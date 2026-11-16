@@ -1148,6 +1148,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'quickbooks_environment'         => 'quickbooks_mcp' === $connection_type && isset( $_POST['quickbooks_environment'] ) && in_array( $_POST['quickbooks_environment'], array( 'sandbox', 'production' ), true )
 					? sanitize_key( wp_unslash( $_POST['quickbooks_environment'] ) )
 					: 'production',
+				// QuickBooks Online MCP tool-category switches — mirrors the
+				// reference server's QUICKBOOKS_DISABLE_WRITE/UPDATE/DELETE flags.
+				'quickbooks_disable_write'       => 'quickbooks_mcp' === $connection_type && ! empty( $_POST['quickbooks_disable_write'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
+				'quickbooks_disable_update'      => 'quickbooks_mcp' === $connection_type && ! empty( $_POST['quickbooks_disable_update'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
+				'quickbooks_disable_delete'      => 'quickbooks_mcp' === $connection_type && ! empty( $_POST['quickbooks_disable_delete'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
 			);
 
 			// Google Classroom uses its own scope-profile select; fold it into the
@@ -3560,6 +3565,32 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="sandbox" <?php selected( $saved_quickbooks_environment, 'sandbox' ); ?>><?php esc_html_e( 'Sandbox', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 						<p class="description"><?php esc_html_e( 'Use Sandbox while validating the integration against a test company. Production is required for live books.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="quickbooks_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<?php esc_html_e( 'Tool Categories', 'mcp-ai-wpoos-pro' ); ?>
+					</th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Restrict which QuickBooks MCP tool categories are exposed to assistants', 'mcp-ai-wpoos-pro' ); ?></legend>
+							<label for="quickbooks_disable_write">
+								<input type="checkbox" name="quickbooks_disable_write" id="quickbooks_disable_write" value="1" <?php checked( $is_edit && ! empty( $connection['quickbooks_disable_write'] ) ); ?>>
+								<?php esc_html_e( 'Disable create_* tools (QUICKBOOKS_DISABLE_WRITE)', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+							<br>
+							<label for="quickbooks_disable_update">
+								<input type="checkbox" name="quickbooks_disable_update" id="quickbooks_disable_update" value="1" <?php checked( $is_edit && ! empty( $connection['quickbooks_disable_update'] ) ); ?>>
+								<?php esc_html_e( 'Disable update_* tools (QUICKBOOKS_DISABLE_UPDATE)', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+							<br>
+							<label for="quickbooks_disable_delete">
+								<input type="checkbox" name="quickbooks_disable_delete" id="quickbooks_disable_delete" value="1" <?php checked( $is_edit && ! empty( $connection['quickbooks_disable_delete'] ) ); ?>>
+								<?php esc_html_e( 'Disable delete_* tools (QUICKBOOKS_DISABLE_DELETE)', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Mirrors the reference server environment flags. Suppressed categories are hidden from tool discovery and blocked at execution on this site. Self-hosted wrappers should also set the matching server-side flags so the endpoint itself stays restricted. get_*, search_* and read_* tools are always available.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

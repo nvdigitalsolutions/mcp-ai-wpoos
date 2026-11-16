@@ -47,6 +47,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	const QUICKBOOKS_MCP_DEFAULT_URL = 'https://ai-inc.quickbooks.intuit.com/v1/mcp';
 
 	/**
+	 * Tool-name prefixes suppressed by the QuickBooks MCP category switches.
+	 *
+	 * Mirrors the upstream Intuit reference server's environment flags
+	 * (github.com/intuit/quickbooks-online-mcp-server):
+	 * `QUICKBOOKS_DISABLE_WRITE` → `create_*`, `QUICKBOOKS_DISABLE_UPDATE` →
+	 * `update_*`, `QUICKBOOKS_DISABLE_DELETE` → `delete_*`. The server-side
+	 * flags remain authoritative for self-hosted wrappers; this map enforces
+	 * the same categories on the NV oOS side of the bridge so the hosting
+	 * endpoint cannot widen the surface by ignoring its environment.
+	 *
+	 * @since 1.2.22
+	 * @var array<string, string>
+	 */
+	const QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES = array(
+		'write'  => 'create_',
+		'update' => 'update_',
+		'delete' => 'delete_',
+	);
+
+	/**
 	 * Supported authentication types.
 	 *
 	 * @var array<string>
@@ -638,6 +658,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['jetengine_cct_access'] = $existing_connection['jetengine_cct_access'];
 			}
 
+			// Preserve the QuickBooks MCP category switches when an update omits
+			// them — a partial programmatic save must never widen a restricted
+			// accounting surface back to full write access.
+			foreach ( array_keys( self::QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES ) as $category ) {
+				$switch = 'quickbooks_disable_' . $category;
+				if ( ! isset( $connection_data[ $switch ] ) && isset( $existing_connection[ $switch ] ) ) {
+					$connection_data[ $switch ] = $existing_connection[ $switch ];
+				}
+			}
+
 			// Preserve Upwork/LinkedIn mode and search criteria when updating.
 			if ( ! isset( $connection_data['upwork_mode'] ) && isset( $existing_connection['upwork_mode'] ) ) {
 				$connection_data['upwork_mode'] = $existing_connection['upwork_mode'];
@@ -909,6 +939,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'quickbooks_environment'         => isset( $connection_data['quickbooks_environment'] ) && in_array( $connection_data['quickbooks_environment'], array( 'sandbox', 'production' ), true )
 				? $connection_data['quickbooks_environment']
 				: 'production',
+			// QuickBooks Online MCP tool-category switches. These mirror the
+			// upstream server's QUICKBOOKS_DISABLE_WRITE/UPDATE/DELETE flags and
+			// are enforced on the WordPress side of the bridge.
+			'quickbooks_disable_write'       => ! empty( $connection_data['quickbooks_disable_write'] ),
+			'quickbooks_disable_update'      => ! empty( $connection_data['quickbooks_disable_update'] ),
+			'quickbooks_disable_delete'      => ! empty( $connection_data['quickbooks_disable_delete'] ),
 			'mcp_protocol_version'           => isset( $connection_data['mcp_protocol_version'] ) ? sanitize_text_field( $connection_data['mcp_protocol_version'] ) : '',
 			'mcp_server_name'                => isset( $connection_data['mcp_server_name'] ) ? sanitize_text_field( $connection_data['mcp_server_name'] ) : '',
 			'mcp_tool_count'                 => isset( $connection_data['mcp_tool_count'] ) ? absint( $connection_data['mcp_tool_count'] ) : 0,
@@ -1751,6 +1787,87 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Resolve the tool-name prefixes a QuickBooks MCP surface must suppress.
+	 *
+	 * Accepts either a stored connection (carrying the
+	 * `quickbooks_disable_write|update|delete` switches) or an MCP App config
+	 * (carrying the already-resolved `disabled_tool_prefixes`). Only prefixes
+	 * declared in {@see QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES} are honoured,
+	 * so a tampered config cannot suppress arbitrary tool families.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @param array|mixed $source Stored connection array or app config array.
+	 * @return string[] Suppressed tool-name prefixes (empty when unrestricted).
+	 */
+	public static function get_quickbooks_mcp_disabled_prefixes( $source ) {
+		if ( ! is_array( $source ) ) {
+			return array();
+		}
+
+		$candidates = isset( $source['disabled_tool_prefixes'] ) && is_array( $source['disabled_tool_prefixes'] )
+			? $source['disabled_tool_prefixes']
+			: array();
+
+		foreach ( self::QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES as $category => $prefix ) {
+			if ( ! empty( $source[ 'quickbooks_disable_' . $category ] ) ) {
+				$candidates[] = $prefix;
+			}
+		}
+
+		if ( empty( $candidates ) ) {
+			return array();
+		}
+
+		return array_values(
+			array_unique(
+				array_intersect(
+					array_map( 'strval', $candidates ),
+					array_values( self::QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES )
+				)
+			)
+		);
+	}
+
+	/**
+	 * Drop remote tool definitions belonging to a suppressed category.
+	 *
+	 * Mirrors the upstream reference server's `QUICKBOOKS_DISABLE_*`
+	 * environment flags on the WordPress side: suppressed verbs never reach
+	 * tool discovery, the chat tool payload, or bridge registration. The
+	 * bridge re-checks at execution time as a last line of defence.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @param array       $tools  Remote MCP tool definitions (`name`, `description`, `inputSchema`, …).
+	 * @param array|mixed $source Stored connection array or app config array.
+	 * @return array Filtered, re-indexed tool definitions.
+	 */
+	public static function filter_quickbooks_mcp_tool_definitions( array $tools, $source ) {
+		$prefixes = self::get_quickbooks_mcp_disabled_prefixes( $source );
+
+		if ( empty( $prefixes ) ) {
+			return $tools;
+		}
+
+		$filtered = array();
+
+		foreach ( $tools as $tool ) {
+			$name = is_array( $tool ) && isset( $tool['name'] ) ? strtolower( (string) $tool['name'] ) : '';
+
+			foreach ( $prefixes as $prefix ) {
+				if ( '' !== $name && 0 === strpos( $name, $prefix ) ) {
+					continue 2;
+				}
+			}
+
+			$filtered[] = $tool;
+		}
+
+		return $filtered;
+	}
+
+	/**
 	 * Map a stored QuickBooks Online MCP connection onto an MCP App client config.
 	 *
 	 * Three deployment shapes are supported, mirroring industry practice for
@@ -1771,7 +1888,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * the matching custom-header credential. They are not auto-injected into
 	 * the app config.
 	 *
+	 * The connection's tool-category switches (`quickbooks_disable_write`,
+	 * `quickbooks_disable_update`, `quickbooks_disable_delete`) ride along as
+	 * `disabled_tool_prefixes` so discovery, the chat tool payload, and the
+	 * bridge's execution gate all honour them.
+	 *
 	 * @since 1.2.21
+	 * @since 1.2.22 Carries the QuickBooks tool-category switches.
 	 *
 	 * @param array $connection Stored QuickBooks MCP connection array.
 	 * @return array MCP App client config.
@@ -1787,12 +1910,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$config = array(
-			'server_url'  => $server_url,
-			'auth_type'   => 'none',
-			'token'       => '',
-			'header_name' => isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '',
-			'verify_ssl'  => array_key_exists( 'mcp_verify_ssl', $connection ) ? (bool) $connection['mcp_verify_ssl'] : true,
-			'timeout'     => ! empty( $connection['mcp_timeout'] ) ? (int) $connection['mcp_timeout'] : 30,
+			'server_url'             => $server_url,
+			'auth_type'              => 'none',
+			'token'                  => '',
+			'header_name'            => isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '',
+			'verify_ssl'             => array_key_exists( 'mcp_verify_ssl', $connection ) ? (bool) $connection['mcp_verify_ssl'] : true,
+			'timeout'                => ! empty( $connection['mcp_timeout'] ) ? (int) $connection['mcp_timeout'] : 30,
+			// Effective QUICKBOOKS_DISABLE_* categories for the bridged surface.
+			'disabled_tool_prefixes' => self::get_quickbooks_mcp_disabled_prefixes( $connection ),
 		);
 
 		switch ( $auth_type ) {
@@ -2148,7 +2273,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( ! $refresh ) {
 			$cached = get_transient( $cache_key );
 			if ( false !== $cached && is_array( $cached ) ) {
-				return $cached;
+				// Category switches are applied on top of the cached raw list so
+				// flipping one takes effect without waiting out the TTL.
+				return self::filter_quickbooks_mcp_tool_definitions( $cached, $connection );
 			}
 		}
 
@@ -2156,7 +2283,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$tools  = $client->list_tools();
 
 		if ( ! is_wp_error( $tools ) ) {
+			// Cache the raw server list; the snapshot below records the
+			// effective (filtered) surface this connection exposes.
 			set_transient( $cache_key, $tools, 300 );
+			$tools = self::filter_quickbooks_mcp_tool_definitions( $tools, $connection );
 		}
 
 		// Persist the snapshot on the stored connection.

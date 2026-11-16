@@ -193,6 +193,23 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			}
 		}
 
+		// Category switches (QuickBooks MCP, mirroring the upstream server's
+		// QUICKBOOKS_DISABLE_WRITE/UPDATE/DELETE flags) are re-checked at
+		// execution time: a bridge registered before an operator flipped a
+		// switch must not slip a suppressed verb through.
+		$blocked_prefix = $this->get_blocked_category_prefix();
+		if ( '' !== $blocked_prefix ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_tool_category_disabled',
+				sprintf(
+					/* translators: 1: Remote tool name, 2: Suppressed verb (create, update, delete). */
+					__( 'The remote tool "%1$s" is disabled on this connection: %2$s tools are switched off.', 'mcp-ai-wpoos-pro' ),
+					$this->remote_tool_name,
+					rtrim( $blocked_prefix, '_' )
+				)
+			);
+		}
+
 		// Use the registry's client factory to support OAuth auto-refresh.
 		if ( class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
 			$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
@@ -312,6 +329,38 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'external-api',        // Calls external MCP server.
 			'requires-capability', // Requires user capabilities.
 		);
+	}
+
+	/**
+	 * Return the suppressed verb prefix matching this tool, if any.
+	 *
+	 * Only prefixes carried on the app config (`disabled_tool_prefixes`) are
+	 * considered — the Remote Sites connection builder resolves the QuickBooks
+	 * MCP tool-category switches into that list. The same three-prefix
+	 * whitelist is re-applied here so a config that bypassed the builder can
+	 * never suppress an unrelated tool family.
+	 *
+	 * @since 1.2.22
+	 * @return string Matched prefix (e.g. `create_`), or '' when allowed.
+	 */
+	protected function get_blocked_category_prefix() {
+		$prefixes = isset( $this->app_config['disabled_tool_prefixes'] ) && is_array( $this->app_config['disabled_tool_prefixes'] )
+			? $this->app_config['disabled_tool_prefixes']
+			: array();
+
+		$name = strtolower( (string) $this->remote_tool_name );
+
+		foreach ( $prefixes as $prefix ) {
+			$prefix = strtolower( (string) $prefix );
+			if ( ! in_array( $prefix, array( 'create_', 'update_', 'delete_' ), true ) ) {
+				continue;
+			}
+			if ( '' !== $name && 0 === strpos( $name, $prefix ) ) {
+				return $prefix;
+			}
+		}
+
+		return '';
 	}
 
 	/**
