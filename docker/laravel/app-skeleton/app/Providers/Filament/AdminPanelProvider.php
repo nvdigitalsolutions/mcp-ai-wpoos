@@ -54,6 +54,12 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            // Root-relative, not `asset()`: the admin is served from `public/`,
+            // and `asset()` would bake in APP_URL — so a panel reached on a
+            // different host than APP_URL (a second local container, a
+            // preview domain) would point the icon at the wrong origin and
+            // 404. The file is committed at `public/nvoos-icon.svg`.
+            ->favicon('/nvoos-icon.svg')
             // Generated from the ADS DTCG tokens by `php artisan admin:theme`.
             // Both panels share one palette: a customer estate and the vendor
             // panel must not disagree on what "danger" looks like.

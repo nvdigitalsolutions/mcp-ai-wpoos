@@ -46,6 +46,11 @@ class OperatorPanelProvider extends PanelProvider
             ->id('operator')
             ->path('ops')
             ->login()
+            // Same brand icon as the customer panel, for the same reason the
+            // palette is shared: two panels of one product must not look like
+            // two products. Root-relative so it survives a host/port mismatch
+            // with APP_URL.
+            ->favicon('/nvoos-icon.svg')
             // Generated from the ADS DTCG tokens by `php artisan admin:theme`
             // and drift-gated by AdminThemeDriftTest. Never hard-code a colour
             // here: the gate can only see what the generator writes.
