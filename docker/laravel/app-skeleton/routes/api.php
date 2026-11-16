@@ -44,6 +44,7 @@ use App\Http\Controllers\TranscriptsController;
 use App\Http\Controllers\TriggersController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowRunController;
+use App\Http\Controllers\Wifi\KpiController as WifiKpisController;
 use App\Http\Controllers\Wp\ContentController as WpContentController;
 use Illuminate\Support\Facades\Route;
 
@@ -199,6 +200,15 @@ Route::prefix('api/v1')->group(function (): void {
             Route::post('/settings/values', [SettingsController::class, 'updateValues']);
 
             Route::get('/diagnostics/overview', DiagnosticsController::class);
+
+            // Proposal 150 — NV oOS WiFi. The controller adds no logic of its
+            // own: it calls the portable NvoosWifi\Services\Class_Kpi_Service,
+            // so this payload must match the WordPress route's by content.
+            // tests/Feature/WifiKpisTest.php pins both against one committed
+            // fixture (addons/nvoos-wifi/tests/fixtures/), which is the Phase 0
+            // exit condition for portability.
+            Route::get('/wifi/venues/{venue}/kpis', WifiKpisController::class)
+                ->where('venue', '[A-Za-z0-9_\-]+');
             Route::get('/operations/cron', [OperationsController::class, 'cron']);
             Route::delete('/operations/cron/{jobId}', [OperationsController::class, 'removeCron']);
             Route::get('/operations/dlq', [OperationsController::class, 'dlq']);
