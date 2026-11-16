@@ -166,7 +166,11 @@ The expiry defect fixed during this track (`issueCredential()` never persisted `
 
 ### 6.3 Tools
 
-`tools` is read-only on every surface (`writer: none`). The admin gets the full catalogue with readiness annotations. The console's honest projection is the assistant's **enabled** tools plus presets — not the 223-entry registry. Today it receives the full list, which is API3 by definition: the catalogue is not a secret, but it is object property a plan holder did not ask for.
+`tools` is read-only on every surface (`writer: none`). The admin gets the full catalogue with readiness annotations, and so does the console.
+
+This section originally called the full payload "API3 by definition" and proposed projecting the console down to the assistant's **enabled** tools plus presets. **That was wrong, and §22 corrected it.** `ToolPicker` reads this payload *so an administrator can enable a tool the assistant does not have yet*; reducing it to the current tools would empty the picker and make the surface useless for its one job. A catalogue is a reference list, not a tenant-owned record set — there is no property a plan holder should not see, so the property-level concern behind `projection` does not arise. Both presentations now read one reader (`App\Support\ToolCatalogue`) and return identical rows.
+
+The general lesson, recorded because it recurs: `projection` exists for surfaces where one presentation must not receive an object's properties. Applying it to a reference catalogue is a category error, and the fix is to correct the matrix, not to reduce a payload a client depends on.
 
 ### 6.4 Orchestration
 

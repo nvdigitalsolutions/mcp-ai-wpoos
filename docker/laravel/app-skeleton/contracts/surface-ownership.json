@@ -121,12 +121,13 @@
       "title": "Tool catalogue",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["tools"] },
       "writer": "none",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Read-only on both. The console sees the full catalogue today; the intended console projection is the assistant's enabled tools plus presets."
+      "projection": "No reduction, and that is the decision rather than an omission. Both presentations read App\\Support\\ToolCatalogue and return the same rows (slug, name, description, required_capability, readiness, annotations); neither writes. Readiness is what separates a tool that works from one merely present in the package, so hiding it would make the catalogue useless for its one job.",
+      "files": ["app/Filament/Admin/Pages/Tools.php"],
+      "notes": "Shipped 2026-11-17 (§22). The earlier note here proposed projecting the console down to 'the assistant's enabled tools plus presets'. That was wrong: ToolPicker reads this payload so an administrator can enable a tool the assistant does not have yet, and a catalogue is a reference list rather than a tenant-owned record set, so BOPLA does not apply to it."
     },
     {
       "id": "settings.estate",
