@@ -157,7 +157,7 @@ After `wp mcp-ai assistant create`, set the canonical runtime keys (the legacy `
 wp post meta update <id> _wp_mcp_ai_provider openai
 wp post meta update <id> _wp_mcp_ai_model     gpt-4o-mini
 wp post meta update <id> _wp_mcp_ai_temperature 0.5
-wp post meta update <id> _wp_mcp_ai_system_prompt "$(cat teacher-assistant-sri-lanka.md)"
+wp post meta update <id> _wp_mcp_ai_system_prompt "$(cat examples/teacher-assistant-sri-lanka.md)"  # run from the repo root
 wp post meta update <id> _wp_mcp_ai_classification internal
 wp post meta update <id> mcp_ai_required_capability edit_posts
 # then assign the tool slug array (must be a real PHP array):
