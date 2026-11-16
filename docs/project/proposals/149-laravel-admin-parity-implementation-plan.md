@@ -1938,3 +1938,65 @@ operator. The token name is the only reliable link to the assistant's estate.
   omits `tenant_id`, so `create(['tenant_id' => …])` silently lands in the
   default estate. The first version of the new test did exactly that and passed
   the wrong thing; it now assigns the column explicitly.
+
+---
+
+## 20. Dashboards redundancy review (S-3) — decision, not a slice
+
+**State:** review complete 2026-11-17. **No code changed.**
+
+S-3 asked for the dashboards to ship and then be reviewed for redundancy before
+consolidating. The review is
+[`149-dashboards-redundancy-review.md`](./149-dashboards-redundancy-review.md);
+this section records the outcome so the plan does not need the other file open.
+
+### 20.1 The inventory is 10, not 23
+
+The 23 figure referred to the plugin's admin **pages**. Both runtimes declare the
+same ten dashboards: `cre`, `law`, `registration`, `eca`, `health`, `vitals`,
+`ezuite`, `shopify`, `flowhub`, `observability`. Only `eca` is served on this
+runtime; the rest report `disabled` with their toolkit flag.
+
+### 20.2 Two genuine duplicates
+
+| Pair | Evidence | Verdict |
+|---|---|---|
+| `ezuite` ≡ `flowhub` | identical five metric keys with identical formats, and the same single list with `name`/`count` columns | **duplicate** — one panel shape, two connectors |
+| `health` ≡ `vitals` | identical filter set (`member_id`, `days_back` 7/30/90), identical structure, columns differ only | **duplicate one level up** — split by toolkit flag, which is a visibility rule, not a surface |
+
+`shopify` is a partial duplicate: it shares `cached_items` and the
+connector-health framing but adds GraphQL budget metrics, so it joins the same
+dashboard with its own metric group rather than standing alone.
+
+`cre`, `law`, `registration` and `eca` are similar in **shape** and different in
+every substantive dimension — filters, metrics, audience, toolkit. Collapsing
+them removes domains, not duplication.
+
+### 20.3 Recommendation
+
+**10 → 7.** Connector health (`ezuite` + `flowhub` + `shopify`), Member metrics
+(`health` + `vitals`), and `cre`, `law`, `registration`, `eca`, `observability`
+unchanged.
+
+Three is not reachable without deleting domains. The remaining consolidation is
+the **renderer** (the `filters`/`metrics`/`charts`/`lists` contract), which is
+already Wave 3's manifest plan — a different kind of merge.
+
+### 20.4 Why it is not implemented here
+
+1. WordPress is the catalogue's source of truth; merging only the Laravel
+   catalogue breaks label parity on the first request.
+2. `DashboardsTest` pins the disabled set and its toolkit flags; changing the
+   set is a deliberate test change.
+3. Retired ids need aliases — console URLs and, on WordPress, dashboard-widget
+   registration both carry them.
+
+Schedule with Wave 5, with a matching WordPress change. The contract's
+`dashboards` row now records the finding so it is not re-derived.
+
+### 20.5 Still open
+
+The other half of S-3 — does an unlicensed toolkit **disappear** from the
+console, or render an **upsell**? Deferred to Wave 3: absence is an
+authorisation statement and an upsell is a product surface, and that choice
+should be made once for the manifest system, not per dashboard.
