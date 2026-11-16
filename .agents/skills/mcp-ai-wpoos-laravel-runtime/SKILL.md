@@ -45,6 +45,30 @@ Both are symlinks into the mounted repo, so **edits under `lib/` are live
 immediately** — no `composer update`, no rebuild. This is why a `lib/core`
 change shows up in `php artisan test` without any install step.
 
+**`oos-laravel-app` is bound to ONE checkout, not to "the repo".** In a worktree
+the container usually serves a *different* checkout, so "the container runs my
+code" is an assumption, not a fact — read the mounts first:
+
+```sh
+MSYS_NO_PATHCONV=1 docker inspect oos-laravel-app \
+  --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
+```
+
+To actually browse the code in this worktree, add a **second** app container
+instead of editing the running one: copy the env from
+`docker/docker-compose.laravel.yml`'s `x-spike-environment`, change `APP_URL`
+and `SANCTUM_STATEFUL_DOMAINS` to the new port, add `-p 8002:8000 --network
+oos-laravel_default`, and mount this worktree's `docker/laravel/app` at `/app`
+plus the shared `laravel_vendor` / `laravel_storage` volumes. Two things a
+freshly built `docker/laravel/app` lacks, and neither fails loudly — the panel
+just renders unstyled or 500s: the published Filament assets (`public/css`,
+`public/js`, `public/fonts`) and Octane's `public/frankenphp-worker.php`. Copy
+them from a checkout that has run `filament:assets`, or run it in the container.
+
+Local login is `spike@example.com` / `password` (`nvoos:spike-token` creates that
+user; `DatabaseSeeder::seedOperatorMembership()` attaches administrators to the
+operator estate, which is what makes `/ops` reachable at all).
+
 ## 2. Source of truth
 
 - `docker/laravel/app-skeleton/` — **committed**. This is the source.
@@ -94,7 +118,7 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
-| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 694 passed / 4070 assertions (2026-11-15, after the posture defaults landed) |
+| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 694 passed / 4070 assertions (2026-11-15, after the posture defaults landed); **886 passed / 4804 assertions (2026-11-16**, after the WiFi port and the assistants/scheduler slices) |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 180 passed / 678 assertions, **no failures** (2026-11-15, after the two stale status tests were corrected). Run it with **host** PHP: the container's `vendor/nvoos/core` symlink is Windows-absolute and does not resolve on Linux |
 | Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1751 tests / 6185 assertions (2026-11-15, after the harness port, the chat-path wiring, the PII parity work, server-side system-prompt ownership, the necessity gate and the tool preset catalogue); green apart from the no-coverage-driver warning |
 | Lint (Laravel trees) | `php vendor/bin/phpcs --standard=phpcs-laravel.xml.dist --error-severity=1 --warning-severity=8` (repo root) | **807 files, 0 errors** (2026-11-15, after the posture defaults landed). Covers `lib/core/src`, `lib/core/tests`, `lib/laravel-adapter/**` and `docker/laravel/app-skeleton/**`. `lib/core` was added last; it was reformatted from tabs to spaces in #7805. The two indentation sniffs are ruleset-wide excludes, so tabs are not actually forbidden in `lib/core` — see plan §22. If the run is red, check the anonymous-class sniff (`new class (`) first: three such errors reached `alpha-working` via #7813 and #7816 and were fixed in the posture PR — see plan §26 |
@@ -113,10 +137,23 @@ be recreated.
 
 **CI does run the app suite.** `.github/workflows/laravel-app.yml` installs the
 skeleton on SQLite and runs `php artisan test`, so an app-suite regression does
-surface on the PR (the check is `App suite (SQLite)`). The remaining gates on
-`docker/**` are PSR-12 via `phpcs-laravel.xml.dist` and the licence boundary.
-Still quote your local counts in the PR — CI proving "not broken" is weaker
-evidence than a count you actually saw.
+surface on the PR (the check is `App suite (SQLite)`). Still quote your local
+counts in the PR — CI proving "not broken" is weaker evidence than a count you
+actually saw.
+
+**The PSR-12 gate is configured but was unreachable.** It lives inside the
+`WordPress Coding Standards (WPCS 3.0)` job in `php-linting.yml`, *after* `Get
+changed PHP files` (`tj-actions/changed-files`), which hung `in_progress` for
+70+ minutes on three PRs while every later step stayed `pending`. A `pending`
+check does not fail a PR, so six style errors merged into `alpha-working`
+(#7862–#7864). #7865 moves both ruleset checks above that step. Until the merged
+shape reflects that, a green PR is **not** proof the Laravel tree was linted —
+confirm the step, not the check label:
+
+```sh
+gh api repos/<org>/<repo>/actions/jobs/<job-id> \
+  --jq '.steps[] | {n:.number, name, status, conclusion}'
+```
 
 Run the style gate exactly as CI does, otherwise line-length warnings that CI
 ignores will look like failures:
@@ -127,6 +164,11 @@ vendor/bin/phpcs --standard=phpcs-laravel.xml.dist --error-severity=1 --warning-
 
 `Generic.Files.LineLength` is severity 5, so `--warning-severity=8` is what
 makes the check pass on the pre-existing long lines in `AppServiceProvider`.
+
+A **path-scoped** run is the same ruleset at narrower scope, not a different
+gate: passing `docker/laravel/app-skeleton` reports ~300 files, while CI's
+no-path run also covers `lib/core` and `lib/laravel-adapter` (~800+). Say which
+one you ran — the two counts are not comparable.
 
 Never run two `docker exec … phpunit` at once — the WordPress suites share the
 `wordpress_test` database and collide.
@@ -401,6 +443,8 @@ Everything below landed **after** the v1.2.20 section, so treat §8 as the stora
 - **Assistant + console extras** — `POST` assistant test endpoint, blueprint catalogue + install-as-assistant, advanced assistant-editor fields, dashboards route, chat-client route.
 - **Admin panels (Proposal 149)** — `/ops` (operator) and `/admin` (tenant-scoped) are Filament 5.11 panels; resources live under `app/Filament/{Operator,Admin}/` so the two panels cannot share one. Access is `AdminAccessPolicy`: `/ops` = member of a `tenants.is_operator` estate **plus** `manage_options` (never `users.role` — a customer's estate administrator is an administrator), `/admin` = non-viewer membership. `AuditAdminRequests` writes one row per mutating panel request to `nvoos_admin_audit` (failures included; credentials redacted at any depth), and the `RecordsAdminChanges` observer trait adds a **record row** (`resource`/`record_id`/`action`/`before`/`after`) for every administrable model — `resource IS NULL` is what tells a request row from a record row, and a resource write produces one of each. Resources: `/ops/estates` (`EstateResource` over `Tenant`; `TenantPolicy` denies create/delete, `is_operator` and `slug` are not editable, the licence key is write-only — blanked with `afterStateHydrated()` because a password input still ships the value) and `/admin/{estate}/teams` (`TeamResource`; `TeamPolicy` composes estate membership → **record ownership** → team role, and writes go through `TeamServiceInterface` so tenant, slug and creator-as-owner stay in one place). `/ops/queue` is a page rather than a resource (`QueueMonitor`: retry pushes the original payload back through `FailedJobProviderInterface` and forgets the row, forget/flush never requeue, and every action writes its own audit row because Livewire traffic is excluded from the request-level audit). `/ops/credentials` rotates assistant tokens (`Credentials`: **issue first, revoke second** via the captured ids, so a failed issuance leaves the old credential working; the new plaintext lives in a page property — never a form field, the audit row, or a notification, which is cache-backed — and only `oos-assistant-{id}` names are counted). The palette is `AdminTheme::FILAMENT_COLORS`, generated from the storefront DTCG tokens by `php artisan admin:theme` and drift-gated by `AdminThemeDriftTest`.
 
+- **Admin panels, Wave 2 close-out** — two more resources, and the seams they introduced. `/admin/{estate}/assistants` (`AssistantResource`) puts every assistant write through **`AssistantWriter`** (`app/Services/`): the extraction of the five invariants `AssistantController` used to own inline — estate assignment from `TenantContext` (`tenant_id` is not fillable), per-estate slug uniqueness (`-2`, `-3`… mirroring the `(tenant_id, slug)` index; a blank slug derives from the title), `primary_role_slugs` → `meta`, the 14-key `advanced` whitelist (absent keys untouched, present-but-empty removed), and `is_default` exclusivity scoped to the estate. The controller and the resource both delegate, so the REST suite and the panel cannot disagree. `/ops/scheduler` is a **diagnosis, not a Schedule Manager** (`Schedule` model over `nvoos_schedules`, read-only; health states `paused`/`untimed`/`overdue`/`scheduled`; only `bootstrap()` and `due()+run()` are offered — creating and editing stay in the console's `SchedulesController`, which would otherwise be one page twice). It exists because `nvoos_schedules` is advanced only by `nvoos:run-schedules`, which only fires where the `scheduler` role runs `schedule:work` — a dead tick leaves every console page looking healthy. Estate ownership is **`EstateScope`** (`currentId()`/`owns()`), shared by `TeamPolicy` and `AssistantPolicy`; it fails closed on an unresolved estate rather than falling back to the `TenantContext` default.
+
 ### Gotchas that cost cycles in this window
 
 - **A top-level response wrapped "for consistency" breaks the client silently** (MCP apps). Check the SPA client, not the convention.
@@ -409,3 +453,9 @@ Everything below landed **after** the v1.2.20 section, so treat §8 as the stora
 - **`manage_oos` had no definition.** A Gate that is missing denies everything forever — assert issuance through the real path, not a fixture insert.
 - **A static-client OAuth provider cannot use DCR.** Pre-registered clients mean HTTP Basic token requests and case-preserving client IDs.
 - **`Panel::getTenant()` is not the current tenant in Filament 5.** It resolves a tenant *by key* (`getTenant(string $key): Model`) and throws `ArgumentCountError` with no argument; the current tenant is `Filament::getTenant()`. This sat undetected in `AdminAuditLogger::tenantId()` until the first tenant-scoped resource wrote a record row (teams), because the operator panel has no tenancy and every Wave 0 audit test used panel-less routes.
+- **Filament fills a form from `$record->attributesToArray()`.** A field backed by `meta` (the assistant profession selection) therefore needs `$appends = ['primary_role_slugs']` plus a `getPrimaryRoleSlugsAttribute()` accessor — without it the edit form hydrates empty and the first panel save silently wipes the selection. `toRecord()`/`toBundleEntry()` are explicit, so the console wire shape is unaffected.
+- **`assertTableActionHidden($action, $record)` is the wrong assertion for cross-tenant.** When the record is absent from the tenant-scoped table Filament raises `ActionNotResolvableException` instead of reporting "hidden". Assert `assertCanSeeTableRecords` / `assertCanNotSeeTableRecords`: "this estate cannot see that record" is both the real rule and the stable one.
+- **`callTableAction(..., data: [...])` mounts first, then overlays only the keys you pass.** The mount is what hydrates the form, so a partial `data` array is a genuine "edit preserving everything else" test — which is how the `$appends` defect above surfaced.
+- **A panel-provider change needs a container restart.** `->favicon()` / `->colors()` live on the `Panel` object built at boot; `OCTANE_MAX_REQUESTS=1` did **not** pick up a favicon change — the page kept rendering with no `<link rel="icon">` until `docker restart`.
+- **`git archive HEAD <dir>` can return an empty tree.** `export-ignore` in `.gitattributes` filters it, and `docker/laravel/app-skeleton` is affected. Restore individual files with `git show HEAD:path > path` instead of archiving.
+- **The entrypoint only installs Composer deps when `vendor/autoload.php` is absent.** A newly added path package (e.g. `nvoos/wifi`) is therefore never linked into an existing volume — run `composer update <vendor/pkg> --with-dependencies` by hand. The committed `composer.json` also uses host-relative path repos (`../../../lib/core`) that the entrypoint rewrites to `/workspace/oos/…`; if that rewrite did not stick, Composer fails with "The `url` supplied for the path … does not exist" — rewrite the three `../../../` prefixes.

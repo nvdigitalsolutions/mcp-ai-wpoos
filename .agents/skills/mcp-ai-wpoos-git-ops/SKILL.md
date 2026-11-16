@@ -641,11 +641,29 @@ can appear in the repo root. Two failure modes follow:
 - `gh pr checks <n>` shows queued runs; the repo-wide **PHP Linting workflow
   takes ~20–30 minutes** — don't retry or "fix" it while it's simply running.
   `Forbidden pattern checks` alone took 27m once, and
-  `PHP Compatibility Check` + `WPCS 3.0` can sit `pending` indefinitely —
-  they still show pending on PRs merged long before (verified 2026-11-08 on
-  an already-merged PR), so they are not a gate. Report `mergeable`
-  (`MERGEABLE`) plus the JS suites (`test`, `test (18.x)`, `test (20.x)`)
-  instead of blocking on those three.
+  `PHP Compatibility Check` + `WPCS 3.0` can sit `pending` indefinitely
+  (verified 2026-11-08 on an already-merged PR).
+- **"They are not a gate" was the wrong conclusion (corrected 2026-11-16).**
+  The `WPCS 3.0` job wedges on `Get changed PHP files`
+  (`tj-actions/changed-files`), so **every later step stays `pending`** —
+  including the PSR-12 gate for `docker/laravel/**`. Six style errors merged
+  into `alpha-working` that way (#7862–#7864), because a `pending` check does
+  not fail a PR. #7865 moves both ruleset checks above the wedging step.
+  A `pending` check is not evidence of a pass: confirm the **steps**, not the
+  label, before calling a PR verified.
+
+  ```sh
+  gh api repos/<org>/<repo>/actions/jobs/<job-id> \
+    --jq '.steps[] | {n:.number, name, status, conclusion}'
+  ```
+
+  Read `.conclusion`, not `.status` — a wedged step and a queued one both say
+  `in_progress`/`pending`. Report `mergeable` (`MERGEABLE`) plus the JS suites
+  (`test`, `test (18.x)`, `test (20.x)`) when the linting workflow is still
+  running, but say that the lint gate has not reported.
+- `gh api` / `gh pr comment` intermittently fail here with
+  `net/http: TLS handshake timeout` (2026-11-16, several in a row). Retry —
+  it is the network, not the token or a missing permission.
 - After a forced push, GitHub recomputes conflict status automatically;
   re-check `mergeable` before reporting done.
 
