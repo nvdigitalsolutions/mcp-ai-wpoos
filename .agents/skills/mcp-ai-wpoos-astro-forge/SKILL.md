@@ -1195,13 +1195,9 @@ builder themes declare rhythm in classes the sanitizer strips, so
   the template's own 32px rhythm in place.
 - `minHeight` is a floor, never a lock — it closes UNDERSHOOT only. Overshoot is
   a content-scale difference and must be reported as such.
-- **A decoration-only band escapes the 120px strip threshold.**
-  `MIN_MIRRORED_BAND_HEIGHT` assumes a short band's height belongs to the
-  rebuild's type scale — true only when there IS content. A band with no
-  heading, body, media or control is a spacer (jayainc's `dff3f1a`, a lone
-  `widget-spacer`): its measured height is the whole design, so
-  `contentlessBand()` mirrors it at any size. A band whose only content is a
-  control is NOT decoration (`interactions` is part of the test).
+- **A decoration-only band escapes the 120px strip threshold**: with no heading,
+  body, media or control it is a spacer (`contentlessBand()` mirrors it at any
+  size — jayainc's `dff3f1a`); a control-only band is NOT decoration.
 - **A profile `padding`/`minHeight` pin outranks the measurement** — the point
   of a pin, and how a stale one hides. jayainc pinned
   `sections.fd63522.padding: '0px 0px 100px 0px'` against a source box measured
@@ -1209,6 +1205,14 @@ builder themes declare rhythm in classes the sanitizer strips, so
   `paddingBottom`, read `pins[]` before the renderer.
 - `min-height` must be applied **before** the hero early return in `wrapStyle`,
   or the one band a source height pins never gets it.
+- **`bandFacts[].elements` paths are POSITIONAL**, measured from the source band
+  root, which the rebuild nests inside `.post-body`: emit them anchored
+  (`[data-section-id] .post-body > * > <path>`) or the leading `div:nth-child(2)`
+  becomes a DESCENDANT selector that paints the band's surface + pinned height
+  over unrelated nodes (a hero photo vanished under an 810x900 block). Publish
+  `--ds-col-min-h` with the floor too — a centred band wrapper rule re-states
+  `min-height: var(--ds-col-min-h, 0)` above it. See
+  [`reference/render-side-bands.md`](reference/render-side-bands.md) §9.
 - Rows are a **12-column GRID**, not equal-share flex: `grid-column: span N` from
   `vc_col-{lg,md}-N` with `[class~=…]` (whole token). Carousels stay
   `flex-wrap: nowrap` + `flex: 1 1 0`, or 7 logos wrap onto a second row.
