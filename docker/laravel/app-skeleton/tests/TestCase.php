@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 
@@ -15,6 +16,12 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // TenantContext is process-wide static (Proposal 149 T-0.2). Without
+        // this reset a test that pins a tenant hands it to the next test in
+        // the same PHP process, which is exactly the leak the Octane listeners
+        // prevent in production.
+        TenantContext::forget();
 
         // The Paper Store is file-backed, so it does not participate in the
         // database transaction RefreshDatabase wraps around a test. Give every

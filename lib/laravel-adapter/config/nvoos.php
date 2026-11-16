@@ -10,6 +10,57 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Pro entitlement (Proposal 090-B ADR-7 · Proposal 149 T-0.8)
+	|--------------------------------------------------------------------------
+	|
+	| Which Pro surfaces this installation is entitled to. Three driver
+	| families share one contract (`ProEntitlementInterface`):
+	|
+	|   allow  — every feature entitled. Development, CI, and a private
+	|            deployment enforced elsewhere.
+	|   deny   — nothing entitled. Base-only and fail-closed deployments.
+	|   config — only the features listed in `features`.
+	|   license— resolve against the commercial licence server.
+	|
+	| Unknown drivers fail closed. `features` is applied last and wins in both
+	| directions, so an operator can grant or revoke a single surface without
+	| touching the licence server.
+	|
+	| Tenancy note: this block is the INSTALL-LEVEL default. A host that owns
+	| per-estate licences (the Laravel admin resolves each tenant's key) binds
+	| its own decorator over this contract; these values remain the fallback
+	| for an estate with no licence of its own.
+	|
+	| Before Proposal 149 T-0.8 these settings had no home in the shipped
+	| config file at all — `config('oos.pro_entitlement')` was always empty, so
+	| the runtime was permanently on the `allow` default and could not be
+	| configured without publishing the file by hand.
+	|
+	*/
+	'pro_entitlement' => array(
+		'driver' => env( 'NVOOS_PRO_ENTITLEMENT_DRIVER', 'allow' ),
+
+		// Licence-server driver.
+		'license_key' => env( 'NVOOS_PRO_LICENSE_KEY', '' ),
+		'server_url' => env( 'NVOOS_PRO_LICENSE_SERVER', '' ),
+		'instance_id' => env( 'NVOOS_PRO_LICENSE_INSTANCE', '' ),
+		'product' => env( 'NVOOS_PRO_LICENSE_PRODUCT', 'mcp-ai-wpoos-pro' ),
+
+		// `config` driver plan label (diagnostics only; `features` decides).
+		'plan' => env( 'NVOOS_PRO_PLAN', 'compliance' ),
+
+		// Operator overrides: feature => bool.
+		'features' => array(),
+
+		// Licence cache windows (seconds).
+		'ttl' => (int) env( 'NVOOS_PRO_ENTITLEMENT_TTL', 43200 ),
+		'denied_ttl' => (int) env( 'NVOOS_PRO_ENTITLEMENT_DENIED_TTL', 300 ),
+		'grace_ttl' => (int) env( 'NVOOS_PRO_ENTITLEMENT_GRACE_TTL', 604800 ),
+		'timeout' => (int) env( 'NVOOS_PRO_ENTITLEMENT_TIMEOUT', 10 ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Media worker
 	|--------------------------------------------------------------------------
 	|

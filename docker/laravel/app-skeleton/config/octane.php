@@ -1,5 +1,6 @@
 <?php
 
+use App\Listeners\ForgetTenantContext;
 use Laravel\Octane\Contracts\OperationTerminated;
 use Laravel\Octane\Events\OperationReleased;
 use Laravel\Octane\Events\RequestHandled;
@@ -83,6 +84,11 @@ return [
         ],
 
         RequestTerminated::class => [
+            // Tenant state is process-wide static (App\Support\TenantContext).
+            // Octane reuses the worker between requests, so it must be cleared
+            // here or it leaks into the next request's tenant-scoped queries —
+            // a cross-tenant read, not a stale cache. Proposal 149 T-0.2.
+            ForgetTenantContext::class,
             // FlushUploadedFiles::class,
         ],
 
@@ -92,7 +98,7 @@ return [
         ],
 
         TaskTerminated::class => [
-            //
+            ForgetTenantContext::class,
         ],
 
         TickReceived::class => [
@@ -101,7 +107,7 @@ return [
         ],
 
         TickTerminated::class => [
-            //
+            ForgetTenantContext::class,
         ],
 
         OperationTerminated::class => [

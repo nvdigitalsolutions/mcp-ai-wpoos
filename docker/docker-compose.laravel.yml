@@ -34,6 +34,12 @@ x-spike-environment: &spike-environment
   SANCTUM_STATEFUL_DOMAINS: "localhost:8001,localhost:4318,127.0.0.1:4318,localhost,127.0.0.1"
   OCTANE_SERVER: frankenphp
   LOG_CHANNEL: stderr
+  # ADS design tokens for the admin palette (Proposal 149 T-0.6).
+  # The repo root is a bind mount at /workspace/oos inside the container, so
+  # `base_path('../../../examples/...')` — correct for a normal checkout and for
+  # CI — resolves to `/examples` here (a bind mount does not preserve the host
+  # path). This variable is the container's answer to the same question.
+  NVOOS_TOKENS_PATH: /workspace/oos/examples/nvoos-astro-velocity/src/tokens
 
 x-spike-volumes: &spike-volumes
   - ../:/workspace/oos:ro

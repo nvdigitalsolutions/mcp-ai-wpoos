@@ -5,11 +5,17 @@ namespace App\Providers;
 use App\Models\User;
 use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
+use App\Support\AdminThemeGenerator;
 use App\Support\CapabilityMap;
+use App\Support\TenantContext;
+use App\Support\TenantEntitlement;
 use App\Spike\SpikeStreamingProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -17,6 +23,7 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
 
@@ -31,6 +38,29 @@ class AppServiceProvider extends ServiceProvider
         // models), so they are bound here rather than in the package provider.
         $this->app->bind(AssistantServiceInterface::class, LaravelAssistantService::class);
         $this->app->bind(TeamServiceInterface::class, LaravelTeamService::class);
+
+        // The admin palette generator reads a token tree that lives outside the
+        // application (the storefront's DTCG sources), so its location is
+        // configuration, not a class constant (Proposal 149 T-0.6).
+        $this->app->bind(
+            AdminThemeGenerator::class,
+            static fn ($app): AdminThemeGenerator => new AdminThemeGenerator(
+                (string) $app['config']->get('oos.admin_theme.tokens_path', '')
+            )
+        );
+
+        // Entitlement is per estate (Proposal 149 T-0.8). The package binds a
+        // scoped install-level contract; this rebinding wraps it so an estate
+        // with its own licence resolves against the licence server. SCOPED for
+        // the same reason: the memo must die with the request, not with the
+        // Octane worker.
+        $this->app->scoped(
+            ProEntitlementInterface::class,
+            static fn ($app): TenantEntitlement => new TenantEntitlement(
+                (array) $app['config']->get('oos.pro_entitlement', array()),
+                (string) $app['config']->get('app.url', '')
+            )
+        );
     }
 
     /**
@@ -123,6 +153,19 @@ class AppServiceProvider extends ServiceProvider
                 $this->app->make(ErrorFactoryInterface::class),
             ));
         }
+
+        // ── Tenant lifecycle (Proposal 149 T-0.2) ────────────────────
+        //
+        // TenantContext is process-wide static. Octane requests/tasks/ticks are
+        // reset in config/octane.php; queue workers are NOT Octane and fire no
+        // Octane events, so the oos-laravel-worker container — a long-lived
+        // `queue:work redis` process — needs its own reset or a job that pins
+        // a tenant hands it to the next job on the same worker.
+        //
+        // Clear on both outcomes: a job that throws must not leave the pin
+        // behind for the retry or for the next job.
+        Event::listen(JobProcessed::class, static fn () => TenantContext::forget());
+        Event::listen(JobExceptionOccurred::class, static fn () => TenantContext::forget());
     }
 
     /**

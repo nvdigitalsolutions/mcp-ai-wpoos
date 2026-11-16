@@ -92,10 +92,9 @@ use Nvoos\Laravel\Adapter\DatabaseTraceStore;
 use Nvoos\Laravel\Adapter\HarnessProfileProvider;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
-use Nvoos\Laravel\Adapter\LicensedProEntitlement;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
-use Nvoos\Laravel\Adapter\ProEntitlement;
+use Nvoos\Laravel\Adapter\ProEntitlementFactory;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
 use Nvoos\Laravel\Adapter\QueueClient;
 use Nvoos\Laravel\Adapter\RegistryToolInvoker;
@@ -161,28 +160,17 @@ class NvoosServiceProvider extends ServiceProvider {
 		// configuration drivers (allow|deny|config) cover development, CI and
 		// fail-closed deployments. Unknown drivers fail closed
 		// (Proposal 090-B, ADR-7, Phase 5.1).
-		$this->app->singleton( ProEntitlementInterface::class, function ( $app ) {
-			$config = $app['config']->get( 'oos.pro_entitlement', array() );
-			$driver = (string) ( $config['driver'] ?? 'allow' );
-
-			if ( 'license' === $driver ) {
-				return new LicensedProEntitlement(
-					licenseKey: (string) ( $config['license_key'] ?? '' ),
-					serverUrl: (string) ( $config['server_url'] ?? '' ),
-					instanceId: (string) ( $config['instance_id'] ?? $app['config']->get( 'app.url', '' ) ),
-					product: (string) ( $config['product'] ?? 'mcp-ai-wpoos-pro' ),
-					featureMap: (array) ( $config['features'] ?? array() ),
-					ttl: (int) ( $config['ttl'] ?? 43200 ),
-					deniedTtl: (int) ( $config['denied_ttl'] ?? 300 ),
-					graceTtl: (int) ( $config['grace_ttl'] ?? 604800 ),
-					timeout: (int) ( $config['timeout'] ?? 10 ),
-				);
-			}
-
-			return new ProEntitlement(
-				driver: $driver,
-				plan: (string) ( $config['plan'] ?? 'compliance' ),
-				featureMap: (array) ( $config['features'] ?? array() ),
+		//
+		// SCOPED, not singleton (Proposal 149 T-0.8). Entitlement is per-estate
+		// state: a host that resolves a licence per request (the Laravel admin
+		// reads the tenant's key) must not have the first resolved instance
+		// pinned for the life of an Octane worker. Octane flushes scoped
+		// bindings between operations via FlushTemporaryContainerInstances, so
+		// scoped() is the seam that actually bounds it.
+		$this->app->scoped( ProEntitlementInterface::class, function ( $app ) {
+			return ProEntitlementFactory::make(
+				(array) $app['config']->get( 'oos.pro_entitlement', array() ),
+				(string) $app['config']->get( 'app.url', '' )
 			);
 		} );
 
