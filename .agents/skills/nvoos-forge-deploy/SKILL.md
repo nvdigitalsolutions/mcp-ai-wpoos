@@ -185,6 +185,33 @@ node scripts/forge.mjs verify sites/<name>.json --target <dir> --minimal
   wp/v2/pages` — see the astro-forge reference
   `cms-removal-materialized-content.md`.
 
+**Never rebuild an EXISTING generated project as the deploy step (2026-11-16).**
+`npm run build` re-renders that project's own `src/content` and generated
+modules; both freeze at scaffold time. A tree scaffolded before a content or
+profile fix merged ships the OLD site — a hand deploy of virtuallyjamaica that
+ran only `npm run build` silently reverted #7832 (hardware heading above its
+subtitle, footer 2023→2026, hero mobile centring, the carousel lightbox). No
+gate failed: the build was internally consistent, it was just old.
+
+The same stale tree carried the Cloudflare **test** site key
+(`1x00000000000000000000AA`) in `nvoos.json`, because the manifest is baked at
+scaffold time too. Patching that one value made the deploy look right while
+every other reverted fix stayed reverted — a single wrong value in a generated
+tree is a symptom of staleness, not the bug.
+
+- Scaffold into a FRESH target for every hand deploy
+  (`--target <new dir> --content sites/<name>.content`). Re-forging is offline
+  (the media cache is local) and costs minutes, not a re-analysis.
+- Building in place is only safe when you first re-copy the changed SOURCE —
+  `sites/<name>.content/**` into `src/content`, and the generated modules
+  (`src/lib/*.generated.ts`, `nvoos.json`) — never assume `npm run build`
+  re-derives them.
+- Prove freshness in the artifact, not in a status code: grep the built HTML
+  for the exact string the commit changed (a reordered heading, a footer year)
+  before `mirror-push`.
+- Stale generated trees left on disk (`<name>-frontend/`, an old
+  `tmp/<…>-out/`) are how this recurs — delete them once a newer target exists.
+
 Hand-edited projects may not carry `scripts/mirror-push.mjs` (the scaffold owns
 it). Emit it without touching the source:
 
