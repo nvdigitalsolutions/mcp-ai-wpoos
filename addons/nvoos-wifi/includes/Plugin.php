@@ -99,9 +99,18 @@ final class Plugin {
 	 */
 	public static function adapter(): Interface_WiFi_Controller_Adapter {
 		$settings = self::settings();
-		$seed     = isset( $settings['mock_seed'] ) && is_string( $settings['mock_seed'] )
+
+		// The fallback must be the ADAPTER's own default, not a host-specific
+		// string. The shared parity fixture
+		// (`tests/fixtures/kpis-venue-1-window-1.json`) pins the WordPress and
+		// Laravel payloads against each other, so both hosts have to construct
+		// the mock identically when no seed is configured. Laravel already uses
+		// `config('wifi.mock_seed', 'mock-default')`; this host used
+		// `nvoos-wifi-mock`, which made the shared fixture unsatisfiable for one
+		// runtime or the other.
+		$seed = isset( $settings['mock_seed'] ) && is_string( $settings['mock_seed'] )
 			? $settings['mock_seed']
-			: 'nvoos-wifi-mock';
+			: 'mock-default';
 
 		return new Class_Mock_Controller_Adapter( $seed );
 	}

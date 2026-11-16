@@ -157,16 +157,44 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 			$roots[] = WP_MCP_AI_PRO_PATH . 'includes/tools';
 		}
 
-		// Addon tool roots (fantasy-football, graphify, etc.).
+		// Addon tool roots (fantasy-football, graphify, nvoos-wifi, etc.).
+		//
+		// The tool directory is matched case-insensitively: `is_dir()` is
+		// case-sensitive on Linux, and addons that follow the WPCS file naming
+		// convention ship `includes/Tools` rather than `includes/tools`. Probing
+		// only the lowercase name silently excluded those addons, so a preset that
+		// correctly referenced one of their tools was reported as invalid on any
+		// run where the addon itself was not registered.
 		$addons_dir = WP_MCP_AI_PATH . 'addons';
 		if ( is_dir( $addons_dir ) ) {
 			foreach ( scandir( $addons_dir ) as $addon ) {
 				if ( '.' === $addon || '..' === $addon ) {
 					continue;
 				}
-				$addon_tools = $addons_dir . '/' . $addon . '/includes/tools';
-				if ( is_dir( $addon_tools ) ) {
-					$roots[] = $addon_tools;
+
+				$addon_includes = $addons_dir . '/' . $addon . '/includes';
+
+				// Several addons ship no PHP at all (a static SPA, a worker image).
+				// Calling scandir() on a missing directory raises a warning, and
+				// PHPUnit converts warnings to errors.
+				if ( ! is_dir( $addon_includes ) ) {
+					continue;
+				}
+
+				foreach ( scandir( $addon_includes ) as $sub ) {
+					if ( '.' === $sub || '..' === $sub ) {
+						continue;
+					}
+
+					if ( 0 !== strcasecmp( (string) $sub, 'tools' ) ) {
+						continue;
+					}
+
+					$addon_tools = $addons_dir . '/' . $addon . '/includes/' . $sub;
+
+					if ( is_dir( $addon_tools ) ) {
+						$roots[] = $addon_tools;
+					}
 				}
 			}
 		}
