@@ -182,12 +182,13 @@
       "title": "Workflow runs and orchestration stats",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "read-only", "keys": ["workflowRuns", "orchestrationStats"] },
       "writer": "console",
       "plan_gate": null,
-      "projection": "Run rows plus node outcomes; no graph mutation, no re-run from this surface.",
-      "notes": "The one orchestration surface not served well today: inspecting a failed run is an admin-shaped task."
+      "projection": "Run rows plus node outcomes; no graph mutation, no re-run from this surface. Reads go through App\\Support\\WorkflowRuns in both presentations, and WorkflowRun applies a tenant global scope, so /admin and the console cannot disagree about which runs exist or what a summary contains.",
+      "files": ["app/Filament/Admin/Pages/WorkflowRunLog.php"],
+      "notes": "Shipped 2026-11-17 (§18). Run records acquired tenant_id in the same slice, because a read-only list over an unscoped table would expose another estate's per-node payload. Definitions stay console-owned (§13.1); only the after-the-fact log is ported."
     },
     {
       "id": "automation-canvas",
