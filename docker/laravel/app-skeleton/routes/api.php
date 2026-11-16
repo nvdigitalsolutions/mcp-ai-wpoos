@@ -64,15 +64,12 @@ Route::prefix('api/v1')->group(function (): void {
     Route::get('/features', FeaturesController::class);
     Route::get('/site', SiteController::class);
 
-    // The nonce is a plain GET and must always have a session, so it keeps the
-    // `web` group. Login/logout deliberately stay on the `api` group:
-    // `statefulApi()` already starts the session (and validates CSRF) for
-    // console-origin requests, and wrapping them in `web` a second time started
-    // two session stores, the outer of which overwrote the authenticated
-    // payload.
-    Route::middleware('web')->group(function (): void {
-        Route::get('/session/nonce', [SessionController::class, 'nonce']);
-    });
+    // All three session routes share the `api` group so `statefulApi()` owns the
+    // one session store. `/session/nonce` used to add the `web` group as well;
+    // that started a second store, so the token it returned belonged to a
+    // session the login POST could not see and every sign-in was a 419 CSRF
+    // mismatch. Logout stays on `api` for the same reason.
+    Route::get('/session/nonce', [SessionController::class, 'nonce']);
 
     Route::post('/session/login', [SessionController::class, 'login'])
         ->middleware('throttle:6,1');

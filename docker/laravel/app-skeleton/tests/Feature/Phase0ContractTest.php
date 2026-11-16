@@ -62,12 +62,36 @@ class Phase0ContractTest extends TestCase
             ->assertJsonStructure(['login', 'capabilities', 'plan', 'source']);
     }
 
-    public function test_session_nonce_returns_a_token(): void
+    /**
+     * The console is a stateful SPA: Sanctum only starts a session for a
+     * first-party origin, and the nonce route refuses to mint a token without
+     * one. This request therefore has to look like the console.
+     */
+    public function test_session_nonce_returns_a_token_to_a_first_party_origin(): void
     {
-        $this->getJson('/api/v1/session/nonce')
+        config(['sanctum.stateful' => ['localhost', '127.0.0.1']]);
+
+        $this->withHeader('Referer', 'http://localhost')
+            ->getJson('/api/v1/session/nonce')
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonStructure(['nonce']);
+    }
+
+    /**
+     * A caller Sanctum will not open a session for gets no token: there is no
+     * session for the token to belong to, so the route answers 419 rather than
+     * handing back a nonce nothing can validate against.
+     */
+    public function test_session_nonce_rejects_a_caller_without_a_first_party_origin(): void
+    {
+        config(['sanctum.stateful' => ['localhost', '127.0.0.1']]);
+
+        $this->withHeader('Referer', 'https://third-party.example')
+            ->getJson('/api/v1/session/nonce')
+            ->assertStatus(419)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('error.code', 'session_required');
     }
 
     public function test_ops_overview_returns_the_t0_shape(): void

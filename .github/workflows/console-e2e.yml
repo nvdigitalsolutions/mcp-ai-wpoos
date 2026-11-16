@@ -99,12 +99,10 @@ jobs:
         working-directory: docker/laravel/app-skeleton
         run: |
           cp .env.example .env
-          # Sanctum only starts a session for a listed origin, and the only
-          # route that forces a session unconditionally is /session/nonce (it
-          # carries the `web` group). /session/login relies on statefulApi(), so
-          # without this line it reaches the controller with no session and
-          # answers 419 session_required — while /session/nonce happily returns
-          # a nonce, which makes the failure look like a CSRF mismatch.
+          # statefulApi() is the only thing that opens a session for the
+          # session routes, and it does so only for origins listed here. The
+          # Playwright runner serves the console on :4318 and the proxy on
+          # :8001, so both must be present or /session/login answers 419.
           #
           # Written to .env rather than left to the job-level env: .env is the
           # Laravel-native config surface the Docker stack also uses, and it
@@ -113,12 +111,6 @@ jobs:
           php artisan key:generate --force
           touch database/database.sqlite
           php artisan migrate --force --seed
-
-      - name: Report the effective Sanctum config
-        working-directory: docker/laravel/app-skeleton
-        run: |
-          php artisan tinker --execute="echo 'stateful=' . implode('|', config('sanctum.stateful'));"
-          php artisan route:list --path=session -v
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
