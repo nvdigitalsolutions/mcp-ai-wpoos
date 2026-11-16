@@ -66,6 +66,11 @@ MSYS_NO_PATHCONV=1 docker exec oos-laravel-app php artisan octane:reload   # lon
 If a new file is missing at runtime, check the copy step first — the skeleton
 is what CI sees, `app/` is what the container sees.
 
+**`optimize:clear` does not reach a warm Octane worker.** A route or panel added
+to the skeleton appears in `php artisan route:list` but answers **404 over HTTP**
+until `octane:reload` runs — the worker still holds the old route table. Reload,
+then re-`curl` the path before debugging the route definition itself.
+
 **Never `rm -rf docker/laravel/app` to force a clean sync.** The directory is
 tracked by a single `.gitkeep` while its contents are gitignored, so deleting
 the tree stages a deletion of that file — restore it with
@@ -125,6 +130,40 @@ makes the check pass on the pre-existing long lines in `AppServiceProvider`.
 
 Never run two `docker exec … phpunit` at once — the WordPress suites share the
 `wordpress_test` database and collide.
+
+### Running the suites on a bare host or in a fresh worktree
+
+A throwaway worktree has no `.env`, and `artisan test` does not run the suite
+in-process. Both traps produce mass failures that read like a code break:
+
+1. **`php artisan test` spawns a child PHP that does NOT inherit `-d
+   extension=…`.** On a host whose `php.ini` omits `fileinfo`, the parent boots
+   fine and then every storage/fixture test dies with `Class "finfo" not found`
+   (64 of 800 failed this way — the suite looks broken). Run
+   `vendor/bin/phpunit` directly instead. The DLLs are usually installed even
+   when the ini omits them — prove it before reaching for
+   `--ignore-platform-req`:
+   `php -d extension=fileinfo -d extension=intl -d extension=zip -r "var_dump(extension_loaded('intl'));"`
+2. **No `.env` means `MissingAppKeyException`**, and every test touching
+   `encrypt()` (e.g. `Tenant`'s `licence_key`) plus a cascade of unrelated
+   assertions fail together. Seed one first.
+
+```sh
+# from docker/laravel/app-skeleton in a fresh worktree
+cp .env.example .env && php artisan key:generate --force
+php -d extension=fileinfo -d extension=intl -d extension=zip \
+  vendor/bin/phpunit            # NOT `artisan test`
+```
+
+`composer install` on such a host still needs
+`--ignore-platform-req=ext-fileinfo --ignore-platform-req=ext-intl
+--ignore-platform-req=ext-zip` — the CLI does not see `-d` flags.
+
+The two `NVOOS_PM_*_FIXTURE` overrides are a **container-only** requirement.
+`ProjectManagement*ParityTest` falls back to
+`dirname(__DIR__, 5).'/tests/fixtures/pm/…'`, which from
+`docker/laravel/app-skeleton/tests/Feature` is the repo root — correct in CI and
+on a host checkout, but not inside `/app`, where only the skeleton is mounted.
 
 ## 4. Probing WordPress without WP-CLI
 
@@ -291,6 +330,20 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   `php artisan nvoos:fire-triggers --dry-run` (lists due triggers without
   firing). A deployment that relies on cron-style triggers must run the
   scheduler container or a `schedule:run` cron.
+- **A `composer.lock` written inside the container bakes absolute dist paths.**
+  Running `composer install` in `oos-laravel-app` rewrites the nvoos path
+  repositories to `dist: /workspace/oos/lib/core`, which exists nowhere else, so
+  the next install outside the container dies with
+  `Source path "/workspace/oos/lib/core" is not found`. The committed lock must
+  read `../../../lib/core` and `../../../lib/laravel-adapter`; verify with
+  `grep -c /workspace/oos docker/laravel/app-skeleton/composer.lock` → `0`.
+- **Filament's published assets are not gitignored upstream.** `filament:assets`
+  — run by the skeleton's post-install script and by `entrypoint.sh` — writes
+  ~4.5 MB to `public/{css,fonts,js}/filament`, which surfaces as three untracked
+  directories, one `git add -A` away from committing binaries. Only
+  `public/.htaccess`, `public/index.php` and `public/robots.txt` are tracked
+  under `public/`; keep `/public/css/filament`, `/public/fonts/filament` and
+  `/public/js/filament` in the skeleton `.gitignore`.
 
 ## 7. Plan map
 
