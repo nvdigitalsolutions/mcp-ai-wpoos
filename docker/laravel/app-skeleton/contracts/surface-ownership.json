@@ -305,7 +305,8 @@
       "console": { "state": "full", "keys": ["dashboardsSchema"] },
       "writer": "shared",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "notes": "Redundancy review 2026-11-17 (149-dashboards-redundancy-review.md): 10 dashboards, two genuine duplicates. ezuite and flowhub share an identical render spec (five metrics, one name/count list) and differ only in data source; health and vitals share filters and structure and differ only in columns, gated by two different toolkit flags. Recommendation: 10 -> 7 (Connector health = ezuite + flowhub + shopify; Member metrics = health + vitals; cre, law, registration, eca and observability unchanged). Not implemented: WordPress is the catalogue's source of truth, DashboardsTest pins the disabled set, and retired ids need aliases in console URLs and WP widget registration. Wave 5 with a matching WP change."
     },
     {
       "id": "toolkits",
