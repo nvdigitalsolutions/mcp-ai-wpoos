@@ -310,6 +310,42 @@ ls dist media server.js deploy.json      # shape check
 
 List the tree instead of guessing: `gh api "repos/.../contents?ref=site/<name>"`.
 
+## Cloudflare rate limiting on a forged site (2026-11-16)
+
+An app-side form gate (Turnstile, duration-of-fill, payload provenance) sees one
+request at a time; a distributed spam run is only slowed at the edge. Measured
+constraints on the zone that fronts a forged contact form:
+
+- **Free plan: 1 rule, `Block` only**, `period` and `mitigation_timeout` both
+  **10 s** (the API rejects the longer values Pro+ allows). Budget the single
+  slot for the form endpoint, not the whole site.
+- The legacy `/zones/{id}/rate_limits` API is **410 Gone** (`This API has been
+deprecated. Please use the Rulesets API instead.`). The only path is the
+  rulesets phase entrypoint:
+
+  ```sh
+  PUT /zones/{id}/rulesets/phases/http_ratelimit/entrypoint   # create/update
+  GET /zones/{id}/rulesets/phases/http_ratelimit/entrypoint   # 404 = none yet
+  ```
+
+  Rules carry `ratelimit: { characteristics, period, requests_per_period,
+  mitigation_timeout }`; `dry_run=true` validates without persisting.
+- **Read access is not write access.** A Cloudflare MCP connection can `GET`
+  the phase (and returns 404 `could not find entrypoint` when none exists) but
+  the `PUT` needs **`account-waf.write`** or **`account-rulesets.write`** —
+  without it every attempt is a `403 Authentication error` that lists the
+  accepted scopes. Confirm the scope before planning an apply; reconnecting is
+  a browser OAuth step the operator has to do.
+- Shape that fits a forged contact form (POST-only, per IP):
+
+  ```text
+  expression: (http.request.method eq "POST" and http.request.uri.path eq "/api/forms/submit")
+  characteristics: ["ip.src"]   period: 10   requests_per_period: 5   mitigation_timeout: 10
+  ```
+
+A rate rule does not replace the app gate and vice versa: the rule caps a
+flood, the token/provenance checks stop a single crafted request.
+
 ## Gotchas — each one cost a deploy
 
 1. **Green mirror push, stale site.** With `auto_deploy: false` nothing pulls.
