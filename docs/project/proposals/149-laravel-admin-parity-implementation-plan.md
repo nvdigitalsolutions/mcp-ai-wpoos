@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — a ninth — the two settings pages (§17) — a tenth — the read-only workflow run log (§18) — an eleventh — the token manager's estate scope (§19) — and a twelfth — console estate resolution (§21) — shipped 2026-11-17. Together they closed the cross-tenant settings defect, the "editable nowhere" gap the projection opened, the estate leak in workflow run history, a cross-tenant revocation path on the live token manager, and the console API's dependency on the `default` estate.
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — a ninth — the two settings pages (§17) — a tenth — the read-only workflow run log (§18) — an eleventh — the token manager's estate scope (§19) — a twelfth — console estate resolution (§21) — and a thirteenth — the tool catalogue (§22) — shipped 2026-11-17. Together they closed the cross-tenant settings defect, the "editable nowhere" gap the projection opened, the estate leak in workflow run history, a cross-tenant revocation path on the live token manager, and the console API's dependency on the `default` estate.
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1543,7 +1543,7 @@ the console covering a surface does not count as admin parity.
 2. ✅ **Shipped** — settings ownership: estate platform split, one writer, storage-key map (§16). This was the blocker: a form over a global store would have let one estate rewrite platform settings.
 3. ✅ **Shipped** — `/admin/settings` and `/ops/settings`, generated from the catalogue (§17).
 4. ✅ **Shipped** — the read-only workflow run log on `/admin` (§18), including the `tenant_id` the run table was missing.
-5. Tool catalogue projection for the console.
+5. ✅ **Shipped** — the tool catalogue on `/admin` (§22), read-only, reading the same rows as `/api/v1/tools`.
 6. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
 
 ---
@@ -1940,6 +1940,70 @@ operator. The token name is the only reliable link to the assistant's estate.
   omits `tenant_id`, so `create(['tenant_id' => …])` silently lands in the
   default estate. The first version of the new test did exactly that and passed
   the wrong thing; it now assigns the column explicitly.
+
+---
+
+## 22. Wave 2 — thirteenth slice: the tool catalogue (`/admin/tools`)
+
+**State:** shipped 2026-11-17. The first slice that **corrected the matrix**
+rather than implementing it as written.
+
+### 22.1 What the matrix asked for, and why it was wrong
+
+The `tools` row carried this note: *"Read-only on both. The console sees the full
+catalogue today; the intended console projection is the assistant's enabled tools
+plus presets."*
+
+That is not implementable without breaking the product. `ToolPicker` reads
+`/api/v1/tools` **so an administrator can enable a tool the assistant does not
+have yet** — reducing the payload to the assistant's current tools would empty
+the picker and make it impossible to add one. A tool catalogue is a reference
+list, not a tenant-owned record set, so the BOPLA concern behind `projection`
+does not apply to it: there is no property a plan holder should not see.
+
+Row corrected to `admin: read-only` with an explicit `projection` saying
+*no reduction, and that is the decision* — so the next reader does not "fix" it.
+
+### 22.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Reader | `app/Support/ToolCatalogue.php` | rows, summary, readiness vocabulary, filter |
+| Console | `app/Http/Controllers/ToolsController.php` | envelope only; delegates |
+| Panel | `app/Filament/Admin/Pages/Tools.php` | search + readiness filter, no actions |
+| View | `resources/views/filament/admin/tools.blade.php` | plain table, inline styles |
+| Tests | `tests/Feature/AdminToolCatalogueTest.php` | 7 tests |
+
+### 22.3 Decisions worth keeping
+
+- **One reader, two presentations** (R1 in its read form). The console row shape
+  is a client contract (`ToolsClient`, `ToolPicker`), so the mapping lives in
+  `ToolCatalogue` and both callers delegate rather than each mapping the registry.
+- **A payload-shape test for the console.** `test_the_console_payload_keeps_its_shape`
+  asserts the six keys, `total`, `servable` and `endpoint_contract_version`. A
+  future "projection" attempt now fails a named test instead of a SPA page.
+- **Blade rather than a Filament table.** The rows come from the registry as
+  arrays; the page's whole job is a search box and a readiness filter over a few
+  hundred rows. A plain table is verifiable with `assertSee` and cannot silently
+  lose its data source — and this runtime cannot be rendered in a browser from an
+  agent session, so unverifiable framework behaviour is a liability.
+- **Filtering is server-side**, so the count in the header is the count that is
+  actually shown and the page cannot claim a tool is servable when it is not.
+
+### 22.4 Validation record — executed
+
+- `AdminToolCatalogueTest` + `SurfaceOwnershipTest`: **11 passed, 444 assertions**.
+- `php -l` and `phpcs` (CI ruleset): clean.
+- `bin/audit-surface-ownership.php`: **44 surfaces**, **10 Filament-built**
+  (5 `/ops`, 5 `/admin`), 29 console-served, 24 console-only, 9 planned only.
+
+### 22.5 Follow-ups recorded
+
+- **The console still receives the full catalogue with no pagination.** A few
+  hundred rows is acceptable today; if the registry grows into the thousands,
+  paginate — do not project.
+- **`annotations` is passed through untouched.** It is a readiness construct, and
+  the page does not render it; a future "tool detail" drawer is the natural home.
 
 ---
 
