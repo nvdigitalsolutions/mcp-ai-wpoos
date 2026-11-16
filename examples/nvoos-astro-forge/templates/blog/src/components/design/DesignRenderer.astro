@@ -694,6 +694,14 @@ const bandUtilityCss = sections
  *
  * The path's `:nth-child()` segments give these rules a high specificity, so a
  * deep path outranks the arrangement shim without `!important`.
+ *
+ * The path is measured relative to the SOURCE band root, and the rebuild nests
+ * that root exactly one level inside `.post-body`, so the rule is ANCHORED to a
+ * direct child of the post body. Without the anchor the leading
+ * `div:nth-child(2)` is a DESCENDANT selector: it also matched a `.text-box`'s
+ * own first `<div>` and the banner's link overlay, so the band's surface (and
+ * its pinned height) was painted over the hero photo and the whole page
+ * flattened to one solid colour.
  */
 const bandElementCss = sections
 	.map( ( section, index ) => {
@@ -703,6 +711,13 @@ const bandElementCss = sections
 			return '';
 		}
 		const scoped = `[data-section-id="${ id }"]`;
+		// The path starts at the SOURCE band root's children, and the raw band
+		// nests that root exactly one level inside `.post-body`. Anchoring it to a
+		// direct child keeps the leading `div:nth-child(2)` a CHILD selector; as a
+		// bare descendant selector it also matched a `.text-box`'s own first `<div>`
+		// and the banner's link overlay, so the band's surface (and its pinned
+		// height) was painted over the hero photo.
+		const anchored = `${ scoped } .post-body > * > `;
 		return theme.elements
 			.map( ( element ) => {
 				const heights =
@@ -715,6 +730,14 @@ const bandElementCss = sections
 					base.push( `color:${ element.fg }` );
 				}
 				if ( heights.desktop ) {
+					// The `--ds-col-min-h` bridge rides with the floor. A centred band's
+					// wrapper rule out-ranks this path on specificity and re-states
+					// `min-height: var(--ds-col-min-h, 0)`, so a pinned stage landed at 0
+					// (both banners of a two-column band collapsed and their photos
+					// disappeared). Publishing the same value on the measured element makes
+					// that rule resolve to it, and the subtree reset below stops the
+					// property inheriting a floor onto nested wrappers.
+					base.push( `--ds-col-min-h:${ heights.desktop }px` );
 					base.push( `min-height:${ heights.desktop }px` );
 					// A pinned stage must beat the generic in-column banner fallback:
 					// `aspect-ratio` resolves the used height from the WIDTH, and a larger
@@ -724,7 +747,10 @@ const bandElementCss = sections
 				}
 				const rules: string[] = [];
 				if ( base.length > 0 ) {
-					rules.push( `${ scoped } ${ element.path }{${ base.join( ';' ) }}` );
+					rules.push( `${ anchored }${ element.path }{${ base.join( ';' ) }}` );
+					if ( heights.desktop ) {
+						rules.push( `${ anchored }${ element.path } > *{--ds-col-min-h:initial}` );
+					}
 				}
 				// The card's ink must reach its TEXT, not just the box: the band's
 				// measured heading rule sets `color` on `h1…h6` directly, which
@@ -739,17 +765,17 @@ const bandElementCss = sections
 				// base/hover rules instead, inheriting the card ink they sit in.
 				if ( element.fg ) {
 					rules.push(
-						`${ scoped } ${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span){color:${ element.fg }}`
+						`${ anchored }${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span){color:${ element.fg }}`
 					);
 				}
 				if ( heights.tablet ) {
 					rules.push(
-						`@media (min-width: 768px) and (max-width: 1024px){${ scoped } ${ element.path }{min-height:${ heights.tablet }px}}`
+						`@media (min-width: 768px) and (max-width: 1024px){${ anchored }${ element.path }{--ds-col-min-h:${ heights.tablet }px;min-height:${ heights.tablet }px}}`
 					);
 				}
 				if ( heights.mobile ) {
 					rules.push(
-						`@media (max-width: 767px){${ scoped } ${ element.path }{min-height:${ heights.mobile }px}}`
+						`@media (max-width: 767px){${ anchored }${ element.path }{--ds-col-min-h:${ heights.mobile }px;min-height:${ heights.mobile }px}}`
 					);
 				}
 				return rules.join( '' );
