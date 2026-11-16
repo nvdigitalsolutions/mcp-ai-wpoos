@@ -36,7 +36,9 @@ final class CacheKpiSink implements Interface_WiFi_Kpi_Sink
      */
     private const TTL_SECONDS = 86400;
 
-    public function __construct(private Repository $cache) {}
+    public function __construct(private Repository $cache)
+    {
+    }
 
     /**
      * {@inheritdoc}
