@@ -129,7 +129,10 @@ class SettingsProjectionTest extends TestCase
             'A server-fetched URL must not be console-writable.'
         );
 
-        $this->assertContains(
+        // `options` is key => label, so membership is a key check. Using
+        // assertContains here asserted against the labels and would only pass
+        // if the label happened to equal the slug.
+        $this->assertArrayHasKey(
             'ollama',
             SettingsSchema::field('default_provider')['options'],
             'The customer must still be able to SELECT Ollama.'
