@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+	NV oOS WiFi — WordPress-free unit suite (Proposal 150, T-0.12).
+
+	Note what is ABSENT: there is no bootstrap. This suite therefore runs with
+	only PHPUnit and the addon's own `includes/` tree — no WordPress, no site
+	database, no `vendor/` autoload for the addon itself (the tests require the
+	domain files directly).
+
+	That absence is the test. A domain suite that needs `tests/bootstrap.php`
+	cannot demonstrate host-agnosticism, because a `WP_*` symbol would resolve
+	and the failure would be invisible. If this config ever needs a WordPress
+	bootstrap, the layering has been broken.
+
+	Run from the repository root:
+
+	  vendor/bin/phpunit -c addons/nvoos-wifi/phpunit.unit.xml
+
+	Paths inside <testsuite> resolve relative to THIS file's directory.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         colors="true"
+         backupGlobals="false"
+         cacheDirectory=".phpunit.cache">
+    <testsuites>
+        <testsuite name="NV oOS WiFi — domain (no WordPress)">
+            <directory suffix=".php">tests/Unit</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

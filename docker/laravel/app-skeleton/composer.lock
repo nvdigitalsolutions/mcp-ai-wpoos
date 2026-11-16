@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "537f45343775b71c874e4e62c59c9151",
+    "content-hash": "5459fec7ca2e543f6b449a1cefe8d70c",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -4505,7 +4505,7 @@
                 "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/lib/core"
             },
             "transport-options": {
-                "relative": false
+                "relative": true
             }
         },
         {
@@ -4566,7 +4566,51 @@
             ],
             "description": "Laravel adapter implementations for the oOS Core AI orchestration engine.",
             "transport-options": {
-                "relative": false
+                "relative": true
+            }
+        },
+        {
+            "name": "nvoos/wifi",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "../../../addons/nvoos-wifi",
+                "reference": "f2f0b140b8802bba4841cbe9f8ef3d80ec1a6cb1"
+            },
+            "require": {
+                "php": ">=8.1"
+            },
+            "type": "library",
+            "extra": {
+                "_comment_type": "type=library is deliberate. With type=wordpress-plugin and composer/installers present, this package would be relocated into wp-content/plugins when required from the Laravel app. See Proposal 150 decision OQ-2.",
+                "_comment_runtime": "The WordPress host loads includes/Plugin.php directly from nvoos-wifi.php; the Laravel host requires this package through a path repository and binds the interfaces to its own implementations.",
+                "_comment_classmap": "exclude-from-classmap keeps the WordPress-only trees out of an optimised Composer classmap (app/Wifi in the Laravel host never references them). Note this does not disable PSR-4 resolution -- the standing rule is simply that no Laravel code may reference NvoosWifi\\Infrastructure\\Wp\\*, NvoosWifi\\REST\\* or WP_MCP_AI_Tool_*."
+            },
+            "autoload": {
+                "psr-4": {
+                    "NvoosWifi\\": "includes/"
+                },
+                "exclude-from-classmap": [
+                    "includes/Tools/",
+                    "includes/REST/",
+                    "includes/Infrastructure/Wp/",
+                    "tests/"
+                ]
+            },
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "NV Digital Solutions",
+                    "email": "developer@nvdigitalsolutions.com",
+                    "homepage": "https://nvdigitalsolutions.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "AI-powered social WiFi and Wi-Fi observability: captive portal, per-purpose consent, device-identity sessions and Wi-Fi Data Elements-shaped KPIs. Portable across the WordPress and Laravel NV oOS runtimes.",
+            "transport-options": {
+                "relative": true
             }
         },
         {

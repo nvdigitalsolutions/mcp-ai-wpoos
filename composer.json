@@ -86,11 +86,15 @@
         "docs:check-folder-readmes": "php bin/check-folder-readmes.php --scope=base",
         "docs:check-folder-readmes:all": "php bin/check-folder-readmes.php --scope=all",
         "docs:check-folder-readmes:strict": "php bin/check-folder-readmes.php --scope=base --strict",
+        "quality:domain-purity": "@php bin/check-domain-purity.php",
+        "quality:domain-purity:strict": "@php bin/check-domain-purity.php --strict",
+        "quality:wifi-host": "@php bin/check-wifi-host-adapters.php",
         "build:autoload": "composer install --no-dev --classmap-authoritative --no-interaction",
         "skills:sync": "@php bin/sync-agent-skills.php",
         "ci:all": [
             "@lint:errors-only",
             "@docs:check-folder-readmes",
+            "@quality:domain-purity",
             "@vendor:check",
             "@test:gaps:check",
             "@test:coverage"

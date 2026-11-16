@@ -66,6 +66,7 @@
      sniffs conflict with the PSR-4 autoloader; short ternaries are the
      addon's intentional idiom). Exclude from the base plugin's scan. -->
 <exclude-pattern>*/addons/nvoos-astro-bridge/**</exclude-pattern>
+<exclude-pattern>*/addons/nvoos-wifi/**</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
@@ -137,13 +138,18 @@
 </rule>
 
 <!--
-	Phase 2 boundary rule:
-	includes/domain/ must contain zero direct WordPress API calls.
-	includes/infrastructure/ implements WordPress adapters — WordPress calls
-	are expected there and are excluded from this warning pattern.
-	Direct WordPress API calls in includes/services/ or includes/repositories/
-	are flagged so that violations are visible during code review.
-	See docs/ADR_001_module_boundaries.md for the authoritative rule.
+	ADR 001 boundary rule:
+	docs/project/architecture-decisions/ADR_001_module_boundaries.md
+
+	includes/domain/ must contain zero direct WordPress API calls;
+	includes/infrastructure/ is the layer permitted to implement WordPress
+	adapters. This exclusion only silences the GlobalVariablesOverride
+	warning inside the domain layer — it does not enforce the boundary.
+
+	Enforcement lives in bin/check-domain-purity.php, exposed as
+	`composer run quality:domain-purity` and run from `composer run ci:all`
+	(strict for includes/domain/, advisory for services/ and repositories/
+	until the ADR 001 migration completes).
 -->
 <rule ref="WordPress.WP.GlobalVariablesOverride">
 <exclude-pattern>*/includes/domain/*</exclude-pattern>

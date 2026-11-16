@@ -9,7 +9,7 @@ Houses every WordPress-aware adapter that implements an interface from `includes
 | | |
 |---|---|
 | **Distribution** | Base |
-| **PHP target** | 7.4+ |
+| **PHP target** | 8.1+ |
 | **Loaded by** | `includes/bootstrap/loader.php`; wired into the DI container by `includes/class-wp-mcp-ai-container.php` |
 | **Optional dependencies** | none required (each provider client is gated on credentials/availability at runtime) |
 
