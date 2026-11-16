@@ -4,6 +4,7 @@ namespace App\Support\Admin;
 
 use App\Support\TenantContext;
 use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,6 +21,12 @@ use Symfony\Component\HttpFoundation\Response;
  * at any nesting depth. The audit table must never become a second place
  * secrets leak to, which is why a settings form that includes an API key
  * stores `[redacted]` rather than the key.
+ *
+ * Two kinds of row share the table (Wave 2): request rows (this class's
+ * `record()`, `resource` NULL) answer "who tried"; record rows
+ * (`recordResource()`, `resource` set) answer "what changed". A resource write
+ * produces one of each, because a bulk action touching many records cannot be
+ * represented by a single request row.
  *
  * Deliberately NOT a model: there is no update path. `insert()` is the only
  * write, and the table has no `updated_at`, so nothing in the application can
@@ -84,21 +91,80 @@ final class AdminAuditLogger
     }
 
     /**
+     * Write one record-level audit row (Proposal 149, Wave 2).
+     *
+     * Request rows answer "who tried"; these answer "what changed". A resource
+     * write therefore produces two rows, and `resource` is what tells them
+     * apart. Bulk actions legitimately produce one record row per record, which
+     * a single request row could not represent.
+     *
+     * `before`/`after` are redacted with the same structural rule as `payload`.
+     * This is not theoretical: the estate licence key is a column on the
+     * record, so a diff would otherwise store the credential in clear text —
+     * and the encrypted cast would not help, because the model exposes the
+     * plaintext.
+     *
+     * `method` mirrors the action's HTTP verb so a single
+     * `ORDER BY created_at` reads chronologically across both row kinds.
+     *
+     * @param array<string, mixed> $before
+     * @param array<string, mixed> $after
+     */
+    public function recordResource(
+        string $resource,
+        string $recordId,
+        string $action,
+        array $before,
+        array $after,
+        ?string $panelId = null
+    ): void {
+        $request = request();
+
+        DB::table('nvoos_admin_audit')->insert(array(
+            'tenant_id' => $this->tenantId(),
+            'user_id' => auth()->id(),
+            'panel' => $panelId
+                ?? $this->panelFromRoute($request)
+                ?? Filament::getCurrentPanel()?->getId()
+                ?? 'unknown',
+            'method' => $this->verbFor($action),
+            'path' => $this->recordPath($resource, $recordId),
+            'route' => $request->route()?->getName(),
+            'status' => 200,
+            'payload' => null,
+            'resource' => $resource,
+            'record_id' => $recordId,
+            'action' => $action,
+            'before' => $this->encodeDiff($before),
+            'after' => $this->encodeDiff($after),
+            'ip' => $request->ip(),
+            'created_at' => now(),
+        ));
+    }
+
+    /**
      * The estate the action belongs to, or null on the operator panel.
      *
-     * Prefers Filament's resolved tenant and falls back to the pinned context,
-     * because middleware ordering between the tenant stack and the panel stack
-     * is not something this class should assume.
+     * Reads the facade's current tenant, NOT `Panel::getTenant()`: in Filament 5
+     * that method resolves a tenant BY KEY (`getTenant(string $key): Model`), so
+     * calling it with no argument is a fatal — which is how this defect
+     * surfaced, on the first tenant-scoped resource that actually wrote a
+     * record row (Wave 2, teams). The fallback to the pinned context covers a
+     * Livewire update where the panel stack did not run.
      */
     private function tenantId(): ?string
     {
         $panel = Filament::getCurrentPanel();
 
         if (null !== $panel && $panel->hasTenancy()) {
-            $tenant = $panel->getTenant();
+            $tenant = Filament::getTenant();
 
-            if (null !== $tenant) {
+            if ($tenant instanceof Model) {
                 return (string) $tenant->getKey();
+            }
+
+            if (null !== $tenant && '' !== (string) $tenant) {
+                return (string) $tenant;
             }
         }
 
@@ -193,5 +259,69 @@ final class AdminAuditLogger
         }
 
         return false;
+    }
+
+    /**
+     * The HTTP verb a record action maps onto.
+     *
+     * PATCH rather than PUT for an update: what is stored is a partial diff of
+     * the attributes that actually changed, not a full representation.
+     */
+    private function verbFor(string $action): string
+    {
+        return match ($action) {
+            'created' => 'POST',
+            'deleted' => 'DELETE',
+            default => 'PATCH',
+        };
+    }
+
+    /**
+     * The path a record row belongs to.
+     *
+     * Inside a request the real path is the most useful fact ("this change
+     * happened on POST /ops/estates"). Outside one — a command or a queue job
+     * acting for an authenticated user — a synthetic path names the record
+     * instead of writing `/`.
+     */
+    private function recordPath(string $resource, string $recordId): string
+    {
+        if (app()->runningInConsole()) {
+            return $resource.'/'.$recordId;
+        }
+
+        $path = trim(request()->path(), '/');
+
+        return '' === $path ? $resource.'/'.$recordId : '/'.$path;
+    }
+
+    /**
+     * A redacted before/after diff as JSON, or null when nothing changed.
+     *
+     * @param array<string, mixed> $diff
+     */
+    private function encodeDiff(array $diff): ?string
+    {
+        if (array() === $diff) {
+            return null;
+        }
+
+        $encoded = json_encode(
+            $this->redact($diff),
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+
+        if (false === $encoded) {
+            return null;
+        }
+
+        if (strlen($encoded) > self::MAX_PAYLOAD_BYTES) {
+            return (string) json_encode(array(
+                '_truncated' => true,
+                '_bytes' => strlen($encoded),
+            ));
+        }
+
+        return $encoded;
     }
 }
