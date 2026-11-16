@@ -153,6 +153,15 @@ class SettingsProjectionTest extends TestCase
             array_column(SettingsSchema::writableFor('ops'), 'key'),
             'The operator surface is where an operator-scope field is edited.'
         );
+
+        // And the mirror image: a tenant field on /ops would edit the default
+        // estate while looking like a platform setting.
+        $this->assertNotContains('default_model', array_column(SettingsSchema::writableFor('ops'), 'key'));
+        $this->assertSame(
+            array_column(SettingsSchema::forSurface('ops'), 'key'),
+            array_column(SettingsSchema::writableFor('ops'), 'key'),
+            'On /ops the rendered set and the writable set are the same set.'
+        );
     }
 
     public function test_the_console_values_omit_hidden_fields(): void

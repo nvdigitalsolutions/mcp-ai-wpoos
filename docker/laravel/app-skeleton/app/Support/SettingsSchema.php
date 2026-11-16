@@ -211,9 +211,17 @@ final class SettingsSchema
     /**
      * The catalogue as one presentation sees it.
      *
-     * `admin` is the full form. `console` is the reduced product surface: a
-     * field marked `hidden` is omitted entirely rather than returned as null —
-     * null still discloses that the setting exists.
+     * Three surfaces, three questions:
+     *
+     * - `admin` is the estate's full form. It includes operator-scope fields so
+     *   the administrator can see what is managed for them (S-1 renders those
+     *   disabled), which is why this is the default.
+     * - `console` is the reduced product surface: a field marked `hidden` is
+     *   omitted entirely rather than returned as null — null still discloses
+     *   that the setting exists.
+     * - `ops` is the platform form: operator-scope fields only. A tenant field
+     *   belongs to an estate, and `/ops` has no estate selected, so showing it
+     *   there would edit the `default` estate by accident.
      *
      * Filtering here rather than in `fields()` keeps `keys()` and
      * `sensitiveKeys()` complete, which is what the security snapshot path
@@ -223,14 +231,21 @@ final class SettingsSchema
      */
     public static function forSurface(string $surface = 'admin'): array
     {
-        if ('console' !== $surface) {
-            return self::fields();
+        if ('console' === $surface) {
+            return array_values(array_filter(
+                self::fields(),
+                static fn (array $field): bool => 'hidden' !== ($field['console'] ?? 'visible'),
+            ));
         }
 
-        return array_values(array_filter(
-            self::fields(),
-            static fn (array $field): bool => 'hidden' !== ($field['console'] ?? 'visible'),
-        ));
+        if ('ops' === $surface) {
+            return array_values(array_filter(
+                self::fields(),
+                static fn (array $field): bool => 'operator' === ($field['scope'] ?? 'tenant'),
+            ));
+        }
+
+        return self::fields();
     }
 
     /**
@@ -263,8 +278,9 @@ final class SettingsSchema
      * - `admin` renders the full form, including operator-scope fields (S-1:
      *   disabled with a hint), but may write only tenant/user scope. Rendering
      *   a control is not permission to accept it.
-     * - `ops` is the platform operator: every field is writable, and
-     *   operator-scope values are routed to the platform layer by the writer.
+     * - `ops` is the platform operator: operator-scope fields only. Those
+     *   values are routed to the platform layer by the writer, so one edit
+     *   applies to every estate instead of to whichever estate `/ops` resolved.
      *
      * @return list<array<string, mixed>>
      */
@@ -278,7 +294,7 @@ final class SettingsSchema
         }
 
         if ('ops' === $surface) {
-            return self::fields();
+            return self::forSurface('ops');
         }
 
         return array_values(array_filter(

@@ -90,16 +90,16 @@ Authoritative data: `docker/laravel/app-skeleton/contracts/surface-ownership.jso
 
 ```json
 {
-  "id": "settings",
-  "title": "Settings",
+  "id": "settings.estate",
+  "title": "Estate settings",
   "audience": "tenant-admin",
   "ops": null,
-  "admin": { "state": "planned" },
+  "admin": { "state": "full" },
   "console": { "state": "subset", "keys": ["settings"] },
   "writer": "shared",
   "plan_gate": "feature:settings",
-  "projection": "Scope-filtered schema: only scope tenant/user fields reach the console; sensitive fields write-only.",
-  "notes": "SettingsController::schema() currently returns every field to every caller."
+  "projection": "Read: the estate catalogue. Write: writableFor('admin') — operator scope excluded.",
+  "files": ["app/Filament/Admin/Pages/Settings.php"]
 }
 ```
 
@@ -127,6 +127,10 @@ Target: the admin is the full form. The console receives a projection.
 **Shipped 2026-11-17** (implementation plan §15). `enable_logging` is the first operator-scope field, so the console loses the `advanced` tab; nothing in the SPA hardcodes it — the form builds tabs and fields from the payload, so an emptied tab disappears with no client change.
 
 **Ownership shipped 2026-11-17** (implementation plan §16). The store now has two layers: operator scope in `nvoos_settings` (platform), tenant/user scope in `nvoos_tenant_settings` keyed by `(tenant_id, key)`. One service routes a field to its layer and maps the surface key to the storage key the runtime reads (`google_api_key` → `gemini_api_key`, `ollama_endpoint` → `ollama_endpoint_url`). Read and write projections are separate: `forSurface()` decides what is rendered, `writableFor()` decides what is accepted, and `admin` accepts only tenant/user scope — a rendered disabled control is not permission.
+
+**Pages shipped 2026-11-17** (implementation plan §17). One generated form builder feeds both panels: `/admin/settings` renders the full estate catalogue with operator fields disabled under the S-1 hint, and `/ops/settings` renders operator scope only. The contract row split in two — `settings.estate` and `settings.platform` — because they have different audiences, writers and layers.
+
+**Why `/ops` does not render estate fields.** The operator panel is deliberately not tenant-scoped, so `TenantContext` resolves `default`. A `default_model` field there would edit one estate while looking like a platform setting: a failure that appears to work.
 
 **One follow-up.** The WordPress twin still returns `enable_logging` and `ollama_endpoint` to the console; on that runtime the console user is the wp-admin user, so no privilege boundary is crossed, but the same page now differs per runtime — align when the WP settings schema is next touched.
 

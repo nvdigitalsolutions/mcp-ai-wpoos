@@ -120,6 +120,22 @@ class SettingsOwnershipTest extends TestCase
         );
     }
 
+    /**
+     * `/ops` is not tenant-scoped, so a tenant field there would edit the
+     * `default` estate while looking like a platform setting.
+     */
+    public function test_the_ops_surface_cannot_write_estate_scope(): void
+    {
+        $applied = app(SettingsService::class)->write(
+            ['default_model' => 'platform-mistake'],
+            SettingsService::SURFACE_OPS
+        );
+
+        $this->assertSame([], $applied);
+        $this->assertDatabaseMissing('nvoos_tenant_settings', ['key' => 'default_model']);
+        $this->assertDatabaseMissing('nvoos_settings', ['key' => 'default_model']);
+    }
+
     public function test_the_platform_layer_is_shared_by_every_estate(): void
     {
         app('nvoos.settings.platform')->set('enable_logging', true);
