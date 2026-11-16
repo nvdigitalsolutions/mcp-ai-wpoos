@@ -24,6 +24,10 @@ repo's GPL-3.0 license.
 - **`nvoos-pro-spa-vite/`** — the standalone Pro SPA Vite app (pattern D in the `mcp-ai-wpoos-spa-ui` skill).
 - **`nvoos-vite-demo/`** — the npm-package sample app.
 
+## Assistant Packs
+
+- **[`teacher-assistant-sri-lanka.md`](./teacher-assistant-sri-lanka.md)** — a copy-ready system-prompt + tool-recommendation pack for a Sinhala-first teacher assistant covering the Sri Lankan national curriculum (Grades 6–13). Includes the text+audio response rules, the `generate_sinhala_speech` / `generate_openai_speech` TTS routing notes, the recommended tool set, and a WP-CLI provisioning recipe.
+
 ## Embedded Function Calling Examples
 
 The `embedded-function-calling-example.html` and `embedded-function-calling-example.js` files demonstrate how to use function calling (tool calling) with the embedded WebLLM client.
