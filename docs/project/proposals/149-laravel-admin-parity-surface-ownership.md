@@ -126,7 +126,9 @@ Target: the admin is the full form. The console receives a projection.
 
 **Shipped 2026-11-17** (implementation plan §15). `enable_logging` is the first operator-scope field, so the console loses the `advanced` tab; nothing in the SPA hardcodes it — the form builds tabs and fields from the payload, so an emptied tab disappears with no client change.
 
-**Two follow-ups.** The WordPress twin still returns `enable_logging` to the console; on that runtime the console user is the wp-admin user, so no privilege boundary is crossed, but the same page now differs per runtime — align when the WP settings schema is next touched. And `ollama_endpoint` stays tenant-writable even though the server fetches it (open question S-5).
+**Ownership shipped 2026-11-17** (implementation plan §16). The store now has two layers: operator scope in `nvoos_settings` (platform), tenant/user scope in `nvoos_tenant_settings` keyed by `(tenant_id, key)`. One service routes a field to its layer and maps the surface key to the storage key the runtime reads (`google_api_key` → `gemini_api_key`, `ollama_endpoint` → `ollama_endpoint_url`). Read and write projections are separate: `forSurface()` decides what is rendered, `writableFor()` decides what is accepted, and `admin` accepts only tenant/user scope — a rendered disabled control is not permission.
+
+**One follow-up.** The WordPress twin still returns `enable_logging` and `ollama_endpoint` to the console; on that runtime the console user is the wp-admin user, so no privilege boundary is crossed, but the same page now differs per runtime — align when the WP settings schema is next touched.
 
 ### 6.2 Token manager
 
@@ -207,7 +209,7 @@ Passing a row from `planned` to `full` is now the unit of progress, and every tr
 | S-2 | Does the console need a cross-estate view of anything? Today: no. If yes, it becomes an operator surface with a different audience. | Client feedback. |
 | S-3 | For `toolkit:{slug}` gates, does an unlicensed toolkit disappear from the console nav or render an upsell? | Wave 3. Upsell is a product surface; absence is an authorisation surface. |
 | S-4 | Does the admin need a "view as tenant" mode for operators? | Not in v1; it would break the Q-1 trap if implemented as impersonation rather than a separate read projection. |
-| S-5 | Should `ollama_endpoint` be operator-scope? It is a URL the server fetches, so a tenant administrator can point it anywhere today. | Nothing blocks; needs a decision before a security review, because closing it removes customer-configurable local Ollama. |
+| S-5 | ~~Should `ollama_endpoint` be operator-scope?~~ **RESOLVED 2026-11-17 — yes.** A URL the server fetches is platform configuration, not an estate preference; leaving it tenant-writable is an SSRF primitive. Customers keep the ability to *use* Ollama (`default_provider` and `default_model` stay tenant-scope); only the address is closed. Recorded in the contract row and implementation plan §16. | Closed |
 
 ---
 

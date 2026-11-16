@@ -8,6 +8,16 @@
  * them. This mirrors the WordPress pattern where file-based defaults
  * are merged with runtime option values.
  *
+ * TWO LAYERS (Proposal 149 §16). A store constructed with a tenant id reads
+ * that estate's rows over the install-wide platform rows, and writes to the
+ * estate table. A store constructed without one is the platform layer: it
+ * reads and writes `nvoos_settings` only. The default constructor argument
+ * keeps every pre-existing caller on the platform layer, which is what the
+ * console relied on before settings became estate-scoped.
+ *
+ * On WordPress the distinction does not exist: one install is one estate, so
+ * the global option table already is the estate layer.
+ *
  * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
@@ -18,6 +28,7 @@ declare(strict_types=1);
 namespace Nvoos\Laravel\Adapter;
 
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Closure;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,9 +41,30 @@ class SettingsStore implements SettingsStoreInterface {
 	private const CONFIG_KEY = 'oos';
 
 	/**
-	 * The database table name for runtime-overridden settings.
+	 * The install-wide (platform) table for runtime overridden settings.
 	 */
 	private string $table;
+
+	/**
+	 * The estate scoped table. Read only when a tenant id is set.
+	 */
+	private string $tenantTable;
+
+	/**
+	 * Resolves the estate this store acts for, or null for the platform layer.
+	 *
+	 * A RESOLVER, not a fixed id, and that is load-bearing. `ProviderRouter` is a
+	 * singleton and hands one store instance to twelve provider clients at
+	 * construction time — before any tenant middleware has run. A fixed id would
+	 * therefore pin every provider call in the process to whichever estate
+	 * happened to be current at boot. Reading through a closure moves the
+	 * decision to each `all()`, so a request or job sees its own estate.
+	 *
+	 * Null (or a resolver returning an empty value) disables the estate layer,
+	 * which is how `/ops` writes an operator-scope setting exactly once rather
+	 * than once per estate.
+	 */
+	private ?Closure $tenant;
 
 	/**
 	 * Default settings used when neither config nor DB has a value.
@@ -61,10 +93,19 @@ class SettingsStore implements SettingsStoreInterface {
 	);
 
 	/**
-	 * @param string $table  Database table for runtime settings. Defaults to 'nvoos_settings'.
+	 * @param string       $table        Platform table for runtime settings.
+	 * @param Closure|null $tenant       Resolves the estate to scope reads and
+	 *                                   writes to, or null for the platform layer.
+	 * @param string       $tenantTable  Estate table for runtime settings.
 	 */
-	public function __construct( string $table = 'nvoos_settings' ) {
-		$this->table = $table;
+	public function __construct(
+		string $table = 'nvoos_settings',
+		?Closure $tenant = null,
+		string $tenantTable = 'nvoos_tenant_settings'
+	) {
+		$this->table       = $table;
+		$this->tenant      = $tenant;
+		$this->tenantTable = $tenantTable;
 	}
 
 	/**
@@ -85,53 +126,97 @@ class SettingsStore implements SettingsStoreInterface {
 	/**
 	 * Get all settings as an associative array.
 	 *
-	 * Merges: DEFAULTS → config/nvoos.php → database overrides.
+	 * Merges: DEFAULTS → config/nvoos.php → platform rows → estate rows.
+	 *
+	 * The estate layer comes last on purpose: an estate that has set its own
+	 * default model must win over the deployment default. Platform rows are
+	 * consulted in both layers, which is why an operator-scope setting (held
+	 * only in the platform table) still resolves for an estate.
 	 *
 	 * @return array<string, mixed>
 	 */
 	public function all(): array {
 		$fileSettings = Config::get( self::CONFIG_KEY, array() );
-		$dbSettings   = $this->loadFromDatabase();
+		$platformRows = $this->loadFromDatabase( $this->table );
+		$estateRows   = $this->loadEstateSettings();
 
 		return array_merge(
 			self::DEFAULTS,
 			is_array( $fileSettings ) ? $fileSettings : array(),
-			$dbSettings,
+			$platformRows,
+			$estateRows,
 		);
 	}
 
 	/**
 	 * Set a runtime setting value (persisted to database).
 	 *
-	 * Only settings that differ from config-file defaults should be
-	 * written to the database.
+	 * Writes to the layer this instance was built for: the estate table when a
+	 * tenant id is set, otherwise the platform table. Only settings that differ
+	 * from config-file defaults should be written.
+	 *
+	 * The caller decides the layer, not the key. That is deliberate: the store
+	 * is a key/value adapter and has no catalogue, so it cannot know which keys
+	 * are operator-scope. `App\Support\Settings\SettingsService` owns that
+	 * routing (149 R1).
 	 *
 	 * @param string $key    Setting key.
 	 * @param mixed  $value  New value.
 	 */
 	public function set( string $key, mixed $value ): void {
-		$this->ensureTableExists();
+		$table = $this->writeTable();
 
-		DB::table( $this->table )->upsert(
-			array(
-				'key'        => $key,
-				'value'      => json_encode( $value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
-				'updated_at' => now(),
-			),
+		$this->ensureTableExists( $table );
+
+		$row = array(
+			'key'        => $key,
+			'value'      => json_encode( $value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
+			'updated_at' => now(),
+		);
+
+		if ( $this->isEstateScoped() ) {
+			$row['tenant_id'] = (string) $this->tenantId();
+
+			DB::table( $table )->upsert(
+				$row,
+				array( 'tenant_id', 'key' ),
+				array( 'value', 'updated_at' ),
+			);
+
+			return;
+		}
+
+		DB::table( $table )->upsert(
+			$row,
 			array( 'key' ),
 			array( 'value', 'updated_at' ),
 		);
 	}
 
 	/**
-	 * Delete a setting from the database entirely.
+	 * Delete a setting from the layer this instance writes to.
 	 *
-	 * The config-file default (if any) will be used on subsequent reads.
+	 * The config-file default (if any) will be used on subsequent reads. On an
+	 * estate layer this reveals the platform or configured value again, which is
+	 * "reset to inherited" rather than "unset" — the documented behaviour of a
+	 * fallback chain.
 	 *
 	 * @param string $key  Setting key.
 	 */
 	public function delete( string $key ): void {
-		DB::table( $this->table )->where( 'key', $key )->delete();
+		$table = $this->writeTable();
+
+		if ( ! $this->tableExists( $table ) ) {
+			return;
+		}
+
+		$query = DB::table( $table )->where( 'key', $key );
+
+		if ( $this->isEstateScoped() ) {
+			$query->where( 'tenant_id', (string) $this->tenantId() );
+		}
+
+		$query->delete();
 	}
 
 	/**
@@ -221,7 +306,11 @@ class SettingsStore implements SettingsStoreInterface {
 			'gemini'       => 'gemini_api_base_url',
 			'anthropic'    => 'anthropic_base_url',
 			'deepseek'     => 'deepseek_base_url',
-			'ollama'       => 'ollama_base_url',
+			// The settings surface calls this `ollama_endpoint` and the WordPress
+			// twin stores it as `ollama_endpoint_url`; the adapter used to read a
+			// third name (`ollama_base_url`) that nothing wrote. One name now, with
+			// the old one kept as a fallback below so existing rows still resolve.
+			'ollama'       => 'ollama_endpoint_url',
 			'lm_studio'    => 'lm_studio_base_url',
 			'openrouter'   => 'openrouter_base_url',
 			'kimi'         => 'kimi_base_url',
@@ -236,6 +325,10 @@ class SettingsStore implements SettingsStoreInterface {
 		}
 
 		$url = $this->get( $optionKey );
+
+		if ( ( ! is_string( $url ) || '' === $url ) && 'ollama' === $provider ) {
+			$url = $this->get( 'ollama_base_url' );
+		}
 
 		return is_string( $url ) && '' !== $url ? rtrim( $url, '/' ) : null;
 	}
@@ -278,18 +371,80 @@ class SettingsStore implements SettingsStoreInterface {
 	// ─── Private helpers ──────────────────────────────────────────────
 
 	/**
-	 * Load settings from the database table.
+	 * The estate this instance acts for, or null for the platform layer.
 	 *
+	 * The empty string is treated as "no estate": an unpinned TenantContext can
+	 * surface as either null or '', and a row keyed by '' would be a third layer
+	 * nobody can reason about.
+	 */
+	private function tenantId(): ?string {
+		if ( null === $this->tenant ) {
+			return null;
+		}
+
+		$tenantId = ( $this->tenant )();
+
+		return is_string( $tenantId ) && '' !== $tenantId ? $tenantId : null;
+	}
+
+	/**
+	 * Whether this instance acts for an estate rather than the platform.
+	 */
+	private function isEstateScoped(): bool {
+		return null !== $this->tenantId();
+	}
+
+	/**
+	 * The table this instance writes to.
+	 */
+	private function writeTable(): string {
+		return $this->isEstateScoped() ? $this->tenantTable : $this->table;
+	}
+
+	/**
+	 * Load one settings table as a key/value map.
+	 *
+	 * @param string $table  Table name.
 	 * @return array<string, mixed>
 	 */
-	private function loadFromDatabase(): array {
-		if ( ! $this->tableExists() ) {
+	private function loadFromDatabase( string $table ): array {
+		if ( ! $this->tableExists( $table ) ) {
 			return array();
 		}
 
-		$rows = DB::table( $this->table )->pluck( 'value', 'key' );
+		return $this->decode( DB::table( $table )->pluck( 'value', 'key' ) );
+	}
 
+	/**
+	 * The estate layer, or an empty set for the platform instance.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function loadEstateSettings(): array {
+		if ( ! $this->isEstateScoped() ) {
+			return array();
+		}
+
+		if ( ! $this->tableExists( $this->tenantTable ) ) {
+			return array();
+		}
+
+		$rows = DB::table( $this->tenantTable )
+			->where( 'tenant_id', (string) $this->tenantId() )
+			->pluck( 'value', 'key' );
+
+		return $this->decode( $rows );
+	}
+
+	/**
+	 * Decode JSON-encoded values, leaving anything unparseable as-is.
+	 *
+	 * @param iterable<string, mixed> $rows
+	 * @return array<string, mixed>
+	 */
+	private function decode( iterable $rows ): array {
 		$settings = array();
+
 		foreach ( $rows as $key => $value ) {
 			if ( is_string( $value ) ) {
 				$decoded = json_decode( $value, true );
@@ -303,27 +458,46 @@ class SettingsStore implements SettingsStoreInterface {
 	}
 
 	/**
-	 * Whether the settings table exists in the database.
+	 * Whether a settings table exists in the database.
+	 *
+	 * @param string $table  Table name.
 	 */
-	private function tableExists(): bool {
-		return Schema::hasTable( $this->table );
+	private function tableExists( string $table ): bool {
+		return Schema::hasTable( $table );
 	}
 
 	/**
-	 * Create the settings table if it doesn't exist.
+	 * Create a settings table if it doesn't exist.
 	 *
-	 * Called lazily on first write. Production apps should use the
-	 * published migration instead.
+	 * Called lazily on first write. Production apps should use the published
+	 * migration instead; this path exists so a bare install can persist a value
+	 * without one. It must stay shape-identical to the migration, including the
+	 * composite key on the estate table — a mismatch would make `upsert()`
+	 * silently insert duplicates instead of updating.
+	 *
+	 * @param string $table  Table name.
 	 */
-	private function ensureTableExists(): void {
-		if ( $this->tableExists() ) {
+	private function ensureTableExists( string $table ): void {
+		if ( $this->tableExists( $table ) ) {
 			return;
 		}
 
-		Schema::create( $this->table, function ( $table ) {
-			$table->string( 'key' )->primary();
-			$table->text( 'value' )->nullable();
-			$table->timestamps();
+		$estate = $table === $this->tenantTable;
+
+		Schema::create( $table, static function ( $blueprint ) use ( $estate ) {
+			if ( $estate ) {
+				$blueprint->string( 'tenant_id', 64 );
+			}
+
+			$blueprint->string( 'key', 191 );
+			$blueprint->text( 'value' )->nullable();
+			$blueprint->timestamps();
+
+			if ( $estate ) {
+				$blueprint->primary( array( 'tenant_id', 'key' ) );
+			} else {
+				$blueprint->primary( 'key' );
+			}
 		} );
 	}
 }

@@ -31,10 +31,15 @@ class SecurityController
     {
         $settings = $store->all();
         $https = $request->isSecure() || str_starts_with((string) config('app.url'), 'https://');
-        $providers = ! empty($settings['openai_api_key'])
-            || ! empty($settings['google_api_key'])
-            || ! empty($settings['anthropic_api_key'])
-            || ! empty($settings['ollama_endpoint']);
+
+        // Read the keys the provider clients read. The settings surface spells
+        // Gemini's key `google_api_key`; the client asks for `gemini_api_key`.
+        // Asking the surface spelling here reported "no credentials" for a
+        // deployment that could authenticate perfectly well.
+        $providers = ! empty($settings[SettingsSchema::providerCredentialKey('openai')])
+            || ! empty($settings[SettingsSchema::providerCredentialKey('gemini')])
+            || ! empty($settings[SettingsSchema::providerCredentialKey('anthropic')])
+            || ! empty($settings['ollama_endpoint_url']);
 
         $security = (array) config('oos.security', []);
         $hstsMaxAge = (int) ($security['hsts_max_age'] ?? 0);

@@ -16,11 +16,21 @@ namespace App\Support;
  * - `console`: what the reduced product surface does with it — `visible`,
  *   `readonly` or `hidden`.
  *
+ * And one storage fact:
+ *
+ * - `storage`: the key the runtime actually reads. The settings surface is not
+ *   the storage schema — the WordPress twin has always mapped the API key
+ *   `google_api_key` onto the stored option `gemini_api_key`, and
+ *   `ollama_endpoint` onto `ollama_endpoint_url`. Keeping that map here (rather
+ *   than renaming either side) is what makes the form honest: a field exists to
+ *   change a value the provider client already reads.
+ *
  * Scope is not an authorisation check by itself; the route middleware decides
  * who reaches the endpoint. It records ownership so the admin projection can
- * stay complete while the console projection is reduced. `fields()` is the
- * full catalogue: security snapshots and `keys()` depend on it, so filtering
- * happens in `forSurface()`, never here.
+ * stay complete while the console projection is reduced, and so the writer can
+ * route an operator-scope value to the platform layer instead of the estate's.
+ * `fields()` is the full catalogue: security snapshots and `keys()` depend on
+ * it, so filtering happens in `forSurface()`, never here.
  */
 final class SettingsSchema
 {
@@ -46,6 +56,7 @@ final class SettingsSchema
         return [
             [
                 'key' => 'default_provider',
+                'storage' => 'default_provider',
                 'scope' => 'tenant',
                 'console' => 'visible',
                 'type' => 'select',
@@ -65,6 +76,7 @@ final class SettingsSchema
             ],
             [
                 'key' => 'default_model',
+                'storage' => 'default_model',
                 'scope' => 'tenant',
                 'console' => 'visible',
                 'type' => 'text',
@@ -78,6 +90,7 @@ final class SettingsSchema
             ],
             [
                 'key' => 'max_tokens',
+                'storage' => 'max_tokens',
                 'scope' => 'tenant',
                 'console' => 'visible',
                 'type' => 'number',
@@ -94,6 +107,7 @@ final class SettingsSchema
             ],
             [
                 'key' => 'temperature',
+                'storage' => 'temperature',
                 'scope' => 'tenant',
                 'console' => 'visible',
                 'type' => 'number',
@@ -110,6 +124,7 @@ final class SettingsSchema
             ],
             [
                 'key' => 'openai_api_key',
+                'storage' => 'openai_api_key',
                 'scope' => 'tenant',
                 'console' => 'visible',
                 'type' => 'password',
@@ -122,6 +137,10 @@ final class SettingsSchema
             ],
             [
                 'key' => 'google_api_key',
+                // Stored under the name the provider client reads. The
+                // WordPress twin has the same asymmetry (FIELD_MAP), so the
+                // console payload is identical on both runtimes.
+                'storage' => 'gemini_api_key',
                 'scope' => 'tenant',
                 'console' => 'visible',
                 'type' => 'password',
@@ -134,6 +153,7 @@ final class SettingsSchema
             ],
             [
                 'key' => 'anthropic_api_key',
+                'storage' => 'anthropic_api_key',
                 'scope' => 'tenant',
                 'console' => 'visible',
                 'type' => 'password',
@@ -145,20 +165,27 @@ final class SettingsSchema
                 'sensitive' => true,
             ],
             [
+                // S-5: operator scope. This is a URL the server fetches, so a
+                // tenant administrator choosing it is an SSRF primitive. A
+                // customer still reaches Ollama safely by selecting the
+                // `ollama` provider and a model — provider choice and model
+                // remain tenant-scope; only the address is not.
                 'key' => 'ollama_endpoint',
-                'scope' => 'tenant',
-                'console' => 'visible',
+                'storage' => 'ollama_endpoint_url',
+                'scope' => 'operator',
+                'console' => 'hidden',
                 'type' => 'url',
                 'section_id' => 'provider_keys',
                 'section' => 'Provider credentials',
                 'tab' => 'providers',
                 'label' => 'Ollama endpoint',
-                'description' => 'Base URL of the local Ollama server.',
+                'description' => 'Base URL of the Ollama server the platform fetches. Managed by NV Digital.',
                 'sensitive' => false,
                 'default' => 'http://localhost:11434',
             ],
             [
                 'key' => 'enable_logging',
+                'storage' => 'enable_logging',
                 'scope' => 'operator',
                 'console' => 'hidden',
                 'type' => 'checkbox',
@@ -223,6 +250,88 @@ final class SettingsSchema
             static fn (string $label, string $id): bool => in_array($id, $present, true),
             ARRAY_FILTER_USE_BOTH,
         );
+    }
+
+    /**
+     * The catalogue a surface may WRITE.
+     *
+     * Read and write projections are different questions, and conflating them
+     * is how a reduced surface becomes a UI fiction:
+     *
+     * - `console` may write only what it is shown, and not what it is shown
+     *   read-only. Operator-scope fields are already absent from its projection.
+     * - `admin` renders the full form, including operator-scope fields (S-1:
+     *   disabled with a hint), but may write only tenant/user scope. Rendering
+     *   a control is not permission to accept it.
+     * - `ops` is the platform operator: every field is writable, and
+     *   operator-scope values are routed to the platform layer by the writer.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function writableFor(string $surface = 'admin'): array
+    {
+        if ('console' === $surface) {
+            return array_values(array_filter(
+                self::forSurface('console'),
+                static fn (array $field): bool => 'readonly' !== ($field['console'] ?? 'visible'),
+            ));
+        }
+
+        if ('ops' === $surface) {
+            return self::fields();
+        }
+
+        return array_values(array_filter(
+            self::fields(),
+            static fn (array $field): bool => 'operator' !== ($field['scope'] ?? 'tenant'),
+        ));
+    }
+
+    /**
+     * The field with this surface key, or null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function field(string $key): ?array
+    {
+        foreach (self::fields() as $field) {
+            if ($key === $field['key']) {
+                return $field;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The key the runtime reads for a surface field.
+     *
+     * Defaults to the surface key, so adding a field without a `storage` entry
+     * is a no-op mapping rather than a crash.
+     */
+    public static function storageKey(string $key): string
+    {
+        $field = self::field($key);
+
+        return (string) ($field['storage'] ?? $key);
+    }
+
+    /**
+     * The stored credential key for a provider slug.
+     *
+     * Used by diagnostics and the security posture, which iterate providers
+     * rather than form fields. Before this existed, three call sites each carried
+     * their own copy of the `gemini` → `google_api_key` assumption — and two of
+     * them read a key that nothing wrote.
+     */
+    public static function providerCredentialKey(string $provider): string
+    {
+        return match ($provider) {
+            'openai' => 'openai_api_key',
+            'gemini' => 'gemini_api_key',
+            'anthropic' => 'anthropic_api_key',
+            default => $provider.'_api_key',
+        };
     }
 
     /**

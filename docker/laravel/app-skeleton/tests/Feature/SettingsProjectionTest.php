@@ -109,10 +109,57 @@ class SettingsProjectionTest extends TestCase
         );
     }
 
+    /**
+     * S-5. The endpoint is a URL the SERVER fetches, so it is platform
+     * configuration. Closing it here does not stop a customer using Ollama:
+     * `default_provider` and `default_model` stay tenant-scope.
+     */
+    public function test_the_ollama_endpoint_is_operator_scope(): void
+    {
+        $field = SettingsSchema::field('ollama_endpoint');
+
+        $this->assertIsArray($field);
+        $this->assertSame('operator', $field['scope']);
+        $this->assertSame('hidden', $field['console']);
+        $this->assertSame('ollama_endpoint_url', $field['storage']);
+
+        $this->assertNotContains(
+            'ollama_endpoint',
+            array_column(SettingsSchema::forSurface('console'), 'key'),
+            'A server-fetched URL must not be console-writable.'
+        );
+
+        $this->assertContains(
+            'ollama',
+            SettingsSchema::field('default_provider')['options'],
+            'The customer must still be able to SELECT Ollama.'
+        );
+    }
+
+    public function test_the_admin_write_projection_excludes_operator_scope(): void
+    {
+        $writable = array_column(SettingsSchema::writableFor('admin'), 'key');
+
+        $this->assertNotContains('enable_logging', $writable);
+        $this->assertNotContains('ollama_endpoint', $writable);
+        $this->assertContains('default_model', $writable);
+        $this->assertContains('openai_api_key', $writable);
+
+        $this->assertContains(
+            'enable_logging',
+            array_column(SettingsSchema::writableFor('ops'), 'key'),
+            'The operator surface is where an operator-scope field is edited.'
+        );
+    }
+
     public function test_the_console_values_omit_hidden_fields(): void
     {
         Sanctum::actingAs(User::factory()->admin()->create());
-        app(SettingsStoreInterface::class)->set('enable_logging', true);
+
+        // Operator-scope keys live in the platform layer, so the fixture seeds
+        // them there. Writing them through the estate store would put a value
+        // in a layer the console never consults for that scope.
+        app('nvoos.settings.platform')->set('enable_logging', true);
 
         $values = $this->getJson('/api/v1/settings/values')
             ->assertOk()
@@ -125,7 +172,7 @@ class SettingsProjectionTest extends TestCase
     public function test_the_console_index_omits_hidden_fields(): void
     {
         Sanctum::actingAs(User::factory()->admin()->create());
-        app(SettingsStoreInterface::class)->set('enable_logging', true);
+        app('nvoos.settings.platform')->set('enable_logging', true);
 
         $payload = $this->getJson('/api/v1/settings')
             ->assertOk()
@@ -139,7 +186,7 @@ class SettingsProjectionTest extends TestCase
         Sanctum::actingAs(User::factory()->admin()->create());
 
         $store = app(SettingsStoreInterface::class);
-        $store->set('enable_logging', false);
+        app('nvoos.settings.platform')->set('enable_logging', false);
 
         $this->postJson('/api/v1/settings/values', [
             'enable_logging' => true,

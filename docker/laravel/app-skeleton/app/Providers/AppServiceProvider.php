@@ -16,6 +16,7 @@ use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\CapabilityMap;
+use App\Support\Settings\SettingsService;
 use App\Support\TenantContext;
 use App\Support\TenantEntitlement;
 use App\Spike\SpikeStreamingProvider;
@@ -35,6 +36,7 @@ use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
+use Nvoos\Laravel\Adapter\SettingsStore;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -68,6 +70,45 @@ class AppServiceProvider extends ServiceProvider
             static fn ($app): TenantEntitlement => new TenantEntitlement(
                 (array) $app['config']->get('oos.pro_entitlement', array()),
                 (string) $app['config']->get('app.url', '')
+            )
+        );
+
+        // Settings acquire an estate dimension here (Proposal 149 §16). The
+        // package binds one global store; these two rebindings give the app a
+        // store per layer plus the service that routes a field to the right
+        // one.
+        //
+        // The estate store takes a RESOLVER, not a tenant id. ProviderRouter is
+        // a singleton that constructs twelve provider clients — and injects
+        // this store into each — before any tenant middleware has run, so a
+        // fixed id would pin every provider call to whichever estate was
+        // current at boot. BIND, not scoped: resolution happens per call rather
+        // than per request for the same reason.
+        $this->app->bind(
+            SettingsStoreInterface::class,
+            static fn (): SettingsStore => new SettingsStore(
+                'nvoos_settings',
+                static fn (): string => TenantContext::current(),
+                'nvoos_tenant_settings'
+            )
+        );
+
+        // The platform layer: no estate closure, so reads and writes touch
+        // `nvoos_settings` only. `/ops` writes operator-scope fields here.
+        $this->app->bind(
+            'nvoos.settings.platform',
+            static fn (): SettingsStore => new SettingsStore(
+                'nvoos_settings',
+                null,
+                'nvoos_tenant_settings'
+            )
+        );
+
+        $this->app->bind(
+            SettingsService::class,
+            static fn ($app): SettingsService => new SettingsService(
+                $app->make(SettingsStoreInterface::class),
+                $app->make('nvoos.settings.platform')
             )
         );
     }
