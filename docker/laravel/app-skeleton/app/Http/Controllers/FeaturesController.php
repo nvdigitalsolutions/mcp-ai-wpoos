@@ -18,14 +18,11 @@ class FeaturesController
         // Class C discovery (090-i Phase 4): a configured, reachable product
         // lights its key and publishes the base URL the console should mount
         // the island against. The static route map cannot know this — the
-        // product is not part of this router.
+        // product is not part of this router. The merge recomputes `gaps`
+        // because a flipped key changes the answer; WordPress applies the same
+        // rule in `WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps()`.
         $connectedUrls = app(ConnectedAppRegistry::class)->available();
-
-        foreach ($connectedUrls as $key => $url) {
-            if (array_key_exists($key, $manifest['endpoints'])) {
-                $manifest['endpoints'][$key] = true;
-            }
-        }
+        $manifest = EndpointCapabilities::applyConnectedApps($manifest, $connectedUrls);
 
         return response()->json(array(
             'success' => true,
@@ -45,7 +42,7 @@ class FeaturesController
                 // Additive (v2): the resolved base URL for a connected app that
                 // answered its probe. A client that ignores the field behaves
                 // exactly as it did before discovery existed.
-                'endpoint_urls' => (object) $connectedUrls,
+                'endpoint_urls' => (object) ( $manifest['endpoint_urls'] ?? array() ),
                 'backend' => 'laravel',
                 'contract' => 'mcp-ai/v1',
                 'contract_version' => 1,

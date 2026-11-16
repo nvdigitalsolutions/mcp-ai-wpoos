@@ -45,6 +45,21 @@ class Tenant extends Model
     ];
 
     /**
+     * Never serialise the licence key.
+     *
+     * The `encrypted` cast protects the database, not the HTTP boundary: an
+     * encrypted attribute is decrypted on read, so `toArray()`/`toJson()` would
+     * emit the plaintext credential. Hiding it makes the class's documented
+     * promise true for every serialization path, including a console endpoint
+     * added later that returns a model by accident.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'licence_key',
+    ];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

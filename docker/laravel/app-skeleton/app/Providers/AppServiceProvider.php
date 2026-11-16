@@ -2,7 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Team;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Observers\TeamObserver;
+use App\Observers\TenantObserver;
+use App\Policies\TeamPolicy;
+use App\Policies\TenantPolicy;
 use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
@@ -129,6 +135,21 @@ class AppServiceProvider extends ServiceProvider
                     && (int) ($record->author_id ?? 0) === (int) $target->getAuthIdentifier();
             }
         );
+
+        // ── Admin resources (Proposal 149, Wave 2) ──────────────────
+        //
+        // An estate is an authorization boundary, so its policy is registered
+        // explicitly rather than left to convention: renaming either class
+        // would otherwise silently drop the rule and fall back to "anyone who
+        // reached the panel may do anything".
+        Gate::policy(Tenant::class, TenantPolicy::class);
+        Gate::policy(Team::class, TeamPolicy::class);
+
+        // Record-level audit — the half Wave 0 deferred until a resource
+        // existed. The middleware writes the request row; the observers write
+        // what a write changed.
+        Tenant::observe(TenantObserver::class);
+        Team::observe(TeamObserver::class);
 
         // Local/testing soak runs need headroom; production keeps 60/min.
         $chatLimit = app()->environment(['local', 'testing']) ? 60000 : 60;
