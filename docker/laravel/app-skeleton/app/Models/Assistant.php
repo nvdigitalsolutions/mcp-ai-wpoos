@@ -57,6 +57,19 @@ class Assistant extends Model
     ];
 
     /**
+     * Virtual attributes exposed through `attributesToArray()`.
+     *
+     * `primary_role_slugs` lives in `meta`, but the `/admin` assistants form
+     * binds a field to that name. Filament fills a form from the record's
+     * attribute array, so without the append the field would hydrate empty on
+     * every edit and the first save would wipe the selection. `toRecord()` and
+     * `toBundleEntry()` are explicit, so the console wire shape is unaffected.
+     *
+     * @var list<string>
+     */
+    protected $appends = ['primary_role_slugs'];
+
+    /**
      * The estate that owns this assistant (Proposal 149 T-0.7).
      *
      * Named `tenant` because the admin panel declares
@@ -141,6 +154,20 @@ class Assistant extends Model
         $slugs = $this->meta['primary_role_slugs'] ?? [];
 
         return is_array($slugs) ? array_values(array_filter($slugs, 'is_string')) : [];
+    }
+
+    /**
+     * Form/serialisation binding for `primary_role_slugs`.
+     *
+     * Reads through `primaryRoleSlugs()` so there is one definition of "what
+     * the selection is" — a form that disagrees with the wire record would be
+     * the same drift the writer exists to prevent.
+     *
+     * @return string[]
+     */
+    public function getPrimaryRoleSlugsAttribute(): array
+    {
+        return $this->primaryRoleSlugs();
     }
 
     /**
