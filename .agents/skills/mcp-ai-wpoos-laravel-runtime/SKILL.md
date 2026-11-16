@@ -116,9 +116,46 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 ## 3. Validation matrix
 
+**`/app` is a synced copy, not the source (2026-11-17).** `docker inspect oos-laravel-app`
+shows `docker/laravel/app` (gitignored) mounted at `/app`; the tracked source is
+`docker/laravel/app-skeleton`. `vendor/nvoos/{core, laravel-adapter, wifi}` are
+symlinks into `/workspace/oos/lib/…`, so `lib/` edits are live — `app/`,
+`tests/`, `routes/`, `contracts/`, `resources/`, `database/` are not. Sync before
+a run, or you are testing a copy that lags by however long it has been since
+someone last installed:
+
+```sh
+docker exec oos-laravel-app sh -lc \
+  'for d in app database routes tests contracts resources config public; do \
+     cp -a /workspace/oos/docker/laravel/app-skeleton/$d/. /app/$d/; done'
+```
+
+Two failure shapes this produces, both of which read like code breaks:
+
+- a test you just wrote is **not found** (the copy predates it);
+- **stale files from another worktree** produce `No tests found in class
+  "Tests\Feature\X"` for a class that does not exist in `app-skeleton`. Confirm
+  the file exists in the skeleton before investigating the failure. `cp -a`
+  never deletes, so the stale copy only grows.
+
+**The CLI default is 128 MB and the suite exceeds it.** `Phase3dTest` dies with
+`Allowed memory size of 134217728 bytes exhausted` and takes the run with it.
+The container command is therefore:
+
+```sh
+docker exec -w /app oos-laravel-app php -d memory_limit=1G vendor/bin/phpunit
+```
+
+**Docker is the preferred runner.** Use the host only when the container is down
+or has no vendor tree — and expect `Class "PHPUnit\TextUI\Application" not found`
+there, because this worktree's committed `vendor/composer` map is no-dev (see the
+test-suite skill's no-dev shim recipe). `-d` on `artisan test`'s parent does not
+reach the child PHP process either, so a full-suite run needs `vendor/bin/phpunit`
+directly inside the container as well.
+
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
-| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 694 passed / 4070 assertions (2026-11-15, after the posture defaults landed); **886 passed / 4804 assertions (2026-11-16**, after the WiFi port and the assistants/scheduler slices) |
+| App | `docker exec -w /app oos-laravel-app php -d memory_limit=1G vendor/bin/phpunit` — after the sync above. `artisan test` is fine for a filtered run but spawns a child; use phpunit directly for the full suite. The two `NVOOS_PM_*_FIXTURE` overrides are a container-only requirement | **920 tests / 5,125 assertions** (2026-11-17, after the console-tenancy slice); 6 failures were pre-existing scratch-container gaps, not code |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 180 passed / 678 assertions, **no failures** (2026-11-15, after the two stale status tests were corrected). Run it with **host** PHP: the container's `vendor/nvoos/core` symlink is Windows-absolute and does not resolve on Linux |
 | Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1751 tests / 6185 assertions (2026-11-15, after the harness port, the chat-path wiring, the PII parity work, server-side system-prompt ownership, the necessity gate and the tool preset catalogue); green apart from the no-coverage-driver warning |
 | Lint (Laravel trees) | `php vendor/bin/phpcs --standard=phpcs-laravel.xml.dist --error-severity=1 --warning-severity=8` (repo root) | **807 files, 0 errors** (2026-11-15, after the posture defaults landed). Covers `lib/core/src`, `lib/core/tests`, `lib/laravel-adapter/**` and `docker/laravel/app-skeleton/**`. `lib/core` was added last; it was reformatted from tabs to spaces in #7805. The two indentation sniffs are ruleset-wide excludes, so tabs are not actually forbidden in `lib/core` — see plan §22. If the run is red, check the anonymous-class sniff (`new class (`) first: three such errors reached `alpha-working` via #7813 and #7816 and were fixed in the posture PR — see plan §26 |
@@ -459,3 +496,93 @@ Everything below landed **after** the v1.2.20 section, so treat §8 as the stora
 - **A panel-provider change needs a container restart.** `->favicon()` / `->colors()` live on the `Panel` object built at boot; `OCTANE_MAX_REQUESTS=1` did **not** pick up a favicon change — the page kept rendering with no `<link rel="icon">` until `docker restart`.
 - **`git archive HEAD <dir>` can return an empty tree.** `export-ignore` in `.gitattributes` filters it, and `docker/laravel/app-skeleton` is affected. Restore individual files with `git show HEAD:path > path` instead of archiving.
 - **The entrypoint only installs Composer deps when `vendor/autoload.php` is absent.** A newly added path package (e.g. `nvoos/wifi`) is therefore never linked into an existing volume — run `composer update <vendor/pkg> --with-dependencies` by hand. The committed `composer.json` also uses host-relative path repos (`../../../lib/core`) that the entrypoint rewrites to `/workspace/oos/…`; if that rewrite did not stick, Composer fails with "The `url` supplied for the path … does not exist" — rewrite the three `../../../` prefixes.
+
+---
+
+## 11. Console API estate resolution (149 §21)
+
+`TenantContext` was pinned **only** by the panel's `SetTenantContext`, so every
+`/api/v1` request resolved `default`. That was a cross-tenant leak for non-members
+and a silently wrong answer for anyone in several estates.
+
+**`App\Http\Middleware\ResolveApiTenant`** now resolves the estate in middleware,
+following the OWASP Multi-Tenant Security Cheat Sheet's rule that a client-supplied
+tenant id is a **selector only**:
+
+| Request | Response |
+|---|---|
+| `X-Tenant-Id` naming a membership | that estate |
+| `X-Tenant-Id` naming anything else | **404** `tenant_not_found` (R4 — indistinguishable from a missing estate) |
+| no header, one membership | that estate |
+| no header, no memberships | **403** `tenant_unprovisioned` — never a fallback to `default` |
+| no header, several memberships | **409** `tenant_required` |
+
+- Mounted on the authenticated console group; **`/api/v1/session/me` sits outside
+  it** and returns `tenant` + `estates[]`, because it is how a client learns what
+  to select. `ApiTenantResolutionTest` has a **route-coverage gate**: every
+  `api/v1` route except a named allowlist must carry the middleware, so a new
+  endpoint cannot silently bypass it.
+- The context is cleared in `finally`. The queue worker is a long-lived process
+  that fires no Octane events, and `dispatchSync` inside a request would otherwise
+  inherit the request's estate.
+- A refused selection logs `api.tenant_selection_refused` (user id, requested
+  estate, path) — never the estate's name or data.
+- **Fixtures must be provisioned.** `UserFactory::create()` puts the user in
+  `default` with the role derived by `CapabilityMap::estateRoleFor()`; use
+  `inEstate($id, $role)` for a single-estate actor and `withoutEstate()` for the
+  one test that pins the 403. Without this, every authenticated API test fails
+  with 403 and the suite looks broken (356 failures on first run).
+- **Client gap:** the console SPA does not send the header yet (headers are built
+  per API class). Single-estate users are unaffected; a multi-estate user gets 409
+  until the SPA ships the header and a picker. Do not deploy to an environment
+  with multi-estate console users before then.
+
+## 12. Settings: two layers, one writer (149 §16–§17)
+
+| Layer | Table | Scope | Written by |
+|---|---|---|---|
+| Platform | `nvoos_settings` (key = PK) | `operator` | `/ops/settings` |
+| Estate | `nvoos_tenant_settings` (PK `tenant_id, key`) | `tenant` / `user` | `/admin/{estate}/settings`, console |
+
+- **`SettingsStore` takes a tenant RESOLVER closure, not an id.** `ProviderRouter`
+  is a singleton that constructs twelve provider clients with one injected store
+  during boot, before tenant middleware; a fixed id would pin every provider call
+  to the boot-time estate. The closure reads `TenantContext::current()` per `all()`.
+  Bind it with `bind`, not `scoped`, for the same reason.
+- **`App\Support\Settings\SettingsService` is the one writer** (149 R1). It routes
+  each field by its `scope`, and maps the *surface* key to the *storage* key the
+  runtime reads: `google_api_key` → `gemini_api_key`, `ollama_endpoint` →
+  `ollama_endpoint_url`. Those two mismatches shipped as real defects — the form
+  wrote a key nothing read.
+- **`forSurface()` decides what is RENDERED; `writableFor()` decides what is
+  ACCEPTED.** `admin` renders operator-scope fields (disabled, with the S-1 hint)
+  but accepts only tenant/user scope; `ops` renders and accepts operator scope
+  only; `console` gets its visible set minus `readonly`.
+- **`->disabled()` does not stop dehydration** in Filament. A read-only field needs
+  `->dehydrated(false)` as well, and the service must refuse the key anyway.
+- **Generate the form from the schema**, never author it: adding a field is then
+  one edit and both panels stay in step. `app/Filament/Concerns/BuildsSettingsForm`
+  is shared by both pages.
+- `/ops` must **not** render estate fields. That panel has no estate selected, so
+  a `default_model` field there would edit the `default` estate while looking like
+  a platform setting — a failure that appears to work.
+
+## 13. Filament 5 page/form facts (verified against `vendor/`)
+
+- Namespaces moved in v4/v5: `Filament\Schemas\Components\{Section,Tabs,Tab}`
+  (not `Forms\Components`), `Filament\Schemas\Schema`; fields stay
+  `Filament\Forms\Components\{TextInput,Select,Toggle}`.
+- A custom page implements `Filament\Forms\Contracts\HasForms` and uses
+  `Filament\Forms\Concerns\InteractsWithForms`; override
+  `form(Schema $schema)` and set `->statePath('data')` plus
+  `public ?array $data = []`.
+- `$this->form` works through
+  `Filament\Schemas\Concerns\ResolvesDynamicLivewireProperties::__get` →
+  `getSchema('form')`; there is no `$form` property to declare.
+- **A table needs an Eloquent model**, not a query builder. `QueueMonitor`-style
+  read-only log pages should add a model whose `booted()` registers a `tenant`
+  global scope, so the panel and the REST reader share one isolation rule.
+- Blade views use **inline styles**, not Tailwind utilities: the panel's compiled
+  CSS has no arbitrary utilities and a missing class silently collapses layout.
+- Page URLs are tenant-prefixed on `/admin` (`/admin/{slug}/…`); `/ops` has no
+  tenant segment.

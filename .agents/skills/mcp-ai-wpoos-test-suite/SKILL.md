@@ -42,6 +42,10 @@ The test suite runs inside the `oos-wp` container (plugin bind-mounted at
 `/var/www/html/wp-content/plugins/mcp-ai-wpoos`, DB in `oos-wp-db`). Run from
 the repo root on the Windows host with `MSYS_NO_PATHCONV=1`.
 
+> The **Laravel** app suite does not run here — it lives in `oos-laravel-app`
+> (`docker exec -w /app oos-laravel-app …`) and its runner, sync trap and memory
+> limit are documented in the `mcp-ai-wpoos-laravel-runtime` skill §3.
+
 **WP 6.9 (primary):**
 
 ```bash
@@ -1329,6 +1333,44 @@ the changed files is the substantive gate; plan CI waits accordingly.
       inspects the value (`fn ($v) => $v instanceof \stdClass`), or build a
       fresh mock per test. Recognition signal: the failure lands on a call
       count or a downstream assertion rather than on the branch under test.
+
+  96. **Authenticated API tests 403 en masse after estate resolution
+      (2026-11-17, `ApiTenantResolutionTest`).** Once `/api/v1` resolves
+      `TenantContext` from membership, every test whose fixture created a user
+      with **no** estate answers `403 tenant_unprovisioned` — 356 failures that
+      read like a code break. A user with no membership is a state production
+      cannot reach (the membership migration backfills every user into
+      `default`), so fix the fixture, not the resolver: `UserFactory::create()`
+      provisions `default` with `CapabilityMap::estateRoleFor()`, `inEstate($id,
+      $role)` provisions exactly one estate, `withoutEstate()` is the single
+      state that pins the 403. Related trap in the same sweep:
+      **`Assistant::$fillable` omits `tenant_id` on purpose**, so
+      `create(['tenant_id' => 'estate-b'])` silently lands in `default` and the
+      assertion passes for the wrong reason — assign the column after create.
+
+  97. **A shared parity fixture generated with a different seed than one host
+      uses (2026-11-17, `NvoosWifiKpiParityTest`).** Two runtimes pinned the
+      same committed JSON, but Laravel constructed the mock with
+      `config('wifi.mock_seed', 'mock-default')` while WordPress used
+      `settings()['mock_seed'] ?? 'nvoos-wifi-mock'`. The fixture can only match
+      one, so the test was unsatisfiable from the day both landed (same commit —
+      check with `git log -S '<seed string>' -- <host file>`). Recognition: the
+      payload **shape** matches and every **value** differs; recompute one sample
+      from the derivation (`crc32(seed|venue|key)`) under each candidate seed to
+      identify which side the fixture encodes. Fix the outlier host to use the
+      adapter's own default; do not regenerate the fixture to match a host.
+
+  98. **`syncWithoutDetaching($id, $attributes)` silently drops the
+      attributes (2026-11-17).** Its second parameter is `$detaching`, not an
+      attribute array — `syncWithoutDetaching($user->id, ['role' => 'owner'])`
+      passes the array as a truthy boolean and inserts the pivot with **no role**.
+      The union form is the only correct one:
+      `syncWithoutDetaching([$user->id => ['role' => 'owner']])`. This bites when
+      converting a fixture from `attach()` (whose second parameter *is*
+      attributes) to make it idempotent after a factory started provisioning the
+      same pivot; 22 call sites changed in one sweep and a mechanical
+      `attach(` → `syncWithoutDetaching(` substitution would have broken all of
+      them silently.
 
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
