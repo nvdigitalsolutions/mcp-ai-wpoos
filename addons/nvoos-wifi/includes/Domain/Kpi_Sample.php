@@ -72,12 +72,12 @@ final class Kpi_Sample {
 	/**
 	 * Private constructor — use {@see self::make()}.
 	 *
-	 * @param string          $key            Canonical KPI key.
-	 * @param int|float|null  $value          Measured value.
-	 * @param int             $at             Timestamp.
-	 * @param string          $venue_id       Venue identifier.
-	 * @param string|null     $method         Counting method.
-	 * @param string          $source_adapter Producing adapter.
+	 * @param string         $key            Canonical KPI key.
+	 * @param int|float|null $value          Measured value.
+	 * @param int            $at             Timestamp.
+	 * @param string         $venue_id       Venue identifier.
+	 * @param string|null    $method         Counting method.
+	 * @param string         $source_adapter Producing adapter.
 	 */
 	private function __construct(
 		string $key,
@@ -98,12 +98,12 @@ final class Kpi_Sample {
 	/**
 	 * Build a validated sample.
 	 *
-	 * @param string         $key        Canonical KPI key.
-	 * @param mixed          $value      Measured value (int, float or null).
-	 * @param int            $at         Measurement timestamp, epoch seconds.
-	 * @param string         $venue_id   Venue identifier.
-	 * @param string|null    $method     Counting method for entity counts.
-	 * @param string         $adapter_id Producing adapter identifier.
+	 * @param string      $key        Canonical KPI key.
+	 * @param mixed       $value      Measured value (int, float or null).
+	 * @param int         $at         Measurement timestamp, epoch seconds.
+	 * @param string      $venue_id   Venue identifier.
+	 * @param string|null $method     Counting method for entity counts.
+	 * @param string      $adapter_id Producing adapter identifier.
 	 * @return Result `ok( Kpi_Sample )` or `fail( <code> )`.
 	 */
 	public static function make(

@@ -49,37 +49,37 @@ final class Kpi_Schema {
 	 */
 	const DEFINITIONS = array(
 		// --- Service / access ------------------------------------------------
-		'wifi.clients.connected'               => array(
+		'wifi.clients.connected'                => array(
 			'de_name'            => 'Connected Clients',
 			'type'               => 'gauge',
 			'unit'               => 'count',
 			'identity_sensitive' => true,
 		),
-		'wifi.clients.unique'                  => array(
+		'wifi.clients.unique'                   => array(
 			'de_name'            => 'Unique Clients',
 			'type'               => 'gauge',
 			'unit'               => 'count',
 			'identity_sensitive' => true,
 		),
-		'wifi.sessions.started'                => array(
+		'wifi.sessions.started'                 => array(
 			'de_name'            => 'Sessions Started',
 			'type'               => 'counter',
 			'unit'               => 'count',
 			'identity_sensitive' => true,
 		),
-		'wifi.sessions.completed'              => array(
+		'wifi.sessions.completed'               => array(
 			'de_name'            => 'Sessions Completed',
 			'type'               => 'counter',
 			'unit'               => 'count',
 			'identity_sensitive' => true,
 		),
-		'wifi.portal.splash_views'             => array(
+		'wifi.portal.splash_views'              => array(
 			'de_name'            => 'Captive Portal Views',
 			'type'               => 'counter',
 			'unit'               => 'count',
 			'identity_sensitive' => false,
 		),
-		'wifi.portal.splash_completions'       => array(
+		'wifi.portal.splash_completions'        => array(
 			'de_name'            => 'Captive Portal Completions',
 			'type'               => 'counter',
 			'unit'               => 'count',
@@ -98,62 +98,62 @@ final class Kpi_Schema {
 			'identity_sensitive' => false,
 		),
 		// --- Radio -----------------------------------------------------------
-		'wifi.radio.retry_rate'                => array(
+		'wifi.radio.retry_rate'                 => array(
 			'de_name'            => 'Retry Rate',
 			'type'               => 'gauge',
 			'unit'               => 'percent',
 			'identity_sensitive' => false,
 		),
-		'wifi.radio.airtime_utilization'       => array(
+		'wifi.radio.airtime_utilization'        => array(
 			'de_name'            => 'Airtime Utilization',
 			'type'               => 'gauge',
 			'unit'               => 'percent',
 			'identity_sensitive' => false,
 		),
-		'wifi.radio.channel_utilization'       => array(
+		'wifi.radio.channel_utilization'        => array(
 			'de_name'            => 'Channel Utilization',
 			'type'               => 'gauge',
 			'unit'               => 'percent',
 			'identity_sensitive' => false,
 		),
-		'wifi.radio.noise_floor'               => array(
+		'wifi.radio.noise_floor'                => array(
 			'de_name'            => 'Noise Floor',
 			'type'               => 'gauge',
 			'unit'               => 'dbm',
 			'identity_sensitive' => false,
 		),
-		'wifi.radio.tx_power'                  => array(
+		'wifi.radio.tx_power'                   => array(
 			'de_name'            => 'Transmit Power',
 			'type'               => 'gauge',
 			'unit'               => 'dbm',
 			'identity_sensitive' => false,
 		),
-		'wifi.radio.rssi_median'               => array(
+		'wifi.radio.rssi_median'                => array(
 			'de_name'            => 'Median RSSI',
 			'type'               => 'gauge',
 			'unit'               => 'dbm',
 			'identity_sensitive' => false,
 		),
 		// --- Quality ---------------------------------------------------------
-		'wifi.quality.throughput_down'         => array(
+		'wifi.quality.throughput_down'          => array(
 			'de_name'            => 'Downlink Throughput',
 			'type'               => 'gauge',
 			'unit'               => 'mbps',
 			'identity_sensitive' => false,
 		),
-		'wifi.quality.throughput_up'           => array(
+		'wifi.quality.throughput_up'            => array(
 			'de_name'            => 'Uplink Throughput',
 			'type'               => 'gauge',
 			'unit'               => 'mbps',
 			'identity_sensitive' => false,
 		),
-		'wifi.quality.latency'                 => array(
+		'wifi.quality.latency'                  => array(
 			'de_name'            => 'Latency',
 			'type'               => 'gauge',
 			'unit'               => 'ms',
 			'identity_sensitive' => false,
 		),
-		'wifi.quality.dns_failure_rate'        => array(
+		'wifi.quality.dns_failure_rate'         => array(
 			'de_name'            => 'DNS Failure Rate',
 			'type'               => 'gauge',
 			'unit'               => 'percent',

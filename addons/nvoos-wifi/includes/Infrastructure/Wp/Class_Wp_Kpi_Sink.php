@@ -46,10 +46,13 @@ final class Class_Wp_Kpi_Sink implements Interface_WiFi_Kpi_Sink {
 	const MAX_SAMPLES = 500;
 
 	/**
-	 * {@inheritdoc}
+	 * Persist a batch of samples.
 	 *
 	 * Writes are idempotent per `(key, at, source_adapter)`, so a retried poll
 	 * cannot double-count a counter KPI.
+	 *
+	 * @param array<int, Kpi_Sample> $samples Samples to persist.
+	 * @return Result `ok( array{written:int} )` or `fail( <code> )`.
 	 */
 	public function write( array $samples ): Result {
 		if ( array() === $samples ) {
@@ -87,7 +90,7 @@ final class Class_Wp_Kpi_Sink implements Interface_WiFi_Kpi_Sink {
 					continue;
 				}
 
-				$stored[]    = $row;
+				$stored[]      = $row;
 				$index[ $key ] = true;
 				++$written;
 			}
@@ -105,7 +108,11 @@ final class Class_Wp_Kpi_Sink implements Interface_WiFi_Kpi_Sink {
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Read samples for a venue within a window, ordered by timestamp ascending.
+	 *
+	 * @param string $venue_id Venue identifier.
+	 * @param Window $window   Time window.
+	 * @return Result `ok( array<int, Kpi_Sample> )` or `fail( <code> )`.
 	 */
 	public function read( string $venue_id, Window $window ): Result {
 		$stored  = $this->load( $venue_id );

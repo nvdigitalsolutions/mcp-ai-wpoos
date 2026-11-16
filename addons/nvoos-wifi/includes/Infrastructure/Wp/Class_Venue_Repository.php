@@ -51,8 +51,8 @@ final class Class_Venue_Repository {
 			);
 		}
 
-		$data         = $venues[ $key ];
-		$data['id']   = $key;
+		$data       = $venues[ $key ];
+		$data['id'] = $key;
 
 		return Venue::from_array( $data );
 	}

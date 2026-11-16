@@ -286,11 +286,22 @@ check( Window::make( 10, 10 )->code() === 'invalid_window', 'Window rejects a ze
 check( Window::make( -1, 10 )->code() === 'invalid_window', 'Window rejects negative bounds' );
 
 check(
-	Venue::from_array( array( 'id' => 'v', 'label' => 'V', 'timezone' => 'Mars/Olympus' ) )->code() === 'invalid_timezone',
+	Venue::from_array(
+		array(
+			'id'       => 'v',
+			'label'    => 'V',
+			'timezone' => 'Mars/Olympus',
+		)
+	)->code() === 'invalid_timezone',
 	'Venue rejects an unknown timezone'
 );
 check(
-	Venue::from_array( array( 'id' => '', 'label' => 'V' ) )->code() === 'invalid_venue',
+	Venue::from_array(
+		array(
+			'id'    => '',
+			'label' => 'V',
+		)
+	)->code() === 'invalid_venue',
 	'Venue rejects an empty id'
 );
 

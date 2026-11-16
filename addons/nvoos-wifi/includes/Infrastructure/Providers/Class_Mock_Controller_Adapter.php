@@ -108,22 +108,30 @@ final class Class_Mock_Controller_Adapter implements Interface_WiFi_Controller_A
 	 */
 	public function kpi_map(): array {
 		return array(
-			'native_client_count'       => 'wifi.clients.connected',
+			'native_client_count'        => 'wifi.clients.connected',
 			'native_unique_client_count' => 'wifi.clients.unique',
-			'native_retry_pct'          => 'wifi.radio.retry_rate',
-			'native_airtime_pct'        => 'wifi.radio.airtime_utilization',
-			'native_channel_pct'        => 'wifi.radio.channel_utilization',
-			'native_noise_dbm'          => 'wifi.radio.noise_floor',
-			'native_rssi_median_dbm'    => 'wifi.radio.rssi_median',
-			'native_down_mbps'          => 'wifi.quality.throughput_down',
-			'native_up_mbps'            => 'wifi.quality.throughput_up',
-			'native_latency_ms'         => 'wifi.quality.latency',
-			'native_dns_failure_pct'    => 'wifi.quality.dns_failure_rate',
+			'native_retry_pct'           => 'wifi.radio.retry_rate',
+			'native_airtime_pct'         => 'wifi.radio.airtime_utilization',
+			'native_channel_pct'         => 'wifi.radio.channel_utilization',
+			'native_noise_dbm'           => 'wifi.radio.noise_floor',
+			'native_rssi_median_dbm'     => 'wifi.radio.rssi_median',
+			'native_down_mbps'           => 'wifi.quality.throughput_down',
+			'native_up_mbps'             => 'wifi.quality.throughput_up',
+			'native_latency_ms'          => 'wifi.quality.latency',
+			'native_dns_failure_pct'     => 'wifi.quality.dns_failure_rate',
 		);
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Read native radio and service statistics for a venue.
+	 *
+	 * The reported timestamp is clamped into the window: a measurement must not
+	 * be stamped on the window's exclusive upper bound, or every later read
+	 * filters it out.
+	 *
+	 * @param Venue  $venue  Venue.
+	 * @param Window $window Time window.
+	 * @return Result `ok( array{at:int, values:array<string, int|float>} )`.
 	 */
 	public function read_radio_stats( Venue $venue, Window $window ): Result {
 		// A measurement must fall *inside* the window it reports for. `Window` is
@@ -155,7 +163,10 @@ final class Class_Mock_Controller_Adapter implements Interface_WiFi_Controller_A
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * List currently associated clients.
+	 *
+	 * @param Venue $venue Venue.
+	 * @return Result `ok( array<int, array{identity: Device_Identity, connected_at:int, rssi:int}> )`.
 	 */
 	public function list_clients( Venue $venue ): Result {
 		$count   = $this->derive_int( $venue->id(), 'client_list_size', 2, 8 );

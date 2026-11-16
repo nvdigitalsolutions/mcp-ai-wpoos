@@ -152,7 +152,15 @@ jobs:
           done
 
       - name: phpcs
-        run: vendor/bin/phpcs --standard=addons/nvoos-wifi/phpcs.xml.dist addons/nvoos-wifi/
+        # Scoped to production code, matching the nvoos-astro-bridge invocation in
+        # php-linting.yml. `tests/` is deliberately excluded: the harnesses there
+        # define several test doubles in one file and print to stdout, so the
+        # one-object-per-file and escape-output sniffs do not apply to them.
+        run: |
+          vendor/bin/phpcs --standard=addons/nvoos-wifi/phpcs.xml.dist \
+            addons/nvoos-wifi/includes \
+            addons/nvoos-wifi/nvoos-wifi.php \
+            addons/nvoos-wifi/uninstall.php
 
   unit:
     name: Domain unit suite (no WordPress)
@@ -165,9 +173,13 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
+        # 8.2, not the addon's 8.1 floor: the repo's dev dependencies (PHPUnit
+        # 11.5 and the sebastian/* tree) require >=8.2, so `composer install`
+        # fails outright on 8.1. The 8.1 floor is proven by the `portability`
+        # job, which needs no Composer at all.
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           coverage: none
           tools: composer
 

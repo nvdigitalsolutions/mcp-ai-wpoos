@@ -42,7 +42,7 @@ delete_option( 'nvoos_wifi_venues' );
 
 // KPI samples — one option per venue, named by md5 hash of the venue id.
 global $wpdb;
-$wpdb->query(
+$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time uninstall sweep: the options API cannot enumerate option names by LIKE, and the result must not be cached.
 	$wpdb->prepare(
 		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
 		$wpdb->esc_like( 'nvoos_wifi_kpi_' ) . '%'

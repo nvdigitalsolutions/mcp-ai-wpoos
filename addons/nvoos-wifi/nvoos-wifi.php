@@ -53,7 +53,7 @@ if ( ! defined( 'NVOOS_WIFI_URL' ) ) {
 // WordPress install.
 //
 // Note the paths this autoloader will *never* resolve:
-//   includes/Domain/**, includes/Interfaces/**, includes/Services/**
+// includes/Domain/**, includes/Interfaces/**, includes/Services/**
 // are pure PHP with no WordPress dependency — that is the point of the layering
 // (ADR 001), and it is what lets the Laravel host load them directly.
 // ---------------------------------------------------------------------------

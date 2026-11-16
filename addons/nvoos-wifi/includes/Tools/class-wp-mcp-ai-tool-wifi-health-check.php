@@ -139,17 +139,17 @@ class WP_MCP_AI_Tool_WiFi_Health_Check implements WP_MCP_AI_Tool_Interface, WP_M
 		// Gate 2: every emitted value is a scalar this method constructed or a
 		// sanitised identifier — nothing is passed through from user input.
 		return array(
-			'success'     => true,
-			'adapter'     => $payload['adapter'],
-			'health'      => $payload['health'],
-			'schema'      => array(
+			'success'    => true,
+			'adapter'    => $payload['adapter'],
+			'health'     => $payload['health'],
+			'schema'     => array(
 				'kpi_count' => count( Kpi_Schema::keys() ),
 			),
-			'venues'      => array(
+			'venues'     => array(
 				'count' => count( $venue_ids ),
 				'ids'   => $venue_ids,
 			),
-			'checked_at'  => Plugin::clock()->now(),
+			'checked_at' => Plugin::clock()->now(),
 		);
 	}
 }

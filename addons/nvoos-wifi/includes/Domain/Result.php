@@ -126,9 +126,16 @@ final class Result {
 	 */
 	public function value() {
 		if ( ! $this->ok ) {
+			// WPCS flags unescaped data passed to an exception constructor, on the
+			// assumption it may surface as HTML. Here it cannot: the domain layer may
+			// not call WordPress escaping functions at all (ADR 001, enforced by
+			// bin/check-domain-purity.php), and this message exists for stack traces
+			// and logs. Disable the sniff for the block rather than break the layering.
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			throw new LogicException(
 				sprintf( 'Cannot read the value of a failed Result (%s).', $this->code )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		return $this->value;

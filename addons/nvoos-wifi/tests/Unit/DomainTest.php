@@ -110,7 +110,15 @@ final class DomainTest extends TestCase {
 		$this->assertTrue( $ok->is_ok() );
 		$this->assertSame( 'America/Jamaica', $ok->value()->timezone() );
 
-		$this->assertSame( 'invalid_venue', Venue::from_array( array( 'id' => '', 'label' => 'X' ) )->code() );
+		$this->assertSame(
+			'invalid_venue',
+			Venue::from_array(
+				array(
+					'id'    => '',
+					'label' => 'X',
+				)
+			)->code()
+		);
 		$this->assertSame(
 			'invalid_timezone',
 			Venue::from_array(

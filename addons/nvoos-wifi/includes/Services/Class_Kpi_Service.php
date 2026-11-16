@@ -134,12 +134,12 @@ final class Class_Kpi_Service {
 			);
 		}
 
-		$at           = (int) $payload['at'];
-		$native       = $payload['values'];
-		$map          = $this->adapter->kpi_map();
-		$identity     = $this->adapter->identity_method();
-		$by_key       = array();
-		$skipped      = array();
+		$at       = (int) $payload['at'];
+		$native   = $payload['values'];
+		$map      = $this->adapter->kpi_map();
+		$identity = $this->adapter->identity_method();
+		$by_key   = array();
+		$skipped  = array();
 
 		foreach ( $map as $native_key => $canonical_key ) {
 			if ( ! Kpi_Schema::has( $canonical_key ) ) {
