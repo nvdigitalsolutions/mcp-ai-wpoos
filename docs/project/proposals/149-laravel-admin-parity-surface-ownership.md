@@ -195,7 +195,7 @@ Ordered by leverage, each small enough to be one slice:
 
 1. **`SettingsSchema` scope + console projection** (§6.1). The clearest R3 violation in the codebase.
 2. **`/admin` settings page** — the full form, reading the same store.
-3. **Workflow runs list** in the admin (§6.4) — read-only, the one orchestration gap.
+3. ✅ **Workflow runs list** in the admin (§6.4) — read-only, the one orchestration gap. Shipped 2026-11-17; plan §18.
 4. **Tool catalogue projection** for the console (§6.3) — enabled tools + presets.
 5. **PAT manager** split from assistant credentials (§6.2), with an operator cross-estate view.
 6. **`/ops` tail** — onboarding, site health, identity provider, assets, datasets, conversation import, reports, audit log (all `planned` rows).

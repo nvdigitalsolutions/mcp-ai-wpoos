@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — and a ninth — the two settings pages (§17) — shipped 2026-11-17. Together they closed the cross-tenant settings defect and the "editable nowhere" gap that the projection opened.
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — a ninth — the two settings pages (§17) — and a tenth — the read-only workflow run log (§18) — shipped 2026-11-17. Together they closed the cross-tenant settings defect, the "editable nowhere" gap the projection opened, and the estate leak in workflow run history.
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1542,7 +1542,7 @@ the console covering a surface does not count as admin parity.
 1. ✅ **Shipped** — `SettingsSchema` scope + console projection (§6.1, §15).
 2. ✅ **Shipped** — settings ownership: estate platform split, one writer, storage-key map (§16). This was the blocker: a form over a global store would have let one estate rewrite platform settings.
 3. ✅ **Shipped** — `/admin/settings` and `/ops/settings`, generated from the catalogue (§17).
-4. Workflow runs list in `/admin` (read-only).
+4. ✅ **Shipped** — the read-only workflow run log on `/admin` (§18), including the `tenant_id` the run table was missing.
 5. Tool catalogue projection for the console.
 6. PAT manager split from assistant credentials.
 
@@ -1791,3 +1791,67 @@ against the synced skeleton:
   `enable_logging` and `ollama_endpoint` to the console.
 - **Next slice:** workflow runs in `/admin` (read-only) — the one orchestration
   surface the console serves badly (§14.1).
+
+---
+
+## 18. Wave 2 — tenth slice: the workflow run log (`/admin`)
+
+**State:** shipped 2026-11-17. The first slice where the console's *own* read
+path had to change, because the data it reads was never estate-scoped.
+
+### 18.1 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Estate column | `database/migrations/2026_11_17_110000_add_tenant_to_workflow_runs.php` | `tenant_id` default `default`, indexed |
+| Writer | `app/Support/WorkflowRunner.php` | records the estate that executed the run |
+| Model + scope | `app/Models/WorkflowRun.php` | `tenant` global scope: the single isolation rule |
+| Reader | `app/Support/WorkflowRuns.php` | summaries, `find`, titles, JSON decode |
+| Console endpoints | `app/Http/Controllers/WorkflowRunController.php` | delegates to the reader; `show()` 404s cross-estate |
+| Panel | `app/Filament/Admin/Pages/WorkflowRunLog.php` | read-only table + inspect modal |
+| Tests | `tests/Feature/AdminWorkflowRunsTest.php` | 5 tests; `WorkflowRunTest` asserts the writer |
+
+### 18.2 Decisions worth keeping
+
+- **The schema had to change first.** A read-only list over `nvoos_workflow_runs`
+  would have listed every estate's runs, and the inspector would have shown
+  their per-node `events`. That is API3 on object properties, not a rendering
+  bug. Porting the page without the column would have made the leak reachable
+  from a customer panel.
+- **Isolation lives on the model, not on each query.** `WorkflowRun` applies a
+  `tenant` global scope, so the console endpoints and the panel cannot drift.
+  The reader exists for the payload shape; the scope exists for the boundary.
+- **The console endpoints were scoped too.** They had the same leak. Scoping to
+  `TenantContext::current()` means a multi-estate deployment under-reports on
+  the console (`default` only) instead of over-reporting, and a single-estate
+  deployment is unchanged. When §16.5's tenant-selection rule lands, this works
+  without a second edit.
+- **Read-only means no mutating action, not a permission check.** There is no
+  re-run, no delete, no graph edit — a surface that can replay a run has a
+  different blast radius and deserves its own decision.
+- **Only the after-the-fact surface was ported.** Definitions stay console-owned
+  (§13.1); rebuilding the workflow editor in Filament would maintain one page
+  twice.
+- **The run stores `workflow_id`, not the title.** A workflow can be renamed
+  after it ran, and the run should still say what it ran. The list resolves
+  titles with a memoised per-row lookup rather than a join, which would make
+  `id` ambiguous with the content table.
+
+### 18.3 Validation record — executed
+
+- `AdminWorkflowRunsTest` + `WorkflowRunTest` + `WorkflowTriggerTest` +
+  `SurfaceOwnershipTest`: **34 passed, 507 assertions**.
+- `php -l` and `phpcs` (CI ruleset): clean.
+- `bin/audit-surface-ownership.php`: **43 surfaces**, **9 Filament-built**
+  (5 `/ops`, 4 `/admin`), 29 console-served, 25 console-only, 9 planned only.
+
+### 18.4 Follow-ups recorded
+
+- **`orchestrationStats` still reads unscoped.** The stats endpoint aggregates
+  counts; it should read through the same estate scope. It has no panel
+  equivalent yet, so it was left unchanged rather than half-changed.
+- **Existing rows are attributed to `default`.** A multi-estate deployment that
+  ran workflows before this migration cannot recover the true estate: the row
+  records no author. Documented rather than guessed.
+- **No run retention.** The table is append-only and grows; a pruning decision
+  belongs with the console's DLQ policy, not with this page.
