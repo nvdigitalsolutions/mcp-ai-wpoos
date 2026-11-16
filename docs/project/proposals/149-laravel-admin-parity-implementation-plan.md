@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — five slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), and assistants on `/admin/assistants` (§12). **The Wave 2 exit gate (key rotation + DLQ drain) is met.**
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — six slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), and scheduler liveness on `/ops/scheduler` (§13). **The Wave 2 exit gate (key rotation + DLQ drain) is met.**
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1364,3 +1364,104 @@ Remaining `/admin` resources, one at a time, each with its own cross-tenant
 test: professions, chat profiles, memory, media, transcripts, tool catalogue.
 `EstateScope` and `RecordsAdminChanges` now mean a resource brings only its
 policy, its write path and its form.
+
+---
+
+## 13. Wave 2 — sixth slice: scheduler liveness (`/ops/scheduler`)
+
+**State:** shipped 2026-11-16.
+
+### 13.1 The correction that shaped this slice
+
+§11.6 listed "cron" among the `/ops` surfaces with no console equivalent. That
+was half wrong, and the correction is the slice:
+
+- The console's Schedule Manager (`Pro/SchedulesController`) already owns
+  **definitions** — create, edit, delete, toggle, trigger one named schedule,
+  history, results, fleet stats. Rebuilding that in Filament would be one page
+  twice, in two UIs, which is the maintenance cost §8.1 exists to avoid.
+- **Liveness** has no owner. `nvoos_schedules` is advanced only by
+  `nvoos:run-schedules`, which only fires where the `scheduler` container role
+  runs `php artisan schedule:work`. Without that role the rows keep their old
+  `next_run_at` and every console page still looks healthy — it lists
+  definitions, not clocks. The plan's own `admin-cron-manager` entry was asking
+  for exactly this question, not for a second CRUD form.
+
+### 13.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Model | `app/Models/Schedule.php` | read-only, like `FailedJob`; owns `healthLabel()` |
+| Page | `app/Filament/Operator/Pages/Scheduler.php` | `/ops/scheduler`; no row actions |
+| View | `resources/views/filament/operator/scheduler.blade.php` | overdue callout above the table |
+
+Four health states, one column, one definition:
+
+| State | Meaning |
+|---|---|
+| `paused` | disabled — never due, by intent |
+| `untimed` | enabled with no `next_run_at`; nothing will ever advance it |
+| `overdue` | enabled, clock in the past; **the tick is not running** |
+| `scheduled` | healthy |
+
+Two actions, both existing service methods, neither a per-schedule trigger:
+
+- **Time untimed schedules** → `ScheduleRunner::bootstrap()`. Not firing: the
+  first occurrence is always in the future, so a backlog can be timed without
+  being run.
+- **Run due now** → `ScheduleRunner::due()` + `run()`. This *is* the tick,
+  invoked by hand after the scheduler was down. The console's `trigger` fires one
+  named schedule regardless of whether it is due; this fires whichever are
+  overdue and advances their clocks, so a catch-up cannot leave a row
+  permanently due.
+
+Deliberately absent: create/edit/delete/toggle and per-schedule trigger. Those
+belong to the console.
+
+### 13.3 Decisions worth keeping
+
+- **A dead tick is diagnosed by a lagging indicator, and that is stated.** A
+  schedule whose next run is still in the future looks healthy even if nothing
+  will ever run it. Lateness is the honest signal available without a scheduler
+  heartbeat, which the runtime does not record — so it is documented as lagging
+  rather than dressed up as a health check.
+- **A failure does not wedge the catch-up.** `ScheduleRunner::run()` records the
+  failure in `nvoos_schedule_runs` and still advances the clock; the page counts
+  failures into one audit row (`{count, failed}`) instead of one row per
+  schedule, because a fifty-schedule catch-up is one operator decision.
+- **Nothing due writes nothing.** No run row, no audit row. Pressing the button
+  on an idle platform is not an event, and an audit log full of no-ops stops
+  being read.
+- **The model exists for the table, not for writes.** Filament needs an Eloquent
+  query to paginate and resolve rows; clocks stay owned by `ScheduleRunner`,
+  which is what keeps a row from being due forever after one tick.
+
+### 13.4 Validation record (2026-11-16)
+
+- `php artisan test --filter=OperatorSchedulerTest`: **13 passed / 54
+  assertions** — operator reaches the page, customer administrator 403, guest
+  redirected to `/ops/login`, viewer 403, page predicate false for a non-operator,
+  all four health states, an overdue row surfaced in the callout, a disabled
+  overdue row neither counted nor run, bootstrap sets a clock without writing a
+  run, run-due records a successful run and advances the clock, a failing handler
+  counted but not fatal, nothing-due writing no rows, an unparseable cron left
+  untimed with no audit row.
+- Full app suite: **880 passed / 4,788 assertions** (was 867 / 4,734; +13).
+- `phpcs --standard=phpcs-laravel.xml.dist --error-severity=1
+  --warning-severity=8`: **289 files, 0 errors, 0 warnings**.
+- `bash bin/check-license-boundary.sh`: intact.
+
+### 13.5 Next slice, and one recorded follow-up
+
+**Follow-up (not faked in this slice):** the page cannot say *when* the tick last
+ran, only that a clock is late. A scheduler heartbeat — one row written by
+`nvoos:run-schedules` on every tick — would turn lateness into "the tick last ran
+4 minutes ago", and would also cover the case where there are no schedules at
+all. It needs a table, so it is its own small slice; guessing from existing
+timestamps would be a heuristic dressed as a diagnosis.
+
+**Next surface:** the remaining `/ops` gaps are onboarding and Auth0 setup, both
+of which need decisions outside the app (provisioning steps; an identity-provider
+contract). On `/admin`, professions, chat profiles, memory, media, transcripts
+and the tool catalogue remain — one at a time, each with its own cross-tenant
+test (`EstateScope` + `RecordsAdminChanges` now carry the shared weight).
