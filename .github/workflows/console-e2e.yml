@@ -1,0 +1,173 @@
+name: Console E2E (Laravel)
+
+# Rung 2 of the console-e2e ladder (090-p §10).
+#
+# `console-tests.yml` runs the Vitest suite, which asserts the CONTRACT. It
+# cannot see whether the console actually boots against a live backend, nor
+# whether a page secretly reaches for WordPress. This job does: it boots the
+# Laravel runtime on SQLite (no Octane, no Redis, no MySQL), builds the
+# Laravel-profile console into `.e2e-dist/`, serves it through
+# `scripts/serve.mjs` — the deployment shape, not the Vite dev server — and runs
+# the narrow T0 Playwright smoke in `examples/nvoos-complete-velocity/e2e`.
+#
+# It fails when `/api/v1/features` loses a field the console needs, when an
+# endpoint key the console expects disappears, when the built console cannot
+# boot, or when a T0 page issue a request to `/wp-json*`.
+#
+# Rung 3 (the full Docker stack against Octane/FrankenPHP) stays a manual,
+# pre-release gate: it is the brittle top of the ladder, not a per-PR cost.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'examples/nvoos-complete-velocity/**'
+      - 'addons/pro/assets/spa-v2/**'
+      - 'addons/media-studio/assets/dist/**'
+      - 'addons/document-editor/assets/dist/**'
+      - 'docker/laravel/**'
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - '.github/workflows/console-e2e.yml'
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'examples/nvoos-complete-velocity/**'
+      - 'addons/pro/assets/spa-v2/**'
+      - 'addons/media-studio/assets/dist/**'
+      - 'addons/document-editor/assets/dist/**'
+      - 'docker/laravel/**'
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - '.github/workflows/console-e2e.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Console E2E (Laravel / SQLite)
+    runs-on: ubuntu-latest
+    # The Vite build, the migration+seed, the Playwright browser install and the
+    # smoke together sit well under this; the cap is a runaway guard, not a
+    # budget.
+    timeout-minutes: 30
+
+    # Read by artisan for both the migrate step and `artisan serve`. Explicit
+    # env wins over .env, so these are authoritative even though .env.example
+    # already selects SQLite.
+    env:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      APP_URL: http://127.0.0.1:8001
+      DB_CONNECTION: sqlite
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      # Must include the proxy origin, or Sanctum will not start a session for
+      # the console and the auth setup project fails at the login screen.
+      # Same value as docker/docker-compose.laravel.yml.
+      SANCTUM_STATEFUL_DOMAINS: localhost:8001,localhost:4318,127.0.0.1:4318,localhost,127.0.0.1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # The app-skeleton lock file requires 8.3 (same as laravel-app.yml).
+          php-version: '8.3'
+          extensions: fileinfo, mbstring, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        working-directory: docker/laravel/app-skeleton
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-console-e2e-${{ hashFiles('docker/laravel/app-skeleton/composer.lock', 'lib/core/composer.json', 'lib/laravel-adapter/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-console-e2e-
+
+      - name: Install Laravel dependencies
+        working-directory: docker/laravel/app-skeleton
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare the application
+        working-directory: docker/laravel/app-skeleton
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          touch database/database.sqlite
+          php artisan migrate --force --seed
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: examples/nvoos-complete-velocity/package-lock.json
+
+      - name: Install console dependencies
+        working-directory: examples/nvoos-complete-velocity
+        run: npm ci --ignore-engines
+
+      - name: Install Playwright browser
+        working-directory: examples/nvoos-complete-velocity
+        run: npx playwright install --with-deps chromium
+
+      - name: Serve the Laravel runtime
+        working-directory: docker/laravel/app-skeleton
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8001 > "$RUNNER_TEMP/laravel-serve.log" 2>&1 &
+          # Any HTTP answer means the socket is up. /api/v1/features is
+          # auth-gated, so 401 is the healthy answer here — waiting for 200
+          # would hang.
+          for attempt in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/api/v1/features || true)
+            if [ "$code" != "000" ]; then
+              echo "Laravel answered $code on :8001"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::The Laravel runtime never answered on :8001"
+          cat "$RUNNER_TEMP/laravel-serve.log"
+          exit 1
+
+      - name: Run the T0 console smoke
+        working-directory: examples/nvoos-complete-velocity
+        env:
+          # The seeded account (database/seeders/DatabaseSeeder.php). The
+          # Playwright config defaults to spike@example.com, which the skeleton
+          # does not create.
+          E2E_EMAIL: test@example.com
+          E2E_PASSWORD: password
+          E2E_BACKEND_URL: http://127.0.0.1:8001
+        # `webServer` in e2e/playwright.config.ts builds .e2e-dist/ and starts
+        # scripts/serve.mjs with NVOOS_BACKEND=laravel on the console port.
+        run: npm run test:e2e
+
+      - name: Laravel log on failure
+        if: failure()
+        working-directory: docker/laravel/app-skeleton
+        run: |
+          echo "=== laravel serve log ==="
+          cat "$RUNNER_TEMP/laravel-serve.log" 2>/dev/null || true
+          echo "=== storage/logs ==="
+          tail -n 200 storage/logs/laravel.log 2>/dev/null || true
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-e2e-playwright-report
+          path: examples/nvoos-complete-velocity/e2e/playwright-report
+          retention-days: 7
+          if-no-files-found: ignore
