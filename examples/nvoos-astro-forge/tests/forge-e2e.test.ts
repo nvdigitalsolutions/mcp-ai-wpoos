@@ -156,6 +156,24 @@ const PROFILE: SiteProfile = {
 			],
 		},
 	},
+	// The per-ELEMENT surface/pinned-height facts (Proposal 114 `elements`).
+	// The emitted rule must stay ANCHORED to the raw band's own root: measured
+	// from the source's band element the path starts one level BELOW it, and the
+	// rebuild nests that root inside `.post-body`. Unanchored, the leading
+	// `div:nth-child(2)` is a DESCENDANT selector that also matches a
+	// `.text-box`'s first `<div>` and the banner's link overlay, so the band's
+	// surface and pinned height paint over the hero photo.
+	bandFacts: {
+		b4c5d6e: {
+			elements: [
+				{
+					path: 'div:nth-child(2) > div:nth-child(1)',
+					bg: 'background-color:rgb(221, 51, 51)',
+					height: 900,
+				},
+			],
+		},
+	},
 	// The animation inventory fixture (2026-11-12): a finite, layout-safe CSS
 	// keyframe on the split hero's first media. The scaffold must bake the
 	// generated keyframes into animations.generated.ts and the build must serve
@@ -780,6 +798,28 @@ describe('forge e2e — emitted site', () => {
 		expect(audit.strict).toBe(false);
 		expect(audit.audit.pairs.length).toBeGreaterThanOrEqual(10);
 		expect(audit.audit.failures).toEqual([]);
+	});
+
+	it('anchors per-element design facts to the raw band (Proposal 114 `elements`)', async () => {
+		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
+		// The measured path starts at the SOURCE band root's children; the raw band
+		// nests that root one level inside `.post-body`. Emitted unanchored, the
+		// leading `div:nth-child(2)` is a descendant selector that also matched a
+		// `.text-box`'s first `<div>` and the banner's link overlay — the section's
+		// surface and pinned height then painted over the hero photo and every
+		// band flattened to one solid colour.
+		expect(index).toContain(
+			'[data-section-id="b4c5d6e"] .post-body > * > div:nth-child(2) > div:nth-child(1){'
+		);
+		// The floor must publish the `--ds-col-min-h` bridge: a centred band's
+		// wrapper rule re-states `min-height: var(--ds-col-min-h, 0)` at a higher
+		// specificity, so a pinned stage without the bridge rendered at 0 (both
+		// photo columns collapsed).
+		expect(index).toContain('--ds-col-min-h:900px;min-height:900px');
+		// …and the element's own subtree must not inherit the floor.
+		expect(index).toContain(
+			'[data-section-id="b4c5d6e"] .post-body > * > div:nth-child(2) > div:nth-child(1) > *{--ds-col-min-h:initial}'
+		);
 	});
 
 	it('ships the deploy-branch build report as an artifact (README.md)', async () => {
