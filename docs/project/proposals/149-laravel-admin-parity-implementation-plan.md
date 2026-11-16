@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — shipped 2026-11-17 and closed the cross-tenant settings defect that blocked the admin form.
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — and a ninth — the two settings pages (§17) — shipped 2026-11-17. Together they closed the cross-tenant settings defect and the "editable nowhere" gap that the projection opened.
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1541,7 +1541,7 @@ the console covering a surface does not count as admin parity.
 
 1. ✅ **Shipped** — `SettingsSchema` scope + console projection (§6.1, §15).
 2. ✅ **Shipped** — settings ownership: estate platform split, one writer, storage-key map (§16). This was the blocker: a form over a global store would have let one estate rewrite platform settings.
-3. `/admin` settings page reading `writableFor('admin')`, plus `/ops` for the operator layer.
+3. ✅ **Shipped** — `/admin/settings` and `/ops/settings`, generated from the catalogue (§17).
 4. Workflow runs list in `/admin` (read-only).
 5. Tool catalogue projection for the console.
 6. PAT manager split from assistant credentials.
@@ -1607,14 +1607,14 @@ client change was needed.
   next touched.
 - **`ollama_endpoint`** stays tenant-writable although the server fetches it
   (open question S-5). Closing it is a security decision, not a projection one.
-- **Temporary product gap — must close next.** With no `/admin` settings page
-  yet, `enable_logging` is now editable **nowhere** on this runtime: it left the
-  console and has no admin form to land in. That is the honest cost of hiding
-  without an admin presentation, and it is why the settings page is the next
-  slice rather than a later one. Do not mark another field `hidden` until that
-  page exists.
+- **Temporary product gap — CLOSED 2026-11-17.** With no `/admin` settings page,
+  `enable_logging` was editable **nowhere** on this runtime: it left the console
+  and had no admin form to land in. §17 shipped the admin and operator forms, so
+  the gap lasted one slice. The rule it produced still stands: do not mark a
+  field `hidden` without a surface that can still write it.
 - **Next slice:** `/admin` settings page reading `forSurface('admin')` through
 the same store, so the full form exists before any further field is reduced.
+→ Shipped as §17, after the storage split it needed (§16).
 
 ---
 
@@ -1714,3 +1714,80 @@ is what makes it reachable by a customer.
 - **Next slice:** `/admin/settings`, the full form on `writableFor('admin')`
   with operator-scope fields disabled under the S-1 hint, plus `/ops/settings`
   for the operator layer.
+
+---
+
+## 17. Wave 2 — ninth slice: the settings pages (`/admin` + `/ops`)
+
+**State:** shipped 2026-11-17. This is the first surface where the same writer
+feeds two admin presentations and the console, and the first where the
+"two versions" question is answered by projection rather than by forking a page.
+
+### 17.1 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Form builder | `app/Filament/Concerns/BuildsSettingsForm.php` | generated from `SettingsSchema`; not a hand-written form |
+| Estate form | `app/Filament/Admin/Pages/Settings.php` | full catalogue; operator fields disabled under the S-1 hint |
+| Platform form | `app/Filament/Operator/Pages/Settings.php` | operator scope only; writes the platform layer |
+| View | `resources/views/filament/settings-form.blade.php` | shared by both pages |
+| Contract | `contracts/surface-ownership.json` | `settings` split into `settings.estate` and `settings.platform` |
+| Tests | `tests/Feature/AdminSettingsTest.php` | 8 tests |
+
+### 17.2 Decisions worth keeping
+
+- **S-1 is applied as "hint", not "omit".** An administrator who cannot see
+  `enable_logging` cannot tell whether it exists, is broken, or is hidden from
+  them. All three are worse than "NV Digital manages this". The field renders
+  disabled, with the owner named.
+- **The hint is not the control.** The component sets `dehydrated(false)`, and
+  `SettingsService::write()` filters by `writableFor('admin')` regardless — a
+  crafted Livewire payload never passes through a component. Two guards, because
+  the first one is a UI fact and the second is an authorisation fact.
+- **`/ops` is operator scope only, and that is a correctness decision.** That
+  panel is deliberately not tenant-scoped, so `TenantContext` resolves `default`.
+  A `default_model` field there would edit one estate while looking like a
+  platform setting — a failure that appears to work, which is the worst kind.
+- **"Disabled" is derived from the surface's write projection.** The first
+  implementation keyed off `scope === 'operator'`, which disabled the very
+  fields `/ops` exists to write; the operator test caught it on the first run.
+  `isWritableHere()` asks `writableFor($surface)`, so the two pages cannot
+  disagree about who owns a field.
+- **The form is generated, never authored.** A hand-written form drifts silently
+  the first time a field is added, and the drift looks like "that field just
+  isn't editable". Generation makes "add a field" one edit.
+- **Secrets are never hydrated.** The masked placeholder never enters the form
+  state: `afterStateHydrated` blanks it and `dehydrated(filled)` means an empty
+  box is "unchanged", not "clear it".
+- **The audit row records keys, not values.** Settings include provider
+  credentials, and the audit table is durable. `recordResource('settings', …)`
+  stores `['keys' => [...]]`.
+
+### 17.3 Validation record — executed, not inferred
+
+`oos-laravel-app` came up healthy during this slice, so the suite ran locally
+against the synced skeleton:
+
+- `AdminSettingsTest` + `SettingsOwnershipTest` + `SettingsProjectionTest` +
+  `SurfaceOwnershipTest` + `AdminPanelAccessTest` + `AdminPanelTest`:
+  **60 passed, 563 assertions**.
+- `php -l` and `phpcs` (CI ruleset) clean on every changed file.
+- `bin/audit-surface-ownership.php`: **43 surfaces**, **8 Filament-built**
+  (5 `/ops`, 3 `/admin`), 29 console-served, 9 planned only.
+- Full local suite: **905 tests, 6 failures**, all traceable to the scratch
+  container rather than to this change — four `WifiKpisTest` cases from an
+  unbound addon interface, and two "no tests found" classes that exist only as
+  stale files in the scratch `/app` (they are not in `app-skeleton`). CI runs the
+  clean checkout and is the authority.
+
+### 17.4 Follow-ups recorded
+
+- **No "reset to inherited" action.** Deleting an estate row reveals the
+  platform/configured value again, but the UI does not offer it. Add it with the
+  first field whose default is expensive to retype.
+- **The console API still resolves the default estate** (§16.5). Unchanged by
+  this slice; `/admin` pins correctly through `SetTenantContext`.
+- **WordPress twin divergence** (§15.4): the plugin still shows
+  `enable_logging` and `ollama_endpoint` to the console.
+- **Next slice:** workflow runs in `/admin` (read-only) — the one orchestration
+  surface the console serves badly (§14.1).

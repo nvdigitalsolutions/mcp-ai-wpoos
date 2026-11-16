@@ -129,16 +129,30 @@
       "notes": "Read-only on both. The console sees the full catalogue today; the intended console projection is the assistant's enabled tools plus presets."
     },
     {
-      "id": "settings",
-      "title": "Settings",
+      "id": "settings.estate",
+      "title": "Estate settings",
       "audience": "tenant-admin",
-      "ops": { "state": "planned" },
-      "admin": { "state": "planned" },
+      "ops": null,
+      "admin": { "state": "full" },
       "console": { "state": "subset", "keys": ["settings"] },
       "writer": "shared",
       "plan_gate": "feature:settings",
-      "projection": "Read: scope-filtered schema (only tenant/user scope reaches the console; sensitive fields masked on read, blank means unchanged). Write: the surface's write projection plus the field's own scope — operator-scope fields never leave the platform layer, so no tenant surface can write them even if a crafted payload names them.",
-      "notes": "Two slices. Projection shipped 2026-11-17 (§15). Ownership shipped 2026-11-17 (§16): App\\Support\\Settings\\SettingsService routes each field to the platform layer (operator scope, table nvoos_settings) or the estate layer (tenant/user scope, table nvoos_tenant_settings), and maps the surface key to the storage key the runtime reads (google_api_key -> gemini_api_key, ollama_endpoint -> ollama_endpoint_url). S-5 applied: ollama_endpoint is now operator scope, because it is a URL the server fetches. The WordPress twin still exposes enable_logging and ollama_endpoint to the console; align when that schema is next touched."
+      "projection": "Read: the estate catalogue — every field the estate owns, with operator-scope fields included but masked as managed. Write: writableFor('admin'), which excludes operator scope, so a crafted payload naming enable_logging or ollama_endpoint is ignored rather than rejected. Sensitive fields are masked on read and blank means unchanged.",
+      "files": ["app/Filament/Admin/Pages/Settings.php"],
+      "notes": "Console projection shipped 2026-11-17 (§15). Ownership shipped 2026-11-17 (§16): tenant/user scope lives in nvoos_tenant_settings keyed by (tenant_id, key). The page shipped 2026-11-17 (§17): generated from SettingsSchema, so a new field is one edit. Operator-scope fields render disabled under the S-1 hint rather than being omitted."
+    },
+    {
+      "id": "settings.platform",
+      "title": "Platform settings",
+      "audience": "operator",
+      "ops": { "state": "full" },
+      "admin": { "state": "subset" },
+      "console": null,
+      "writer": "ops",
+      "plan_gate": null,
+      "projection": "Admin renders the operator-scope fields disabled with the S-1 hint (subset: same values, no write). Ops renders writableFor('ops') — operator scope only — and writes the platform layer, so one save applies to every estate. Estate fields are deliberately absent from /ops: that panel has no estate selected, so editing one would silently change the default estate.",
+      "files": ["app/Filament/Operator/Pages/Settings.php"],
+      "notes": "Carries enable_logging and ollama_endpoint. ollama_endpoint became operator scope with S-5: it is a URL the server fetches, so a tenant form choosing it is an SSRF primitive. Customers still select the ollama provider and model on the estate surface."
     },
     {
       "id": "approvals",
