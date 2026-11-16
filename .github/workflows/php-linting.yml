@@ -47,9 +47,42 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
+      # The two "own ruleset" checks run BEFORE `Get changed PHP files` on
+      # purpose. That action has wedged in_progress for over an hour on
+      # several PRs (#7862, #7863, #7864), and every step after it — these
+      # two, plus both WPCS runs — was left pending. A pending check does not
+      # fail a PR, so a style gate placed after it is decorative: the six
+      # WiFi style errors reached alpha-working that way. Neither of these
+      # checks reads `changed-files`, so nothing is lost by moving them up.
+      - name: Run PSR-12 on the Laravel trees (own ruleset)
+        run: |
+          # phpcs.xml.dist excludes lib/ and docker/, so the Laravel adapter and
+          # the app skeleton had no style gate at all. They are checked here
+          # with phpcs-laravel.xml.dist: full PSR-12 for the app skeleton,
+          # PSR-12 minus indentation for the tab-indented adapter. Line length
+          # stays advisory (PSR-12's 120-column soft limit).
+          vendor/bin/phpcs --standard=phpcs-laravel.xml.dist \
+            --error-severity=1 --warning-severity=8
+
+      - name: Run WPCS on nvoos-astro-bridge addon (own ruleset)
+        run: |
+          # The nvoos-astro-bridge addon is excluded from the base plugin's
+          # phpcs.xml.dist (PSR-4 layout, deliberate idioms) and carries its
+          # own ruleset at addons/nvoos-astro-bridge/phpcs.xml.dist. Enforce it here
+          # so addon changes stay covered on PRs and pushes.
+          vendor/bin/phpcs --standard=addons/nvoos-astro-bridge/phpcs.xml.dist \
+            addons/nvoos-astro-bridge/includes addons/nvoos-astro-bridge/nvoos-astro-bridge.php addons/nvoos-astro-bridge/uninstall.php
+
+      # Bounded so a hang here cannot void the three checks below it. Five
+      # minutes is generous: the action resolves a file list, it does not lint.
+      # The steps that depend on it also guard on `any_changed` / `all_changed_files`,
+      # so a timeout degrades to "changed-file scoping skipped" rather than a
+      # silently green job — see the `if:` on `Run WPCS on changed files`.
       - name: Get changed PHP files
         id: changed-files
         if: github.event_name == 'pull_request'
+        timeout-minutes: 5
+        continue-on-error: true
         uses: tj-actions/changed-files@v45
         with:
           files: |
@@ -64,25 +97,6 @@ jobs:
             plugins/nvoos-content-graph-ai/**
             plugins/nvoos-content-graph-ai-platform/**
             plugins/nvoos-content-graph-pro/**
-
-      - name: Run WPCS on nvoos-astro-bridge addon (own ruleset)
-        run: |
-          # The nvoos-astro-bridge addon is excluded from the base plugin's
-          # phpcs.xml.dist (PSR-4 layout, deliberate idioms) and carries its
-          # own ruleset at addons/nvoos-astro-bridge/phpcs.xml.dist. Enforce it here
-          # so addon changes stay covered on PRs and pushes.
-          vendor/bin/phpcs --standard=addons/nvoos-astro-bridge/phpcs.xml.dist \
-            addons/nvoos-astro-bridge/includes addons/nvoos-astro-bridge/nvoos-astro-bridge.php addons/nvoos-astro-bridge/uninstall.php
-
-      - name: Run PSR-12 on the Laravel trees (own ruleset)
-        run: |
-          # phpcs.xml.dist excludes lib/ and docker/, so the Laravel adapter and
-          # the app skeleton had no style gate at all. They are checked here
-          # with phpcs-laravel.xml.dist: full PSR-12 for the app skeleton,
-          # PSR-12 minus indentation for the tab-indented adapter. Line length
-          # stays advisory (PSR-12's 120-column soft limit).
-          vendor/bin/phpcs --standard=phpcs-laravel.xml.dist \
-            --error-severity=1 --warning-severity=8
 
       - name: Run WPCS on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
