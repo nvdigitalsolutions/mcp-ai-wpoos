@@ -24,17 +24,15 @@ class DiagnosticsController
 
         $providerRows = array_map(
             static function (string $slug) use ($settings): array {
-                $key = match ($slug) {
-                    'openai' => 'openai_api_key',
-                    'gemini' => 'google_api_key',
-                    'anthropic' => 'anthropic_api_key',
-                    default => $slug.'_api_key',
-                };
+                // The provider client's storage key, not the settings surface's
+                // key: diagnostics reports whether the runtime can authenticate,
+                // so it must ask the same question the client does.
+                $key = SettingsSchema::providerCredentialKey($slug);
 
                 $has = ! empty($settings[$key]);
 
                 if ($slug === 'ollama') {
-                    $has = $has || ! empty($settings['ollama_endpoint']);
+                    $has = $has || ! empty($settings['ollama_endpoint_url']);
                 }
 
                 return [

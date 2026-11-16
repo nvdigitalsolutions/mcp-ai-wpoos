@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — six slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), and scheduler liveness on `/ops/scheduler` (§13). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** A seventh slice — the settings projection (§15) — shipped 2026-11-17 and is the first surface built from the ownership matrix (§14).
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — shipped 2026-11-17 and closed the cross-tenant settings defect that blocked the admin form.
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1540,10 +1540,11 @@ the console covering a surface does not count as admin parity.
 ### 14.4 Next slices, in leverage order
 
 1. ✅ **Shipped** — `SettingsSchema` scope + console projection (§6.1, §15).
-2. `/admin` settings page reading the same store.
-3. Workflow runs list in `/admin` (read-only).
-4. Tool catalogue projection for the console.
-5. PAT manager split from assistant credentials.
+2. ✅ **Shipped** — settings ownership: estate platform split, one writer, storage-key map (§16). This was the blocker: a form over a global store would have let one estate rewrite platform settings.
+3. `/admin` settings page reading `writableFor('admin')`, plus `/ops` for the operator layer.
+4. Workflow runs list in `/admin` (read-only).
+5. Tool catalogue projection for the console.
+6. PAT manager split from assistant credentials.
 
 ---
 
@@ -1614,3 +1615,102 @@ client change was needed.
   page exists.
 - **Next slice:** `/admin` settings page reading `forSurface('admin')` through
 the same store, so the full form exists before any further field is reduced.
+
+---
+
+## 16. Wave 2 — eighth slice: settings ownership (`/settings` storage)
+
+**State:** shipped 2026-11-17. This slice has no page. It closes the blocker
+that §15.4 recorded: the admin form could not be built honestly because the
+store had no estate dimension.
+
+### 16.1 The defect, stated precisely
+
+`SettingsStore` wrote one table, `nvoos_settings`, keyed on `key` alone. On
+WordPress that is correct — one install is one estate. On a multi-tenant Laravel
+deployment it means every estate shares `default_model` and `openai_api_key`.
+Nothing caught it because the only writer was the console, and nothing pins a
+tenant on `/api/v1`: `TenantContext::current()` returns `'default'` for every
+console request, so one estate's write and another estate's read both landed on
+the same row and looked consistent.
+
+That is an OWASP API1 (BOLA) defect, not a presentation quirk. `/admin/settings`
+is what makes it reachable by a customer.
+
+### 16.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Estate layer | `database/migrations/2026_11_17_100000_create_nvoos_tenant_settings_table.php` | `(tenant_id, key)` composite primary; copies pre-split rows to `default` |
+| Two-layer reads | `lib/laravel-adapter/src/Adapter/SettingsStore.php` | estate rows over platform rows over config over `DEFAULTS` |
+| One writer | `app/Support/Settings/SettingsService.php` | routes by `scope`; maps surface key → storage key; ignores non-writable keys |
+| Model catalogue | `app/Support/SettingsSchema.php` | `storage` on every field; `writableFor()`; S-5 applied |
+| Console route | `app/Http/Controllers/SettingsController.php` | envelope only; projection and casts come from the service |
+| Runtime readers | `DiagnosticsController`, `SecurityController` | ask the key the provider client asks |
+| Wiring | `app/Providers/AppServiceProvider.php` | estate store, `nvoos.settings.platform`, `SettingsService` |
+| Tests | `tests/Feature/SettingsOwnershipTest.php` | 11 tests |
+
+### 16.3 Decisions worth keeping
+
+- **The tenant is a resolver, not an id.** `ProviderRouter` is a singleton and
+  constructs twelve provider clients with one injected store *during boot* —
+  before any tenant middleware runs. A fixed id would pin every provider call in
+  the process to whichever estate was current at boot. A closure moves the
+  decision to each `all()`. This is the difference between "works in a test" and
+  "works in Octane".
+- **The store stays scope-blind; the service routes.** Teaching the adapter
+  which keys are operator-scope would mean a key list in `lib/` that drifts from
+  `SettingsSchema`. One store per layer plus one router is smaller and has a
+  single source of truth.
+- **Copy, don't delete, on migration.** Every deployment that predates this has
+  one estate, so the copy is the whole story there; a deployment that already
+  holds several keeps resolving through the platform layer until each estate
+  writes its own value. Deleting the originals would break an estate that has
+  never opened the page. Cleanup is a later, separate decision (§16.5).
+- **S-5 is applied, not deferred.** `ollama_endpoint` is operator scope. The
+  customer is not blocked from Ollama: `default_provider` and `default_model`
+  stay tenant-scope, so they select the provider and the model against the
+  operator's endpoint. What closes is the ability to choose an address the
+  server fetches — an SSRF primitive — from a tenant form.
+- **The surface key and the storage key are different names on purpose.** The
+  WordPress twin has always mapped `google_api_key` → `gemini_api_key` and
+  `ollama_endpoint` → `ollama_endpoint_url` (`FIELD_MAP`). Renaming either side
+  would break one of the two runtimes; recording the map in `SettingsSchema` is
+  what makes the form honest.
+- **Two wiring defects were fixed because the form would have inherited them.**
+  Nothing wrote `gemini_api_key` while the settings surface wrote the *display*
+  key, and nothing wrote `ollama_endpoint_url` while the provider client read
+  `ollama_base_url`. A full admin form writing keys the runtime does not read is
+  worse than no form, because it looks like it worked.
+
+### 16.4 Validation record
+
+- `php -l`: clean on all ten changed PHP files.
+- `vendor/bin/phpcs --standard=phpcs-laravel.xml.dist`: clean on all ten.
+- Standalone catalogue check (no framework): **9** fields, console **7**
+  (`general,providers`), admin **9**, writable admin **7**, writable ops **9**;
+  `storageKey('google_api_key') === 'gemini_api_key'`,
+  `storageKey('ollama_endpoint') === 'ollama_endpoint_url'`;
+  `keys()`/`sensitiveKeys()` complete.
+- `bin/audit-surface-ownership.php`: contract parses, **42** rows, burn-down
+  unchanged (6 Filament-built, 29 console-served).
+- **The PHPUnit run has not happened.** `oos-laravel-app` and
+  `oos-laravel-worker` are unhealthy. CI's `App suite (SQLite)` is the first
+  execution of `SettingsOwnershipTest` and the revised `SettingsProjectionTest`.
+
+### 16.5 Follow-ups recorded
+
+- **The console API still resolves the default estate.** Nothing pins a tenant
+  on `/api/v1`, so a multi-estate user's console reads `default`. Closing it
+  needs a tenant-selection rule (a header, a subdomain, or a membership
+  chooser) — a product decision, not a storage one. The `/admin` panel is
+  unaffected: `SetTenantContext` pins it.
+- **Legacy tenant-scope rows remain in `nvoos_settings`.** They are the
+  pre-split copy and the deployment default. Drop them one release after every
+  estate has written its own provider keys.
+- **`user` scope is unbuilt.** No field uses it. A user layer needs a third
+  table and a decision about which "user" (console session vs assistant actor);
+  routing it silently to the estate layer would be a bug with a long fuse.
+- **Next slice:** `/admin/settings`, the full form on `writableFor('admin')`
+  with operator-scope fields disabled under the S-1 hint, plus `/ops/settings`
+  for the operator layer.

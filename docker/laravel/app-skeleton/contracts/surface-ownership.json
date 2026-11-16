@@ -132,13 +132,13 @@
       "id": "settings",
       "title": "Settings",
       "audience": "tenant-admin",
-      "ops": null,
+      "ops": { "state": "planned" },
       "admin": { "state": "planned" },
       "console": { "state": "subset", "keys": ["settings"] },
       "writer": "shared",
       "plan_gate": "feature:settings",
-      "projection": "Scope-filtered schema: only fields with scope tenant/user are returned to the console; sensitive fields are write-only (mask on read, blank means unchanged). Operator-scope fields never leave the admin.",
-      "notes": "Console projection shipped 2026-11-17: SettingsSchema::forSurface('console') omits operator-scope fields, so enable_logging is admin-only and the emptied 'advanced' tab disappears. The WordPress twin still exposes enable_logging to the console; align when that schema is next touched."
+      "projection": "Read: scope-filtered schema (only tenant/user scope reaches the console; sensitive fields masked on read, blank means unchanged). Write: the surface's write projection plus the field's own scope — operator-scope fields never leave the platform layer, so no tenant surface can write them even if a crafted payload names them.",
+      "notes": "Two slices. Projection shipped 2026-11-17 (§15). Ownership shipped 2026-11-17 (§16): App\\Support\\Settings\\SettingsService routes each field to the platform layer (operator scope, table nvoos_settings) or the estate layer (tenant/user scope, table nvoos_tenant_settings), and maps the surface key to the storage key the runtime reads (google_api_key -> gemini_api_key, ollama_endpoint -> ollama_endpoint_url). S-5 applied: ollama_endpoint is now operator scope, because it is a URL the server fetches. The WordPress twin still exposes enable_logging and ollama_endpoint to the console; align when that schema is next touched."
     },
     {
       "id": "approvals",
