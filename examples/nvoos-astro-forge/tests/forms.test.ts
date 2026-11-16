@@ -10,7 +10,14 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { INTERNAL_FIELDS, MAX_BODY_BYTES, readSubmissionFields, submissionMessage } from '../lib/forms.ts';
+import {
+	INTERNAL_FIELDS,
+	MAX_BODY_BYTES,
+	carriesPage,
+	harvestedField,
+	readSubmissionFields,
+	submissionMessage,
+} from '../lib/forms.ts';
 
 function jsonRequest( body: unknown ): Request {
 	return new Request( 'https://example.com/api/forms/submit', {
@@ -140,5 +147,43 @@ describe( 'submissionMessage', () => {
 
 	it( 'returns undefined when only reserved fields were submitted', () => {
 		expect( submissionMessage( { honeypot: '', timestamp: '1', form: 'contact' } ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'harvestedField', () => {
+	it( 'flags a field this site never emits', () => {
+		expect( harvestedField( { 'your-name': 'Ea', submit: 'Send' } ) ).toBe( 'submit' );
+		expect( harvestedField( { 'your-email': 'a@b.co', 'g-recaptcha-response': '' } ) ).toBe(
+			'g-recaptcha-response'
+		);
+		expect( harvestedField( { _wpcf7_version: '6.0' } ) ).toBe( '_wpcf7_version' );
+	} );
+
+	it( 'passes a submission from this form', () => {
+		expect(
+			harvestedField( {
+				'your-name': 'Ada',
+				'your-email': 'ada@example.com',
+				'your-message': 'Hello',
+				page: 'https://virtuallyjamaica.com/',
+			} )
+		).toBeUndefined();
+	} );
+} );
+
+describe( 'carriesPage', () => {
+	it( 'accepts the carrier the form script sends', () => {
+		expect( carriesPage( { page: 'https://virtuallyjamaica.com/' }, 'virtuallyjamaica.com' ) ).toBe( true );
+		expect(
+			carriesPage( { page: 'https://virtuallyjamaica.com/shop/?x=1' }, 'virtuallyjamaica.com' )
+		).toBe( true );
+	} );
+
+	it( 'drops a missing, foreign or unparsable carrier', () => {
+		// A replayed flat payload carries no `page` at all (2026-11-16).
+		expect( carriesPage( {}, 'virtuallyjamaica.com' ) ).toBe( false );
+		expect( carriesPage( { page: 'https://evil.example/' }, 'virtuallyjamaica.com' ) ).toBe( false );
+		expect( carriesPage( { page: 'not a url' }, 'virtuallyjamaica.com' ) ).toBe( false );
+		expect( carriesPage( { page: 'https://virtuallyjamaica.com/' }, '' ) ).toBe( false );
 	} );
 } );

@@ -268,3 +268,12 @@ short digest of the highest-traffic ones stays in `SKILL.md`.
   invented. The named type scale (`title-large`, `title-extra-large-4`, …)
   needs no rows: the measured `type.headings` facts already apply those sizes
   and match the source's computed value.
+- **The suite flakes under full parallelism on a cold tree** — 104 workers × the
+  scaffold-heavy files (`lock`, `scaffold`, `contact-section`) blow vitest's 5 s
+  per-test timeout with 3–4 failures that pass in isolation, and a fresh Windows
+  checkout can also throw `EPERM: operation not permitted, rename
+  …\TEMP\forge-scaffold-*\x.forge-tmp-*` from `swapStagedProject`'s rename-in.
+  Both are environmental. Re-run `npx vitest run --exclude
+  tests/forge-e2e.test.ts --no-file-parallelism` (~90 s) before believing a
+  failure belongs to your diff, and say which run the numbers came from in the
+  PR body.
