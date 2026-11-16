@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assistant;
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,18 @@ use Illuminate\Support\Facades\DB;
  * Only tokens named `oos-assistant-*` are listed. Other Sanctum tokens in the
  * table belong to unrelated features and are none of this page's business.
  *
+ * ESTATE SCOPE (149 §19). `personal_access_tokens` has no tenant column and its
+ * `tokenable` is the user who issued the credential, not the estate that owns
+ * the assistant — so the only reliable link is the assistant id in the token
+ * name. Both the listing and the revoke path therefore resolve the estate's
+ * assistant ids first. Before this, an estate administrator could read another
+ * estate's credentials and revoke them by id: a cross-tenant WRITE, not just a
+ * disclosure.
+ *
+ * This surface is assistant credentials, not personal access tokens. The
+ * ownership matrix used to label the `tokenManager` key "personal access
+ * tokens"; §19 corrects the contract to say what the console actually serves.
+ *
  * Restrictions (`TokenRestriction`) have no store on this runtime: the
  * rate limiter is window-based and keeps no persisted block, so the list is
  * empty and `lift` answers 404. That is honest rather than invented.
@@ -43,8 +56,26 @@ class TokenManagerController
 
     public function overview(): JsonResponse
     {
+        $estateAssistants = $this->estateAssistantIds();
+
+        if ( array() === $estateAssistants ) {
+            return response()->json(array(
+                'success' => true,
+                'data'    => array(
+                    'stats'        => array(
+                        'total'       => 0,
+                        'active'      => 0,
+                        'revoked'     => 0,
+                        'assistants'  => 0,
+                    ),
+                    'credentials'  => array(),
+                    'restrictions' => array(),
+                ),
+            ));
+        }
+
         $rows = DB::table('personal_access_tokens')
-            ->where('name', 'like', 'oos-assistant-%')
+            ->whereIn('name', $this->credentialNames($estateAssistants))
             ->orderByDesc('created_at')
             ->get(array(
                 'id',
@@ -152,7 +183,7 @@ class TokenManagerController
      */
     private function destroy(int $assistant, string $credential, string $verb): JsonResponse
     {
-        if ( ! ctype_digit($credential) ) {
+        if ( ! ctype_digit($credential) || ! $this->ownsAssistant($assistant) ) {
             return $this->missing();
         }
 
@@ -169,8 +200,50 @@ class TokenManagerController
 
         return response()->json(array(
             'success' => true,
-            'data' => array( $verb => true ),
+            'data'    => array( $verb => true ),
         ));
+    }
+
+    /**
+     * Assistant ids belonging to the current estate.
+     *
+     * @return list<int>
+     */
+    private function estateAssistantIds(): array
+    {
+        return Assistant::query()
+            ->where('tenant_id', TenantContext::current())
+            ->pluck('id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    /**
+     * Whether the assistant belongs to the caller's estate.
+     */
+    private function ownsAssistant(int $assistantId): bool
+    {
+        return Assistant::query()
+            ->where('id', $assistantId)
+            ->where('tenant_id', TenantContext::current())
+            ->exists();
+    }
+
+    /**
+     * Token names for a set of assistant ids.
+     *
+     * Scoping by the literal names keeps the query indexed by `name` and avoids
+     * a `like` scan over every estate's credentials.
+     *
+     * @param list<int> $assistantIds
+     * @return list<string>
+     */
+    private function credentialNames(array $assistantIds): array
+    {
+        return array_map(
+            static fn (int $id): string => 'oos-assistant-'.$id,
+            $assistantIds
+        );
     }
 
     private function missing(): JsonResponse

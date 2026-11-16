@@ -136,17 +136,22 @@ Target: the admin is the full form. The console receives a projection.
 
 ### 6.2 Token manager
 
-Two different surfaces, previously conflated:
+Two different surfaces, previously conflated — and this document was part of the conflation.
 
-| | Assistant credentials (`/ops/credentials`) | Personal access tokens (`tokenManager`) |
+| | Assistant credentials | Personal access tokens |
 |---|---|---|
-| Audience | operator | tenant-admin (own tokens), planned operator cross-estate view |
-| Writer | `AuthProvider` | token service |
-| Verbs | rotate (issue-then-delete) | overview / revoke / delete / lift |
+| Audience | operator (`/ops/credentials`) and tenant-admin (`tokenManager`) | tenant-admin (unbuilt) |
+| Writer | `AuthProvider` | token service (unbuilt) |
+| Scope | `/ops` is cross-estate; the console is the estate's **own** assistants | the caller's own user |
+| Verbs | rotate (issue-then-delete) | overview / revoke / lift |
 | Projection | plaintext shown once, never stored in audit | metadata only; **hash never selected** |
-| Console | absent | `subset` — own tokens, metadata only |
+| Console | `credentials.estate` — `subset` | absent |
 
-The expiry defect fixed during this track (`issueCredential()` never persisted `expires_at`) belongs to the first column and is the reason the two must not share a page.
+**Correction, 2026-11-17 (§19).** The `tokenManager` key was labelled "personal access tokens" here and in the contract. It serves *assistant credentials* for the estate's own assistants. The contract now maps that key to `credentials.estate` and leaves `tokens.personal` unbuilt with no console key.
+
+**The defect the correction exposed.** `TokenManagerController` listed the whole `oos-assistant-*` range and its revoke path only compared the URL assistant id with the token name. An estate administrator could therefore **read and revoke another estate's credentials** — a cross-tenant write, not just a disclosure. Fixed in §19: the estate's assistant ids resolve first, and both the listing and the revoke path require membership. `personal_access_tokens` has no tenant column and its `tokenable` is the issuing user, so the assistant id in the token name is the only reliable link.
+
+The expiry defect fixed during this track (`issueCredential()` never persisted `expires_at`) is the reason the operator and estate presentations must not share a page: rotation is an operator verb against a cross-estate inventory, revocation is an estate verb against its own.
 
 ### 6.3 Tools
 
