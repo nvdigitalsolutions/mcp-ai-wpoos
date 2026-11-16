@@ -23,7 +23,7 @@ After the change:
 | Fact | Before | After |
 |---|---|---|
 | WordPress manifest | absent | `endpoints` + `endpoint_reasons` + `endpoint_gaps` + `backend` + `contract` |
-| WordPress live measurement | n/a | **39 true / 6 false / 0 gaps** (`chatChannels`, `professions`, `orgTeams`, `contentGraph`, `mediaStudio`, `documentEditor` false *by reason*) |
+| WordPress live measurement | n/a | **41 true / 4 false / 0 gaps** on the dev estate (re-measured 2026-11-16; `chatChannels`, `contentGraph`, `mediaStudio`, `documentEditor` false *by reason*). The **39/6** recorded when this row was written predates 090-p W1/W7 — `professions` and `orgTeams` now serve — and `docsHub` reads true because the docs-hub plugin registers `nvoos-docs` on that estate, so a base install without it reads 40/5 |
 | Console contract CI | none | `console-tests.yml` → `tsc --noEmit` + 166 Vitest tests |
 | `toolkits` on WordPress | blank | `mcp-ai-pro/v1/toolkit-manifests` |
 | Connected apps on Laravel | never | configured probe → `endpoint_urls` + flipped key, cached |

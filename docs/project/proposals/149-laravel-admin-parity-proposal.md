@@ -39,12 +39,17 @@ version 2). Of those, **39 are declared `route`-backed and 6 are not** (4
 
 > **Measurement caveat.** The 39/6 split is the *contract* declaration. The
 > *runtime* truth is what `GET /api/v1/features` reports from the live router,
-> and the last figure recorded in the `mcp-ai-wpoos-laravel-runtime` skill was
-> **33 true / 12 false**. Six keys had no live route at that measurement — i.e.
-> they were shipped in the contract but not in `routes/api.php`. That class of
-> drift is precisely what `manifest()['gaps']` exists to expose, and closing it
-> is Wave 1 (§11). Re-take the number before starting Wave 1:
-> `php artisan tinker --execute='$m=App\Support\EndpointCapabilities::map(); echo count(array_filter($m));'`
+> and it was re-measured on 2026-11-16: **39 true / 6 false with
+> `endpoint_gaps: []`** — the runtime answer now matches the declaration key
+> for key. The six false are exactly the six non-`route` keys (`chatChannels`
+> toolkit-shaped; `mediaCc` connected-service with no worker configured;
+> `contentGraph`/`docsHub`/`mediaStudio`/`documentEditor` external-product with
+> no `oos.connected_apps`). An earlier reading of **33 true / 12 false** had six
+> contract keys with no live route — the drift class `manifest()['gaps']`
+> exists to expose — so **Wave 1's exit gate already holds** and what remains
+> of Wave 1 is recording the rulings, not building routes. Re-take the number
+> before any further work:
+> `php artisan tinker --execute='$m=App\Support\EndpointCapabilities::map(); echo count($m)." total, ".count(array_filter($m))." true\n";'`
 
 That means the console is, by design, a *product* surface: chat, assistants,
 orchestration, toolkits, schedules, command centre, and the operator tooling a

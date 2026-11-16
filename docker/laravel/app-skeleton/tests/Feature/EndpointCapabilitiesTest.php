@@ -306,6 +306,48 @@ class EndpointCapabilitiesTest extends TestCase
         );
     }
 
+    public function test_connected_apps_flip_the_key_and_recompute_gaps(): void
+    {
+        // A discovered product proves the surface is served, so its key flips
+        // true. `gaps` must be recomputed in the same breath: a key cannot be
+        // both available and missing. This is only observable with a synthetic
+        // manifest, because the real connected-app keys are `external-product`
+        // and therefore never gaps — but a key reclassified to `route` later
+        // would otherwise keep reporting a contradiction.
+        $manifest = array(
+            'version'   => EndpointCapabilities::CONTRACT_VERSION,
+            'endpoints' => array( 'chat' => false, 'tools' => true ),
+            'reasons'   => array( 'chat' => 'route', 'tools' => 'route' ),
+            'gaps'      => array( 'chat' ),
+        );
+
+        $merged = EndpointCapabilities::applyConnectedApps(
+            $manifest,
+            array( 'chat' => 'https://chat.example.com' )
+        );
+
+        $this->assertTrue($merged['endpoints']['chat']);
+        $this->assertSame(array(), $merged['gaps']);
+        $this->assertSame(array('chat' => 'https://chat.example.com'), $merged['endpoint_urls']);
+
+        // Availability and supply class are separate facts: discovery does not
+        // reclassify the key, so a failed probe still reads as external.
+        $this->assertSame($manifest['reasons'], $merged['reasons']);
+    }
+
+    public function test_no_connected_apps_leaves_the_manifest_untouched(): void
+    {
+        // The early return keeps `endpoint_urls` out of the document when no
+        // product answered, which is how a console tells "no discovery was
+        // attempted" from "discovery found nothing".
+        $manifest = EndpointCapabilities::manifest();
+
+        $merged = EndpointCapabilities::applyConnectedApps($manifest, array());
+
+        $this->assertSame($manifest, $merged);
+        $this->assertArrayNotHasKey('endpoint_urls', $merged);
+    }
+
     public function test_unavailable_endpoints_are_not_classified_as_route_supplied(): void
     {
         // The complement of the gap check: nothing that is false may claim to be
