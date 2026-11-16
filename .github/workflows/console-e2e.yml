@@ -64,10 +64,6 @@ jobs:
       SESSION_DRIVER: database
       CACHE_STORE: database
       QUEUE_CONNECTION: database
-      # Must include the proxy origin, or Sanctum will not start a session for
-      # the console and the auth setup project fails at the login screen.
-      # Same value as docker/docker-compose.laravel.yml.
-      SANCTUM_STATEFUL_DOMAINS: localhost:8001,localhost:4318,127.0.0.1:4318,localhost,127.0.0.1
 
     steps:
       - name: Checkout repository
@@ -103,6 +99,17 @@ jobs:
         working-directory: docker/laravel/app-skeleton
         run: |
           cp .env.example .env
+          # Sanctum only starts a session for a listed origin, and the only
+          # route that forces a session unconditionally is /session/nonce (it
+          # carries the `web` group). /session/login relies on statefulApi(), so
+          # without this line it reaches the controller with no session and
+          # answers 419 session_required — while /session/nonce happily returns
+          # a nonce, which makes the failure look like a CSRF mismatch.
+          #
+          # Written to .env rather than left to the job-level env: .env is the
+          # Laravel-native config surface the Docker stack also uses, and it
+          # keeps the value next to the app that needs it.
+          echo 'SANCTUM_STATEFUL_DOMAINS=localhost:8001,localhost:4318,127.0.0.1:4318,localhost,127.0.0.1' >> .env
           php artisan key:generate --force
           touch database/database.sqlite
           php artisan migrate --force --seed
