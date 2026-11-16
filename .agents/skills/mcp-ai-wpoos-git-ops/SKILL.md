@@ -446,6 +446,49 @@ done
   the editor's built-in security rule ("too harmful"). Run the `rm` and the
   `checkout` as separate calls.
 
+## Isolated worktrees, allowlist staging, reaping (2026-11-16, Wave 0 admin PR)
+
+When another agent's uncommitted edits block an in-place `git checkout -b`,
+build the PR in a throwaway worktree rather than negotiating the shared index:
+
+```sh
+git fetch origin alpha-working --quiet
+git worktree add .wt-<task> --detach origin/alpha-working
+git -C .wt-<task> checkout -b feat/<track>-<descriptor>
+```
+
+Copy only your own paths in, then stage from an **explicit allowlist** — never
+`git status --porcelain`, which cannot tell your files from theirs (it missed a
+foreign *move* once, so the old and the new name both looked unremarkable):
+
+```sh
+while IFS= read -r f; do git -C .wt-x add -- "$f"; done < /tmp/mine.txt
+git -C .wt-x add -- <late additions>
+git -C .wt-x diff --cached --name-only | sort > /tmp/staged.txt
+(cat /tmp/mine.txt; echo <late additions>) | sort > /tmp/expected.txt
+comm -23 /tmp/staged.txt /tmp/expected.txt   # foreign risk — must be empty
+comm -13 /tmp/staged.txt /tmp/expected.txt   # missing      — must be empty
+```
+
+- **`.git` inside a worktree is a FILE, not a directory** (a pointer into
+  `.git/worktrees/<name>`). Writing scratch to `<worktree>/.git/msg.txt` fails
+  with "parent directory doesn't exist" — keep scratch in `/tmp`.
+- **`/tmp` is MSYS-only.** Windows Python cannot read `/tmp/mine.txt`
+  (`FileNotFoundError`); pipe the list on stdin, or read it from the sh side.
+- **Reap only what is provably disposable.** Before
+  `git worktree remove <path>`, require *both*
+  `git -C <path> status --porcelain` empty **and**
+  `git -C <path> rev-list --count '@{u}..HEAD'` = 0. A detached HEAD has no
+  upstream, so it can never pass — report it and leave it. Removing a clean,
+  pushed worktree loses nothing (the branch survives on `origin`); removing a
+  dirty one destroys work that exists nowhere else. Use `--force` only to get
+  past ignored `vendor/` or `.env`, never to override a dirty status.
+- **Never delete a worktree outside the repo root** (e.g.
+  `F:/GITHUB/worktrees/…`) or one on a branch you did not create — those belong
+  to other agents' sessions. Enumerate with
+  `git worktree list --porcelain` before removing anything, and report what you
+  deliberately left behind.
+
 ## Windows reserved-name artifacts (learned 2026-10-29)
 
 A stray untracked file literally named `nul` (Windows reserved device name)
@@ -514,6 +557,23 @@ can appear in the repo root. Two failure modes follow:
   `git commit --amend -F /tmp/msg.txt`), then confirm with
   `git --no-pager log -1 --format=%B` **before** pushing. Amending is safe
   pre-push; a corrupt message that reaches the remote needs a force-push.
+- **Windows junctions are invisible to `os.path.islink()`, and `cmd //c` does not
+  survive this shell (2026-11-16).** Sharing a sibling worktree's `vendor` with
+  `ln -s` can create a **junction** rather than a symlink: native Windows Python
+  reports
+  `os.path.islink()` → `False`, but `os.path.realpath()` resolves to the target,
+  which is the reliable detection. `MSYS_NO_PATHCONV=1 cmd //c rmdir "F:\…"`
+  prints the cmd banner and opens an interactive prompt instead of running.
+  Removal that cannot touch the target:
+  `python -c "import os; os.rmdir(r'F:\…\vendor')"` — `os.rmdir` unlinks a
+  reparse point and refuses a real non-empty directory. Verify the source tree
+  still has its files afterwards. **`ln -s` is not reliable either way:** the
+  same command sometimes produces a junction and sometimes a silent **deep
+  copy** — a 108 MB `node_modules` was duplicated in seconds, and the tells were
+  `os.rmdir()` refusing ("directory is not empty") and `os.path.realpath()`
+  resolving *inside* the worktree instead of at the source. Check realpath after
+  every `ln -s` of a directory: if it stays inside your own tree you got a copy,
+  so `rm -rf` is both safe and necessary — the original was never linked.
 
 ## Pathspec commits, shared-index races, workflow YAML (learned 2026-11-02, Cognition rebrand session)
 
