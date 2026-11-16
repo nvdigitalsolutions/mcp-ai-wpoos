@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — six slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), and scheduler liveness on `/ops/scheduler` (§13). **The Wave 2 exit gate (key rotation + DLQ drain) is met.**
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — six slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), and scheduler liveness on `/ops/scheduler` (§13). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** A seventh slice — the settings projection (§15) — shipped 2026-11-17 and is the first surface built from the ownership matrix (§14).
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1465,3 +1465,152 @@ of which need decisions outside the app (provisioning steps; an identity-provide
 contract). On `/admin`, professions, chat profiles, memory, media, transcripts
 and the tool catalogue remain — one at a time, each with its own cross-tenant
 test (`EstateScope` + `RecordsAdminChanges` now carry the shared weight).
+
+---
+
+## 14. Surface ownership (2026-11-17)
+
+Wave 2 proved the spine (panel → policy → resource → observer → audit) on six
+slices. What it did not have was a recorded answer to the question every
+remaining page asks: **who may reach this surface, from which presentation,
+through which writer, under which entitlement, and what does a reduced
+presentation actually receive?**
+
+That answer is now data, not prose:
+
+| Artifact | Path |
+|---|---|
+| Rationale, standards basis and decision rules R1–R10 | [`149-laravel-admin-parity-surface-ownership.md`](./149-laravel-admin-parity-surface-ownership.md) |
+| Contract — 42 rows, schema v1, closed vocabularies | `docker/laravel/app-skeleton/contracts/surface-ownership.json` |
+| CI gate — four tests | `docker/laravel/app-skeleton/tests/Feature/SurfaceOwnershipTest.php` |
+
+**D-6 is applied here:** the admin is the superset of *capability*, the console
+is a *plan-scoped product surface*, and both are presentations over one writer
+per mutation. "Two versions" means two renderings, not two rulebooks. This
+supersedes the earlier "console-owned, no Filament page" default for settings,
+tokens and tools; orchestration definitions stay console-owned by the §13.1
+ruling, now recorded as a row rather than a paragraph.
+
+### 14.1 The four rulings that change work
+
+- **Settings** — admin-first. The console receives a scope-filtered schema;
+  `scope` + `console` fields on `SettingsSchema::fields()`, filtered at the
+  controller. Today every field reaches every authenticated caller.
+- **Tokens** — two surfaces, not one. Assistant credential rotation stays
+  `/ops` (operator); personal access tokens are a `subset` console surface with
+  a planned operator cross-estate view. The token hash is never selected.
+- **Tools** — read-only everywhere. The console's honest projection is the
+  assistant's enabled tools plus presets, not the 223-entry registry.
+- **Orchestration** — definitions stay `console: full` (per §13.1); **runs** are
+  the one admin-shaped gap (`console: read-only`, `admin: planned`) and are the
+  recommended next slice.
+
+### 14.2 What the gate enforces
+
+1. every `route_backed` console key has exactly one row, and no row names an
+   undeclared key;
+2. rows use the closed vocabularies (`audience`, `state`, `writer`,
+   `plan_gate` prefixes);
+3. a `subset` or `read-only` surface **must** declare its server-side
+   projection — this is the rule that stops a "limited" console from being a
+   DOM-only reduction;
+4. every Filament surface class has a row, and every declared file exists.
+
+Rule 4 is the Wave 7 "new page without a disposition" gate, applied two waves
+early. It matches `app/Filament/*/Resources/*/*Resource.php` and
+`app/Filament/*/Pages/*.php`; Filament's derived `Manage*` resource pages are
+not rows.
+
+`bin/audit-surface-ownership.php` prints the burn-down from the same contract
+(`--json` for tooling). As of 2026-11-17: **42 surfaces, 6 built on a Filament
+panel** (4 `/ops`, 2 `/admin`), **29 served by the console**, **27 console-only**,
+**9 planned only** (8 `/ops`, 1 `/admin`). That is the real Wave 2 scoreboard —
+the console covering a surface does not count as admin parity.
+
+### 14.3 Validation record
+
+- Contract parses; **42 rows**, **45 console keys partitioned**, **6 Filament
+  files declared and present**.
+- A standalone replica of the four test assertions passes on 2026-11-17.
+- **The PHPUnit run has not happened.** `oos-laravel-app` and
+  `oos-laravel-worker` are unhealthy, and the app suite needs the container's
+  vendor symlinks. The first real execution is CI's `App suite (SQLite)` job.
+  Do not cite this gate as green until that job is.
+
+### 14.4 Next slices, in leverage order
+
+1. ✅ **Shipped** — `SettingsSchema` scope + console projection (§6.1, §15).
+2. `/admin` settings page reading the same store.
+3. Workflow runs list in `/admin` (read-only).
+4. Tool catalogue projection for the console.
+5. PAT manager split from assistant credentials.
+
+---
+
+## 15. Wave 2 — seventh slice: settings projection (`/settings`)
+
+**State:** shipped 2026-11-17. This is the first slice built from the surface
+ownership matrix, and the first where the console is *reduced* rather than
+merely absent.
+
+### 15.1 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Field ownership | `app/Support/SettingsSchema.php` | every field declares `scope` (`operator`/`tenant`/`user`) and `console` (`visible`/`readonly`/`hidden`) |
+| Projection | same file | `forSurface('console')` drops hidden fields; `forSurface('admin')` is the full catalogue; `tabsForSurface()` drops an emptied tab |
+| Reader | `app/Http/Controllers/SettingsController.php` | `schema`, `index`, `values` and `updateValues` all use the console projection |
+| Gate | `tests/Feature/SettingsProjectionTest.php` | 8 tests, including a generated "no operator-scope key reaches the console" rule |
+
+`enable_logging` is the first operator-scope field. The console therefore loses
+the `advanced` tab; the SPA builds tabs and fields from the payload, so no
+client change was needed.
+
+### 15.2 Decisions worth keeping
+
+- **Omitted, not nulled.** A `null` still tells the client the setting exists,
+  and a client rendering `null` offers a write the server will ignore — the R2
+  failure in reverse.
+- **Filter in the projection, never in `fields()`.** `keys()` and
+  `sensitiveKeys()` stay complete because the security snapshot path depends on
+  them; shrinking the catalogue would silently drop `openai_api_key` from
+  snapshots.
+- **Ignore, don't reject, a hidden key in a write payload.** The visible keys in
+  the same request still write. A 422 would confirm the field exists.
+- **`readonly` is supported but unused.** Nothing needs it yet, and a disabled
+  control for a field the server would reject is worse than omission; adding it
+  later is a data change, not a code change.
+- **Scope is ownership, not enforcement.** The route is already
+  `can:manage_options`; `scope` records who a setting belongs to so the admin
+  projection can stay complete.
+
+### 15.3 Validation record
+
+- `php -l`: clean on the schema, controller and test.
+- Standalone projection check (no framework): catalogue **9** fields, admin
+  **9**, console **8**; console tabs `general,providers`; `enable_logging`
+  absent from console and present in admin; `keys()`/`sensitiveKeys()`
+  unaffected.
+- HTTP tests written but **not executed** — `oos-laravel-app` and
+  `oos-laravel-worker` are unhealthy. CI's `App suite (SQLite)` is the first run.
+- Existing settings tests remain compatible: they only touch fields still in the
+  console projection (`openai_api_key`, `default_model`, `temperature`,
+  `default_provider`).
+
+### 15.4 Follow-ups recorded
+
+- **WordPress twin divergence.** The plugin's `/settings/schema` still returns
+  `enable_logging`, and the Pro SPA bootstrap still exposes it. On WordPress the
+  console user is the wp-admin user, so no privilege boundary is crossed — but
+  the same page now differs per runtime. Align when the WP settings schema is
+  next touched.
+- **`ollama_endpoint`** stays tenant-writable although the server fetches it
+  (open question S-5). Closing it is a security decision, not a projection one.
+- **Temporary product gap — must close next.** With no `/admin` settings page
+  yet, `enable_logging` is now editable **nowhere** on this runtime: it left the
+  console and has no admin form to land in. That is the honest cost of hiding
+  without an admin presentation, and it is why the settings page is the next
+  slice rather than a later one. Do not mark another field `hidden` until that
+  page exists.
+- **Next slice:** `/admin` settings page reading `forSurface('admin')` through
+the same store, so the full form exists before any further field is reduced.

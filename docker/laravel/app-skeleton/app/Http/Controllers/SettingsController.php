@@ -22,8 +22,8 @@ class SettingsController
         return response()->json([
             'success' => true,
             'data' => [
-                'tabs' => SettingsSchema::tabs(),
-                'fields' => SettingsSchema::fields(),
+                'tabs' => SettingsSchema::tabsForSurface('console'),
+                'fields' => SettingsSchema::forSurface('console'),
             ],
         ]);
     }
@@ -44,7 +44,7 @@ class SettingsController
             abort(422, 'The values payload must be an object.');
         }
 
-        $fields = collect(SettingsSchema::fields())->keyBy('key');
+        $fields = collect(SettingsSchema::forSurface('console'))->keyBy('key');
 
         foreach ($changes as $key => $value) {
             if (! is_string($key) || ! $fields->has($key)) {
@@ -68,13 +68,18 @@ class SettingsController
     }
 
     /**
+     * The console projection: operator-scope fields never leave the admin.
+     *
+     * See 149 §14 — a reduced surface returns the fields it declares, and
+     * omitting a key is the only honest way to withhold it.
+     *
      * @return array<string, mixed>
      */
     private function maskedValues(SettingsStoreInterface $store): array
     {
         $values = [];
 
-        foreach (SettingsSchema::fields() as $field) {
+        foreach (SettingsSchema::forSurface('console') as $field) {
             $value = $store->get($field['key'], $field['default'] ?? null);
 
             if ($field['sensitive']) {

@@ -8,6 +8,19 @@ namespace App\Support;
  * Mirrors the plugin's `GET /mcp-ai/v1/settings/schema` shape so the same
  * SettingsPage works on both runtimes. Session keys are the only writable
  * surface in Phase 1; provider keys are masked on read and never echoed.
+ *
+ * Every field declares two presentation facts (149 §14, D-6):
+ *
+ * - `scope`: who the setting belongs to — `operator` (NV staff / shared
+ *   infrastructure), `tenant` (the estate's administrator) or `user`.
+ * - `console`: what the reduced product surface does with it — `visible`,
+ *   `readonly` or `hidden`.
+ *
+ * Scope is not an authorisation check by itself; the route middleware decides
+ * who reaches the endpoint. It records ownership so the admin projection can
+ * stay complete while the console projection is reduced. `fields()` is the
+ * full catalogue: security snapshots and `keys()` depend on it, so filtering
+ * happens in `forSurface()`, never here.
  */
 final class SettingsSchema
 {
@@ -33,6 +46,8 @@ final class SettingsSchema
         return [
             [
                 'key' => 'default_provider',
+                'scope' => 'tenant',
+                'console' => 'visible',
                 'type' => 'select',
                 'section_id' => 'general',
                 'section' => 'Model defaults',
@@ -50,6 +65,8 @@ final class SettingsSchema
             ],
             [
                 'key' => 'default_model',
+                'scope' => 'tenant',
+                'console' => 'visible',
                 'type' => 'text',
                 'section_id' => 'general',
                 'section' => 'Model defaults',
@@ -61,6 +78,8 @@ final class SettingsSchema
             ],
             [
                 'key' => 'max_tokens',
+                'scope' => 'tenant',
+                'console' => 'visible',
                 'type' => 'number',
                 'section_id' => 'general',
                 'section' => 'Model defaults',
@@ -75,6 +94,8 @@ final class SettingsSchema
             ],
             [
                 'key' => 'temperature',
+                'scope' => 'tenant',
+                'console' => 'visible',
                 'type' => 'number',
                 'section_id' => 'general',
                 'section' => 'Model defaults',
@@ -89,6 +110,8 @@ final class SettingsSchema
             ],
             [
                 'key' => 'openai_api_key',
+                'scope' => 'tenant',
+                'console' => 'visible',
                 'type' => 'password',
                 'section_id' => 'provider_keys',
                 'section' => 'Provider credentials',
@@ -99,6 +122,8 @@ final class SettingsSchema
             ],
             [
                 'key' => 'google_api_key',
+                'scope' => 'tenant',
+                'console' => 'visible',
                 'type' => 'password',
                 'section_id' => 'provider_keys',
                 'section' => 'Provider credentials',
@@ -109,6 +134,8 @@ final class SettingsSchema
             ],
             [
                 'key' => 'anthropic_api_key',
+                'scope' => 'tenant',
+                'console' => 'visible',
                 'type' => 'password',
                 'section_id' => 'provider_keys',
                 'section' => 'Provider credentials',
@@ -119,6 +146,8 @@ final class SettingsSchema
             ],
             [
                 'key' => 'ollama_endpoint',
+                'scope' => 'tenant',
+                'console' => 'visible',
                 'type' => 'url',
                 'section_id' => 'provider_keys',
                 'section' => 'Provider credentials',
@@ -130,6 +159,8 @@ final class SettingsSchema
             ],
             [
                 'key' => 'enable_logging',
+                'scope' => 'operator',
+                'console' => 'hidden',
                 'type' => 'checkbox',
                 'section_id' => 'runtime',
                 'section' => 'Runtime',
@@ -148,6 +179,50 @@ final class SettingsSchema
     public static function keys(): array
     {
         return array_column(self::fields(), 'key');
+    }
+
+    /**
+     * The catalogue as one presentation sees it.
+     *
+     * `admin` is the full form. `console` is the reduced product surface: a
+     * field marked `hidden` is omitted entirely rather than returned as null —
+     * null still discloses that the setting exists.
+     *
+     * Filtering here rather than in `fields()` keeps `keys()` and
+     * `sensitiveKeys()` complete, which is what the security snapshot path
+     * needs.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function forSurface(string $surface = 'admin'): array
+    {
+        if ('console' !== $surface) {
+            return self::fields();
+        }
+
+        return array_values(array_filter(
+            self::fields(),
+            static fn (array $field): bool => 'hidden' !== ($field['console'] ?? 'visible'),
+        ));
+    }
+
+    /**
+     * Tabs that still carry at least one field on this surface.
+     *
+     * The console derives its tab strip from the field list, so a tab emptied
+     * by the projection disappears without a client change.
+     *
+     * @return array<string, string>
+     */
+    public static function tabsForSurface(string $surface = 'admin'): array
+    {
+        $present = array_column(self::forSurface($surface), 'tab');
+
+        return array_filter(
+            self::tabs(),
+            static fn (string $label, string $id): bool => in_array($id, $present, true),
+            ARRAY_FILTER_USE_BOTH,
+        );
     }
 
     /**

@@ -1,11 +1,11 @@
 # Proposal 149 — Laravel Admin Parity: Porting the WordPress Admin Surface the Console Does Not Cover
 
-**Status:** 🟡 PARTIALLY ACCEPTED — owner decisions D-1, D-2, D-5 resolved; architecture (D-3, Filament + canvas bundle) still pending review; Wave 0 plan ready
+**Status:** 🟡 ACTIVE — owner decisions D-1 … D-6 resolved (D-6 2026-11-17). Waves 0–1 complete; Wave 2 in progress — six slices shipped and the exit gate (key rotation + DLQ drain) met. Surface ownership matrix is contract-backed and CI-gated.
 **Date:** 2026-11-16
 **Relates to:** Proposal 090 (`docker/laravel`, the Laravel runtime flip) · Proposal 090-b (admin surfaces, Phases 0–5) · Proposal 090-d (tool port) · Proposal 090-g (identity/org authorization) · Proposal 090-h (workflow engine) · Proposal 083 (`examples/nvoos-complete-velocity`, the Complete Console) · Proposal 095 (ADS tokens / `nvoos-astro-mcp`) · Proposal 097 (cross-surface token sharing with NDS) · Proposal 107 (content surface) · Proposal 143 (Service Exchange, the expert-deploy estate) · `addons/nvoos-design-system` (NDS DTCG importer) · Skills: `mcp-ai-wpoos-laravel-runtime`, `mcp-ai-wpoos-spa-rest-contract`, `mcp-ai-wpoos-spa-ui`, `mcp-ai-wpoos-toolkit-creation`, `mcp-ai-wpoos-toolkit-universalisation`
 **Author:** NV oOS coding agent (Zed)
 **Research companions:** none yet — §4 cites external sources inline
-**Implementation plan:** [`149-laravel-admin-parity-implementation-plan.md`](./149-laravel-admin-parity-implementation-plan.md) (Wave 0, ready for review)
+**Implementation plan:** [`149-laravel-admin-parity-implementation-plan.md`](./149-laravel-admin-parity-implementation-plan.md) (Waves 0–2) · **Surface ownership matrix:** [`149-laravel-admin-parity-surface-ownership.md`](./149-laravel-admin-parity-surface-ownership.md) (D-6, contract-backed)
 
 ---
 
@@ -18,6 +18,7 @@
 | D-3 | Architecture: **Filament 5 panels + self-mounting React canvas bundle**. | 2026-11-16 (this proposal) | §5 Option C, §6 |
 | D-4 | WordPress admin remains a **first-class supported surface**, not legacy. | 2026-11-16 (implied by D-1) | Manifests are shared between the free and paid products from Wave 3 (OQ-5 becomes mandatory) |
 | D-5 | **Pro remains available for WordPress.** The Laravel admin is an upsell, not a replacement. | 2026-11-16 (owner) | This stays a **port** (~26–31 weeks). No customer runtime-migration track, no cutover programme. Wave 7 remains a classification sweep |
+| D-6 | The admin is the superset of **capability**; the console is a **plan-scoped product surface**. Two presentations, one writer per operation. | 2026-11-17 (owner) | Supersedes the "console-owned, no Filament page" default for settings, tokens and tools. Every surface now declares audience, presentation state, writer, plan gate and server-side projection — [`149-laravel-admin-parity-surface-ownership.md`](./149-laravel-admin-parity-surface-ownership.md) |
 
 All owner decisions are now resolved. The only carried-forward items are
 engineering questions in the Wave 0 plan (§8 Q-1…Q-3) and the commercial
