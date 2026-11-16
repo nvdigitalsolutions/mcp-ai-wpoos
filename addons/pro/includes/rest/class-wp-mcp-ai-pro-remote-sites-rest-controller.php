@@ -123,6 +123,15 @@ class WP_MCP_AI_Pro_Remote_Sites_REST_Controller extends WP_REST_Controller {
 		'mcp_verify_ssl',
 		'company_id',
 		'quickbooks_environment',
+		// QuickBooks Online MCP tool-category switches (mirror the upstream
+		// QUICKBOOKS_DISABLE_WRITE/UPDATE/DELETE flags). Read-only here: the
+		// console wizard renders catalogue fields as free-text inputs, so a
+		// blank value would silently clear a restriction on every save. Edit
+		// them from the wp-admin Remote Sites form; partial saves preserve the
+		// stored value (WP_MCP_AI_Pro_Remote_Site_Manager::save_connection).
+		'quickbooks_disable_write',
+		'quickbooks_disable_update',
+		'quickbooks_disable_delete',
 		'graph_api_version',
 		'base_url',
 		'flowhub_mode',

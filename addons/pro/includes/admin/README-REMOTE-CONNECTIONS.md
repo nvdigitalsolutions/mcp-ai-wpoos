@@ -123,6 +123,28 @@ The following tables list the meta keys stored per connection type. All sensitiv
 | `refresh_token` | string (encrypted) | Stored automatically after OAuth2 flow |
 | `url` | string | Auto-set to `https://appcenter.intuit.com/connect/oauth2` |
 
+### `quickbooks_mcp`
+
+| Meta Key | Type | Notes |
+|----------|------|-------|
+| `url` | string | Streamable HTTP MCP endpoint. Defaults to `https://ai-inc.quickbooks.intuit.com/v1/mcp`; stored verbatim (no trailing slash) for self-hosted wrappers. |
+| `client_id` | string | Intuit app Client ID (pre-registered confidential client; case preserved). |
+| `client_secret` | string (encrypted) | Intuit app Client Secret. Enables `client_secret_basic` token/refresh instead of DCR. |
+| `company_id` | string | QuickBooks Company / Realm ID (diagnostics; `X-QB-Realm-Id` for realm-scoped wrappers). |
+| `quickbooks_environment` | string | `production` (default) or `sandbox`. |
+| `mcp_oauth` | string (encrypted) | OAuth token blob (access + rotating refresh token). |
+| `mcp_header_name` | string | Custom-header name for `custom_header` auth. |
+| `mcp_timeout` | int | Request timeout in seconds (5–120, default 30). |
+| `mcp_verify_ssl` | bool | Default `true`. |
+| `quickbooks_disable_write` | bool | Suppress `create_*` tools (mirrors `QUICKBOOKS_DISABLE_WRITE`). |
+| `quickbooks_disable_update` | bool | Suppress `update_*` tools (mirrors `QUICKBOOKS_DISABLE_UPDATE`). |
+| `quickbooks_disable_delete` | bool | Suppress `delete_*` tools (mirrors `QUICKBOOKS_DISABLE_DELETE`). |
+
+The three `quickbooks_disable_*` switches are resolved into the app config's
+`disabled_tool_prefixes`, which filters discovery and is re-checked by the Tool
+Bridge at execution time. Only the whitelisted `create_` / `update_` /
+`delete_` prefixes are honoured. Reference: `docs/quickbooks-mcp-connect.md` §5.
+
 ### `quickbooks_desktop`
 
 | Meta Key | Type | Notes |

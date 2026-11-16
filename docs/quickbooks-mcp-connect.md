@@ -107,9 +107,34 @@ categories at the server process:
 | `QUICKBOOKS_DISABLE_DELETE=true` | `delete_*` |
 | *(none)* | `get_*`, `search_*`, `read_*` are always available |
 
-Apply these on the **server** (self-hosted wrapper). On the NV oOS side,
-bridged tools still pass the per-tool capability gate (`edit_posts` by
-default) and are only exposed to assistants you attach the app to.
+**Set these on the server** (self-hosted wrapper) whenever you control the
+process — that is the authoritative boundary.
+
+### The same switches on the connection
+
+The **Tool Categories** row on a `QuickBooks Online (MCP)` connection mirrors
+those flags so the boundary also holds on the WordPress side:
+
+| Connection checkbox | Stored field | Mirrors | Suppresses |
+|---|---|---|---|
+| Disable `create_*` | `quickbooks_disable_write` | `QUICKBOOKS_DISABLE_WRITE` | `create_*` |
+| Disable `update_*` | `quickbooks_disable_update` | `QUICKBOOKS_DISABLE_UPDATE` | `update_*` |
+| Disable `delete_*` | `quickbooks_disable_delete` | `QUICKBOOKS_DISABLE_DELETE` | `delete_*` |
+
+A checked category is enforced at three points:
+
+1. **Discovery** — suppressed tools are dropped from the connection snapshot
+   and from the discovery count the MCP Apps metabox reports.
+2. **Chat payload** — bridged tools are registered as `mcp_app_<label>_<tool>`
+   only for the surviving categories, so the model never sees them.
+3. **Execution** — a bridged call to a suppressed verb returns
+   `wp_mcp_ai_mcp_app_tool_category_disabled` even if a bridge was registered
+   before the switch was flipped.
+
+Only the three prefixes above are honoured; a tampered config cannot suppress
+arbitrary tool families. `get_*`, `search_*` and `read_*` stay available, and
+bridged tools still pass the per-tool capability gate (`edit_posts` by default)
+and are only exposed to assistants you attach the app to.
 
 For finance workflows, prefer a dedicated Intuit user with the minimum role,
 and start with write/delete categories disabled until reports reconcile.
