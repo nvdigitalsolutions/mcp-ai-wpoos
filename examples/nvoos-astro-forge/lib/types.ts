@@ -98,13 +98,17 @@ export interface ForgeForms {
 	 *
 	 * `onProviderError` decides what happens when siteverify cannot answer
 	 * (timeout, 5xx, DNS): `allow` (default) keeps the enquiry and logs, `block`
-	 * refuses it. A *missing* token is always accepted-unverified with a log, so
-	 * a script/CSP problem can never 400 every real submission.
+	 * refuses it. A MISSING token is rejected (400) by default — the widget
+	 * renders for every real visitor, so a tokenless POST is a script hitting the
+	 * route directly (virtuallyjamaica, 2026-11-16). `requireToken: false` keeps
+	 * the old accept-unverified behaviour for a site that must hold its no-JS
+	 * POST floor.
 	 */
 	turnstile?: {
 		siteKey?: string;
 		action?: string;
 		onProviderError?: 'allow' | 'block';
+		requireToken?: boolean;
 	};
 	/**
 	 * How a submission becomes an email.

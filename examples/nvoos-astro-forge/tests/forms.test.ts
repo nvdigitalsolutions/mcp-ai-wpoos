@@ -122,6 +122,22 @@ describe( 'submissionMessage', () => {
 		expect( submissionMessage( { ...fields, honeypot: 'bot' } )?.idempotencyKey ).toBe( first );
 	} );
 
+	it( 'drops harvested-payload noise from the body', () => {
+		// A bot posts the scraper's whole field list; none of it belongs in the
+		// email (virtuallyjamaica's reCAPTCHA-era payload, 2026-11-16).
+		const message = submissionMessage( {
+			...fields,
+			submit: 'Send',
+			'g-recaptcha-response': '',
+			'_wpcf7_version': '6.0',
+		} );
+
+		expect( message?.text ).toContain( 'name: Ada' );
+		expect( message?.text ).not.toContain( 'submit: ' );
+		expect( message?.text ).not.toContain( 'g-recaptcha-response: ' );
+		expect( message?.text ).not.toContain( '_wpcf7_version: ' );
+	} );
+
 	it( 'returns undefined when only reserved fields were submitted', () => {
 		expect( submissionMessage( { honeypot: '', timestamp: '1', form: 'contact' } ) ).toBeUndefined();
 	} );

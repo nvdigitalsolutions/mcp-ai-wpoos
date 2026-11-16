@@ -15,7 +15,9 @@
 // Turnstile (2026-11-15): the widget is chrome, `siteverify` is the boundary.
 // Verification runs BEFORE the throttle on purpose — a token is free to mint,
 // so letting a rejected one consume a real address's slots would let one bot
-// lock the form for every visitor behind the same NAT.
+// lock the form for every visitor behind the same NAT. A MISSING token is
+// rejected too: the widget renders for every real visitor, so a tokenless POST
+// is a script posting the route directly (2026-11-16).
 //
 // The payload + message contract lives in lib/forms.ts, because the bridge's
 // `forms.fallback` path needs the same two functions.
@@ -37,12 +39,20 @@ export interface DirectFormsTurnstile {
 	/**
 	 * What to do when siteverify cannot answer (timeout / 5xx / DNS):
 	 * `allow` (default) keeps the enquiry, `block` refuses it.
-	 *
-	 * A MISSING token is always accepted-unverified with a loud log: a widget
-	 * that never rendered is a CSP or script fault, and 400ing on it is the
-	 * silent-drop failure class this endpoint exists to avoid.
 	 */
 	onProviderError?: 'allow' | 'block';
+	/**
+	 * Reject a submission that carries NO token (default `true`).
+	 *
+	 * The widget renders for every real visitor, so a tokenless POST is a script
+	 * hitting the route directly — the spam class the check exists for
+	 * (virtuallyjamaica, 2026-11-16: a bot posting the old CF7 field list with an
+	 * empty `g-recaptcha-response` sailed through the accept-unverified branch).
+	 *
+	 * Set `false` only for a site that must keep `Form.astro`'s no-JS POST floor,
+	 * where a missing token is a CSP/script fault rather than a bot.
+	 */
+	requireToken?: boolean;
 }
 
 /** A single-quoted JS literal — profile values are data, never code. */
@@ -62,6 +72,7 @@ export function renderDirectFormsEndpointTs( turnstile: DirectFormsTurnstile = {
 	const action = ( turnstile.action ?? '' ).trim();
 	const hostname = ( turnstile.hostname ?? '' ).trim();
 	const onProviderError = turnstile.onProviderError === 'block' ? 'block' : 'allow';
+	const requireToken = turnstile.requireToken !== false;
 	const verify = siteKey !== '';
 
 	const turnstileConsts = verify
@@ -81,6 +92,8 @@ export function renderDirectFormsEndpointTs( turnstile: DirectFormsTurnstile = {
 				`const TURNSTILE_HOSTNAME: string = ${ literal( hostname ) };`,
 				'/** `allow` keeps the enquiry when siteverify cannot answer; `block` refuses. */',
 				`const TURNSTILE_ON_ERROR: 'allow' | 'block' = ${ literal( onProviderError ) };`,
+				'/** A tokenless POST is a script hitting the route, not a visitor. */',
+				`const TURNSTILE_REQUIRE_TOKEN: boolean = ${ requireToken ? 'true' : 'false' };`,
 				"const TURNSTILE_TOKEN_FIELD = 'cf-turnstile-response';",
 				'/** siteverify gets this long before TURNSTILE_ON_ERROR decides. */',
 				'const TURNSTILE_TIMEOUT_MS = 5000;',
@@ -144,9 +157,19 @@ export function renderDirectFormsEndpointTs( turnstile: DirectFormsTurnstile = {
 				"\tif ( TURNSTILE_SITE_KEY !== '' ) {",
 				"\t\tconst token = ( fields[ TURNSTILE_TOKEN_FIELD ] ?? '' ).trim();",
 				"\t\tif ( token === '' ) {",
-				'\t\t\t// A missing token is a broken widget or CSP far more often than a',
-				'\t\t\t// bot, and dropping the enquiry silently is the failure this',
-				'\t\t\t// endpoint exists to prevent.',
+				'\t\t\tif ( TURNSTILE_REQUIRE_TOKEN ) {',
+				'\t\t\t\t// The widget renders for every real visitor, so a tokenless POST',
+				'\t\t\t\t// is a script posting the route directly — the spam class this',
+				'\t\t\t\t// check exists for. Rejecting costs a broken-widget enquiry;',
+				'\t\t\t\t// accepting it costs the whole inbox (virtuallyjamaica 2026-11-16).',
+				"\t\t\t\tconsole.warn( '[forms] Turnstile token missing - rejected' );",
+				'\t\t\t\treturn Response.json(',
+				"\t\t\t\t\t{ ok: false, message: 'Verification failed, please retry' },",
+				'\t\t\t\t\t{ status: 400 }',
+				'\t\t\t\t);',
+				'\t\t\t}',
+				'\t\t\t// Profile opt-out: a widget that never rendered is a CSP or script',
+				'\t\t\t// fault far more often than a bot, so keep the enquiry.',
 				"\t\t\tconsole.warn( '[forms] Turnstile token missing - accepted unverified' );",
 				'\t\t} else {',
 				'\t\t\tconst verdict = await verifyTurnstile( token, ip, request );',
