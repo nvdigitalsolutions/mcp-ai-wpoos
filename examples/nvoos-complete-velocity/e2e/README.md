@@ -24,11 +24,18 @@ stateful-domain + CSRF-alias handshake end to end.
 
 ## Prerequisites
 
-1. **Laravel stack up** (see `docker/laravel/README.md`):
+1. **A Laravel runtime with the schema migrated and the seeded user.**
+   Playwright starts one itself (`e2e/playwright.config.ts` `webServer`), unless
+   something is already answering on `E2E_BACKEND_URL` — which is what the
+   Docker stack below provides locally.
 
    ```sh
    docker compose -f docker/docker-compose.laravel.yml up -d --build
    ```
+
+   Started by Playwright instead, it needs `vendor/` in the skeleton and a
+   `.env` with a key + a migrated, seeded SQLite database (the `Console E2E
+   (Laravel)` CI job is the reference recipe).
 
 2. **Console origin is a Sanctum stateful domain.** The proxy serves on
    `http://localhost:4318`, and Sanctum only starts a session for listed

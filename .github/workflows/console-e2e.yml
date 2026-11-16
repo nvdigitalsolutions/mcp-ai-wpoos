@@ -122,25 +122,6 @@ jobs:
         working-directory: examples/nvoos-complete-velocity
         run: npx playwright install --with-deps chromium
 
-      - name: Serve the Laravel runtime
-        working-directory: docker/laravel/app-skeleton
-        run: |
-          php artisan serve --host=127.0.0.1 --port=8001 > "$RUNNER_TEMP/laravel-serve.log" 2>&1 &
-          # Any HTTP answer means the socket is up. /api/v1/features is
-          # auth-gated, so 401 is the healthy answer here — waiting for 200
-          # would hang.
-          for attempt in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/api/v1/features || true)
-            if [ "$code" != "000" ]; then
-              echo "Laravel answered $code on :8001"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "::error::The Laravel runtime never answered on :8001"
-          cat "$RUNNER_TEMP/laravel-serve.log"
-          exit 1
-
       - name: Run the T0 console smoke
         working-directory: examples/nvoos-complete-velocity
         env:
@@ -150,18 +131,19 @@ jobs:
           E2E_EMAIL: test@example.com
           E2E_PASSWORD: password
           E2E_BACKEND_URL: http://127.0.0.1:8001
-        # `webServer` in e2e/playwright.config.ts builds .e2e-dist/ and starts
-        # scripts/serve.mjs with NVOOS_BACKEND=laravel on the console port.
+        # Playwright owns both servers (e2e/playwright.config.ts `webServer`):
+        # it starts `php artisan serve` on the backend URL and the console proxy
+        # on the console port. Starting the backend from an earlier CI step does
+        # not work — the process does not survive the step boundary, the proxy
+        # then 502s and the console renders its fatal state instead of the login
+        # screen. The job-level env above is inherited by the artisan process,
+        # which is why SANCTUM_STATEFUL_DOMAINS reaches it.
         run: npm run test:e2e
 
       - name: Laravel log on failure
         if: failure()
         working-directory: docker/laravel/app-skeleton
-        run: |
-          echo "=== laravel serve log ==="
-          cat "$RUNNER_TEMP/laravel-serve.log" 2>/dev/null || true
-          echo "=== storage/logs ==="
-          tail -n 200 storage/logs/laravel.log 2>/dev/null || true
+        run: tail -n 200 storage/logs/laravel.log 2>/dev/null || true
 
       - name: Upload the Playwright report
         if: failure()
