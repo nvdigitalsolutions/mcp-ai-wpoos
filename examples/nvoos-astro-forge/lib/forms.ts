@@ -58,6 +58,43 @@ export const NOISE_FIELDS: ReadonlySet< string > = new Set( [
 ] );
 
 /**
+ * The first field name that proves the payload came from a harvested form.
+ *
+ * This site's form never emits any `NOISE_FIELDS` name, so their presence
+ * means the sender scraped a form definition elsewhere — typically the
+ * pre-forge WordPress CF7 form. A minted Turnstile token does not make such a
+ * payload legitimate (virtuallyjamaica, 2026-11-16 12:24 UTC).
+ */
+export function harvestedField( fields: Record< string, string > ): string | undefined {
+	for ( const key of Object.keys( fields ) ) {
+		if ( NOISE_FIELDS.has( key ) ) {
+			return key;
+		}
+	}
+	return undefined;
+}
+
+/**
+ * True when `page` names the expected host.
+ *
+ * `page` is the carrier the form's own script always sends
+ * (`page: window.location.href`). It is not proof of humanity — a bot can
+ * forge it — but a flat replayed payload does not carry it, which closes the
+ * cheapest attack on a route that already verifies tokens.
+ */
+export function carriesPage( fields: Record< string, string >, expectedHost: string ): boolean {
+	const page = ( fields.page ?? '' ).trim();
+	if ( page === '' || expectedHost === '' ) {
+		return false;
+	}
+	try {
+		return new URL( page ).hostname === expectedHost;
+	} catch {
+		return false;
+	}
+}
+
+/**
  * Normalise a submission to string pairs, or `undefined` when it cannot be
  * parsed or exceeds the cap.
  *
