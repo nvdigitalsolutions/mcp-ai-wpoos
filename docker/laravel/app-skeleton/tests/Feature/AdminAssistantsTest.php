@@ -397,7 +397,7 @@ class AdminAssistantsTest extends TestCase
     {
         $viewer = User::factory()->create();
         Tenant::query()->findOrFail(Tenant::DEFAULT_ID)
-            ->users()->attach($viewer->id, array('role' => 'viewer'));
+            ->users()->syncWithoutDetaching([$viewer->id => array('role' => 'viewer')]);
 
         $this->actingAs($viewer)
             ->get('/admin/default/assistants')
@@ -417,10 +417,14 @@ class AdminAssistantsTest extends TestCase
 
     private function estateAdmin(string $tenantId): User
     {
-        $user = User::factory()->admin()->create();
+        // `withoutEstate()`: a cross-estate fixture must belong ONLY to the
+        // estate it is testing. The factory's default membership would otherwise
+        // make "a member of another estate" also a member of this one, and the
+        // 404 assertion would pass or fail for the wrong reason (149 §21).
+        $user = User::factory()->admin()->withoutEstate()->create();
 
         Tenant::query()->findOrFail($tenantId)
-            ->users()->attach($user->id, array('role' => 'owner'));
+            ->users()->syncWithoutDetaching([$user->id => array('role' => 'owner')]);
 
         return $user;
     }

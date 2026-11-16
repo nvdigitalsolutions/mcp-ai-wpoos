@@ -28,6 +28,36 @@ final class CapabilityMap
     /** Team roles, in the order the UI lists them. */
     public const TEAM_ROLES = ['owner', 'admin', 'manager', 'member', 'viewer'];
 
+    /**
+     * Site role → estate membership role.
+     *
+     * The same five words mean the same thing at both scopes, so a site role is
+     * mapped rather than re-invented. Fails closed: an unknown role becomes
+     * `viewer`, which `AdminAccessPolicy` refuses outright.
+     *
+     * This is the live copy. `2026_11_16_100100_create_tenant_user_table.php`
+     * carries a frozen copy because a migration must not change behaviour on
+     * replay; keep this one authoritative for new code.
+     *
+     * @var array<string, string>
+     */
+    public const ESTATE_ROLE_FOR_SITE_ROLE = [
+        'administrator' => 'owner',
+        'admin' => 'owner',
+        'editor' => 'manager',
+        'author' => 'member',
+        'contributor' => 'member',
+        'subscriber' => 'viewer',
+    ];
+
+    /**
+     * The estate role a site role grants on membership.
+     */
+    public static function estateRoleFor(string $siteRole): string
+    {
+        return self::ESTATE_ROLE_FOR_SITE_ROLE[$siteRole] ?? 'viewer';
+    }
+
     /** Team abilities a membership role can hold. */
     public const ABILITY_MANAGE_TEAM = 'manage_team';
     public const ABILITY_MANAGE_TEAM_MEMBERS = 'manage_team_members';

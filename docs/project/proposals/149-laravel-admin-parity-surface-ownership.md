@@ -36,6 +36,7 @@ Four sources decide the shape of the artifact. Each contributes a column, not a 
 | API5 BFLA | Clear separation of administrative and regular functions. | The matrix itself. Every surface declares its audience, and the console cannot reach an `operator` row. |
 | **NIST SP 800-162 (ABAC)** | Authorisation is decided by attributes of the **subject**, the **object**, the **requested operation**, and the **environment**. | The four axes: `audience` (subject), `surface` (object), `writer`/`state` (operation), `plan_gate` (environment). A matrix that only records roles is RBAC wearing an ABAC hat. |
 | **BFF pattern** (Sam Newman) | *"one experience, one BFF"*; duplication across services is preferable to a bloated shared backend. | One reader in `lib/core`, two callers. The console and the admin must not converge on a single general-purpose "admin API" that both then special-case. |
+| **OWASP Multi-Tenant Security Cheat Sheet** — §1, §5, §8 | *"Treat client-supplied tenant identifiers as selectors only. Verify that the authenticated principal is authorized to act in the selected tenant."* Context is established in middleware, mounted only where it is required, and denials are monitored. | §21: `X-Tenant-Id` is a selector, never an authority; `ResolveApiTenant` resolves from membership; the route-coverage gate keeps a new endpoint from bypassing it. |
 | **Laravel authorisation** | `Gate::before` returning `null` falls through; `Response::denyAsNotFound()` hides existence. | Existing repo rules: `Gate::before` answers site abilities and returns `null`; cross-tenant misses return 404, not 403. |
 
 **What the standards do *not* say.** None of them requires two code paths. ASVS 4.1.1 is satisfied by one service layer with two presentations; BFF cautions against consolidating *backends*, not against sharing a domain layer. The matrix is therefore an **authorisation and ownership** artifact, not a build-order artifact.
@@ -62,6 +63,16 @@ Three consequences that the matrix enforces:
 - **The console is not a simplified `/admin`**. It is a different product surface with its own audience (tenant users, not only tenant administrators) and its own strengths (chat, canvas). Reducing it to "admin with buttons hidden" throws away the one thing it does better.
 
 **D-6 therefore reads:** the admin is the superset of capability, the console is plan-scoped, and both are presentations over one writer per operation. "Two versions" means two renderings, not two rulebooks.
+
+### 3.1 Which estate a request acts in
+
+Authority has a second question the matrix alone does not answer: **not "may this person reach this surface", but "which estate's rows does this request touch".**
+
+- `/ops` is **not** tenant-scoped. An operator inspects every estate from one panel, and `TenantContext` stays at its default there on purpose — which is why platform settings live on their own page and why an estate field must never appear on `/ops`.
+- `/admin` resolves the estate from the **URL** (`/admin/{estate-slug}/…`), pinned by `SetTenantContext`.
+- `/api/v1` resolves it from **membership** (implementation plan §21): `X-Tenant-Id` selects, the server verifies, and an unprovisioned account is refused rather than defaulted.
+
+The three differ because the callers differ; the invariant is the same — **the estate a request acts in is always one the caller is a member of.** Nothing in the matrix is enforced by a presentation alone.
 
 ---
 

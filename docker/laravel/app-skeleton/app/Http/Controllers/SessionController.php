@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\ResolveApiTenant;
 use App\Support\CapabilityMap;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -101,6 +102,26 @@ class SessionController
 
         $entitlement = app(ProEntitlementInterface::class);
 
+        // The estates this caller may act in, and the one the next request will
+        // resolve without a header (149 §21). Returning both here — rather than
+        // in the 409 body — keeps errors as errors: a client should not have to
+        // parse a failure to learn it needs to show a picker.
+        $estates = $user->tenants()
+            ->orderBy('tenants.name')
+            ->get()
+            ->map(static fn ($tenant): array => array(
+                'id' => (string) $tenant->getKey(),
+                'name' => (string) ($tenant->name ?? ''),
+                'slug' => (string) ($tenant->slug ?? ''),
+                'role' => (string) ($tenant->pivot->role ?? ''),
+                'is_operator' => (bool) ($tenant->is_operator ?? false),
+            ))
+            ->values()
+            ->all();
+
+        $selected = $request->header(ResolveApiTenant::HEADER);
+        $selected = is_string($selected) ? trim($selected) : '';
+
         return response()->json([
             'id' => (int) $user->getAuthIdentifier(),
             'login' => (string) ($user->email ?? $user->name ?? ''),
@@ -108,6 +129,10 @@ class SessionController
             'capabilities' => CapabilityMap::forUser($user),
             'plan' => $entitlement->plan(),
             'source' => $entitlement->source(),
+            'tenant' => '' !== $selected
+                ? $selected
+                : (1 === count($estates) ? $estates[0]['id'] : null),
+            'estates' => $estates,
         ]);
     }
 }

@@ -283,6 +283,6 @@ class AdminPanelTest extends TestCase
     private function join(User $user, string $tenantId, string $role): void
     {
         Tenant::query()->findOrFail($tenantId)
-            ->users()->attach($user->id, ['role' => $role]);
+            ->users()->syncWithoutDetaching([$user->id => ['role' => $role]]);
     }
 }

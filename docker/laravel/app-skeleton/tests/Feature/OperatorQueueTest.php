@@ -171,7 +171,7 @@ class OperatorQueueTest extends TestCase
     {
         $viewer = User::factory()->create();
         Tenant::query()->findOrFail(Tenant::DEFAULT_ID)
-            ->users()->attach($viewer->id, array('role' => 'viewer'));
+            ->users()->syncWithoutDetaching([$viewer->id => array('role' => 'viewer')]);
 
         $this->actingAs($viewer)
             ->get('/ops/queue')
@@ -216,7 +216,7 @@ class OperatorQueueTest extends TestCase
         Tenant::query()
             ->findOrFail(Tenant::OPERATOR_ID)
             ->users()
-            ->attach($user->id, array('role' => 'owner'));
+            ->syncWithoutDetaching([$user->id => array('role' => 'owner')]);
 
         return $user;
     }
@@ -228,7 +228,7 @@ class OperatorQueueTest extends TestCase
         Tenant::query()
             ->findOrFail(Tenant::DEFAULT_ID)
             ->users()
-            ->attach($user->id, array('role' => 'owner'));
+            ->syncWithoutDetaching([$user->id => array('role' => 'owner')]);
 
         return $user;
     }

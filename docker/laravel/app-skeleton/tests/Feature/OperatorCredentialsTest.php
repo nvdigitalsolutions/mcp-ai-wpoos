@@ -235,7 +235,7 @@ class OperatorCredentialsTest extends TestCase
         Tenant::query()
             ->findOrFail(Tenant::OPERATOR_ID)
             ->users()
-            ->attach($user->id, array('role' => 'owner'));
+            ->syncWithoutDetaching([$user->id => array('role' => 'owner')]);
 
         return $user;
     }
@@ -247,7 +247,7 @@ class OperatorCredentialsTest extends TestCase
         Tenant::query()
             ->findOrFail(Tenant::DEFAULT_ID)
             ->users()
-            ->attach($user->id, array('role' => 'owner'));
+            ->syncWithoutDetaching([$user->id => array('role' => 'owner')]);
 
         return $user;
     }

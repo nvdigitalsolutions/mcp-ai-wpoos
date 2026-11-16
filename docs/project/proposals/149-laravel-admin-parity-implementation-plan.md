@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — a ninth — the two settings pages (§17) — a tenth — the read-only workflow run log (§18) — and an eleventh — the token manager's estate scope (§19) — shipped 2026-11-17. Together they closed the cross-tenant settings defect, the "editable nowhere" gap the projection opened, the estate leak in workflow run history, and a cross-tenant revocation path on the live token manager.
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — a ninth — the two settings pages (§17) — a tenth — the read-only workflow run log (§18) — an eleventh — the token manager's estate scope (§19) — and a twelfth — console estate resolution (§21) — shipped 2026-11-17. Together they closed the cross-tenant settings defect, the "editable nowhere" gap the projection opened, the estate leak in workflow run history, a cross-tenant revocation path on the live token manager, and the console API's dependency on the `default` estate.
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1700,11 +1700,12 @@ is what makes it reachable by a customer.
 
 ### 16.5 Follow-ups recorded
 
-- **The console API still resolves the default estate.** Nothing pins a tenant
-  on `/api/v1`, so a multi-estate user's console reads `default`. Closing it
-  needs a tenant-selection rule (a header, a subdomain, or a membership
-  chooser) — a product decision, not a storage one. The `/admin` panel is
-  unaffected: `SetTenantContext` pins it.
+- **~~The console API still resolves the default estate.~~ CLOSED 2026-11-17 by
+  §21.** Nothing pinned a tenant on `/api/v1`, so a multi-estate user's console
+  read `default`. The API now resolves the estate from membership, accepts an
+  `X-Tenant-Id` selector verified against that membership, and refuses an
+  unprovisioned account. The `/admin` panel is unchanged: `SetTenantContext`
+  still pins it.
 - **Legacy tenant-scope rows remain in `nvoos_settings`.** They are the
   pre-split copy and the deployment default. Drop them one release after every
   estate has written its own provider keys.
@@ -1785,8 +1786,9 @@ against the synced skeleton:
 - **No "reset to inherited" action.** Deleting an estate row reveals the
   platform/configured value again, but the UI does not offer it. Add it with the
   first field whose default is expensive to retype.
-- **The console API still resolves the default estate** (§16.5). Unchanged by
-  this slice; `/admin` pins correctly through `SetTenantContext`.
+- **~~The console API still resolves the default estate~~ (§16.5). Closed by
+  §21.** The console's header support is a separate change; see §21.6 for the
+  deployment constraint that follows.
 - **WordPress twin divergence** (§15.4): the plugin still shows
   `enable_logging` and `ollama_endpoint` to the console.
 - **Next slice:** workflow runs in `/admin` (read-only) — the one orchestration
@@ -1822,10 +1824,10 @@ path had to change, because the data it reads was never estate-scoped.
   `tenant` global scope, so the console endpoints and the panel cannot drift.
   The reader exists for the payload shape; the scope exists for the boundary.
 - **The console endpoints were scoped too.** They had the same leak. Scoping to
-  `TenantContext::current()` means a multi-estate deployment under-reports on
+  `TenantContext::current()` meant a multi-estate deployment under-reported on
   the console (`default` only) instead of over-reporting, and a single-estate
-  deployment is unchanged. When §16.5's tenant-selection rule lands, this works
-  without a second edit.
+  deployment was unchanged. §21 replaced that fallback with real resolution, so
+  the reader's scope now follows membership rather than a default.
 - **Read-only means no mutating action, not a permission check.** There is no
   re-run, no delete, no graph edit — a surface that can replay a run has a
   different blast radius and deserves its own decision.
@@ -2000,3 +2002,146 @@ The other half of S-3 — does an unlicensed toolkit **disappear** from the
 console, or render an **upsell**? Deferred to Wave 3: absence is an
 authorisation statement and an upsell is a product surface, and that choice
 should be made once for the manifest system, not per dashboard.
+
+---
+
+## 21. Wave 2 — twelfth slice: console estate resolution (`/api/v1`)
+
+**State:** shipped 2026-11-17. This is the gap §16.5 recorded, and the one four
+earlier slices had to work around by scoping defensively.
+
+### 21.1 The defect
+
+`TenantContext` was pinned only by the Filament panel's `SetTenantContext`
+middleware. Nothing pinned it on `/api/v1`, so every console request resolved the
+`default` estate. Two different defects sat behind that one fact:
+
+1. **A cross-tenant leak** for any caller who is not a member of `default` — a
+   read *and* write exposure across assistants, teams, settings, transcripts,
+   the token manager and workflow runs.
+2. **A silently-wrong answer** for a caller who belongs to several estates: the
+   console showed `default` with no indication it was the wrong estate.
+
+### 21.2 The standard, and the options it rules out
+
+The [OWASP Multi-Tenant Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html)
+is explicit, and its wording is the design:
+
+> "Treat client-supplied tenant identifiers as **selectors only**. Verify that the
+authenticated principal is authorized to act in the selected tenant."
+
+> "establish tenant context early in the request lifecycle (middleware/interceptor)"
+
+> "mount tenant-aware middleware only on routes where tenant context is required"
+
+> "Monitor and alert on denied or unexpected cross-tenant access attempts"
+
+Three alternative designs were considered and rejected on measured grounds, not
+taste:
+
+| Option | Why not |
+|---|---|
+| **Subdomain per estate** (`acme.api.example.com`) | Needs DNS, a wildcard certificate and a per-tenant resolver in front of the app. Correct at scale; disproportionate to a single deployment serving a handful of estates. |
+| **Path prefix** (`/api/v1/t/{estate}/...`) | Forks every path from the WordPress twin, which serves the same console client. The matrix's whole premise is one route contract on two runtimes. |
+| **Tenant claim in the token** | The console authenticates with Sanctum **cookie sessions**, not a JWT. There is no verified claim to read. A claim would only cover the bearer-token clients. |
+
+So: a header selector verified against membership, resolved in middleware.
+
+### 21.3 The four outcomes
+
+`App\Http\Middleware\ResolveApiTenant`:
+
+| Request | Response |
+|---|---|
+| `X-Tenant-Id` naming a membership | that estate |
+| `X-Tenant-Id` naming anything else | **404** `tenant_not_found` (R4: an estate the caller cannot enter must be indistinguishable from one that does not exist) |
+| no header, exactly one membership | that estate — the single-estate case, which is every deployment today |
+| no header, no memberships | **403** `tenant_unprovisioned` — never a fallback to `default` |
+| no header, several memberships | **409** `tenant_required`, with a message naming the header and `/session/me` |
+
+OWASP's own worked example answers 403 for "tenant access denied". This repo's
+R4 says 404 for a cross-tenant object, and the estate **is** an object — so 404
+wins here, consistently with `TeamAccess`. The important property is that the
+answer does not vary with whether the estate exists.
+
+A refused selection is logged (`api.tenant_selection_refused`, with user id,
+requested estate and path) per the cheat sheet's monitoring section. It does not
+log the estate's name or any data.
+
+### 21.4 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Resolver | `app/Http/Middleware/ResolveApiTenant.php` | selector → membership check → `TenantContext::set()`; cleared in `finally` |
+| Mounting | `routes/api.php` | on the authenticated console group; `/session/me` deliberately outside it |
+| Identity | `app/Http/Controllers/SessionController.php` | `me` returns `tenant` + `estates[]` so a client can learn what to select |
+| Role map | `app/Support/CapabilityMap.php` | `estateRoleFor()` — the live copy of the site-role → estate-role map |
+| Fixtures | `database/factories/UserFactory.php` | users are provisioned into `default`; `inEstate()`, `withoutEstate()` |
+| Gate | `tests/Feature/ApiTenantResolutionTest.php` | 8 tests, including the route-coverage gate |
+
+`finally { TenantContext::forget(); }` is not decoration: the queue worker is a
+long-lived process that fires no Octane events, and `dispatchSync` inside a
+request would otherwise inherit the request's estate.
+
+### 21.5 The fixture work this forced, and what it caught
+
+First run against strict resolution: **356 failures**. Every one was a fixture
+creating a user with no estate — a state production cannot reach, because the
+membership migration backfills every existing user into `default`.
+
+The fix was to make fixtures realistic, not to weaken the policy:
+
+- `UserFactory` now provisions the created user into `default`, deriving the
+  membership role from the site role via `CapabilityMap::estateRoleFor()`. That
+  keeps `AdminPanelAccessTest`'s viewer/manager expectations intact.
+- `inEstate($id, $role)` provisions **one** estate (the cross-estate fixture),
+  and `withoutEstate()` is the one state that pins the 403.
+- 22 call sites used `->attach($id, ['role' => …])`, which now collides with the
+  factory's row. They became `->syncWithoutDetaching([$id => ['role' => …]])`.
+  The obvious shorthand is wrong: `syncWithoutDetaching($id, $attributes)` takes
+  `$detaching` as its second argument, so attributes passed there are silently
+  treated as a boolean.
+- Three tests drove tenancy by pinning `TenantContext` directly. They now use the
+  real mechanism — a second actor whose only membership is the estate under test,
+  or the header. One of them, `TeamTest`, had been asserting a global slug
+  uniqueness rule through an unscoped seam rather than through resolution.
+- `Assistant::$fillable` omits `tenant_id` on purpose ("the tenant is never
+  supplied by a request body"), so `create(['tenant_id' => …])` silently lands in
+  the default estate. A fixture written that way passed the wrong assertion until
+  it was corrected.
+
+### 21.6 Deployment constraint — read before shipping this
+
+The console SPA does **not** send `X-Tenant-Id` yet; its clients build headers
+per API class and there is no shared interceptor.
+
+- **Single-estate users are unaffected.** They resolve implicitly, exactly as
+  before.
+- **A user with two or more memberships gets 409** on every tenant-scoped call
+  until the SPA selects one. That is the correct server behaviour and a visible
+  one, not a silent wrong estate — but it is a break.
+
+**Do not release this to an environment that has multi-estate console users
+before the SPA ships the header and a picker.** The server contract is ready:
+`/session/me` returns `estates[]` and `tenant`, so the client has everything it
+needs.
+
+### 21.7 Validation record — executed
+
+- `ApiTenantResolutionTest`: **8 passed (23 assertions)** — implicit resolution,
+  explicit selection, non-member 404, ambiguity 409, unprovisioned 403, the
+  identity endpoint, context clearing, and the route-coverage gate.
+- Full suite: **920 tests, 5,125 assertions, 6 failures**, all pre-existing
+  environment gaps in the scratch container (two stale parity classes, four
+  `WifiKpisTest` cases from an unbound addon interface). No new failures.
+- `phpcs` (CI ruleset): clean across **267 files**.
+
+### 21.8 Follow-ups recorded
+
+- **SPA header + estate picker** — the blocking follow-up (§21.6).
+- **Refusal alerting is a log line.** The cheat sheet asks for alerting on
+  repeated denials; there is no metrics pipeline in this runtime yet.
+- **`default` is still the implicit single-estate case.** That is a deployment
+  convenience, not a security decision: the caller must be a member.
+- **`user`-scope settings remain unbuilt** (§16.5) — the third storage layer,
+  unrelated to this slice but the same table.
