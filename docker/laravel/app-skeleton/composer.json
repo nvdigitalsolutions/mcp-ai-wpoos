@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "filament/filament": "^5.11",
         "laravel/framework": "^12.0",
         "laravel/mcp": "^1.2",
         "laravel/octane": "^2.24",
@@ -55,7 +56,8 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
@@ -88,23 +90,26 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "repositories": [{
-        "name": "nvoos-laravel",
-        "type": "path",
-        "url": "../../../lib/laravel-adapter",
-        "options": {
-            "versions": {
-                "nvoos/laravel-adapter": "1.0.0"
+    "repositories": [
+        {
+            "name": "nvoos-laravel",
+            "type": "path",
+            "url": "/workspace/oos/lib/laravel-adapter",
+            "options": {
+                "versions": {
+                    "nvoos/laravel-adapter": "1.0.0"
+                }
+            }
+        },
+        {
+            "name": "nvoos-core",
+            "type": "path",
+            "url": "/workspace/oos/lib/core",
+            "options": {
+                "versions": {
+                    "nvoos/core": "1.0.0"
+                }
             }
         }
-    },{
-        "name": "nvoos-core",
-        "type": "path",
-        "url": "../../../lib/core",
-        "options": {
-            "versions": {
-                "nvoos/core": "1.0.0"
-            }
-        }
-    }]
+    ]
 }

@@ -47,6 +47,19 @@ final class ProPlanCatalog
             'reports_basic',
             'audit_trail',
             'evidence_collection',
+            // Infrastructure surfaces the runtime actually gates on. They were
+            // in use by `pro.entitlement:*` route middleware and by the toolkit
+            // manifests' `feature` field, but absent from this catalogue — so
+            // `allows()` returned false for every plan and a LICENSED install
+            // denied its own Pro surface. The `allow` dev driver masked it
+            // completely; only a real licence or `config` driver exposed it.
+            // They sit in the base plan because that preserves the pre-fix
+            // behaviour (everyone entitled); re-tiering is a commercial
+            // decision, tracked as Q-5 in Proposal 149.
+            'schedules',
+            'records',
+            'commerce',
+            'documents',
         ),
         'professional' => array(
             'dashboard',
@@ -58,6 +71,10 @@ final class ProPlanCatalog
             'risk_matrix',
             'multi_framework',
             'siem_integration',
+            'schedules',
+            'records',
+            'commerce',
+            'documents',
         ),
         'enterprise' => array(
             'dashboard',
@@ -72,6 +89,10 @@ final class ProPlanCatalog
             'white_label',
             'priority_support',
             'custom_development',
+            'schedules',
+            'records',
+            'commerce',
+            'documents',
         ),
     );
 

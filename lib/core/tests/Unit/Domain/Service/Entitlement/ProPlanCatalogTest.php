@@ -74,4 +74,49 @@ final class ProPlanCatalogTest extends TestCase
         $this->assertGreaterThan(ProPlanCatalog::rank('professional'), ProPlanCatalog::rank('enterprise'));
         $this->assertSame(-1, ProPlanCatalog::rank('platinum'));
     }
+
+    /**
+     * Plans are cumulative by construction — each list repeats the previous —
+     * which means a feature added to one list and not the next silently
+     * downgrades the larger plan. This pins the invariant so the repetition
+     * cannot drift.
+     */
+    public function testEachPlanContainsEveryFeatureOfTheSmallerPlans(): void
+    {
+        $plans = ProPlanCatalog::plans();
+
+        for ($i = 1; $i < count($plans); $i++) {
+            $smaller = ProPlanCatalog::features($plans[$i - 1]);
+            $larger = ProPlanCatalog::features($plans[$i]);
+
+            foreach ($smaller as $feature) {
+                $this->assertContains(
+                    $feature,
+                    $larger,
+                    "Plan '{$plans[$i]}' is missing '{$feature}' from the smaller plan '{$plans[$i - 1]}'."
+                );
+            }
+        }
+    }
+
+    /**
+     * Regression (Proposal 149 T-0.8): `schedules`, `records`, `commerce` and
+     * `documents` are gated by live routes and by the toolkit manifests, but
+     * were absent from the catalogue. `allows()` therefore returned false for
+     * every plan, which means a LICENSED install denied its own Pro surface —
+     * invisible under the `allow` dev driver.
+     */
+    public function testSurfacesTheRuntimeGatesOnAreEntitledByEveryPlan(): void
+    {
+        $gated = array('schedules', 'records', 'commerce', 'documents');
+
+        foreach (ProPlanCatalog::plans() as $plan) {
+            foreach ($gated as $feature) {
+                $this->assertTrue(
+                    ProPlanCatalog::allows($plan, $feature),
+                    "The runtime gates on '{$feature}' but plan '{$plan}' does not entitle it."
+                );
+            }
+        }
+    }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Assistant extends Model
 {
@@ -53,6 +55,19 @@ class Assistant extends Model
         'meta',
         'is_default',
     ];
+
+    /**
+     * The estate that owns this assistant (Proposal 149 T-0.7).
+     *
+     * Named `tenant` because the admin panel declares
+     * `->tenant(Tenant::class, 'slug', 'tenant')`; Filament resolves that
+     * ownership relationship to `whereBelongsTo($tenant, 'tenant')`, so the
+     * name is the scoping contract, not a style choice.
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id', 'id');
+    }
 
     protected function casts(): array
     {

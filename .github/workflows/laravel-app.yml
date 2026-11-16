@@ -76,10 +76,24 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: php bin/sync-schedule-presets.php --check
 
+      - name: Toolkit manifest mirror is current
+        # Same contract again: the app serves resources/pro-toolkits/*.json,
+        # mirrored from addons/pro/includes/toolkits/manifests. Without this a
+        # manifest edit in the addon silently leaves the console serving the
+        # old toolkit definition (Proposal 149 Q-6).
+        working-directory: ${{ github.workspace }}
+        run: php bin/sync-toolkit-manifests.php --check
+
       - name: Prepare the application
         run: |
           cp .env.example .env
           php artisan key:generate --force
+
+      - name: Admin theme is current
+        # The Filament palette is generated from the ADS design tokens and
+        # committed. A token change that was not regenerated must fail here —
+        # AdminThemeDriftTest also covers it, but this step names the fix.
+        run: php artisan admin:theme --check
 
       - name: Run the suite
         run: php artisan test

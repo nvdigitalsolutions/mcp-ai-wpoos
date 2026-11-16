@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -19,6 +21,18 @@ class Team extends Model
         'slug',
         'description',
     ];
+
+    /**
+     * The estate that owns this team (Proposal 149 T-0.7).
+     *
+     * The relationship NAME is the scoping contract: the admin panel declares
+     * `ownershipRelationship: 'tenant'`, and Filament scopes a resource with
+     * `whereBelongsTo($tenant, 'tenant')`.
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id', 'id');
+    }
 
     protected function casts(): array
     {

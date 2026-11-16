@@ -100,6 +100,21 @@
 					"$type": "color",
 					"$value": "#b3261e",
 					"$description": "Danger/promo (matches the legacy --nv-danger)"
+				},
+				"success": {
+					"$type": "color",
+					"$value": "#2e7d32",
+					"$description": "Success state text/border (additive 2026-11-16, Proposal 149 Q-4). 5.13:1 on surface — SC 1.4.3. Deliberately a grass green so it is distinguishable by hue from the teal-green brand accent, not only by shade."
+				},
+				"warning": {
+					"$type": "color",
+					"$value": "#8a5300",
+					"$description": "Warning state text/border (additive 2026-11-16). 6.33:1 on surface — SC 1.4.3. Amber reads as caution at AA contrast without the yellow-on-white failure."
+				},
+				"info": {
+					"$type": "color",
+					"$value": "#0b5fa5",
+					"$description": "Informational state text/border (additive 2026-11-16). 6.57:1 on surface — SC 1.4.3. Distinct from both brand accent and danger."
 				}
 			},
 			"radius": {
@@ -228,6 +243,21 @@
 				"$type": "color",
 				"$value": "{core.palette.danger}"
 			},
+			"success": {
+				"$type": "color",
+				"$value": "{core.palette.success}",
+				"$description": "Success state (SC 1.4.3). Additive 2026-11-16 — Proposal 149 Q-4."
+			},
+			"warning": {
+				"$type": "color",
+				"$value": "{core.palette.warning}",
+				"$description": "Warning state (SC 1.4.3). Additive."
+			},
+			"info": {
+				"$type": "color",
+				"$value": "{core.palette.info}",
+				"$description": "Informational state (SC 1.4.3). Additive."
+			},
 			"radius": {
 				"$type": "dimension",
 				"$value": "{core.radius.md}"
@@ -259,7 +289,10 @@
 				"line-strong": "#767676",
 				"accent": "#0f6b4f",
 				"accent-ink": "#ffffff",
-				"danger": "#b3261e"
+				"danger": "#b3261e",
+				"success": "#2e7d32",
+				"warning": "#8a5300",
+				"info": "#0b5fa5"
 			},
 			"dark": {
 				"ink": "#f5f5f4",
@@ -270,7 +303,10 @@
 				"line-strong": "#8a8a8a",
 				"accent": "#3d9c7d",
 				"accent-ink": "#0b0f0d",
-				"danger": "#ff6b5e"
+				"danger": "#ff6b5e",
+				"success": "#4ade80",
+				"warning": "#fbbf24",
+				"info": "#7cc4ff"
 			}
 		},
 		"example-brand": {
@@ -333,6 +369,21 @@
 					"$type": "color",
 					"$value": "#b3261e",
 					"$description": "Danger/promo (matches the legacy --nv-danger)"
+				},
+				"success": {
+					"$type": "color",
+					"$value": "#2e7d32",
+					"$description": "Success state text/border (additive 2026-11-16, Proposal 149 Q-4). 5.13:1 on surface — SC 1.4.3. Deliberately a grass green so it is distinguishable by hue from the teal-green brand accent, not only by shade."
+				},
+				"warning": {
+					"$type": "color",
+					"$value": "#8a5300",
+					"$description": "Warning state text/border (additive 2026-11-16). 6.33:1 on surface — SC 1.4.3. Amber reads as caution at AA contrast without the yellow-on-white failure."
+				},
+				"info": {
+					"$type": "color",
+					"$value": "#0b5fa5",
+					"$description": "Informational state text/border (additive 2026-11-16). 6.57:1 on surface — SC 1.4.3. Distinct from both brand accent and danger."
 				}
 			},
 			"radius": {
@@ -460,6 +511,21 @@
 			"danger": {
 				"$type": "color",
 				"$value": "#b3261e"
+			},
+			"success": {
+				"$type": "color",
+				"$value": "#2e7d32",
+				"$description": "Success state (SC 1.4.3). Additive 2026-11-16 — Proposal 149 Q-4."
+			},
+			"warning": {
+				"$type": "color",
+				"$value": "#8a5300",
+				"$description": "Warning state (SC 1.4.3). Additive."
+			},
+			"info": {
+				"$type": "color",
+				"$value": "#0b5fa5",
+				"$description": "Informational state (SC 1.4.3). Additive."
 			},
 			"radius": {
 				"$type": "dimension",

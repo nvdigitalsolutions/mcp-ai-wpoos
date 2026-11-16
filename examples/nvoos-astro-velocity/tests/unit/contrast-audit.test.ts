@@ -31,6 +31,12 @@ const TEXT_PAIRS: Array<{ fg: string; bg: string }> = [
 	{ fg: 'muted', bg: 'surface-alt' },
 	{ fg: 'accent-ink', bg: 'accent' },
 	{ fg: 'danger', bg: 'surface' },
+	// Status tokens (additive 2026-11-16, Proposal 149 Q-4). Gated on `surface`
+	// only, matching `danger`: they are text/icon colours for a banner or badge
+	// on the page surface, not body copy repeated on the alternate surface.
+	{ fg: 'success', bg: 'surface' },
+	{ fg: 'warning', bg: 'surface' },
+	{ fg: 'info', bg: 'surface' },
 ];
 
 // --- UI pairs ---------------------------------------------------------------

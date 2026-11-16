@@ -3,12 +3,13 @@
 # check-license-boundary.sh — fail the build if the licence boundary between
 # the GPL base, the MIT engine, and the proprietary addons has been breached.
 #
-# The repo is a single tree holding three differently-licensed products:
+# The repo is a single tree holding four differently-licensed products:
 #
 #   includes/              GPL-3.0-or-later   (base plugin, ships to WP.org)
 #   lib/core/src/          MIT                (nvoos/core Composer package)
 #   addons/pro/includes/   Proprietary        (commercial addon)
 #   addons/canvas/         Proprietary        (commercial addon)
+#   docker/laravel/        Commercial         (the Laravel admin, Proposal 149)
 #
 # A repo is not a licence unit — a distributed artefact is. This script asserts
 # both layers: that each source tree declares the right licence in its file
@@ -123,6 +124,49 @@ require_tree() {
 }
 
 require_tree "lib/core/src" "MIT" "MIT (package is MIT)"
+
+# ---------------------------------------------------------------------------
+# 2b. The Laravel admin application is COMMERCIAL (Proposal 149 D-1).
+#
+# It may consume the MIT engine (lib/core, lib/laravel-adapter) and nothing
+# else. MIT flows into a commercial product freely; GPL does not. A single
+# import from includes/ would relicense the whole admin, so the boundary is
+# asserted before the first admin page is written.
+# ---------------------------------------------------------------------------
+check_tree "docker/laravel/app-skeleton/app"      "GPL" "GPL (package is Commercial)"
+check_tree "docker/laravel/app-skeleton/config"   "GPL" "GPL (package is Commercial)"
+check_tree "docker/laravel/app-skeleton/database" "GPL" "GPL (package is Commercial)"
+check_tree "docker/laravel/app-skeleton/tests"    "GPL" "GPL (package is Commercial)"
+
+# Headers alone do not prove separation — the app could call into the plugin
+# while carrying no GPL header at all. Flag CODE coupling only. Two things in
+# the app legitimately mention WordPress and must NOT trip this:
+#
+#   * docblocks that cite the WordPress class being ported ("Port of
+#     `WP_MCP_AI_REST_Okf`"), which are the provenance record for the port; and
+#   * `_wp_mcp_ai_*` meta-key STRINGS, which must match WordPress so an
+#     exported assistant bundle round-trips between runtimes.
+#
+# Both are documentation/data, not linkage. The pattern therefore anchors on
+# the keywords that only appear in real references.
+check_no_wp_coupling() {
+	local tree="$1"
+	[ -d "$tree" ] || { pass "$tree absent, skipped"; return; }
+
+	local offenders
+	offenders=$(grep -rnE \
+		'(new|extends|implements|instanceof|class_exists|function_exists|interface_exists)[[:space:]]+\\?(WP_MCP_AI_|wp_mcp_ai_)|(require|include)(_once)?[^;]*includes/' \
+		--include="*.php" "$tree/app" "$tree/config" "$tree/database" 2>/dev/null \
+		| cut -d: -f1 | sort -u || true)
+
+	if [ -z "$offenders" ]; then
+		pass "$tree — no code coupling to the GPL plugin"
+	else
+		fail "$tree couples to the GPL plugin (licence boundary breach)"
+		show_offenders "$offenders"
+	fi
+}
+check_no_wp_coupling "docker/laravel/app-skeleton"
 
 # ---------------------------------------------------------------------------
 # 3. Every source file must declare a licence at all.

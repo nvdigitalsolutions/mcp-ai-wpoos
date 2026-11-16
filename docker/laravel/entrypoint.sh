@@ -67,6 +67,14 @@ php artisan migrate --force --no-interaction
 # Serve uploaded media from the public disk (idempotent).
 php artisan storage:link >/dev/null 2>&1 || true
 
+# Filament's panel CSS/JS are build output published into public/, which is
+# gitignored — a fresh checkout has none and the panels render unstyled. Build
+# them once per checkout rather than on every boot (Proposal 149 T-0.4).
+if [ ! -f public/css/filament/filament/app.css ]; then
+	echo "[spike] publishing filament assets"
+	php artisan filament:assets --no-interaction >/dev/null 2>&1 || true
+fi
+
 if [ "$ROLE" = "setup" ]; then
     echo "[spike] setup complete"
     exit 0
