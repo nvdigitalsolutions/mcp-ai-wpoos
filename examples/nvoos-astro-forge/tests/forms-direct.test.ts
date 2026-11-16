@@ -83,9 +83,9 @@ describe('renderDirectFormsEndpointTs', () => {
 	it('reads the shared client envelope through the shared parser', () => {
 		// The flatten + reserved-field rules live in lib/forms.ts so the bridge
 		// fallback cannot drift from this endpoint; they are unit-tested there.
-		expect(source).toContain(
-			"import { readSubmissionFields, submissionMessage } from '../../../forge/forms.ts';"
-		);
+		expect(source).toContain("from '../../../forge/forms.ts';");
+		expect(source).toContain('readSubmissionFields');
+		expect(source).toContain('submissionMessage');
 		expect(source).toContain('const fields = await readSubmissionFields( request );');
 	});
 
@@ -175,5 +175,37 @@ describe('renderDirectFormsEndpointTs — Turnstile', () => {
 	it('does not crash when TURNSTILE_SECRET is unset yet', () => {
 		expect(turnstileSource).toContain("const secret = ( runtimeEnv().TURNSTILE_SECRET ?? '' ).trim();");
 		expect(turnstileSource).toContain("if ( secret === '' ) {");
+	});
+
+	it('drops a harvested payload even when its token is real', () => {
+		// A minted token does not make a scraped field list legitimate
+		// (virtuallyjamaica, 2026-11-16 12:24 UTC). Silent, so the sender
+		// learns nothing.
+		expect(turnstileSource).toContain('const harvested = harvestedField( fields );');
+		expect(turnstileSource).toContain('dropped harvested payload');
+	});
+
+	it('requires the page carrier the form script sends', () => {
+		expect(turnstileSource).toContain(
+			'const siteHost = TURNSTILE_HOSTNAME || new URL( request.url ).hostname;'
+		);
+		expect(turnstileSource).toContain('if ( ! carriesPage( fields, siteHost ) ) {');
+		expect(turnstileSource).toContain('dropped submission without the page carrier');
+		// Both gates run before the throttle so a dropped bot burns no slot.
+		const carrierAt = turnstileSource.indexOf('carriesPage( fields, siteHost )');
+		const throttleAt = turnstileSource.indexOf('if ( throttled( ip, Date.now() ) )');
+		expect(carrierAt).toBeGreaterThan(-1);
+		expect(throttleAt).toBeGreaterThan(carrierAt);
+	});
+
+	it('imports the provenance helpers only when they are emitted', () => {
+		expect(turnstileSource).toContain('harvestedField,');
+		expect(turnstileSource).toContain('carriesPage,');
+
+		// A profile that keeps the no-JS POST floor has no `page` to send, so
+		// the gate must not be emitted there (and the import must stay clean).
+		const lenient = renderDirectFormsEndpointTs({ siteKey: 'k', requireToken: false });
+		expect(lenient).not.toContain('carriesPage');
+		expect(lenient).not.toContain('harvestedField');
 	});
 });
