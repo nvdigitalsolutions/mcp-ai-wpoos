@@ -2,11 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Assistant;
 use App\Models\Team;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Observers\AssistantObserver;
 use App\Observers\TeamObserver;
 use App\Observers\TenantObserver;
+use App\Policies\AssistantPolicy;
 use App\Policies\TeamPolicy;
 use App\Policies\TenantPolicy;
 use App\Services\LaravelAssistantService;
@@ -144,12 +147,14 @@ class AppServiceProvider extends ServiceProvider
         // reached the panel may do anything".
         Gate::policy(Tenant::class, TenantPolicy::class);
         Gate::policy(Team::class, TeamPolicy::class);
+        Gate::policy(Assistant::class, AssistantPolicy::class);
 
         // Record-level audit — the half Wave 0 deferred until a resource
         // existed. The middleware writes the request row; the observers write
         // what a write changed.
         Tenant::observe(TenantObserver::class);
         Team::observe(TeamObserver::class);
+        Assistant::observe(AssistantObserver::class);
 
         // Local/testing soak runs need headroom; production keeps 60/min.
         $chatLimit = app()->environment(['local', 'testing']) ? 60000 : 60;

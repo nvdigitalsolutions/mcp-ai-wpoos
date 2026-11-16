@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — four slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), and credential rotation on `/ops/credentials` (§11). **The Wave 2 exit gate (key rotation + DLQ drain) is met.**
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — five slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), and assistants on `/admin/assistants` (§12). **The Wave 2 exit gate (key rotation + DLQ drain) is met.**
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1275,3 +1275,92 @@ makes the replacement time-limited.
 Wave 2's exit gate is now met. The remaining `/ops` surfaces with no console
 equivalent are onboarding, Auth0 setup and asset inventory; on `/admin`, one
 tenant-scoped resource at a time, each with its own cross-tenant test (§9.6).
+
+---
+
+## 12. Wave 2 — fifth slice: assistants (`/admin/assistants`)
+
+**State:** shipped 2026-11-16. The second tenant-scoped `/admin` resource, and
+the first one that had to **extract** a write path rather than adopt an existing
+service.
+
+### 12.1 Why this one first on the `/admin` list
+
+Teams (§9) reused `TeamServiceInterface`. Assistants had no contract to reuse:
+the five write invariants lived inline in `AssistantController`, because the
+controller was the only writer. A Filament action calling `Model::save()` would
+have made the form the second implementation of all five.
+
+So the slice is a **refactor plus a resource**, in that order:
+
+| Piece | Path | Note |
+|---|---|---|
+| Writer | `app/Services/AssistantWriter.php` | The five invariants, extracted from the controller |
+| Policy | `app/Policies/AssistantPolicy.php` | membership → record ownership |
+| Estate scope | `app/Support/EstateScope.php` | `TeamPolicy`'s rule 2, shared |
+| Audit | `app/Observers/AssistantObserver.php` | through `RecordsAdminChanges` |
+| Resource + page | `app/Filament/Admin/Resources/Assistants/{AssistantResource,Pages/ManageAssistants}.php` | `/admin/{estate}/assistants`; list + create/edit modals |
+| Model | `app/Models/Assistant.php` | `$appends` the profession selection for form hydration |
+
+### 12.2 The five invariants, now in one place
+
+1. **Estate assignment** — `tenant_id` from `TenantContext`, never the payload;
+   not fillable.
+2. **Per-estate slug uniqueness** — suffixed `-2`, `-3`, … within the estate
+   only, mirroring the `(tenant_id, slug)` unique index.
+3. **`primary_role_slugs` → `meta`** — the profession selection is metadata,
+   because the catalogue is reference data and the slug is the identity.
+4. **`advanced` → flat `meta`** — the 14-key whitelist with per-key coercion;
+   absent keys untouched, present-but-empty keys removed.
+5. **`is_default` exclusivity** — clearing is scoped to the assistant's estate.
+
+`AssistantController` now validates and delegates; `AssistantResource` delegates
+the same way. `AssistantTenancyTest`, `AssistantProfessionTest` and
+`AssistantAdvancedFieldsTest` (18 tests) still pin the REST surface through the
+shared writer, so the extraction is proven by the existing suite as well as the
+new one.
+
+### 12.3 Decisions worth keeping
+
+- **One rule, one implementation.** `TeamPolicy`'s estate-ownership check moved
+  into `EstateScope` in the same change that needed it twice. Two copies of a
+  cross-tenant predicate is how one of them gets fixed alone.
+- **A virtual attribute beats a Filament hook.** The profession selection is in
+  `meta`, and `EditAction` hydrates from `$record->attributesToArray()`. Appending
+  `primary_role_slugs` to the model makes the form hydrate with no
+  `mutateFormDataBeforeFill` hook — and `toRecord()` is explicit, so the console
+  wire shape is unchanged.
+- **Blank slug is absent.** A form submits every field, so `slug: ''` must derive
+  from the title rather than from the `'assistant'` fallback — otherwise every
+  assistant created from the panel would land on the same slug.
+- **The fourteen `advanced` keys are not on the form yet.** They survive a panel
+  edit (the writer only touches `meta` when `advanced` is present) and stay
+  editable in the console and the REST surface. Rendering `list`/`map` shapes in
+  a Filament form is its own slice; a test pins the preservation.
+- **The table asserts invisibility, not hidden actions.** For a record the
+  table cannot resolve, Filament raises `ActionNotResolvableException` instead of
+  reporting the action hidden — a weaker and more fragile claim than “this estate
+  cannot see that record”. `assertCanNotSeeTableRecords()` states the actual rule.
+- **No bulk delete.** Deletion is per-record so the estate check runs per record.
+
+### 12.4 Validation record (2026-11-16)
+
+- `php artisan test --filter=AdminAssistantsTest`: **16 passed / 70 assertions**
+  — surface reachable, guest redirected, foreign estate 404 on the tenant route,
+  the list scoped to one estate, the foreign record unresolvable by query *and*
+  policy *and* table, slug derivation and `-2` suffixing, cross-estate slug
+  reuse, `tenant_id` ignored from the payload, `is_default` exclusivity with a
+  foreign default surviving, a record-level audit row, no row without an actor,
+  `advanced` keys preserved, profession selection hydrated and preserved, delete,
+  viewer refused.
+- Full app suite: **867 passed / 4,734 assertions** (was 851 / 4,664; +16).
+- `phpcs --standard=phpcs-laravel.xml.dist --error-severity=1
+  --warning-severity=8`: **285 files, 0 errors, 0 warnings**.
+- `bash bin/check-license-boundary.sh`: intact.
+
+### 12.5 Next slice
+
+Remaining `/admin` resources, one at a time, each with its own cross-tenant
+test: professions, chat profiles, memory, media, transcripts, tool catalogue.
+`EstateScope` and `RecordsAdminChanges` now mean a resource brings only its
+policy, its write path and its form.
