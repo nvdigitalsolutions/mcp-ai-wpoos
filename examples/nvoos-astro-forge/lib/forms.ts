@@ -38,6 +38,26 @@ export const INTERNAL_FIELDS: ReadonlySet< string > = new Set( [
 ] );
 
 /**
+ * Harvested-payload noise — sent by bots, never by this site's form.
+ *
+ * A contact-form payload sprayed at the route arrives with the scraper's field
+ * list attached: the submit button, a decade-old reCAPTCHA hidden input, and
+ * Contact Form 7's own bookkeeping. They mean the sender never rendered our
+ * form, so echoing them only pads the email (virtuallyjamaica, 2026-11-16).
+ */
+export const NOISE_FIELDS: ReadonlySet< string > = new Set( [
+	'submit',
+	'g-recaptcha-response',
+	'h-captcha-response',
+	'_wpcf7',
+	'_wpcf7_version',
+	'_wpcf7_locale',
+	'_wpcf7_unit_tag',
+	'_wpcf7_container_post',
+	'_wpcf7_posted_data_hash',
+] );
+
+/**
  * Normalise a submission to string pairs, or `undefined` when it cannot be
  * parsed or exceeds the cap.
  *
@@ -103,7 +123,7 @@ export async function readSubmissionFields( request: Request ): Promise< Record<
  */
 export function submissionMessage( fields: Record< string, string > ): MailMessage | undefined {
 	const rows = Object.entries( fields )
-		.filter( ( [ key ] ) => ! INTERNAL_FIELDS.has( key ) )
+		.filter( ( [ key ] ) => ! INTERNAL_FIELDS.has( key ) && ! NOISE_FIELDS.has( key ) )
 		.map( ( [ key, value ] ) => `${ key }: ${ String( value ).slice( 0, 2000 ) }` );
 	if ( rows.length === 0 ) {
 		return undefined;

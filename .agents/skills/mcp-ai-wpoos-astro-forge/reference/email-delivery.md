@@ -200,10 +200,17 @@ What the emitted verifier guarantees:
 - **Order: verify → throttle → send.** A token is free to mint, so letting a
   rejected one consume a real address's slots would let a single bot lock the
   form for everyone behind the same NAT.
-- A **missing** token is accepted unverified with a loud `console.warn`. A
-  widget that never rendered is a CSP/script fault far more often than a bot,
-  and 400ing on it is the silent-drop failure class this endpoint exists to
-  avoid.
+- A **missing** token is rejected (400) by default. The widget renders for
+  every real visitor, so a tokenless POST is a script hitting the route
+  directly — the spam class that hit virtuallyjamaica on 2026-11-16, where a
+  bot posted the old CF7 field list (`your-name`, `your-email`,
+  `your-message`, `submit`, an empty `g-recaptcha-response`) and the
+  accept-unverified branch delivered every one. `requireToken: false` restores
+  the old behaviour for a site that must keep `Form.astro`'s no-JS POST floor;
+  a broken widget is then a CSP/script fault rather than a bot.
+- Harvested-payload noise (`submit`, `g-recaptcha-response`,
+  `h-captcha-response`, `_wpcf7*`) never reaches the body — `NOISE_FIELDS` in
+  `lib/forms.ts` drops it, so a bot's scraper field list cannot pad the email.
 - `onProviderError: "allow"` keeps the enquiry when siteverify itself is
   unreachable (timeout / 5xx / DNS); `"block"` refuses it with a 503 so the
   visitor is not blamed for our outage.

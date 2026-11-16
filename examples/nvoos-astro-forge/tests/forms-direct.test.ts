@@ -9,7 +9,8 @@
 //   - the emitted text is syntactically valid TypeScript
 //   - the throttle keys on the PROXY-AWARE client address, not the socket peer
 //   - the shared client envelope (`{ fields: { … } }`) is flattened
-//   - Turnstile is verified server-side, before the throttle, and fails open
+//   - Turnstile is verified server-side, before the throttle, and a tokenless
+//     POST is rejected
 //
 // The peer-keyed throttle shipped once and made the rate limit site-wide:
 // behind the platform proxy every visitor shares one bucket (2026-11-15).
@@ -150,12 +151,19 @@ describe('renderDirectFormsEndpointTs — Turnstile', () => {
 		expect(strict).toContain("const TURNSTILE_ON_ERROR: 'allow' | 'block' = 'block';");
 	});
 
-	it('accepts a missing token unverified, but loudly', () => {
-		// A widget that never rendered is a CSP/script fault far more often
-		// than a bot; 400ing on it is the silent-drop failure class this
-		// endpoint exists to prevent.
-		expect(turnstileSource).toContain("if ( token === '' ) {");
-		expect(turnstileSource).toContain('Turnstile token missing - accepted unverified');
+	it('rejects a missing token by default', () => {
+		// The widget renders for every real visitor, so a tokenless POST is a
+		// script hitting the route directly — the spam class of 2026-11-16.
+		expect(turnstileSource).toContain('const TURNSTILE_REQUIRE_TOKEN: boolean = true;');
+		expect(turnstileSource).toContain('if ( TURNSTILE_REQUIRE_TOKEN ) {');
+		expect(turnstileSource).toContain('Turnstile token missing - rejected');
+	});
+
+	it('lets a profile opt back into accepting a missing token', () => {
+		const lenient = renderDirectFormsEndpointTs({ siteKey: 'k', requireToken: false });
+
+		expect(lenient).toContain('const TURNSTILE_REQUIRE_TOKEN: boolean = false;');
+		expect(lenient).toContain('Turnstile token missing - accepted unverified');
 	});
 
 	it('keeps the token out of the email body', () => {
