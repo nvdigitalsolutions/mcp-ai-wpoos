@@ -227,16 +227,28 @@
       "notes": "Six probe surfaces share one renderer; they are operator-shaped but safe to expose read-only to a plan holder."
     },
     {
+      "id": "credentials.estate",
+      "title": "Estate assistant credentials",
+      "audience": "tenant-admin",
+      "ops": null,
+      "admin": { "state": "planned" },
+      "console": { "state": "subset", "keys": ["tokenManager"] },
+      "writer": "shared",
+      "plan_gate": null,
+      "projection": "Credentials for the estate's OWN assistants only: the estate's assistant ids resolve first, and the token list is filtered by the literal `oos-assistant-{id}` names those ids produce. Metadata only — the token hash is never selected. revoke/delete answer 404 for an assistant outside the estate. lift is 404 by design: this runtime keeps no persisted restrictions.",
+      "notes": "Shipped as the console's token-manager; estate-scoped 2026-11-17 (§19). Before that the listing and the revoke path used the whole `oos-assistant-*` range, so one estate could read and revoke another estate's credentials — a cross-tenant write. Distinct from operator rotation (/ops/credentials), which is deliberately cross-estate. The contract previously mislabelled this key as personal access tokens; §19 corrected it."
+    },
+    {
       "id": "tokens.personal",
       "title": "Personal access tokens",
       "audience": "tenant-admin",
       "ops": { "state": "planned" },
       "admin": { "state": "planned" },
-      "console": { "state": "subset", "keys": ["tokenManager"] },
+      "console": null,
       "writer": "shared",
       "plan_gate": null,
-      "projection": "Own tokens only. Metadata only — the token hash is never selected. revoke/delete/lift are the only verbs.",
-      "notes": "Distinct from assistant credential rotation (ops). A cross-estate PAT view is operator-only."
+      "projection": null,
+      "notes": "Genuinely not built, and it has no console key: the key the matrix previously assigned here (`tokenManager`) serves assistant credentials, which is `credentials.estate`. A user-scoped PAT surface needs its own endpoint, its own user filter and an operator cross-estate view."
     },
     {
       "id": "remote-sites",

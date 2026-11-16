@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — a ninth — the two settings pages (§17) — and a tenth — the read-only workflow run log (§18) — shipped 2026-11-17. Together they closed the cross-tenant settings defect, the "editable nowhere" gap the projection opened, and the estate leak in workflow run history.
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — a ninth — the two settings pages (§17) — a tenth — the read-only workflow run log (§18) — and an eleventh — the token manager's estate scope (§19) — shipped 2026-11-17. Together they closed the cross-tenant settings defect, the "editable nowhere" gap the projection opened, the estate leak in workflow run history, and a cross-tenant revocation path on the live token manager.
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1544,7 +1544,7 @@ the console covering a surface does not count as admin parity.
 3. ✅ **Shipped** — `/admin/settings` and `/ops/settings`, generated from the catalogue (§17).
 4. ✅ **Shipped** — the read-only workflow run log on `/admin` (§18), including the `tenant_id` the run table was missing.
 5. Tool catalogue projection for the console.
-6. PAT manager split from assistant credentials.
+6. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
 
 ---
 
@@ -1855,3 +1855,86 @@ path had to change, because the data it reads was never estate-scoped.
   records no author. Documented rather than guessed.
 - **No run retention.** The table is append-only and grows; a pruning decision
   belongs with the console's DLQ policy, not with this page.
+
+---
+
+## 19. Wave 2 — eleventh slice: the token manager's estate scope
+
+**State:** shipped 2026-11-17. This slice shipped no new page. It fixed a
+cross-tenant **write** on a live console surface and corrected the ownership
+matrix that had mislabelled it.
+
+### 19.1 The defect
+
+`TokenManagerController` backs the console's `tokenManager` key. It listed every
+token named `oos-assistant-%` — the whole table, every estate — and its revoke /
+delete path only checked that the URL's assistant id matched the id inside the
+token name. No estate check existed anywhere.
+
+So an estate administrator could:
+
+- read another estate's assistant credential ids, assistant titles, issuing user
+  ids and timestamps;
+- **revoke or delete** them by id.
+
+The second is the serious one: a cross-tenant write reachable from
+`can:manage_options`, which every estate administrator holds.
+
+### 19.2 The matrix was wrong too
+
+The contract mapped `tokenManager` to a row called *personal access tokens*,
+claiming the console showed a user's own PATs with `revoke / delete / lift`. It
+does not: it shows assistant credentials. The rationale document said the same
+thing (§6.2), so the error was consistent rather than a typo — which is how it
+survived a review.
+
+Corrected:
+
+| Row | Change |
+|---|---|
+| `credentials.estate` (new) | assistant credentials for the estate's own assistants; `console: subset`, key `tokenManager`; projection names the resolution rule |
+| `tokens.personal` (rewritten) | genuinely unbuilt, `console: null`, admin/ops planned |
+| `credentials.assistant` | unchanged — the operator's cross-estate rotation surface |
+
+Surface count: 44. `tokenManager` still maps to exactly one row, so the gate's
+partition invariant holds.
+
+### 19.3 The fix
+
+- `overview()` resolves the estate's assistant ids first and filters the token
+  query by the literal `oos-assistant-{id}` names those ids produce. That is also
+  better than the old `like 'oos-assistant-%'` scan: it is index-shaped and does
+  not depend on a pattern match.
+- `destroy()` refuses any assistant outside the estate before looking at the
+  credential, so a foreign id answers the same 404 as an unknown one (R4).
+- An estate with no assistants returns an empty payload without querying tokens
+  at all.
+
+Why the assistant id, not a join: `personal_access_tokens` has no tenant column,
+and its `tokenable` is the *issuing user* — on this runtime that is usually the
+operator. The token name is the only reliable link to the assistant's estate.
+
+### 19.4 Validation record — executed
+
+- `TokenManagerTest` + `SurfaceOwnershipTest`: **16 passed, 474 assertions**,
+  including the two new cases:
+  - `the overview lists only the current estate's credentials` — two estates,
+    each sees exactly one;
+  - `a credential from another estate cannot be revoked` — 404 and the row
+    survives.
+- `php -l` and `phpcs` (CI ruleset): clean.
+- `bin/audit-surface-ownership.php`: **44 surfaces**, 9 Filament-built,
+  29 console-served, 10 planned only.
+
+### 19.5 Follow-ups recorded
+
+- **`/admin` has no credential page yet.** `credentials.estate` declares
+  `admin: planned`. The console is the working surface; the panel page is the
+  port, not a fix.
+- **`tokens.personal` is a real, unbuilt feature.** It needs its own endpoint, a
+  user filter and an operator cross-estate view. It now has a row that says so
+  instead of borrowing another surface's key.
+- **The fixture trap worth remembering:** `Assistant::$fillable` deliberately
+  omits `tenant_id`, so `create(['tenant_id' => …])` silently lands in the
+  default estate. The first version of the new test did exactly that and passed
+  the wrong thing; it now assigns the column explicitly.
