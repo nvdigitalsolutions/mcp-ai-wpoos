@@ -2320,6 +2320,72 @@ plausible product decision rather than an impossible one. What it needs, in orde
 
 ---
 
+## 38. The panel brand mark
+
+**State:** shipped 2026-11-17. Not a parity slice — a branding fix that surfaced
+one real constraint.
+
+### 38.1 What changed
+
+Both panels (`/ops` and `/admin`) now render the NV oOS wordmark top-left, and the
+page title reads *“Login — NV oOS”* instead of *“Login — Laravel”*
+(`config('app.name')` defaults to `Laravel`, and no `brandName` was set).
+
+| Piece | Path |
+|---|---|
+| Mark | `app/Support/Brand/BrandMark.php` |
+| Artwork | `public/nvoos-logo-white.svg` (copied from `assets/images/nvoos-logo-blk-v2.svg`) |
+| Panels | `AdminPanelProvider`, `OperatorPanelProvider` |
+| Tests | `tests/Feature/PanelBrandingTest.php` (7 tests) |
+
+### 38.2 The constraint the artwork imposed
+
+`nvoos-logo-blk-v2.svg` is **white on transparent** — five of its six elements are
+`#fff`, and the one remaining element inherits black. It was drawn for a dark
+surface, despite the `blk` in its name.
+
+Filament's sidebar and topbar are white in light mode, and neither panel forces a
+theme mode, so the panels follow the OS. A bare `<img>` would therefore look
+correct in dark mode and be **invisible in light mode**.
+
+Three options were considered:
+
+| Option | Why not |
+|---|---|
+| Force both panels to dark mode | A product-wide appearance change nobody asked for |
+| Invent a second, dark-on-light logo file | Creating brand artwork is not this repo's call |
+| **Anchor the white mark on a dark chip** | Chosen: exact artwork, legible in both modes, one code path |
+
+`BrandMark::logo()` returns an `Htmlable` so Filament renders the chip markup
+verbatim; `brandLogo()` accepts one, which is what makes this possible without a
+custom theme build.
+
+### 38.3 Decisions worth keeping
+
+- **Root-relative, not `asset()`.** Same reasoning the favicon already documents:
+`asset()` bakes in `APP_URL`, so a panel reached on a different host or port (a
+second local container, a preview domain) would 404 the image. A test asserts the
+path starts with `/` and contains no scheme.
+- **One definition, two panels.** `BrandMark` is the single source, so the customer
+estate and the vendor panel cannot drift — the same rule the colour palette follows.
+- **The `alt` carries the product name.** The mark is a link to the panel home; an
+unlabelled image link is a dead end for a screen reader.
+- **A test parses the SVG.** A committed asset that is not valid XML would fail at
+render time in the browser, not in CI; `simplexml_load_file` catches a broken copy.
+
+### 38.4 Validation record — executed
+
+- `PanelBrandingTest`: **7 passed, 20 assertions**.
+- `php -l` and `phpcs` (CI ruleset) clean on all four files.
+- Container restarted (a panel-provider change is not picked up otherwise), then
+verified end to end inside it:
+  - `GET /nvoos-logo-white.svg` → **200, `image/svg+xml`**
+  - `GET /ops/login` → contains `nvoos-logo-white.svg` **and** `background:#0f172a`
+  - `GET /admin/login` → contains `nvoos-logo-white.svg`
+  - `<title>` on `/admin/login` → `Login - NV oOS`
+
+---
+
 ## 37. Wave 2 — twenty-fourth slice: conversation import (`/ops/conversation-import`)
 
 **State:** shipped 2026-11-17, as a `subset`. The last buildable row.

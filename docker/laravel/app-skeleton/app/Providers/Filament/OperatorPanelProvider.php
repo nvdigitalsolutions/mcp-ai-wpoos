@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Http\Middleware\AuditAdminRequests;
 use App\Support\AdminTheme;
+use App\Support\Brand\BrandMark;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -51,6 +52,12 @@ class OperatorPanelProvider extends PanelProvider
             // two products. Root-relative so it survives a host/port mismatch
             // with APP_URL.
             ->favicon('/nvoos-icon.svg')
+            // The brand mark, shared with the customer panel. `BrandMark` explains
+            // why the white artwork sits on a chip: the panel follows the OS
+            // theme, and the logo is white on transparent, so a bare <img> would
+            // vanish on the light sidebar.
+            ->brandName(BrandMark::NAME)
+            ->brandLogo(BrandMark::logo())
             // Generated from the ADS DTCG tokens by `php artisan admin:theme`
             // and drift-gated by AdminThemeDriftTest. Never hard-code a colour
             // here: the gate can only see what the generator writes.
