@@ -109,12 +109,13 @@
       "title": "Professions",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["professions"] },
-      "writer": "admin",
+      "writer": "none",
       "plan_gate": null,
-      "projection": null,
-      "notes": "save_profession is deliberately not registered on Laravel; the write path stays WordPress-side."
+      "projection": "No reduction: both presentations read App\\Support\\ProfessionCatalogue and return the same rows (slug, title, category, category_slug, description, expertise, tools_count). Neither writes. The catalogue is code-owned reference data rather than a tenant-owned record set, so BOPLA does not apply — and reducing it would break the console's profession selector, which exists to offer every profession including one an assistant does not have yet.",
+      "files": ["app/Filament/Admin/Pages/Professions.php"],
+      "notes": "Shipped 2026-11-17 (§23). `writer` corrected from `admin` to `none`: save_profession is deliberately not registered on this runtime, so no surface owns a write path. An admin page with create/edit controls would either lie about persistence or invent a second writer for a read-only catalogue. A writable overlay is a separate proposal with its own storage."
     },
     {
       "id": "tools",
