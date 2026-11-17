@@ -61,12 +61,17 @@ class AdminPanelProvider extends PanelProvider
             // preview domain) would point the icon at the wrong origin and
             // 404. The file is committed at `public/nvoos-icon.svg`.
             ->favicon('/nvoos-icon.svg')
-            // The brand mark, shared with the operator panel. `BrandMark` explains
-            // why the white artwork sits on a chip: the panel follows the OS
-            // theme, and the logo is white on transparent, so a bare <img> would
-            // vanish on the light sidebar.
+            // The brand mark, shared with the operator panel. Two variants, because
+            // the artwork is a black core with a white rim: it reads as a solid
+            // wordmark on a light surface and nearly vanishes on a dark one.
+            // Filament renders whichever matches the panel's mode, so no wrapper
+            // colour is needed. `BrandMark` has the full reasoning.
             ->brandName(BrandMark::NAME)
             ->brandLogo(BrandMark::logo())
+            ->darkModeBrandLogo(BrandMark::darkLogo())
+            // Filament fixes the logo wrapper's height; `BrandMark::HEIGHT` is the
+            // one place that number lives.
+            ->brandLogoHeight(BrandMark::HEIGHT)
             // Generated from the ADS DTCG tokens by `php artisan admin:theme`.
             // Both panels share one palette: a customer estate and the vendor
             // panel must not disagree on what "danger" looks like.
