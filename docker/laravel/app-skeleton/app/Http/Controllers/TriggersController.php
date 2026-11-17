@@ -2,17 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\TenantContext;
 use App\Support\TriggerDispatcher;
 use App\Support\TriggerNotRunnable;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Workflow triggers (`/orchestration/triggers`, `/triggers`) — 090-h.
+ *
+ * ESTATE SCOPE (149 §29). The table had no tenant column and every method named
+ * it directly, while the routes already resolved an estate — so any tenant user
+ * could list, rewrite, delete and FIRE another estate's triggers. `fire` was the
+ * sharp edge: it executes the trigger's workflow with the caller's user id.
+ *
+ * Every query now starts at `query()`, and `TriggerDispatcher::due()` stays
+ * deliberately unscoped: the scheduler is a system job that must see every
+ * estate's due triggers, and `nvoos:fire-triggers` sets the estate context per
+ * trigger before firing.
+ */
 class TriggersController
 {
     public function index(): JsonResponse
     {
-        $rows = DB::table('nvoos_triggers')->orderBy('name')->get();
+        $rows = $this->query()->orderBy('name')->get();
 
         return response()->json([
             'triggers' => array_map([$this, 'record'], $rows->all()),
@@ -30,7 +45,8 @@ class TriggersController
             'webhook_url' => ['sometimes', 'nullable', 'url', 'max:255'],
         ]);
 
-        $id = DB::table('nvoos_triggers')->insertGetId([
+        $id = $this->query()->insertGetId([
+            'tenant_id' => TenantContext::current(),
             'name' => $data['name'],
             'type' => $data['type'],
             'config' => json_encode($data['config'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
@@ -41,7 +57,7 @@ class TriggersController
             'updated_at' => now(),
         ]);
 
-        return response()->json($this->record(DB::table('nvoos_triggers')->find($id)), 201);
+        return response()->json($this->record($this->query()->find($id)), 201);
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -55,7 +71,7 @@ class TriggersController
             'webhook_url' => ['sometimes', 'nullable', 'url', 'max:255'],
         ]);
 
-        $row = DB::table('nvoos_triggers')->find($id);
+        $row = $this->query()->find($id);
 
         if ($row === null) {
             return $this->missing();
@@ -73,14 +89,14 @@ class TriggersController
             $update['config'] = json_encode($data['config'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         }
 
-        DB::table('nvoos_triggers')->where('id', $id)->update($update);
+        $this->query()->where('id', $id)->update($update);
 
-        return response()->json($this->record(DB::table('nvoos_triggers')->find($id)));
+        return response()->json($this->record($this->query()->find($id)));
     }
 
     public function destroy(int $id): JsonResponse
     {
-        $deleted = DB::table('nvoos_triggers')->where('id', $id)->delete();
+        $deleted = $this->query()->where('id', $id)->delete();
 
         return $deleted > 0
             ? response()->json(['deleted' => true])
@@ -96,7 +112,7 @@ class TriggersController
      */
     public function fire(Request $request, int $id): JsonResponse
     {
-        $row = DB::table('nvoos_triggers')->find($id);
+        $row = $this->query()->find($id);
 
         if (null === $row) {
             return $this->missing();
@@ -147,5 +163,15 @@ class TriggersController
             'success' => false,
             'error' => ['code' => 'not_found', 'message' => 'Trigger not found.'],
         ], 404);
+    }
+
+    /**
+     * Every query in this controller starts here, so no method can forget the
+     * scope. A trigger id from another estate answers 404 exactly like a
+     * nonexistent one, so the routes cannot confirm which ids exist.
+     */
+    private function query(): Builder
+    {
+        return DB::table('nvoos_triggers')->where('tenant_id', TenantContext::current());
     }
 }

@@ -177,7 +177,7 @@
       "writer": "console",
       "plan_gate": null,
       "projection": null,
-      "notes": "Console-owned by ruling (149 §13.1). Definitions are CRUD; rebuilding them in Filament would maintain one page twice. The admin candidate is a read-only view."
+      "notes": "Console-owned by ruling (149 §13.1). Definitions are CRUD; rebuilding them in Filament would maintain one page twice. The admin candidate is a read-only view. UNBLOCKED 2026-11-17 by §29: `nvoos_triggers` gained `tenant_id` and TriggersController now scopes every query, so a read-only `/admin` list could be honest. Before that the console's `triggers` key was cross-estate, and a panel over it would have leaked every estate's triggers twice. `scheduleManager` is already served by `/ops/scheduler`; `workflowPresets` still has no reader."
     },
     {
       "id": "automation-runs",

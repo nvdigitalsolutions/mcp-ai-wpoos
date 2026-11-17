@@ -2175,6 +2175,78 @@ oversight plus operator settings, not a second copy of every console form.
 
 ---
 
+## 29. Wave 2 — nineteenth slice: triggers are estate data
+
+**State:** shipped 2026-11-17. The second instance of the §27 defect class, and
+the one that unblocks the orchestration surface.
+
+### 29.1 The defect
+
+`nvoos_triggers` had no tenant column, and `TriggersController` named the table
+directly in six places:
+
+| Method | Before |
+|---|---|
+| `index` | `DB::table('nvoos_triggers')->orderBy('name')` — every estate |
+| `store` | insert with no estate |
+| `update` / `fire` | `->find($id)` — any estate's row |
+| `destroy` | `->where('id', $id)` — any estate's row |
+
+Any tenant user could list, rewrite, delete and **fire** another estate's
+triggers. `fire` is the sharp edge: it executes the trigger's workflow with the
+caller's user id, so a cross-estate fire ran someone else's automation under the
+caller's identity.
+
+### 29.2 The half that only shows up once triggers have estates
+
+`TriggerDispatcher::due()` is deliberately unscoped — the scheduler is a system
+job that must see every estate's due triggers — but the **workflow lookup inside
+`fire()` goes through the estate-scoped content store**. With no estate context,
+every non-default estate's trigger looked its workflow up in the default estate
+and skipped as `workflow_not_found`. That bug predates this slice and was
+invisible while every trigger was effectively global.
+
+`nvoos:fire-triggers` now pins `TenantContext` to each trigger's estate before
+firing and resets it in a `finally`, so a stale estate cannot leak into the next
+iteration.
+
+### 29.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Migration | `2026_11_17_130000_add_tenant_to_triggers.php` | `tenant_id` default `default`, `(tenant_id, name)` index, guarded |
+| Controller | `app/Http/Controllers/TriggersController.php` | one `query()` helper; six call sites routed through it |
+| Command | `app/Console/Commands/FireTriggers.php` | per-trigger estate context, reset in `finally` |
+| Tests | `tests/Feature/TriggersTenancyTest.php` | 6 tests |
+
+### 29.4 Decisions worth keeping
+
+- **404, not 403, for a foreign id** — identical to the answer for a
+nonexistent id, so the route cannot confirm which ids exist.
+- **`due()` stays unscoped.** Scoping it would silently stop every estate's
+scheduled automations; the scheduler is the one caller that legitimately spans
+estates, and it carries the scope per row instead.
+- **The context reset lives in `finally`.** A `continue` in the catch block would
+otherwise skip it and let one trigger's estate leak into the next.
+- **Existing rows default to `default`**, same reasoning as §27.
+
+### 29.5 Validation record — executed
+
+- `TriggersTenancyTest` + `WorkflowTriggerTest`: **19 passed, 61 assertions**.
+- `php -l` clean; `phpcs` (CI ruleset) clean on all four files.
+- The command test is the one that matters: a workflow and trigger created in
+  `estate-b` fire from `nvoos:fire-triggers` with no request context, and the run
+  row lands with `tenant_id = estate-b`.
+
+### 29.6 Unblocked
+
+`automation-definitions` can now get an honest read-only `/admin` view — the
+contract row records the unblock. `workflowPresets` still has no reader, and
+`scheduleManager` is already served by `/ops/scheduler`, so the page should list
+workflows and triggers, not all three keys.
+
+---
+
 ## 28. Chat profiles are WordPress-only, so the row is `absent`
 
 **State:** recorded 2026-11-17. A disposition, not a build. This was the last
@@ -2284,14 +2356,13 @@ route cannot confirm which ids exist.
   which is the point: they all operate in the default estate.
 - `php -l` clean; `phpcs` (CI ruleset) clean.
 
-### 27.5 The same defect class, unfixed
+### 27.5 The same defect class, now fixed in §29
 
-`nvoos_triggers` has **no tenant column either**, and `TriggersController` reads
-it with `DB::table('nvoos_triggers')->orderBy('name')->get()` — no estate filter.
-The console's `triggers` key is therefore cross-estate today, and
-`automation-definitions` (`console: full`) cannot honestly get an `/admin`
-presentation until the same migration lands. Recorded here so the next slice
-starts with the table rather than with the page.
+`nvoos_triggers` had **no tenant column either**, and `TriggersController` read
+it with `DB::table('nvoos_triggers')` in six places — no estate filter. The
+console's `triggers` key was cross-estate, and `automation-definitions`
+(`console: full`) could not honestly get an `/admin` presentation until the same
+migration landed. Fixed in §29, which also unblocked that page.
 
 ---
 
