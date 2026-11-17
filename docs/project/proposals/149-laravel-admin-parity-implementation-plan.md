@@ -2241,6 +2241,160 @@ by the test that sets both, and fixed before merge.
 
 ---
 
+## 35. `datasets` — researched three times, blocked for a better reason
+
+**State:** recorded 2026-11-17. The conclusion moved twice before it settled, and
+the final answer is evidence rather than assumption.
+
+### 35.1 The three passes
+
+| Pass | Conclusion | Basis |
+|---|---|---|
+| §32 | Blocked on an HF client, a quota'd store and a registry | the WordPress page is a browser plus download |
+| §35.1 | Looks free — the classes exist | `lib/core/src/Tool/` ships **eleven** HuggingFace dataset tools, including `huggingface_dataset_preview_rows` and `huggingface_recommended_datasets` |
+| §35.2 | Still blocked, for a sharper reason | verified in the registry: none of them is registered |
+
+### 35.2 The actual blocker
+
+The eleven tools are listed in `lib/core/resources/tool-readiness.php` as
+`readiness: unverified`, with the reason *“Auto-added by the auditor; not
+classified yet.”* `ManifestToolRegistrar` registers only `$manifest->servable()`,
+so `ToolRegistry::has()` is false for every one of them and no assistant can call
+them.
+
+A browser rendered now would list datasets the runtime cannot use — exactly the
+objection §32 raised, this time evidenced rather than assumed.
+
+### 35.3 What would unblock it
+
+Classify the eleven tools: give each a `ready` entry and an HTTP client, or mark
+them deliberately `unavailable`. That is a **readiness-classification task with
+network implications** (the tools would become callable and would make outbound
+requests), not a page. It belongs in a proposal about the HuggingFace tool set,
+not in a parity slice.
+
+### 35.4 A separate finding worth acting on later
+
+Eleven tools sitting at `unverified` with an auditor's placeholder reason is a
+manifest-quality gap that spans more than HuggingFace. `/admin/tools` already
+shows the class per tool, so an operator can see it; nothing is hidden. A
+classification sweep would move the servable count up and is worth its own pass.
+
+---
+
+## 36. `onboarding` and `identity-provider`
+
+**State:** recorded 2026-11-17. One is not applicable, one is not a port.
+
+### 36.1 `onboarding` → `absent`
+
+`WP_MCP_AI_Onboarding_Wizard` is 2,414 lines of four-step first-run flow (welcome,
+provider key, assistant presets, finish), built around
+`wp_mcp_ai_activation_redirect` — a plugin-activation transient this runtime has
+no equivalent for.
+
+Its two real writes already have homes: provider keys are `/ops/settings`, and
+seeding assistants from presets is `/admin/assistants`. Rebuilding the wizard
+would be a guided shell over surfaces that exist, and duplicating the writes is
+how two settings paths start to disagree.
+
+If a first-run experience is ever wanted, the honest shape is a **derived
+checklist** (is a provider key set, does an estate have an assistant) in the
+`site-health` / `assets` pattern — named as new work, not called onboarding
+parity.
+
+### 36.2 `identity-provider` → stays `planned`
+
+Nothing to port: a grep for `identity_provider` / `IdentityProvider` / `saml` /
+`openid` / `oidc` across the WordPress plugin returns only an A2A agent card,
+which is unrelated. No identity-provider implementation exists on **either**
+runtime.
+
+It stays `planned` rather than `absent` because an operator SSO surface is a
+plausible product decision rather than an impossible one. What it needs, in order:
+
+1. a scope decision (OIDC only, or SAML as well),
+2. a client that maps a subject to a `User` and an estate membership,
+3. provisioning rules for a subject with no membership,
+4. only then a page.
+
+---
+
+## 37. Wave 2 — twenty-fourth slice: conversation import (`/ops/conversation-import`)
+
+**State:** shipped 2026-11-17, as a `subset`. The last buildable row.
+
+### 37.1 What §32 said, and what was right about it
+
+§32: *“a feature rather than a page: file parsing, a policy map, chunked
+idempotent import and a report artifact. Needs its own proposal.”*
+
+That was right about the WordPress subsystem — **fifteen classes**: five adapters
+(ChatGPT, Claude, Gemini, OpenAI JSONL, ShareGPT), a zip archive reader, a CCT
+writer, a deleter, a media handler, a memory miner, a privacy filter and an async
+queue.
+
+It was wrong about the smallest useful slice. Two shapes, synchronous, capped and
+upsert-by-session is a genuine import, so it shipped as `subset` with the
+reduction declared.
+
+### 37.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Importer | `app/Support/Import/ConversationImport.php` | parse, caps, role map, session keys, truncation |
+| Panel | `app/Filament/Operator/Pages/ConversationImportPage.php` | preview, then import |
+| View | `resources/views/filament/operator/conversation-import.blade.php` | textarea + report |
+| Tests | `tests/Feature/AdminConversationImportTest.php` | 17 tests |
+
+Accepted: ShareGPT (`[{conversations: [{from, value}]}]`) and generic
+(`[{session_id, messages: [{role, content}]}]`). Caps: 2,097,152 bytes, 500
+conversations, 200 messages per conversation (excess truncated and reported).
+
+### 37.3 Decisions worth keeping
+
+- **Paste, not upload.** An upload path needs a temporary file store, a MIME gate
+and a size check before the bytes are readable. A paste is one code path with no
+filesystem surface — the right trade for a deliberately narrow first version.
+- **Idempotency came free.** `TranscriptStoreInterface::save()` upserts by
+`session_id`, so the session key is derived deterministically (the export's own id,
+otherwise a hash of the first message and the index). Re-pasting corrects rather
+than duplicates, and a test asserts the row count stays at one.
+- **Preview is a separate step.** A 500-conversation body imported blind on one
+click is not something a user can undo row by row.
+- **Excess is truncated *and counted*.** Silently dropping message 201 would make
+the import lie about what it stored.
+- **Roles come from a closed set**, and an unknown speaker label falls back to
+`user` rather than passing through — an import must not be able to invent a role
+`ChatOrchestrator` does not understand.
+- **A bulk import leaves a record row.** Counts only, never content.
+
+### 37.4 A correction this slice forced on its own test
+
+The first draft asserted that invalid UTF-8 is *scrubbed on write*. It cannot be
+reached: JSON must be valid UTF-8, so `json_decode` rejects the whole body before
+any message is built — and `json_encode` in the test could not even produce the
+fixture. The test now asserts what actually happens (the body is rejected at the
+JSON boundary with nothing written), and the scrub stays as defence-in-depth for
+the day a byte-level source — the upload path that is not ported — lands.
+
+### 37.5 Validation record — executed
+
+- `AdminConversationImportTest`: **17 passed, 45 assertions**.
+- Plus `SurfaceOwnershipTest`, `AdminComplianceReportTest`,
+  `AdminAssetInventoryTest`: **46 passed, 765 assertions, 0 failures**.
+- `php -l` clean; `phpcs` (CI ruleset) clean on all three files.
+
+### 37.6 The stale-copy trap fired again
+
+Deleting the abandoned `datasets` files from the source tree was not enough:
+`cp -a` never deletes, so `SurfaceOwnershipTest` found a **stale**
+`app/Filament/Operator/Pages/Datasets.php` in `/app` and failed on an undeclared
+Filament surface. Removing the files from both sides fixed it. When a slice
+*removes* files, clean the container too — the sync is additive only.
+
+---
+
 ## 34. Wave 2 — twenty-third slice: compliance reports (`/ops/reports`)
 
 **State:** shipped 2026-11-17. The last row that was blocked only on an exporter.

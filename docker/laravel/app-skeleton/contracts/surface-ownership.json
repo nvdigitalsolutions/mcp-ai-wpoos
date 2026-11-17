@@ -440,12 +440,13 @@
       "id": "onboarding",
       "title": "Estate onboarding wizard",
       "audience": "operator",
-      "ops": { "state": "planned" },
+      "ops": { "state": "absent" },
       "admin": null,
       "console": null,
-      "writer": "ops",
+      "writer": "none",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "notes": "Not applicable to this runtime (§36). The WordPress source is `WP_MCP_AI_Onboarding_Wizard` — a 2,414-line four-step first-run flow (welcome, provider key, assistant presets, finish) built around `wp_mcp_ai_activation_redirect`, a plugin-activation transient this runtime has no equivalent for. Its two real writes already have homes here: provider keys are `/ops/settings`, and seeding assistants from presets is `/admin/assistants`. Rebuilding the wizard would be a guided shell over surfaces that already exist, and duplicating the writes is how two settings paths start to disagree. `writer` corrected to `none`. If a first-run experience is ever wanted, the honest shape is a DERIVED checklist (is a provider key set, does an estate have an assistant) in the `site-health` / `assets` pattern — named as new work, not called onboarding parity."
     },
     {
       "id": "site-health",
@@ -467,10 +468,10 @@
       "ops": { "state": "planned" },
       "admin": null,
       "console": null,
-      "writer": "ops",
+      "writer": "none",
       "plan_gate": null,
       "projection": null,
-      "notes": "Needs an identity-provider contract outside the app before it can be built."
+      "notes": "Researched 2026-11-17 (§36): nothing to port. No identity-provider implementation exists on EITHER runtime — a grep for identity_provider / IdentityProvider / saml / openid / oidc across the WordPress plugin returns only an A2A agent card, which is unrelated. So this is not a parity gap but a new feature, and it stays `planned` rather than `absent` because an operator SSO surface is a plausible product decision rather than an impossible one. What it needs, in order: (1) a decision on scope (OIDC only, or SAML as well), (2) a client that maps a subject to a `User` and an estate membership, (3) provisioning rules for a subject with no membership, (4) only then a page. `writer` corrected to `none` until (2) exists."
     },
     {
       "id": "assets",
@@ -487,27 +488,28 @@
     },
     {
       "id": "datasets",
-      "title": "Datasets",
+      "title": "Dataset browser",
       "audience": "operator",
       "ops": { "state": "planned" },
       "admin": null,
       "console": null,
-      "writer": "ops",
+      "writer": "none",
       "plan_gate": null,
       "projection": null,
-      "notes": "Researched 2026-11-17 (§32): the WordPress source is `WP_MCP_AI_Datasets_Admin_Page` — a HuggingFace datasets browser with download and local management. That needs three things this runtime does not have: an HTTP client for the HF API, a download/store path with quota, and a dataset registry. Blocked on scope rather than on a page; do not build a read-only shell, because a browser with no download path is a catalogue of things the user cannot have."
+      "notes": "Researched three times, 2026-11-17, and the conclusion moved twice before it settled (§35). (1) §32 said 'blocked on an HF client, a quota'd store and a registry'. (2) The classes DO exist — lib/core ships eleven HuggingFace dataset tools including huggingface_dataset_preview_rows and huggingface_recommended_datasets — so a browser looked free. (3) Verified in the registry: none of them is registered. They are listed in lib/core/resources/tool-readiness.php as `readiness: unverified` with the reason 'Auto-added by the auditor; not classified yet.', and ManifestToolRegistrar registers only servable tools, so they are not callable. A browser now would advertise datasets this runtime cannot use — the exact objection §32 raised, now evidenced rather than assumed. UNBLOCK = classify those eleven tools (they need an HTTP client and, for real use, an HF token) or mark them deliberately unavailable; that is a readiness-classification task with network implications, not a page. `writer` corrected to `none`: browsing never writes."
     },
     {
       "id": "conversation-import",
       "title": "Conversation import",
       "audience": "operator",
-      "ops": { "state": "planned" },
+      "ops": { "state": "subset" },
       "admin": null,
       "console": null,
       "writer": "ops",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Researched 2026-11-17 (§32): the WordPress source is `WP_MCP_AI_Conversation_Import_Admin` — upload, format preview, policy mapping, enqueue on the async job queue, poll progress, download a JSON report. Feasible here (the queue and the transcript store both exist) but it is a feature rather than a page: file parsing, a policy map, chunked idempotent import and a report artifact. Needs its own proposal. `writer: ops` is correct — an import writes transcripts."
+      "projection": "A deliberately narrow first version (§37). Accepted: pasted JSON in two shapes — ShareGPT (`[{conversations: [{from, value}]}]`) and generic (`[{session_id, messages: [{role, content}]}]`). Caps enforced on the string before storage: 2,097,152 bytes, 500 conversations, 200 messages per conversation (excess truncated and reported). NOT ported from WordPress: zip archives (an archive reader needs entry-name validation and a decompression limit), JSONL streaming (needs a temp file, which a paste avoids), the Claude / Gemini / OpenAI-JSONL adapters, media handling, the memory miner, the privacy filter, and the async queue (import is synchronous and bounded instead). Import is idempotent because TranscriptStoreInterface::save() upserts by session_id and the key is derived deterministically; imported text is scrubbed to valid UTF-8 and roles come from a closed set.",
+      "files": ["app/Filament/Operator/Pages/ConversationImportPage.php"],
+      "notes": "Shipped as `subset` 2026-11-17 (§37). §32 called this 'a feature rather than a page ... needs its own proposal'; that was right about the WordPress subsystem (fifteen classes) and wrong about the smallest useful slice — two shapes, synchronous, capped, upsert-by-session is a genuine import. Paste rather than upload on purpose: an upload path needs a temporary file store, a MIME gate and a size check before the bytes are readable, and this runtime has not configured one for imports. `writer: ops` is correct and this is one of the few rows where a state of `subset` still writes."
     },
     {
       "id": "reports",
