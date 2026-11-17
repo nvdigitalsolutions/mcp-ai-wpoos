@@ -2175,6 +2175,81 @@ oversight plus operator settings, not a second copy of every console form.
 
 ---
 
+## 30. Wave 2 — twentieth slice: automation definitions (`/admin/automations`)
+
+**State:** shipped 2026-11-17. The orchestration surface, and the first page
+whose reader takes **no** estate parameter.
+
+### 30.1 What the matrix asked for
+
+`automation-definitions`: `admin: planned`, `console: full`, `writer: console`,
+note *“Console-owned by ruling (§13.1). Definitions are CRUD; rebuilding them in
+Filament would maintain one page twice. The admin candidate is a read-only
+view.”*
+
+That note was already the design. It just could not be built honestly until §29 —
+the `triggers` half was cross-estate.
+
+### 30.2 Two record sets, one page
+
+| Set | Source | Why it is here |
+|---|---|---|
+| Workflows | content records (`mcp_ai_workflow`) via `ContentStoreInterface` | a workflow with no trigger runs only when someone fires it |
+| Triggers | `nvoos_triggers`, estate-scoped since §29 | a trigger names the workflow it runs |
+
+Showing one without the other leaves "what automations exist here" half-answered.
+`scheduleManager` is already `/ops/scheduler` and `workflowPresets` has no
+reader, so neither is duplicated here.
+
+### 30.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Reader | `app/Support/Automation/AutomationCatalogue.php` | workflows, triggers, filter, totals |
+| Panel | `app/Filament/Admin/Pages/AutomationDefinitions.php` | search only, no actions |
+| View | `resources/views/filament/admin/automation-definitions.blade.php` | two tables, inline styles |
+| Tests | `tests/Feature/AdminAutomationDefinitionsTest.php` | 10 tests |
+
+### 30.4 Decisions worth keeping
+
+- **A webhook URL is reduced to its host.** Slack and most providers embed the
+secret in the path, so a read-only list that echoed the URL would be a
+credential dump with a friendly name. The row carries the host and a
+`has_webhook` flag; `config` is reduced to its `schedule` value for the same
+reason. Pinned by `test_a_webhook_url_is_reduced_to_its_host`.
+- **The reader takes no estate parameter.** Both sources read `TenantContext`,
+which `SetTenantContext` pins to the panel tenant on every `/admin` request. A
+parameter would invite a caller to choose an estate the panel cannot render,
+and there is no second consumer to disagree with (unlike `EstateCredentials`,
+which is shared with the API).
+- **`read-only` declares an action reduction, not a field one**, and the
+projection says so — otherwise the next reader assumes something is being
+hidden.
+- **No fire control.** Firing runs a workflow with the caller's identity; that is
+the console's action, and a panel button that redirected to the console would be
+a link pretending to be an action.
+
+### 30.5 Validation record — executed
+
+- `AdminAutomationDefinitionsTest`: **10 passed, 32 assertions**.
+- Plus `SurfaceOwnershipTest`, the four other new panel suites, `TriggersTenancyTest`,
+`WorkflowTriggerTest` and `ApiTenantResolutionTest`: **94 passed, 734
+assertions, 0 failures**.
+- `php -l` clean; `phpcs` (CI ruleset) clean on all three files.
+- `bin/audit-surface-ownership.php`: **44 surfaces · 15 Filament-built**
+  (6 `/ops`, 10 `/admin`); console-only down to **21**.
+
+### 30.6 A test-harness trap worth remembering
+
+`Sanctum::actingAs()` changes the **default** guard, and Filament resolves its
+tenant against the panel guard. A fixture helper that authenticates with
+`Sanctum::actingAs()` leaves a later `/admin` request looking unauthenticated —
+the page returns **302** and every `assertSee` fails against a login redirect.
+Use `$this->actingAs()` (web) in panel tests, even for the API call that seeds
+the fixture.
+
+---
+
 ## 29. Wave 2 — nineteenth slice: triggers are estate data
 
 **State:** shipped 2026-11-17. The second instance of the §27 defect class, and
