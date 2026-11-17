@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ProfessionCatalogue;
 use Illuminate\Http\JsonResponse;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 
@@ -14,6 +15,10 @@ use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
  *
  * Read-only by design: professions are code-owned reference data here, and
  * `save_profession` is not registered on this runtime.
+ *
+ * The row mapping lives in App\Support\ProfessionCatalogue because the
+ * read-only `/admin/professions` page (149 §23) reads the same rows. Two
+ * mappers would drift on the first field change.
  */
 class ProfessionController
 {
@@ -31,7 +36,7 @@ class ProfessionController
             $found = $this->professions->getBySlug((string) $slug);
 
             if (! empty($found['found'])) {
-                $items[] = $this->summary($found['profession']);
+                $items[] = ProfessionCatalogue::summary($found['profession']);
             }
         }
 
@@ -56,7 +61,7 @@ class ProfessionController
         return response()->json(array(
             'success' => true,
             'data' => array_merge(
-                $this->summary($profession),
+                ProfessionCatalogue::summary($profession),
                 array(
                     'role_description' => (string) ($profession['role_description'] ?? ''),
                     'warnings' => $profession['warnings'] ?? array(),
@@ -65,47 +70,5 @@ class ProfessionController
                 )
             ),
         ));
-    }
-
-    /**
-     * The list shape — the same fields the team-catalogue members carry, so the
-     * console renders a profession identically in both places.
-     *
-     * @param array<string, mixed> $profession Normalised catalogue record.
-     * @return array<string, mixed>
-     */
-    private function summary(array $profession): array
-    {
-        $slug = (string) ($profession['slug'] ?? '');
-        $category = (string) ($profession['category'] ?? '');
-        $description = (string) ($profession['description'] ?? '');
-
-        return array(
-            'slug' => $slug,
-            'title' => (string) ($profession['name'] ?? $slug),
-            'category' => $this->categoryLabel($category),
-            'category_slug' => $category,
-            'description' => $description,
-            'expertise' => $profession['expertise'] ?? array(),
-            'tools_count' => count($profession['default_tools'] ?? array()),
-        );
-    }
-
-    /**
-     * Same label map the teams controller sends.
-     */
-    private function categoryLabel(string $slug): string
-    {
-        $labels = array(
-            'advisory' => 'Advisory/Consulting',
-            'creative' => 'Creative Services',
-            'technical' => 'Technical',
-            'healthcare' => 'Healthcare',
-            'legal' => 'Legal',
-            'financial' => 'Financial',
-            'other' => 'Other',
-        );
-
-        return $labels[$slug] ?? ('' === $slug ? '' : ucfirst($slug));
     }
 }

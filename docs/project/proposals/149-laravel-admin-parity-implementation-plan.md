@@ -1544,7 +1544,10 @@ the console covering a surface does not count as admin parity.
 3. ✅ **Shipped** — `/admin/settings` and `/ops/settings`, generated from the catalogue (§17).
 4. ✅ **Shipped** — the read-only workflow run log on `/admin` (§18), including the `tenant_id` the run table was missing.
 5. ✅ **Shipped** — the tool catalogue on `/admin` (§22), read-only, reading the same rows as `/api/v1/tools`.
-6. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
+6. ✅ **Shipped** — the profession catalogue on `/admin` (§23), read-only, and
+   the first slice to correct a `writer` (`admin` → `none`) rather than only a
+   `state`. The category label map is now single-source across three callers.
+7. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
 
 ---
 
@@ -2066,6 +2069,96 @@ The other half of S-3 — does an unlicensed toolkit **disappear** from the
 console, or render an **upsell**? Deferred to Wave 3: absence is an
 authorisation statement and an upsell is a product surface, and that choice
 should be made once for the manifest system, not per dashboard.
+
+---
+
+## 23. Wave 2 — fourteenth slice: the profession catalogue (`/admin/professions`)
+
+**State:** shipped 2026-11-17. The first slice that **corrected a `writer`**
+rather than only a `state`, and the first to answer the user's framing question
+directly.
+
+### 23.1 What the matrix asked for, and why it was wrong
+
+The `professions` row said `admin: planned`, `writer: admin`, with the note
+*"save_profession is deliberately not registered on Laravel; the write path
+stays WordPress-side."*
+
+Those two statements cannot both hold. `writer` names the layer that owns the
+write path; if the write path is WordPress-side and not registered here, no
+surface on this runtime owns it, so the honest value is `none` — the same value
+`tools` and `audit-log` carry. Leaving `writer: admin` would have invited a page
+with a create button that either lies about persistence or, worse, grows a
+second writer on a catalogue that is code-owned reference data.
+
+Row corrected to `admin: read-only` with an explicit `projection` and
+`writer: none`.
+
+### 23.2 The framing question this settles ("admin full, console limited")
+
+A surface can only be `full` on `/admin` when the Laravel runtime **owns** the
+write path. Where the console owns it, `/admin` gets a read-only supervisor view
+and does **not** get a duplicate write path: two writers for one record set is
+how the two surfaces start disagreeing, and §16's single-writer rule exists for
+exactly that.
+
+The admin is the more powerful surface through *reach*, not through duplicated
+product writes: operator-scope settings, the `/ops` panel, estate-wide
+visibility, and supervision of what the console owns. "The admin has everything
+the console has, and more" is therefore true — with "more" meaning breadth of
+oversight plus operator settings, not a second copy of every console form.
+
+### 23.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Reader | `app/Support/ProfessionCatalogue.php` | rows, summary, category labels, `categories()`, `filter()`, `totals()` |
+| Console | `app/Http/Controllers/ProfessionController.php` | delegates the row mapping; payload unchanged |
+| Team catalogue | `app/Http/Controllers/TeamCatalogueController.php` | delegates the category label; duplicate map removed |
+| Panel | `app/Filament/Admin/Pages/Professions.php` | search + category filter, no actions, no form |
+| View | `resources/views/filament/admin/professions.blade.php` | plain table, inline styles, catalogue version in the header |
+| Tests | `tests/Feature/AdminProfessionCatalogueTest.php` | 11 tests |
+
+### 23.4 Decisions worth keeping
+
+- **One reader, three callers.** `GET /api/v1/professions`, the team-catalogue
+  member list and the panel all read `ProfessionCatalogue`. The category label
+  map existed twice before this slice and would have existed three times.
+- **`tools` is a sum, not a distinct count.** The same tool is recommended by
+  several professions; collapsing duplicates would understate the catalogue.
+  `totals()` says so in the docblock because the next reader will want to
+  "fix" it.
+- **`categories()` is derived from the rows**, so the filter can never offer a
+  category with nothing behind it, and a category added by a licensed catalogue
+  renders as itself through the `ucfirst()` fallback.
+- **A structural read-only test.** `test_the_page_accepts_no_payload` asserts the
+  page does not use `InteractsWithForms` and does not implement `HasForms`.
+  Adding a write form now requires changing a named test, which forces the
+  contract row to move from `read-only` in the same commit.
+- **The catalogue version is rendered.** Professions are versioned reference
+  data; "which generation is this runtime serving?" is the first question when a
+  definition looks stale, and it was previously only visible over the API.
+
+### 23.5 Validation record — executed
+
+- `AdminProfessionCatalogueTest` + `ProfessionCatalogueTest` +
+  `TeamCatalogueTest` + `SurfaceOwnershipTest`: **29 passed, 517 assertions**
+  (Docker, `oos-laravel-app`).
+- `php -l` clean; `phpcs` (CI ruleset) clean after phpcbf normalised the new
+  support class from WordPress spacing to PSR-12.
+- Two pre-existing collection-time errors in `ProjectManagementToolParityTest`
+  and `ProjectManagementWriteParityTest` appear in this container because their
+  data provider returns `[]` when the WordPress corpus file is absent. Not
+  caused by this slice and not touched.
+
+### 23.6 Follow-ups recorded
+
+- **No detail view.** The list shows category, description and tool count; the
+  recommended-tool slugs are only in `GET /api/v1/professions/{slug}`. Add an
+  expandable row when someone needs it — as a read, never as a form.
+- **A writable profession overlay is a separate proposal.** It needs storage,
+  a merge rule against the code catalogue, and a `catalogueVersion()` that
+  actually moves. Do not bolt it onto this page.
 
 ---
 
