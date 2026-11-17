@@ -511,15 +511,16 @@
     },
     {
       "id": "reports",
-      "title": "Report generator",
+      "title": "Compliance reports",
       "audience": "operator",
-      "ops": { "state": "planned" },
+      "ops": { "state": "read-only" },
       "admin": null,
       "console": null,
       "writer": "ops",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Researched 2026-11-17 (§32): the WordPress source is `WP_MCP_AI_Report_Generator` — compliance reports in PDF/DOCX/XLSX/HTML/CSV. It reports OVER the asset inventory, so it was blocked on `assets`. UNBLOCKED 2026-11-17 by §33: the `AssetRegister` class (app/Support/Assets) now derives the register, including `byClassification()` / `byType()` / `statistics()`, which are the shapes a report needs. What remains is an EXPORTER — format writers and a delivery path — and a decision on how much of the WordPress five formats is worth carrying. Do not ship a PDF/DOCX writer for one table: start with CSV/JSON over the existing register, which needs no new dependency, and add formats only when a compliance customer names the one they need."
+      "projection": "Cross-estate and unreduced: a compliance report evidences the whole deployment, not one estate. Two sections only — assets (derived by AssetRegister) and audit trail (AuditTrail over nvoos_admin_audit). WordPress also emits controls, risks, evidence and frameworks from a Pro compliance database this runtime does not have; those are OMITTED rather than emitted empty, because a 'Risks' heading with no rows reads as 'no risks', which is a claim rather than an absence. Formats are CSV and JSON: the WordPress generator also returns an error for PDF/DOCX/Excel, and a report generator that pulls in a PDF engine to render one table is the wrong trade. No standalone HTML artifact — this page is the HTML report.",
+      "files": ["app/Filament/Operator/Pages/Reports.php"],
+      "notes": "Shipped 2026-11-17 (§34). `writer` stays `ops`, and that is the distinction worth keeping: the state is `read-only` because the surface writes no report data — every file is streamed from memory and nothing is persisted — but each download records an audit row, so the layer does own one write. The audit row records format and counts, never content. The page and both downloads serialise one ComplianceReport, so there is no second renderer to drift."
     },
     {
       "id": "chat-profiles",
