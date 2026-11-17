@@ -277,3 +277,37 @@ short digest of the highest-traffic ones stays in `SKILL.md`.
   tests/forge-e2e.test.ts --no-file-parallelism` (~90 s) before believing a
   failure belongs to your diff, and say which run the numbers came from in the
   PR body.
+
+## Cross-app parity gate: running it from a clean worktree (2026-11-17)
+
+`bin/check-astro-app-parity.mjs` imports the two apps' `.ts` modules directly,
+and the forge's `lib/llms.ts` is the one file with a runtime dependency
+(`htmlparser2`). A bare `git worktree add` checkout has no `node_modules`, and
+because ESM **resolves static imports before any statement in the script runs**,
+the failure was an `ERR_MODULE_NOT_FOUND` stack with exit 1 and NO checks
+printed — indistinguishable from real drift, and it cost a debugging cycle.
+
+- **Exit codes are now `0` parity / `1` drift / `2` cannot verify.** The script
+  preflights the forge's `node_modules/htmlparser2` and loads the app modules
+  with `await import()`, so a deps-less tree prints
+  `run npm ci in examples/nvoos-astro-forge` and exits 2. Exit 2 means the gate
+  did NOT run — never "resolve" it by weakening a check.
+- **Lend deps instead of a full `npm ci`** for a one-off run:
+  `cmd //c "mklink /J <wt>/examples/nvoos-astro-forge/node_modules <main>/examples/nvoos-astro-forge/node_modules"`.
+  Velocity's modules are dependency-free by design (the workflow comments say
+  to keep them so). **Unlink with `cmd //c "rmdir <that path>"` before
+  `git worktree remove`** — `rmdir` without `/S` removes the junction only,
+  while a recursive delete follows it into the real `node_modules`.
+- **A red gate in a worktree is usually a stale file, not drift.** Compare
+  `git hash-object bin/check-astro-app-parity.mjs` against
+  `git rev-parse <branch>:bin/check-astro-app-parity.mjs` BEFORE debugging the
+  logic. On 2026-11-17 a pre-fix copy without `model-3d` in `SHARED` produced
+  exactly two failures (forge 6+12=18 kinds vs 19 actual; velocity 6+5=11 vs 12)
+  while the branch tip was green.
+- **Adding a band kind is a three-file decision in ONE commit**: the app's kind
+  list (`lib/types.ts` `SECTION_KINDS`, and velocity's
+  `src/lib/content/section-kinds.ts`), the block that emits `data-section`, and
+  the gate's `SHARED` / `FORGE_ONLY` / `VELOCITY_ONLY` array. `hero`,
+  `testimonial`, `stats`, `comparison`, `steps`, `team` and `model-3d` are
+  SHARED; `accordion` and `content` are forge-only; `image`, `faq`, `tabs`,
+  `product-grid`, `promotion` are velocity-only.

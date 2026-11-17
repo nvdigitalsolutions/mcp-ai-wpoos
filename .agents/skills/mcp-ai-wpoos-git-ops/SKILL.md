@@ -275,6 +275,19 @@ Each rule below cost a recovery:
   and can be killed mid-checkout on this repo — if it times out, `rm -rf` the
   leftover, `git worktree prune`, and check the branch was not already
   registered.
+- **A worktree can hold a STALE copy of a committed file** (2026-11-17). A gate
+  that is red there but green on the branch is usually a file patched on one
+  side only, not a logic bug — compare `git hash-object <file>` with
+  `git rev-parse <branch>:<file>` BEFORE debugging. Seen with
+  `bin/check-astro-app-parity.mjs`: a pre-fix copy produced two plausible but
+  wrong failures while the branch tip was green.
+- **Never `git worktree remove` a tree holding junctions into a real
+  `node_modules`** — a recursive delete follows the junction and can erase the
+  main worktree's deps. Lend deps for a one-off gate run with `cmd //c "mklink
+  /J <wt>/examples/<app>/node_modules <main>/examples/<app>/node_modules"`, then
+  **unlink first** with `cmd //c "rmdir <that path>"` (no `/S` — removes the
+  link only) before removing the worktree, and verify the real
+  `node_modules/<dep>/package.json` still exists afterwards.
 - **Rebasing with foreign unstaged edits present:** plain `git rebase`
   refuses ("You have unstaged changes"); `git rebase --autostash` stashes
   only tracked changes and pops them back. **Safer variant (2026-11-03,

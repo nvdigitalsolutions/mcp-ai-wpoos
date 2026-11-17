@@ -1196,11 +1196,12 @@ legacy-identifier renames.
   `lib/content/portable-text.ts`, the `CUSTOM_BLOCK_TYPES` allowlist, a
   component in `components/blocks/`, and the `TYPE_COMPONENTS` map in
   `components.ts`. `tests/unit/agent-surfaces.test.ts` pins accept + reject.
-- **`data-section` on block roots**: ALL eleven block types now emit it.
+- **`data-section` on block roots**: ALL twelve block types now emit it.
   The three new blocks (comparison/steps/team) plus hero, image, testimonial,
   `stat` (which emits `data-section="stats"` — the KIND name — while its
   Portable Text type keeps the name `stat`), and — as of the follow-up pass —
-  `faq`, `tabs`, `productGrid` (`product-grid`), `promotion`.
+  `faq`, `tabs`, `productGrid` (`product-grid`), `promotion`, and `model3d`
+  (`model-3d`, 2026-11-17).
 - **The `ui/` primitives already forward attributes.** `UiAccordion`,
   `UiTabs`, `UiTabsList`, `UiTabsPanel`, `UiTabsTab`, `UiAccordionItem` all
   end with `{...rest}` on their root, so passing `data-section` from the block
@@ -1210,7 +1211,11 @@ legacy-identifier renames.
 - **Vocabulary lives in `src/lib/content/section-kinds.ts`**
   (`SECTION_KINDS`, `isSectionKind`, `BLOCK_TYPE_TO_KIND`). It is
   storefront-local: the forge has no `faq`/`tabs`/`product-grid`/`promotion`
-  kinds because it does not generate those bands. Two gates:
+  kinds because it does not generate those bands. **`model-3d` is the one
+  exception** (2026-11-17): the forge's `product-3d` variant emits the same
+  `data-section`, so it is the sole SHARED entry in the parity gate's
+  vocabulary — adding a kind that both apps can emit means editing BOTH trees
+  plus `bin/check-astro-app-parity.mjs`'s `SHARED` array. Two gates:
   `tests/unit/section-kinds.test.ts` (source grep — every
   `src/components/blocks/*.astro` declares exactly ONE in-vocabulary
   `data-section`, every kind has a block; `Blocks.astro` is the dispatcher and
