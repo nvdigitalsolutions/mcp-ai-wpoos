@@ -52,12 +52,17 @@ class OperatorPanelProvider extends PanelProvider
             // two products. Root-relative so it survives a host/port mismatch
             // with APP_URL.
             ->favicon('/nvoos-icon.svg')
-            // The brand mark, shared with the customer panel. `BrandMark` explains
-            // why the white artwork sits on a chip: the panel follows the OS
-            // theme, and the logo is white on transparent, so a bare <img> would
-            // vanish on the light sidebar.
+            // The brand mark, shared with the customer panel for the same reason
+            // the palette is shared: two panels of one product must not look like
+            // two products. Two variants, because the artwork is a black core with
+            // a white rim: it reads as a solid wordmark on a light surface and
+            // nearly vanishes on a dark one. `BrandMark` has the full reasoning.
             ->brandName(BrandMark::NAME)
             ->brandLogo(BrandMark::logo())
+            ->darkModeBrandLogo(BrandMark::darkLogo())
+            // Filament fixes the logo wrapper's height; `BrandMark::HEIGHT` is the
+            // one place that number lives.
+            ->brandLogoHeight(BrandMark::HEIGHT)
             // Generated from the ADS DTCG tokens by `php artisan admin:theme`
             // and drift-gated by AdminThemeDriftTest. Never hard-code a colour
             // here: the gate can only see what the generator writes.

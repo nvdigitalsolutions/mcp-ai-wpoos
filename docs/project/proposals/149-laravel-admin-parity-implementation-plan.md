@@ -2320,69 +2320,116 @@ plausible product decision rather than an impossible one. What it needs, in orde
 
 ---
 
-## 38. The panel brand mark
+## 38. The panel brand lockup
 
-**State:** shipped 2026-11-17. Not a parity slice — a branding fix that surfaced
-one real constraint.
+**State:** shipped 2026-11-17, revised the same day. Not a parity slice — a branding
+fix that surfaced one real constraint, and then corrected a misreading of the
+artwork that had shaped the first attempt.
 
 ### 38.1 What changed
 
-Both panels (`/ops` and `/admin`) now render the NV oOS wordmark top-left, and the
-page title reads *“Login — NV oOS”* instead of *“Login — Laravel”*
-(`config('app.name')` defaults to `Laravel`, and no `brandName` was set).
+Both panels (`/ops` and `/admin`) render the NV oOS **lockup** top-left — a colour
+molecule mark followed by the wordmark — and the page title reads *"Login — NV oOS"*
+instead of *"Login — Laravel"* (`config('app.name')` defaults to `Laravel`, and no
+`brandName` was set).
 
 | Piece | Path |
 |---|---|
-| Mark | `app/Support/Brand/BrandMark.php` |
-| Artwork | `public/nvoos-logo-white.svg` (copied from `assets/images/nvoos-logo-blk-v2.svg`) |
+| Lockup definition | `app/Support/Brand/BrandMark.php` |
+| Mark | `public/nvoos-mark.svg` (from `assets/images/nvoos-icon-old.svg`) |
+| Wordmark, light | `public/nvoos-logo-light.svg` (from `assets/images/nvoos-logo-blk-v2.svg`) |
+| Wordmark, dark | `public/nvoos-logo-dark.svg` (same geometry, root `fill="#fff"`) |
 | Panels | `AdminPanelProvider`, `OperatorPanelProvider` |
-| Tests | `tests/Feature/PanelBrandingTest.php` (7 tests) |
+| Tests | `tests/Feature/PanelBrandingTest.php` (12 tests) |
 
-### 38.2 The constraint the artwork imposed
+### 38.2 The artwork is a black core, not white artwork
 
-`nvoos-logo-blk-v2.svg` is **white on transparent** — five of its six elements are
-`#fff`, and the one remaining element inherits black. It was drawn for a dark
-surface, despite the `blk` in its name.
+The first revision of this section claimed `nvoos-logo-blk-v2.svg` was *white on
+transparent* because five of its six **classified** elements were `#fff`. That was
+wrong, and the error drove a wrong decision, so it is recorded here rather than
+quietly edited away.
 
-Filament's sidebar and topbar are white in light mode, and neither panel forces a
-theme mode, so the panels follow the OS. A bare `<img>` would therefore look
-correct in dark mode and be **invisible in light mode**.
+The file is **12 shapes in two stacked layers**: six white fills (`st0`/`st1` plus
+one `st0` rect) and **six unclassed copies offset by `+3,+3`** that therefore inherit
+`fill: black`. The white `N` starts at `M54.6,202`; the black `N` starts at
+`M57.6,205`. They compose into a black wordmark with a white highlight rim.
 
-Three options were considered:
+The consequence is the opposite of what white-on-transparent artwork would do:
 
-| Option | Why not |
-|---|---|
-| Force both panels to dark mode | A product-wide appearance change nobody asked for |
-| Invent a second, dark-on-light logo file | Creating brand artwork is not this repo's call |
-| **Anchor the white mark on a dark chip** | Chosen: exact artwork, legible in both modes, one code path |
+| Surface | Bare wordmark | Why |
+|---|---|---|
+| Light | **Solid black wordmark**, fully legible | the white rim merges with the page, leaving the black core |
+| Dark | **Nearly invisible** — a hairline rim only | the black core disappears into the surface |
 
-`BrandMark::logo()` returns an `Htmlable` so Filament renders the chip markup
-verbatim; `brandLogo()` accepts one, which is what makes this possible without a
-custom theme build.
+This was verified by rendering the bare file on both surfaces before changing any
+code, rather than reasoning from the fill classes again.
 
-### 38.3 Decisions worth keeping
+### 38.3 Why two variants instead of a chip
+
+The first revision (same day) anchored the wordmark on a `#0f172a` chip so the white
+rim would read against a light sidebar. With §38.2 corrected, that decision was
+wrong twice over: the chip compensated in the wrong direction, and in dark mode it
+added a navy badge to an already-dark topbar.
+
+Filament already ships the right mechanism. `brandLogo()` and `darkModeBrandLogo()`
+are separate slots, and the logo blade renders exactly one per mode (`fi-logo-light`
+/ `fi-logo-dark`, gated on the `dark` class). No wrapper colour is needed.
+
+The dark variant is produced mechanically: **one attribute**. Adding `fill="#fff"` to
+the root `<svg>` promotes the six unclassed shapes to white, so all 12 render white.
+No path data is touched, which is what makes the pair safe to regenerate.
+
+The **mark** needs no variant. `nvoos-icon-old.svg` is a nine-colour molecule with
+dark outlines; its saturation holds up on white and on navy alike, so one file serves
+both modes. Only the wordmark has a black core.
+
+Composition is two `<img>` elements in a flex row rather than a pre-composited SVG,
+so each half keeps the artwork the brand owns and the wordmark can swap per mode
+while the mark stays shared.
+
+### 38.4 Decisions worth keeping
 
 - **Root-relative, not `asset()`.** Same reasoning the favicon already documents:
 `asset()` bakes in `APP_URL`, so a panel reached on a different host or port (a
-second local container, a preview domain) would 404 the image. A test asserts the
+second local container, a preview domain) would 404 the images. A test asserts every
 path starts with `/` and contains no scheme.
 - **One definition, two panels.** `BrandMark` is the single source, so the customer
 estate and the vendor panel cannot drift — the same rule the colour palette follows.
-- **The `alt` carries the product name.** The mark is a link to the panel home; an
-unlabelled image link is a dead end for a screen reader.
-- **A test parses the SVG.** A committed asset that is not valid XML would fail at
+- **The mark is decorative.** `alt=""` plus `aria-hidden="true"` on the icon, `alt="NV oOS"`
+on the wordmark. Without that the link announces the product twice.
+- **Optical sizing, not equal heights.** The mark is full-bleed in a 600×600 canvas;
+the wordmark's ink is ~62% of its 249-unit canvas. At `2rem` of wordmark the ink is
+~`1.25rem`, so the mark is `1.6rem` — just proud of cap height. Equal heights let the
+icon dominate; `1.8rem` and up reads as an icon with a caption.
+- **A geometry test pins the pair.** Both wordmark variants must expose identical
+`d`/rect attributes and differ *only* by the root fill, so a brand refresh cannot
+silently desynchronise them.
+- **A test parses every SVG.** A committed asset that is not valid XML would fail at
 render time in the browser, not in CI; `simplexml_load_file` catches a broken copy.
+- **The wrapper height equals the wordmark height.** There is no chip to absorb a
+difference: a taller wrapper leaves dead space, a shorter one crops the mark.
 
-### 38.4 Validation record — executed
+### 38.5 Validation record — executed
 
-- `PanelBrandingTest`: **7 passed, 20 assertions**.
-- `php -l` and `phpcs` (CI ruleset) clean on all four files.
+- `PanelBrandingTest`: **12 passed, 65 assertions**.
+- `php -l` and `phpcs` (CI ruleset) clean on all four PHP files.
 - Container restarted (a panel-provider change is not picked up otherwise), then
 verified end to end inside it:
-  - `GET /nvoos-logo-white.svg` → **200, `image/svg+xml`**
-  - `GET /ops/login` → contains `nvoos-logo-white.svg` **and** `background:#0f172a`
-  - `GET /admin/login` → contains `nvoos-logo-white.svg`
-  - `<title>` on `/admin/login` → `Login - NV oOS`
+  - `GET /nvoos-mark.svg`, `/nvoos-logo-light.svg`, `/nvoos-logo-dark.svg` → **200**
+  - `GET /nvoos-logo-white.svg` → **404** (the chip-era asset was removed)
+  - light mode: `fi-logo-light` visible, **161×32** (mark 25.6 + wordmark 129)
+  - `dark` class applied: `fi-logo-light` hides, `fi-logo-dark` shows the white
+    wordmark at the same **161×32**
+- Both modes screenshotted and inspected.
+
+### 38.6 Known inconsistency, not addressed here
+
+The favicon (`public/nvoos-icon.svg`) is a **different mark** from the lockup icon —
+a two-colour cyan/violet glyph in a 70.2×73.9 viewBox, where the lockup uses the
+nine-colour molecule in 600×600. The tab icon and the in-page mark therefore do not
+match. Aligning them is a one-line swap of a committed asset, but it changes what
+users see in every tab, so it is left as an explicit decision rather than done as a
+side effect of a layout change.
 
 ---
 
