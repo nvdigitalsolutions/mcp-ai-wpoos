@@ -476,13 +476,14 @@
       "id": "assets",
       "title": "Asset inventory",
       "audience": "operator",
-      "ops": { "state": "planned" },
+      "ops": { "state": "read-only" },
       "admin": null,
       "console": null,
-      "writer": "ops",
+      "writer": "none",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Researched 2026-11-17 (§32): NOT a media library and NOT redundant with `media`. The WordPress source is `WP_MCP_AI_Asset_Inventory_Admin` — an ISO 27001 asset register (asset, owner, classification, confidentiality/integrity/availability ratings) gated on a fleet capability. This runtime has no table, model or store for it, so there is nothing to render yet. Prerequisite: the register itself — a migration plus a store — before any page. `reports` depends on it, so both land together or neither does."
+      "projection": "No reduction and no writer: the register is DERIVED on every load from what the deployment actually contains — tables that exist with row counts, configured credentials as PRESENCE ONLY, registered providers, shipped packages and machine-read contracts. Nothing is stored, so there is nothing a second surface could disagree about, and an editable row would immediately stop describing reality. Cross-estate by nature: an information-asset register describes the deployment, not one estate's slice; the `owner` column carries the per-team split. Credential values are read transiently to reduce to a boolean and are never recorded, logged or rendered.",
+      "files": ["app/Filament/Operator/Pages/AssetInventory.php"],
+      "notes": "Shipped 2026-11-17 (§33). §32's assumption was wrong and is corrected here: the WordPress source (`WP_MCP_AI_Asset_Inventory`) is auto-discovered, not a hand-maintained CRUD register — it walks code directories, probes option presence, lists integrations, counts CPTs and stores the result in an option refreshed weekly. It persists only because its discovery walks the plugin tree; this runtime's discovery is a handful of cheap queries, so a stored snapshot would go stale on the next migration. `writer` corrected from `ops` to `none`. Classification vocabulary and the eight asset types are copied verbatim from the WordPress constants so `reports` can key off the same labels."
     },
     {
       "id": "datasets",
@@ -518,7 +519,7 @@
       "writer": "ops",
       "plan_gate": null,
       "projection": null,
-      "notes": "Researched 2026-11-17 (§32): the WordPress source is `WP_MCP_AI_Report_Generator` — compliance reports in PDF/DOCX/XLSX/HTML/CSV. It reports OVER the asset inventory, so it is blocked on `assets`: generating a compliance report with no register to report on would produce an empty document that looks authoritative. Land `assets` first, then the exporter."
+      "notes": "Researched 2026-11-17 (§32): the WordPress source is `WP_MCP_AI_Report_Generator` — compliance reports in PDF/DOCX/XLSX/HTML/CSV. It reports OVER the asset inventory, so it was blocked on `assets`. UNBLOCKED 2026-11-17 by §33: the `AssetRegister` class (app/Support/Assets) now derives the register, including `byClassification()` / `byType()` / `statistics()`, which are the shapes a report needs. What remains is an EXPORTER — format writers and a delivery path — and a decision on how much of the WordPress five formats is worth carrying. Do not ship a PDF/DOCX writer for one table: start with CSV/JSON over the existing register, which needs no new dependency, and add formats only when a compliance customer names the one they need."
     },
     {
       "id": "chat-profiles",
