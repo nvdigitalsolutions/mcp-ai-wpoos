@@ -55,12 +55,12 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            // Root-relative, not `asset()`: the admin is served from `public/`,
-            // and `asset()` would bake in APP_URL — so a panel reached on a
-            // different host than APP_URL (a second local container, a
-            // preview domain) would point the icon at the wrong origin and
-            // 404. The file is committed at `public/nvoos-icon.svg`.
-            ->favicon('/nvoos-icon.svg')
+            // The tab icon is the lockup mark, not the frontend glyph: the backend
+            // and the console are different products, and this repo had already
+            // shipped them with mismatched artwork once. Root-relative, not
+            // `asset()`, so a panel reached on a different host or port than
+            // APP_URL does not 404 the icon.
+            ->favicon(BrandMark::FAVICON_PATH)
             // The brand mark, shared with the operator panel. Two variants, because
             // the artwork is a black core with a white rim: it reads as a solid
             // wordmark on a light surface and nearly vanishes on a dark one.

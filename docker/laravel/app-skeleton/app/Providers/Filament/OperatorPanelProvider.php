@@ -47,11 +47,12 @@ class OperatorPanelProvider extends PanelProvider
             ->id('operator')
             ->path('ops')
             ->login()
-            // Same brand icon as the customer panel, for the same reason the
-            // palette is shared: two panels of one product must not look like
-            // two products. Root-relative so it survives a host/port mismatch
-            // with APP_URL.
-            ->favicon('/nvoos-icon.svg')
+            // Same tab icon as the customer panel, for the same reason the palette
+            // is shared: two panels of one product must not look like two products.
+            // `BrandMark::FAVICON_PATH` is the lockup mark, so the tab and the
+            // sidebar agree; root-relative so a host/port mismatch with APP_URL
+            // does not 404 it.
+            ->favicon(BrandMark::FAVICON_PATH)
             // The brand mark, shared with the customer panel for the same reason
             // the palette is shared: two panels of one product must not look like
             // two products. Two variants, because the artwork is a black core with
