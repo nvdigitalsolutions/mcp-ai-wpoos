@@ -32,6 +32,7 @@
 		"start": "node server.js",
 		"smoke": "node scripts/smoke.mjs",
 		"record:fixtures": "node scripts/record-fixtures.mjs",
+		"optimize:model": "node scripts/optimize-glb.mjs",
 		"sync:bridge-fixtures": "node scripts/sync-bridge-fixtures.mjs",
 		"sync:dist": "node scripts/sync-dist.mjs"
 	},

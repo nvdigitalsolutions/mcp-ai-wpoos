@@ -1,0 +1,179 @@
+---
+// ---------------------------------------------------------------------------
+// VideoHero — poster-first hero video (video-hero template variant).
+//
+// The poster <img> is the LCP element: it loads eagerly with high fetch
+// priority, and it is what a no-JS, reduced-motion, Save-Data or 2G visitor
+// keeps. The <video> is deferred (`preload="none"` fetches NOTHING until play)
+// and only starts when `shouldAutoplay()` allows it.
+//
+// Two details that are easy to get wrong:
+//   - the poster is faded with `opacity`, never `display: none`, so its `alt`
+//     stays in the accessibility tree after the video takes over;
+//   - autoplay is muted-only (browser policy), and a visible pause control is
+//     the a11y requirement that comes with it.
+//
+// Pass the output of `resolveHeroVideo()` — it returns null when the block has
+// no valid poster/MP4, so the caller keeps its normal hero band instead.
+// ---------------------------------------------------------------------------
+import { shouldAutoplay } from '../lib/hero-video';
+
+interface Props {
+	poster: string;
+	mp4: string;
+	webm?: string;
+	alt: string;
+	caption?: string;
+	/** Frame ratio for the reserved box (prevents CLS). */
+	ratio?: string;
+}
+
+const { poster, mp4, webm, alt, caption, ratio = '16 / 9' } = Astro.props;
+---
+
+<figure class="video-hero" data-hero-video>
+	<div class="video-hero__frame" style={`aspect-ratio: ${ratio}`}>
+		<img
+			class="video-hero__poster"
+			src={poster}
+			alt={alt}
+			loading="eager"
+			fetchpriority="high"
+			decoding="async"
+		/>
+		<video
+			class="video-hero__video"
+			muted
+			playsinline
+			loop
+			preload="none"
+			poster={poster}
+			aria-hidden="true"
+			tabindex="-1">
+			{webm ? <source src={webm} type="video/webm" /> : null}
+			<source src={mp4} type="video/mp4" />
+		</video>
+		<button class="video-hero__toggle" type="button" data-hero-video-toggle hidden>Pause</button>
+	</div>
+	{caption ? <figcaption class="video-hero__caption">{caption}</figcaption> : null}
+</figure>
+
+<script>
+	import { shouldAutoplay } from '../lib/hero-video';
+
+	type Connection = { saveData?: boolean; effectiveType?: string };
+	const connection = (navigator as Navigator & { connection?: Connection }).connection;
+
+	// The gate is a MOTION and DATA decision, made once from browser signals.
+	if (
+		shouldAutoplay({
+			reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+			saveData: connection?.saveData === true,
+			effectiveType: connection?.effectiveType,
+		})
+	) {
+		document.querySelectorAll<HTMLElement>('[data-hero-video]').forEach((figure) => {
+			const video = figure.querySelector('video');
+			const toggle = figure.querySelector<HTMLButtonElement>('[data-hero-video-toggle]');
+			if (!video) {
+				return;
+			}
+
+			video
+				.play()
+				.then(() => {
+					figure.dataset.playing = 'true';
+					if (toggle) {
+						toggle.hidden = false;
+						toggle.textContent = 'Pause';
+					}
+				})
+				.catch(() => {
+					// Autoplay refused (policy, low-power mode) — the poster stays.
+				});
+
+			toggle?.addEventListener('click', () => {
+				if (video.paused) {
+					void video.play();
+					toggle.textContent = 'Pause';
+					figure.dataset.playing = 'true';
+				} else {
+					video.pause();
+					toggle.textContent = 'Play';
+				}
+			});
+		});
+	}
+</script>
+
+<style>
+	.video-hero {
+		--vh-radius: 0.5rem;
+		--vh-surface: #111111;
+		margin: 0;
+	}
+
+	.video-hero__frame {
+		position: relative;
+		overflow: hidden;
+		border-radius: var(--vh-radius);
+		background: var(--vh-surface);
+	}
+
+	.video-hero__poster,
+	.video-hero__video {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: opacity 400ms ease;
+	}
+
+	.video-hero__video {
+		opacity: 0;
+	}
+
+	/* The poster is faded, never hidden: its `alt` is the hero's accessible
+	   name, and `display: none` would drop it from the a11y tree. */
+	.video-hero[data-playing='true'] .video-hero__poster {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.video-hero[data-playing='true'] .video-hero__video {
+		opacity: 1;
+	}
+
+	.video-hero__toggle {
+		position: absolute;
+		right: 0.75rem;
+		bottom: 0.75rem;
+		padding: 0.35rem 0.75rem;
+		border: 1px solid currentColor;
+		border-radius: 999px;
+		background: rgb(0 0 0 / 55%);
+		color: #ffffff;
+		font: inherit;
+		font-size: 0.8125rem;
+		cursor: pointer;
+	}
+
+	.video-hero__toggle:focus-visible {
+		outline: 2px solid #ffffff;
+		outline-offset: 2px;
+	}
+
+	.video-hero__caption {
+		margin: 0.5rem 0 0;
+		font-size: 0.875rem;
+		opacity: 0.75;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.video-hero__poster,
+		.video-hero__video {
+			transition: none;
+		}
+	}
+</style>

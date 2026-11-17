@@ -1095,6 +1095,35 @@ describe( 'analyzeScrollBehavior (Proposal 121)', () => {
 		expect( second?.direction ).toBeUndefined();
 	} );
 
+	it( 'records a HORIZONTAL motion_fx piece as axis x', () => {
+		// Pre-2026-11 this collapsed into a VERTICAL drift: the analyzer read the
+		// translateX settings but never recorded which axis produced them.
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-7777777">' +
+			'<div class="elementor-element elementor-element-5555555" data-settings="{&quot;motion_fx_motion_fx_scrolling&quot;:&quot;yes&quot;,&quot;motion_fx_translateX_effect&quot;:&quot;yes&quot;,&quot;motion_fx_translateX_direction&quot;:&quot;negative&quot;,&quot;motion_fx_translateX_speed&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:3,&quot;sizes&quot;:[]}}"><img src="/x.jpg" alt=""></div>' +
+			'</section>';
+
+		const horizontal = analyzeScrollBehavior( { url: 'https://jayainc.com', html, css: [] } );
+		const piece = horizontal.entries.find( ( entry ) => entry.kind === 'parallax' )?.pieces?.[ 0 ];
+
+		expect( piece ).toMatchObject( { axis: 'x', direction: 'negative', speed: 3 } );
+	} );
+
+	it( 'prefers the VERTICAL reading when both axes are enabled', () => {
+		// Keeping translateY first is what leaves every pre-existing site's
+		// generated facts byte-identical.
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-7777778">' +
+			'<div class="elementor-element elementor-element-5555556" data-settings="{&quot;motion_fx_motion_fx_scrolling&quot;:&quot;yes&quot;,&quot;motion_fx_translateY_effect&quot;:&quot;yes&quot;,&quot;motion_fx_translateY_speed&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:1,&quot;sizes&quot;:[]},&quot;motion_fx_translateX_effect&quot;:&quot;yes&quot;,&quot;motion_fx_translateX_speed&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:4,&quot;sizes&quot;:[]}}"><img src="/y.jpg" alt=""></div>' +
+			'</section>';
+
+		const both = analyzeScrollBehavior( { url: 'https://jayainc.com', html, css: [] } );
+		const piece = both.entries.find( ( entry ) => entry.kind === 'parallax' )?.pieces?.[ 0 ];
+
+		expect( piece?.axis ).toBeUndefined();
+		expect( piece?.speed ).toBe( 1 );
+	} );
+
 	it( 'maps the aux reveal effect onto the canonical vocabulary', () => {
 		const entry = pass.entries.find( ( behavior ) => behavior.id === '1111111' );
 		expect( entry ).toEqual( { id: '1111111', kind: 'reveal', effect: 'fade-up' } );

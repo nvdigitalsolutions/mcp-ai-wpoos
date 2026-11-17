@@ -11,7 +11,7 @@ import { z } from 'zod/v4';
 import { zipSync } from 'fflate';
 
 import { BINARY_EXTENSIONS, SKIP_DIRS } from '../../lib/project-files.ts';
-import { rewriteGlobalCss, scaffold, tokenWarnings } from '../../lib/scaffold.ts';
+import { isTemplateVariant, rewriteGlobalCss, scaffold, TEMPLATE_VARIANTS, tokenWarnings } from '../../lib/scaffold.ts';
 import { SitesStore } from '../../lib/sites.ts';
 import type { SiteProfile } from '../../lib/types.ts';
 import type { ToolDef } from '../tool-def.ts';
@@ -43,21 +43,30 @@ export const SCAFFOLD_TOOLS: ToolDef[] = [
 			profilePath: z.string().optional(),
 			target: z.string().optional(),
 			template: z.string().optional(),
+			variant: z.string().optional(),
 			tokens: z.record( z.string(), z.string() ).optional(),
 			overwrite: z.boolean().optional(),
 		} ),
 		annotations: WRITE_TOOL,
 		write: true,
 		handler: async ( args, env ) => {
-			const { site, profilePath, target, template, tokens, overwrite } = args as {
+			const { site, profilePath, target, template, tokens, variant, overwrite } = args as {
 				site?: string;
 				profilePath?: string;
 				target?: string;
 				template?: string;
 				tokens?: Record<string, string>;
+				variant?: string;
 				overwrite?: boolean;
 			};
 			try {
+				// Fail fast on an unknown variant — before any profile or write.
+				if ( variant !== undefined && ! isTemplateVariant( variant ) ) {
+					return errorResult(
+						`Unknown variant "${ variant }" — expected one of: ${ TEMPLATE_VARIANTS.join( ', ' ) }.`,
+						{ ok: false }
+					);
+				}
 				// Fail fast on target confinement — before touching any profile.
 				await ensureWorkDir( env );
 				const targetDir = resolveTarget( env, target ?? join( env.workDir, site ?? basename( profilePath ?? 'site' ) ) );
@@ -72,7 +81,7 @@ export const SCAFFOLD_TOOLS: ToolDef[] = [
 				if ( tokens ) {
 					profile.tokens = { ...( profile.tokens ?? {} ), ...tokens };
 				}
-				const result = await scaffold( { profile, targetDir, template, overwrite } );
+				const result = await scaffold( { profile, targetDir, template, variant, overwrite } );
 				const warnings = [ ...result.warnings, ...tokenWarnings( tokens ) ];
 				return text( `Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }.`, {
 					targetDir: result.targetDir,

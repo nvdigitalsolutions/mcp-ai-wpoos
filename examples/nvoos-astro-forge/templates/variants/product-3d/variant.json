@@ -1,0 +1,16 @@
+{
+	"id": "product-3d",
+	"version": 1,
+	"description": "Poster-first 3D product viewer for a generated storefront (a custom element, never an island).",
+	"adds": [
+		"VARIANT.md",
+		"public/vendor/README.md",
+		"src/components/ModelViewer.astro",
+		"src/lib/product-model.ts"
+	],
+	"requires": {
+		"runtime": "public/vendor/model-viewer.min.js",
+		"authoring": "product.model3d = { src, poster?, alt?, ar? }",
+		"note": "The runtime is self-hosted by the operator. A CDN origin widens the CSP and lets a third party break the page."
+	}
+}

@@ -66,9 +66,9 @@ import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
-import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
+import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy, suggestedVariant } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
-import { auditTokenBlock, mergeTokens, rewriteGlobalCss, scaffold } from '../lib/scaffold.ts';
+import { auditTokenBlock, mergeTokens, rewriteGlobalCss, scaffold, TEMPLATE_VARIANTS } from '../lib/scaffold.ts';
 import { auditSeo, scanSeoHtml } from '../lib/seo-audit.ts';
 import { analyzeTracking, mergeTrackingDraft, renderTrackingReport, trackingFromReport } from '../lib/tracking.ts';
 import { auditTracking } from '../lib/tracking-audit.ts';
@@ -1325,6 +1325,7 @@ async function runScaffold( profileRef, options ) {
 		profile,
 		targetDir: options.target,
 		template: options.template,
+		variant: options.variant,
 		overwrite: options.overwrite === true,
 		preset: options.preset,
 		render: options.render,
@@ -1342,6 +1343,12 @@ async function runScaffold( profileRef, options ) {
 	const materialized = isMaterializedContent( profile );
 	for ( const collection of result.manifest.collections ) {
 		console.log( `  - ${ collection.slug } <- ${ materialized ? 'materialized content (no CMS)' : collection.restBase}` );
+	}
+	// A variant is never guessed (the probe cannot see a `model3d` field), so
+	// surface the one this preset can carry instead of silently omitting it.
+	const variantHint = suggestedVariant( options.preset ?? 'blog' );
+	if ( variantHint && ! options.variant ) {
+		console.log( `  hint: this preset can carry --variant ${ variantHint }` );
 	}
 	for ( const warning of result.warnings ) {
 		console.warn( `\u26a0 ${ warning }` );
@@ -3750,7 +3757,7 @@ program
 	.option( '--target <dir>', 'scaffold target directory (prompted on a TTY when missing)' )
 	.option( '--name <name>', 'registry site name (default: derived from the hostname)' )
 	.option( '--to <mode>', 'deploy mode', 'github-pages' )
-	.option( '--preset <name>', 'blog | storefront | minimal (default: suggested from the analysis)' )
+	.option( '--preset <name>', `${ PRESET_NAMES.join( ' | ' ) } (default: suggested from the analysis)` )
 	.option( '--render <mode>', 'static | ssr (default: static; prompted for storefront on a TTY)' )
 	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
@@ -3788,7 +3795,7 @@ program
 	.option( '--repo <name>', 'repository name (default: slugified site name)' )
 	.option( '--org <org>', 'create the repository under an organization' )
 	.option( '--public', 'make the repository public (default: private)' )
-	.option( '--preset <name>', 'blog | storefront | minimal (applied when scaffolding)' )
+	.option( '--preset <name>', `${ PRESET_NAMES.join( ' | ' ) } (applied when scaffolding)` )
 	.option( '--render <mode>', 'static | ssr (applied when scaffolding)' )
 	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (applied when scaffolding)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
@@ -4146,7 +4153,8 @@ function scaffoldOptions( cmd ) {
 		.argument( '<profileRef>', 'site.json path or registered site name' )
 		.option( '--target <dir>', 'scaffold target directory' )
 		.option( '--template <nameOrPath>', 'built-in template name or a directory path' )
-		.option( '--preset <name>', 'blog | storefront | minimal' )
+		.option( '--variant <name>', `additive template variant: ${ TEMPLATE_VARIANTS.join( ' | ' ) }` )
+		.option( '--preset <name>', PRESET_NAMES.join( ' | ' ) )
 		.option( '--render <mode>', 'static | ssr (default: the preset\'s render mode, static)' )
 		.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 		.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )

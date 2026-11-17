@@ -26,8 +26,8 @@ already extracted its design language — the tokens feed the template's
 | `lib/wp-loader.ts` | The Astro content-layer loader — wc/v3 commerce extraction, wp/v2 featured-media resolution, optional sources |
 | `lib/sanitize.ts` | Versioned `sanitize-html` allowlist — the XSS gate before `set:html` |
 | `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning + preset surfaces + agent stubs + render variant (Q4) + OG endpoint (Q5) |
-| `lib/presets.ts` | 104 §4.3 preset registry — `blog` / `storefront` / `minimal` descriptors (render mode + surfaces incl. `ogImages`), `suggestPreset()`, `applyPresetToProfile()` |
-| `scripts/forge.mjs` | CLI on **commander** + **@clack/prompts**: `analyze`, `wizard [--preset …] [--render …]`, `site`, `vault`, `deploy-config`, `deploy`, scaffold (`--preset`, `--render`, `--og-images`, `--no-agents`) — plain JS, Node ≥ 22.6 |
+| `lib/presets.ts` | 104 §4.3 preset registry — `blog` / `storefront` / `portfolio` / `landing` / `docs` / `minimal` descriptors (render mode + surfaces incl. `ogImages` + the variants each can carry), `suggestPreset()`, `suggestedVariant()`, `applyPresetToProfile()` |
+| `scripts/forge.mjs` | CLI on **commander** + **@clack/prompts**: `analyze`, `wizard [--preset …] [--render …]`, `site`, `vault`, `deploy-config`, `deploy`, scaffold (`--preset`, `--render`, `--variant`, `--og-images`, `--no-agents`) — plain JS, Node ≥ 22.6 |
 | `lib/discovery.ts` | `site_analyze` — root/types/counts/front-page/junk/Woo/SEO probes → draft site.json |
 | `lib/vault.ts` | Phase 3.1 credential store — AES-256-GCM entries under `~/.nvoos-forge/vault.json`, key from `NVOOS_FORGE_VAULT_KEY`, masked output |
 | `lib/sites.ts` | Phase 3.4 multi-site registry — named profile refs + default flag in `~/.nvoos-forge/sites.json` |
@@ -463,7 +463,53 @@ node scripts/forge.mjs site.json --target ./customer-frontend --theme-policy dar
 | --- | --- | --- | --- |
 | `blog` | `blog` | as discovered (the Phase 0 default) | search, feed, sitemap |
 | `storefront` | `blog` | blog + products (`wc/v3`, consumer-key auth) + front page | search, feed, sitemap |
+| `portfolio` | `blog` | posts/pages + an **optional** `projects` CPT (added only when no portfolio-ish CPT exists) | search, sitemap — no feed (browsed by facet, not subscribed) |
+| `landing` | `blog` | posts/pages, commerce pruned; sets `shape: one-pager` | sitemap only — a one-pager has nothing to search and nothing to subscribe to |
+| `docs` | `blog` | posts/pages, commerce pruned (the page hierarchy is the site) | search, sitemap — no feed |
 | `minimal` | `blog` | posts/pages only | feed, sitemap — **no search** (page + Pagefind step + nav link pruned) |
+
+Preset invariants, enforced by `presets.test.ts`: **commerce is the only thing a
+content preset prunes** (an arbitrary CPT is content and survives every preset),
+and a preset **never invents a taxonomy** — it only ensures the one collection it
+can honestly default. `suggestPreset()` picks storefront → portfolio → blog from
+the discovery report; `landing` and `docs` are only ever chosen explicitly,
+because shape and reading order are operator intent, not something a probe can
+see.
+
+### Template variants (`--variant <name>`)
+
+A variant is an **additive overlay** on the base template, not a second
+template: `templates/blog` stays the single source of truth, so a base fix
+reaches every variant for free. The six rules a new variant must clear — and
+the candidates already screened out — live in
+[`templates/variants/VARIANTS.md`](templates/variants/VARIANTS.md).
+
+```sh
+node scripts/forge.mjs site.json --target ./frontend --preset storefront --variant product-3d
+node scripts/forge.mjs site.json --target ./frontend --preset landing --variant video-hero
+```
+
+| Variant | Fits | Adds | Needs |
+| --- | --- | --- | --- |
+| `product-3d` | `storefront` | `src/lib/product-model.ts`, `src/components/ModelViewer.astro` | a self-hosted `public/vendor/model-viewer.min.js`; a product `model3d` field |
+| `video-hero` | `storefront`, `portfolio`, `landing` | `src/lib/hero-video.ts`, `src/components/VideoHero.astro` | a poster + MP4 (WebM optional) under `public/media/` |
+
+`scaffold()` refuses an incompatible preset/variant pair before any write, and
+`suggestedVariant()` reports the first variant a preset can carry — the scaffold
+prints it as a hint, never applying it automatically, because `site_analyze`
+cannot see whether product records carry a `model3d` field.
+
+**`product-3d`:** the operator authors `model3d = { src, poster?, alt?, ar? }`;
+`poster` falls back to the first catalogue image and `alt` to the product name.
+`src`/`poster` must be root-relative or `https` (a protocol-relative `//` is
+rejected, mirroring the sanitizer). See
+`templates/variants/product-3d/VARIANT.md`.
+
+**`video-hero`:** the poster is the LCP element (`eager` +
+`fetchpriority="high"`), the video is `preload="none"` so zero media bytes move
+until playback starts, and `shouldAutoplay()` vetoes reduced-motion, Save-Data
+and 2G. The poster is faded with `opacity` — never `display: none` — so its
+`alt` stays in the accessibility tree. See `templates/variants/video-hero/VARIANT.md`.
 
 ### Render variant (Proposal 104 Q4 — `--render static|ssr`)
 

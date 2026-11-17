@@ -48,11 +48,13 @@ export default defineConfig({
 		// The content-write spec publishes/deletes posts, which would race
 		// every other spec's listing counts — so it runs serial against its
 		// OWN fixture + BFF pair (ports 8125/4323), the theme-policy pattern.
+		// model-3d shares the pair for the same reason (it creates/deletes a
+		// post to exercise the 3D block).
 		{
 			name: 'content-write',
 			fullyParallel: false,
 			workers: 1,
-			testMatch: /content-write\.spec\.ts/,
+			testMatch: /(content-write|model-3d)\.spec\.ts/,
 			use: {
 				baseURL: 'http://localhost:4323',
 				trace: 'on-first-retry',

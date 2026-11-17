@@ -1,0 +1,116 @@
+---
+// ---------------------------------------------------------------------------
+// ModelViewer — poster-first 3D product viewer (product-3d template variant).
+//
+// A generated forge project is STATIC and ships zero framework runtime, so the
+// viewer must be a CUSTOM ELEMENT (<model-viewer>), never an island. The poster
+// <img> is the whole contract for a no-JS / reduced-data visitor and for the
+// first paint; the element only takes over once it is `:defined`.
+//
+// The runtime is SELF-HOSTED (public/vendor/model-viewer.min.js — see
+// public/vendor/README.md). A CDN origin would widen the CSP and hand a
+// third-party the ability to break the page.
+//
+// Pass the output of `resolveProductModel()` from src/lib/product-model.ts:
+// it returns null when a product has no usable poster, so this component is
+// only ever rendered for a product that can actually show a model.
+// ---------------------------------------------------------------------------
+interface Props {
+	src: string;
+	poster: string;
+	alt: string;
+	caption?: string;
+	ar?: boolean;
+}
+
+const { src, poster, alt, caption, ar = false } = Astro.props;
+---
+
+<figure class="block-model3d" data-section="model-3d">
+	<div class="block-model3d__frame">
+		<img class="block-model3d__poster" src={poster} alt={alt} loading="lazy" decoding="async" />
+		<model-viewer
+			src={src}
+			poster={poster}
+			alt={alt}
+			class="block-model3d__viewer"
+			camera-controls
+			touch-action="pan-y"
+			shadow-intensity="1"
+			reveal="auto"
+			loading="lazy"
+			data-auto-rotate="true"
+			ar={ar ? '' : undefined}
+			ar-modes={ar ? 'webxr scene-viewer quick-look' : undefined}></model-viewer>
+	</div>
+	{caption ? <figcaption class="block-model3d__caption">{caption}</figcaption> : null}
+</figure>
+
+<script is:inline>
+	(function () {
+		// Load the self-hosted runtime exactly once per document.
+		if (!window.__nvoosModelViewerRuntime) {
+			window.__nvoosModelViewerRuntime = true;
+			const runtime = document.createElement('script');
+			runtime.type = 'module';
+			runtime.src = '/vendor/model-viewer.min.js';
+			runtime.dataset.nvoosModelViewer = '1';
+			document.head.appendChild(runtime);
+		}
+		// Auto-rotation IS motion — only for visitors who did not ask for less.
+		if (window.matchMedia && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			document.querySelectorAll('model-viewer[data-auto-rotate="true"]').forEach(function (viewer) {
+				viewer.setAttribute('auto-rotate', '');
+				viewer.setAttribute('auto-rotate-delay', '2000');
+			});
+		}
+	})();
+</script>
+
+<style>
+	.block-model3d {
+		/* Local, overridable knobs — the component must not depend on a token
+		   name the base template is free to rename. */
+		--mv-radius: 0.5rem;
+		--mv-surface: #f4f2ef;
+		margin: 1.5rem 0;
+	}
+
+	.block-model3d__frame {
+		position: relative;
+		aspect-ratio: 4 / 3;
+		border-radius: var(--mv-radius);
+		overflow: hidden;
+		background: var(--mv-surface);
+	}
+
+	.block-model3d__poster {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.block-model3d__viewer {
+		display: none;
+		width: 100%;
+		height: 100%;
+		background: transparent;
+	}
+
+	/* Upgrade only once the custom element is DEFINED — before that the poster
+	   is the viewer, which is also the no-runtime fallback. */
+	.block-model3d__viewer:defined {
+		display: block;
+	}
+
+	.block-model3d:has(.block-model3d__viewer:defined) .block-model3d__poster {
+		display: none;
+	}
+
+	.block-model3d__caption {
+		margin: 0.5rem 0 0;
+		font-size: 0.875rem;
+		opacity: 0.75;
+	}
+</style>

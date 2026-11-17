@@ -7,8 +7,10 @@
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 
 import {
+	parallaxAxis,
 	parallaxBandCss,
 	parallaxEndpoints,
 	parallaxMaxWidth,
@@ -50,6 +52,67 @@ describe( 'parallaxSign', () => {
 		expect( parallaxSign( { direction: 'negative' } ) ).toBe( 1 );
 		expect( parallaxSign( { direction: 'positive' } ) ).toBe( -1 );
 		expect( parallaxSign( {} ) ).toBe( 1 );
+	} );
+} );
+
+describe( 'parallaxAxis', () => {
+	it( 'defaults to vertical — every Phlox piece and the common motion_fx case', () => {
+		expect( parallaxAxis( {} ) ).toBe( 'y' );
+		expect( parallaxAxis( { axis: 'y' } ) ).toBe( 'y' );
+	} );
+
+	it( 'honours an explicit horizontal piece', () => {
+		expect( parallaxAxis( { axis: 'x' } ) ).toBe( 'x' );
+	} );
+} );
+
+describe( 'parallaxPieceCss — axis channels', () => {
+	it( 'writes the Y channel for a vertical piece (the existing contract)', () => {
+		const css = parallaxPieceCss( 'abc1234', 'gallery', { depth: 0.1, origin: 'bottom' }, 0 );
+
+		expect( css ).toContain( '--ds-parallax-from:' );
+		expect( css ).toContain( '--ds-parallax-to:' );
+		expect( css ).not.toContain( '--ds-parallax-x-from' );
+	} );
+
+	it( 'writes the X channel and FREEZES Y for a horizontal piece', () => {
+		const css = parallaxPieceCss( 'abc1234', 'gallery', { axis: 'x', speed: 2, direction: 'positive' }, 0 );
+
+		expect( css ).toContain( '--ds-parallax-x-from:' );
+		expect( css ).toContain( '--ds-parallax-x-to:' );
+		// Frozen, or a diagonal source would drift twice.
+		expect( css ).toContain( '--ds-parallax-from:0px' );
+		expect( css ).toContain( '--ds-parallax-to:0px' );
+	} );
+
+	it( 'still refuses a background-type piece rather than faking it', () => {
+		expect( parallaxPieceCss( 'abc1234', 'gallery', { type: 'background' }, 0 ) ).toBe( '' );
+	} );
+} );
+
+describe( 'templates/blog/src/styles/global.css — the shipped stylesheet', () => {
+	const css = readFileSync(
+		new URL( '../templates/blog/src/styles/global.css', import.meta.url ),
+		'utf8'
+	);
+
+	it( 'parses (a hand-edited brace or at-rule must fail here, not at a site build)', () => {
+		const { parse } = createRequire( import.meta.url )( 'css-tree' ) as {
+			parse: ( source: string ) => unknown;
+		};
+		expect( () => parse( css ) ).not.toThrow();
+	} );
+
+	it( 'gates the parallax runtime behind @supports (the static-offset trap)', () => {
+		// Without the guard the animation still runs with a 0s duration and
+		// `fill-mode: both`, baking the END keyframe into browsers that have no
+		// scroll timelines — every carrier permanently offset.
+		expect( css ).toContain( '@supports (animation-timeline: scroll())' );
+	} );
+
+	it( 'carries both translate channels in the parallax keyframe', () => {
+		expect( css ).toContain( '--ds-parallax-x-from' );
+		expect( css ).toContain( '--ds-parallax-x-to' );
 	} );
 } );
 

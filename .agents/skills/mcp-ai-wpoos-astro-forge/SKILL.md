@@ -294,102 +294,8 @@ gates, visual-regression practice).
 
 ## Proposal 114 §3.9 — form bridge P7 (shipped 2026-11-05)
 
-Forms integrate like WooCommerce: **content at build time, behavior proxied
-through WordPress.**
-
-- **Render half (the forge):** `sanitize.ts` gains the form allowlist —
-  `form`/`label`/`input`/`textarea`/`select`/`option`/`optgroup`/`button`/
-  `fieldset`/`legend` + functional attributes only (`action`/`method`/
-  `on*`/`formaction`/`style` are never allowed; `javascript:` `value`s die in
-  transformTags) — `SANITIZE_VERSION = 2`. `semantic.ts` gains the `form`
-  section kind + `FormInfo` (kind search|submit|cta, handler, formId,
-  formName, postId, fields, submitLabel): forms are extracted FIRST, before
-  the builder-section pipeline, from the top-level nodes; search forms = one
-  search-ish input (`type=search` / name s|search|query|q / `role=search` /
-  the profile's `forms.searchForms` names) or a hidden-ID carrier
-  (`form_id` → elementor, `_jet_engine_booking_form_id` → jetformbuilder,
-  `_wpcf7` → wpcf7; `post_id`/`__queried_post_id` → postId); no resolvable ID
-  → `cta` (title/links band, dropped when empty — never a dead endpoint).
-  `classifyHtml(html, options)` — the no-forms path is byte-identical to
-  pre-P7 (all 297 unit tests pin it). `Form.astro` (pure Astro, NO islands):
-  search → GET `/search/?q=`; submit → POST to `{NVOOS_FORGE_FORMS_ENDPOINT ||
-  manifest.forms.endpoint}/forms/submit` with hidden `form`/`post_id?`/
-  `honeypot`/`timestamp`/`_redirect` + delegated fetch enhancement (Astro
-  hoists + dedupes identical bundled scripts); the no-JS floor is the
-  ordinary form POST + `?form=ok|error` status script. `search.astro`
-  prefills + auto-runs from `?q=`.
-- **Config:** `types.ts` `ForgeForms` (endpoint/origin/searchForms) on
-  `SiteProfile` + `ForgeManifest`; scaffold emits `manifest.forms` (endpoint
-  defaults to `<profile.url>/wp-json/nvoos-forge/v1`) and `.env.example`
-  (`NVOOS_FORGE_FORMS_ENDPOINT`, `NVOOS_FORGE_FORMS_ORIGIN`).
-- **Behavior half (`plugins/nvoos-forge-bridge` 0.2.0):**
-  `includes/rest/class-nvoos-forge-bridge-forms.php` — one public route
-  `POST /nvoos-forge/v1/forms/submit` (permission `__return_true` — public
-  by design; the gates are CSRF/abuse controls, NOT authorization — see the
-  invariants below): disabled→404; origin allowlist (Origin header,
-  Referer fallback, normalized via `Settings::normalize_origin`)→403;
-  per-IP rate limit (transient, 5/10min)→429; honeypot non-empty or
-  timestamp outside ±2h (JSON path; optional on the no-JS form-encoded
-  floor)→silent 200 discard; optional Turnstile with `action`=
-  `nvoos_forge_form` + hostname pinned to the allowlisted origin (fails
-  closed on network errors); server-side `sanitize_textarea_field` on every
-  field (count/length caps). Dispatch ladder: JFB (`jet_fb_handler()->
-  process_form()` driven through the `_jet_engine_booking_form_id` +
-  `_jet_engine_refer` `$_POST` carriers, `is_ajax = true` for the JSON
-  response; form-id resolution via the `jet-form-builder` CPT) → Elementor
-  Pro (`ElementorPro\Modules\Forms\Classes\Ajax_Handler::ajax_send_form()`
-  with the admin-ajax contract emulated in-process: `action`/`form_id`/
-  `post_id`/`queried_id`/`form_fields` + a fresh `wp_create_nonce(
-  'elementor_pro_forms')`; form existence via a bounded `_elementor_data`
-  LIKE) → typed 404 `nvoos_forge_form_not_found` / 501
-  `nvoos_forge_no_form_handler`. Both native dispatches are wrapped in
-  `capture_json()`: it filters `wp_doing_ajax` true (otherwise `wp_send_json`
-  calls `die` directly and no die-handler filter runs), swaps
-  `wp_die_ajax_handler`/`wp_die_json_handler` for a sentinel thrower, and
-  buffers the echoed JSON (both `{status,…}` JFB and `{success,data}` shapes
-  map into the envelope `{ok,message,errors?}`). Version-drift seams: `nvoos_forge_bridge_forms_
-  jfb_available|elementor_available` (bool filters) + `…_jfb_dispatch|
-  elementor_dispatch` (return an envelope array or WP_Error to pin a
-  specific plugin release; null = native). Audit seam: the
-  `nvoos_forge_bridge_form_submission` action (accepted|rejected). No-JS
-  floor: form-encoded bodies redirect (302) to the allowlisted `_redirect`
-  with `?form=ok|error` (open-redirect guarded). Settings: `OPTION_FORMS_*`
-  (enabled, origins textarea, captcha provider/site key/secret) + UI
-  section + `option_keys()` + redacted health fields.
-- **Security invariants (0.3.1, do not regress):** only `post_status = publish`
-  + empty `post_password` forms resolve (JFB by ID and title; Elementor
-  `_elementor_data` lookup joins `wp_posts`); non-public forms return the same
-  404 as missing ones (no draft enumeration). The rate-limit IP is
-  `REMOTE_ADDR` unless the direct peer is in the
-  `nvoos_forge_bridge_trusted_proxies` filter, then the rightmost untrusted
-  hop. The route is public by design, so the origin allowlist is a CSRF gate,
-  never authorization. A submitted field can never re-target the dispatch:
-  JFB's routing carriers (`_jet_engine_booking_form_id` / `_jet_engine_refer`)
-  are stripped from the fields and re-asserted last.
-- **Tests:** forge — sanitizer form allowlist + XSS vectors, semantic form
-  classification (search/submit/cta/JFB/CF7/postId/options), scaffold forms
-  emission, e2e fixture forms (xss-trap search+Elementor form, contact JFB
-  form) asserting the rebuilt `action`es + honeypot + no carrier/vector
-  leaks. Bridge — `tests/test-forms.php` zero-HTTP: origin/rate/spam gates,
-  404/501/400/429 contracts, both dispatch seams + sanitization capture,
-  captcha via intercepted `pre_http_request`, no-JS 302 + open-redirect
-  guard.
-- **Gotchas (each cost a fix 2026-11-05, P7):** the generated project's
-  frontmatter context cannot resolve DOM type NAMES (`HTMLInputTypeAttribute`
-  → ts(2304)) — cast input `type` to a literal union instead; `is:inline`
-  scripts are PLAIN JS — TS assertions (`as unknown as`) fail the check
-  (ts(8016)); a type error in one template file makes `astro check` emit
-  cascading ts(7027) "unreachable code" noise on unrelated inline scripts —
-  fix the root error, not the warnings; `nvoos.json` has no `forms` key on
-  form-less profiles — read it through an explicit cast shape; `--overwrite`
-  re-scaffold wipes `node_modules` (reinstall); `classifyHtml` must split
-  forms from the TOP-LEVEL nodes in document order or non-form content
-  re-renders forms twice; the JFB `form_id` carrier is a hidden INPUT NAME
-  (`_jet_engine_booking_form_id`), Elementor's is `form_id` + `post_id`
-  hidden inputs — no `data-*` surface needed; bridge PHPUnit needs the
-  Docker `oos-wp` env (wp-tests-config targets the compose network) — phpcs
-  + `php -l` run anywhere, PHPUnit does not.
-
+Moved to [`reference/form-bridge.md`](reference/form-bridge.md) — content unchanged
+(split out 2026-11-17 to keep this file under Zed's load limit).
 ## Shared-mirror deploy (branch per site, 2026-11-06)
 
 Owner decision: forged client sites deploy through ONE private mirror repo
@@ -817,93 +723,8 @@ keyframes use `translate`/`scale`, never `transform` (it replaces the centering)
 
 ## Proposal 123 — chrome typography pass (2026-11-06)
 
-Header/footer fidelity round: the chrome was rebuild-blind to the source's
-nav/call/footer type facts and its strip colors. All facts verified with
-headless-chromium computed styles against the live source.
-
-- **The shared cascade (`resolveElementRules`):** every chrome fact resolves
-  through the CSS with an own-match-first ladder — `!important` (per
-  DECLARATION, not per rule) > own-token match > context match, spec =
-  `own * 1e6 + context * 1e8 + ruleIndex`. A rule matching NONE of the
-  element's own tokens can only INHERIT — it must lose (the header's
-  `.aux-header-light { color: #fff }` must not paint the call button; its
-  real ink comes from its own classes). Pseudo-states AND state CLASSES
-  skip (`:hover` + `aux-hover` — jayainc's nav had an `!important`
-  `.aux-hover` rule that out-cascaded the resting white). `terminalFill`
-  gates the element-level FILL to rules whose selector ENDS on an own
-  token (the call button's gradient must never leak onto the header).
-  `bgForCss` keeps rgba()/hsla() alpha raw — `rgba(8,26,67,0.9)` and
-  `rgba(255,255,255,0.7)` ARE the facts, hex-flattening loses the look.
-- **The fetch must see the whole sheet set:** MAX_STYLESHEETS 6 silently
-  dropped jayainc's CUSTOMIZER file (`uploads/phlox-pro/custom.css` — the
-  file with every real body/header/footer override). Raised to 40 with a
-  3MB total cap that breaks BETWEEN files; the per-file cap went 512KB →
-  2MB — a 512KB cut landed mid-`@media` in the 886KB main.css and the
-  dangling brace swallowed EVERY stylesheet after it. Inline `<style>`
-  blocks and `<link>` sheets now interleave in DOCUMENT order (WP prints
-  the inline blocks after the links — the inline 16px nav rule must
-  cascade AFTER the linked 0.875em rule).
-- **`topLevelRules` (the splitter):** the flat RULE_RE desyncs on `@media`
-  blocks and on braces/quotes inside `url(data:…)` payloads — one svg data
-  URI ate every later `body { font-family }` rule. The splitter is a
-  char scanner: comments skipped, quoted strings inert-but-accumulated,
-  quotes only open strings OUTSIDE `url(...)` parens, braces inside parens
-  are value bytes. Media bodies stay inert blobs (no element tokens match
-  a media selector).
-- **Typography harvest:** the body font comes from the LAST `body`-selector
-  rule (frequency ranking miscounts Elementor's unused token-layer
-  families — jayainc's body rendered Rubik while the tokens said Roboto);
-  the DISPLAY font from the `h1..h6` rule; `bodyWeight` token (300) from
-  the body rule; `font` emits even when body === display (a single-family
-  source renders BOTH roles in it). @font-face blocks are stripped before
-  family ranking (load evidence, not usage).
-- **New chrome facts (all in `design.chrome`):** `topbarBg/Ink`,
-  `headerBg/Ink`, `navStyle` (weight/size/transform/letterSpacing),
-  `navInk`, `call.style` (padding/radius/weight/size/transform — jayainc:
-  `14px 43px`, `100em` pill, 400, 16px, uppercase), `footerBarBg/Ink` (the
-  dark copyright strip — the bar INK resolves from the COPYRIGHT node, not
-  the footer element), `footerHeadingStyle` (500/29px/capitalize),
-  `chromeSize` (16px — the body rule's `100%` resolves against the html
-  ROOT rule, never the rebuilt 13px content body).
-- **Template wiring:** the facts ride as CSS vars on `<body>`
-  (`--forge-chrome-size`, `--forge-header-bg`, `--forge-nav-transform`,
-  `--forge-call-pad` → falls back to `--forge-cta-pad` → template
-  default, …); `.site-header--themed`/`.site-footer--themed` classes drop
-  the default hairline when a harvested bg exists; the footer splits into
-  two full-width strips (light subfooter + dark bar — the source's rhythm,
-  the inner containers re-measure); **`.site-header--sticky` must chain
-  `var(--forge-header-bg, var(--forge-surface))`** — the sticky variant
-  painted surface over the navy (caught in headless verification).
-- **Verification:** headless chromium + a tiny in-process static server
-  (the MCP browser backends cannot reach this machine's localhost) — dump
-  computed styles per chrome element and diff against the live source.
-  Re-scaffold (not manual CSS copies) after template edits — the
-  `FORGE:tokens` rewrite only runs in the scaffold pipeline.
-- **The top strip's STRUCTURE is measured** (`measureTopbar`, 2026-11-12):
-  items (icon + text, the address's own line break), icon-only socials,
-  alignment, height and the icon/item rhythm — `analyzeChrome` only reads its
-  text lines. Contract + the `tsString` newline gotcha:
-  [`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md) §11.
-
-### The mobile nav disclosure (`chrome.navToggle`)
-
-The chrome pass captured nav LINKS but nothing about the control that hides
-them; a rebuild without it wrapped six links over three rows at 390px.
-Presence + accessible name are markup facts (`analyzeChrome`); WHERE it appears
-is a browser fact (`measureNavToggle`) — never guess a breakpoint, since Brando
-collapses at 991px and Bootstrap at 768px. The template renders an APG
-disclosure button (Escape closes + returns focus, focus-out closes, resize
-re-syncs) and hides the nav **only** via `data-collapsed`, which JS alone sets,
-so JS-off leaves it inline at every width. A chrome fact needs THREE edits
-(`ForgeChrome`, the emitted interface, the emitted value) or it silently
-disappears — detail: [`reference/mobile-nav-disclosure.md`](reference/mobile-nav-disclosure.md).
-
-**The OPENED panel is a measured SURFACE** (`chrome.mobileNav`), and
-`verify --chrome` diffs it (plus the header BOX — `chrome.geometry` — the footer
-brand ROW — `chrome.footerBrand`: logo/social positions per viewport — and
-colour-region resolution) —
-[`reference/chrome-gates.md`](reference/chrome-gates.md).
-
+Moved to [`reference/chrome-typography.md`](reference/chrome-typography.md) — content unchanged
+(split out 2026-11-17 to keep this file under Zed's load limit).
 ## Proposal 125 — split hero, webfonts, catalog (2026-11-06)
 
 The live jayainc rebuild taught four rebuild gaps; all fixed in the
@@ -1365,7 +1186,7 @@ Four more measured facts (detail:
 The two Astro products share a CONTRACT but not code, so neither suite can see
 the other tree. `bin/check-astro-app-parity.mjs` (CI:
 `.github/workflows/astro-app-parity.yml`, triggered by EITHER app) is the
-record — read it as the spec. Exit 0 = parity, 1 = undeclared drift. It pins:
+record — read it as the spec. Exit 0 = parity, 1 = drift, 2 = cannot verify. It pins:
 
 - **`composeLlmsTxt` is byte-identical** modulo one declared knob: the forge
   always links `.md`, velocity defaults to HTML (`variant: 'markdown'`
@@ -1427,89 +1248,8 @@ emits it in sitemap/llms. The source needs `show_in_rest`. Notes:
 
 ## Proposal 139 — media localization (2026-11-09)
 
-Full notes: `docs/project/proposals/139-forge-media-localization-proposal.md`.
-
-A forged site must never hotlink the CMS. Astro's `<Image>` localizes what it
-can see; everything else did not — body-content `<img>`, chrome logos/favicon,
-collage photos, and any host outside `image.domains`. A domain move
-(`jayainc.com` → `cms.jayainc.com`) therefore broke images.
-
-Three layers, one contract:
-
-- **Authorize** — `image.domains` = CMS host ∪ `profile.media.hosts` ∪
-  `NVOOS_FORGE_MEDIA_HOSTS`; `SmartImage` reads the same rule from
-  `src/lib/media.ts` instead of a single-host comparison.
-- **Repair** — a `/wp-content/` or `/wp-includes/` path whose host is neither
-  the CMS nor an allowlisted media host is re-pointed at the CMS origin
-  (path + query preserved). Do NOT put the old domain in `media.hosts`: the
-  repair is what makes a stale DB work; allowlisting the dead host makes the
-  build fetch from the wrong place.
-- **Mirror** — `scripts/localize-media.mjs` runs after `astro build` (before
-  pagefind). Strategy follows the tier: `nvoos.json runtime: 'static'` →
-  **mirror** every remaining candidate into `dist/media/<hash>-<slug>.<ext>`;
-  `runtime: 'managed'` (bridge/BFF present) → **proxy** uploads to the
-  runtime's same-origin `/media/<rest>` route (a rewrite, no download).
-  **External stylesheets are mirrored with their fonts in BOTH modes**
-  (theme icon sheets, plus the Google Fonts sheet when
-  `NVOOS_FORGE_LOCALIZE_FONTS` is on — the `/media` proxy only matches uploads,
-  so leaving the font chain remote kept a render-blocking cross-origin hop in
-  a supposedly self-contained artifact). Icon glyphs therefore stop depending
-  on the CMS host — and stop tripping a future enforced CSP. A face lists
-  several encodings of the SAME font: one missing derivative must prune only
-  that `src`, never the whole `@font-face` (a dead `.ttf` dropped et-line and
-  its icons on virtuallyjamaica, 2026-11-15). **Linked documents** (an allowlist:
-  pdf/doc/xls/ppt/odt/csv/txt/rtf/epub/ics/zip) are mirrored too, with their
-  own cap and `#page=` fragments preserved; executables are never candidates.
-  Non-image stored facts (the catalogue CTA, `chrome.iconCss`, the JSON-LD
-  logo) are repaired at RENDER time via `repairMediaUrl` instead. Override:
-  `NVOOS_FORGE_MEDIA_MODE=local|proxy|off`. Fail-soft (report in
-  `.forge-cache/media-localize.json`, build never fails), idempotent, honours
-  `WP_FETCH_PROXY`, caps per file (25 MB) and per build (500 MB).
-
-- **Optimize** — Proposal 140 adds WebP re-encode (q82), intrinsic
-  `width`/`height` fill, self-hosted webfonts with `font-display: swap`,
-  dead `preconnect` stripping, and a `media budget` verify gate. Env vars,
-  modes and gotchas:
-  [`reference/performance-budget.md`](reference/performance-budget.md).
-
-- **Font survival + deployed identity (2026-11-15)** — a mirrored sheet can
-  keep its selectors, classes and markup while losing its `@font-face`, which
-  is invisible to every design gate. Three defences: `.forge-cache/media-localize.json`
-  records `droppedFontFamilies` with `used`; `verify` has a browser-free
-  `font coverage` gate in `--minimal` and a browser `font render` gate (both
-  `--strict-fonts` blocking); `Base.astro` marks a genuinely unusable marker
-  `forge-icon-missing` and `global.css` draws a neutral bullet. A CMS-less
-  site should also freeze its media: `forge media-snapshot <profile> --from
-  <built-project>` writes `sites/<name>.media/` (URL-keyed manifest; CSS entries
-  store the SOURCE sheet, so a second pass does not chase its own `/media/…`
-  rewrites). `media.snapshot: true` makes it authoritative; the scaffold
-  refuses a flag with no directory.
-
-- **Stale releases** — a green build proves the artifact, not the live site.
-  Set `FORGE_BUILD_ID` at build time (CI: `${GITHUB_SHA}-${GITHUB_RUN_ID}`);
-  `Base.astro` stamps `<meta name="forge-build">`, `mirror-push` records it in
-  `deploy.json`, and `forge deployed <profile> --target <dir> [--strict]`
-  compares the live marker (with retries for Velocity's async deploy). The
-  monorepo smoke runs it post-push; the generated pipeline emits
-  `scripts/verify-deployed.mjs` as a non-blocking step.
-
-Config: `profile.media { hosts, localize, mode, snapshot, maxFileMb }` → `nvoos.json` +
-`.env.example`; env wins. `media.mode` (`local|proxy|off`) is how a managed
-site — whose default is the bridge’s same-origin `/media` proxy — opts into a
-fully self-contained artifact: `"media": { "localize": true, "mode": "local" }`.
-
-**Never rewrite** `<a href>`, `<meta>` (`og:image` must stay absolute) or
-JSON-LD — a relative path there is invalid, and the catalogue PDF must keep
-working. Gotchas: emit `url(/media/…)` **unquoted** (a nested quote breaks a
-`style="…"` attribute); attribute regexes need `(?:^|\s)` / `(?<![\w-])` so
-`src` does not match inside `data-src`; SSR output lives in `dist/client`;
-and a flaky `EPERM`/`ENOTEMPTY` scaffold timeout under 61 parallel workers is
-the Windows staging race — re-run with `--maxWorkers=4` before debugging code.
-- **In-process fixture server + `spawnSync` deadlocks:** an integration test
-  that serves HTTP from the test process and runs the CLI synchronously
-  hangs until the request timeout — the parent's event loop is blocked,
-  so it can never answer the child. Spawn asynchronously; await the exit.
-
+Moved to [`reference/media-localization.md`](reference/media-localization.md) — content unchanged
+(split out 2026-11-17 to keep this file under Zed's load limit).
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to
@@ -1547,6 +1287,17 @@ the Windows staging race — re-run with `--maxWorkers=4` before debugging code.
   [`reference/interaction-states.md`](reference/interaction-states.md) — the
   CDP forced-pseudo-state mechanism, the rest-paint rule, the WCAG 2.4.13 /
   1.4.11 focus baseline and the measured virtuallyjamaica numbers.
+- Form bridge P7 (render + proxy halves):
+  [`reference/form-bridge.md`](reference/form-bridge.md) — the sanitize
+  allowlist, the WordPress proxy half and the direct-mode boundary.
+- Chrome typography (Proposal 123):
+  [`reference/chrome-typography.md`](reference/chrome-typography.md) — the
+  shared cascade-resolver ladder, terminalFill/bgForCss and the measured
+  nav/call/footer type facts.
+- Media localization (Proposal 139):
+  [`reference/media-localization.md`](reference/media-localization.md) —
+  localizing everything `<Image>` cannot see (body `<img>`, chrome
+  logos/favicon).
 
 ## Email delivery
 
