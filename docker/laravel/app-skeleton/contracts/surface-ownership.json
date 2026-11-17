@@ -172,12 +172,13 @@
       "title": "Schedules, triggers and presets",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["triggers", "scheduleManager", "workflowPresets"] },
       "writer": "console",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Console-owned by ruling (149 §13.1). Definitions are CRUD; rebuilding them in Filament would maintain one page twice. The admin candidate is a read-only view. UNBLOCKED 2026-11-17 by §29: `nvoos_triggers` gained `tenant_id` and TriggersController now scopes every query, so a read-only `/admin` list could be honest. Before that the console's `triggers` key was cross-estate, and a panel over it would have leaked every estate's triggers twice. `scheduleManager` is already served by `/ops/scheduler`; `workflowPresets` still has no reader."
+      "projection": "No field reduction — the reduction is actions: the panel lists workflows and triggers and offers no create/edit/delete/fire, because the console owns this CRUD by ruling (§13.1) and a second writer would maintain one page twice. Two omissions are deliberate and cheap: a trigger's `webhook_url` is reduced to its HOST plus a has_webhook flag, because webhook providers put the secret in the path; and `config` is reduced to its `schedule` value rather than echoed whole. Both sets are estate-scoped through TenantContext, which SetTenantContext pins to the panel tenant on every /admin request.",
+      "files": ["app/Filament/Admin/Pages/AutomationDefinitions.php"],
+      "notes": "Console-owned by ruling (149 §13.1). Definitions are CRUD; rebuilding them in Filament would maintain one page twice. Shipped as a read-only view 2026-11-17 (§30), unblocked by §29: `nvoos_triggers` gained `tenant_id` and TriggersController now scopes every query, so the list is honest. Before that the console's `triggers` key was cross-estate, and a panel over it would have leaked every estate's triggers twice. The page shows workflows + triggers only: `scheduleManager` is already served by `/ops/scheduler` and `workflowPresets` has no reader."
     },
     {
       "id": "automation-runs",
