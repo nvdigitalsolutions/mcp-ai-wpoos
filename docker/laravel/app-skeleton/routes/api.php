@@ -28,6 +28,7 @@ use App\Http\Controllers\Pro\ToolkitsController;
 use App\Http\Controllers\Pro\WorkflowNodeController;
 use App\Http\Controllers\Pro\WorkflowPresetsController;
 use App\Http\Controllers\McpAppsController;
+use App\Http\Controllers\PersonalTokenController;
 use App\Http\Controllers\ProfessionController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
@@ -82,6 +83,24 @@ Route::prefix('api/v1')->group(function (): void {
     // client learns who it is and which estates it may select, so requiring a
     // selection first would leave a multi-estate client with no way to ask.
     Route::middleware('auth:sanctum')->get('/session/me', [SessionController::class, 'me']);
+
+    // Personal access tokens are user-scoped, not estate-scoped: a token belongs
+    // to a person across every estate they can reach, so demanding an estate
+    // selection before minting one would be a fiction (149 §26). Ownership is
+    // the authorization on every route — no capability gate, because the token
+    // carries the user's own authority and nothing more.
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::get('/personal-tokens', [PersonalTokenController::class, 'index'])
+            ->middleware('throttle:console');
+
+        // Tighter than the console default: minting a credential is the one
+        // action here that produces a durable secret.
+        Route::post('/personal-tokens', [PersonalTokenController::class, 'store'])
+            ->middleware('throttle:6,1');
+
+        Route::delete('/personal-tokens/{token}', [PersonalTokenController::class, 'destroy'])
+            ->middleware('throttle:console');
+    });
 
     // Everything authenticated below acts inside one estate (149 §21).
     Route::middleware(['auth:sanctum', ResolveApiTenant::class])->group(function (): void {

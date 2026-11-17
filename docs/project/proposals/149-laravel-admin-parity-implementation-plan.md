@@ -1554,7 +1554,13 @@ the console covering a surface does not count as admin parity.
    cross-estate by design. The same slice made the credential revoke write a
    record row, which it previously did not: panel traffic goes over
    `/livewire/update`, which the request audit middleware skips.
-9. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
+9. ✅ **Shipped** — personal access tokens on `/admin` (§26) plus
+   `GET/POST/DELETE /api/v1/personal-tokens`. User-scoped, so the routes sit
+   outside estate resolution; `oos-personal:*` names keep them out of both
+   credential surfaces. The `/ops` cross-estate view stays `planned`.
+10. PAT manager split from assistant credentials. → Done: §19 untangled the
+   contract, and §26 shipped the user-scoped half that was missing. Remaining:
+   the operator cross-estate view.
 
 ---
 
@@ -2166,6 +2172,99 @@ oversight plus operator settings, not a second copy of every console form.
 - **A writable profession overlay is a separate proposal.** It needs storage,
   a merge rule against the code catalogue, and a `catalogueVersion()` that
   actually moves. Do not bolt it onto this page.
+
+---
+
+## 26. Wave 2 — seventeenth slice: personal access tokens (`/admin/personal-tokens`)
+
+**State:** shipped 2026-11-17. The third and last token row, and the first
+`/admin` surface whose data is **not** estate-scoped.
+
+### 26.1 What the matrix asked for, and what the slice narrowed
+
+The row said `admin: planned`, `ops: planned`, `writer: shared`, with the note
+*“A user-scoped PAT surface needs its own endpoint, its own user filter and an
+operator cross-estate view.”*
+
+All three halves shipped except the last. `writer` narrowed from `shared` to
+`admin`: the operator cross-estate view is still unbuilt, and `shared` would
+claim a write path that does not exist (the §23 rule applied again). "Whose
+tokens can I see" is the whole question on a cross-estate token surface, so a
+half-built one is worse than an honestly-planned one.
+
+### 26.2 Two design constraints that decided the shape
+
+1. **Sanctum abilities are not enforced anywhere.** No `tokenCan()` call and no
+   `abilities:` middleware exists in this runtime; authorization comes from the
+   user's *current* role through `CapabilityMap`. A token is therefore a way to
+   present your own authority over HTTP, not to hold a frozen subset of it — and
+   a demotion takes effect on the next request. The stored ability is `['*']`
+   because that is the truth; `['edit_posts']` (the assistant-credential default)
+   would assert a restriction nothing enforces. No ability selector is offered
+   for the same reason: it would be a promise the server does not keep.
+2. **A token is not estate data.** It belongs to a person across every estate
+   they can reach, so the routes sit **outside** `ResolveApiTenant` — otherwise
+   a multi-estate user would 409 out of their own credentials. Added to that
+   test's allowlist with the reason.
+
+### 26.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Reader + mint + revoke | `app/Support/PersonalTokens.php` | prefix, sanitisation, expiry bounds, metadata-only reads |
+| Endpoint | `app/Http/Controllers/PersonalTokenController.php` | `GET`/`POST`/`DELETE /api/v1/personal-tokens` |
+| Routes | `routes/api.php` | `auth:sanctum`, own throttle per verb |
+| Panel | `app/Filament/Admin/Pages/PersonalTokensPage.php` | mint, list, two-step revoke |
+| View | `resources/views/filament/admin/personal-tokens.blade.php` | plaintext-once block |
+| Tests | `tests/Feature/AdminPersonalTokensTest.php` | 13 tests |
+
+### 26.4 Decisions worth keeping
+
+- **The name prefix is the separation.** Personal tokens are
+`oos-personal:*`; `credentials.estate` and the console token manager match
+`oos-assistant-*` names exactly, so neither surface can list or revoke the
+other's rows. One record set per surface, enforced by the name rather than a
+shared boolean column — and tested in both directions.
+- **An expiry is mandatory and bounded** (1–365 days, default 30). A personal
+token with no expiry is a permanent credential pasted into a chat window, so the
+surface refuses to create one. Sanctum rejects an expired token, so the status
+column reports what the runtime actually does.
+- **Labels are sanitised, not rejected.** `[A-Za-z0-9 ._-]`, collapsed
+whitespace, 60 chars, `token` fallback. `%` and `*` cannot reach the name, so a
+hostile label cannot inject a LIKE wildcard; `_` is kept because `ci_runner` is
+a normal label and the prefix pattern is unaffected by it.
+- **The plaintext is absent from the audit trail.** `recordResource()` logs the
+label, expiry and abilities — never the secret. A record row carrying a live
+credential would defeat hashing it.
+- **Dismissing the plaintext is not cosmetic.** Revoking the armed token also
+clears it: leaving a secret on screen after it stopped working would be
+misleading.
+- **A viewer may mint but not open the page.** The panel refuses viewers
+outright; the API lets them mint a token that carries viewer authority. That is
+a deliberate split, and it is tested.
+
+### 26.5 Validation record — executed
+
+- `AdminPersonalTokensTest`: **13 passed, 63 assertions**.
+- Plus `ApiTenantResolutionTest`, `SurfaceOwnershipTest`, `TokenManagerTest`,
+  `AdminEstateCredentialsTest`, `AdminAuditLogTest`: **58 passed, 634
+  assertions, 0 failures**.
+- `php -l` clean; `phpcs` (CI ruleset) clean on all six changed files.
+- `bin/audit-surface-ownership.php`: **44 surfaces · 14 Filament-built**
+  (6 `/ops`, 9 `/admin`); planned-only down to **8**.
+
+### 26.6 Follow-ups recorded
+
+- **`/ops/personal-tokens` is still `planned`.** It needs a cross-estate list
+  and an operator revoke for incident response, both of which need an explicit
+  decision about whether an operator may revoke another person's token.
+- **Assistant credentials default to `['edit_posts']`.** If abilities is ever
+  enforced, every existing assistant credential silently loses access. Either
+  enforce nothing (status quo) or migrate the default to `['*']` in the same
+  slice that starts enforcing.
+- **No “last used from” column.** Sanctum records `last_used_at` only. An IP or
+  user-agent column would be a migration on a vendor table; do it only if token
+  forensics becomes a real requirement.
 
 ---
 
