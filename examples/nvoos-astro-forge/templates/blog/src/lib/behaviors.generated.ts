@@ -19,6 +19,8 @@ export interface ParallaxPiece {
 	src?: string;
 	index?: number;
 	type?: 'position' | 'background';
+	/** The axis the piece travels on; absent = vertical. */
+	axis?: 'x' | 'y';
 	depth?: number;
 	origin?: 'top' | 'bottom' | 'middle';
 	off?: number;

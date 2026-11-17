@@ -2656,8 +2656,16 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 }
 
 @keyframes ds-parallax-media {
-	from { translate: 0 var(--ds-parallax-from, var(--ds-parallax-range, 24px)); }
-	to { translate: 0 var(--ds-parallax-to, calc(var(--ds-parallax-range, 24px) * -1)); }
+	/* Two channels, one keyframe: a VERTICAL piece writes --ds-parallax-from/to
+	 * (the band fallback), a HORIZONTAL piece writes --ds-parallax-x-from/to and
+	 * pins the Y pair to 0. The X defaults keep every pre-existing source
+	 * byte-identical. */
+	from {
+		translate: var(--ds-parallax-x-from, 0px) var(--ds-parallax-from, var(--ds-parallax-range, 24px));
+	}
+	to {
+		translate: var(--ds-parallax-x-to, 0px) var(--ds-parallax-to, calc(var(--ds-parallax-range, 24px) * -1));
+	}
 }
 
 /* The hero/about media: all images, side by side (the source two-up). */

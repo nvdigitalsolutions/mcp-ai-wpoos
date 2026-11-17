@@ -2876,6 +2876,14 @@ function parallaxPieceOf( node: HNodeLike, settings: Record<string, unknown> | u
 	if ( attrs[ 'data-parallax-type' ] === 'background' || attrs[ 'data-parallax-type' ] === 'position' ) {
 		piece.type = attrs[ 'data-parallax-type' ];
 	}
+	// Axis: the generic conventions only ever declare the ODD case. Vertical is
+	// what the renderer assumes, so a `y` spelling is a no-op either way.
+	const axisAttr = attrs[ 'data-parallax-axis' ] ?? attrs[ 'data-scroll-axis' ];
+	if ( axisAttr === 'x' || axisAttr === 'horizontal' ) {
+		piece.axis = 'x';
+	} else if ( attrs[ 'data-rellax-horizontal' ] !== undefined || attrs[ 'data-parallax-horizontal' ] !== undefined ) {
+		piece.axis = 'x';
+	}
 	if ( depth !== undefined ) {
 		piece.depth = depth;
 	}
@@ -2892,14 +2900,21 @@ function parallaxPieceOf( node: HNodeLike, settings: Record<string, unknown> | u
 	}
 
 	if ( motionPiece ) {
-		const direction = motionFxValue( settings, 'motion_fx_translateY_direction' ) ?? motionFxValue( settings, 'motion_fx_translateX_direction' );
+		// Which axis the source actually drives. translateY wins when BOTH are
+		// enabled: the vertical reading is the common one, and keeping it first
+		// leaves every pre-existing site's generated output byte-identical.
+		const axisKey = motionFxValue( settings, 'motion_fx_translateY_effect' ) === 'yes' ? 'translateY' : 'translateX';
+		if ( axisKey === 'translateX' ) {
+			piece.axis = 'x';
+		}
+		const direction = motionFxValue( settings, `motion_fx_${ axisKey }_direction` );
 		piece.direction = direction === 'negative' ? 'negative' : 'positive';
-		const speedEntry = ( motionFxValue( settings, 'motion_fx_translateY_speed' ) ?? motionFxValue( settings, 'motion_fx_translateX_speed' ) ) as { size?: unknown } | undefined;
+		const speedEntry = motionFxValue( settings, `motion_fx_${ axisKey }_speed` ) as { size?: unknown } | undefined;
 		const speed = numberOf( speedEntry?.size );
 		if ( speed !== undefined && speed > 0 ) {
 			piece.speed = speed;
 		}
-		const rangeEntry = ( motionFxValue( settings, 'motion_fx_translateY_affectedRange' ) ?? motionFxValue( settings, 'motion_fx_translateX_affectedRange' ) ) as { sizes?: { start?: unknown; end?: unknown } } | undefined;
+		const rangeEntry = motionFxValue( settings, `motion_fx_${ axisKey }_affectedRange` ) as { sizes?: { start?: unknown; end?: unknown } } | undefined;
 		const start = numberOf( rangeEntry?.sizes?.start );
 		const end = numberOf( rangeEntry?.sizes?.end );
 		if ( start !== undefined || end !== undefined ) {

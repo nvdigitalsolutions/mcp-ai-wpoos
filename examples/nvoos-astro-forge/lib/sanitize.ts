@@ -12,7 +12,7 @@ import sanitizeHtmlLib from 'sanitize-html';
 import { readableInk } from './contrast.ts';
 
 /** Bump on every allowlist/behaviour change. Generated projects carry this. */
-export const SANITIZE_VERSION = 4;
+export const SANITIZE_VERSION = 5;
 
 /** The default sanitize-html options — Gutenberg output minus scripts/events. */
 export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
@@ -46,6 +46,12 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		'blockquote',
 		'figure',
 		'figcaption',
+		// 3D product viewer (v5). The tag must SURVIVE: `disallowedTagsMode`
+		// discards unknown elements, so an authored <model-viewer> used to vanish
+		// from `set:html` with no build error at all. The RUNTIME stays
+		// layout-owned — `script` is still forbidden, so the custom element is
+		// registered by the generated project, never by content authors.
+		'model-viewer',
 		'img',
 		'table',
 		'thead',
@@ -80,6 +86,30 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		img: ['src', 'alt', 'title', 'width', 'height', 'srcset', 'sizes', 'loading', 'decoding', 'class'],
 		figure: ['class'],
 		figcaption: ['class'],
+		// The viewer's data contract only: `src`/`poster` are scheme-checked by
+		// sanitize-html (http/https/root-relative — a data: or javascript: model
+		// URL dies), and there is deliberately NO `environment-image` or
+		// `with-credentials`: both would open a fetch/credential surface from a
+		// content-authored tag. No `style`, no `on*`.
+		'model-viewer': [
+			'src',
+			'poster',
+			'alt',
+			'class',
+			'id',
+			'title',
+			'loading',
+			'reveal',
+			'camera-controls',
+			'touch-action',
+			'shadow-intensity',
+			'auto-rotate',
+			'auto-rotate-delay',
+			'camera-orbit',
+			'field-of-view',
+			'ar',
+			'ar-modes',
+		],
 		// NOTE (2026-11-11): `p` deliberately does NOT keep its class YET. A builder
 		// styles paragraphs by class (`text-extra-large`, `padding-six-lr`), and
 		// stripping them costs fidelity — but restoring them without per-device

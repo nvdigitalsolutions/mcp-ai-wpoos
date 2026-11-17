@@ -817,6 +817,38 @@ function validRangeOffset( value?: string ): boolean {
 }
 
 /**
+ * A media carrier that a parallax band ALSO animates (the same band + ordinal).
+ * The inventory rule and the parallax rule both target it, and `animation-*`
+ * longhands cascade per property — so the LAST rule wins the NAME. That is how
+ * a horizontal or vertical parallax piece silently stopped binding once the
+ * carrier also carried a rebuilt keyframe (found 2026-11-17 by a computed-style
+ * probe on a built site).
+ */
+export interface ParallaxCarrier {
+	bandId: string;
+	/** 0-based media ordinal the piece targets. */
+	mediaIndex: number;
+}
+
+/**
+ * The parallax animation's longhands — the exact values global.css establishes
+ * on `.ds-parallax … .ds-media`, restated here so a merged rule can list both
+ * animations positionally. `animation-duration: auto` is what makes a scroll
+ * timeline drive progress instead of completing instantly.
+ */
+const PARALLAX_ANIMATION = {
+	name: 'ds-parallax-media',
+	duration: 'auto',
+	timing: 'linear',
+	delay: '0s',
+	iterations: '1',
+	direction: 'normal',
+	fill: 'both',
+	timeline: 'scroll(root)',
+	range: 'cover 0% cover 100%',
+} as const;
+
+/**
  * Emit scoped CSS for the finite, layout-safe keyframe facts. Infinite motion
  * is allowed only when the caller planned it with `allowInfinite` (the page
  * Pause motion control exists in that case). JS runtimes never reach here.
@@ -824,8 +856,15 @@ function validRangeOffset( value?: string ): boolean {
  * `animation-timeline` stays a LONGHAND — the minifier regression from 121
  * applies here too. `prefers-reduced-motion` is the outer gate, so the page is
  * complete at rest for a reader who asks for less motion.
+ *
+ * When a carrier is ALSO a parallax target, the two animations are COMPOSED into
+ * one multi-value declaration list rather than letting the cascade drop one.
+ * Every list is positional, so each property is emitted for all animations.
  */
-export function animationRebuildCss( facts: ForgeAnimationFact[] ): string {
+export function animationRebuildCss(
+	facts: ForgeAnimationFact[],
+	parallaxCarriers: ParallaxCarrier[] = []
+): string {
 	return facts
 		.filter( ( fact ) => fact.rebuild === 'css' && fact.bandId && fact.keyframes && fact.keyframes.length > 0 )
 		.map( ( fact ) => {
@@ -840,22 +879,58 @@ export function animationRebuildCss( facts: ForgeAnimationFact[] ): string {
 				.join( '' );
 			const scoped = `[data-section-id="${ fact.bandId }"]`;
 			const selectors = targetCarriers( scoped, fact );
-			const declarations = [
-				`animation-name:forge-anim-${ hash }`,
-				`animation-duration:${ fact.duration ?? '1s' }`,
-				fact.easing ? `animation-timing-function:${ fact.easing }` : '',
-				fact.delay ? `animation-delay:${ fact.delay }` : '',
-				fact.iterations ? `animation-iteration-count:${ fact.iterations }` : '',
-				fact.direction ? `animation-direction:${ fact.direction }` : '',
-				`animation-fill-mode:${ fact.fill && fact.fill !== 'none' ? fact.fill : 'both' }`,
-				fact.timeline === 'ScrollTimeline' ? 'animation-timeline:scroll(root)' : '',
-				fact.timeline === 'ViewTimeline' ? 'animation-timeline:view()' : '',
+			const fill = fact.fill && fact.fill !== 'none' ? fact.fill : 'both';
+			const timeline =
+				fact.timeline === 'ScrollTimeline' ? 'scroll(root)' : fact.timeline === 'ViewTimeline' ? 'view()' : undefined;
+			const range =
 				fact.rangeStart && validRangeOffset( fact.rangeStart )
-					? `animation-range:${ fact.rangeStart }${ fact.rangeEnd && validRangeOffset( fact.rangeEnd ) ? ` ${ fact.rangeEnd }` : '' }`
-					: '',
-			]
-				.filter( Boolean )
-				.join( ';' );
+					? `${ fact.rangeStart }${ fact.rangeEnd && validRangeOffset( fact.rangeEnd ) ? ` ${ fact.rangeEnd }` : '' }`
+					: undefined;
+
+			// Only a MEDIA carrier can overlap: parallax pieces move media (a
+			// `background` piece is skipped by the renderer, so it never lands here).
+			// A fact that already animates `translate` is NOT composed: CSS cannot
+			// blend two animations on ONE property (the later name wins), so merging
+			// would silently kill the source's own effect. `transform` is NOT a
+			// conflict — the individual transform properties compose WITH `transform`
+			// per spec, so a scale/rotate keyframe and a translate animation coexist.
+			const animatedProperties = new Set(
+				( fact.keyframes ?? [] ).flatMap( ( step ) => Object.keys( step.declarations ) )
+			);
+			const movesTheSameProperty = animatedProperties.has( 'translate' );
+			const merged =
+				! movesTheSameProperty &&
+				( fact.target ?? 'media' ) === 'media' &&
+				parallaxCarriers.some(
+					( carrier ) => carrier.bandId === fact.bandId && carrier.mediaIndex === ( fact.mediaIndex ?? 0 )
+				);
+
+			const declarations = merged
+				? [
+						`animation-name:forge-anim-${ hash }, ${ PARALLAX_ANIMATION.name }`,
+						`animation-duration:${ fact.duration ?? '1s' }, ${ PARALLAX_ANIMATION.duration }`,
+						// Defaults are written out: a single value would apply to BOTH names.
+						`animation-timing-function:${ fact.easing ?? 'ease' }, ${ PARALLAX_ANIMATION.timing }`,
+						`animation-delay:${ fact.delay ?? '0s' }, ${ PARALLAX_ANIMATION.delay }`,
+						`animation-iteration-count:${ fact.iterations ?? '1' }, ${ PARALLAX_ANIMATION.iterations }`,
+						`animation-direction:${ fact.direction ?? 'normal' }, ${ PARALLAX_ANIMATION.direction }`,
+						`animation-fill-mode:${ fill }, ${ PARALLAX_ANIMATION.fill }`,
+						`animation-timeline:${ timeline ?? 'auto' }, ${ PARALLAX_ANIMATION.timeline }`,
+						`animation-range:${ range ?? 'normal' }, ${ PARALLAX_ANIMATION.range }`,
+				  ].join( ';' )
+				: [
+						`animation-name:forge-anim-${ hash }`,
+						`animation-duration:${ fact.duration ?? '1s' }`,
+						fact.easing ? `animation-timing-function:${ fact.easing }` : '',
+						fact.delay ? `animation-delay:${ fact.delay }` : '',
+						fact.iterations ? `animation-iteration-count:${ fact.iterations }` : '',
+						fact.direction ? `animation-direction:${ fact.direction }` : '',
+						`animation-fill-mode:${ fill }`,
+						timeline ? `animation-timeline:${ timeline }` : '',
+						range ? `animation-range:${ range }` : '',
+				  ]
+						.filter( Boolean )
+						.join( ';' );
 			return `@keyframes forge-anim-${ hash }{${ steps }}@media (prefers-reduced-motion: no-preference){${ selectors.join( ',' ) }{${ declarations }}}`;
 		} )
 		.join( '' );

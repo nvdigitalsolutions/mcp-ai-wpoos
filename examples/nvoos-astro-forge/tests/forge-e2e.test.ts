@@ -20,11 +20,40 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { chromium } from 'playwright';
+
 import { scaffold } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
 
 const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const FIXTURE_SERVER = path.join(FORGE_ROOT, 'scripts', 'wp-fixture-server.mjs');
+
+/** Chromium is the devDependency the other browser suites use; skip if absent. */
+const hasChromium = ( () => {
+	try {
+		return Boolean( chromium.executablePath() );
+	} catch {
+		return false;
+	}
+} )();
+
+/** Enough MIME types to serve a built Astro artifact to a browser. */
+const MIME: Record< string, string > = {
+	'.html': 'text/html; charset=utf-8',
+	'.css': 'text/css; charset=utf-8',
+	'.js': 'text/javascript; charset=utf-8',
+	'.mjs': 'text/javascript; charset=utf-8',
+	'.json': 'application/json',
+	'.svg': 'image/svg+xml',
+	'.jpg': 'image/jpeg',
+	'.jpeg': 'image/jpeg',
+	'.png': 'image/png',
+	'.webp': 'image/webp',
+	'.avif': 'image/avif',
+	'.woff2': 'font/woff2',
+	'.xml': 'application/xml',
+	'.txt': 'text/plain; charset=utf-8',
+};
 
 let server: ReturnType<typeof spawn> | undefined;
 let origin = '';
@@ -150,6 +179,13 @@ const PROFILE: SiteProfile = {
 					pieces: [
 						{ id: 'a10001', index: 0, depth: -0.1, origin: 'bottom', off: 1024, direction: 'negative', speed: 2, range: { start: 0, end: 100 }, devices: [ 'desktop', 'tablet', 'mobile' ] },
 						{ id: 'a10002', index: 1, depth: 0.1, origin: 'bottom', off: 1024, speed: 2 },
+						// The AXIS fixture (2026-11-17): a THIRD piece on the HORIZONTAL axis.
+						// The fixture has only two collage photos, so this carrier emits the X
+						// channel without a rendered element — the BINDING is owned by
+						// parallax-browser.test.ts. What this proves is narrower and
+						// end-to-end: a real scaffold → build executes the axis branch instead
+						// of silently collapsing it into a vertical drift.
+						{ id: 'a10003', index: 2, axis: 'x', speed: 2, direction: 'positive' },
 					],
 				},
 				{ id: 'a1b2c3d', kind: 'reveal', effect: 'fade-up' },
@@ -538,6 +574,91 @@ describe('forge e2e — emitted site', () => {
 		expect(detail).toContain('"BlogPosting"');
 		expect(detail).toContain(`<link rel="canonical" href="${origin}/posts/4/studio-notes-autumn/"`);
 	});
+
+	it('carries the parallax AXIS through scaffold → build', async () => {
+		// The scaffold fact: the analyzed axis reaches the generated module.
+		const generated = await readFile(path.join(workDir, 'src', 'lib', 'behaviors.generated.ts'), 'utf8');
+		expect(generated).toContain("axis: 'x'");
+
+		// The build fact: the renderer's axis branch emits the X CHANNEL (and
+		// freezes Y, or a horizontal piece would drift on both axes).
+		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
+		expect(index).toContain('--ds-parallax-x-from:');
+		expect(index).toContain('--ds-parallax-x-to:');
+		expect(index).toContain('--ds-parallax-from:0px');
+		expect(index).toContain('--ds-parallax-to:0px');
+	});
+
+	// KNOWN DEFECT FIXED (2026-11-17): the animation-inventory rule used to win
+	// the `animation-name` cascade on a carrier that also carried a parallax
+	// piece, so `ds-parallax-media` never bound and the computed `translate`
+	// stayed `none`. `animationRebuildCss` now COMPOSES both names; the browser
+	// assertion below is the proof, and it is the only check that could see it.
+
+	it.skipIf(!hasChromium)('COMPOSES the inventory keyframe and the parallax on the built carrier', async () => {
+		const dist = path.join(workDir, 'dist');
+		const staticServer = http.createServer(async (request, response) => {
+			const rel = (request.url ?? '/').split('?')[0].replace(/^\/+/, '') || 'index.html';
+			const file = path.join(dist, rel);
+			try {
+				const body = await readFile(file);
+				response.writeHead(200, { 'content-type': MIME[path.extname(file).toLowerCase()] ?? 'application/octet-stream' });
+				response.end(body);
+			} catch {
+				response.writeHead(404);
+				response.end('not found');
+			}
+		});
+		await new Promise< void >((resolve) => staticServer.listen(0, '127.0.0.1', resolve));
+		const address = staticServer.address();
+		const port = typeof address === 'object' && address ? address.port : 0;
+
+		const browser = await chromium.launch();
+		try {
+			const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+			await page.goto(`http://127.0.0.1:${port}/`);
+
+			// Registration is the claim here: BEFORE the fix the parallax name was
+			// dropped from the cascade, so `getAnimations()` listed only the
+			// inventory keyframe. The scroll DELTA is asserted in
+			// parallax-browser.test.ts against a sized fixture — this built page's
+			// collage carriers collapse to ~1px under a minimal static server, which
+			// makes a `cover` range degenerate rather than broken.
+			const probe = await page.evaluate(() => {
+				const el = document.querySelector('[data-section-id="a1b2c3d"] .ds-media') as HTMLElement | null;
+				if (!el) {
+					return null;
+				}
+				const computed = window.getComputedStyle(el);
+				return {
+					names: computed.animationName,
+					timelines: computed.animationTimeline,
+					running: el.getAnimations().map((animation) => ({
+						name: (animation as CSSAnimation).animationName ?? '',
+						timeline: animation.timeline?.constructor?.name ?? '',
+					})),
+				};
+			});
+			if (!probe) {
+				throw new Error('the split hero rendered no .ds-media carrier');
+			}
+
+			// Both names in one declaration list — the composition, end to end.
+			expect(probe.names).toContain('forge-anim-');
+			expect(probe.names, 'the parallax name was not composed in').toContain('ds-parallax-media');
+			expect(probe.timelines, 'the parallax tuple must keep its own scroll timeline').toContain('scroll(root)');
+
+			// Both animations are REGISTERED, each on the timeline it needs.
+			const inventory = probe.running.find((animation) => animation.name.startsWith('forge-anim-'));
+			const parallax = probe.running.find((animation) => animation.name === 'ds-parallax-media');
+			expect(inventory, 'the source keyframe stopped running').toBeDefined();
+			expect(parallax, 'the composed parallax never registered').toBeDefined();
+			expect(parallax?.timeline).toBe('ScrollTimeline');
+		} finally {
+			await browser.close();
+			await new Promise< void >((resolve) => staticServer.close(() => resolve()));
+		}
+	}, 120_000);
 
 	it('applies the design tokens, RSS, 404 and the redirect map', async () => {
 		// tokens_apply: the accent override is baked into the built CSS. The

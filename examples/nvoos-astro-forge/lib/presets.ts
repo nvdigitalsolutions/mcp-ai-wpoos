@@ -18,7 +18,7 @@
 import type { DiscoveryReport } from './discovery.ts';
 import type { SiteProfile, WpCollection } from './types.ts';
 
-export const PRESET_NAMES = ['blog', 'storefront', 'minimal'] as const;
+export const PRESET_NAMES = ['blog', 'storefront', 'portfolio', 'landing', 'docs', 'minimal'] as const;
 export type PresetName = (typeof PRESET_NAMES)[number];
 
 export const RENDER_MODES = ['static', 'ssr'] as const;
@@ -93,7 +93,27 @@ const PRESET_GUIDANCE: Record< PresetName, { bestFor: string; detect: string[]; 
 	storefront: {
 		bestFor: 'WooCommerce catalogues and product marketing.',
 		detect: [ 'wc/v3 advertised', 'product post type present' ],
-		kinds: [ 'hero', 'pricing', 'feature-grid', 'gallery', 'stats', 'comparison', 'testimonial', 'cta' ],
+		// `model-3d` (sanitize v5): a 3D product viewer band the storefront
+		// template can carry — always poster-first, never hydrated.
+		kinds: [ 'hero', 'pricing', 'feature-grid', 'gallery', 'stats', 'comparison', 'testimonial', 'cta', 'model-3d' ],
+	},
+	portfolio: {
+		bestFor: 'Creative work: a project/case-study catalogue with an optional journal.',
+		detect: [ 'a portfolio/projects/case-study CPT is advertised', 'no wc/v3 namespace advertised' ],
+		// The case-study band set: work shown (gallery), outcomes proven (stats),
+		// process told (steps), and the client speaking (testimonial).
+		kinds: [ 'hero', 'gallery', 'feature-grid', 'stats', 'testimonial', 'steps', 'comparison', 'cta' ],
+	},
+	landing: {
+		bestFor: 'A single marketing page: hero, proof, and one call to action.',
+		detect: [ 'one-page source with no blog or catalogue', 'a single conversion goal' ],
+		kinds: [ 'hero', 'feature-grid', 'icon-list', 'stats', 'testimonial', 'pricing', 'accordion', 'cta' ],
+	},
+	docs: {
+		bestFor: 'Documentation: a page hierarchy read in order, with search.',
+		detect: [ 'many nested pages', 'no products', 'no dated posts' ],
+		// Reading-order kinds: prose, ordered procedure, collapsible reference.
+		kinds: [ 'hero', 'text', 'steps', 'accordion', 'comparison', 'content' ],
 	},
 	minimal: {
 		bestFor: 'The smallest useful site: posts and pages, no search surface.',
@@ -136,6 +156,14 @@ export interface ForgePreset {
 	render: RenderMode;
 	/** Surface toggles applied to the generated project. */
 	surfaces: PresetSurfaces;
+	/**
+	 * Template variants this preset can carry (validated by scaffold against
+	 * TEMPLATE_VARIANTS). Empty means "no variant applies" — a variant is a
+	 * surface specific to the preset's job, so `product-3d` belongs to
+	 * `storefront` and nowhere else. `presets-catalogue.test.ts` pins every id
+	 * here to the shipped variant list.
+	 */
+	variants: readonly string[];
 	/** One-line description for CLI prompts. */
 	description: string;
 }
@@ -146,6 +174,7 @@ export const PRESETS: Record<PresetName, ForgePreset> = {
 		template: 'blog',
 		render: 'static',
 		surfaces: { search: true, feed: true, sitemap: true, ogImages: false },
+		variants: [],
 		description: 'Blog: posts, pages, search, feeds (the Phase 0 default).',
 	},
 	storefront: {
@@ -153,25 +182,83 @@ export const PRESETS: Record<PresetName, ForgePreset> = {
 		template: 'blog',
 		render: 'static',
 		surfaces: { search: true, feed: true, sitemap: true, ogImages: false },
+		variants: [ 'product-3d', 'video-hero' ],
 		description: 'Storefront: blog + products catalog + static front page.',
+	},
+	portfolio: {
+		name: 'portfolio',
+		template: 'blog',
+		render: 'static',
+		// A work catalogue is browsed by facet, not by date — no RSS.
+		surfaces: { search: true, feed: false, sitemap: true, ogImages: false },
+		variants: [ 'video-hero' ],
+		description: 'Portfolio: work catalogue (projects CPT) + optional journal, no feed.',
+	},
+	landing: {
+		name: 'landing',
+		template: 'blog',
+		render: 'static',
+		// One page: nothing to search, nothing to subscribe to.
+		surfaces: { search: false, feed: false, sitemap: true, ogImages: false },
+		variants: [ 'video-hero' ],
+		description: 'Landing: one-pager marketing site — hero, proof, one CTA.',
+	},
+	docs: {
+		name: 'docs',
+		template: 'blog',
+		render: 'static',
+		// Documentation is searched, not subscribed to.
+		surfaces: { search: true, feed: false, sitemap: true, ogImages: false },
+		variants: [],
+		description: 'Docs: a page hierarchy read in order, searchable, no feed.',
 	},
 	minimal: {
 		name: 'minimal',
 		template: 'blog',
 		render: 'static',
 		surfaces: { search: false, feed: true, sitemap: true, ogImages: false },
+		variants: [],
 		description: 'Minimal: posts and pages only, no search.',
 	},
 };
 
 /**
- * Suggest a preset from a site_analyze report: WooCommerce or any product
- * collection detected → 'storefront', otherwise the blog default.
+ * Slugs that mean "a portfolio/project catalogue" in the wild. Used both to
+ * SUGGEST the preset and to decide whether `portfolio` must add a default
+ * projects collection.
+ */
+const PORTFOLIO_SLUG = /portfolio|projects?|case-stud|case_stud|\bwork\b/i;
+
+/**
+ * Suggest a preset from a site_analyze report.
+ *
+ * Precedence is deliberate: commerce beats everything (a shop with a
+ * portfolio CPT is still a shop), then a work catalogue, then the blog
+ * default. `landing` and `docs` are only ever chosen explicitly — shape and
+ * reading order are operator INTENT, and the probe cannot see intent.
  */
 export function suggestPreset(report: Pick<DiscoveryReport, 'woocommerce' | 'collections'>): PresetName {
 	const hasProducts =
 		report.woocommerce === true || report.collections.some((collection) => collection.kind === 'product');
-	return hasProducts ? 'storefront' : 'blog';
+	if (hasProducts) {
+		return 'storefront';
+	}
+	if (report.collections.some((collection) => PORTFOLIO_SLUG.test(collection.slug))) {
+		return 'portfolio';
+	}
+	return 'blog';
+}
+
+/**
+ * The variant a preset can carry, if any — a SUGGESTION, never automatic.
+ *
+ * `site_analyze` reports collections and WooCommerce; it cannot see whether
+ * individual product records carry a `model3d` field. So the 3D viewer is an
+ * operator decision (the `--variant` flag, or a TTY prompt), and inventing it
+ * would drop a viewer — and a vendored runtime — into a site that has no models.
+ */
+export function suggestedVariant(preset: PresetName): string | null {
+	return PRESETS[preset].variants[0] ?? null;
 }
 
 /** The standard wc/v3 products collection a storefront profile defaults to. */
@@ -201,26 +288,62 @@ const STOREFRONT_PRODUCTS: WpCollection = {
 };
 
 /**
- * Apply a preset to a drafted profile (the wizard's collection-profile
- * step). 'minimal' drops commerce collections — posts/pages stay because
- * the home, page and sitemap routes consume them; 'storefront' ensures a
- * products collection exists (wc/v3 with consumer-key auth); 'blog' is the
- * identity.
+ * The standard projects collection a portfolio preset defaults to. `optional`
+ * because a site that advertises the preset without that CPT must still build
+ * (a 404 source warns and yields an empty collection, it does not fail).
+ */
+const PORTFOLIO_PROJECTS: WpCollection = {
+	slug: 'projects',
+	restBase: 'wp/v2/projects',
+	fields: ['id', 'slug', 'date_gmt', 'title', 'excerpt', 'content', 'featured_media'],
+	kind: 'post',
+	optional: true,
+};
+
+/** Commerce is the ONE thing a content preset prunes — a CPT is content. */
+function withoutCommerce(profile: SiteProfile): SiteProfile {
+	return {
+		...profile,
+		collections: profile.collections.filter((collection) => collection.slug !== 'products'),
+	};
+}
+
+/**
+ * Apply a preset to a drafted profile (the wizard's collection-profile step).
+ *
+ * Two invariants hold for every preset:
+ *   - COMMERCE is the only thing a content preset prunes; an extra collection
+ *     is content the profile declared on purpose (an arbitrary CPT), so it
+ *     survives every preset;
+ *   - a preset never invents a taxonomy — it only ensures the one collection it
+ *     can honestly default (`storefront` → wc/v3 products, `portfolio` →
+ *     projects).
  */
 export function applyPresetToProfile(profile: SiteProfile, preset: PresetName): SiteProfile {
 	switch (preset) {
 		case 'minimal':
-			// Drop COMMERCE only. An extra collection is content the profile
-			// declared on purpose (an arbitrary CPT), so it survives every preset.
-			return {
-				...profile,
-				collections: profile.collections.filter((collection) => collection.slug !== 'products'),
-			};
+			return withoutCommerce(profile);
 		case 'storefront':
 			if (profile.collections.some((collection) => collection.slug === 'products')) {
 				return profile;
 			}
 			return { ...profile, collections: [...profile.collections, { ...STOREFRONT_PRODUCTS }] };
+		case 'portfolio': {
+			const content = withoutCommerce(profile);
+			if (content.collections.some((collection) => PORTFOLIO_SLUG.test(collection.slug))) {
+				return content;
+			}
+			return { ...content, collections: [...content.collections, { ...PORTFOLIO_PROJECTS }] };
+		}
+		case 'landing':
+			// A landing site is ONE page by definition — `shape` is what the
+			// template reads to render anchor nav instead of page links.
+			return { ...withoutCommerce(profile), shape: 'one-pager' };
+		case 'docs':
+			// The page hierarchy IS the site; commerce is pruned, search stays on.
+			// Shape is PINNED multi-page: a docs source that happens to look like a
+			// one-pager would otherwise lose its hierarchy navigation.
+			return { ...withoutCommerce(profile), shape: 'multi-page' };
 		case 'blog':
 		default:
 			return profile;

@@ -185,6 +185,18 @@ export function markdownFromPortableText( items: unknown[] ): string {
 			}
 			break;
 		}
+		case 'model3d': {
+			// The model URL is the fact an agent can act on; the poster is the
+			// accessible still that every no-JS visitor actually sees.
+			if ( item.src ) {
+				const still = item.poster ? ` — still: ${ String( item.poster ) }` : '';
+				out.push( `**3D model:** [${ String( item.alt ?? '' ) }](${ String( item.src ) })${ still }` );
+			}
+			if ( item.caption ) {
+				out.push( `*${ String( item.caption ) }*` );
+			}
+			break;
+		}
 		case 'testimonial': {
 			const author = item.author ? `\n\n— ${ String( item.author ) }` : '';
 			out.push( `> ${ String( item.quote ?? '' ) }${ author }` );

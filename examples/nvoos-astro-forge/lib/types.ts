@@ -1322,6 +1322,10 @@ export const SECTION_KINDS = [
 	'team',
 	'marquee',
 	'comparison',
+	// The 3D product viewer band — always poster-first, never hydrated.
+	// Mirrored by the Velocity storefront's SECTION_KINDS (both spell it
+	// `model-3d` so a generated band and a hand-built band mean the same thing).
+	'model-3d',
 	'content',
 ] as const;
 
@@ -1923,6 +1927,11 @@ export interface ParallaxPiece {
 	/** `translate` (the default) or `background` (the source animates
 	 * `background-position`; the rebuild does not fake it with a transform). */
 	type?: 'position' | 'background';
+	/** The axis the source moves on. Absent means vertical (`y`) — every Phlox
+	 * piece is vertical and Elementor's translateY is the common case. An `x`
+	 * piece is a HORIZONTAL drift (motion_fx translateX, rellax horizontal,
+	 * `data-parallax-axis="x"`). */
+	axis?: 'x' | 'y';
 	/** Phlox `data-parallax-depth` — sign AND magnitude. Negative depth moves
 	 * DOWN as the page scrolls (the theme flips the sign). */
 	depth?: number;

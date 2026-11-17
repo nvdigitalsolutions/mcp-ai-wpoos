@@ -20,7 +20,14 @@ describe( 'presets.json', () => {
 	} );
 
 	it( 'lists every preset once, in the canonical order', () => {
-		expect( presetCatalogue().map( ( preset ) => preset.id ) ).toEqual( [ 'blog', 'storefront', 'minimal' ] );
+		expect( presetCatalogue().map( ( preset ) => preset.id ) ).toEqual( [
+			'blog',
+			'storefront',
+			'portfolio',
+			'landing',
+			'docs',
+			'minimal',
+		] );
 	} );
 
 	it( 'gives each preset a bestFor line and at least one kind', () => {

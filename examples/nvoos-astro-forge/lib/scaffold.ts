@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
 import { isMaterializedContent, withMaterializedDefaults } from './content-source.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './geometry.ts';
-import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
+import { animationRebuildCss, countAnimations, planAnimationRebuild, type ParallaxCarrier } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit, readableInk } from './contrast.ts';
 import { contrast, designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
@@ -197,6 +197,12 @@ export interface ScaffoldOptions {
 	mediaDir?: string;
 	/** Built-in template name ('blog') or a path to a template directory. */
 	template?: string;
+	/**
+	 * Additive variant applied AFTER the template copy (see TEMPLATE_VARIANTS).
+	 * A variant never replaces the template — it overlays only the files it
+	 * needs, so a base-template fix reaches every variant for free.
+	 */
+	variant?: TemplateVariant;
 	/** Fail instead of clobbering an existing target. */
 	overwrite?: boolean;
 	/**
@@ -357,6 +363,58 @@ export async function resolveTemplateDir(template?: string): Promise<string> {
 		throw new Error(`Template directory not found: ${explicit}`);
 	}
 	return explicit;
+}
+
+/**
+ * The additive template variants this forge ships.
+ *
+ * A variant is NOT a template: `templates/blog` stays the single source of
+ * truth and a variant overlays only the files it needs, so a base-template fix
+ * reaches every variant for free. `templates/variants/<id>/variant.json` is the
+ * machine-readable manifest — the same agent-readable discipline as presets.json.
+ */
+export const TEMPLATE_VARIANTS = ['product-3d', 'video-hero'] as const;
+export type TemplateVariant = (typeof TEMPLATE_VARIANTS)[number];
+
+/** True when `value` names a shipped variant. */
+export function isTemplateVariant(value: unknown): value is TemplateVariant {
+	return typeof value === 'string' && (TEMPLATE_VARIANTS as readonly string[]).includes(value);
+}
+
+/** Every file under a directory, as `/`-joined relative paths. */
+async function relativeFiles(root: string, prefix = ''): Promise<string[]> {
+	const files: string[] = [];
+	for (const entry of await readdir(root, { withFileTypes: true })) {
+		const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+		if (entry.isDirectory()) {
+			files.push(...(await relativeFiles(path.join(root, entry.name), rel)));
+		} else {
+			files.push(rel);
+		}
+	}
+	return files.sort();
+}
+
+/**
+ * Overlay a variant on a freshly scaffolded project.
+ *
+ * `fs.cp` merges directories, so this never deletes a template file — it only
+ * adds (or deliberately replaces) the ones the variant owns. Returns the
+ * relative paths it wrote, for the manifest and the CLI log line.
+ */
+export async function applyTemplateVariant(
+	targetDir: string,
+	variant: TemplateVariant
+): Promise<string[]> {
+	const source = path.join(FORGE_ROOT, 'templates', 'variants', variant);
+	try {
+		await readFile(path.join(source, 'variant.json'));
+	} catch {
+		throw new Error(`Template variant "${variant}" not found under ${source}`);
+	}
+	const files = await relativeFiles(source);
+	await cp(source, targetDir, { recursive: true });
+	return files;
 }
 
 /** Serialize one collection as a TS object literal for content.config.ts. */
@@ -2716,7 +2774,7 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 		kind: string;
 		effect?: string;
 		speed?: number;
-		pieces?: Array<{ depth?: number; origin?: string; off?: number; direction?: string; speed?: number }>;
+		pieces?: Array<{ depth?: number; origin?: string; off?: number; direction?: string; speed?: number; axis?: string }>;
 	}>;
 	const header = [
 		'# Motion contract',
@@ -2759,7 +2817,11 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 	}
 	const rows = entries.map( ( entry ) => {
 		const behaviour = entry.effect && entry.kind !== 'sticky' ? `${ entry.kind } (${ entry.effect })` : entry.kind;
-		const baseRange = entry.kind === 'parallax' && entry.speed ? `±${ Math.min( entry.speed, 4 ) * 24 }px` : '—';
+		const horizontal = entry.kind === 'parallax' && ( entry.pieces ?? [] ).some( ( piece ) => piece.axis === 'x' );
+		const baseRange =
+			entry.kind === 'parallax' && entry.speed
+				? `±${ Math.min( entry.speed, 4 ) * 24 }px${ horizontal ? ' (horizontal)' : '' }`
+				: '—';
 		// A piece-level parallax band names its sources: depth/origin/off decide
 		// direction and the mobile gate, so a reviewer can check the source facts.
 		const range =
@@ -2870,7 +2932,9 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 		'\tid?: string;',
 		'\tsrc?: string;',
 		'\tindex?: number;',
-		'\ttype?: \'position\' | \'background\';',
+		'	type?: \'position\' | \'background\';',
+		'	/** The axis the piece travels on; absent = vertical. */',
+		'	axis?: \'x\' | \'y\';',
 		'\tdepth?: number;',
 		'\torigin?: \'top\' | \'bottom\' | \'middle\';',
 		'\toff?: number;',
@@ -2936,6 +3000,9 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 				if ( piece.type ) {
 					fields.push( `type: ${ tsString( piece.type ) }` );
 				}
+				if ( piece.axis ) {
+					fields.push( `axis: ${ tsString( piece.axis ) }` );
+				}
 				if ( piece.depth !== undefined ) {
 					fields.push( `depth: ${ piece.depth }` );
 				}
@@ -3000,6 +3067,39 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 }
 
 /**
+ * The media carriers a parallax band also animates, keyed by band + ordinal.
+ *
+ * A HERO band is excluded: global.css deliberately keeps `.ds-section-wrap--hero`
+ * static (125 §5 — a band translate overlapped the flush band below it), so
+ * composing the parallax animation into a hero carrier would silently undo that
+ * decision. `piece.type === 'background'` is excluded too — the renderer skips
+ * it rather than faking `background-position` with a transform.
+ */
+function parallaxCarriersOf( profile: SiteProfile ): ParallaxCarrier[] {
+	const entries = profile.design?.behavior?.entries ?? [];
+	const heroIds = new Set(
+		( profile.design?.sections ?? [] )
+			.filter( ( section ) => section.kind === 'hero' && section.id )
+			.map( ( section ) => section.id as string )
+	);
+
+	const carriers: ParallaxCarrier[] = [];
+	for ( const entry of entries ) {
+		if ( entry.kind !== 'parallax' || ! entry.id || heroIds.has( entry.id ) ) {
+			continue;
+		}
+		// `parallaxPieceCss` falls back to the piece's ARRAY POSITION, so mirror it.
+		entry.pieces?.forEach( ( piece, position ) => {
+			if ( piece.type === 'background' ) {
+				return;
+			}
+			carriers.push( { bandId: entry.id as string, mediaIndex: piece.index ?? position } );
+		} );
+	}
+	return carriers;
+}
+
+/**
  * Render `src/lib/animations.generated.ts` — the finite, layout-safe CSS
  * keyframe rebuild (2026-11-12). JS runtimes and infinite motion never reach
  * this file; they live in MOTION.md as deferred facts.
@@ -3008,7 +3108,7 @@ export function renderAnimationsGenerated( profile: SiteProfile ): string {
 	const facts = planAnimationRebuild( profile.animations?.facts ?? [], profile.design?.behavior, {
 		allowInfinite: true,
 	} );
-	const css = animationRebuildCss( facts );
+	const css = animationRebuildCss( facts, parallaxCarriersOf( profile ) );
 	const hasInfiniteMotion = facts.some( ( fact ) => fact.rebuild === 'css' && fact.infinite === true );
 	return [
 		'// ---------------------------------------------------------------------------',
@@ -3468,6 +3568,15 @@ async function scaffoldProject(
 	targetDir: string
 ): Promise<ScaffoldResult> {
 	const preset = PRESETS[options.preset ?? 'blog'];
+	// A variant must be compatible with the PRESET — `product-3d` is a commerce
+	// surface, and dropping a viewer (plus a vendored runtime) into a site with
+	// no products is a silent misconfiguration. Fail before any write.
+	if (options.variant && !preset.variants.includes(options.variant)) {
+		const allowed = preset.variants.length > 0 ? preset.variants.join(', ') : 'none';
+		throw new Error(
+			`Template variant "${options.variant}" is not compatible with the "${preset.name}" preset (allowed: ${allowed}).`
+		);
+	}
 	// The preset's collection-profile half applies here so a preset scaffold
 	// is self-contained (idempotent when the caller already applied it —
 	// applyPresetToProfile re-filters to the same result).
@@ -3496,6 +3605,19 @@ async function scaffoldProject(
 			return base !== 'node_modules' && base !== 'dist' && base !== '.astro';
 		},
 	});
+
+	// 1b. Optional template variant — an ADDITIVE overlay on the copy above, so
+	//     the base template stays the single source of truth. Placement matters:
+	//     it lands BEFORE the FORGE-marker rewrites, which must still win over
+	//     any file a variant ships.
+	if (options.variant) {
+		if (!isTemplateVariant(options.variant)) {
+			throw new Error(
+				`Unknown template variant "${options.variant}" — expected one of: ${TEMPLATE_VARIANTS.join(', ')}`
+			);
+		}
+		await applyTemplateVariant(targetDir, options.variant);
+	}
 
 	// 2. Vendor the forge libs so the customer repo builds standalone.
 	const forgeDir = path.join(targetDir, 'src', 'forge');
