@@ -1,10 +1,21 @@
-# Proposal 149 — Implementation Plan: Wave 0 (Foundation)
+# Proposal 149 — Implementation Plan
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — seven slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), credential rotation on `/ops/credentials` (§11), assistants on `/admin/assistants` (§12), scheduler liveness on `/ops/scheduler` (§13), and the settings projection (§15). **The Wave 2 exit gate (key rotation + DLQ drain) is met.** An eighth slice — settings ownership (§16) — a ninth — the two settings pages (§17) — a tenth — the read-only workflow run log (§18) — an eleventh — the token manager's estate scope (§19) — a twelfth — console estate resolution (§21) — and a thirteenth — the tool catalogue (§22) — shipped 2026-11-17. Together they closed the cross-tenant settings defect, the "editable nowhere" gap the projection opened, the estate leak in workflow run history, a cross-tenant revocation path on the live token manager, and the console API's dependency on the `default` estate.
-**Date:** 2026-11-16
-**Scope:** ~3–4 weeks, one engineer
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **24 numbered slices** (§8–§37) **plus the panel brand lockup (§38) shipped**, and **the Wave 2 exit gate (key rotation + DLQ drain) is met**.
+**Scoreboard** — re-measured 2026-11-17 with `bin/audit-surface-ownership.php`: **44 surfaces · 19 built on a Filament panel** (10 `/ops`, 10 `/admin`; `settings.platform` is on both) · **29 console-served** · **21 console-only** · **2 planned-only** (`identity-provider`, `datasets`, both `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Validation** — `App suite (SQLite)` green: **1062 passed / 6018 assertions**, including `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that job is a contract break, not a flake.
+**Date:** 2026-11-16 · **Header refreshed:** 2026-11-17
+**Scope (Wave 0):** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
+
+**What the slices closed.** The cross-tenant settings defect; the "editable
+nowhere" gap the settings projection opened; the estate leak in workflow run
+history; a cross-tenant revocation path on the live token manager; the console
+API's dependency on the `default` estate; and two unscoped stores
+(`nvoos_remote_sites` §27, `nvoos_triggers` §29) whose `test` and `fire` actions
+reached into other estates. Four rows were also **dispositions** rather than
+builds (`chat-profiles`, `onboarding`, `datasets`, `identity-provider`), which is
+why the burn-down below is honest rather than merely short.
 
 ## Completion log
 
@@ -1522,20 +1533,32 @@ early. It matches `app/Filament/*/Resources/*/*Resource.php` and
 not rows.
 
 `bin/audit-surface-ownership.php` prints the burn-down from the same contract
-(`--json` for tooling). As of 2026-11-17: **42 surfaces, 6 built on a Filament
-panel** (4 `/ops`, 2 `/admin`), **29 served by the console**, **27 console-only**,
-**9 planned only** (8 `/ops`, 1 `/admin`). That is the real Wave 2 scoreboard —
-the console covering a surface does not count as admin parity.
+(`--json` for tooling). **Re-measured 2026-11-17, after the tail closed: 44
+surfaces, 19 built on a Filament panel** (10 `/ops`, 10 `/admin` —
+`settings.platform` is on both), **29 served by the console**, **21 console-only**,
+**2 planned only** (both `/ops`), **2 recorded `absent`**. That is the real Wave 2
+scoreboard — the console covering a surface does not count as admin parity.
+
+The figures this section carried when it was written — 42 / 6 / 29 / 27 / 9 —
+were correct that morning and are superseded, not wrong: the contract grew by two
+rows and the built set went from six to nineteen. **Re-run the script before
+quoting a number.** It reads the same contract file the CI gate reads, so a
+disagreement between a doc and the script is a doc defect.
 
 ### 14.3 Validation record
 
-- Contract parses; **42 rows**, **45 console keys partitioned**, **6 Filament
-  files declared and present**.
-- A standalone replica of the four test assertions passes on 2026-11-17.
-- **The PHPUnit run has not happened.** `oos-laravel-app` and
-  `oos-laravel-worker` are unhealthy, and the app suite needs the container's
-  vendor symlinks. The first real execution is CI's `App suite (SQLite)` job.
-  Do not cite this gate as green until that job is.
+- Contract parses; **44 rows**, **45 console keys partitioned**, and every
+  declared Filament file is present.
+- **The gate is green in CI**, which is what this section previously could not
+  claim: `App suite (SQLite)` reports `PASS
+  Tests\Feature\SurfaceOwnershipTest` — the full job is **1062 passed / 6018
+  assertions** on `1ac9e3a0e7`. Treat a red run of that job as a contract break,
+  not a flake.
+- The earlier caveat was environmental, not a doubt about the assertions:
+  `oos-laravel-app` and `oos-laravel-worker` were unhealthy and the app suite
+  needs the container's vendor symlinks, so the first real execution was always
+  going to be CI's. A standalone replica of the four assertions still exists for
+  a bare host checkout.
 
 ### 14.4 Next slices, in leverage order
 
@@ -2422,14 +2445,27 @@ verified end to end inside it:
     wordmark at the same **161×32**
 - Both modes screenshotted and inspected.
 
-### 38.6 Known inconsistency, not addressed here
+### 38.6 The icon split: backend vs frontend
 
-The favicon (`public/nvoos-icon.svg`) is a **different mark** from the lockup icon —
-a two-colour cyan/violet glyph in a 70.2×73.9 viewBox, where the lockup uses the
-nine-colour molecule in 600×600. The tab icon and the in-page mark therefore do not
-match. Aligning them is a one-line swap of a committed asset, but it changes what
-users see in every tab, so it is left as an explicit decision rather than done as a
-side effect of a layout change.
+The same-day follow-up. The icon axis is **not** light/dark — it is backend vs
+frontend:
+
+| Surface | Icon | Path |
+|---|---|---|
+| Backend (`/ops`, `/admin`) | the molecule | `docker/laravel/app-skeleton/public/nvoos-mark.svg` |
+| Frontend (console, MCP gateway, …) | the two-colour glyph | `assets/images/nvoos-icon.svg` |
+
+- Both panels' `favicon()` now points at `BrandMark::FAVICON_PATH`, which is aliased
+to `MARK_PATH`. The tab icon and the in-page mark are therefore **one asset** and
+cannot drift, which is the failure mode that produced this section: the two-colour
+frontend glyph had been sitting in the backend's `public/` and serving as the panel
+favicon, so every backend tab showed frontend artwork the page never displayed.
+- The glyph was moved out of `public/` to `assets/images/`, where the frontend brand
+assets live.
+- At 16px the molecule still reads as a colour burst — verified at 16/32/48px on
+both surfaces before it was adopted — which is what a favicon has to do.
+- `AdminPanelTest` and `PanelBrandingTest` both assert the panels point at the
+backend mark, so re-pointing one at the frontend glyph fails CI.
 
 ---
 
@@ -2712,6 +2748,16 @@ is intended) and the prerequisite recorded on the row.
 `planned only` fell from 7 to **6**, all `/ops`: `onboarding` and
 `identity-provider` (blocked on decisions outside the app) plus the four above.
 `/admin` remains at **0**.
+
+**Addendum, later the same day — the tail is closed.** Three of the four moved.
+`assets` shipped as a **derived** register (§33, which corrected this section's
+"migration plus a store" prerequisite: the register is computed per request, not
+stored), `reports` followed it (§34), and `conversation-import` shipped as a
+declared `subset` (§37). `datasets` is the only one still `planned` alongside
+`identity-provider`, and §35 replaced the guess with evidence: the eleven
+HuggingFace tools exist in `lib/core` but sit at `readiness: unverified`, so
+`ManifestToolRegistrar` registers none of them and a browser would list datasets
+the runtime cannot use.
 
 ---
 

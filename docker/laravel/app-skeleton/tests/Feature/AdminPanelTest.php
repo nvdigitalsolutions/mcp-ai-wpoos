@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Http\Middleware\SetTenantContext;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Brand\BrandMark;
 use App\Support\TenantContext;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,26 +34,29 @@ class AdminPanelTest extends TestCase
     }
 
     /**
-     * The brand icon, on both panels.
+     * The backend mark, on both panels.
      *
      * Two assertions because they fail differently: a panel without
      * `favicon()` falls back to the browser's `/favicon.ico` probe (a 404 on
      * this runtime), and a panel pointing at a missing file renders a broken
      * `<link rel="icon">` — which is what a copy into a second app produces
      * when the asset is not shipped with it.
+     *
+     * The backend uses the molecule, not the frontend glyph: `/ops` and `/admin`
+     * are not the same product surface as the console or the MCP gateway.
      */
     public function test_both_panels_serve_the_brand_icon(): void
     {
         $this->assertFileExists(
-            public_path('nvoos-icon.svg'),
-            'The brand icon must ship in public/ — panel `favicon()` points at it.'
+            public_path(ltrim(BrandMark::FAVICON_PATH, '/')),
+            'The backend mark must ship in public/ — panel `favicon()` points at it.'
         );
 
         foreach (array('admin', 'operator') as $id) {
             $this->assertSame(
-                '/nvoos-icon.svg',
+                BrandMark::FAVICON_PATH,
                 Filament::getPanel($id)->getFavicon(),
-                "Panel '{$id}' does not point at the brand icon."
+                "Panel '{$id}' does not point at the backend mark."
             );
         }
     }

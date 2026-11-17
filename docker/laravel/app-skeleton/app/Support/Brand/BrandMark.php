@@ -81,6 +81,26 @@ final class BrandMark
     /** The molecule mark, shared by both modes. */
     public const MARK_PATH = '/nvoos-mark.svg';
 
+    /**
+     * The tab icon, for both panels.
+     *
+     * Deliberately the same file as the lockup mark. A backend whose tab icon and
+     * in-page mark are different artwork reads as two products, and this repo had
+     * already made that mistake once: the two-colour FRONTEND glyph was serving as
+     * the panel favicon while the panel itself showed this molecule.
+     *
+     * The icon split is backend vs frontend, not light vs dark:
+     *
+     * | Surface | Icon |
+     * |---|---|
+     * | Backend (`/ops`, `/admin`) | this molecule, `nvoos-mark.svg` |
+     * | Frontend (console, MCP gateway) | `assets/images/nvoos-icon.svg` |
+     *
+     * Shown at 16px the molecule still reads as a colour burst (verified), which is
+     * what a favicon has to do; it is not a simplified calligraphic glyph.
+     */
+    public const FAVICON_PATH = self::MARK_PATH;
+
     /** Wordmark for light surfaces: the brand file unchanged, black core preserved. */
     public const LIGHT_LOGO_PATH = '/nvoos-logo-light.svg';
 

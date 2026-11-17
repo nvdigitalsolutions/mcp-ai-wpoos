@@ -260,12 +260,26 @@ class PanelBrandingTest extends TestCase
         }
     }
 
-    public function test_the_favicon_is_unchanged(): void
+    /**
+     * The tab icon is the backend mark, not the frontend glyph.
+     *
+     * Backend and frontend are separate products here: `/ops` and `/admin` show the
+     * molecule, while the console and the MCP gateway use
+     * `assets/images/nvoos-icon.svg`. The panels pointing at the frontend glyph was
+     * exactly the mismatch this test now prevents.
+     */
+    public function test_the_tab_icon_is_the_backend_mark(): void
     {
-        $this->assertFileExists(public_path('nvoos-icon.svg'));
+        $this->assertSame(
+            BrandMark::MARK_PATH,
+            BrandMark::FAVICON_PATH,
+            'The tab icon and the lockup mark must be one asset, so they cannot drift apart.'
+        );
+
+        $this->assertFileExists(public_path(ltrim(BrandMark::FAVICON_PATH, '/')));
 
         foreach (array('admin', 'operator') as $id) {
-            $this->assertSame('/nvoos-icon.svg', Filament::getPanel($id)->getFavicon());
+            $this->assertSame(BrandMark::FAVICON_PATH, Filament::getPanel($id)->getFavicon(), $id.' tab icon');
         }
     }
 
