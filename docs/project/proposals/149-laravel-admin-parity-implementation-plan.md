@@ -2241,6 +2241,90 @@ by the test that sets both, and fixed before merge.
 
 ---
 
+## 33. Wave 2 — twenty-second slice: the information-asset register (`/ops/assets`)
+
+**State:** shipped 2026-11-17. The one `/ops` row that had no substitute, and the
+slice that corrected §32's own research note.
+
+### 33.1 The assumption §32 got wrong
+
+§32 recorded the prerequisite as *“a migration plus a store”*. That was wrong.
+Reading `WP_MCP_AI_Asset_Inventory` in full showed the register is
+**auto-discovered**, not hand-maintained: it walks code directories, probes option
+presence, lists integrations, counts CPTs and documentation, and only then stores
+the result in an option refreshed weekly.
+
+It stores because its discovery walks the plugin tree and that is expensive. This
+runtime's discovery is a handful of cheap queries, so the register is **computed
+per request**. No migration, no table, no store — and no staleness. A stored
+snapshot in a compliance register goes stale on the next migration, which is
+worse than no register at all.
+
+Correcting the note matters: a future agent reading §32 would have written a
+migration for data that should never be stored.
+
+### 33.2 What is registered
+
+| Source | Becomes | Classification rule |
+|---|---|---|
+| Settings layers | 2 configuration assets | `nvoos_settings` restricted, tenant settings confidential |
+| Provider credentials | 1 asset per provider with a key **set** | restricted, presence only |
+| Runtime tables | 1 asset per table that exists, with a row count | by content: credential material restricted, conversation/config data confidential, rest internal |
+| Provider clients | 1 asset per registered provider | confidential |
+| Shipped packages | application code, runtime packages | confidential |
+| Machine-read contracts | surface ownership, console endpoints | internal |
+
+33 tables are mapped, so the register names every store the deployment actually
+has rather than a curated subset.
+
+### 33.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Register | `app/Support/Assets/AssetRegister.php` | discovery, classification, statistics, filter |
+| Panel | `app/Filament/Operator/Pages/AssetInventory.php` | search + classification filter, no actions |
+| View | `resources/views/filament/operator/asset-inventory.blade.php` | badge table + per-classification counts |
+| Tests | `tests/Feature/AdminAssetInventoryTest.php` | 14 tests |
+
+### 33.4 Decisions worth keeping
+
+- **Vocabulary copied verbatim.** The four ISO classifications and the eight
+asset types are the WordPress constants, so an estate migrating between runtimes
+keeps one set of report labels — and `reports` (§32) can key off them.
+- **Highest classification first.** The register sorts restricted → public
+because the first question an auditor asks is “what is in here, and how sensitive
+is the worst of it”. A test asserts the sort never descends then climbs again.
+- **Presence, never value.** `getApiKey()` returns the value to the caller, so it
+is read transiently to reduce to a boolean. The test seeds a real key and asserts
+the secret appears in neither the register nor the rendered page.
+- **No filesystem walk.** Mtimes over `lib/core` cost more than the page is worth,
+and ISO 27001 asks for classification and ownership, not mtimes. Code assets are
+recorded by package presence and the description says so.
+- **Row counts, capped honestly.** A count is one query per table and is the
+volume number an auditor asks for. `-1` becomes “row count unavailable” rather
+than a zero that reads like “empty”.
+- **`writer: none`.** Nothing is stored, so `writer: ops` (the placeholder) was
+wrong — the §23 rule, fourth time.
+
+### 33.5 Validation record — executed
+
+- `AdminAssetInventoryTest`: **14 passed, 246 assertions**.
+- Plus `AdminSiteHealthTest`, `SurfaceOwnershipTest`, `AdminAuditLogTest`,
+  `OperatorCredentialsTest`, `AdminAutomationDefinitionsTest`: **62 passed, 825
+  assertions, 0 failures**.
+- `php -l` clean; `phpcs` (CI ruleset) clean on all three files.
+
+### 33.6 What `reports` still needs
+
+The data half is now done: `byClassification()`, `byType()` and `statistics()`
+are exactly the shapes a compliance report consumes. What remains is an
+**exporter** — format writers and a delivery path. The row records the argument
+against starting with PDF/DOCX: ship CSV/JSON over the register first (no new
+dependency), and add a format only when a compliance customer names the one they
+need.
+
+---
+
 ## 32. The `/ops` tail, researched: four blocked, one built
 
 **State:** recorded 2026-11-17. The last four `planned` rows had **no notes at
