@@ -166,6 +166,12 @@ class ApiTenantResolutionTest extends TestCase
             'api/v1/session/login',
             'api/v1/session/logout',
             'api/v1/session/me',
+            // A personal token belongs to a person across every estate they can
+            // reach, so requiring an estate selection before minting or listing
+            // one would be a fiction — and would 409 a multi-estate user out of
+            // their own credentials (149 §26).
+            'api/v1/personal-tokens',
+            'api/v1/personal-tokens/{token}',
         ];
 
         $unprotected = [];

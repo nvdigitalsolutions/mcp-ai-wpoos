@@ -246,12 +246,13 @@
       "title": "Personal access tokens",
       "audience": "tenant-admin",
       "ops": { "state": "planned" },
-      "admin": { "state": "planned" },
+      "admin": { "state": "full" },
       "console": null,
-      "writer": "shared",
+      "writer": "admin",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Genuinely not built, and it has no console key: the key the matrix previously assigned here (`tokenManager`) serves assistant credentials, which is `credentials.estate`. A user-scoped PAT surface needs its own endpoint, its own user filter and an operator cross-estate view."
+      "projection": "Ownership, not capability: every read and the revoke path filter on the authenticated user's id, and a token id belonging to someone else answers 404 rather than disclosing that it exists. Metadata only — the hash column is never selected, so the plaintext exists solely in the response to the mint call and nowhere else. The routes sit OUTSIDE ResolveApiTenant because a token is not estate data: it belongs to a person across every estate they can reach. Abilities are not the authority — nothing in this runtime calls tokenCan() or applies abilities: middleware, so authorization comes from the user's current role through CapabilityMap, and the stored ability is ['*'] because that is the truth. No ability selector and no \"never expires\" option are offered: one would be an unenforced promise, the other a permanent credential.",
+      "files": ["app/Filament/Admin/Pages/PersonalTokensPage.php"],
+      "notes": "Shipped on `/admin` 2026-11-17 (§26) with GET/POST/DELETE `/api/v1/personal-tokens`. `writer` narrowed from `shared` to `admin`: the operator cross-estate view is still unbuilt, and pretending otherwise would mark a write path that does not exist. Personal tokens are named `oos-personal:*` so `credentials.estate` and the console token manager (`oos-assistant-*` exact names) can never list them, and this surface cannot list assistant credentials. The earlier label on this row (`tokenManager`) was wrong and §19 corrected it."
     },
     {
       "id": "remote-sites",
