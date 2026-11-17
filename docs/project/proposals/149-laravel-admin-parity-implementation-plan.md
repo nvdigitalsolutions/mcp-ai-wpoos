@@ -1550,7 +1550,11 @@ the console covering a surface does not count as admin parity.
 7. ✅ **Shipped** — estate assistant credentials on `/admin` (§24), `subset`:
    list and revoke, no issue/rotate, because rotation is the operator surface.
    The console and the panel now share one reader and one revoke primitive.
-8. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
+8. ✅ **Shipped** — the admin audit trail on `/ops` (§25), read-only and
+   cross-estate by design. The same slice made the credential revoke write a
+   record row, which it previously did not: panel traffic goes over
+   `/livewire/update`, which the request audit middleware skips.
+9. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
 
 ---
 
@@ -2162,6 +2166,78 @@ oversight plus operator settings, not a second copy of every console form.
 - **A writable profession overlay is a separate proposal.** It needs storage,
   a merge rule against the code catalogue, and a `catalogueVersion()` that
   actually moves. Do not bolt it onto this page.
+
+---
+
+## 25. Wave 2 — sixteenth slice: the admin audit trail (`/ops/audit-log`)
+
+**State:** shipped 2026-11-17. The first `/ops` surface since §17, and the one
+that closes a hole §24 opened.
+
+### 25.1 What the matrix asked for
+
+`audit-log`: `ops: planned`, `writer: none`, note *“Read-only view of
+nvoos_admin_audit. Append-only by construction; no surface may write it.”* That
+was already the whole design; only the page was missing.
+
+### 25.2 The hole this slice found
+
+`AuditAdminRequests` skips `/livewire/update` as UI mechanics, so **panel actions
+leave no request row**. `AdminAuditLogger::recordResource()` is the only path
+that records them, and §24's credential revoke did not call it — a destructive,
+irreversible action with no trace. Fixed in this slice, before the page that
+would have made the omission visible.
+
+### 25.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Model | `app/Models/AdminAudit.php` | append-only: `$timestamps = false`, `$guarded = ['*']` |
+| Reader | `app/Support/Admin/AuditTrail.php` | rows, totals, panels, estates, resources, filters |
+| Page | `app/Filament/Operator/Pages/AuditLog.php` | five filters, no actions |
+| View | `resources/views/filament/operator/audit-log.blade.php` | plain table, inline styles |
+| Audit call | `app/Filament/Admin/Pages/EstateCredentialsPage.php` | revoke now writes a scoped record row |
+| Tests | `tests/Feature/AdminAuditLogTest.php` | 12 tests |
+
+### 25.4 Decisions worth keeping
+
+- **Both row kinds are shown.** Request rows (`resource` null) answer “who tried
+and was refused”; record rows (`resource` set) answer “what changed”. A page
+that showed only the second would hide every 403/422 — the half of a trail that
+matters when something went wrong. The `kind` filter exists so an operator can
+still isolate either.
+- **`operator` is a filter value, not a wildcard.** Rows with no estate are
+operator actions; they are a category, and hiding them would break the trail's
+continuity across an estate's own history.
+- **Cross-estate on purpose.** This is the one `/ops` surface where reading every
+estate is the requirement, not a leak. The projection says so, so the next
+reader does not “fix” it into a tenant scope.
+- **No re-redaction.** `AdminAuditLogger::redact()` runs on every write path; a
+second pass in the reader would give false confidence while changing nothing.
+- **`LIMIT` is visible in the header.** The table grows forever, so the page says
+“newest 200” rather than implying it shows everything.
+
+### 25.5 Validation record — executed
+
+- `AdminAuditLogTest`: **12 passed, 37 assertions**.
+- Plus the seven other panel suites listed in §24.4 and `AdminToolCatalogueTest`
+  / `AdminProfessionCatalogueTest` / `AdminSettingsTest` / `AdminTeamsTest` /
+  `AdminAssistantsTest`: **106 passed, 756 assertions, 0 failures**.
+- `php -l` clean; `phpcs` (CI ruleset) clean.
+- `bin/audit-surface-ownership.php`: **44 surfaces · 13 Filament-built**
+  (6 `/ops`, 8 `/admin`); planned-only down to 9.
+
+### 25.6 Follow-ups recorded
+
+- **No pagination.** `LIMIT` 200 with filters. If the trail becomes the primary
+  tool for a compliance review, paginate by `id` cursor — the `(tenant_id,
+  created_at)` and `(user_id, created_at)` indexes already support it.
+- **Erase-on-request has no story.** The trail keeps a `user_id` with no FK on
+  purpose (a deleted user's actions must survive), so a data-erasure request
+  against this table needs a decision before it needs code.
+- **`payload` is stored but not rendered.** It is the most sensitive column in
+  the table and the least useful in a list. Render it behind an explicit reveal
+  when someone needs it, not by default.
 
 ---
 
