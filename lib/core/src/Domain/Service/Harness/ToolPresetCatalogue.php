@@ -430,6 +430,7 @@ final class ToolPresetCatalogue
                 'get_site_uptime',
                 'check_site_security',
                 'research_site_best_practices',
+                'wifi_health_check',
                 'list_comments',
                 'get_comment',
                 'create_comment',
