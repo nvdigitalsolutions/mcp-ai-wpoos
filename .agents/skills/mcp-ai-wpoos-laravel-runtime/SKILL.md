@@ -586,3 +586,74 @@ tenant id is a **selector only**:
   CSS has no arbitrary utilities and a missing class silently collapses layout.
 - Page URLs are tenant-prefixed on `/admin` (`/admin/{slug}/…`); `/ops` has no
   tenant segment.
+
+## 14. Surface-ownership audits that found real bugs (149 §22–§24)
+
+Three slices in this window each found a contradiction in
+`contracts/surface-ownership.json` rather than a missing page. Read the row as
+an assertion about the code, and check it before building.
+
+- **`writer` is present tense.** If it names a layer whose write path is not
+  registered on this runtime, the row is lying. `professions` said
+  `writer: admin` while its own note said `save_profession` stays WordPress-side
+  — correct it to `none`. Ask: *which class actually persists?* If the answer is
+  "none here", so is the writer. `shared` is only true when two real writers
+  exist.
+- **`subset` is BUILT.** `bin/audit-surface-ownership.php` omitted it from
+  `$builtStates`, so the first row whose only panel presentation is a subset
+  (`credentials.estate`) reported as console-only, and `settings.platform`
+  (admin: subset, the S-1 rendered-disabled decision) was under-counted too.
+  When you ship the first row in a new state, check the script's vocabulary
+  against the contract's vocabulary — the contract test only enforces the
+  contract.
+- **A reference catalogue is not a tenant record set.** For `tools` and
+  `professions` the honest projection is "no reduction, and that is the
+  decision", because reducing the payload breaks the console's picker/selector.
+  Say so in `projection`, or the next reader "fixes" it.
+- **A page with actions is not proved read-only by a forms assertion.** The
+  `InteractsWithForms` / `HasForms` check proves "accepts no payload" for a
+  browse page. For a page with an action (revoke), pin the *action surface*
+  (`assertDontSee('Issue credential')`) and re-resolve the estate at action
+  time, so armed Livewire state cannot reach across estates.
+
+### Panel tenancy is not `TenantContext`
+
+`Filament::getTenant()` resolves the estate on panel requests; `TenantContext`
+is request-middleware state and is **not** populated on panel GETs. A support
+class shared by a console controller and a panel page must therefore take an
+**explicit estate id**, never read ambient state — otherwise the page lists the
+wrong estate, or silently `Assistant::DEFAULT_TENANT`. The page should fail
+closed: an empty id reads nothing, and the class returns empty rows rather than
+falling back.
+
+`Assistant` has **no** tenant global scope (unlike `WorkflowRun`), so
+`where('tenant_id', $id)` is the only filter — passing the Filament tenant id is
+required, not belt-and-braces.
+
+Sanctum credentials are linked to an estate only through the token **name**
+(`oos-assistant-{id}`), because `personal_access_tokens` has no tenant column and
+`tokenable` is the issuing user. Scope by the literal name list (indexed) rather
+than a `like` scan.
+
+### Editing `surface-ownership.json` safely
+
+A single `\` inside a JSON string is an invalid escape. `php -r` one-liners that
+rewrite this file mangle the replacement under this shell, and the failure is
+silent until PHPUnit parses the contract. Symptom:
+`Invalid \escape: line N column M` from `json.loads`, while `json_decode`
+returns `null` with no position.
+
+Write a `.py` or `.php` **file** for the edit, use `App\\Support\\Foo` in the
+JSON, and assert `json.loads(...)` succeeds before committing. Do not trust a
+`str_replace` that reported "fixed".
+
+### Diagnosing suite noise in the container
+
+- `Empty data set provided by data provider` + `No tests found in class`
+  = the provider's **corpus file is absent** (e.g.
+  `ProjectManagement*ParityTest` needs the WordPress capture). It is not the
+  stale-copy trap, and it fires at collection time even when `--filter`
+  excludes the class. Check the provider's `is_file()` guard before touching
+  anything.
+- `AuthProvider::issueCredential()` refuses to run unauthenticated — tests must
+  `actingAs()` a user before minting, and that user becomes `tokenable_id`.
