@@ -15,6 +15,7 @@
 // Exit codes (mirroring check-chat-parity.php):
 //   0 - parity: no drift
 //   1 - drift: a contract difference that is not declared below
+//   2 - cannot verify: the modules under test could not be loaded (missing deps)
 //
 // Node >= 22.18 / 23 / 24 strips TypeScript types natively, so this imports the
 // .ts sources directly — no build step, no tsconfig resolution, no vitest. The
@@ -24,10 +25,36 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
-import { SECTION_KINDS as FORGE_KINDS } from '../examples/nvoos-astro-forge/lib/types.ts';
-import { composeLlmsTxt as forgeCompose } from '../examples/nvoos-astro-forge/lib/llms.ts';
-import { SECTION_KINDS as VELOCITY_KINDS } from '../examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts';
-import { composeLlmsTxt as velocityCompose } from '../examples/nvoos-astro-velocity/src/lib/llms.ts';
+// Loaded with `await import()` rather than static imports because static
+// imports are RESOLVED before any statement in this file executes: a bare
+// `git worktree` checkout with no node_modules would abort with an opaque
+// ERR_MODULE_NOT_FOUND stack and exit 1 — reading as "drift found" when the
+// truth is "could not check". Dynamic imports put this preflight in front of
+// resolution and give that state its own exit code.
+if ( ! existsSync( new URL( '../examples/nvoos-astro-forge/node_modules/htmlparser2/package.json', import.meta.url ) ) ) {
+	console.error( 'astro app parity: cannot verify — the forge dependencies are missing.' );
+	console.error( '  run `npm ci` in examples/nvoos-astro-forge (the only install this check needs).' );
+	process.exit( 2 );
+}
+
+let forgeTypes, forgeLlms, velocityKindsModule, velocityLlms;
+try {
+	[ forgeTypes, forgeLlms, velocityKindsModule, velocityLlms ] = await Promise.all( [
+		import( '../examples/nvoos-astro-forge/lib/types.ts' ),
+		import( '../examples/nvoos-astro-forge/lib/llms.ts' ),
+		import( '../examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts' ),
+		import( '../examples/nvoos-astro-velocity/src/lib/llms.ts' ),
+	] );
+} catch ( error ) {
+	console.error( `astro app parity: cannot verify — loading the app modules failed: ${ error.message }` );
+	console.error( '  run `npm ci` in examples/nvoos-astro-forge; velocity modules must stay dependency-free.' );
+	process.exit( 2 );
+}
+
+const { SECTION_KINDS: FORGE_KINDS } = forgeTypes;
+const { composeLlmsTxt: forgeCompose } = forgeLlms;
+const { SECTION_KINDS: VELOCITY_KINDS } = velocityKindsModule;
+const { composeLlmsTxt: velocityCompose } = velocityLlms;
 
 const failures = [];
 const check = (ok, label, detail) => {
