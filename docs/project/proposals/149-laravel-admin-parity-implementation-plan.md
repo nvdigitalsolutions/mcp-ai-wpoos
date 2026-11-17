@@ -1,9 +1,9 @@
 # Proposal 149 — Implementation Plan
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **24 numbered slices** (§8–§37) **plus the panel brand lockup (§38) shipped**, and **the Wave 2 exit gate (key rotation + DLQ drain) is met**.
-**Scoreboard** — re-measured 2026-11-17 with `bin/audit-surface-ownership.php`: **44 surfaces · 19 built on a Filament panel** (10 `/ops`, 10 `/admin`; `settings.platform` is on both) · **29 console-served** · **21 console-only** · **2 planned-only** (`identity-provider`, `datasets`, both `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
-**Validation** — `App suite (SQLite)` green: **1062 passed / 6018 assertions**, including `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that job is a contract break, not a flake.
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **27 numbered slices** (§8–§41; §38 is the branding fix rather than a slice) **shipped**, and **the Wave 2 exit gate (key rotation + DLQ drain) is met**.
+**Scoreboard** — re-measured 2026-11-17 with `bin/audit-surface-ownership.php`: **44 surfaces · 22 built on a Filament panel** (10 `/ops`, 13 `/admin`; `settings.platform` is on both) · **29 console-served** · **18 console-only** · **2 planned-only** (`identity-provider`, `datasets`, both `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Validation** — app suite: **1101 tests / 6160 assertions**, 4 failures, all `WifiKpisTest` (the documented pre-existing unbound-addon gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-17
 **Scope (Wave 0):** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1534,8 +1534,8 @@ not rows.
 
 `bin/audit-surface-ownership.php` prints the burn-down from the same contract
 (`--json` for tooling). **Re-measured 2026-11-17, after the tail closed: 44
-surfaces, 19 built on a Filament panel** (10 `/ops`, 10 `/admin` —
-`settings.platform` is on both), **29 served by the console**, **21 console-only**,
+surfaces, 22 built on a Filament panel** (10 `/ops`, 13 `/admin` —
+`settings.platform` is on both), **29 served by the console**, **18 console-only**,
 **2 planned only** (both `/ops`), **2 recorded `absent`**. That is the real Wave 2
 scoreboard — the console covering a surface does not count as admin parity.
 
@@ -3412,3 +3412,250 @@ needs.
   convenience, not a security decision: the caller must be a member.
 - **`user`-scope settings remain unbuilt** (§16.5) — the third storage layer,
   unrelated to this slice but the same table.
+
+---
+
+## 39. Wave 2 — twenty-fifth slice: transcripts (`/admin/transcripts`)
+
+**State:** shipped 2026-11-17. The first row where the page could not be built
+before its data model was fixed, and the first slice to find a **write collision**
+rather than a read leak.
+
+### 39.1 The defect, twice over
+
+`nvoos_transcripts` shipped with **no tenant column**, and `TranscriptStore` read
+and wrote it unscoped — `list()`, `get()`, `counts()` and `delete()` all named
+the table directly, while the routes already sat inside `ResolveApiTenant`. So any
+authenticated console user listing `/api/v1/chat-transcripts` saw every estate's
+sessions, and `show` returned another estate's **full conversation**.
+
+The second half is worse and only appeared while scoping: `session_id` was
+**globally unique**. Two estates that generated the same session key silently
+overwrote each other's transcript on the next `save()`, because the upsert
+matched on `session_id` alone. Adding `tenant_id` without touching that key would
+have converted a silent overwrite into a unique-constraint failure — louder, but
+still wrong.
+
+As in §27 and §29, the contract had recorded `console: full` with no `projection`,
+which is exactly what a missing scope looks like from the matrix's side.
+
+### 39.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Migration | `lib/laravel-adapter/database/migrations/2026_11_17_140000_add_tenant_to_transcripts.php` | `tenant_id` default `default`; global unique replaced by `(tenant_id, session_id)`; `(tenant_id, updated_at)` index; guarded by `hasColumn` + `getIndexes` |
+| Store | `lib/laravel-adapter/src/Adapter/TranscriptStore.php` | optional tenant **resolver**; one `query()` helper every method starts from; `prune()` deliberately unscoped |
+| Binding | `app/Providers/AppServiceProvider.php` | rebinds `TranscriptStoreInterface` with `TenantContext::current()`, `bind` not `scoped` |
+| Preview rule | `app/Support/Transcripts/TranscriptPreview.php` | the first-user-message rule, now shared by the console and the panel |
+| Controller | `app/Http/Controllers/TranscriptsController.php` | uses the shared rule; the inline `(string) $content` cast is gone |
+| Model | `app/Models/Transcript.php` | read-only (`$guarded = ['*']`), `tenant` global scope, derived `turn_count`/`preview` |
+| Page | `app/Filament/Admin/Pages/Transcripts.php` | read-only table + inspect modal, no mutating action |
+| Views | `resources/views/filament/admin/transcripts.blade.php`, `transcript.blade.php` | inline styles; message bodies escaped in `<pre>` |
+| Tests | `tests/Feature/AdminTranscriptsTest.php` | 10 tests |
+
+### 39.3 Decisions worth keeping
+
+- **The key, not just the column.** `(tenant_id, session_id)` is the fix. A
+  per-estate key is also the correct model: a session id is client-generated, so a
+  global unique made one estate's chat able to overwrite another's.
+- **`prune()` stays unscoped.** Retention is a server-owned job (the row says so)
+  with no request estate; scoping it would silently stop retaining every estate
+  but `default`. The §29 `TriggerDispatcher::due()` rule, applied to a second
+  system caller.
+- **Resolver closure, `bind` not `scoped`.** The store is constructed before
+  tenant middleware runs, so a captured id would pin every later request to the
+  boot-time estate. Same reasoning as `SettingsStore` (§16) and `RemoteSiteStore`
+  (§27).
+- **One preview rule, two callers.** The console list and the panel now share
+  `TranscriptPreview`. The rule it replaced cast content to `(string)`, which on a
+  multimodal turn (content parts) raises "Array to string conversion" and previews
+  the session as the word *Array*; parts are reduced to their text, and an
+  image-only opening turn is skipped rather than ending the search.
+- **Read-only by construction.** The only action is Inspect. Deletion is the
+  console's `DELETE` and retention is `prune()`; a panel delete button would be a
+  second writer over a rule that is deliberately centralised.
+- **Assistant labels resolved once, from an explicit estate filter.** `Assistant`
+  has no tenant global scope (the tenant is never request-supplied), so the filter
+  options and the row labels come from one bounded query keyed by
+  `TenantContext::current()`.
+- **Message bodies behind an explicit modal, escaped.** An assistant turn may
+  contain markdown or HTML; rendering it would make a stored message an injection
+  vector, so it is shown as literal text.
+
+### 39.4 Validation record — executed
+
+- `AdminTranscriptsTest`: **10 passed, 27 assertions** — including the collision
+  case (two estates, one session key, two rows, each estate reading its own
+  content), the write path's estate, `prune()`'s deliberate span, the preview
+  rendering through the table (column → accessor → escaped cell, not just the
+  model accessor), and the read-only assertion that the page is not a `HasForms`.
+- Contract gate and neighbours — `SurfaceOwnershipTest`,
+  `ApiTenantResolutionTest`, `CoreOperationsTest`, `AdminConversationImportTest`:
+  **33 passed, 550 assertions**.
+- Full app suite (container, `-d memory_limit=2G`, both PM fixture overrides):
+  **1084 tests, 6104 assertions, 4 failures** — all four are `WifiKpisTest`, the
+  documented pre-existing unbound-addon gap (070 Phase 0). None from this slice.
+- Adapter suite (host): **286 passed, 1534 assertions**, OK.
+- Console smoke (G1, `npm run test:e2e`): **6 passed** in 1.5 m — sign-in, the
+  contract sweep (empty `endpoint_gaps`), the five T0 pages, the chat composer,
+  zero WordPress requests, and the allowed nav set.
+- `phpcs` (CI ruleset, `--warning-severity=8`), path-scoped to the eight changed
+  files: **8/8 clean**.
+- `bin/audit-surface-ownership.php`: **44 surfaces · 20 Filament-built**
+  (10 `/ops`, 11 `/admin`) · **20 console-only**.
+
+An earlier full-suite attempt was killed at ~48 tests with exit 137 and no OOM
+flag; the rerun with `-d memory_limit=2G` completed. Treat a mid-run 137 in this
+container as a runner problem, not a code failure, and rerun before investigating.
+
+### 39.5 Follow-ups recorded
+
+- **No export.** A transcript export is a data-egress feature with its own
+  decision, and the console has none either.
+- **`metadata` is not rendered.** The console's `show` returns it; the panel shows
+  messages only. Add it behind the same reveal if a diagnostic question needs it.
+- **An operator cross-estate transcript view is not planned.** A conversation is
+  the most sensitive row in the runtime; Q-1 gives an operator *estates*, not
+  people's chats. It would need its own decision, and probably its own proposal.
+- **Bulk retention UX is still absent.** `prune()` is a job, not a surface, on
+  purpose — the row's note says retention stays server-owned.
+- **`/ops` conversation import has no estate selector**, so its saves land in
+  `default` (the same implicit single-estate case the console API had before
+  §21). That is correct for every deployment today; if `/ops` ever gains an
+  estate selector, the importer must take it rather than relying on the fallback.
+
+---
+
+## 40. Wave 2 — twenty-sixth slice: agent memory (`/admin/memory`)
+
+**State:** shipped 2026-11-17. The third store in the §27 defect class, and the
+first one where a natural-looking filter turned out not to be a boundary.
+
+### 40.1 The defect
+
+`nvoos_memories` had no tenant column, and `MemoryStore` named the table directly
+in **all six** methods — `store`, `get`, `update`, `delete`, `search`,
+`listByAgent`. The routes sit inside `ResolveApiTenant`, so every request resolved
+an estate and then ignored it: `search()` spanned every estate, and any console
+user could read, rewrite or delete any row by id.
+
+`listByAgent( $agentId )` reads like a boundary and is not one: the agent id is a
+query parameter, so it narrows a result set rather than authorising access.
+
+### 40.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Migration | `lib/laravel-adapter/database/migrations/2026_11_17_150000_add_tenant_to_memories.php` | `tenant_id` default `default`; `(tenant_id, agent_id)` and `(tenant_id, updated_at)` indexes; guarded |
+| Store | `lib/laravel-adapter/src/Adapter/MemoryStore.php` | optional tenant resolver; one `query()` helper every method starts from; `store()` writes the estate |
+| Binding | `app/Providers/AppServiceProvider.php` | rebinds `MemoryStoreInterface` with `TenantContext::current()` |
+| Model | `app/Models/Memory.php` | read-only, `tenant` global scope, JSON `tags` accessor, derived `is_expired`/`preview` |
+| Page | `app/Filament/Admin/Pages/AgentMemory.php` | read-only browser, tier filter, inspect modal |
+| Views | `resources/views/filament/admin/agent-memory.blade.php`, `agent-memory-record.blade.php` | inline styles; content escaped in `<pre>` |
+| Tests | `tests/Feature/AdminMemoryTest.php` | 8 tests |
+
+### 40.3 Decisions worth keeping
+
+- **Expired rows are listed, and flagged.** Recall filters them out, so a memory
+  that "disappeared" is the exact question this page exists to answer. Hiding it
+  here would leave an operator inferring expiry from absence.
+- **Read-only, no delete.** The tools (`scope_memory`) and the console's `DELETE`
+  own removal. A panel delete would be a second writer over rows the recall path
+  filters by TTL.
+- **`agent_id` is displayed, not trusted.** It is useful for reading (`who
+  remembered this`) and useless for isolation — which is why the scope is the
+  estate, not the agent.
+- **The resolver, not an id.** Same seam and same reason as §16, §27 and §39: the
+  store is constructed before tenant middleware runs.
+
+### 40.4 Validation record — executed
+
+- `AdminMemoryTest`: **8 passed, 36 assertions** — table isolation, panel
+  reachability, console `recall` and `search` scoping, a foreign
+  `get`/`update`/`delete` all refusing and leaving the row untouched, the write
+  path's estate, the model scope, read-only, and the expired-row case (listed on
+  the page, absent from `search()`).
+- With the transcript suite and the contract gate: **31 passed, 513 assertions**.
+- Full app suite: **1101 tests, 6160 assertions, 4 failures** — all
+  `WifiKpisTest` (pre-existing).
+- `phpcs` PSR-12 path-scoped: clean. PHP-compatibility on the changed files,
+  including both views: clean.
+
+### 40.5 Follow-ups recorded
+
+- **No create or edit.** Memory is written by the tools; a panel form would have
+  to re-implement TTL, tagging and importance rules that already exist there.
+- **No per-agent grouping.** The tier filter and the search are enough for the
+  first version; a grouped view is a different page shape.
+- **`wing`/`room` are hidden by default** — they are a MemPalace-style hierarchy
+  most estates never populate.
+
+---
+
+## 41. Wave 2 — twenty-seventh slice: the approval queue (`/admin/approvals`)
+
+**State:** shipped 2026-11-17. The sharpest instance of the defect class: a
+cross-estate **write that authorises a destructive action**.
+
+### 41.1 The defect
+
+`nvoos_approvals` had no tenant column, and `ApprovalsController` named the table
+in `index`, `store` **and `resolve`**. An approval is the human gate in front of a
+destructive tool call, so the escalation is one layer above §29's `fire`: any
+estate administrator could list the whole queue and then **approve or deny another
+estate's gated action**, writing `resolved_by` as themselves.
+
+### 41.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Migration | `lib/laravel-adapter/database/migrations/2026_11_17_160000_add_tenant_to_approvals.php` | `tenant_id` default `default`; `(tenant_id, status, created_at)` queue index; guarded (the table can be created by either the package or the app migration) |
+| Controller | `app/Http/Controllers/ApprovalsController.php` | one `query()` helper for `index`/`store`/`resolve`; `store` writes the estate; a foreign `resolve` answers 404 |
+| Model | `app/Models/Approval.php` | read-only, `tenant` global scope, JSON `arguments` accessor, derived `is_expired` |
+| Page | `app/Filament/Admin/Pages/Approvals.php` | read-only queue, status filter, inspect modal |
+| Views | `resources/views/filament/admin/approvals.blade.php`, `approval-record.blade.php` | inline styles; arguments pretty-printed, values untouched, escaped |
+| Tests | `tests/Feature/AdminApprovalsTest.php` | 8 tests |
+
+### 41.3 Decisions worth keeping
+
+- **Read-only on purpose, and the reason is auditability.** Approve/deny on the
+  panel is the obvious next step and is *not* here: it would make the page a
+  second writer, and panel traffic goes over `/livewire/update`, which
+  `AuditAdminRequests` skips (§25). A decision button needs its own
+  `recordResource()` call before it is safe; reading the queue has no such
+  obligation. Recorded on the contract row as the next step, together with the
+  `writer: console` → `shared` change it implies.
+- **404 for a foreign id, 404 for a missing one.** The refusal must not disclose
+  that a queue entry exists — and the test asserts the foreign row is still
+  `pending` afterwards, so a "refused" resolve cannot have half-written.
+- **`is_expired` only means anything while pending.** A resolved row is not
+  expired; the timestamp stops mattering once the decision is made.
+- **Arguments are shown exactly as queued.** Pretty-printing changes formatting,
+  never values — the payload is the thing being approved.
+
+### 41.4 Validation record — executed
+
+- `AdminApprovalsTest`: **8 passed, 34 assertions** — including the foreign
+  `resolve` 404 (and 999999 producing the identical answer), the row staying
+  `pending`, the write path's estate via the `X-Tenant-Id` selector with real
+  membership, the model scope, the expired-while-pending case, and read-only.
+- With the memory/transcript suites and the contract gate: **31 passed, 513
+  assertions**.
+- Full app suite: **1101 tests, 6160 assertions, 4 failures** — all
+  `WifiKpisTest` (pre-existing).
+- Console smoke: **6 passed** — but only after `artisan migrate`. The first run
+  failed 4/6 because the dev database was two migrations behind and the scoped
+  `where tenant_id` queries 500'd; `/features` stayed green, so it read exactly
+  like a code regression. Run the migrations before believing a smoke failure.
+- `phpcs` PSR-12 path-scoped: clean. PHP-compatibility on the changed files,
+  including both views: clean.
+
+### 41.5 Follow-ups recorded
+
+- **Approve/deny on the panel** — the recorded next step; needs the audit row and
+  a `shared` writer.
+- **No requester name.** The row stores `requester_id`, and resolving it to a
+  user is a join the console does not do either; an id is honest until a name is
+  worth a lookup.
+- **Expired approvals are not auto-resolved.** Nothing sweeps them; the queue
+  shows them past their window so a human can see the gate failed open.

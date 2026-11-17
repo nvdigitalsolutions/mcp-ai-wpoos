@@ -199,27 +199,29 @@ Test 4 is the "new page without a decision" gate. It is deliberately file-path-b
 
 ### 7.2 What is deliberately not wired yet
 
-- **Per-field projection assertions.** The contract says Settings must be scope-filtered; no test asserts a field is absent for a console caller, because the projection itself does not exist yet. Wiring the test before the projection would assert a fiction.
+- **Per-field projection assertions beyond Settings.** The Settings projection now exists and is asserted: `SettingsProjectionTest` proves the console schema omits every operator-scope field, that the values and index payloads omit hidden fields, and that a hidden field cannot be written through the console. What is still unwired is the same class of assertion for any *future* surface that declares a `projection` — the contract enforces that one is **declared**, not that it is **applied**.
 - **Route-level reachability per row.** The endpoint map already covers console keys; `/ops` and `/admin` reachability is covered by the existing panel/policy tests.
 - **Entitlement resolution.** `plan_gate` is declared, not enforced by this contract. `TenantEntitlement` enforces plans; the matrix only names which key a surface depends on.
 
 ### 7.3 Validation status
 
-The contract JSON parses and the four tests were written on 2026-11-17. **They have not been executed**: `oos-laravel-app` (8001) and `oos-laravel-worker` are unhealthy, and the app suite needs the container's vendor symlinks. The first real run is CI's `App suite (SQLite)` job. Treat the gate as unproven until that job is green — the repo rule is that a count you saw is stronger evidence than a pipeline that did not fail.
+The contract JSON parses and the four tests run **green in CI**: the `App suite (SQLite)` job reports `PASS Tests\Feature\SurfaceOwnershipTest` (1062 passed / 6018 assertions on `1ac9e3a0e7`). The gate is proven — a red run of that job is a contract break, not a flake.
+
+The earlier "unproven" note was an environment fact, not a doubt about the assertions: `oos-laravel-app` (8001) and `oos-laravel-worker` were unhealthy, and the app suite needs the container's vendor symlinks, so the first real run was always CI's. That caveat is now discharged.
 
 ---
 
 ## 8. Gaps this exposes
 
-Ordered by leverage, each small enough to be one slice:
+Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-17 after the transcript, memory and approval slices (`bin/audit-surface-ownership.php`): **44 surfaces · 22 built on a panel · 18 console-only · 2 planned-only**.
 
-1. **`SettingsSchema` scope + console projection** (§6.1). The clearest R3 violation in the codebase.
-2. **`/admin` settings page** — the full form, reading the same store.
-3. ✅ **Workflow runs list** in the admin (§6.4) — read-only, the one orchestration gap. Shipped 2026-11-17; plan §18.
-4. **Tool catalogue projection** for the console (§6.3) — enabled tools + presets.
-5. **PAT manager** split from assistant credentials (§6.2), with an operator cross-estate view.
-6. **`/ops` tail** — onboarding, site health, identity provider, assets, datasets, conversation import, reports, audit log (all `planned` rows).
-7. **`/admin` tail** — professions, chat profiles, memory, media, transcripts, tool catalogue, blueprints, portability, MCP apps, remote sites, skills/OKF, paper store, dashboards, command centre (all `planned` rows).
+1. ✅ **`SettingsSchema` scope + console projection** — shipped, plan §15; asserted by `SettingsProjectionTest`.
+2. ✅ **`/admin` settings page** — shipped as `/admin/{estate}/settings` plus `/ops/settings`, plan §16–§17. One writer, a storage-key map, and the estate/platform split.
+3. ✅ **Workflow runs list** in the admin — shipped, plan §18, including the `tenant_id` the run table was missing.
+4. ✅ **Tool catalogue projection** for the console — shipped, plan §22. The console's honest projection is the assistant's enabled tools plus presets, not the registry.
+5. ✅ **PAT manager** split from assistant credentials — shipped, plan §19 (contract) and §26 (the user-scoped half). **Remaining:** the operator cross-estate view; `tokens.personal` is still `ops: planned`.
+6. ✅ **`/ops` tail** — `site-health` (§31), `assets` (§33), `reports` (§34) and `conversation-import` (§37) all shipped. `identity-provider` and `datasets` remain `planned` for the reasons recorded in plan §35–§36; `onboarding` is `absent` by decision.
+7. **`/admin` tail — 13 rows still `planned`:** blueprints, portability, mcp-apps, security (planned on both panels), remote-sites, agent-skills, okf, paper-store, dashboards, toolkits, command-centre, media, chat-channels. `chat` and `automation-canvas` are deliberate `link-out`; `wordpress-bridge` and `connected-apps` carry no panel decision yet. `transcripts` (§39), `memory` (§40) and `approvals` (§41) shipped on 2026-11-17, each after its table gained an estate scope.
 
 Passing a row from `planned` to `full` is now the unit of progress, and every transition is a one-line diff plus its test.
 
