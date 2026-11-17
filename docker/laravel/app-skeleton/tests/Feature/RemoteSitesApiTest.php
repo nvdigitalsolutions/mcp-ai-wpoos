@@ -279,4 +279,120 @@ final class RemoteSitesApiTest extends TestCase
             ->assertJsonPath('data.endpoint_reasons.remoteSites', 'route')
             ->assertJsonPath('data.endpoint_gaps', []);
     }
+
+    // ── Estate scope (149 §27) ─────────────────────────────────────────
+    //
+    // `nvoos_remote_sites` shipped without a tenant column, and the store read
+    // and wrote it unscoped while the routes already resolved an estate. Any
+    // estate administrator could list, edit, delete and TEST every other
+    // estate's connections. These four tests are the regression guard.
+
+    public function test_another_estates_connection_is_not_listed(): void
+    {
+        $this->connectionIn('estate-b', 'Foreign site');
+
+        $this->actAsAdmin();
+
+        $response = $this->getJson('/api/v1/pro/remote-sites')->assertOk();
+
+        $this->assertStringNotContainsString('Foreign site', $response->getContent());
+        // The console contract is flat: `items`/`total` at the root.
+        $this->assertSame(array(), $response->json('items'));
+        $this->assertSame(0, $response->json('total'));
+    }
+
+    public function test_another_estates_connection_cannot_be_updated(): void
+    {
+        $id = $this->connectionIn('estate-b', 'Foreign site');
+
+        $this->actAsAdmin();
+
+        $this->postJson('/api/v1/pro/remote-sites/'.$id, array('name' => 'Hijacked'))
+            ->assertNotFound()
+            ->assertJsonPath('code', 'rest_not_found');
+
+        $this->assertSame(
+            'Foreign site',
+            (string) DB::table('nvoos_remote_sites')->where('id', $id)->value('name'),
+            'A cross-estate refusal must not change the row.'
+        );
+    }
+
+    public function test_another_estates_connection_cannot_be_deleted(): void
+    {
+        $id = $this->connectionIn('estate-b', 'Foreign site');
+
+        $this->actAsAdmin();
+
+        $this->deleteJson('/api/v1/pro/remote-sites/'.$id)
+            ->assertNotFound()
+            ->assertJsonPath('code', 'rest_not_found');
+
+        $this->assertSame(1, DB::table('nvoos_remote_sites')->where('id', $id)->count());
+    }
+
+    /**
+     * `test` performs an outbound request with the connection's sealed
+     * credentials. Reaching another estate's row here would both leak its
+     * endpoint and send its secret to whatever URL the row names.
+     */
+    public function test_another_estates_connection_cannot_be_tested(): void
+    {
+        $id = $this->connectionIn('estate-b', 'Foreign site');
+
+        $this->actAsAdmin();
+
+        $this->postJson('/api/v1/pro/remote-sites/'.$id.'/test')
+            ->assertNotFound()
+            ->assertJsonPath('code', 'rest_not_found');
+
+        $this->assertNull(
+            DB::table('nvoos_remote_sites')->where('id', $id)->value('last_tested_at'),
+            'A refused test must not record an outcome.'
+        );
+    }
+
+    /**
+     * A created connection records the estate that created it, so the scoping
+     * works in the write direction as well as the read one.
+     */
+    public function test_a_created_connection_records_its_estate(): void
+    {
+        $this->actAsAdmin();
+
+        $this->postJson('/api/v1/pro/remote-sites', array(
+            'name' => 'Own site',
+            'connection_type' => 'wordpress',
+            'url' => 'https://own.test',
+        ))->assertCreated();
+
+        $this->assertSame(
+            'default',
+            (string) DB::table('nvoos_remote_sites')->value('tenant_id')
+        );
+    }
+
+    /**
+     * Insert a connection straight into another estate.
+     */
+    private function connectionIn(string $tenantId, string $name): string
+    {
+        $id = (string) \Illuminate\Support\Str::ulid();
+
+        DB::table('nvoos_remote_sites')->insert(array(
+            'id' => $id,
+            'tenant_id' => $tenantId,
+            'name' => $name,
+            'url' => 'https://foreign.test',
+            'connection_type' => 'wordpress',
+            'auth_type' => 'application_password',
+            'config' => null,
+            'credentials' => null,
+            'enabled' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ));
+
+        return $id;
+    }
 }

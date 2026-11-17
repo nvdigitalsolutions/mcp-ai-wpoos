@@ -16,6 +16,8 @@ use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\CapabilityMap;
+use App\Support\CredentialStore;
+use App\Support\RemoteSites\RemoteSiteStore;
 use App\Support\Settings\SettingsService;
 use App\Support\TenantContext;
 use App\Support\TenantEntitlement;
@@ -109,6 +111,18 @@ class AppServiceProvider extends ServiceProvider
             static fn ($app): SettingsService => new SettingsService(
                 $app->make(SettingsStoreInterface::class),
                 $app->make('nvoos.settings.platform')
+            )
+        );
+
+        // Remote sites are estate data (149 §27). The resolver mirrors the
+        // settings store: `RemoteSiteStore` may be resolved before
+        // `ResolveApiTenant` has run, so the estate is read per query rather
+        // than captured at construction.
+        $this->app->bind(
+            RemoteSiteStore::class,
+            static fn ($app): RemoteSiteStore => new RemoteSiteStore(
+                $app->make(CredentialStore::class),
+                static fn (): string => TenantContext::current()
             )
         );
     }
