@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Pages;
 
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
+use App\Support\Admin\AdminAuditLogger;
 use App\Support\EstateCredentials;
 use BackedEnum;
 use Filament\Facades\Filament;
@@ -109,6 +110,12 @@ class EstateCredentialsPage extends Page
      * belongs to this estate — so a stale page (or a tampered Livewire payload)
      * cannot revoke across estates. A credential that has already gone is
      * reported as such rather than as an error.
+     *
+     * A successful revoke writes a record row to the audit trail. Panel actions
+     * travel over Livewire's `/livewire/update`, which `AuditAdminRequests`
+     * deliberately skips as UI mechanics — so without this call a destructive
+     * action would leave no trace at all. The row records the assistant and the
+     * outcome, never the token: the token is never read here.
      */
     public function revoke(): void
     {
@@ -116,11 +123,20 @@ class EstateCredentialsPage extends Page
             return;
         }
 
-        $revoked = EstateCredentials::revoke(
-            $this->estateId(),
-            $this->pendingAssistant,
-            (int) $this->pendingRevoke
-        );
+        $credentialId = (int) $this->pendingRevoke;
+        $assistantId = $this->pendingAssistant;
+
+        $revoked = EstateCredentials::revoke($this->estateId(), $assistantId, $credentialId);
+
+        if ($revoked) {
+            app(AdminAuditLogger::class)->recordResource(
+                'credentials',
+                (string) $credentialId,
+                'revoke',
+                array('assistant_id' => $assistantId, 'present' => true),
+                array('assistant_id' => $assistantId, 'present' => false)
+            );
+        }
 
         $this->status = $revoked
             ? 'Credential revoked. The token stopped working immediately.'

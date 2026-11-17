@@ -527,13 +527,14 @@
       "id": "audit-log",
       "title": "Admin audit log",
       "audience": "operator",
-      "ops": { "state": "planned" },
+      "ops": { "state": "read-only" },
       "admin": null,
       "console": null,
       "writer": "none",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Read-only view of nvoos_admin_audit. Append-only by construction; no surface may write it."
+      "projection": "Cross-estate on purpose, and that is not a reduction to bypass: an operator asking what happened on one estate needs that estate's rows plus the operator actions that touched it, and the latter carry no estate at all. Both row kinds are shown — request rows (resource null, 'who tried and was refused') and record rows (resource set, 'what changed') — because showing only the second hides every 403/422. Payload and diff columns are redacted at write time by AdminAuditLogger::redact(); this reader does not re-redact, since the write-time pass runs on every path and a second pass would give false confidence.",
+      "files": ["app/Filament/Operator/Pages/AuditLog.php"],
+      "notes": "Read-only view of nvoos_admin_audit. Append-only by construction; no surface may write it. Shipped 2026-11-17 (§25) with App\\Models\\AdminAudit and App\\Support\\Admin\\AuditTrail. The same slice made the estate credential revoke write a record row: panel actions travel over Livewire's /livewire/update, which AuditAdminRequests deliberately skips, so a destructive panel action would otherwise leave no trace at all."
     }
   ]
 }
