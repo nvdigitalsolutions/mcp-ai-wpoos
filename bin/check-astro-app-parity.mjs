@@ -129,7 +129,19 @@ console.log('default variant differs ONLY in link targets');
 // `product-grid` vs `productGrid` were both made deliberately).
 // ---------------------------------------------------------------------------
 
-const SHARED = ['hero', 'testimonial', 'stats', 'comparison', 'steps', 'team'];
+const SHARED = [
+	'hero',
+	'testimonial',
+	'stats',
+	'comparison',
+	'steps',
+	'team',
+	// The 3D product viewer (2026-11-17). A forged storefront band and a
+	// hand-built velocity block emit the SAME `data-section`, so the kind is a
+	// cross-product decision rather than an app-local extra — and both spell it
+	// `model-3d` (the forge's SECTION_KINDS and velocity's section-kinds.ts).
+	'model-3d',
+];
 
 const FORGE_ONLY = [
 	'feature-grid',
