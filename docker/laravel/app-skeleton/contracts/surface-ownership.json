@@ -263,8 +263,8 @@
       "console": { "state": "full", "keys": ["remoteSites"] },
       "writer": "shared",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Credentials are masked uniformly; credentialsFor() is the only opener and is runtime-only."
+      "projection": "Estate-scoped since §27: every read and write goes through RemoteSiteStore::query(), which filters on `tenant_id` read from a resolver at query time. A connection id from another estate answers 404 on update, delete and test — the test route matters most, because it sends the row's sealed credentials to the URL the row names. Secrets are masked uniformly; credentialsFor() is the only opener and is runtime-only.",
+      "notes": "Credentials are masked uniformly; credentialsFor() is the only opener and is runtime-only. §27 added `tenant_id` to `nvoos_remote_sites`: before it the table had no tenant column and the store read and wrote it unscoped while the routes already resolved an estate, so any estate administrator could list, edit, delete and TEST every other estate's connections — a cross-tenant write, the same defect class as §19. Existing rows default to `default` because no signal can attribute them to another estate. The `/admin` page follows in a later slice."
     },
     {
       "id": "agent-skills",

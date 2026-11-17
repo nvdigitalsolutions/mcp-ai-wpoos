@@ -2175,6 +2175,78 @@ oversight plus operator settings, not a second copy of every console form.
 
 ---
 
+## 27. Wave 2 — eighteenth slice: remote sites were never estate-scoped (`§27`)
+
+**State:** shipped 2026-11-17. A security fix, not a page. Same class as §19.
+
+### 27.1 The defect
+
+`nvoos_remote_sites` shipped with **no tenant column**, and `RemoteSiteStore`
+read and wrote it unscoped:
+
+| Method | Before |
+|---|---|
+| `all()` | `DB::table('nvoos_remote_sites')->orderBy('name')` — every estate |
+| `find()` / `row()` | `->find($id)` — any estate's id |
+| `update()` / `delete()` / `recordTest()` | `->where('id', $id)` — any estate's row |
+
+The routes already sat inside `ResolveApiTenant`, so an estate **was** resolved on
+every request and then ignored. Any estate administrator could list, edit,
+delete and **test** every other estate's connections. `test` is the worst of the
+four: it performs an outbound request *with that row's sealed credentials*, so a
+cross-estate reach both disclosed the endpoint and sent the secret to whatever
+URL the row named.
+
+The contract had recorded `console: full` with no `projection`, which is exactly
+what a missing scope looks like from the matrix's side: nothing declared a
+reduction because nothing had one.
+
+### 27.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Migration | `2026_11_17_120000_add_tenant_to_remote_sites.php` | `tenant_id` default `default`, `(tenant_id, name)` index, guarded |
+| Store | `app/Support/RemoteSites/RemoteSiteStore.php` | one `query()` helper every method goes through |
+| Binding | `app/Providers/AppServiceProvider.php` | resolver closure, `bind` not `scoped` |
+| Tests | `tests/Feature/RemoteSitesApiTest.php` | 5 new, one per verb plus the write direction |
+
+### 27.3 Decisions worth keeping
+
+- **One `query()` helper.** Every method in the store starts there, so a future
+method cannot forget the scope. The alternative — adding `->where('tenant_id')`
+to six call sites — is a change one forgotten line undoes.
+- **The estate is a resolver, not a constructor value.** `RemoteSiteStore` can be
+resolved before `ResolveApiTenant` has run, so an id captured at construction
+would pin the store to whichever estate was current at boot. Same reasoning as
+`SettingsStore` (§16.2), and `bind` rather than `scoped` for the same reason.
+- **Existing rows default to `default`.** No signal can attribute them to another
+estate; null would either hide real connections or force a nullable branch in
+every query, and that branch is where a future scope gets dropped.
+- **`down()` does nothing.** Dropping the column would silently re-expose every
+estate's rows, and the rows are user data.
+- **404, not 403, for a foreign id.** The same answer as a nonexistent id, so the
+route cannot confirm which ids exist.
+
+### 27.4 Validation record — executed
+
+- `RemoteSitesApiTest` + `RemoteSiteStoreTest` + `RemoteSiteVerifierTest`:
+  **34 passed, 106 assertions**.
+- Plus `ApiTenantResolutionTest` and `SurfaceOwnershipTest`: **46 passed, 549
+  assertions, 0 failures** — the existing 29 remote-site tests were unaffected,
+  which is the point: they all operate in the default estate.
+- `php -l` clean; `phpcs` (CI ruleset) clean.
+
+### 27.5 The same defect class, unfixed
+
+`nvoos_triggers` has **no tenant column either**, and `TriggersController` reads
+it with `DB::table('nvoos_triggers')->orderBy('name')->get()` — no estate filter.
+The console's `triggers` key is therefore cross-estate today, and
+`automation-definitions` (`console: full`) cannot honestly get an `/admin`
+presentation until the same migration lands. Recorded here so the next slice
+starts with the table rather than with the page.
+
+---
+
 ## 26. Wave 2 — seventeenth slice: personal access tokens (`/admin/personal-tokens`)
 
 **State:** shipped 2026-11-17. The third and last token row, and the first
