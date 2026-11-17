@@ -64,18 +64,32 @@ const { node } = Astro.props;
 	{node.caption ? <figcaption class="block-model3d__caption">{node.caption}</figcaption> : null}
 </figure>
 
-<script is:inline>
-	(function () {
+<script>
+	// CSP note (Proposal 104 D12): this MUST stay a bundled external script.
+	// An `is:inline` block exists only on pages that render the block, but the
+	// CSP hash list belongs to the DOCUMENT — ClientRouter keeps the first
+	// page's policy across an in-app navigation, so a page-variant inline
+	// script is blocked exactly when a visitor reaches a 3D post from the
+	// listing. The bundled chunk rides `script-src 'self'`.
+	function upgradeModelViewers() {
+		// Nothing to do on pages without the block — never fetch the runtime
+		// for them (the chunk can be evaluated on a page that lacks the band).
+		if (!document.querySelector('model-viewer')) {
+			return;
+		}
+
 		// 1. Load the self-hosted runtime exactly once per document. Deferred:
 		//    the poster has already painted, so this costs nothing above the fold.
-		if (!window.__nvoosModelViewerRuntime) {
-			window.__nvoosModelViewerRuntime = true;
+		const scope = window as unknown as { __nvoosModelViewerRuntime?: boolean };
+		if (!scope.__nvoosModelViewerRuntime) {
+			scope.__nvoosModelViewerRuntime = true;
 			const runtime = document.createElement('script');
 			runtime.type = 'module';
 			runtime.src = '/vendor/model-viewer.min.js';
 			runtime.dataset.nvoosModelViewer = '1';
 			document.head.appendChild(runtime);
 		}
+
 		// 2. Auto-rotation IS motion — only for visitors who did not ask for less.
 		if (window.matchMedia && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			document.querySelectorAll('model-viewer[data-auto-rotate="true"]').forEach(function (viewer) {
@@ -83,7 +97,12 @@ const { node } = Astro.props;
 				viewer.setAttribute('auto-rotate-delay', '2000');
 			});
 		}
-	})();
+	}
+
+	upgradeModelViewers();
+	// The ClientRouter swaps the nodes but keeps the document; re-apply so a
+	// post reached in-app still upgrades its viewer (the UiTabs pattern).
+	document.addEventListener('astro:after-swap', upgradeModelViewers);
 </script>
 
 <style>

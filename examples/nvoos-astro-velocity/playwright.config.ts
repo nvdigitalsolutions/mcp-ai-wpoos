@@ -27,7 +27,10 @@ export default defineConfig({
 		{
 			name: 'default',
 			fullyParallel: true,
-			testIgnore: /(design-import|rebrand-loop|theme-policy|content-write|checkout-woo|checkout-embedded)\.spec\.ts/,
+			// model-3d is content-write's sibling: it hard-codes the 8125
+			// fixture and creates/deletes a post, so it must not run here.
+			testIgnore:
+				/(design-import|rebrand-loop|theme-policy|content-write|model-3d|checkout-woo|checkout-embedded)\.spec\.ts/,
 		},
 		{
 			name: 'stateful-mcp',
@@ -49,7 +52,8 @@ export default defineConfig({
 		// every other spec's listing counts — so it runs serial against its
 		// OWN fixture + BFF pair (ports 8125/4323), the theme-policy pattern.
 		// model-3d shares the pair for the same reason (it creates/deletes a
-		// post to exercise the 3D block).
+		// post to exercise the 3D block) and is excluded from `default`, where
+		// its hard-coded 8125 fixture is not the one behind the 4321 BFF.
 		{
 			name: 'content-write',
 			fullyParallel: false,
