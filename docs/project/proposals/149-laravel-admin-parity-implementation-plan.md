@@ -2241,6 +2241,85 @@ by the test that sets both, and fixed before merge.
 
 ---
 
+## 34. Wave 2 — twenty-third slice: compliance reports (`/ops/reports`)
+
+**State:** shipped 2026-11-17. The last row that was blocked only on an exporter.
+
+### 34.1 What the WordPress generator does
+
+`WP_MCP_AI_Report_Generator` accepts `$type` and `$scope`, gathers six sections
+(controls, risks, audit trail, compliance status, evidence, frameworks) and writes
+HTML, CSV or JSON to `wp-content/uploads/mcp-ai-reports/`.
+
+Two findings shaped this slice:
+
+1. **PDF/DOCX/Excel are not implemented in WordPress either.** They return
+   `WP_Error('… requires additional libraries. HTML/CSV/JSON are available now.')`.
+   §33.6 argued against shipping a PDF engine for one table; WordPress had already
+   reached the same conclusion.
+2. **Its CSV is sectioned**, not a flat table: a `Metadata` block, then a heading
+   plus header row per section. That is the artifact shape an auditor recognises,
+   so it is mirrored rather than replaced with something tidier.
+
+### 34.2 Two sections, because two can be evidenced
+
+| Section | Source |
+|---|---|
+| Assets | `AssetRegister` (§33) |
+| Audit trail | `AuditTrail` over `nvoos_admin_audit` (newest 1000) |
+
+WordPress's controls, risks, evidence and frameworks come from a Pro compliance
+database this runtime does not have. They are **omitted, not emitted empty** — a
+“Risks” heading with no rows reads as “no risks”, which is a claim rather than an
+absence. The omission is asserted by a test.
+
+### 34.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Report | `app/Support/Reports/ComplianceReport.php` | build, sectioned CSV, JSON, filename, content type |
+| Panel | `app/Filament/Operator/Pages/Reports.php` | renders the report; two streamed downloads |
+| View | `resources/views/filament/operator/reports.blade.php` | metadata, summary, 25-row preview |
+| Reader | `app/Support/Admin/AuditTrail.php` | `rows()` gained an optional `$limit` |
+| Tests | `tests/Feature/AdminComplianceReportTest.php` | 11 tests |
+
+### 34.4 Decisions worth keeping
+
+- **The page is the HTML report.** WordPress writes an HTML artifact; here the page
+is the renderer and the downloads serialise the same `ComplianceReport`. A third
+output would be a second renderer to keep in sync.
+- **`writer: ops` with `state: read-only`.** The surface writes no report data —
+every file is streamed from memory — but each download records an audit row. That
+is the one write, and an export of a security register must leave a trace of who
+exported it. This is the distinction between “writes its own data” (`writer`) and
+“writes anything at all” (`state`), and it is the only row where the two diverge.
+- **`AuditTrail::rows()` gained a limit rather than a second reader.** A report that
+silently stopped at the page's 200-row ceiling would look complete. The default
+still protects the page; the report passes 1000 and the CSV heading says so.
+- **`now()` rather than `time()`** for the filename stamp, so the value respects a
+frozen clock and matches every other timestamp this runtime writes.
+- **The audit row records counts, never content** — format, asset count, audit-row
+count. Pinned by a test that asserts `content` is absent.
+
+### 34.5 Validation record — executed
+
+- `AdminComplianceReportTest`: **11 passed, 45 assertions**.
+- Plus `AdminAssetInventoryTest`, `AdminAuditLogTest`, `AdminSiteHealthTest`,
+  `SurfaceOwnershipTest`: **52 passed, 785 assertions, 0 failures**.
+- `php -l` clean; `phpcs` (CI ruleset) clean on all four files.
+- `bin/audit-surface-ownership.php`: **44 surfaces · 18 Filament-built**
+  (9 `/ops`, 10 `/admin`) · planned-only **4**.
+
+### 34.6 A CSV trap worth remembering
+
+`fputcsv()` encloses a field that contains **any whitespace**, not just the
+delimiter — so a multi-word section heading is written as `"Audit trail (newest
+1000)"`. A test that asserts the unquoted heading fails on correct output. Assert
+the bytes the writer produces, or assert on parsed rows; do not assume a bare
+heading.
+
+---
+
 ## 33. Wave 2 — twenty-second slice: the information-asset register (`/ops/assets`)
 
 **State:** shipped 2026-11-17. The one `/ops` row that had no substitute, and the

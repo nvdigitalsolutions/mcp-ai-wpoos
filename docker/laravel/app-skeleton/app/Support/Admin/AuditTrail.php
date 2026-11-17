@@ -37,16 +37,20 @@ final class AuditTrail
     /**
      * Newest rows first, filtered.
      *
+     * `$limit` defaults to the page ceiling; a report passes a higher one
+     * because a compliance export that silently stops at 200 rows would look
+     * complete. The default keeps the page honest about its window.
+     *
      * @param array{panel?: string, estate?: string, kind?: string, status?: string, search?: string} $filters
      * @return list<array<string, mixed>>
      */
-    public static function rows(array $filters = array()): array
+    public static function rows(array $filters = array(), int $limit = self::LIMIT): array
     {
         $query = AdminAudit::query()->orderByDesc('created_at')->orderByDesc('id');
 
         self::applyFilters($query, $filters);
 
-        $rows = $query->limit(self::LIMIT)->get();
+        $rows = $query->limit(max(1, $limit))->get();
 
         $names = self::actorNames($rows->pluck('user_id')->filter()->unique()->all());
 
