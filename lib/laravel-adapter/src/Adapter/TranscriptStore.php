@@ -2,8 +2,17 @@
 /**
  * Laravel adapter: transcript store.
  *
- * One row per chat session. `save()` upserts by session_id, so the console's
+ * One row per chat session. `save()` upserts by session id, so the console's
  * session list and the transcript contract share one durable record.
+ *
+ * ESTATE SCOPING (Proposal 149 §39). Transcripts are estate data. The store
+ * therefore takes an optional tenant RESOLVER and filters every read and write
+ * through it — the same seam `SettingsStore` uses, and a closure for the same
+ * reason: this object is constructed before any tenant middleware has run, so a
+ * captured id would pin every later request to the boot-time estate.
+ *
+ * `prune()` is the one deliberate exception. Retention is a system job with no
+ * request estate, so it spans every estate; see the method docblock.
  *
  * @package Nvoos\Laravel
  * @since   1.2.0
@@ -14,6 +23,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Laravel\Adapter;
 
+use Closure;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -22,6 +33,24 @@ use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 class TranscriptStore implements TranscriptStoreInterface {
 
 	private const TABLE = 'nvoos_transcripts';
+
+	/**
+	 * Resolves the estate every query is scoped to.
+	 *
+	 * Null means "unscoped": a standalone or adapter-only install with no
+	 * tenancy, which is the pre-§39 behaviour and still correct for one estate.
+	 *
+	 * @var Closure():string|null
+	 */
+	private ?Closure $tenant;
+
+	/**
+	 * @param Closure():string|null $tenant Resolves the estate to scope reads
+	 *                                      and writes to.
+	 */
+	public function __construct( ?Closure $tenant = null ) {
+		$this->tenant = $tenant;
+	}
 
 	public function isAvailable(): bool {
 		return Schema::hasTable( self::TABLE );
@@ -45,7 +74,9 @@ class TranscriptStore implements TranscriptStoreInterface {
 		$metadata = is_array( $transcript['metadata'] ?? null ) ? $transcript['metadata'] : array();
 		$assistantId = isset( $transcript['assistant_id'] ) ? (string) $transcript['assistant_id'] : null;
 
-		$existing = DB::table( self::TABLE )->where( 'session_id', $sessionId )->first();
+		$tenant = $this->tenantId();
+
+		$existing = $this->query( $tenant )->where( 'session_id', $sessionId )->first();
 
 		if ( null !== $existing ) {
 			$id = (string) $existing->id;
@@ -59,7 +90,7 @@ class TranscriptStore implements TranscriptStoreInterface {
 		} else {
 			$id = (string) Str::uuid();
 
-			DB::table( self::TABLE )->insert( array(
+			$row = array(
 				'id' => $id,
 				'session_id' => $sessionId,
 				'assistant_id' => $assistantId,
@@ -67,7 +98,15 @@ class TranscriptStore implements TranscriptStoreInterface {
 				'metadata' => json_encode( $metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
 				'created_at' => now(),
 				'updated_at' => now(),
-			) );
+			);
+
+			// Unscoped use leaves the column to its default, so the pre-§39
+			// behaviour is unchanged for a single-estate install.
+			if ( null !== $tenant ) {
+				$row['tenant_id'] = $tenant;
+			}
+
+			DB::table( self::TABLE )->insert( $row );
 		}
 
 		return array( 'success' => true, 'transcript_id' => $id );
@@ -81,7 +120,7 @@ class TranscriptStore implements TranscriptStoreInterface {
 			return array( 'found' => false );
 		}
 
-		$row = DB::table( self::TABLE )->where( 'id', $transcriptId )->first();
+		$row = $this->query()->where( 'id', $transcriptId )->first();
 
 		return null === $row
 			? array( 'found' => false )
@@ -96,7 +135,7 @@ class TranscriptStore implements TranscriptStoreInterface {
 			return array( 'transcripts' => array(), 'total' => 0 );
 		}
 
-		$query = DB::table( self::TABLE );
+		$query = $this->query();
 
 		if ( ! empty( $filters['assistant_id'] ) ) {
 			$query->where( 'assistant_id', (string) $filters['assistant_id'] );
@@ -126,7 +165,7 @@ class TranscriptStore implements TranscriptStoreInterface {
 			return array( 'success' => false, 'error' => 'Transcript store unavailable.' );
 		}
 
-		$deleted = DB::table( self::TABLE )->where( 'id', $transcriptId )->delete();
+		$deleted = $this->query()->where( 'id', $transcriptId )->delete();
 
 		return $deleted > 0
 			? array( 'success' => true )
@@ -134,6 +173,14 @@ class TranscriptStore implements TranscriptStoreInterface {
 	}
 
 	/**
+	 * Delete transcripts older than a window, across EVERY estate.
+	 *
+	 * Deliberately unscoped. Retention is a server-owned job (the ownership
+	 * contract says so on the row), it runs without a request and therefore
+	 * without a meaningful estate, and scoping it would silently stop retaining
+	 * every estate but the default. The same reasoning as `TriggerDispatcher::due()`
+	 * in §29: a system caller spans estates by design.
+	 *
 	 * {@inheritDoc}
 	 */
 	public function prune( int $olderThanSeconds ): array {
@@ -156,7 +203,7 @@ class TranscriptStore implements TranscriptStoreInterface {
 			return array( 'total' => 0 );
 		}
 
-		$query = DB::table( self::TABLE );
+		$query = $this->query();
 
 		if ( ! empty( $filters['assistant_id'] ) ) {
 			$query->where( 'assistant_id', (string) $filters['assistant_id'] );
@@ -173,6 +220,42 @@ class TranscriptStore implements TranscriptStoreInterface {
 			'total' => (int) $query->count(),
 			'by_assistant' => $byAssistant,
 		);
+	}
+
+	// ─── Private helpers ──────────────────────────────────────────────
+
+	/**
+	 * The estate to scope to, or null when this instance is unscoped.
+	 *
+	 * The empty string is treated as "no estate" for the same reason as
+	 * `SettingsStore::tenantId()`: an unpinned context can surface as either
+	 * null or '', and a row keyed by '' would be a third state nobody can
+	 * reason about.
+	 */
+	private function tenantId(): ?string {
+		if ( null === $this->tenant ) {
+			return null;
+		}
+
+		$tenantId = ( $this->tenant )();
+
+		return is_string( $tenantId ) && '' !== $tenantId ? $tenantId : null;
+	}
+
+	/**
+	 * The base query. Every method starts here, so a future method cannot
+	 * forget the estate filter — adding `->where( 'tenant_id', … )` at each call
+	 * site is a change one forgotten line undoes.
+	 */
+	private function query( ?string $tenant = null ): Builder {
+		$query = DB::table( self::TABLE );
+		$tenant = $tenant ?? $this->tenantId();
+
+		if ( null !== $tenant ) {
+			$query->where( 'tenant_id', $tenant );
+		}
+
+		return $query;
 	}
 
 	/**

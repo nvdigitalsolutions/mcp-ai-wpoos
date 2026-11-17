@@ -2,10 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\TenantContext;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * The human-in-the-loop approval queue — Proposal 149 §41.
+ *
+ * Every method starts from {@see self::query()}, which pins the estate. Before
+ * §41 the controller named `nvoos_approvals` directly while the routes already
+ * sat inside `ResolveApiTenant`: `index` listed every estate's queue and
+ * `resolve` could approve or deny *another estate's* gated tool call.
+ *
+ * `resolve` re-reads the row through the scoped query, so a foreign id answers
+ * 404 — identical to a missing one (R4).
+ */
 class ApprovalsController
 {
     public function index(Request $request): JsonResponse
@@ -14,7 +27,7 @@ class ApprovalsController
         $offset = max(0, (int) $request->query('offset', 0));
         $status = (string) $request->query('status', 'pending');
 
-        $query = DB::table('nvoos_approvals');
+        $query = $this->query();
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -42,6 +55,7 @@ class ApprovalsController
         ]);
 
         $id = DB::table('nvoos_approvals')->insertGetId([
+            'tenant_id' => TenantContext::current(),
             'status' => 'pending',
             'tool' => $data['tool'],
             'arguments' => json_encode($data['arguments'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
@@ -54,7 +68,7 @@ class ApprovalsController
             'updated_at' => now(),
         ]);
 
-        return response()->json($this->record(DB::table('nvoos_approvals')->find($id)), 201);
+        return response()->json($this->record($this->query()->find($id)), 201);
     }
 
     public function resolve(Request $request, int $id, string $action): JsonResponse
@@ -67,7 +81,7 @@ class ApprovalsController
             'note' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
-        $row = DB::table('nvoos_approvals')->find($id);
+        $row = $this->query()->find($id);
 
         if ($row === null) {
             return response()->json([
@@ -83,7 +97,7 @@ class ApprovalsController
             ], 409);
         }
 
-        DB::table('nvoos_approvals')->where('id', $id)->update([
+        $this->query()->where('id', $id)->update([
             'status' => $action === 'approve' ? 'approved' : 'denied',
             'resolution_note' => (string) ($data['note'] ?? ''),
             'resolved_by' => $request->user()?->getAuthIdentifier(),
@@ -92,6 +106,14 @@ class ApprovalsController
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * The base query: this estate's approvals.
+     */
+    private function query(): Builder
+    {
+        return DB::table('nvoos_approvals')->where('tenant_id', TenantContext::current());
     }
 
     /**
