@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="presentation">
+	<defs>
+		<linearGradient id="room" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#f4f2ef"/>
+			<stop offset="1" stop-color="#e4ded6"/>
+		</linearGradient>
+		<linearGradient id="seat" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#8d7d6d"/>
+			<stop offset="1" stop-color="#6f6154"/>
+		</linearGradient>
+	</defs>
+	<rect width="800" height="600" fill="url(#room)"/>
+	<ellipse cx="400" cy="512" rx="300" ry="34" fill="#cfc7bc" opacity="0.55"/>
+	<g>
+		<rect x="196" y="228" width="408" height="150" rx="26" fill="url(#seat)"/>
+		<rect x="224" y="196" width="160" height="92" rx="22" fill="#7f7061"/>
+		<rect x="416" y="196" width="160" height="92" rx="22" fill="#7f7061"/>
+		<rect x="168" y="300" width="64" height="120" rx="22" fill="#9c8c7b"/>
+		<rect x="568" y="300" width="64" height="120" rx="22" fill="#9c8c7b"/>
+		<rect x="232" y="366" width="336" height="66" rx="18" fill="#6a5c50"/>
+		<rect x="252" y="428" width="20" height="46" rx="8" fill="#4f443b"/>
+		<rect x="528" y="428" width="20" height="46" rx="8" fill="#4f443b"/>
+		<rect x="300" y="262" width="200" height="10" rx="5" fill="#a59685" opacity="0.6"/>
+	</g>
+	<text x="400" y="546" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="20" fill="#7a6f64" letter-spacing="2">AURORA · 3-SEATER</text>
+</svg>
