@@ -616,19 +616,39 @@ an assertion about the code, and check it before building.
   (`assertDontSee('Issue credential')`) and re-resolve the estate at action
   time, so armed Livewire state cannot reach across estates.
 
-### Panel tenancy is not `TenantContext`
+### Panel tenancy and `TenantContext` (corrected 2026-11-17)
 
-`Filament::getTenant()` resolves the estate on panel requests; `TenantContext`
-is request-middleware state and is **not** populated on panel GETs. A support
-class shared by a console controller and a panel page must therefore take an
-**explicit estate id**, never read ambient state — otherwise the page lists the
-wrong estate, or silently `Assistant::DEFAULT_TENANT`. The page should fail
-closed: an empty id reads nothing, and the class returns empty rows rather than
-falling back.
+`App\Http\Middleware\SetTenantContext` is registered on the **customer panel**
+as tenant middleware (`->tenantMiddleware([...], isPersistent: true)`), so it
+pins `TenantContext` to `Filament::getTenant()` on every `/admin` request. That
+is why `WorkflowRunLog` and `AutomationCatalogue` can read ambient state and be
+correct. Three exceptions, and they are the ones that bite:
+
+1. **Livewire component tests do not run middleware.** `Livewire::test(...)` on a
+   panel page leaves `TenantContext` at `'default'` unless the test sets it.
+2. **The operator panel deliberately does not pin a tenant** — an operator
+   inspects every estate, so `/ops` pages must not filter by one.
+3. **Console/API code needs an explicit id**, because `ResolveApiTenant` sets it
+   per request and a shared reader (e.g. `EstateCredentials`) is called from both
+   shapes. A shared reader takes an **explicit estate id** and fails closed on an
+   empty one; a panel-only reader may read ambient state and say so in its
+docblock.
+
+Do not "fix" a panel page by adding `TenantContext::set()` — the middleware
+already did it, and a second write fights the Octane/queue resets.
 
 `Assistant` has **no** tenant global scope (unlike `WorkflowRun`), so
-`where('tenant_id', $id)` is the only filter — passing the Filament tenant id is
-required, not belt-and-braces.
+`where('tenant_id', $id)` is the only filter — passing the estate id is required,
+not belt-and-braces.
+
+### `Sanctum::actingAs()` breaks panel tests
+
+`Sanctum::actingAs()` changes the **default** guard; Filament resolves its tenant
+against the panel guard. A fixture helper that seeds data with `Sanctum::actingAs()`
+leaves a later `/admin` request looking unauthenticated — the page answers **302**
+(a login redirect) and every `assertSee` fails against HTML that has nothing to do
+with the page. Use `$this->actingAs()` in panel tests, even for the API call that
+creates the fixture.
 
 Sanctum credentials are linked to an estate only through the token **name**
 (`oos-assistant-{id}`), because `personal_access_tokens` has no tenant column and
