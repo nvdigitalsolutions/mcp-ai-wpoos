@@ -26,8 +26,14 @@ if (! is_array($contract) || ! isset($contract['surfaces']) || ! is_array($contr
     exit(1);
 }
 
-$builtStates = ['full', 'read-only'];
+$builtStates = ['full', 'subset', 'read-only'];
 $servedStates = ['full', 'subset', 'read-only'];
+
+// `subset` is built. The contract's vocabulary says a subset surface is
+// *rendered* with a reduced field set or reduced actions — the reduction is a
+// projection, not an absence. It was missing here until §24, when
+// `credentials.estate` became the first row whose only panel presentation is a
+// subset and the burn-down reported it as console-only.
 
 $report = [
     'total' => 0,

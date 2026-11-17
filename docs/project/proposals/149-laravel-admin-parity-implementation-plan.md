@@ -1547,7 +1547,10 @@ the console covering a surface does not count as admin parity.
 6. ✅ **Shipped** — the profession catalogue on `/admin` (§23), read-only, and
    the first slice to correct a `writer` (`admin` → `none`) rather than only a
    `state`. The category label map is now single-source across three callers.
-7. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
+7. ✅ **Shipped** — estate assistant credentials on `/admin` (§24), `subset`:
+   list and revoke, no issue/rotate, because rotation is the operator surface.
+   The console and the panel now share one reader and one revoke primitive.
+8. PAT manager split from assistant credentials. → Partly done as §19: the contract now distinguishes them, and the estate scope on the live console surface was fixed. A user-scoped PAT surface remains unbuilt.
 
 ---
 
@@ -2159,6 +2162,86 @@ oversight plus operator settings, not a second copy of every console form.
 - **A writable profession overlay is a separate proposal.** It needs storage,
   a merge rule against the code catalogue, and a `catalogueVersion()` that
   actually moves. Do not bolt it onto this page.
+
+---
+
+## 24. Wave 2 — fifteenth slice: estate credentials (`/admin/credentials`)
+
+**State:** shipped 2026-11-17. The first slice that ports a **write** to `/admin`
+that was previously console-only, and the first `subset` on the admin side.
+
+### 24.1 What the matrix asked for
+
+`credentials.estate`: `admin: planned`, `console: subset`, `writer: shared`, with
+the projection already written (estate-scoped assistant ids, metadata only, 404
+across estates). `shared` was the tell — the contract already expected two
+writing surfaces, and only one existed.
+
+Shipped as `admin: subset`. The reduction on `/admin` is **actions, not fields**:
+list and revoke are offered; issuing is not. Issuing is rotation —
+`/ops/credentials` creates the replacement before deleting the old ids — and
+rotation is `credentials.assistant`, `writer: ops`. A customer-facing "issue"
+button would either duplicate that flow with different semantics or hand a
+plaintext credential to a page not built to burn it after one render.
+
+### 24.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Reader + revoke | `app/Support/EstateCredentials.php` | overview, revoke, estate helpers; hash never selected |
+| Console | `app/Http/Controllers/TokenManagerController.php` | envelope + error vocabulary only; delegates |
+| Panel | `app/Filament/Admin/Pages/EstateCredentialsPage.php` | list + two-step revoke; no issue/rotate |
+| View | `resources/views/filament/admin/estate-credentials.blade.php` | armed/confirm pair per row |
+| Tests | `tests/Feature/AdminEstateCredentialsTest.php` | 9 tests |
+
+### 24.3 Decisions worth keeping
+
+- **Tenant id is a parameter, not ambient state.** `EstateCredentials` takes an
+explicit estate id. The panel resolves tenancy through Filament and does not
+populate `TenantContext` on every request; reading ambient state there would
+have listed the wrong estate or silently the default one. The page fails closed
+with an empty id rather than falling back.
+- **Two-step revoke.** First click arms the row and the button becomes "Confirm
+revoke"; only the second click deletes. There is no undo because revocation is
+deletion: Sanctum re-reads `personal_access_tokens` on every request, so a
+soft-revoked row would keep authenticating — a credential that looks revoked but
+still works.
+- **The estate is re-resolved at revoke time.** The armed state carries the
+credential id and the assistant id, but `revoke()` re-checks ownership against
+the panel tenant, so a stale page or a tampered Livewire payload cannot reach
+across estates. A refused revoke reports "not found in this estate" and leaves
+the row.
+- **One revoke primitive.** The console and the panel call the same method. A
+second implementation would drift on the one rule that matters.
+- **`tokens.personal` stays unbuilt.** It is a different record set (user-scoped
+PATs, not assistant credentials) and the matrix already says so; this page
+deliberately lists only `oos-assistant-*` names.
+
+### 24.4 Validation record — executed
+
+- `AdminEstateCredentialsTest` **9 passed, 28 assertions** (Docker).
+- `AdminEstateCredentialsTest` + `TokenManagerTest` + `SurfaceOwnershipTest` +
+  `OperatorCredentialsTest` + `CredentialExpiryTest` + `ApiTenantResolutionTest`
+  + `AdminPanelAccessTest`: **55 passed, 610 assertions, 0 failures** — so the
+  extraction left the console contract and its cross-estate 404 intact.
+- `php -l` clean; `phpcs` (CI ruleset) clean.
+- `bin/audit-surface-ownership.php` reported this row as **console-only** after
+the page shipped, because `$builtStates` omitted `subset`. That is wrong per the
+contract's own vocabulary — a subset surface is *rendered* with a reduced field
+set or reduced actions, so it is built. Fixed in the same slice; the corrected
+script reports **44 surfaces / 12 Filament-built (5 `/ops`, 8 `/admin`)**, and
+it also stops under-counting `settings.platform`, whose `/admin` presentation
+was already `subset` (the S-1 "rendered disabled" decision).
+- Same two pre-existing `ProjectManagement*ParityTest` collection-time errors as
+  §23.5 (missing corpus file), unrelated and untouched.
+
+### 24.5 Follow-ups recorded
+
+- **No pagination.** A handful of credentials per estate; if a fleet grows to
+  hundreds, paginate — do not project.
+- **`last_used_at` is selected but not rendered.** The console does not show it
+  either. Adding it to one surface without the other is how the shared row shape
+  starts to diverge; add it to both or neither.
 
 ---
 
