@@ -451,12 +451,14 @@
       "id": "site-health",
       "title": "Site Health and connection pool",
       "audience": "operator",
-      "ops": { "state": "planned" },
+      "ops": { "state": "read-only" },
       "admin": null,
       "console": null,
-      "writer": "ops",
+      "writer": "none",
       "plan_gate": null,
-      "projection": null
+      "projection": "No reduction and no writer: every probe re-runs on page load and nothing is persisted, so a saved 'last checked' would be a lie the moment the page closes. Cross-estate by nature — the probes describe the runtime, not an estate. Configuration FLAGS only (is debug on, is the app key set, is the secure cookie on); no credential value is read or rendered. Eight probes port the eleven site_status_tests the WordPress plugin registers with core Site Health; file integrity, MCP schema compliance and per-model availability are not ported because they need WordPress itself. The status vocabulary is WordPress's on purpose: good, recommended, critical.",
+      "files": ["app/Filament/Operator/Pages/SiteHealthPage.php"],
+      "notes": "Shipped 2026-11-17 (§31). `writer` corrected from `ops` to `none`: a health page reads the runtime and writes nothing. The 'connection pool' half of the title is the queue probe (pending/failed depth); a pool inspector would need the queue driver's own metrics, which are not exposed here. Model availability and credentials validation are deliberately absent — the first is per-assistant data rather than a probe, and the second would require reading secrets to be meaningful."
     },
     {
       "id": "identity-provider",
@@ -479,7 +481,8 @@
       "console": null,
       "writer": "ops",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "notes": "Researched 2026-11-17 (§32): NOT a media library and NOT redundant with `media`. The WordPress source is `WP_MCP_AI_Asset_Inventory_Admin` — an ISO 27001 asset register (asset, owner, classification, confidentiality/integrity/availability ratings) gated on a fleet capability. This runtime has no table, model or store for it, so there is nothing to render yet. Prerequisite: the register itself — a migration plus a store — before any page. `reports` depends on it, so both land together or neither does."
     },
     {
       "id": "datasets",
@@ -490,7 +493,8 @@
       "console": null,
       "writer": "ops",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "notes": "Researched 2026-11-17 (§32): the WordPress source is `WP_MCP_AI_Datasets_Admin_Page` — a HuggingFace datasets browser with download and local management. That needs three things this runtime does not have: an HTTP client for the HF API, a download/store path with quota, and a dataset registry. Blocked on scope rather than on a page; do not build a read-only shell, because a browser with no download path is a catalogue of things the user cannot have."
     },
     {
       "id": "conversation-import",
@@ -501,7 +505,8 @@
       "console": null,
       "writer": "ops",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "notes": "Researched 2026-11-17 (§32): the WordPress source is `WP_MCP_AI_Conversation_Import_Admin` — upload, format preview, policy mapping, enqueue on the async job queue, poll progress, download a JSON report. Feasible here (the queue and the transcript store both exist) but it is a feature rather than a page: file parsing, a policy map, chunked idempotent import and a report artifact. Needs its own proposal. `writer: ops` is correct — an import writes transcripts."
     },
     {
       "id": "reports",
@@ -512,7 +517,8 @@
       "console": null,
       "writer": "ops",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "notes": "Researched 2026-11-17 (§32): the WordPress source is `WP_MCP_AI_Report_Generator` — compliance reports in PDF/DOCX/XLSX/HTML/CSV. It reports OVER the asset inventory, so it is blocked on `assets`: generating a compliance report with no register to report on would produce an empty document that looks authoritative. Land `assets` first, then the exporter."
     },
     {
       "id": "chat-profiles",

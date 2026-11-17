@@ -2175,6 +2175,116 @@ oversight plus operator settings, not a second copy of every console form.
 
 ---
 
+## 31. Wave 2 — twenty-first slice: runtime health (`/ops/site-health`)
+
+**State:** shipped 2026-11-17. A port of the WordPress Site Health integration,
+reduced to what this runtime can honestly observe.
+
+### 31.1 What the matrix asked for
+
+`site-health`: `ops: planned`, `writer: ops`, no note. Research (§32) found the
+WordPress source: `WP_MCP_AI_Site_Health` registers **eleven** `site_status_tests`
+with core Site Health — API connectivity, model availability, credentials, tool
+functionality, MCP schema compliance, database schema, cache backend, queue
+storage, cron configuration, security posture, file integrity.
+
+### 31.2 What is ported, and what is not
+
+| WordPress probe | Here | Why |
+|---|---|---|
+| API connectivity | `providers` | registered provider slugs from the router |
+| Model availability | — | per-assistant data, not a runtime probe |
+| Credentials validation | — | would need to read secrets to mean anything |
+| Tool functionality | `tools` | registry size + servable count |
+| MCP schema compliance | — | needs the WordPress auditor; no equivalent |
+| Database schema | `database` | connection + the twelve runtime tables |
+| Cache backend | `cache` | a real put/get/forget round-trip |
+| Queue storage | `queue` | pending + failed depth |
+| Cron configuration | `scheduler` | overdue schedules — the only evidence a runner is alive |
+| Security posture | `security` | debug flag, app key presence, secure cookie |
+| File integrity | — | hashes the WordPress plugin tree; not applicable |
+
+Eight probes. The status vocabulary is WordPress's on purpose — `good`,
+`recommended`, `critical` — so an operator who has seen Site Health does not have
+to learn a second one.
+
+### 31.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Prob | `app/Support/Health/SiteHealth.php` | eight probes, totals, worst-wins overall |
+| Panel | `app/Filament/Operator/Pages/SiteHealthPage.php` | no actions, no state |
+| View | `resources/views/filament/operator/site-health.blade.php` | badge table, inline styles |
+| Tests | `tests/Feature/AdminSiteHealthTest.php` | 11 tests |
+
+### 31.4 Decisions worth keeping
+
+- **Observables, not configuration.** "The cache is configured" is not a health
+check; a put/get round-trip is. The same reasoning makes `scheduler` look at
+*overdue* schedules rather than at the schedule list, because configuration
+proves nothing about the runner.
+- **`database` is `recommended`, not `critical`, when a table is missing.** The
+stores guard optional tables, so a missing one is "run migrate", not "the
+runtime is down".
+- **Config flags only, never values.** `security` reads `app.debug`, whether
+`app.key` is empty, and `session.secure` — never a credential.
+- **Worst-wins is explicit.** The first draft assigned status inside a loop over
+the findings, so a later warning silently downgraded an earlier critical. Caught
+by the test that sets both, and fixed before merge.
+- **`writer: none`.** Every probe re-runs on load and nothing is stored, so
+`writer: ops` (the placeholder) was wrong; `none` is the §23 rule applied again.
+
+### 31.5 Validation record — executed
+
+- `AdminSiteHealthTest`: **11 passed, 30 assertions**.
+- `php -l` clean; `phpcs` (CI ruleset) clean.
+
+---
+
+## 32. The `/ops` tail, researched: four blocked, one built
+
+**State:** recorded 2026-11-17. The last four `planned` rows had **no notes at
+all**, which is what a placeholder looks like. Each was traced to its WordPress
+source before deciding anything.
+
+| Row | WordPress source | Finding |
+|---|---|---|
+| `assets` | `WP_MCP_AI_Asset_Inventory_Admin` | **ISO 27001 asset register**, not a media library. No table, model or store here. Prerequisite: the register itself. |
+| `datasets` | `WP_MCP_AI_Datasets_Admin_Page` | HuggingFace browser + download. Needs an HF client, a quota'd store and a registry. |
+| `conversation-import` | `WP_MCP_AI_Conversation_Import_Admin` | Upload → preview → policy → queue → JSON report. Feasible here, but a feature, not a page. |
+| `reports` | `WP_MCP_AI_Report_Generator` | Compliance reports **over the asset inventory**, so blocked on `assets`. |
+| `site-health` | `WP_MCP_AI_Site_Health` | Eleven probes, eight portable. **Built in §31.** |
+
+### 32.1 Why none of the four is a page
+
+Three of them are blocked on a **data model** rather than a presentation, and one
+is a feature with a queue and a file format. Building any of them as a read-only
+shell would put a plausible-looking surface in front of nothing:
+
+- an asset register page with no register,
+- a dataset browser with no download path — a catalogue of things the user
+  cannot have,
+- a compliance report over no register — an empty document that looks
+  authoritative.
+
+So they stay `planned` with `writer: ops` (the WP side does write, and the port
+is intended) and the prerequisite recorded on the row.
+
+### 32.2 The order, if this tail is ever prioritised
+
+1. `assets` — migration + store first; it is the only one with no substitute.
+2. `reports` — follows immediately, because it reports over `assets`.
+3. `conversation-import` — its own proposal; the queue already exists.
+4. `datasets` — last, because it is the only one that needs an external service.
+
+### 32.3 Effect on the burn-down
+
+`planned only` fell from 7 to **6**, all `/ops`: `onboarding` and
+`identity-provider` (blocked on decisions outside the app) plus the four above.
+`/admin` remains at **0**.
+
+---
+
 ## 30. Wave 2 — twentieth slice: automation definitions (`/admin/automations`)
 
 **State:** shipped 2026-11-17. The orchestration surface, and the first page
