@@ -518,11 +518,12 @@
       "title": "Chat profiles (read-only enforcement)",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "absent" },
       "console": null,
-      "writer": "admin",
+      "writer": "none",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "notes": "Not a parity gap: WordPress-only by construction (Proposal 015). The feature is a two-value code registry (`write`/`read-only`), a per-user preference in user meta plus `wp_mcp_ai_settings`, and enforcement through the `wp_mcp_ai_before_tool_execution` gate pipeline, seeded into the Pro SPA runtime. Nothing in this runtime implements any of the three — no registry, no preference, no gate — so a page here would render a control nothing reads, which is the UI fiction this contract exists to prevent. `writer` corrected from `admin` to `none` for the same reason as `professions` (§23): no class on this runtime persists a profile. The prerequisite is an enforcement port covering both the API and the panel; a page without it is worse than no page, because it would advertise a restriction the server does not apply."
     },
     {
       "id": "audit-log",

@@ -2175,6 +2175,54 @@ oversight plus operator settings, not a second copy of every console form.
 
 ---
 
+## 28. Chat profiles are WordPress-only, so the row is `absent`
+
+**State:** recorded 2026-11-17. A disposition, not a build. This was the last
+`/admin` row in `planned`.
+
+### 28.1 Why no page
+
+`chat-profiles` sat at `admin: planned`, `writer: admin` with no note. Checked
+against the code, it is not a parity gap that a page can close — Proposal 015 is
+WordPress-only by construction, in all three of its parts:
+
+| Part | WordPress | This runtime |
+|---|---|---|
+| Registry | `WP_MCP_AI_Chat_Profile_Registry` (`write` / `read-only`) | none |
+| Preference | user meta + `wp_mcp_ai_settings` | none |
+| Enforcement | `wp_mcp_ai_before_tool_execution` gate pipeline | none |
+
+A page over two hard-coded labels with no enforcement would offer a "read-only"
+toggle that changes nothing — the UI fiction the ownership contract exists to
+prevent, and worse than an absent surface because it advertises a restriction the
+server does not apply.
+
+`writer` corrected from `admin` to `none` for the same reason as `professions`
+(§23): no class on this runtime persists a profile. State corrected to `absent`,
+because this is not a to-do for the parity track.
+
+### 28.2 What a real port would need, in order
+
+1. **An enforcement gate** in the Laravel tool-execution path, covering both the
+   REST tool route and the chat agentic loop. Without it there is nothing to
+   select. The WordPress implementation reuses a filter pipeline; here it would
+   be a decorator over `ToolRegistry` or a check inside `ChatOrchestrator`.
+2. **A preference store.** `SettingsService` already supports a `user` scope, so
+   the preference itself is a data change rather than a schema change.
+3. **A page.** Last, because it is the only part that is safe to defer.
+
+The order matters: a page first has no way to prove it does anything, and a test
+that "read-only blocks a write" is the only evidence that the port works.
+
+### 28.3 Effect on the burn-down
+
+`planned only` fell from 8 to **7**, and the `/admin` column to **0**. Every
+remaining planned row is `/ops`: `onboarding` and `identity-provider` (both
+blocked on decisions outside the app), and `site-health`, `assets`, `datasets`,
+`conversation-import`, `reports` (no data source yet).
+
+---
+
 ## 27. Wave 2 — eighteenth slice: remote sites were never estate-scoped (`§27`)
 
 **State:** shipped 2026-11-17. A security fix, not a page. Same class as §19.
