@@ -25,24 +25,26 @@
       "title": "Transcripts",
       "audience": "tenant-user",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["transcripts"] },
       "writer": "console",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Admin gets a read-only list once a resource exists; retention stays server-owned."
+      "projection": "Read-only list scoped to the current estate: session key, assistant, turn count, first user message (100 chars) and timestamps. Message bodies are read behind an explicit inspect modal. Deletion and retention are the store's prune() and the console's DELETE; the panel has no mutating action.",
+      "files": ["app/Filament/Admin/Pages/Transcripts.php"],
+      "notes": "Shipped on `/admin` 2026-11-17 (§39) with `GET|POST|DELETE /api/v1/chat-transcripts` unchanged. Building it first required the same schema fix as §27 and §29: `nvoos_transcripts` had no tenant column and `session_id` was globally unique, so any console user could list and open every estate's conversations, and two estates that generated the same session key overwrote each other. The key is now `(tenant_id, session_id)`; `prune()` stays deliberately unscoped because retention is a server-owned job with no request estate."
     },
     {
       "id": "memory",
       "title": "Agent memory",
       "audience": "tenant-user",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["memory"] },
       "writer": "console",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Admin memory browser is a Wave 2 /admin surface."
+      "projection": "Read-only browser scoped to the current estate: title, agent, tier, importance, content preview, wing/room, expiry and timestamps, with the full content behind an inspect modal. Expired rows stay listed because recall filters them out — 'why did it forget' has to have an answer. No create/update/delete on the panel; the memory tools and the console API own writes.",
+      "files": ["app/Filament/Admin/Pages/AgentMemory.php"],
+      "notes": "Shipped on `/admin` 2026-11-17 (§40). Same schema-first story as §27, §29 and §39: `nvoos_memories` had no tenant column and `MemoryStore` named the table in all six methods, so `search()` spanned every estate and any console user could read, rewrite or delete another estate's memory by id. `listByAgent( agent_id )` was never a boundary — the agent id is a query parameter. The store now takes a tenant resolver and every method starts from one `query()` helper."
     },
     {
       "id": "assistants",
@@ -161,11 +163,13 @@
       "title": "Approvals",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["approvals"] },
       "writer": "console",
       "plan_gate": null,
-      "projection": null
+      "projection": "Read-only queue scoped to the current estate: id, status, tool, requester, reason, queued/expiry and timestamps, with the queued arguments and the resolution behind an inspect modal. No approve/deny on the panel — resolving stays the console's write, and a panel action would need its own audit row first (§25).",
+      "files": ["app/Filament/Admin/Pages/Approvals.php"],
+      "notes": "Shipped on `/admin` 2026-11-17 (§41). Schema-first like §27/§29/§39/§40: `nvoos_approvals` had no tenant column and `ApprovalsController` named the table in `index`, `store` and `resolve`, so any estate administrator could list the whole queue and **approve or deny another estate's gated tool call**. `resolve` is the sharp edge, as `fire` was in §29. Approve/deny on the panel is the recorded next step: it flips `writer` to `shared` and must write a record-level audit row, because panel traffic goes over `/livewire/update`, which the request audit skips."
     },
     {
       "id": "automation-definitions",

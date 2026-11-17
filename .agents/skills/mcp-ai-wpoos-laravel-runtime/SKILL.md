@@ -138,6 +138,15 @@ Two failure shapes this produces, both of which read like code breaks:
   the file exists in the skeleton before investigating the failure. `cp -a`
   never deletes, so the stale copy only grows.
 
+**A scoped store plus an un-migrated dev database is a third.** After adding a
+`tenant_id` migration, run `php artisan migrate` in the container before judging
+anything: the running app serves its **own** database, and a scoped
+`where tenant_id` against a table that lacks the column returns 500s. The console
+smoke then fails its page renders while `/features` — which touches no scoped
+store — stays green, so the failure looks like a UI regression rather than a
+schema one. Seen on 2026-11-17 with `nvoos_memories` and `nvoos_approvals` pending:
+4/6 failing, 6/6 after `migrate`.
+
 **The CLI default is 128 MB and the suite exceeds it.** `Phase3dTest` dies with
 `Allowed memory size of 134217728 bytes exhausted` and takes the run with it.
 The container command is therefore:
@@ -677,3 +686,145 @@ JSON, and assert `json.loads(...)` succeeds before committing. Do not trust a
   anything.
 - `AuthProvider::issueCredential()` refuses to run unauthenticated — tests must
   `actingAs()` a user before minting, and that user becomes `tokenable_id`.
+
+## 15. Wave 2 tail: slices 25–38 (149 §25–§38)
+
+The last thirteen slices were mostly **dispositions and disclosures**, not new
+CRUD. Read this before adding a panel page: much of what looks missing was
+deliberately not built, and the reason is recorded.
+
+**Scoreboard:** `php bin/audit-surface-ownership.php` (`--json` for tooling) —
+44 surfaces · 22 panel-built · 29 console-served · 18 console-only · 2
+planned-only, measured 2026-11-17. Re-run it before quoting a number; it reads the
+same contract the CI gate reads.
+
+### Panel traffic is not audited by the request middleware
+
+`AuditAdminRequests` skips `/livewire/update` as UI mechanics, so **every panel
+action needs its own `AdminAuditLogger::recordResource()` call** — destructive
+ones especially. §25 found the credential revoke left no trace at all. A resource
+write produces **two** rows (request + record); `resource IS NULL` is the request
+row. `/ops/audit-log` renders both kinds on purpose: request rows answer "who
+tried and was refused", record rows answer "what changed". The page is `LIMIT`
+200 with the ceiling printed in the header — never a silent truncation.
+
+### The token surfaces are three, and the name is the separation
+
+| Surface | Names it touches | Scope |
+|---|---|---|
+| `/ops/credentials` (assistant, rotate) | `oos-assistant-{id}` | estate |
+| `/admin/credentials` (estate, list/revoke) | `oos-assistant-{id}` | estate |
+| `/admin/personal-tokens` | `oos-personal:*` | **user** |
+
+- **Sanctum abilities are not enforced anywhere** — no `tokenCan()`, no
+  `abilities:` middleware. Authority comes from the user's *current* role via
+  `CapabilityMap`, so a personal token stores `['*']` (`['edit_posts']` would
+  assert a restriction nothing applies) and the UI offers no ability selector.
+- Personal-token routes sit **outside `ResolveApiTenant`** (allowlisted in that
+  test with the reason): a token belongs to a person across every estate, so
+  requiring an estate would 409 a multi-estate user out of their own credentials.
+- Expiry is mandatory and bounded (1–365 days). The plaintext is shown once,
+  never audited, and cleared when the armed token is revoked.
+
+### Cross-estate stores: the scope belongs in one helper
+
+Two tables shipped with **no tenant column** while their routes already ran
+inside `ResolveApiTenant` — the estate was resolved and then ignored
+(`nvoos_remote_sites` §27, `nvoos_triggers` §29). Rule: **one `query()` helper per
+store/controller that every method starts from.** Adding `->where('tenant_id', …)`
+to six call sites is a change one forgotten line undoes.
+
+- The dangerous verbs are the ones that *act* with a foreign row: `test` sends
+  that row's sealed credentials to the named URL; `fire` runs a workflow under the
+  caller's identity.
+- **404, not 403, for a foreign id** — identical to a nonexistent id.
+- System callers stay unscoped and carry the scope per row. `TriggerDispatcher::due()`
+  must see every estate; `nvoos:fire-triggers` pins `TenantContext` per trigger and
+  resets it in `finally` (a `continue` in the catch block would skip a reset
+  placed at the end of the loop body).
+- `down()` does nothing on these migrations — dropping the column re-exposes
+  every estate's rows.
+- **A scope can be a KEY, not just a column.** `nvoos_transcripts` had no
+  `tenant_id` *and* a globally unique `session_id`, so two estates that generated
+  the same session key overwrote each other's conversation on `save()` (§39).
+  Adding the column alone converts a silent overwrite into a constraint failure —
+  the unique has to become `(tenant_id, session_id)`. Whenever a store upserts by
+  a client-generated id, check the unique index before scoping it.
+- **Retention jobs stay unscoped.** `TranscriptStore::prune()` deletes across every
+  estate on purpose, like `TriggerDispatcher::due()`: a job with no request estate
+  must not inherit one. Audit records and asset registers that compute per request
+  are the other side of the same rule — they declare `writer: none`.
+- **Five stores have now shipped unscoped; assume the next one is.**
+  `nvoos_remote_sites` (§27), `nvoos_triggers` (§29), `nvoos_transcripts` (§39),
+  `nvoos_memories` (§40) and `nvoos_approvals` (§41) all had the same shape: routes
+  already inside `ResolveApiTenant`, a store or controller naming the table
+  directly, and no `tenant_id`. Before adding a page over a store you have not
+  touched, `grep -n "DB::table" <store>` — if the table has no estate column, the
+  schema is the first problem and the page is the second.
+- **Scope the verbs that ACT, not just the ones that list.** `resolve` on
+  `nvoos_approvals` (§41) let one estate approve or deny another estate's gated
+  tool call; `test` on a remote site (§27) sent that row's sealed credentials to a
+  URL; `fire` on a trigger (§29) ran a workflow under the caller's identity. When
+  you scope a controller, enumerate its verbs and ask which one has an effect
+  outside the request.
+- **A filter is not a boundary.** `listByAgent( agent_id )` (§40) reads like one
+  and is not: the id arrives as a query parameter. Estate scope belongs in the
+  query helper, not in the argument list.
+
+### `writer: none` when nothing persists
+
+The §23 rule fired four more times. `site-health`, `assets` and the audit log all
+declare `writer: none` because they compute per request. `reports` is the one row
+where `writer` and `state` diverge: it writes no report data (`read-only`) but
+each download records an audit row (`writer: ops`). Ask *which class persists* —
+if the answer is "none here", so is the writer.
+
+### Derive registers; never store a snapshot
+
+The information-asset register (§33) is **computed per request**. A stored
+compliance snapshot goes stale on the next migration, which is worse than no
+register. Carry-ons:
+
+- **Presence, never value.** Seed a real key, then assert the secret appears in
+  neither the register nor the rendered page.
+- **Vocabulary copied verbatim** from the WordPress constants (4 ISO
+  classifications, 8 asset types) so one set of report labels survives a runtime
+  move — `reports` keys off them.
+- Omit a section rather than emit it empty: a "Risks" heading with no rows is a
+  claim. `AdminComplianceReportTest` asserts the omission.
+
+### Two presentation traps
+
+- **`fputcsv()` quotes any field containing whitespace**, so a sectioned report's
+  heading is written `"Audit trail (newest 1000)"`. Assert the bytes the writer
+  produces or parse the rows; do not assert a bare heading.
+- **`cp -a` never deletes.** Removing a page from the source tree leaves the stale
+  copy in the container and `SurfaceOwnershipTest` fails on an undeclared Filament
+  surface. When a slice *removes* files, delete them on both sides.
+
+### What is deliberately absent — do not reopen without the recorded reason
+
+| Key | State | Why |
+|---|---|---|
+| `chat-profiles` | `absent` | Proposal 015 is WordPress-only: registry, user-meta preference and the `wp_mcp_ai_before_tool_execution` gate have no counterpart here. A toggle with no enforcement is worse than no page. A real port needs the **gate first**, then the preference (`SettingsService` already has `user` scope), then the page. |
+| `onboarding` | `absent` | Its two writes already have homes (`/ops/settings` for provider keys, `/admin/assistants` for presets). A first-run experience would be a derived checklist, not a wizard. |
+| `datasets` | `planned` | The eleven HuggingFace tools are in `lib/core` but sit at `readiness: unverified`, so `ManifestToolRegistrar` registers none and no assistant can call one. Unblocking is a **readiness classification with network implications**, not a page. |
+| `identity-provider` | `planned` | Nothing to port — no SSO implementation exists on either runtime. Needs a scope decision (OIDC, or OIDC+SAML) before any code. |
+
+### Branding (§38)
+
+`App\Support\Brand\BrandMark` is the one lockup definition for both panels, and
+asset paths are **root-relative** (`asset()` bakes in `APP_URL` and 404s on
+another host or port). The wordmark SVG is a **black core with a white highlight
+rim**: six white shapes plus six unclassed copies offset `+3,+3` that inherit
+black. So the bare wordmark is solid black on light and nearly invisible on dark;
+the dark variant is produced mechanically by adding `fill="#fff"` to the root
+`<svg>`, with no path data touched. The mark needs no variant.
+`PanelBrandingTest` pins geometry parity between the two variants and parses every
+committed SVG.
+
+- A panel-provider change needs `docker restart` — `OCTANE_MAX_REQUESTS=1` does not
+  pick up a favicon or logo change.
+- The tab favicon is still a **different mark** from the lockup icon (known
+  inconsistency, plan §38.6). Changing it is an explicit decision, not a side
+  effect of a layout change.

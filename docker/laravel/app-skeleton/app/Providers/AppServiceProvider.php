@@ -35,10 +35,14 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
+use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
+use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\SettingsStore;
+use Nvoos\Laravel\Adapter\TranscriptStore;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -122,6 +126,26 @@ class AppServiceProvider extends ServiceProvider
             RemoteSiteStore::class,
             static fn ($app): RemoteSiteStore => new RemoteSiteStore(
                 $app->make(CredentialStore::class),
+                static fn (): string => TenantContext::current()
+            )
+        );
+
+        // Transcripts are estate data too (149 §39). The package binds the store
+        // with no resolver, which leaves it unscoped; this rebinding gives it the
+        // same per-query estate seam as settings and remote sites. BIND, not
+        // scoped: the store is constructed before tenant middleware runs.
+        $this->app->bind(
+            TranscriptStoreInterface::class,
+            static fn (): TranscriptStore => new TranscriptStore(
+                static fn (): string => TenantContext::current()
+            )
+        );
+
+        // Agent memory is estate data as well (149 §40), rebound for the same
+        // reason: an unscoped `search()` reached every estate's memory.
+        $this->app->bind(
+            MemoryStoreInterface::class,
+            static fn (): MemoryStore => new MemoryStore(
                 static fn (): string => TenantContext::current()
             )
         );

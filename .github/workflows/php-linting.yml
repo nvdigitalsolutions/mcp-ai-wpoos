@@ -250,7 +250,17 @@ jobs:
         run: |
           echo "Changed PHP files:"
           echo "${{ steps.changed-files.outputs.all_changed_files }}"
-          vendor/bin/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 ${{ steps.changed-files.outputs.all_changed_files }}
+          # `--ignore=*.blade.php`: a Blade template is not PHP source. It ends in
+          # `.php`, so the changed-file list includes it, but the only PHP in it is
+          # an `@php` block compiled by Laravel — judging it against the WordPress
+          # runtime's PHP range produced "No PHP code was found in this file and
+          # short open tags are not allowed" on every view without an `@php` block
+          # (site-health.blade.php, #7889) and failed the job on a file that has no
+          # compatibility surface at all. Non-Blade files are still checked: this
+          # flag only excludes the pattern.
+          vendor/bin/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 \
+            --ignore='*.blade.php' \
+            ${{ steps.changed-files.outputs.all_changed_files }}
 
       - name: Run PHP Compatibility Check on all files
         if: github.event_name == 'push'
