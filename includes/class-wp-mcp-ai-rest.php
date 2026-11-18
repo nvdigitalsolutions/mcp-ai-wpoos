@@ -6283,10 +6283,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * a mid-turn reset that loses the whole turn.
 		 *
 		 * The threshold is filterable via `wp_mcp_ai_sse_offload_elapsed_seconds`
-		 * (Settings → General → "Background Hand-off"; default 110, a margin
-		 * below Cloudflare's 125 s origin read timeout so the `job_offload`
-		 * frame still lands before the reset). It must sit BELOW the proxy's idle
-		 * timeout to be useful — at or above it the connection has already been
+		 * (NV oOS → General Settings → Behavior & Limits → "Background Hand-off";
+		 * default 110, a margin below Cloudflare's 125 s origin read timeout so the
+		 * `job_offload` frame still lands before the reset). It must sit BELOW the
+		 * proxy's idle timeout to be useful — at or above it the connection has already been
 		 * reset and no `job_offload` frame can be delivered — so lower it when
 		 * the host resets sooner. Returning 0 disables offload entirely (4a
 		 * keepalive behavior only).
