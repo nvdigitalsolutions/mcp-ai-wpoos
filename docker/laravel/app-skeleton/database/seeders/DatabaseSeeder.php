@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         $this->seedOperatorMembership();
 
         $this->call(ProjectManagementSeeder::class);
+        $this->call(ModelConfigSeeder::class);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Filament\Concerns;
 
 use App\Support\Admin\AdminAuditLogger;
+use App\Support\Models\ModelConfigCatalogue;
 use App\Support\Settings\SettingsService;
 use App\Support\Settings\SettingsText;
 use App\Support\SettingsSchema;
@@ -207,6 +208,15 @@ trait BuildsSettingsForm
             static fn ($label): string => SettingsText::fromHtml((string) $label),
             $field['options'] ?? array()
         );
+
+        if (str_starts_with((string) ($field['options_source'] ?? ''), 'model_catalog:')) {
+            // Add models the curated list does not know yet, for THIS provider.
+            // `+` keeps the curated label for an existing id, so this can only
+            // grow the list; media selects are deliberately never marked.
+            $provider = substr((string) $field['options_source'], strlen('model_catalog:'));
+            $options += ModelConfigCatalogue::optionsForProvider($provider);
+        }
+
         $current = $this->data[ $field['key'] ] ?? null;
 
         if (is_string($current) && '' !== $current && ! array_key_exists($current, $options)) {
