@@ -7333,3 +7333,164 @@ wiring is observable and testable rather than implicit.
    the whole request, exactly as the existing provider-chain failover does, so a
    provider that emits chunks and then errors would be replayed. Guarding on
    "bytes already sent" belongs in the streaming layer, not the router.
+
+## 70. Limits, billing and hop hygiene — the catalogue becomes authoritative (2026-11-18)
+
+§69 made the fallback column live and left three consequences unaddressed. This
+section closes them, and turns on a check that had been dead code in the
+runtime since the Laravel adapter was written.
+
+### 70.1 Limits: the snapshot becomes the fallback
+
+`TokenBudgetManager` carried a hardcoded `MODEL_LIMITS` / `MAX_OUTPUT_TOKENS`
+snapshot. It is right on the day it is written and wrong as soon as a provider
+ships a model, and the runtime already keeps a maintained catalogue of exactly
+those two numbers.
+
+`ModelLimitCatalogueInterface` (core) answers `contextWindow($model)` and
+`maxOutputTokens($model)`. The manager now asks the catalogue first and falls
+back to the snapshot:
+
+| Answer | Used |
+|---|---|
+| a positive integer | **the catalogue value** |
+| `null` (unknown model) | the snapshot |
+| `0` (a row with no limit recorded) | the snapshot |
+
+Zero is deliberately not an answer: a synced row for a model the catalogue
+knows little about must not silently disable the check.
+
+**The tie-break, and why it is "widest".** The budget manager runs inside a
+provider client, where the payload is built and where the model — not the
+provider — is at hand, so the contract is lookup-by-model. Two providers can
+publish the same id. `ModelCatalogueLookup` takes the **widest servable** row,
+because the two errors are not symmetric: a limit that is too low rejects
+requests the provider would have accepted, while a limit that is too high only
+makes the pre-flight less strict — the provider still enforces its own.
+
+### 70.2 Pre-flight validation was dead code
+
+`AbstractProviderClient::setTokenBudgetManager()` existed, `validateContextWindow()`
+existed, and **nothing in the runtime ever called the setter**. Every client's
+`$tokenBudget` was null, so the pre-flight check returned `null` immediately and
+every request went out unvalidated.
+
+Two things change that:
+
+1. `NvoosServiceProvider` binds one `TokenBudgetManager` singleton and attaches
+   the platform's `ModelLimitCatalogueInterface` when one is bound (Proposal 149
+   §70; the app binds `ModelCatalogueLookup`).
+2. `ProviderRegistrar::register()` takes that manager and attaches it to all
+   twelve clients, so they share one set of limits.
+
+This is a **behaviour change with teeth**: a payload whose estimated size exceeds
+the model's window now returns `context_window_exceeded` instead of being sent.
+It mirrors the WordPress layer, which has the same check
+(`WP_MCP_AI_Token_Budget_Service::validate_context_window()`), and the error
+carries the remediation actions the WordPress one does.
+
+The estimate is still `json_encode($payload) / 4`. That is the part to watch: a
+crude estimator can reject a request a provider would have accepted. The
+catalogue makes the *limit* accurate; it does not make the estimator accurate
+(§70.7).
+
+### 70.3 Billing the model that answered
+
+`CostCalculator` was called with `$options['model']` — the model the caller asked
+for. After §69 that is no longer guaranteed to be the model that ran.
+
+The router now annotates a successful result with what actually answered:
+
+```php
+$response['_nvoos_routing'] = [ 'provider' => 'openai', 'model' => 'gpt-5-mini' ];
+```
+
+and `ChatOrchestrator::billedRoute()` reads it, then the response's own `model`,
+then the request:
+
+```
+_nvoos_routing.model  >  response.model  >  options.model
+_nvoos_routing.provider  >  options.provider
+```
+
+`response.model` is a real signal, not a copy of the request: the
+OpenAI-compatible client returns the API payload (which echoes the served
+model), and Anthropic/Gemini normalise against the model they were called with —
+the fallback id, because that is what the router sent.
+
+**The annotation is written only when the router changed the model.** The first
+cut annotated every hop, and four existing chain tests failed on the added key —
+which is the right signal: mutating a provider payload for every caller, most of
+whom have no catalogue, is a shape change nobody asked for. Now a plain provider
+hop returns exactly the payload it always did, and the marker appears only where
+a caller cannot otherwise see what happened: a retry on a different model.
+
+The consequence is precise and limited: a **model fallback** is now costed at the
+fallback's rates, and a **plain provider-chain hop** still bills the requested
+provider's rates, exactly as before (§70.7).
+
+### 70.4 Hop hygiene: do not send a model to a provider that does not serve it
+
+A fallback chain is a list of provider slugs, and the chain used to carry the
+primary model's id into every hop — so `gpt-5` reached Gemini. Upstream, the
+cascade router already dropped the model on a provider switch
+(`buildTier1Options`); the failover chain never did.
+
+`ModelRoutingCatalogueInterface::serves($provider, $modelId)` is three-state:
+
+| Answer | Meaning | Router |
+|---|---|---|
+| `true` | the catalogue holds a servable row for the pair | keep the model |
+| `false` | the catalogue knows the id and this provider does not serve it | **drop the model** |
+| `null` | no opinion (unlisted id) | keep the model |
+
+Only `false` changes anything, and that is the whole design: an Azure deployment
+name, a fine-tune, or a model released after the last sync is unknown to the
+catalogue and must keep its override. A known id with no servable row on the
+target is the one case where sending it is certainly wrong.
+
+### 70.5 Shape: one reader, two contracts
+
+`ModelFallbackCatalogueInterface` grew `serves()` and was renamed
+`ModelRoutingCatalogueInterface`; `ModelLimitCatalogueInterface` is new.
+`App\Support\Models\ModelCatalogueLookup` implements both over
+`nvoos_model_configs`, with the shared guards: servable rows only, unknown is
+`null` rather than an error, query failures report and return `null`, and
+`nvidia_nim` translates to `nvidia`.
+
+`TokenBudgetManager::getCatalogue()` and
+`AbstractProviderClient::getTokenBudgetManager()` exist so the wiring is
+observable rather than implicit — the same reason `ProviderRouter::getModelCatalogue()`
+exists.
+
+### 70.6 Gates
+
+| Run | Result |
+|---|---|
+| `ProviderRouterModelFallbackTest` | **10 tests** — including three new hop cases: drop on `false`, keep on `null`, keep on `true` |
+| `TokenBudgetManagerCatalogueTest` | **6 tests** — precedence, unknown, zero, no-catalogue, refusal, unknown-not-validated |
+| Provider + Token core dirs | **33 tests / 90 assertions** (the six pre-existing chain tests pass unmodified) |
+| `ModelFallbackRoutingTest` (app) | **7 tests / 30 assertions** — adapter `serves`, adapter limits, budget wiring, fallback annotation |
+| nvoos/core unit suite | **1360 tests / 4300 assertions, 0 failures** (14 pre-existing runner deprecations) |
+| phpcs (`phpcs-laravel.xml.dist`, 13 files) | **0 errors** |
+| Full app suite | **1329 tests / 17932 assertions, 0 failures** (baseline 1326 / 17916; 2 pre-existing runner deprecations) |
+
+### 70.7 Still open
+
+1. **A plain provider hop still bills the requested provider.** The annotation is
+   model-change-only by design (§70.3). Reporting every hop would mean either
+   mutating every payload or moving routing metadata out of the payload into a
+   result wrapper — a larger contract change than this slice.
+2. **The estimator is still chars/4.** A pre-flight check is now live, so an
+   over-estimate can reject a valid request. `TiktokenServiceInterface` exists;
+   wiring a real tokenizer is the fix, and it belongs in its own slice with its
+   own benchmarks.
+3. **`max_output_tokens` is not used by the pre-flight.** `validateContextWindow()`
+   reserves the payload's own `max_tokens` (or 4096); the catalogue's output
+   budget is used by `calculateBudget()` only.
+4. **Retired models are still callable on ingress.** A stale assistant naming a
+   retired model is sent; only fallback targets and hop eligibility check status.
+5. **No per-assistant opt-out for pre-flight.** The only switches are unbinding
+   the catalogue or not passing the manager to the registrar.
+6. **The fallback counter is still unbuilt.** `_nvoos_routing` is the seam a
+   diagnostics counter would read; nothing consumes it for display yet.
