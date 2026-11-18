@@ -31,6 +31,25 @@ final class OkfCatalogue
     /** Matches WordPress's route pattern for `{bundle}`. */
     private const NAME_PATTERN = '/^[a-z0-9][a-z0-9_-]{0,99}$/';
 
+    /**
+     * Frontmatter keys exposed by any read, matching WordPress's allowlist.
+     *
+     * Public because the `/admin/okf` page (149 §50) and the REST controller
+     * must expose the same keys: a key the console can read and the panel
+     * cannot would be a second, quieter allowlist.
+     */
+    public const FRONTMATTER_ALLOWLIST = [
+        'title',
+        'description',
+        'type',
+        'tags',
+        'status',
+        'verified',
+        'stale_after',
+        'generated',
+        'usage_window',
+    ];
+
     public function __construct(private readonly string $root)
     {
     }
@@ -204,6 +223,25 @@ final class OkfCatalogue
         }
 
         return $real;
+    }
+
+    /**
+     * Allowlist frontmatter keys.
+     *
+     * @param array<string, mixed> $frontmatter Parsed frontmatter.
+     * @return array<string, mixed>
+     */
+    public static function allowlisted(array $frontmatter): array
+    {
+        $out = [];
+
+        foreach (self::FRONTMATTER_ALLOWLIST as $key) {
+            if (array_key_exists($key, $frontmatter)) {
+                $out[$key] = $frontmatter[$key];
+            }
+        }
+
+        return $out;
     }
 
     /**

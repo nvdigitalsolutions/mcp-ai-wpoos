@@ -2,11 +2,13 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\PersonalTokens;
 use BackedEnum;
+use UnitEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 
@@ -46,8 +48,10 @@ class PersonalTokensPage extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Connections;
+
     // With the credentials surface: both are token management.
-    protected static ?int $navigationSort = 55;
+    protected static ?int $navigationSort = 40;
 
     protected string $view = 'filament.admin.personal-tokens';
 

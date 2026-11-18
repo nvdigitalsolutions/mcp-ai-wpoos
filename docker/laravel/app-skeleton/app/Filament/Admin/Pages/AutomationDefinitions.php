@@ -2,10 +2,12 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Automation\AutomationCatalogue;
 use BackedEnum;
+use UnitEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
@@ -39,8 +41,10 @@ class AutomationDefinitions extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBolt;
 
-    // Definitions before the run log, both after the reference catalogues.
-    protected static ?int $navigationSort = 75;
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Automation;
+
+    // Definitions before the run log: you author an automation, then read its runs.
+    protected static ?int $navigationSort = 10;
 
     protected string $view = 'filament.admin.automation-definitions';
 

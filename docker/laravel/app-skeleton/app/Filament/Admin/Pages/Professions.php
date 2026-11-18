@@ -2,10 +2,12 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\ProfessionCatalogue;
 use BackedEnum;
+use UnitEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
@@ -39,8 +41,10 @@ class Professions extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBriefcase;
 
-    // The reference catalogues sit after the record surfaces (resources) and
-    // before the run log and settings.
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Knowledge;
+
+    // Last of the reference catalogues: professions classify the records the
+    // other surfaces hold.
     protected static ?int $navigationSort = 60;
 
     protected string $view = 'filament.admin.professions';

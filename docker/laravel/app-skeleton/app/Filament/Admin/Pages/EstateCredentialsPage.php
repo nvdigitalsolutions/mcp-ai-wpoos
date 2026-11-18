@@ -2,11 +2,13 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\EstateCredentials;
 use BackedEnum;
+use UnitEnum;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -46,9 +48,10 @@ class EstateCredentialsPage extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
-    // With the record surfaces: assistants, teams, then the credentials those
-    // assistants hold. Before the reference catalogues.
-    protected static ?int $navigationSort = 50;
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Connections;
+
+    // After the endpoints: a connection names the URL, a credential names the key.
+    protected static ?int $navigationSort = 30;
 
     protected string $view = 'filament.admin.estate-credentials';
 

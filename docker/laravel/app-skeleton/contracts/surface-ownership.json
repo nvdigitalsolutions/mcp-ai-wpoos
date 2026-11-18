@@ -64,34 +64,57 @@
       "title": "Assistant blueprints",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
-      "console": { "state": "full", "keys": ["blueprints"] },
+      "admin": {
+        "state": "full"
+      },
+      "console": {
+        "state": "full",
+        "keys": [
+          "blueprints"
+        ]
+      },
       "writer": "shared",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "files": [
+        "app/Filament/Admin/Pages/Blueprints.php"
+      ],
+      "notes": "Shipped on `/admin` 2026-11-17 (§53) as `/admin/blueprints`. Not read-only, and `writer` stays `shared`, because the write is genuinely one service: the page calls `BlueprintInstaller` — the same writer behind the console's install route — rather than the route itself, so there is no loopback HTTP hop and no second install path to keep in step. Building this slice found **nothing to fix**, which is the opposite result from §47 (toolkit records), §49 (shortcuts) and §51 (security snapshots): the installer already resolved the existing assistant with `where('tenant_id', …)` and set the tenant on create, and `BlueprintCatalogue::installedMap()` was already estate-scoped, so a title collision is an estate collision and another estate's assistant neither blocks an install here nor renders as installed. That is recorded explicitly so the next reader does not go looking for the defect the neighbouring slices all had. Overwrite is a separate confirmed control and updates the same assistant in place; each install and reinstall writes its own record-level audit row because `AuditAdminRequests` excludes `/livewire/update`. Access requires `manage_options` in addition to non-viewer membership, matching the `can:manage_options` group around the console route — a panel write reachable by a member the API refuses would be a promise the runtime breaks. The catalogue itself is code-shipped reference data mirrored from the Pro toolkits by `bin/sync-blueprints.php` and guarded by its `--check` mode, identical on every estate; only the installed flags are estate-scoped. WordPress hides blueprints whose toolkit is disabled in `wp_mcp_ai_settings`; this runtime lists every mirrored toolkit, because there is no equivalent settings surface and hiding a blueprint nobody could enable would be worse than showing it."
     },
     {
       "id": "portability",
       "title": "Assistant export / import",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
-      "console": { "state": "full", "keys": ["portability"] },
+      "admin": {
+        "state": "full"
+      },
+      "console": {
+        "state": "full",
+        "keys": [
+          "portability"
+        ]
+      },
       "writer": "shared",
       "plan_gate": null,
-      "projection": null
+      "projection": null,
+      "files": [
+        "app/Filament/Admin/Pages/Portability.php"
+      ],
+      "notes": "Shipped on `/admin` 2026-11-17 (§54) as `/admin/portability`. `full`, not read-only, and `writer` stays `shared`, because both transports call one service: `App\\Services\\AssistantPortability`. The page calls it directly, the console's `POST /assistants/export|import` routes call it from a controller that now only parses and maps refusals. Building this slice found the worst tenancy defect of the run, in three independent paths: `export()` queried `Assistant` with no estate filter at all, so a `manage_options` user in one estate received **every** estate's assistants including system prompts and free-form `meta` (a bulk disclosure, not a scoping bug); `import()` resolved its slug-then-title conflict unscoped, so `mode=overwrite` could `fill()->save()` another estate's row; and `Assistant::create()` never set `tenant_id` (the model has no `creating` hook), so an import in estate B wrote into the column default, while the `is_default` reset ran `update()` across the whole table. Fixed by construction rather than by adding `where()` clauses one at a time: every read goes through an estate-scoped query and every write through `AssistantWriter`, which already owned estate assignment, per-estate slug uniqueness and per-estate default exclusivity — the controller's private `uniqueSlug()` copy is deleted, which also changes the duplicate suffix from `-copy` to `-2`, matching WordPress's `wp_insert_post()` behaviour. A bundle is a document, not authority: a `tenant_id` inside an entry is never read, so a pasted bundle cannot import into another estate. An `ids[]` entry that is unknown or belongs elsewhere is refused with 422 rather than silently dropped — an incomplete bundle is how a restore lands wrong — and the message says 'not in this estate' without distinguishing absent from foreign. On `/admin`: export renders the bundle in a textarea (visible, and nothing is stored server-side), import is preview-first with the write behind a confirm and disabled while 'Preview only' is ticked, each import writes a record-level audit row carrying counts and mode but never the bundle, and access requires `manage_options` in addition to non-viewer membership, matching the console's `can:manage_options` group. Export itself is not audited because it is a read; see §54's follow-ups."
     },
     {
       "id": "mcp-apps",
       "title": "MCP Apps",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "full" },
       "console": { "state": "full", "keys": ["mcpApps"] },
       "writer": "shared",
       "plan_gate": null,
-      "projection": null,
-      "notes": "The eight writable fields are whitelisted server-side; token and oauth_data are never written."
+      "projection": "Full on both presentations, and both replace the whole per-assistant list through McpAppsStore::replace(): the eight writable fields (label, server_url, connection_ref, auth_type, header_name, enabled, timeout, verify_ssl) are whitelisted server-side, the list is capped at 10, and `oauth_data` is never written. A token is accepted but sealed by CredentialStore, stored at `token_sealed`, and projected back only as a uniform mask — never a value, never a tail. A blank token AND a mask both mean `keep the stored one`, so a read → write round-trip cannot seal the mask as a credential. The token is carried across an update by `connection_ref`, or by `server_url` when the ref is blank: changing either is a different connection and does not carry it, which the panel states in the form. The panel's `assistantId` is a selector, re-resolved through `assistants.tenant_id` on every request — Assistant has no global tenant scope, so a tampered id resolves to null rather than another estate's assistant.",
+      "files": ["app/Filament/Admin/Pages/McpAppsPage.php"],
+      "notes": "The eight writable fields are whitelisted server-side; token and oauth_data are never written. Shipped on `/admin` 2026-11-17 (§43) as a FULL surface — the list is the unit of edit on both presentations, so a per-record CRUD would be a third shape. Two things the panel adds over the console's editor: a write-only token field (the console's `toWritableApp()` strips it, so a connection created there could never be given one) and the mask guard in McpAppsStore — `McpAppsTest::test_a_read_projection_cannot_be_saved_back_as_a_token` pins that a bulk read → write keeps the sealed token instead of replacing it with `••••••••`. Estate scope is `assistants.tenant_id`, checked on selection and again on save."
     },
     {
       "id": "teams",
@@ -214,24 +237,38 @@
       "title": "Security audit, monitor and training",
       "audience": "tenant-admin",
       "ops": { "state": "planned" },
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["security"] },
-      "writer": "shared",
+      "writer": "console",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Security snapshots are a dedicated store; the admin read-only view is a projection, never a scan at request time."
+      "projection": "A projection over the estate's saved settings snapshots: label, recorded-at, and the settings each snapshot captured, with every sensitive key masked at render as well as at write time. No posture scan, no header preview and no self-test run on page load; those are live checks the console performs on demand.",
+      "files": ["app/Filament/Admin/Pages/SecuritySnapshots.php"],
+      "notes": "The `/admin` half shipped 2026-11-17 (§51) as `/admin/security`; the `/ops` half stays planned and the live security-monitor chart is Wave 6 (canvas bundle, §7.10). Building it exposed a tenancy defect: `nvoos_security_snapshots` had no estate column while its payload is the estate's settings, so `GET /security/snapshots` listed every estate and `POST /security/restore` would copy another estate's configuration into the caller's settings — a cross-estate configuration disclosure and write. The table now carries `tenant_id` and every statement goes through `App\\Support\\Security\\SecuritySnapshotStore`. `writer` moved from `shared` to `console` because the panel has no write: creating and restoring snapshots remain console actions (§16's one-writer rule). The four WordPress pages behind this row (audit dashboard, monitor, training, supplier security) are not ported one-to-one: the audit log already lives at `/ops/audit-log`, the monitor chart is Wave 6, and training/supplier records have no store on this runtime. The snapshot row's button was dead until §53: `@js()` does not compile inside a `<x-filament::…>` attribute, so the attribute shipped verbatim and Livewire threw in the browser while every PHP test passed; it now uses a `{{ Js::from(...) }}` echo, and `AdminPanelBladeTest` bans the directive in panel views."
     },
     {
       "id": "platform-operations",
       "title": "Operations, diagnostics and cost",
       "audience": "operator",
-      "ops": { "state": "planned" },
+      "ops": { "state": "read-only" },
       "admin": null,
       "console": { "state": "read-only", "keys": ["operations", "diagnostics", "cost"] },
+      "writer": "none",
+      "plan_gate": null,
+      "projection": "Aggregates only. A probe returns a rendered result summary — status, one actionable sentence and label/value rows — never a raw provider payload. Credentials appear as \"configured\"/\"no credentials\"; there is no mask, no key and no URL with a query string, because the probe result type has no field for one.",
+      "files": ["app/Filament/Operator/Pages/DiagnosticsPage.php"],
+      "notes": "Shipped on `/ops` 2026-11-17 (§48) as `/ops/diagnostics`, closing the last WordPress screens this runtime did not have: Tools → Provider Test, MCP Server Diagnostic and REST Context Diagnostic, plus the free half of Test Assistant. Six probe surfaces were proposed (§7.8) with one renderer; four shipped — `provider`, `rest`, `mcp`, `assistant`. `test model`, `test profession` and `test team` are deliberately NOT built: the WordPress pages are chat UIs with a selector, and a panel copy would be a second chat surface whose only difference is which config it hydrates. The console owns chat, so those three stay unbuilt rather than faked. `writer` moved from `ops` to `none` for §31's reason: every probe re-runs on demand and nothing is persisted, so there is no write path to own."
+    },
+    {
+      "id": "measurement",
+      "title": "Measurement dashboard",
+      "audience": "operator",
+      "ops": { "state": "planned" },
+      "admin": null,
+      "console": null,
       "writer": "ops",
       "plan_gate": null,
-      "projection": "Aggregates only. Probe surfaces return a rendered result summary, not raw payloads or credentials.",
-      "notes": "Six probe surfaces share one renderer; they are operator-shaped but safe to expose read-only to a plan holder."
+      "projection": null,
+      "notes": "Recorded 2026-11-17 (149 §45) after the admin-inventory audit (§44) found it outside both counted trees: `includes/admin/measurement/` attaches a Measurement page to the settings dashboard (`wp-mcp-ai-dashboard`) and falls back to Tools when that menu is absent. It is a NEW surface, not a port of a probe: the WordPress page lists registered metrics (privacy tier, counter-metric pairing), verifiers (independence profile), reward functions (anti-gaming text), eval suites (case counts) and the most recent collector-buffer events; its admin-post handler clears the buffer, downloads a JSON export and resets a persistent budget envelope — so it has a writer, unlike a pure probe. That is product data, which is why it is not folded into `platform-operations` (runtime probes and cost aggregates). Planned rather than `absent` because metrics, evals and budgets are product features rather than WordPress idioms; the prerequisite is the data model (metric, eval-run and budget stores), not a renderer — the WordPress page is itself pre-PR-4 read-only."
     },
     {
       "id": "credentials.estate",
@@ -264,46 +301,52 @@
       "title": "Remote sites",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "subset" },
       "console": { "state": "full", "keys": ["remoteSites"] },
       "writer": "shared",
       "plan_gate": null,
-      "projection": "Estate-scoped since §27: every read and write goes through RemoteSiteStore::query(), which filters on `tenant_id` read from a resolver at query time. A connection id from another estate answers 404 on update, delete and test — the test route matters most, because it sends the row's sealed credentials to the URL the row names. Secrets are masked uniformly; credentialsFor() is the only opener and is runtime-only.",
-      "notes": "Credentials are masked uniformly; credentialsFor() is the only opener and is runtime-only. §27 added `tenant_id` to `nvoos_remote_sites`: before it the table had no tenant column and the store read and wrote it unscoped while the routes already resolved an estate, so any estate administrator could list, edit, delete and TEST every other estate's connections — a cross-tenant write, the same defect class as §19. Existing rows default to `default` because no signal can attribute them to another estate. The `/admin` page follows in a later slice."
+      "projection": "Estate-scoped since §27: every read and write goes through RemoteSiteStore::query(), which filters on `tenant_id` read from a resolver at query time. A connection id from another estate answers 404 on update, delete and test — the test route matters most, because it sends the row's sealed credentials to the URL the row names. Secrets are masked uniformly; credentialsFor() is the only opener and is runtime-only. On `/admin` the reduction is ACTIONS, not fields: list, test, enable/disable and delete are offered; create and edit are not, because the console's wizard owns authoring (it renders each type's field schema from RemoteSiteTypes and splits the flat payload server-side), and a second authoring form would be that wizard twice with a second place to keep the secret/non-secret split correct. The panel renders presence, never a credential — `has_credentials` only, not the mask — and shows the endpoint as host + path: query and fragment are dropped because a provider can put a secret there (§30's webhook_url rule). Access requires `manage_options` in addition to panel membership, matching the REST surface.",
+      "files": ["app/Filament/Admin/Pages/RemoteSitesPage.php"],
+      "notes": "Credentials are masked uniformly; credentialsFor() is the only opener and is runtime-only. §27 added `tenant_id` to `nvoos_remote_sites`: before it the table had no tenant column and the store read and wrote it unscoped while the routes already resolved an estate, so any estate administrator could list, edit, delete and TEST every other estate's connections — a cross-tenant write, the same defect class as §19. Existing rows default to `default` because no signal can attribute them to another estate. The `/admin` page shipped 2026-11-17 (§42) as a SUBSET: the store is the boundary (a foreign id is `null`, so a tampered armed state deletes nothing), the shared RemoteSiteVerifier is the Test action so the panel and the console cannot report differently about one endpoint, and test/enable/disable/delete each write their own audit row because Livewire traffic is excluded from the request-level audit."
     },
     {
       "id": "agent-skills",
       "title": "Skills, shortcuts and slash commands",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["skills", "shortcuts", "slashCommands"] },
       "writer": "console",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Read-only skill registry; the WordPress manager (install/replace/delete) is deliberately absent."
+      "projection": "Three read-only lists. Skills: name, description, licence and compatibility from the configured skills directory, plus that directory so an empty list is explainable. Shortcuts: the normalised label/payload/tool/description/category/icon for one assistant resolved inside the current estate. Slash commands: name, description, usage, parameters and category for the commands the signed-in account may run, filtered by the executor's own capability check. No install, execute, clear or delete control; all four are writes and the console owns them.",
+      "files": ["app/Filament/Admin/Pages/AgentSkills.php"],
+      "notes": "Shipped on `/admin` 2026-11-17 (§49). The WordPress manager (install from raw SKILL.md or a remote catalogue, replace, delete) stays absent, and the WP slash-command dashboard's execute/execute-workflow/clear-history actions are not ported: `writer` is `console`, and a panel control would create a second command path. Execution history is also not rendered — `nvoos_slash_command_audit` has no `tenant_id`, so a tenant-scoped page could only show it by leaking across estates or inventing a users-join; that is a §47-class schema gap, recorded rather than papered over. Building the slice exposed the same class of defect in `ToolShortcutsController`: it resolved the assistant with a bare `find()` and the default with a bare `is_default` lookup, so an id from another estate returned that estate's shortcut configuration and a foreign default could win the fallback. Both now resolve through `App\\Services\\AssistantShortcutCatalogue`, which the page also uses."
     },
     {
       "id": "okf",
       "title": "OKF knowledge bundles",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
-      "console": { "state": "full", "keys": ["okf"] },
-      "writer": "console",
+      "admin": { "state": "read-only" },
+      "console": { "state": "read-only", "keys": ["okf"] },
+      "writer": "none",
       "plan_gate": null,
-      "projection": null
+      "projection": "Read-only bundle and concept views over the deployment's knowledge directory. Bundles: name, concept/stale/deprecated counts, types, trust-tier distribution, broken-internal-link count. Concepts: id, title, type, status, trust tier, staleness and tags for one bundle, filtered server-side and capped with the pre-cap total printed. Concept detail: only the shared frontmatter allowlist plus body and resolved internal links. No bundle create, replace, delete or write control.",
+      "files": ["app/Filament/Admin/Pages/OkfKnowledge.php"],
+      "notes": "Shipped on `/admin` 2026-11-17 (§50). The row named `okf-bundle-manager-admin-page` — bundle CRUD — but only the read half is portable: `WP_MCP_AI_OKF_Writer` lives in the plugin and this runtime has no OKF writer, so `writer` moved from `console` to `none` and the console state from `full` to `read-only` (its five routes are all GETs). Knowledge is deployment-global, not estate data: one directory at `config('oos.okf.path')` serves every estate, which the page states rather than implying the list is the tenant's own. `/okf/skills` stays honest-empty because there is no grant store; the page renders no grant section that could only be empty. Building it moved the frontmatter allowlist to `OkfCatalogue::FRONTMATTER_ALLOWLIST` + `allowlisted()` so the controller and the page cannot drift. The bundle and concept row buttons were dead until §53: `@js()` does not compile inside a `<x-filament::…>` attribute (the component tag compiler makes the value a string literal) and breaks a single-quoted attribute on a plain element, so Livewire threw `Missing closing parenthesis` in the browser while every PHP test passed. Both now use `{{ Js::from(...) }}` echoes and `AdminPanelBladeTest` bans the directive in panel views."
     },
     {
       "id": "paper-store",
       "title": "Paper Store and record schemas",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["paperStore", "recordsSchema"] },
-      "writer": "shared",
+      "writer": "console",
       "plan_gate": null,
-      "projection": null
+      "projection": "Read-only browse over the deployment's Paper Store: collection names with record counts, one collection's records filtered by status and tag (capped, with the pre-cap total printed), a cross-collection search over title and description, and one record's description, body, tags and meta. Plus the record-schema catalogue `GET /pro/records/schema` serves. No create, edit or delete control.",
+      "files": ["app/Filament/Admin/Pages/PaperStore.php"],
+      "notes": "Shipped on `/admin` 2026-11-17 (§52). **Deliberately NOT estate-scoped, and that is a decision rather than an omission.** Unlike §47 (toolkit records), §49 (shortcuts) and §51 (security snapshots), the Paper Store holds curated shared knowledge — research records, prompts, workflows, brand kits — and has no owner column on either runtime; the contract's promise is that 'a record written by WordPress is readable here and vice versa'. Adding `tenant_id` would break that cross-runtime property and split a shared library. The page states the sharing instead of implying the list is the tenant's own. The panel is read-only because the console owns CRUD and the row is slated for the Wave 3 manifest engine, which will render records from a schema rather than from a second hand-written form; `writer` moved from `shared` to `console` to match. Building it moved the four-entity records catalogue from `RecordsController` to `App\\Support\\RecordsSchema` so the API and the page cannot advertise different entities. The page's search loop deliberately mirrors the controller rather than extracting a service: that glue is what the manifest engine replaces. Every row button on this page was dead until §53 — both the `<x-filament::…>` attributes (`@js()` never compiles there) and the plain `<button>` in search results (single-quoted attribute colliding with `Js::from()`'s single quotes). They now use `{{ Js::from(...) }}` echoes in double-quoted attributes; `AdminPanelBladeTest` fails the build on either variant."
     },
     {
       "id": "dashboards",
@@ -412,7 +455,7 @@
       "plan_gate": null,
       "projection": null,
       "files": ["app/Filament/Operator/Pages/QueueMonitor.php"],
-      "notes": "Laravel failed_jobs, distinct from the console's nvoos_jobs DLQ: different producers, different questions."
+      "notes": "Laravel failed_jobs, distinct from the console's nvoos_jobs DLQ: different producers, different questions. The WordPress Job Queue page (`class-wp-mcp-ai-async-job-queue.php`, a submenu under `wp-mcp-ai`) lists *pending* async jobs; this surface covers failed jobs only (retry/forget/flush), and `/diagnostics/overview` reports the counts. A pending-job listing is not exposed — recorded by the admin-inventory audit (149 §44) rather than left implicit."
     },
     {
       "id": "scheduler",

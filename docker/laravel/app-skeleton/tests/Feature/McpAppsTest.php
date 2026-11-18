@@ -75,6 +75,26 @@ final class McpAppsTest extends TestCase
             ->assertJsonPath('apps.0.auth_type', 'bearer');
     }
 
+    public function test_null_boolean_fields_fall_back_to_defaults(): void
+    {
+        $id = $this->assistant();
+
+        // A partial payload (a panel row that never touched a toggle) must not
+        // read as "false": null means "not supplied".
+        $this->putJson("/api/v1/mcp-apps/{$id}", array(
+            'apps' => array(array(
+                'server_url' => 'https://mcp.example.com/mcp',
+                'enabled' => null,
+                'verify_ssl' => null,
+                'timeout' => null,
+            )),
+        ))
+            ->assertOk()
+            ->assertJsonPath('apps.0.enabled', true)
+            ->assertJsonPath('apps.0.verify_ssl', true)
+            ->assertJsonPath('apps.0.timeout', 30);
+    }
+
     public function test_a_replace_removes_the_previous_list(): void
     {
         $id = $this->assistant();
@@ -154,6 +174,33 @@ final class McpAppsTest extends TestCase
         $this->assertSame(
             $sealed,
             Assistant::find($id)->meta['_wp_mcp_ai_mcp_apps'][0]['token_sealed']
+        );
+    }
+
+    public function test_a_read_projection_cannot_be_saved_back_as_a_token(): void
+    {
+        $id = $this->assistant();
+        $url = 'https://mcp.example.com/mcp';
+
+        $this->putJson("/api/v1/mcp-apps/{$id}", array(
+            'apps' => array(array('server_url' => $url, 'token' => 'first-token')),
+        ))->assertOk();
+
+        $sealed = Assistant::find($id)->meta['_wp_mcp_ai_mcp_apps'][0]['token_sealed'];
+
+        // A bulk editor that reads the list and writes it straight back sends
+        // the mask. Treating it as a value would seal `••••••••` as the token
+        // and silently replace a working credential.
+        $read = $this->getJson("/api/v1/mcp-apps/{$id}")->assertOk()->json('apps');
+
+        $this->assertSame("\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}", $read[0]['token']);
+
+        $this->putJson("/api/v1/mcp-apps/{$id}", array('apps' => $read))->assertOk();
+
+        $this->assertSame(
+            $sealed,
+            Assistant::find($id)->meta['_wp_mcp_ai_mcp_apps'][0]['token_sealed'],
+            'A round-tripped mask must keep the sealed token.'
         );
     }
 

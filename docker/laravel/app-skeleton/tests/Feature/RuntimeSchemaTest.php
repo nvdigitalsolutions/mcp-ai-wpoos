@@ -64,14 +64,40 @@ class RuntimeSchemaTest extends TestCase
         $this->assertTrue(Schema::hasColumns('nvoos_schedule_runs', ['schedule_id', 'status', 'duration']));
         $this->assertTrue(Schema::hasColumns('nvoos_approvals', ['status', 'tool', 'expires_at']));
         $this->assertTrue(Schema::hasColumns('nvoos_posts', ['title', 'slug', 'meta', 'deleted_at']));
-        $this->assertTrue(Schema::hasColumns('nvoos_toolkit_records', ['toolkit', 'entity', 'external_id', 'data']));
+        $this->assertTrue(Schema::hasColumns('nvoos_toolkit_records', ['tenant_id', 'toolkit', 'entity', 'external_id', 'data']));
     }
 
     public function test_the_toolkit_record_identity_is_unique(): void
     {
-        $indexes = collect(Schema::getIndexes('nvoos_toolkit_records'))
-            ->firstWhere('name', 'nvoos_toolkit_records_toolkit_entity_external_id_unique');
+        // Estate-scoped since 149 §47: the old global key refused two estates the
+        // same business key, so the test names the composite it must now be. If
+        // someone re-adds `tenant_id` without moving this key, inserts collide.
+        $indexes = collect(Schema::getIndexes('nvoos_toolkit_records'));
 
-        $this->assertNotNull($indexes, 'The toolkit/entity/external_id unique index is missing.');
+        $this->assertNotNull(
+            $indexes->firstWhere('name', 'nvoos_toolkit_records_tenant_toolkit_entity_external_id_unique'),
+            'The tenant/toolkit/entity/external_id unique index is missing.'
+        );
+
+        $this->assertNull(
+            $indexes->firstWhere('name', 'nvoos_toolkit_records_toolkit_entity_external_id_unique'),
+            'The unscoped toolkit/entity/external_id unique index still exists; two estates cannot share an id.'
+        );
+    }
+
+    public function test_security_snapshots_are_estate_scoped(): void
+    {
+        // §51: the payload is the estate's settings blob, so the column and the
+        // list index are the difference between a history and a disclosure.
+        $this->assertTrue(
+            Schema::hasColumns('nvoos_security_snapshots', ['tenant_id', 'payload', 'created_at'])
+        );
+
+        $indexes = collect(Schema::getIndexes('nvoos_security_snapshots'));
+
+        $this->assertNotNull(
+            $indexes->firstWhere('name', 'nvoos_security_snapshots_tenant_created_index'),
+            'The tenant/created_at index is missing; the snapshot list is not estate-scoped.'
+        );
     }
 }

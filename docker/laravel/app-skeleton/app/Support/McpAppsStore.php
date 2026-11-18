@@ -20,6 +20,11 @@ use InvalidArgumentException;
  * contract. Identity for that carry-over is `connection_ref` when set, else
  * `server_url`.
  *
+ * The mask is also treated as blank. A caller that reads the list and writes it
+ * back is the normal shape for a bulk editor — the panel does exactly that — and
+ * without this guard the read projection's `••••••••` would be sealed as the
+ * new credential, silently replacing a working token with a mask.
+ *
  * `oauth_data` stays unsupported: it is a multi-field blob with its own
  * refresh semantics, and the console never sends it.
  */
@@ -86,6 +91,13 @@ final class McpAppsStore
             $normalised = $this->normalise($app, $index);
 
             $token = is_array($app) && is_string($app['token'] ?? null) ? trim($app['token']) : '';
+
+            // A read projection carries the mask, not a value. Treating it as
+            // absent keeps a read → write round-trip from sealing the mask as
+            // the credential.
+            if (CredentialStore::MASK === $token) {
+                $token = '';
+            }
 
             // A supplied token is sealed; an absent one keeps whatever this
             // connection already had. Never fall back to another app's token.
@@ -185,9 +197,12 @@ final class McpAppsStore
             'connection_ref' => is_string($app['connection_ref'] ?? null) ? $app['connection_ref'] : '',
             'auth_type' => in_array($authType, self::AUTH_TYPES, true) ? $authType : 'none',
             'header_name' => is_string($app['header_name'] ?? null) ? $app['header_name'] : '',
-            'enabled' => ! array_key_exists('enabled', $app) || (bool) $app['enabled'],
+            'enabled' => (bool) ($app['enabled'] ?? true),
             'timeout' => $this->timeout($app['timeout'] ?? 30),
-            'verify_ssl' => ! array_key_exists('verify_ssl', $app) || (bool) $app['verify_ssl'],
+            // `null` means "not supplied", not "false": a partial payload (a
+            // panel row that never touched the toggle) must get the default
+            // rather than silently disabling TLS verification.
+            'verify_ssl' => (bool) ($app['verify_ssl'] ?? true),
         );
     }
 
