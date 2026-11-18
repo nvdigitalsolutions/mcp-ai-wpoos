@@ -727,9 +727,9 @@ class WP_MCP_AI_Pro_Remote_Sites_REST_Controller extends WP_REST_Controller {
 						'required' => true,
 					),
 					'client_secret' => array(
-						'label'    => __( 'Client Secret', 'mcp-ai-wpoos-pro' ),
+						'label'    => __( 'OAuth Access Token (optional)', 'mcp-ai-wpoos-pro' ),
 						'secret'   => true,
-						'required' => true,
+						'required' => false,
 					),
 					'refresh_token' => array(
 						'label'  => __( 'Refresh Token', 'mcp-ai-wpoos-pro' ),

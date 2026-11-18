@@ -21,6 +21,13 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 	require_once __DIR__ . '/class-wp-mcp-ai-quickbooks-oauth-handler.php';
 }
 
+// Load the clean-path REST callback (Intuit rejects redirect URIs with query parameters).
+if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Controller' ) ) {
+	require_once __DIR__ . '/class-wp-mcp-ai-quickbooks-oauth-controller.php';
+}
+
+WP_MCP_AI_QuickBooks_OAuth_Controller::init();
+
 // Register the QuickBooks OAuth handler with the container.
 add_action(
 	'wp_mcp_ai_register_services',

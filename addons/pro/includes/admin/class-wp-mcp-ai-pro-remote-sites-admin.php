@@ -3496,12 +3496,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="quickbooks-only-field" style="display: none;">
 					<th scope="row">
-						<label for="quickbooks_client_secret"><?php esc_html_e( 'Client Secret / OAuth Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+						<label for="quickbooks_client_secret"><?php esc_html_e( 'OAuth Access Token (optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<textarea name="quickbooks_client_secret" id="quickbooks_client_secret" class="large-text" rows="3" autocomplete="off"></textarea>
+						<p class="description"><?php esc_html_e( 'Optional. Paste an Intuit OAuth 2.0 access token (starts "eyJ…", no "Bearer " prefix). Access tokens expire after about an hour. Leave blank to use the OAuth connection in Settings → Integrations → QuickBooks, which refreshes tokens automatically.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret/token. For OAuth, paste the complete token here.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -3515,6 +3516,103 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description"><?php esc_html_e( 'The QuickBooks company/realm ID.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
+
+				<?php if ( class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) : ?>
+					<?php
+					$qb_connected      = WP_MCP_AI_QuickBooks_OAuth_Handler::is_connected();
+					$qb_redirect_uri   = WP_MCP_AI_QuickBooks_OAuth_Handler::get_quickbooks_oauth_redirect_uri();
+					$qb_clean_redirect = WP_MCP_AI_QuickBooks_OAuth_Handler::has_clean_redirect_uri();
+					$qb_settings       = WP_MCP_AI_Admin_Settings::get_settings();
+					$qb_has_app        = ! empty( $qb_settings['quickbooks_client_id'] ) && ! empty( $qb_settings['quickbooks_client_secret'] );
+					$qb_external_tools = admin_url( 'admin.php?page=wp-mcp-ai-gmail-crawl4ai' );
+					$qb_return_url     = $is_edit ? admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( (string) $connection['id'] ) ) : '';
+					$qb_start_url      = wp_nonce_url(
+						add_query_arg(
+							array(
+								'action' => 'wp_mcp_ai_quickbooks_oauth_start',
+								'return' => rawurlencode( $qb_return_url ),
+							),
+							admin_url( 'admin-post.php' )
+						),
+						'wp_mcp_ai_quickbooks_oauth_start'
+					);
+					$qb_disconnect_url = wp_nonce_url(
+						add_query_arg(
+							array(
+								'action' => 'wp_mcp_ai_quickbooks_disconnect',
+								'return' => rawurlencode( $qb_return_url ),
+							),
+							admin_url( 'admin-post.php' )
+						),
+						'wp_mcp_ai_quickbooks_disconnect'
+					);
+					?>
+					<tr class="quickbooks-only-field" style="display: none;">
+						<th scope="row"><?php esc_html_e( 'QuickBooks OAuth', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<?php if ( $qb_connected ) : ?>
+								<p>
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;" aria-hidden="true"></span>
+									<strong><?php esc_html_e( 'Connected to QuickBooks.', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<?php if ( ! empty( $qb_settings['quickbooks_company_id'] ) ) : ?>
+										<?php
+										printf(
+											/* translators: %s: QuickBooks company ID. */
+											esc_html__( 'Company: %s', 'mcp-ai-wpoos-pro' ),
+											'<code>' . esc_html( (string) $qb_settings['quickbooks_company_id'] ) . '</code>'
+										);
+										?>
+									<?php endif; ?>
+								</p>
+								<p class="description"><?php esc_html_e( 'Access tokens refresh automatically (Intuit tokens live about an hour; refresh tokens rotate and the newest one is always stored).', 'mcp-ai-wpoos-pro' ); ?></p>
+							<?php else : ?>
+								<p>
+									<span class="dashicons dashicons-warning" style="color: #dba617;" aria-hidden="true"></span>
+									<strong><?php esc_html_e( 'Not connected.', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<?php esc_html_e( 'Connect the company to mint and refresh tokens automatically.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
+
+							<p class="description">
+								<?php esc_html_e( 'Register this exact Redirect URI in your Intuit app (Settings - Redirect URIs). Intuit rejects URIs that contain query parameters, so do not append anything to it.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p>
+								<input type="text" readonly class="large-text code" value="<?php echo esc_attr( $qb_redirect_uri ); ?>" onclick="this.select();" aria-label="<?php esc_attr_e( 'QuickBooks OAuth redirect URI', 'mcp-ai-wpoos-pro' ); ?>">
+							</p>
+
+							<?php if ( ! $qb_clean_redirect ) : ?>
+								<p><strong><?php esc_html_e( 'Pretty permalinks are required.', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'This site returns a ?rest_route= URL, which Intuit rejects. Set Settings - Permalinks to any structure except Plain before connecting.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<?php endif; ?>
+
+							<?php if ( ! $qb_has_app ) : ?>
+								<p class="description">
+									<?php
+									echo wp_kses_post(
+										sprintf(
+											/* translators: %s: External Tools page URL. */
+											__( 'Save the Intuit app Client ID and Client Secret in <a href="%s">NV oOS - External Tools</a> first; the OAuth flow reads them from there.', 'mcp-ai-wpoos-pro' ),
+											esc_url( $qb_external_tools )
+										)
+									);
+									?>
+								</p>
+							<?php endif; ?>
+
+							<?php if ( ! $is_edit ) : ?>
+								<p class="description"><?php esc_html_e( 'Save this connection first, then connect the QuickBooks company.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<?php else : ?>
+								<p>
+									<a class="button button-primary" href="<?php echo esc_url( $qb_start_url ); ?>" <?php disabled( ! $qb_clean_redirect || ! $qb_has_app ); ?>>
+										<?php echo $qb_connected ? esc_html__( 'Reconnect QuickBooks', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Connect QuickBooks', 'mcp-ai-wpoos-pro' ); ?>
+									</a>
+									<?php if ( $qb_connected ) : ?>
+										<a class="button" href="<?php echo esc_url( $qb_disconnect_url ); ?>"><?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos-pro' ); ?></a>
+									<?php endif; ?>
+								</p>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endif; ?>
 
 				<!-- Type-specific fields for QuickBooks Online (MCP) -->
 				<tr class="quickbooks_mcp-only-field" style="display: none;">

@@ -114,7 +114,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 
 		$required_capability = apply_filters( 'wp_mcp_ai_quickbooks_required_capability', 'manage_options', $context );
 
-		if ( ! $user_id || ! user_can( $user_id, $required_capability ) ) {
+		if ( ! $user_id || ! user_can( $user_id, $required_capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_quickbooks_required_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_quickbooks_forbidden', __( 'You do not have permission to access QuickBooks reports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -125,7 +125,9 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		// Get connection_id if provided.
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
 
-		// Try to get credentials from connection first, then fall back to settings.
+		$connection     = array();
+		$allow_settings = true;
+
 		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
@@ -166,14 +168,11 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 				);
 			}
 
-			// Get credentials from connection.
-			$company_id = ! empty( $connection['company_id'] ) ? trim( (string) $connection['company_id'] ) : '';
-			$api_key    = ! empty( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
-
-			// QuickBooks uses OAuth tokens, check for client_secret as the token.
-			if ( ! empty( $connection['client_secret'] ) ) {
-				$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
-			}
+			// A token pasted on the connection always wins. Site-wide credentials
+			// are only a fallback, and only when the assistant may use the
+			// settings row.
+			$allowed_ids    = $this->get_allowed_connection_ids( $context );
+			$allow_settings = ( null === $allowed_ids || in_array( 'settings', $allowed_ids, true ) );
 		} else {
 			// A restricted assistant may only fall back to the site-wide settings
 			// when the assistant editor granted the "settings" row.
@@ -185,30 +184,31 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 					array( 'status' => 403 )
 				);
 			}
-
-			// Fallback to settings (old approach - for backward compatibility).
-			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
-			$company_id = isset( $settings['quickbooks_company_id'] ) ? trim( (string) $settings['quickbooks_company_id'] ) : '';
-			$api_key    = isset( $settings['quickbooks_api_key'] ) ? trim( (string) $settings['quickbooks_api_key'] ) : '';
-
-			// Show deprecation notice in logs if using settings.
-			if ( '' !== $company_id && '' !== $api_key ) {
-				error_log( 'WP MCP AI: Settings-based QuickBooks configuration is deprecated. Please migrate to Remote Sites connections.' );
-			}
 		}
 
 		$report_name = isset( $arguments['report'] ) ? trim( sanitize_text_field( $arguments['report'] ) ) : '';
 
-		if ( '' === $company_id || '' === $api_key ) {
-			return new WP_Error(
-				'wp_mcp_ai_quickbooks_missing_credentials',
-				__( 'QuickBooks credentials are not configured. Add the company ID and API key in the NV oOS settings or use a Remote Sites connection.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
 		if ( '' === $report_name ) {
 			return new WP_Error( 'wp_mcp_ai_quickbooks_missing_report', __( 'A QuickBooks report name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_quickbooks_manager_unavailable',
+				__( 'The Remote Sites connection manager is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Resolve the realm and bearer token. Connection token first, then the
+		// auto-refreshing OAuth grant, then the legacy site-wide bearer token.
+		$credentials = WP_MCP_AI_Pro_Remote_Site_Manager::resolve_quickbooks_credentials( $connection, $allow_settings );
+
+		if ( is_wp_error( $credentials ) ) {
+			return $credentials;
+		}
+
+		$company_id = $credentials['company_id'];
+		$api_key    = $credentials['token'];
 
 		$query_args = array();
 
@@ -260,16 +260,25 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
 
-		$response = wp_remote_get(
-			$endpoint,
-			array(
-				'timeout' => $timeout,
-				'headers' => array(
-					'Accept'        => 'application/json',
-					'Authorization' => 'Bearer ' . $api_key,
-				),
-			)
-		);
+		$response = $this->request_report( $endpoint, $api_key, $timeout );
+
+		// Intuit access tokens are valid for 3,600 s. An OAuth-managed grant is
+		// refreshed proactively before expiry, but a token can still be
+		// revoked or rotated early. Retry exactly once with a forced refresh
+		// before asking the operator to reconnect.
+		if (
+			! is_wp_error( $response )
+			&& 401 === (int) wp_remote_retrieve_response_code( $response )
+			&& 'oauth' === $credentials['source']
+			&& class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' )
+		) {
+			$refreshed = WP_MCP_AI_QuickBooks_OAuth_Handler::force_refresh_access_token();
+
+			if ( ! is_wp_error( $refreshed ) && '' !== (string) $refreshed ) {
+				$api_key  = (string) $refreshed;
+				$response = $this->request_report( $endpoint, $api_key, $timeout );
+			}
+		}
 
 		if ( is_wp_error( $response ) ) {
 			WP_MCP_AI_Admin_Settings::log( 'QuickBooks report request failed.', array( 'error' => $response->get_error_message() ) );
@@ -282,6 +291,34 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 401 === $status_code ) {
+			WP_MCP_AI_Admin_Settings::log( 'QuickBooks rejected the access token.', array( 'source' => $credentials['source'] ) );
+
+			return new WP_Error(
+				'wp_mcp_ai_quickbooks_unauthorized',
+				__( 'QuickBooks rejected the access token (HTTP 401). Access tokens expire after about an hour — reconnect through Settings → Integrations → QuickBooks (tokens refresh automatically) or paste a fresh token on the connection.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'status' => 401,
+					'source' => $credentials['source'],
+					'body'   => wp_remote_retrieve_body( $response ),
+				)
+			);
+		}
+
+		if ( 403 === $status_code ) {
+			WP_MCP_AI_Admin_Settings::log( 'QuickBooks denied access to the report.', array( 'status' => $status_code ) );
+
+			return new WP_Error(
+				'wp_mcp_ai_quickbooks_forbidden',
+				__( 'QuickBooks denied access to this report (HTTP 403). The token is valid but is not authorised for this company or scope — check that the app requests the com.intuit.quickbooks.accounting scope and that the token was minted for this realm.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'status' => 403,
+					'source' => $credentials['source'],
+					'body'   => wp_remote_retrieve_body( $response ),
+				)
+			);
+		}
 
 		if ( 200 !== $status_code ) {
 			WP_MCP_AI_Admin_Settings::log( 'QuickBooks report returned unexpected status.', array( 'status' => $status_code ) );
@@ -321,12 +358,36 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		}
 
 		return array(
-			'report'       => $report_name,
-			'company_id'   => $company_id,
-			'parameters'   => $query_args,
-			'raw_response' => $this->sanitize_report_payload( $decoded ),
-			'requested_at' => current_time( 'mysql' ),
-			'http_status'  => $status_code,
+			'report'            => $report_name,
+			'company_id'        => $company_id,
+			'credential_source' => $credentials['source'],
+			'parameters'        => $query_args,
+			'raw_response'      => $this->sanitize_report_payload( $decoded ),
+			'requested_at'      => current_time( 'mysql' ),
+			'http_status'       => $status_code,
+		);
+	}
+
+	/**
+	 * Issue one authenticated QuickBooks reports request.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @param string $endpoint Full reports endpoint URL.
+	 * @param string $token    Bearer access token.
+	 * @param int    $timeout  Request timeout in seconds.
+	 * @return array|WP_Error HTTP response array or transport error.
+	 */
+	private function request_report( $endpoint, $token, $timeout ) {
+		return wp_remote_get(
+			$endpoint,
+			array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Accept'        => 'application/json',
+					'Authorization' => 'Bearer ' . $token,
+				),
+			)
 		);
 	}
 
