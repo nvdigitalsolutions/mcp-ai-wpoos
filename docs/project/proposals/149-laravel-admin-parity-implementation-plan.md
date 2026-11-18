@@ -6749,3 +6749,124 @@ shared test rather than by PSR-12.
    rather than to WordPress itself.
 3. **`cloudflare_base_url` has no writer.** Harmless today; adding a field or
    removing the entry is the follow-up.
+
+## 66. Security tab — scope review and section split (2026-11-18)
+
+§64 reviewed the provider tab and left `security` (77 raw / 74 ported), `tools`
+and `orchestration` as follow-up 1. This is the security tab: **29 of its 74
+ported fields move to operator scope**, and the dense sections split by concern.
+Tenant scope goes from 580 to **551**; operator from 5 to **34**.
+
+### 66.1 The rule, and one fact about this runtime
+
+§64.1's rule applies unchanged: **local / self-hosted endpoints, their bind
+interfaces, and the keys that authenticate to them are operator; everything an
+estate can meaningfully choose for itself stays tenant.**
+
+What makes this tab different is that, on Laravel, the security posture is
+**derived from deployment configuration rather than from these settings**.
+`SecurityController` reads `APP_DEBUG`, `session.secure`,
+`oos.security.hsts_max_age`, `oos.security.csp_frame_ancestors`,
+`cors.allowed_origins` and PHP's `post_max_size`; the route throttles are bound
+in `AppServiceProvider`. Most ported fields therefore do not change the runtime
+when an estate edits them — they change only the value the estate reports.
+
+That is the case in which operator scope is the honest answer rather than scope
+theatre: the value is deployment-owned, and an estate administrator must not be
+able to assert a posture the deployment does not have.
+
+### 66.2 What moved to operator (29)
+
+| Group | Fields |
+|---|---|
+| Infrastructure, root key, SSRF, resource limits | `enable_root_security_key`, `root_security_key`, `enable_loopback_ssl_bypass`, `enable_loopback_private_network_requests`, `mcp_app_allowed_hosts`, `max_sse_connections_per_user`, `max_request_body_size_kb`, `max_json_depth` |
+| Transport, headers, CORS, output hardening | `require_https`, `enable_security_headers`, `enable_hsts`, `hsts_max_age`, `csp_frame_ancestors`, `cors_allow_origin`, `cors_allowed_origins`, `api_error_verbosity`, `strip_asset_versions` |
+| Throttling | `enable_rate_limiting`, `rate_limit_requests`, `rate_limit_window`, `rate_limit_by`, `enable_auth_rate_limiting`, `auth_rate_limit_threshold`, `auth_rate_limit_window`, `enable_oauth_token_rate_limit` |
+| Audit and compliance | `enable_security_audit_log`, `log_successful_auth`, `log_file_access`, `audit_log_retention_days` |
+
+Two deserve a sentence each:
+
+- **`root_security_key`** is a deployment credential for sensitive operations. It
+  is write-only on `/ops`, refused on `/admin`, and never returned in plaintext.
+- **`mcp_app_allowed_hosts`** is the SSRF allowlist for remote MCP servers. It is
+  the same boundary as `ollama_endpoint`: the address the server fetches is
+  infrastructure, not an estate preference.
+
+### 66.3 What stayed tenant (45)
+
+| Group | Fields | Why |
+|---|---|---|
+| Authentication and access | `require_authentication_all`, `allow_guest_access`, `bypass_auth_for_logged_in`, `enable_2fa_requirement`, `minimum_capability`, `guest_token_ttl_hours`, `enable_a2a_jwt_validation`, `require_capability_on_delegate` | Who may reach this estate's API, with which capability |
+| Endpoint protection | `require_auth_chat_endpoints`, `require_auth_tool_execution`, `mcp_require_assistant_scope`, `require_auth_assistant_management`, `require_auth_transcripts`, `require_auth_file_operations` | Which of this estate's surfaces require authentication |
+| Files and media | `protect_media_urls`, `protect_attachment_pages`, `allow_public_thumbnails`, `protected_file_extensions` | The estate's own content-protection policy |
+| Network access | `enable_ip_whitelist`, `ip_whitelist`, `enable_ip_blacklist`, `ip_blacklist`, `tool_rate_limit_max`, `tool_rate_limit_window`, `tool_rate_limit_exempt_tokens` | The estate's inbound IP policy and tool-call budget |
+| AI safety | `enable_prompt_injection_detector`, `prompt_injection_sensitivity`, `prompt_injection_mode`, `enable_pii_filter`, `pii_filter_side`, `pii_filter_mode`, `enable_sandbox_mode` | Detector and redaction behaviour for this estate's chats |
+| Approval and budgets | `enable_hitl_for_write_tools`, `hitl_write_tool_threshold`, `enable_ai_cost_tracking`, `ai_daily_budget_usd`, `ai_monthly_budget_usd` | This estate's write-tool approval threshold and spend |
+| Transparency | `enable_ai_disclosure`, `ai_disclosure_message`, `ai_disclosure_position`, `enable_consent_modal`, `consent_message`, `enable_transparency_headers`, `enable_generation_logging`, `generation_log_retention_days` | The estate's disclosure and consent copy |
+
+The IP lists are application policy rather than a bind interface, and the tool
+limits govern the estate's own agents; both stay tenant. The audit writer and
+retention are platform-wide, which is why the four audit fields went the other
+way.
+
+### 66.4 The split (5 → 11 sections)
+
+| Original | New sections | Fields |
+|---|---|---|
+| `security__access` (22) | `security__access` (8), `security__endpoints` (6), `security__media` (4), plus 4 into `security__infrastructure` | 22 |
+| `security__network` (28) | `security__network` (7), `security__throttling` (8), `security__transport` (9), plus 4 into `security__infrastructure` | 28 |
+| `security__ai_safety` (12) | `security__ai_safety` (7), `security__ai_governance` (5) | 12 |
+| `security__transparency` (8) | unchanged | 8 |
+| `security__audit` (4) | unchanged | 4 |
+
+`security__infrastructure` draws the root/loopback pair from `access` and the
+MCP-host/SSE/body/JSON limits from `network`. The largest section is now **9**
+controls, down from 28; no section mixes operator infrastructure with estate
+policy.
+
+### 66.5 Gates
+
+Five assertions in `SettingsCatalogueTest`:
+
+- **completeness** — every security field is listed as operator or tenant.
+  Deliberately an equality, not the file's usual floor: an unclassified field
+  would keep the generator's default `tenant`, which is how an estate gains a
+  control the deployment should own.
+- **projection** — the 29 operator keys are on `/ops`, still render on `/admin`
+  (disabled), and are absent from `writableFor('admin')`; the 45 tenant keys are
+  writable on `/admin` and absent from `/ops`.
+- **sections** — the 11 sections exist with their reviewed sizes, none exceeds 9,
+  and none mixes the two scopes.
+- **behaviour** — a submitted `root_security_key` is ignored on `/admin` while
+  the rest of the payload applies, and the store stays empty.
+- **secrets** — the same key is writable on `/ops` and returned masked, never in
+  plaintext.
+- **render** — `/admin/default/settings` shows "Root Security Key" under the hint,
+  while `/ops/settings` has the field and does not have the estate's
+  `require_authentication_all`.
+
+### 66.6 Validation
+
+| Run | Result |
+|---|---|
+| `SettingsCatalogueTest` | **22 tests / 9164 assertions, 0 failures** |
+| Settings cluster (8 classes) | **107 tests / 10913 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`, changed tests) | **0 errors** |
+| `php bin/check-endpoint-wiring.php` | **52 checks, 0 failures** (unaffected) |
+| Full app suite | **1306 tests / 17822 assertions, 0 failures** (one-off container, this worktree, SQLite — the §65.5 method) |
+
+### 66.7 Still open
+
+1. **`/ops` now renders 29 security controls** (34 operator fields in total with
+   §64's five). The panel has grown and has not had a visual pass; §64.6 item 2
+   recorded the same caveat for the provider fields.
+2. **Most of these fields are not consulted by the Laravel runtime.** They are
+   parity surface, and the posture page derives its answers from config. Wiring
+   them — or marking the WordPress-only ones as such — is a separate decision;
+   operator scope at least stops an estate from asserting a posture it does not
+   control.
+3. **`tools` (141 ported / 171 raw) and `orchestration` (81 / 99) remain.** The
+   RabbitMQ block in `orchestration` is unambiguously operator; the rest needs
+   the same pass.
+4. **The catalogue generator** is still uncommitted (§65.6), and the scope overlay
+   this section creates has to be preserved by it.

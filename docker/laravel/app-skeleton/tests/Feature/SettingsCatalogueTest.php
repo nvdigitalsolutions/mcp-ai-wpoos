@@ -20,10 +20,113 @@ use Tests\TestCase;
  *
  * Counts are floors, not equalities: adding fields to the WordPress surface
  * should not fail this file, only regenerating away half of them should.
+ * The exception is the security tab's owner classification (§66): a new security
+ * field must be reviewed and listed, because the generator's default is `tenant`
+ * and that is how an estate gains a control the deployment should own.
  */
 class SettingsCatalogueTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * 149 §66 — the security tab's reviewed operator ownership.
+     *
+     * Deliberately an equality, not a floor. A security field nobody classified
+     * would keep the generator's default `tenant`, which is how an estate
+     * administrator gains a control the deployment should own. Adding a field to
+     * the tab is expected to fail this file until it is reviewed and listed.
+     *
+     * @var list<string>
+     */
+    private const SECURITY_OPERATOR = array(
+        // Infrastructure, root key, SSRF boundary, resource limits.
+        'enable_root_security_key',
+        'root_security_key',
+        'enable_loopback_ssl_bypass',
+        'enable_loopback_private_network_requests',
+        'mcp_app_allowed_hosts',
+        'max_sse_connections_per_user',
+        'max_request_body_size_kb',
+        'max_json_depth',
+        // Transport, response headers, CORS, error/output hardening.
+        'require_https',
+        'enable_security_headers',
+        'enable_hsts',
+        'hsts_max_age',
+        'csp_frame_ancestors',
+        'cors_allow_origin',
+        'cors_allowed_origins',
+        'api_error_verbosity',
+        'strip_asset_versions',
+        // Throttling: the platform's middleware, not an estate preference.
+        'enable_rate_limiting',
+        'rate_limit_requests',
+        'rate_limit_window',
+        'rate_limit_by',
+        'enable_auth_rate_limiting',
+        'auth_rate_limit_threshold',
+        'auth_rate_limit_window',
+        'enable_oauth_token_rate_limit',
+        // Audit/compliance: platform-wide writer and retention.
+        'enable_security_audit_log',
+        'log_successful_auth',
+        'log_file_access',
+        'audit_log_retention_days',
+    );
+
+    /**
+     * Security fields that describe the estate's own policy or product
+     * behaviour, and stay writable by its administrator.
+     *
+     * @var list<string>
+     */
+    private const SECURITY_TENANT = array(
+        'require_authentication_all',
+        'allow_guest_access',
+        'bypass_auth_for_logged_in',
+        'require_auth_chat_endpoints',
+        'require_auth_tool_execution',
+        'mcp_require_assistant_scope',
+        'require_auth_assistant_management',
+        'require_auth_transcripts',
+        'require_auth_file_operations',
+        'protect_media_urls',
+        'protect_attachment_pages',
+        'allow_public_thumbnails',
+        'protected_file_extensions',
+        'minimum_capability',
+        'enable_2fa_requirement',
+        'guest_token_ttl_hours',
+        'enable_a2a_jwt_validation',
+        'require_capability_on_delegate',
+        'enable_ip_whitelist',
+        'ip_whitelist',
+        'enable_ip_blacklist',
+        'ip_blacklist',
+        'tool_rate_limit_max',
+        'tool_rate_limit_window',
+        'tool_rate_limit_exempt_tokens',
+        'enable_prompt_injection_detector',
+        'prompt_injection_sensitivity',
+        'prompt_injection_mode',
+        'enable_pii_filter',
+        'pii_filter_side',
+        'pii_filter_mode',
+        'enable_hitl_for_write_tools',
+        'hitl_write_tool_threshold',
+        'enable_sandbox_mode',
+        'enable_ai_cost_tracking',
+        'ai_daily_budget_usd',
+        'ai_monthly_budget_usd',
+        'enable_ai_disclosure',
+        'ai_disclosure_message',
+        'ai_disclosure_position',
+        'enable_consent_modal',
+        'consent_message',
+        'enable_transparency_headers',
+        'enable_generation_logging',
+        'generation_log_retention_days',
+    );
 
     public function test_the_catalogue_loads(): void
     {
@@ -319,6 +422,176 @@ class SettingsCatalogueTest extends TestCase
             }
 
             $this->assertLessThanOrEqual(22, count($keys), $sid.' is still one undifferentiated block.');
+        }
+    }
+
+    /**
+     * 149 §66 — every security field has a reviewed owner.
+     */
+    public function test_every_security_field_has_a_reviewed_owner(): void
+    {
+        $this->assertSame(
+            array(),
+            array_intersect(self::SECURITY_OPERATOR, self::SECURITY_TENANT),
+            'A field cannot be both operator and tenant.'
+        );
+
+        $actual = array();
+
+        foreach (SettingsCatalogue::fields() as $field) {
+            if ('security' === $field['tab']) {
+                $actual[$field['key']] = $field['scope'];
+            }
+        }
+
+        $expected = array_fill_keys(self::SECURITY_OPERATOR, 'operator')
+            + array_fill_keys(self::SECURITY_TENANT, 'tenant');
+
+        ksort($actual);
+        ksort($expected);
+
+        $this->assertSame(
+            $expected,
+            $actual,
+            'The security tab has an unreviewed field; classify it in plan §66.'
+        );
+    }
+
+    /**
+     * 149 §66 — infrastructure is rendered for transparency but not writable by
+     * an estate administrator.
+     */
+    public function test_security_infrastructure_is_operator_and_not_estate_writable(): void
+    {
+        $ops      = array_column(SettingsSchema::forSurface('ops'), 'key');
+        $admin    = array_column(SettingsSchema::forSurface('admin'), 'key');
+        $writable = array_column(SettingsSchema::writableFor('admin'), 'key');
+
+        foreach (self::SECURITY_OPERATOR as $key) {
+            $this->assertContains($key, $ops, $key.' should be operator scope.');
+            $this->assertContains($key, $admin, $key.' must still render on /admin (disabled).');
+            $this->assertNotContains($key, $writable, $key.' must not be writable by an estate.');
+        }
+
+        // The two fields that would be most damaging to hand over.
+        $this->assertContains('root_security_key', self::SECURITY_OPERATOR);
+        $this->assertContains('mcp_app_allowed_hosts', self::SECURITY_OPERATOR);
+    }
+
+    /**
+     * 149 §66 — estate policy stays tenant scope and writable on /admin.
+     */
+    public function test_security_estate_policy_is_tenant_writable(): void
+    {
+        $writable = array_column(SettingsSchema::writableFor('admin'), 'key');
+        $ops      = array_column(SettingsSchema::forSurface('ops'), 'key');
+
+        foreach (self::SECURITY_TENANT as $key) {
+            $field = SettingsSchema::field($key);
+
+            $this->assertNotNull($field, $key.' is missing from the catalogue.');
+            $this->assertSame('tenant', $field['scope'], $key.' should stay tenant scope.');
+            $this->assertContains($key, $writable, $key.' should be writable on /admin.');
+            $this->assertNotContains($key, $ops, $key.' is not a platform setting.');
+        }
+    }
+
+    /**
+     * 149 §66 — the root key is refused on the estate surface, and the rest of
+     * the payload still applies.
+     */
+    public function test_a_root_security_key_is_refused_on_the_admin_surface(): void
+    {
+        $applied = app(SettingsService::class)->write(
+            array(
+                'root_security_key' => 'deployment-root-key',
+                'default_model'     => 'gpt-4o-mini',
+            ),
+            SettingsService::SURFACE_ADMIN
+        );
+
+        $this->assertNotContains('root_security_key', $applied);
+        $this->assertContains('default_model', $applied, 'Ignoring the operator key must not reject the rest.');
+        $this->assertNull(app(\Nvoos\Core\Domain\Contract\SettingsStoreInterface::class)->get('root_security_key'));
+    }
+
+    /**
+     * 149 §66 — the root key is writable on /ops and never returned in plaintext.
+     */
+    public function test_the_root_security_key_is_masked_on_the_ops_surface(): void
+    {
+        $applied = app(SettingsService::class)->write(
+            array('root_security_key' => 'deployment-root-key'),
+            SettingsService::SURFACE_OPS
+        );
+
+        $this->assertContains('root_security_key', $applied);
+
+        $values = app(SettingsService::class)->values(SettingsService::SURFACE_OPS);
+
+        $this->assertSame(SettingsSchema::MASKED_PLACEHOLDER, $values['root_security_key']);
+        $this->assertNotContains('deployment-root-key', $values);
+    }
+
+    /**
+     * 149 §66 — the two dense sections split by concern.
+     */
+    public function test_security_sections_split_by_concern(): void
+    {
+        $sections = array();
+
+        foreach (SettingsCatalogue::fields() as $field) {
+            if ('security' === $field['tab']) {
+                $sections[$field['section_id']][] = $field['key'];
+            }
+        }
+
+        $expected = array(
+            'security__access'         => 8,
+            'security__endpoints'      => 6,
+            'security__media'          => 4,
+            'security__network'        => 7,
+            'security__throttling'     => 8,
+            'security__transport'      => 9,
+            'security__infrastructure' => 8,
+            'security__ai_safety'      => 7,
+            'security__ai_governance'  => 5,
+            'security__transparency'   => 8,
+            'security__audit'          => 4,
+        );
+
+        $this->assertSame(
+            array(),
+            array_diff(array_keys($expected), array_keys($sections)),
+            'A reviewed security section disappeared.'
+        );
+        $this->assertSame(
+            array(),
+            array_diff(array_keys($sections), array_keys($expected)),
+            'A new security section needs a review in plan §66.'
+        );
+
+        $operator_only = array(
+            'security__throttling',
+            'security__transport',
+            'security__infrastructure',
+            'security__audit',
+        );
+
+        foreach ($expected as $sid => $count) {
+            $this->assertCount($count, $sections[$sid], $sid.' has the wrong field count.');
+            $this->assertLessThanOrEqual(9, count($sections[$sid]), $sid.' is still one undifferentiated block.');
+
+            $scopes = array_values(array_unique(array_map(
+                static fn (string $key): string => (string) SettingsSchema::field($key)['scope'],
+                $sections[$sid]
+            )));
+
+            $this->assertSame(
+                in_array($sid, $operator_only, true) ? array('operator') : array('tenant'),
+                $scopes,
+                $sid.' mixes deployment infrastructure with estate policy.'
+            );
         }
     }
 
