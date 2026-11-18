@@ -1,0 +1,39 @@
+{
+  "slug": "financial-planner",
+  "name": "Financial Planner",
+  "version": "1.0.0",
+  "description": "Currency, rate assumptions and bank sync defaults for the Financial Planner toolkit.",
+  "icon": "💰",
+  "feature": "financial-planner",
+  "screens": ["settings"],
+  "settings": [
+    {
+      "key": "default_currency",
+      "label": "Default currency",
+      "type": "text",
+      "default": "USD",
+      "description": "Currency used for new plans and projections."
+    },
+    {
+      "key": "default_interest_rate",
+      "label": "Default interest rate",
+      "type": "number",
+      "default": 7,
+      "description": "Annual interest rate applied when a plan does not set one."
+    },
+    {
+      "key": "default_inflation_rate",
+      "label": "Default inflation rate",
+      "type": "number",
+      "default": 3,
+      "description": "Annual inflation rate applied when a plan does not set one."
+    },
+    {
+      "key": "enable_bank_sync",
+      "label": "Enable bank account sync",
+      "type": "boolean",
+      "default": false,
+      "description": "Import balances and transactions from linked bank accounts."
+    }
+  ]
+}

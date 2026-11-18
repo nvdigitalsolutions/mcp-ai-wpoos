@@ -102,22 +102,32 @@ class Phase4Test extends TestCase
 
         // The committed catalogue, alphabetical (the loader `ksort`s). A new
         // manifest is a conscious addition to this list — `crm` joined it on
-        // 2026-11-18 as the first settings-only family (plan §56.6), and the
-        // authoring pass added the nine below it (plan §56.7).
+        // 2026-11-18 as the first settings-only family (plan §56.6). The
+        // batch-2 authoring pass took it to 21 once §7b's persistence rule was
+        // satisfied for every page (plan §59).
         $this->assertSame(
             [
+                'analytics',
+                'architectural-design',
                 'chat-channels',
                 'comic-creation',
                 'commerce',
                 'crm',
                 'dietpi',
                 'documents',
+                'ecommerce',
                 'ezuite',
+                'financial-planner',
                 'flowhub',
                 'law-firm',
+                'media',
+                'multilingual',
                 'pro-schedule',
                 'project-management',
+                'regulatory-registration',
                 'shopify-sync',
+                'social-media',
+                'video-production',
             ],
             $slugs
         );

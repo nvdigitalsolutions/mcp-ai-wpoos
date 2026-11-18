@@ -125,6 +125,15 @@ final class ProPlanCatalogTest extends TestCase
             'ezuite',
             'flowhub',
             'dietpi',
+            'analytics',
+            'architectural-design',
+            'ecommerce',
+            'financial-planner',
+            'media',
+            'multilingual',
+            'regulatory-registration',
+            'social-media',
+            'video-production',
         );
 
         foreach (ProPlanCatalog::plans() as $plan) {

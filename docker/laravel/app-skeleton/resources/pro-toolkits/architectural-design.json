@@ -1,0 +1,82 @@
+{
+  "slug": "architectural-design",
+  "name": "Architectural Design",
+  "version": "1.0.0",
+  "description": "Jurisdiction, code pack, export and rendering defaults for the Architectural Design toolkit.",
+  "icon": "📐",
+  "feature": "architectural-design",
+  "screens": ["settings"],
+  "settings": [
+    {
+      "key": "default_country",
+      "label": "Default region",
+      "type": "select",
+      "default": "LK",
+      "options": ["LK", "JM", "US"],
+      "description": "Jurisdiction used for compliance dispatch, wind and seismic tables, BoQ format, currency and cost rates."
+    },
+    {
+      "key": "default_unit_system",
+      "label": "Default unit system",
+      "type": "select",
+      "default": "metric",
+      "options": ["metric", "imperial"],
+      "description": "Measurement system for floor plans, dimensions, loads and area calculations."
+    },
+    {
+      "key": "building_code_standard",
+      "label": "Building code pack",
+      "type": "select",
+      "default": "lk_uda_2021",
+      "options": ["lk_uda_2021", "jm_jnbc_2018", "us_ibc_2024", "us_irc_2024", "local"],
+      "description": "Primary code pack for compliance validation. Custom packs register through the wp_mcp_ai_arch_code_packs filter."
+    },
+    {
+      "key": "default_export_format",
+      "label": "Default export format",
+      "type": "select",
+      "default": "pdf",
+      "options": ["pdf", "dwg", "ifc", "gbxml", "svg"],
+      "description": "Format for exporting architectural documents and BIM models."
+    },
+    {
+      "key": "ifc_export_version",
+      "label": "IFC export version",
+      "type": "select",
+      "default": "4.3",
+      "options": ["4.3", "4.0", "2x3"],
+      "description": "Schema version used by the IFC STEP-format builder."
+    },
+    {
+      "key": "rendering_quality",
+      "label": "Rendering quality",
+      "type": "select",
+      "default": "draft",
+      "options": ["draft", "standard", "high"],
+      "description": "Default quality for 3D renderings and visualisations."
+    },
+    {
+      "key": "enable_gpu_rendering",
+      "label": "Enable GPU rendering",
+      "type": "boolean",
+      "default": false,
+      "description": "GPU acceleration for rendering; requires remote sites."
+    },
+    {
+      "key": "sustainability_framework",
+      "label": "Sustainability framework",
+      "type": "select",
+      "default": "edge",
+      "options": ["edge", "leed", "breeam", "energy_star", "passive_house"],
+      "description": "Framework used by the EDGE and LEED v4 certification scorers. EDGE is the default for LK and JM, LEED v4 BD+C for the US."
+    },
+    {
+      "key": "masterformat_year",
+      "label": "BoQ MasterFormat year",
+      "type": "select",
+      "default": "2020",
+      "options": ["2020", "2018", "2016"],
+      "description": "MasterFormat edition used when generating bills of quantities."
+    }
+  ]
+}
