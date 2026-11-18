@@ -79,6 +79,47 @@ The `WP_MCP_AI_Settings_Dashboard` class orchestrates a 7-step save:
 
 ---
 
+## Adding a Field to a Sub-Tabbed Section
+
+A section that defines `get_subtab_groups()` renders and saves **only** the keys
+named in the active group's `fields` array:
+
+- `render()` iterates `$subtab_groups[ $active_subtab ]['fields']` and calls
+  `render_field()` for those keys only.
+- `sanitize_with_subtabs()` whitelists submitted input to the same list, so an
+  unregistered key is dropped on save.
+
+Declaring a field in `get_fields()` alone therefore makes it **invisible and
+unsaveable** — with no PHP error and no PHPCS finding, because both methods are
+individually valid. A field needs both registrations:
+
+```php
+public function get_fields() {
+	return array(
+		'my_field' => array( /* ... */ ),      // 1. definition.
+	);
+}
+
+protected function get_subtab_groups() {
+	return array(
+		'behavior' => array(
+			'fields' => array( 'my_field' ),   // 2. registration.
+		),
+	);
+}
+```
+
+`.github/scripts/check-settings-field-registration.php` enforces this for every
+sub-tabbed section (base and Pro) in the `settings-field-registration` CI job.
+Pre-existing offenders are baselined in
+`.github/scripts/settings-field-registration.txt`; registering one makes its
+baseline line stale, so the gate forces the line's removal.
+
+Sections **without** `get_subtab_groups()` are unaffected: `sanitize_fields()`
+accepts every declared field, so they need the definition only.
+
+---
+
 ## Migration
 
 A one-time activation migration moves existing credentials from the old single option to the split:
@@ -112,6 +153,7 @@ wp_mcp_ai_migrate_credentials_to_split()
 | Writing API key to `wp_mcp_ai_settings` | Write to `wp_mcp_ai_credentials` |
 | Forgetting to clear credentials cache | Clear both: `wp_cache_delete( OPTION_NAME, 'options' )` AND `wp_cache_delete( CREDENTIALS_OPTION_NAME, 'options' )` |
 | Assuming single-option storage in hooks | Both options fire `updated_option` — listen for both if subscribing |
+| Adding a field only to `get_fields()` in a sub-tabbed section | Also list the key in `get_subtab_groups()[…]['fields']` — otherwise it renders nowhere and is dropped on save. The `settings-field-registration` CI gate catches this. |
 
 ---
 
