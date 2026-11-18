@@ -1218,6 +1218,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				$quick_wins = $report['quick_wins'];
 			}
 
+			// The scorer emits the full Mozilla Observatory band set (A+ … F), so
+			// colour by letter family rather than exact string — a band such as
+			// "A-" is not a key here and used to fall through to the error red,
+			// which made a good score look like a failing control.
 			$grade_color = array(
 				'A' => '#46b450',
 				'B' => '#72aee6',
@@ -1225,7 +1229,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				'D' => '#d63638',
 				'F' => '#8c1c1c',
 			);
-			$color       = $grade_color[ $grade ] ?? '#d63638';
+			$color       = $grade_color[ substr( $grade, 0, 1 ) ] ?? '#d63638';
+
+			// lib/core's catalogue lists every runtime's controls; the ones this
+			// runtime cannot evaluate are excluded from the score's denominator.
+			$applicable_count = 0;
+			foreach ( $signals as $signal ) {
+				if ( ! isset( $signal['applicable'] ) || $signal['applicable'] ) {
+					++$applicable_count;
+				}
+			}
 
 			// Recent security events.
 			$recent_events = array_slice( array_reverse( get_option( 'wp_mcp_ai_security_audit_log', array() ) ), 0, 10 );
@@ -1269,7 +1282,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		<div>
 			<?php /* translators: %d: security posture score (0-100) */ ?>
 			<h3 style="margin:0 0 4px;"><?php echo esc_html( sprintf( __( 'Security Posture: %d / 100', 'mcp-ai-wpoos' ), $score ) ); ?></h3>
-			<p style="margin:0;color:#646970;"><?php echo esc_html( sprintf( /* translators: %d: number of weighted security signals */ __( 'Computed from %d weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ), count( $signals ) ) ); ?></p>
+			<p style="margin:0;color:#646970;">
+				<?php
+				if ( count( $signals ) === $applicable_count ) {
+					/* translators: %d: number of weighted security signals */
+					echo esc_html( sprintf( __( 'Computed from %d weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ), $applicable_count ) );
+				} else {
+					/* translators: 1: number of signals scored on this runtime, 2: total number of catalogue signals */
+					echo esc_html( sprintf( __( 'Computed from %1$d of %2$d weighted signals — the rest do not apply to WordPress. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ), $applicable_count, count( $signals ) ) );
+				}
+				?>
+			</p>
 			<button type="button" class="button button-small wp-mcp-ai-refresh-posture" style="margin-top:8px;">
 				<span class="dashicons dashicons-update" style="vertical-align:middle;"></span>
 				<?php esc_html_e( 'Refresh Now', 'mcp-ai-wpoos' ); ?>
@@ -1326,12 +1349,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				</tr>
 			</thead>
 			<tbody>
-			<?php foreach ( $signals as $signal ) : ?>
+			<?php
+			foreach ( $signals as $signal ) :
+				$applicable = ! isset( $signal['applicable'] ) || $signal['applicable'];
+
+				if ( ! $applicable ) {
+					// Runtime-specific control: shown for parity with the Laravel
+					// console, but neither scored nor presented as a failure.
+					$icon        = '➖';
+					$detail_tone = '#646970';
+				} else {
+					$passed      = ! empty( $signal['passed'] );
+					$icon        = $passed ? '✅' : '❌';
+					$detail_tone = $passed ? '#46b450' : '#d63638';
+				}
+				?>
 				<tr>
-					<td style="text-align:center;font-size:18px;"><?php echo (bool) $signal['passed'] ? '✅' : '❌'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- emoji literals, bool-cast prevents unexpected output ?></td>
+					<td style="text-align:center;font-size:18px;"><?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- emoji literals set from a fixed list above ?></td>
 					<td><?php echo esc_html( $signal['label'] ); ?></td>
-					<td><?php echo esc_html( $signal['weight'] ); ?></td>
-					<td style="color:<?php echo esc_attr( (bool) $signal['passed'] ? '#46b450' : '#d63638' ); ?>;"><?php echo esc_html( $signal['detail'] ); ?></td>
+					<td><?php echo esc_html( $applicable ? $signal['weight'] : '—' ); ?></td>
+					<td style="color:<?php echo esc_attr( $detail_tone ); ?>;"><?php echo esc_html( $signal['detail'] ); ?></td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
