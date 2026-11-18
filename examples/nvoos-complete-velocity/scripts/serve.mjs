@@ -280,7 +280,11 @@ function proxyCacheKey(req, incoming) {
   // encoding bucket is part of the key (clients are consistent per URL).
   const accept = String(req.headers['accept-encoding'] ?? '').toLowerCase();
   const encoding = accept.includes('br') ? 'br' : accept.includes('gzip') ? 'gzip' : 'identity';
-  return `${req.method} ${incoming.pathname}${incoming.search} ${encoding}`;
+  // The estate selector changes the payload of every tenant-scoped route.
+  // Omitting it would let one estate's publicly-cacheable response be
+  // replayed to another — the multi-tenant cache-key rule.
+  const tenant = String(req.headers['x-tenant-id'] ?? '').trim();
+  return `${req.method} ${incoming.pathname}${incoming.search} ${encoding} ${tenant}`;
 }
 
 /**

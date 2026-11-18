@@ -161,7 +161,23 @@ final class ToolkitManifestTest extends TestCase
         $raw             = $this->validManifest();
         $raw['entities'] = array();
 
+        // Declaring `entities` and naming none is a mistake, not a decision.
         $this->assertStringContainsString('entities must be a non-empty list', implode(' ', ToolkitManifest::validate($raw)));
+    }
+
+    public function testEntitiesMayBeOmittedForASettingsOnlyManifest(): void
+    {
+        $raw = $this->validManifest();
+        unset($raw['entities'], $raw['dashboard']);
+        $raw['screens'] = array( 'settings' );
+
+        $this->assertSame(array(), ToolkitManifest::validate($raw));
+
+        $manifest = ToolkitManifest::fromArray($raw);
+
+        $this->assertSame(array(), $manifest->entities());
+        $this->assertNull($manifest->entity('product'));
+        $this->assertSame(array( 'settings' ), $manifest->screens());
     }
 
     public function testDuplicateEntityKeysAreRejected(): void
@@ -293,5 +309,131 @@ final class ToolkitManifestTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         ToolkitManifest::fromArray(array( 'slug' => 'x' ));
+    }
+
+    public function testUntabbedSettingsRenderAsOneGeneralTab(): void
+    {
+        $manifest = ToolkitManifest::fromArray($this->validManifest());
+
+        $this->assertSame(array(), $manifest->tabLabels());
+        $this->assertSame(
+            array(
+                array(
+                    'key'      => 'general',
+                    'label'    => 'General',
+                    'settings' => $manifest->settings(),
+                ),
+            ),
+            $manifest->settingTabs()
+        );
+    }
+
+    public function testTabbedSettingsGroupInDeclaredOrder(): void
+    {
+        $raw = $this->validManifest();
+
+        $raw['tab_labels'] = array(
+            'basics'  => 'Basics',
+            'stock'   => 'Stock',
+        );
+
+        $raw['settings'] = array(
+            array( 'key' => 'currency', 'label' => 'Currency', 'type' => 'text', 'tab' => 'basics' ),
+            array( 'key' => 'threshold', 'label' => 'Threshold', 'type' => 'number', 'tab' => 'stock' ),
+            array( 'key' => 'region', 'label' => 'Region', 'type' => 'text', 'tab' => 'basics' ),
+        );
+
+        $this->assertSame(array(), ToolkitManifest::validate($raw));
+
+        $tabs = ToolkitManifest::fromArray($raw)->settingTabs();
+
+        $this->assertSame(array( 'basics', 'stock' ), array_column($tabs, 'key'));
+        $this->assertSame(array( 'currency', 'region' ), array_column($tabs[0]['settings'], 'key'));
+        $this->assertSame(array( 'threshold' ), array_column($tabs[1]['settings'], 'key'));
+    }
+
+    public function testSettingTabWithoutLabelsIsRejected(): void
+    {
+        $raw                       = $this->validManifest();
+        $raw['settings'][0]['tab'] = 'basics';
+
+        $this->assertStringContainsString('requires a top-level tab_labels map', implode(' ', ToolkitManifest::validate($raw)));
+    }
+
+    public function testLabelsRequireEverySettingToDeclareATab(): void
+    {
+        $raw                 = $this->validManifest();
+        $raw['tab_labels']   = array( 'basics' => 'Basics' );
+
+        $this->assertStringContainsString('.tab is required when tab_labels is declared', implode(' ', ToolkitManifest::validate($raw)));
+    }
+
+    public function testUndeclaredTabIsRejected(): void
+    {
+        $raw                       = $this->validManifest();
+        $raw['tab_labels']         = array( 'basics' => 'Basics' );
+        $raw['settings'][0]['tab'] = 'advanced';
+
+        $this->assertStringContainsString('is not declared in tab_labels', implode(' ', ToolkitManifest::validate($raw)));
+    }
+
+    public function testUnusedTabLabelIsRejected(): void
+    {
+        $raw                       = $this->validManifest();
+        $raw['tab_labels']         = array( 'basics' => 'Basics', 'extra' => 'Extra' );
+        $raw['settings'][0]['tab'] = 'basics';
+
+        $this->assertStringContainsString('tab_labels.extra is not used by any setting', implode(' ', ToolkitManifest::validate($raw)));
+    }
+
+    public function testTabLabelsRequireSettings(): void
+    {
+        $raw               = $this->validManifest();
+        $raw['tab_labels'] = array( 'basics' => 'Basics' );
+        unset($raw['settings']);
+
+        $this->assertStringContainsString('tab_labels requires settings', implode(' ', ToolkitManifest::validate($raw)));
+    }
+
+    public function testInvalidTabLabelKeyIsRejected(): void
+    {
+        $raw               = $this->validManifest();
+        $raw['tab_labels'] = array( 'Basics Tab' => 'Basics' );
+
+        $this->assertStringContainsString('tab_labels key', implode(' ', ToolkitManifest::validate($raw)));
+    }
+
+    public function testTextareaSettingIsAcceptedWithARowsHint(): void
+    {
+        $raw                       = $this->validManifest();
+        $raw['settings'][0]['type'] = 'textarea';
+        $raw['settings'][0]['rows'] = 6;
+
+        $this->assertSame(array(), ToolkitManifest::validate($raw));
+        $this->assertContains('textarea', ToolkitManifest::SETTING_TYPES);
+    }
+
+    public function testRowsHintIsRejectedOutsideATextarea(): void
+    {
+        $raw                       = $this->validManifest();
+        $raw['settings'][0]['rows'] = 4;
+
+        $this->assertStringContainsString('applies only to textarea', implode(' ', ToolkitManifest::validate($raw)));
+    }
+
+    public function testTextareaRowsMustBeWithinBounds(): void
+    {
+        $raw                       = $this->validManifest();
+        $raw['settings'][0]['type'] = 'textarea';
+
+        foreach (array( 1, 21, '4', 4.5 ) as $rows) {
+            $raw['settings'][0]['rows'] = $rows;
+
+            $this->assertStringContainsString(
+                'rows must be an integer between 2 and 20',
+                implode(' ', ToolkitManifest::validate($raw)),
+                'Rows value ' . var_export($rows, true) . ' must be rejected.'
+            );
+        }
     }
 }

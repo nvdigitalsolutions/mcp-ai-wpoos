@@ -1,0 +1,526 @@
+{
+  "slug": "crm",
+  "name": "CRM",
+  "version": "1.0.0",
+  "description": "Lead scoring, routing, consent, outbound channels and sourcing settings for the CRM toolkit.",
+  "icon": "🤝",
+  "feature": "crm",
+  "screens": ["settings"],
+  "tab_labels": {
+    "qualification": "Lead qualification",
+    "routing": "Lead routing",
+    "consent": "Consent",
+    "integrations": "Integrations",
+    "hygiene": "Email hygiene",
+    "upwork": "Upwork",
+    "linkedin": "LinkedIn",
+    "sourcing": "Sourcing",
+    "results": "Results & notifications",
+    "operations": "Operations"
+  },
+  "settings": [
+    {
+      "key": "qualification_framework",
+      "label": "Qualification framework",
+      "type": "select",
+      "tab": "qualification",
+      "default": "bant",
+      "options": ["bant", "meddic", "champ"],
+      "description": "Framework the qualification tools apply to a lead."
+    },
+    {
+      "key": "hot_score_threshold",
+      "label": "Hot lead threshold",
+      "type": "number",
+      "tab": "qualification",
+      "default": 70,
+      "description": "Leads scoring at or above this value are hot."
+    },
+    {
+      "key": "warm_score_threshold",
+      "label": "Warm lead threshold",
+      "type": "number",
+      "tab": "qualification",
+      "default": 40,
+      "description": "Leads scoring at or above this value are warm."
+    },
+    {
+      "key": "routing_strategy",
+      "label": "Routing strategy",
+      "type": "select",
+      "tab": "routing",
+      "default": "round_robin",
+      "options": ["round_robin", "weighted"],
+      "description": "Round robin distributes evenly; weighted assigns to the rep with the fewest active leads."
+    },
+    {
+      "key": "require_double_opt_in",
+      "label": "Require double opt-in",
+      "type": "boolean",
+      "tab": "consent",
+      "default": false,
+      "description": "Only leads that confirmed their address are treated as marketable."
+    },
+    {
+      "key": "physical_address",
+      "label": "CAN-SPAM physical address",
+      "type": "text",
+      "tab": "consent",
+      "default": "",
+      "description": "Appended to outbound email footers."
+    },
+    {
+      "key": "gmail_default_query",
+      "label": "Default Gmail import query",
+      "type": "text",
+      "tab": "integrations",
+      "default": "",
+      "description": "Gmail search expression used when an inbox scan has no explicit query."
+    },
+    {
+      "key": "gmail_poll_interval",
+      "label": "Gmail poll interval (seconds)",
+      "type": "number",
+      "tab": "integrations",
+      "default": 300
+    },
+    {
+      "key": "gmail_max_per_poll",
+      "label": "Max emails per poll",
+      "type": "number",
+      "tab": "integrations",
+      "default": 10
+    },
+    {
+      "key": "gmail_use_history_sync",
+      "label": "Incremental sync (historyId)",
+      "type": "boolean",
+      "tab": "integrations",
+      "default": false,
+      "description": "Resume from the last history cursor instead of re-reading the query window."
+    },
+    {
+      "key": "sms_provider",
+      "label": "SMS provider",
+      "type": "select",
+      "tab": "integrations",
+      "default": "twilio",
+      "options": ["twilio", "notifylk"]
+    },
+    {
+      "key": "twilio_account_sid",
+      "label": "Twilio account SID",
+      "type": "text",
+      "tab": "integrations",
+      "default": ""
+    },
+    {
+      "key": "twilio_auth_token",
+      "label": "Twilio auth token",
+      "type": "secret",
+      "tab": "integrations"
+    },
+    {
+      "key": "twilio_from_number",
+      "label": "Twilio from number",
+      "type": "text",
+      "tab": "integrations",
+      "default": ""
+    },
+    {
+      "key": "whatsapp_access_token",
+      "label": "WhatsApp access token",
+      "type": "secret",
+      "tab": "integrations"
+    },
+    {
+      "key": "whatsapp_phone_number_id",
+      "label": "WhatsApp phone number ID",
+      "type": "text",
+      "tab": "integrations",
+      "default": ""
+    },
+    {
+      "key": "whatsapp_app_secret",
+      "label": "WhatsApp app secret",
+      "type": "secret",
+      "tab": "integrations"
+    },
+    {
+      "key": "notifylk_user_id",
+      "label": "notify.lk user ID",
+      "type": "text",
+      "tab": "integrations",
+      "default": ""
+    },
+    {
+      "key": "notifylk_api_key",
+      "label": "notify.lk API key",
+      "type": "secret",
+      "tab": "integrations"
+    },
+    {
+      "key": "notifylk_sender_id",
+      "label": "notify.lk sender ID",
+      "type": "text",
+      "tab": "integrations",
+      "default": ""
+    },
+    {
+      "key": "exclude_list",
+      "label": "Exclude list",
+      "type": "textarea",
+      "tab": "hygiene",
+      "rows": 5,
+      "default": "",
+      "description": "Addresses or domains to always skip during import. One per line; use @domain.com to block a domain."
+    },
+    {
+      "key": "priority_list",
+      "label": "Priority list",
+      "type": "textarea",
+      "tab": "hygiene",
+      "rows": 5,
+      "default": "",
+      "description": "Addresses or domains to always fast-track. One per line."
+    },
+    {
+      "key": "spam_domains",
+      "label": "Spam domains",
+      "type": "textarea",
+      "tab": "hygiene",
+      "rows": 3,
+      "default": "",
+      "description": "Known spam domains; substring match."
+    },
+    {
+      "key": "promotional_domains",
+      "label": "Promotional domains",
+      "type": "textarea",
+      "tab": "hygiene",
+      "rows": 3,
+      "default": "",
+      "description": "Bulk-marketing senders, so the classifier can spot promotional mail from new addresses."
+    },
+    {
+      "key": "priority_domains",
+      "label": "Priority domains",
+      "type": "textarea",
+      "tab": "hygiene",
+      "rows": 3,
+      "default": "",
+      "description": "Sender domains that are always treated as priority."
+    },
+    {
+      "key": "promotional_keywords",
+      "label": "Promotional keywords",
+      "type": "textarea",
+      "tab": "hygiene",
+      "rows": 3,
+      "default": "",
+      "description": "Phrases that indicate promotional content. One per line; case-insensitive."
+    },
+    {
+      "key": "upwork_auto_import_as",
+      "label": "Auto-import jobs as",
+      "type": "select",
+      "tab": "upwork",
+      "default": "deal",
+      "options": ["deal", "project", "task"]
+    },
+    {
+      "key": "upwork_auto_import_min_score",
+      "label": "Min score to auto-import",
+      "type": "number",
+      "tab": "upwork",
+      "default": 60
+    },
+    {
+      "key": "upwork_use_profile_context",
+      "label": "Use my profile for AI grounding",
+      "type": "boolean",
+      "tab": "upwork",
+      "default": false
+    },
+    {
+      "key": "upwork_default_search_keywords",
+      "label": "Default keywords",
+      "type": "text",
+      "tab": "upwork",
+      "default": ""
+    },
+    {
+      "key": "upwork_default_location",
+      "label": "Default location",
+      "type": "text",
+      "tab": "upwork",
+      "default": ""
+    },
+    {
+      "key": "upwork_default_job_type",
+      "label": "Default job type",
+      "type": "select",
+      "tab": "upwork",
+      "default": "",
+      "options": ["", "hourly", "fixed"]
+    },
+    {
+      "key": "upwork_default_experience_level",
+      "label": "Default experience level",
+      "type": "select",
+      "tab": "upwork",
+      "default": "",
+      "options": ["", "entry", "intermediate", "expert"]
+    },
+    {
+      "key": "upwork_default_categories",
+      "label": "Default categories",
+      "type": "text",
+      "tab": "upwork",
+      "default": "",
+      "description": "Comma-separated category names."
+    },
+    {
+      "key": "upwork_excluded_keywords",
+      "label": "Excluded keywords",
+      "type": "textarea",
+      "tab": "upwork",
+      "rows": 3,
+      "default": "",
+      "description": "Jobs containing any of these are filtered out. One per line."
+    },
+    {
+      "key": "upwork_max_results_per_search",
+      "label": "Max results per search",
+      "type": "number",
+      "tab": "upwork",
+      "default": 20
+    },
+    {
+      "key": "linkedin_use_profile_context",
+      "label": "Use my profile for AI grounding",
+      "type": "boolean",
+      "tab": "linkedin",
+      "default": false
+    },
+    {
+      "key": "linkedin_default_location",
+      "label": "Default location",
+      "type": "text",
+      "tab": "linkedin",
+      "default": ""
+    },
+    {
+      "key": "linkedin_default_search_keywords",
+      "label": "Default search keywords",
+      "type": "text",
+      "tab": "linkedin",
+      "default": ""
+    },
+    {
+      "key": "linkedin_auto_import_as",
+      "label": "Auto-import jobs as",
+      "type": "select",
+      "tab": "linkedin",
+      "default": "deal",
+      "options": ["deal", "project", "task"]
+    },
+    {
+      "key": "linkedin_auto_import_min_score",
+      "label": "Min score to auto-import",
+      "type": "number",
+      "tab": "linkedin",
+      "default": 60
+    },
+    {
+      "key": "linkedin_default_job_type",
+      "label": "Default job type",
+      "type": "select",
+      "tab": "linkedin",
+      "default": "",
+      "options": ["", "full_time", "part_time", "contract", "temporary", "internship"]
+    },
+    {
+      "key": "linkedin_default_experience_level",
+      "label": "Default experience level",
+      "type": "select",
+      "tab": "linkedin",
+      "default": "",
+      "options": ["", "entry", "mid_level", "senior", "executive"]
+    },
+    {
+      "key": "linkedin_default_remote",
+      "label": "Remote only",
+      "type": "boolean",
+      "tab": "linkedin",
+      "default": false
+    },
+    {
+      "key": "linkedin_excluded_keywords",
+      "label": "Excluded keywords",
+      "type": "textarea",
+      "tab": "linkedin",
+      "rows": 3,
+      "default": "",
+      "description": "Jobs containing any of these are filtered out. One per line."
+    },
+    {
+      "key": "linkedin_max_results_per_search",
+      "label": "Max results per search",
+      "type": "number",
+      "tab": "linkedin",
+      "default": 20
+    },
+    {
+      "key": "ideal_client_profile",
+      "label": "Ideal client profile",
+      "type": "textarea",
+      "tab": "sourcing",
+      "rows": 5,
+      "default": "",
+      "description": "Injected as context into the job-scoring tools. Leave blank for generic scoring."
+    },
+    {
+      "key": "default_budget_min",
+      "label": "Default budget minimum",
+      "type": "number",
+      "tab": "sourcing",
+      "default": 0,
+      "description": "Leave at 0 to skip budget filtering."
+    },
+    {
+      "key": "default_budget_max",
+      "label": "Default budget maximum",
+      "type": "number",
+      "tab": "sourcing",
+      "default": 0,
+      "description": "Leave at 0 to skip budget filtering."
+    },
+    {
+      "key": "excluded_keywords",
+      "label": "Excluded keywords (shared)",
+      "type": "textarea",
+      "tab": "sourcing",
+      "rows": 3,
+      "default": "",
+      "description": "Applied to both platforms. One per line."
+    },
+    {
+      "key": "result_description_length",
+      "label": "Description length (words)",
+      "type": "number",
+      "tab": "results",
+      "default": 200
+    },
+    {
+      "key": "result_include_email",
+      "label": "Include email in results",
+      "type": "boolean",
+      "tab": "results",
+      "default": false
+    },
+    {
+      "key": "result_include_client_info",
+      "label": "Include client info",
+      "type": "boolean",
+      "tab": "results",
+      "default": false
+    },
+    {
+      "key": "result_include_budget",
+      "label": "Include budget",
+      "type": "boolean",
+      "tab": "results",
+      "default": false
+    },
+    {
+      "key": "result_include_skills",
+      "label": "Include skills",
+      "type": "boolean",
+      "tab": "results",
+      "default": false
+    },
+    {
+      "key": "result_include_applicants",
+      "label": "Include applicant count",
+      "type": "boolean",
+      "tab": "results",
+      "default": false
+    },
+    {
+      "key": "result_compact_mode",
+      "label": "Compact mode",
+      "type": "boolean",
+      "tab": "results",
+      "default": false
+    },
+    {
+      "key": "notifications_enabled",
+      "label": "Enable notifications",
+      "type": "boolean",
+      "tab": "results",
+      "default": false
+    },
+    {
+      "key": "notifications_email",
+      "label": "Notification email",
+      "type": "text",
+      "tab": "results",
+      "default": "",
+      "description": "Where alerts are sent. Defaults to the site admin address when blank."
+    },
+    {
+      "key": "notifications_min_score",
+      "label": "Min score to alert",
+      "type": "number",
+      "tab": "results",
+      "default": 80
+    },
+    {
+      "key": "notifications_max_alerts_per_cycle",
+      "label": "Max alerts per cycle",
+      "type": "number",
+      "tab": "results",
+      "default": 5
+    },
+    {
+      "key": "dedup_enabled",
+      "label": "Enable deduplication",
+      "type": "boolean",
+      "tab": "results",
+      "default": false,
+      "description": "Prevents the same job being imported twice across search cycles."
+    },
+    {
+      "key": "dedup_strategy",
+      "label": "Deduplication strategy",
+      "type": "select",
+      "tab": "results",
+      "default": "title_url",
+      "options": ["title_url", "url_only", "none"]
+    },
+    {
+      "key": "dedup_lookback_days",
+      "label": "Deduplication lookback (days)",
+      "type": "number",
+      "tab": "results",
+      "default": 90
+    },
+    {
+      "key": "message_retention_days",
+      "label": "Message retention (days)",
+      "type": "number",
+      "tab": "operations",
+      "default": 90,
+      "description": "Delete CRM messages older than this. 0 keeps them forever."
+    },
+    {
+      "key": "audit_max_entries",
+      "label": "Audit log max entries",
+      "type": "number",
+      "tab": "operations",
+      "default": 5000,
+      "description": "Entries kept before automatic compaction."
+    }
+  ]
+}

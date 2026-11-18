@@ -767,8 +767,17 @@ final class ToolkitEngine
                     : array(false, null, 'Must be one of: '.implode(', ', $allowed).'.');
 
             case 'text':
+            case 'textarea':
             case 'secret':
             default:
+                // A blank field hydrates as null in a generated form, and
+                // "blank" is a legitimate value for text: treat it as the
+                // empty string instead of a type error. The console already
+                // sends '' for this case; the panel's Livewire state does not.
+                if (null === $value) {
+                    return array(true, '', null);
+                }
+
                 return is_scalar($value)
                     ? array(true, (string) $value, null)
                     : array(false, null, 'Must be a string.');

@@ -9,6 +9,12 @@ import { fileURLToPath } from 'node:url';
  * The form goes through `submitLaravelLogin()` → POST /api/v1/session/login,
  * so a passing setup also proves the Sanctum stateful-domain configuration
  * and the CSRF-alias handshake between the proxy and the backend.
+ *
+ * A multi-estate account is asked which estate to work in before the shell
+ * mounts (149 §21) — `ResolveApiTenant` answers 409 `tenant_required` to a
+ * scoped request that carries no selector, so the console cannot silently
+ * pick one. The choice is persisted in localStorage, which `storageState`
+ * carries into the smoke project.
  */
 
 const AUTH_FILE = fileURLToPath(new URL('../.auth/state.json', import.meta.url));
@@ -26,9 +32,25 @@ setup('signs in to the Laravel runtime', async ({ page }) => {
   await page.locator('#nvoos-login-password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
+  // Boot resolves to either the dashboard (single estate) or the picker.
+  await expect(
+    page
+      .getByRole('heading', { name: 'Dashboard', level: 1 })
+      .or(page.getByRole('heading', { name: 'Choose an estate' })),
+  ).toBeVisible({ timeout: 30_000 });
+
+  if (await page.getByRole('heading', { name: 'Choose an estate' }).isVisible()) {
+    // The list is ordered by estate name server-side; the first option is a
+    // deterministic choice without hard-coding a seeded estate name.
+    await page
+      .getByRole('list', { name: 'Choose an estate' })
+      .getByRole('button')
+      .first()
+      .click();
+  }
+
   // Authenticated bootstrap: the dashboard greets the session's user.
   await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
   await expect(page.getByText(/Signed in as /)).toBeVisible();
-
   await page.context().storageState({ path: AUTH_FILE });
 });

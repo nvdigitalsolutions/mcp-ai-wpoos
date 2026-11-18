@@ -7,6 +7,7 @@ use App\Models\AdminAudit;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Import\ConversationImport;
+use App\Support\TenantContext;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +43,8 @@ class AdminConversationImportTest extends TestCase
             ->get('/ops/conversation-import')
             ->assertOk()
             ->assertSee('Conversation import')
+            ->assertSee('Target estate')
+            ->assertSee('Default estate')
             ->assertSee('Preview')
             ->assertSee('idempotent');
     }
@@ -277,6 +280,13 @@ class AdminConversationImportTest extends TestCase
 
         $this->assertSame(1, DB::table('nvoos_transcripts')->count());
 
+        // The selector defaults to `default`, which is the behaviour every
+        // import had before §37.5 — now stated rather than implicit.
+        $this->assertSame(
+            'default',
+            DB::table('nvoos_transcripts')->where('session_id', 'import:page-1')->value('tenant_id')
+        );
+
         $row = AdminAudit::query()
             ->where('resource', 'conversation-import')
             ->where('action', 'import')
@@ -284,7 +294,70 @@ class AdminConversationImportTest extends TestCase
 
         $this->assertNotNull($row, 'A bulk import must leave a record row.');
         $this->assertSame(1, (int) $row->after['conversations']);
+        $this->assertSame('default', $row->after['estate']);
         $this->assertArrayNotHasKey('content', $row->after);
+    }
+
+    public function test_the_page_imports_into_the_selected_estate(): void
+    {
+        $this->actingAs($this->operator());
+
+        Tenant::query()->create(array(
+            'id' => 'estate-b',
+            'name' => 'Estate B',
+            'slug' => 'estate-b',
+        ));
+
+        Livewire::test(ConversationImportPage::class)
+            ->set('estate', 'estate-b')
+            ->set('body', (string) json_encode(array(array(
+                'id' => 'b-1',
+                'conversations' => array(array('from' => 'human', 'value' => 'Hello B')),
+            ))))
+            ->call('import')
+            ->assertSet('mode', 'import')
+            ->assertSee('imported');
+
+        $this->assertSame(
+            'estate-b',
+            DB::table('nvoos_transcripts')->where('session_id', 'import:b-1')->value('tenant_id')
+        );
+        $this->assertSame(0, DB::table('nvoos_transcripts')->where('tenant_id', 'default')->count());
+
+        // The audit row names the write scope, because the operator panel's own
+        // tenant is null.
+        $row = AdminAudit::query()
+            ->where('resource', 'conversation-import')
+            ->where('action', 'import')
+            ->first();
+
+        $this->assertNotNull($row);
+        $this->assertSame('estate-b', $row->after['estate']);
+
+        // The pin exists only for the action; leaving it set would leak the
+        // estate into the next Livewire request in the same worker.
+        $this->assertFalse(TenantContext::isPinned());
+    }
+
+    public function test_an_unknown_estate_is_refused_before_any_write(): void
+    {
+        $this->actingAs($this->operator());
+
+        Livewire::test(ConversationImportPage::class)
+            ->set('estate', 'no-such-estate')
+            ->set('body', (string) json_encode(array(array(
+                'id' => 'nope',
+                'conversations' => array(array('from' => 'human', 'value' => 'Hello')),
+            ))))
+            ->call('import')
+            ->assertSee('Choose an estate before importing');
+
+        $this->assertSame(0, DB::table('nvoos_transcripts')->count());
+        $this->assertSame(
+            0,
+            AdminAudit::query()->where('resource', 'conversation-import')->count(),
+            'A refused import must not leave an audit row for a write that never happened.'
+        );
     }
 
     public function test_a_customer_admin_is_refused_the_page(): void

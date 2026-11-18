@@ -1,0 +1,83 @@
+{
+  "slug": "project-management",
+  "name": "Project Management",
+  "version": "1.0.0",
+  "description": "Defaults for projects, tasks and calendar views in the Project Management toolkit. The Research Assistant select is omitted because its options come from the assistant store.",
+  "icon": "📋",
+  "feature": "project-management",
+  "screens": ["settings"],
+  "tab_labels": {
+    "defaults": "Defaults",
+    "features": "Features",
+    "research": "Research & Add"
+  },
+  "settings": [
+    {
+      "key": "default_project_status",
+      "label": "Default project status",
+      "type": "select",
+      "tab": "defaults",
+      "default": "planning",
+      "options": ["planning", "active", "on_hold", "completed"],
+      "description": "Status applied when a project is created without an explicit one."
+    },
+    {
+      "key": "default_task_priority",
+      "label": "Default task priority",
+      "type": "select",
+      "tab": "defaults",
+      "default": "medium",
+      "options": ["low", "medium", "high", "urgent"],
+      "description": "Priority applied when a task is created without an explicit one."
+    },
+    {
+      "key": "calendar_start_day",
+      "label": "Calendar start day",
+      "type": "select",
+      "tab": "defaults",
+      "default": "1",
+      "options": ["0", "1", "6"],
+      "description": "First day of the week in calendar views: 0 Sunday, 1 Monday, 6 Saturday."
+    },
+    {
+      "key": "enable_budget_tracking",
+      "label": "Enable budget tracking",
+      "type": "boolean",
+      "tab": "features",
+      "default": false,
+      "description": "Adds budget and expense fields to the project interface."
+    },
+    {
+      "key": "enable_time_tracking",
+      "label": "Enable time tracking",
+      "type": "boolean",
+      "tab": "features",
+      "default": false,
+      "description": "Adds time logging to tasks and projects."
+    },
+    {
+      "key": "enable_gantt_charts",
+      "label": "Enable Gantt charts",
+      "type": "boolean",
+      "tab": "features",
+      "default": false,
+      "description": "Enables timeline visualisations for project schedules."
+    },
+    {
+      "key": "auto_generate_task_plans",
+      "label": "Auto-generate task plans",
+      "type": "boolean",
+      "tab": "features",
+      "default": false,
+      "description": "Drafts an execution plan with AI when a project is created."
+    },
+    {
+      "key": "enable_research",
+      "label": "Enable Research & Add",
+      "type": "boolean",
+      "tab": "research",
+      "default": false,
+      "description": "Enables the Research & Add page for this toolkit."
+    }
+  ]
+}

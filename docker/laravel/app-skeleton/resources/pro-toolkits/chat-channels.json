@@ -1,0 +1,47 @@
+{
+  "slug": "chat-channels",
+  "name": "Chat Channels",
+  "version": "1.0.0",
+  "description": "Global switches and message retention for the Chat Channels toolkit. The per-platform credential panels on the WordPress screen are display-only (they are not in the option's sanitize whitelist), so they are deliberately absent here; configure channel credentials through Connections instead. The default assistant select is omitted because its options come from the assistant store.",
+  "icon": "💬",
+  "feature": "chat-channels",
+  "screens": ["settings"],
+  "tab_labels": {
+    "global": "Global",
+    "storage": "Storage"
+  },
+  "settings": [
+    {
+      "key": "enable_logging",
+      "label": "Enable logging",
+      "type": "boolean",
+      "tab": "global",
+      "default": false,
+      "description": "Records inbound and outbound channel activity."
+    },
+    {
+      "key": "enable_rate_limiting",
+      "label": "Enable rate limiting",
+      "type": "boolean",
+      "tab": "global",
+      "default": true,
+      "description": "Applies the channel rate limits to inbound messages."
+    },
+    {
+      "key": "verify_webhook_signatures",
+      "label": "Verify webhook signatures",
+      "type": "boolean",
+      "tab": "global",
+      "default": true,
+      "description": "Rejects inbound webhooks whose signature does not match the channel secret."
+    },
+    {
+      "key": "optimization_message_retention_days",
+      "label": "Message retention (days)",
+      "type": "number",
+      "tab": "storage",
+      "default": 90,
+      "description": "Messages older than this are deleted. 0 keeps them forever; values are clamped to 0-730."
+    }
+  ]
+}

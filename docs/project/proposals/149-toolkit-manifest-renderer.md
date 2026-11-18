@@ -1,7 +1,7 @@
 # Proposal 149 — toolkit manifest renderer (track P4)
 
 **Parent:** [`149-laravel-admin-parity-implementation-plan.md`](./149-laravel-admin-parity-implementation-plan.md) §46
-**State:** design, and **step 1 (engine extraction) shipped 2026-11-17** — see §1a. **Unblocks:** order item **10** (`toolkits`, `chat-channels`, and the 45 Pro settings/CPT pages behind Wave 3).
+**State:** design, **step 1 (engine extraction) shipped 2026-11-17** — see §1a — and **the renderer shipped 2026-11-18** as plan §56 (`/admin/toolkits`, contract row `toolkits: subset`), followed by the **first authoring pass (12 manifests)**. **Remaining:** the 10 toolkits that persist nothing (WordPress-side fix first), the committed settings-page ↔ manifest map, and create/edit on the panel. **Unblocks:** order item **10** (`toolkits`, `chat-channels`, and the 45 Pro settings/CPT pages behind Wave 3).
 **Why it runs in parallel with items 1–9:** it is the only remaining item that changes the *shape* of everything after it. Designing it late would serialise the whole plan.
 
 ## 1. Verified state
@@ -25,10 +25,10 @@ Missing:
 
 | Gap | Evidence |
 |---|---|
-| **No Filament renderer** | `app/Filament/Admin/` has no `Toolkits` surface; contract row `toolkits` is `planned` |
-| **The 7-tab settings page is not expressible** | a manifest's `settings` is a **flat field list** (`key/label/type/default/description`); the archetype it replaces is 7 tabs |
-| **23 manifests missing** | 2 exist (`commerce`, `documents`) against ~25 toolkits |
-| **No manifest lint** | §11's Wave 3 exit gate promises `bin/audit-admin-manifests.php`; it does not exist |
+| ~~**No Filament renderer**~~ | **Shipped 2026-11-18 (plan §56):** `ToolkitsPage` + `ToolkitPage`, contract row `toolkits: subset` |
+| ~~**The 7-tab settings page is not expressible**~~ | **Addressed 2026-11-18:** optional `tab_labels` map + per-setting `tab`, all-or-nothing; `ToolkitManifest::settingTabs()` groups for any renderer. Sections *within* a tab are still not expressible — no manifest needs one yet |
+| **9 of 22 manifests missing** | **12 exist** (`commerce`, `documents`, `crm`, and nine from the 2026-11-18 authoring pass). The pass stopped at 8 of 25 toolkit settings pages because 10 of them never persist what they render and 2 render nothing — see `149-toolkit-manifest-schema-check.md` §9c |
+| ~~**No manifest lint**~~ | **Shipped 2026-11-18:** `bin/audit-admin-manifests.php` (validation, slug/filename, servable screens) wired into `laravel-app.yml`. The settings-page ↔ manifest mapping check waits on the authoring pass |
 | ~~No in-process engine~~ | **Shipped 2026-11-17** (§1a): `ToolkitEngine` + `ToolkitException`; `ToolkitsController` is a thin adapter |
 
 ## 1a. Step 1 shipped — and the blocker it exposed
@@ -125,22 +125,36 @@ screen for no gain.
 
 ## 6. Order item 10 — acceptance
 
-- [ ] `ToolkitEngine` extracted; `ToolkitsController` delegates; its existing tests pass
+- [x] `ToolkitEngine` extracted; `ToolkitsController` delegates; its existing tests pass
       unchanged. **Done 2026-11-17.**
 - [x] `nvoos_toolkit_records` is estate-scoped (`tenant_id`, composite unique, one
       `query()` helper) and a cross-estate test pins it — **blocker §1a**, shipped
       as plan §47.
-- [ ] `commerce` renders **settings, entities and dashboard** from data, with no
-      family-specific PHP.
-- [ ] Adding a family is a manifest commit and nothing else — proven by adding one
+- [x] `commerce` renders **settings, entities and dashboard** from data, with no
+      family-specific PHP. **Shipped 2026-11-18 (plan §56):** one parameterised page
+      renders every manifest; no toolkit name appears in the PHP or the views.
+- [x] Adding a family is a manifest commit and nothing else — proven by adding one
       (recommend `documents`, which already has a manifest, then one new toolkit).
-- [ ] Settings tabs render from `tab`/`tab_labels` with a single-tab fallback.
-- [ ] `bin/audit-admin-manifests.php` fails on an invalid manifest and on a toolkit
+      **Proven in `AdminToolkitsTest`:** a fixture manifest (`workshop`) renders a
+      tabbed settings screen, an entity workbench and a dashboard card with zero
+      code changes beyond the manifest file.
+- [x] Settings tabs render from `tab`/`tab_labels` with a single-tab fallback.
+      **Shipped in `ToolkitManifest::settingTabs()`** so the grouping is shared, not
+      re-implemented per renderer.
+- [~] `bin/audit-admin-manifests.php` fails on an invalid manifest and on a toolkit
       settings page with no manifest; runs in `php-linting.yml` beside the admin-surface
-      coverage job.
-- [ ] `toolkits` and `chat-channels` contract rows move off `planned` (`chat-channels`
-      is toolkit-shaped and becomes reachable once a manifest declares it).
-- [ ] Audit rows for settings and entity writes; a diff never carries a `secret` value.
+      coverage job. **Shipped:** validation, slug/filename match, and unserved-screen
+      detection, wired into `laravel-app.yml`. **Deferred:** the settings-page ↔
+      manifest mapping check — the authoring pass showed the mapping is not
+      "one manifest per settings page" (10 pages persist nothing, 2 render no
+      controls), so the committed map has to come from §9b/§9c of the check doc
+      rather than from filenames.
+- [x] `toolkits` moves off `planned` (`chat-channels` stays `planned` until a manifest
+      declares it). **`toolkits` is `subset`** — the panel lists/searches/deletes
+      records while create/edit remain console-side (§56.4).
+- [x] Audit rows for settings and entity writes; a diff never carries a `secret` value.
+      Keys only: the engine masks secrets on read, so a secret change is reported as a
+      changed **name**, never a value.
 
 ## 7. Non-goals
 
@@ -152,10 +166,25 @@ screen for no gain.
 - **Do not build `research`/`consolidate` screens here.** Those are Wave 4 and share the
   `probe`/wizard renderers; routing them early would ship two blank screens.
 
-## 8. Open question
+## 8. Open question — answered 2026-11-18
 
 The 25-manifest authoring pass assumes the WordPress toolkit settings pages' fields map
 cleanly to the five setting types. One domain should be checked before the bulk
 (recommend `crm`, which has enum-heavy settings) — if a toolkit needs a field type the
 schema lacks, that is a schema decision to make **once**, before 23 manifests are
 written against the wrong shape.
+
+**Answered:** [`149-toolkit-manifest-schema-check.md`](./149-toolkit-manifest-schema-check.md).
+The CRM inventory found one missing type (`textarea`, ten fields: newline lists and
+free text) which **shipped** — optional `rows` 2–20, rendered by both the panel and the
+console. Two exclusions are recorded rather than implemented: dynamic select options
+(three fields read remote-site connections or assistants from another store) and
+sections within a tab. Nested groups map to flattened keys plus `tab_labels`. CRM is
+expressible with the six types, so the authoring pass is unblocked.
+
+**`crm.json` shipped 2026-11-18 as the worked reference** (66 settings / 10 tabs,
+settings-only). Writing it exposed one more assumption: `entities` was required, so a
+settings-only toolkit could not exist. Omitted `entities` is now valid (an explicitly
+empty list is still rejected), and `ToolkitContractTest` skips the entity lifecycle
+for such a family. The recipe for the remaining manifests is §7b of the check, and the
+first pass' results — including the ten pages that persist nothing — are §9 there.

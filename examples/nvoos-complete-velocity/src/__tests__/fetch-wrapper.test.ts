@@ -148,3 +148,100 @@ describe('installFetchWrapper 401 signal', () => {
 	    restore();
 	  });
 	});
+
+describe('installFetchWrapper X-Tenant-Id (Laravel estate selector)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  function install(tenantId?: () => string) {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const restore = installFetchWrapper({ siteOrigin: siteOrigin(), tenantId });
+    return { fetchMock, restore };
+  }
+
+  function headersOf(fetchMock: ReturnType<typeof vi.fn>): Headers {
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    return new Headers(init.headers);
+  }
+
+  it('adds the estate header to same-origin console API requests', async () => {
+    const { fetchMock, restore } = install(() => 'acme');
+
+    await window.fetch('/api/v1/assistants');
+
+    expect(headersOf(fetchMock).get('X-Tenant-Id')).toBe('acme');
+    restore();
+  });
+
+  it('reads the selection per request, not at install time', async () => {
+    let selected = 'default';
+    const { fetchMock, restore } = install(() => selected);
+
+    await window.fetch('/api/v1/assistants');
+    selected = 'acme';
+    await window.fetch('/api/v1/assistants');
+
+    const first = new Headers((fetchMock.mock.calls[0][1] as RequestInit).headers);
+    const second = new Headers((fetchMock.mock.calls[1][1] as RequestInit).headers);
+    expect(first.get('X-Tenant-Id')).toBe('default');
+    expect(second.get('X-Tenant-Id')).toBe('acme');
+    restore();
+  });
+
+  it('never sends the header to the identity endpoints', async () => {
+    // `/session/me` must report the server's own resolution — the picker
+    // validates a stored id against it, so a stale client value here would
+    // validate itself.
+    const { fetchMock, restore } = install(() => 'acme');
+
+    await window.fetch('/api/v1/session/me');
+    await window.fetch('/api/v1/session/nonce');
+
+    expect(headersOf(fetchMock).has('X-Tenant-Id')).toBe(false);
+    const second = new Headers((fetchMock.mock.calls[1][1] as RequestInit).headers);
+    expect(second.has('X-Tenant-Id')).toBe(false);
+    restore();
+  });
+
+  it('never sends the header on a WordPress API path', async () => {
+    const { fetchMock, restore } = install(() => 'acme');
+
+    await window.fetch('/wp-json/mcp-ai/v1/assistants');
+
+    expect(headersOf(fetchMock).has('X-Tenant-Id')).toBe(false);
+    restore();
+  });
+
+  it('never sends the header to another origin', async () => {
+    const { fetchMock, restore } = install(() => 'acme');
+
+    await window.fetch('https://media.example.com/api/v1/assistants');
+
+    expect(headersOf(fetchMock).has('X-Tenant-Id')).toBe(false);
+    restore();
+  });
+
+  it('sends nothing when no selector is installed or it is empty', async () => {
+    const withoutSelector = install(undefined);
+    await window.fetch('/api/v1/assistants');
+    expect(headersOf(withoutSelector.fetchMock).has('X-Tenant-Id')).toBe(false);
+    withoutSelector.restore();
+
+    const emptySelector = install(() => '');
+    await window.fetch('/api/v1/assistants');
+    expect(headersOf(emptySelector.fetchMock).has('X-Tenant-Id')).toBe(false);
+    emptySelector.restore();
+  });
+
+  it('does not overwrite a request-level header', async () => {
+    const { fetchMock, restore } = install(() => 'acme');
+
+    await window.fetch('/api/v1/assistants', { headers: { 'X-Tenant-Id': 'explicit' } });
+
+    expect(headersOf(fetchMock).get('X-Tenant-Id')).toBe('explicit');
+    restore();
+  });
+});

@@ -365,12 +365,13 @@
       "title": "Toolkit domain surfaces",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "subset" },
       "console": { "state": "full", "keys": ["toolkits", "proOps"] },
       "writer": "shared",
       "plan_gate": "toolkit:{slug}",
-      "projection": null,
-      "notes": "Wave 3 renders these from manifests; an unlicensed toolkit is absent, not a rendered 403."
+      "projection": "Settings, the entity workbench (list + server-side search + armed delete) and dashboard cards render from the manifest through ToolkitEngine; create and edit stay in the console workbench. research/consolidate are Wave 4 and are not routed on the panel.",
+      "files": ["app/Filament/Admin/Pages/ToolkitsPage.php", "app/Filament/Admin/Pages/ToolkitPage.php"],
+      "notes": "Wave 3 renderer shipped 2026-11-18 (plan §56). One index page lists the manifests the estate's entitlement allows; one parameterised page renders `/admin/{estate}/toolkits/{toolkit}/{screen}` from data — a new toolkit is a manifest commit, not a page. Settings tabs come from `tab_labels`/`tab` (single General tab when absent). An unlicensed toolkit is absent from the catalogue and answers 404 to a direct URL, indistinguishable from an unknown one (R4). Entity delete is armed two-step and audited with keys only — a diff never carries a secret value."
     },
     {
       "id": "command-centre",
@@ -403,9 +404,9 @@
       "admin": { "state": "planned" },
       "console": { "state": "full", "keys": ["chatChannels"] },
       "writer": "shared",
-      "plan_gate": "feature:chat_channels",
+      "plan_gate": "feature:chat-channels",
       "projection": null,
-      "notes": "toolkit-shaped: served through the toolkit manifest in Wave 3."
+      "notes": "toolkit-shaped: the manifest (chat-channels.json) is the entitlement hook and renders its settings under /admin/{estate}/toolkits/chat-channels/settings. The dedicated surface stays planned; the per-platform credential panels on the WordPress screen are display-only, so the manifest declares only the four settings that persist."
     },
     {
       "id": "wordpress-bridge",
@@ -554,9 +555,9 @@
       "console": null,
       "writer": "ops",
       "plan_gate": null,
-      "projection": "A deliberately narrow first version (§37). Accepted: pasted JSON in two shapes — ShareGPT (`[{conversations: [{from, value}]}]`) and generic (`[{session_id, messages: [{role, content}]}]`). Caps enforced on the string before storage: 2,097,152 bytes, 500 conversations, 200 messages per conversation (excess truncated and reported). NOT ported from WordPress: zip archives (an archive reader needs entry-name validation and a decompression limit), JSONL streaming (needs a temp file, which a paste avoids), the Claude / Gemini / OpenAI-JSONL adapters, media handling, the memory miner, the privacy filter, and the async queue (import is synchronous and bounded instead). Import is idempotent because TranscriptStoreInterface::save() upserts by session_id and the key is derived deterministically; imported text is scrubbed to valid UTF-8 and roles come from a closed set.",
+      "projection": "A deliberately narrow first version (Â§37). Accepted: pasted JSON in two shapes â€” ShareGPT (`[{conversations: [{from, value}]}]`) and generic (`[{session_id, messages: [{role, content}]}]`). Caps enforced on the string before storage: 2,097,152 bytes, 500 conversations, 200 messages per conversation (excess truncated and reported). The target estate is chosen on the page (selector, default `default`); the import pins `TenantContext` for the action only and an unknown estate refuses before any write. NOT ported from WordPress: zip archives (an archive reader needs entry-name validation and a decompression limit), JSONL streaming (needs a temp file, which a paste avoids), the Claude / Gemini / OpenAI-JSONL adapters, media handling, the memory miner, the privacy filter, and the async queue (import is synchronous and bounded instead). Import is idempotent because TranscriptStoreInterface::save() upserts by session_id and the key is derived deterministically; imported text is scrubbed to valid UTF-8 and roles come from a closed set.",
       "files": ["app/Filament/Operator/Pages/ConversationImportPage.php"],
-      "notes": "Shipped as `subset` 2026-11-17 (§37). §32 called this 'a feature rather than a page ... needs its own proposal'; that was right about the WordPress subsystem (fifteen classes) and wrong about the smallest useful slice — two shapes, synchronous, capped, upsert-by-session is a genuine import. Paste rather than upload on purpose: an upload path needs a temporary file store, a MIME gate and a size check before the bytes are readable, and this runtime has not configured one for imports. `writer: ops` is correct and this is one of the few rows where a state of `subset` still writes."
+      "notes": "Shipped as `subset` 2026-11-17 (Â§37). Â§32 called this 'a feature rather than a page ... needs its own proposal'; that was right about the WordPress subsystem (fifteen classes) and wrong about the smallest useful slice â€” two shapes, synchronous, capped, upsert-by-session is a genuine import. Paste rather than upload on purpose: an upload path needs a temporary file store, a MIME gate and a size check before the bytes are readable, and this runtime has not configured one for imports. `writer: ops` is correct and this is one of the few rows where a state of `subset` still writes. The Â§37.5 estate-selector gap closed 2026-11-18: the page names its target, pins `TenantContext` for the action and restores it, refuses an unknown estate before any write, and records the estate on the audit row."
     },
     {
       "id": "reports",

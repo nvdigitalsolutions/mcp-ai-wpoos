@@ -233,6 +233,18 @@ export function SettingsScreen( { client, manifest }: ToolkitScreenProps ): JSX.
 										</option>
 									) ) }
 								</select>
+							) : field.type === 'textarea' ? (
+								<textarea
+									id={ id }
+									className="nvoos-pro-spa-toolkits__input"
+									rows={ field.rows ?? 4 }
+									value={ form[ field.key ] ?? '' }
+									aria-describedby={ describedBy }
+									aria-invalid={ invalid || undefined }
+									onChange={ ( event ) =>
+										setForm( ( current ) => ( { ...current, [ field.key ]: event.target.value } ) )
+									}
+								/>
 							) : (
 								<input
 									id={ id }

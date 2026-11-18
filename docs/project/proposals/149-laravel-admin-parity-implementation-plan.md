@@ -1,10 +1,10 @@
 # Proposal 149 — Implementation Plan
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **37 numbered slices** (§8–§54) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, and **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
-**Scoreboard** — re-measured 2026-11-17 with `bin/audit-surface-ownership.php`: **45 surfaces · 31 built on a Filament panel** (11 `/ops`, 21 `/admin`; `settings.platform` is on both) · **29 console-served** · **9 console-only** · **3 planned-only** (`measurement`, `identity-provider`, `datasets`, all `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
-**Validation** — app suite: **1262 tests / 6755 assertions**, 4 failures, all `WifiKpisTest` (the documented pre-existing unbound-addon gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
-**Date:** 2026-11-16 · **Header refreshed:** 2026-11-17
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **38 numbered slices** (§8–§56) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25), and **§56 opens Wave 3** with the toolkit manifest renderer (`/admin/toolkits`). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
+**Scoreboard** — re-measured 2026-11-18 with `bin/audit-surface-ownership.php`: **45 surfaces · 32 built on a Filament panel** (11 `/ops`, 22 `/admin`; `settings.platform` is on both) · **29 console-served** · **8 console-only** · **3 planned-only** (`measurement`, `identity-provider`, `datasets`, all `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Validation** — app suite: **1277 tests / 7243 assertions, 0 failures** (with the `NVOOS_PM_*` fixtures present; four `WifiKpisTest` cases fail without them, a documented environment gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
+**Date:** 2026-11-16 · **Header refreshed:** 2026-11-18
 **Scope (Wave 0):** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
 
@@ -3377,21 +3377,35 @@ The fix was to make fixtures realistic, not to weaken the policy:
   the default estate. A fixture written that way passed the wrong assertion until
   it was corrected.
 
-### 21.6 Deployment constraint — read before shipping this
+### 21.6 Deployment constraint — closed 2026-11-18
 
-The console SPA does **not** send `X-Tenant-Id` yet; its clients build headers
-per API class and there is no shared interceptor.
+The constraint this section carried is gone: the console **does** send
+`X-Tenant-Id`, through one shared interceptor rather than per-class headers.
 
-- **Single-estate users are unaffected.** They resolve implicitly, exactly as
-  before.
-- **A user with two or more memberships gets 409** on every tenant-scoped call
-  until the SPA selects one. That is the correct server behaviour and a visible
-  one, not a silent wrong estate — but it is a break.
+- `spa-v2/src/api/tenant.ts` — selection store (`nvoos-console.tenant`) +
+  the boot decision. Zero memberships → proceed (WordPress / unprovisioned);
+  one → proceed without a selector; several without a usable stored id →
+  pick; a stored id that is no longer a membership → pick, so a removed
+  estate cannot become a permanent 404.
+- `src/fetch-wrapper.ts` — injects the header **per request** (the picker can
+  change it without re-installing), scoped to same-origin `/api/v1/` paths,
+  and skips `/api/v1/session/` so the identity endpoints keep reporting the
+  server's own resolution. WordPress is never given a selector.
+- `EstatePicker` runs before the shell for an ambiguous session; the sidebar
+  footer gains a switcher for 2+ estates and **reloads** on change, because
+  spa-v2 holds per-estate data in its stores. Sign-out clears the selection.
+- `serve.mjs`'s proxy cache key includes `x-tenant-id` — a tenant-scoped GET
+  that is publicly cacheable must not be replayable across estates.
 
-**Do not release this to an environment that has multi-estate console users
-before the SPA ships the header and a picker.** The server contract is ready:
-`/session/me` returns `estates[]` and `tenant`, so the client has everything it
-needs.
+The original warning still explains the server contract correctly, so it is
+kept below for context; it is no longer a release blocker.
+
+> The console SPA did **not** send `X-Tenant-Id` when this slice shipped; its
+> clients built headers per API class and there was no shared interceptor.
+> Single-estate users resolved implicitly; a user with two or more
+> memberships got 409 on every tenant-scoped call until the SPA selected one.
+> `/session/me` returns `estates[]` and `tenant`, so the client had everything
+> it needed — which is what this follow-up used.
 
 ### 21.7 Validation record — executed
 
@@ -3405,7 +3419,7 @@ needs.
 
 ### 21.8 Follow-ups recorded
 
-- **SPA header + estate picker** — the blocking follow-up (§21.6).
+- ~~**SPA header + estate picker**~~ — **closed 2026-11-18** (§21.6).
 - **Refusal alerting is a log line.** The cheat sheet asks for alerting on
   repeated denials; there is no metrics pipeline in this runtime yet.
 - **`default` is still the implicit single-estate case.** That is a deployment
@@ -3519,10 +3533,15 @@ container as a runner problem, not a code failure, and rerun before investigatin
   people's chats. It would need its own decision, and probably its own proposal.
 - **Bulk retention UX is still absent.** `prune()` is a job, not a surface, on
   purpose — the row's note says retention stays server-owned.
-- **`/ops` conversation import has no estate selector**, so its saves land in
-  `default` (the same implicit single-estate case the console API had before
-  §21). That is correct for every deployment today; if `/ops` ever gains an
-  estate selector, the importer must take it rather than relying on the fallback.
+- **`/ops` conversation import has no estate selector** — **closed 2026-11-18.** The
+  page now names its target (a `Tenant` selector, default `default`, so an operator
+  who ignores it gets the previous behaviour). The import pins `TenantContext` for
+  the action only and restores it in `finally`; an unknown or empty estate refuses
+  before anything is read or written, and the audit row carries the estate id — the
+  operator panel's own tenant is null, so without it the row could not say where the
+  write went. `AdminConversationImportTest` gains three cases: selected-estate write
+  (+ pin restored), unknown-estate refusal (no rows, no audit), and the default
+  target on the pre-existing page-import test.
 
 ---
 
@@ -4042,7 +4061,7 @@ decided or designed:
 | **P1** | [`149-datasets-readiness-worksheet.md`](./149-datasets-readiness-worksheet.md) | classification decision | order item **18** (`datasets`) | the eleven HuggingFace slugs carry a hand-written readiness value + reason, and `bin/audit-tool-readiness.php` passes |
 | **P2** | [`149-identity-provider-decision.md`](./149-identity-provider-decision.md) | **owner decision** | order item **19** (`identity-provider`) | OIDC / OIDC+SAML / defer is chosen and recorded; the row becomes buildable or `absent` |
 | **P3** | [`149-measurement-data-model.md`](./149-measurement-data-model.md) | data-model design | order item **17** (`measurement`) | the five tables, retention rule and API are agreed; the slice can start at migrations |
-| **P4** | [`149-toolkit-manifest-renderer.md`](./149-toolkit-manifest-renderer.md) | engine design | order item **10** (`toolkits`, `chat-channels`, 45 Pro pages) | **engine extracted 2026-11-17**; **record tenancy scoped 2026-11-17** (§47); next: `tab` schema + manifest lint |
+| **P4** | [`149-toolkit-manifest-renderer.md`](./149-toolkit-manifest-renderer.md) | **renderer shipped 2026-11-18 (§56)** | order item **10** (`toolkits`, `chat-channels`, 45 Pro pages) | **engine extracted 2026-11-17**; **record tenancy scoped 2026-11-17** (§47); **tab schema + renderer + manifest lint 2026-11-18** (§56); **12 manifests 2026-11-18** (§56.7). Next: the 10 toolkits that persist nothing need a WordPress-side fix before they can be authored |
 
 ### 46.1 Why these four, and why now
 
@@ -4093,8 +4112,10 @@ items 1–9 run:
 - **P2** — one owner conversation; no engineering.
 - **P3** — design review first (§8 of its doc has three open questions);
   migrations after.
-- **P4** — engine extraction and record tenancy **done 2026-11-17** (§46, §47); next is
-  the tab schema and the renderer. Two manifests exist against ~25 toolkits.
+- **P4** — engine extraction and record tenancy **done 2026-11-17** (§46, §47); the tab
+  schema, the renderer, the manifest lint and the first authoring pass **done
+  2026-11-18** (§56). **12 manifests** exist; the remaining 13 are blocked on
+  WordPress-side persistence, not on manifest volume.
 
 ---
 
@@ -5701,3 +5722,150 @@ because the estate has no such data, which is the intended shape rather than a
 missing migration. Driving the filter to nothing on `tools` and `professions`
 produced `colspan="4"` messages **inside `tbody`** with all four headers still
 visible. Every shared header computed `position: sticky`.
+
+---
+
+## 56. Wave 3 — the toolkit manifest renderer (`/admin/toolkits`)
+
+**State:** shipped 2026-11-18. The first slice of order item 10 (P4). `toolkits`
+moves `planned → subset`; the engine, the schema and the panel now agree on one
+manifest.
+
+### 56.1 Why this slice, and why now
+
+§55 closed before the engine on purpose: the renderer adds a screen per toolkit,
+which multiplies a navigation problem if the nav is still flat. With the six
+groups in place, a toolkit page files under **Knowledge** without a second
+decision, and the shared data table already carries the accessibility contract
+the entity workbench needs.
+
+The blocker §47 removed was the real gate. `nvoos_toolkit_records` had no estate
+column, so a panel over it would have listed every estate's records. That slice
+shipped the composite unique and the one-`query()` rule the renderer now relies
+on rather than re-implements.
+
+### 56.2 What ships
+
+| Piece | Path | Rule it encodes |
+|---|---|---|
+| Tab schema | `lib/core/src/Domain/ValueObject/ToolkitManifest.php` | `tab_labels` + per-setting `tab`, all-or-nothing; `settingTabs()` owns the grouping so both renderers agree |
+| Catalogue | `app/Filament/Admin/Pages/ToolkitsPage.php` | entitled manifests only; a console-only manifest renders as text, never a dead link |
+| Detail | `app/Filament/Admin/Pages/ToolkitPage.php` | `/admin/{estate}/toolkits/{toolkit}/{screen}`; settings, entities (`?entity=`), dashboard |
+| Views | `resources/views/filament/admin/{toolkits,toolkit}.blade.php` | inline styles; shared `<x-admin.data-table>`; no `@js()` (the §51 rule) |
+| Lint | `bin/audit-admin-manifests.php` | every source manifest validates, slug matches filename, and every declared screen is served by some surface |
+| CI | `.github/workflows/laravel-app.yml` §"Toolkit manifests are servable" | red on an invalid manifest or an unserved screen |
+
+**Three screens, all from data.** Settings fields and their tabs come from the
+manifest; entity columns come from the manifest; dashboard cards come from
+`ToolkitEngine::dashboard()`. No toolkit name appears in the PHP or the views —
+that is the acceptance test for "a new family is a manifest commit".
+
+**`research` and `consolidate` are not routed.** The console serves both; the
+panel answers **404** to either, because a link without a renderer is a blank
+shell (P4 §7). A manifest may still declare them — `commerce` does — and the
+catalogue's `screens` projection narrows to the three the panel serves so the
+card never advertises a page this runtime does not have.
+
+### 56.3 Safety properties (and the tests that pin them)
+
+| Property | Test |
+|---|---|
+| Unlicensed is absent from the catalogue and **404** on direct access — indistinguishable from unknown (R4) | `test_an_unlicensed_toolkit_is_absent_from_the_index_and_404s_on_direct_access` |
+| Unrouted and unknown screens 404 | `test_unknown_toolkits_and_unrouted_screens_are_404` |
+| `manage_options` is required, matching the REST group | `test_the_catalogue_requires_manage_options` |
+| Settings write through the engine, and the audit row carries **keys only** | `test_saving_settings_goes_through_the_engine_and_audits_keys_only` |
+| A blank secret keeps the stored value; the value is never rendered | `test_a_blank_secret_keeps_the_stored_value`, `test_the_secret_value_is_never_rendered` |
+| Entity list/search/pagination are server-side and estate-scoped | `test_the_entity_screen_lists_searches_and_pages_records` |
+| Delete is armed two-step, audited, and refuses a foreign id | `test_deleting_an_own_record_is_armed_and_audited`, `test_a_foreign_record_cannot_be_deleted_through_the_panel` |
+
+Secrets follow the credential-page rule end to end: `ToolkitEngine` masks them
+on read, the password field hydrates **empty** (a hidden value is still a value
+in the Livewire snapshot), and only a typed value dehydrates. A save that only
+sets a secret therefore reports the field **name** as changed and never the
+value.
+
+### 56.4 Deliberately a subset
+
+The panel lists, searches and deletes entity records; **create and edit stay in
+the console workbench**. The console's editor is generated from the same
+manifest, so rebuilding it in Livewire would be the same form twice with a
+second place to keep column validation correct — the `RemoteSitesPage`
+precedent. The contract row says `subset` and this is the projection it
+declares.
+
+### 56.5 Validation — executed
+
+- Core: `ToolkitManifestTest` **30 tests / 52 assertions** (8 new: tab grouping,
+  all-or-nothing labels, unused/undeclared tabs, label-key shape).
+- App: `AdminToolkitsTest` **12 tests / 52 assertions**; the focused renderer set
+  (`SurfaceOwnershipTest`, `AdminNavigationTest`, `Toolkit*Test`,
+  `AdminPanelBladeTest`) **52 / 744**.
+- **Amended 2026-11-18:** the CRM schema check added `textarea` + `rows`, so
+  `ToolkitManifestTest` is **33 / 59** and `AdminToolkitsTest` **13 / 60** (the
+  fixture carries a tabbed textarea; a blank text setting saves instead of
+  erroring). See
+  [`149-toolkit-manifest-schema-check.md`](./149-toolkit-manifest-schema-check.md).
+- Full app suite: **1277 tests / 7243 assertions, 0 failures** (baseline was
+  1262 / 6755 with four `WifiKpisTest` gaps; those four only fail when the
+  `NVOOS_PM_*` fixtures are absent, and this run passed both). **Re-measured
+  2026-11-18 after the authoring pass** — the added assertions are the nine new
+  manifests round-tripping settings in `ToolkitContractTest`.
+- `php bin/audit-surface-ownership.php` → **45 surfaces · 32 built** (11 `/ops`,
+  22 `/admin`) · **8 console-only** · 3 planned · 2 absent.
+- `php bin/audit-admin-manifests.php` → exit 0 on the committed catalogue; exit
+  1 with a planted unknown screen.
+- `phpcs --standard=phpcs-laravel.xml.dist` clean on every changed PHP file.
+
+### 56.6 Remaining for order item 10
+
+1. ~~**22 manifests.**~~ **Partly closed 2026-11-18 — 12 exist** (`commerce`,
+   `documents`, `crm` + nine from the authoring pass). The pass stopped at 8 of
+   the 25 `WP_MCP_AI_Toolkit_Settings_Base` subclasses because 10 of them never
+   persist what they render (base `sanitize_settings()` whitelists three keys and
+   their tabs use raw input names) and 2 render no controls. Fixing those 10 is a
+   WordPress-side change, not a manifest one. See §56.7 and §9c of the check doc.
+2. **The settings-page ↔ manifest mapping check** in the lint. The authoring pass
+   showed the map cannot be derived from filenames (10 pages persist nothing, 2
+   render nothing), so it has to be committed from §9b/§9c of the check doc.
+3. **Create/edit on the panel**, if operators ask for it — an explicit
+   disagreement with §56.4, not an oversight.
+4. **`chat-channels`** stays `planned` as a dedicated surface, but its manifest now exists,
+   so its four persisted settings render under
+   `/admin/{estate}/toolkits/chat-channels/settings`. The contract row's
+   `plan_gate` was aligned from `feature:chat_channels` to
+   `feature:chat-channels` to match the manifest's entitlement hook (the
+   underscore form was referenced by no code). The per-platform credential
+   panels on the WordPress screen are display-only — they are absent from the
+   option's `sanitize_settings()` whitelist — so they are not in the manifest.
+
+### 56.7 The authoring pass (2026-11-18)
+
+Nine manifests shipped in two batches, taking the catalogue to **12 manifests /
+158 settings**, all settings-only:
+
+| Batch | Manifests | Settings |
+|---|---|---|
+| 1 | `project-management`, `pro-schedule`, `law-firm`, `comic-creation`, `chat-channels` | 8 / 8 / 7 / 11 / 4 |
+| 2 | `shopify-sync`, `ezuite`, `flowhub`, `dietpi` | 7 / 5 / 12 / 26 |
+
+**The rule the pass added to §7b:** before enumerating controls, prove they
+persist. A toolkit settings page persists a field only if it is named
+`<option_name>[key]` **and** the page's `sanitize_settings()` accepts that key,
+*or* the page reads a prefixed key straight from `$_POST`. Ten of the twenty-five
+pages fail that test, which is why the manifest count is 12 rather than 25.
+
+`pro-schedule` reuses the existing `schedules` feature. The other eight added a
+kebab-case feature key to `ProPlanCatalog` in all three plans — the validator
+requires `feature` to match the slug pattern, so `project-management` rather than
+`project_management`. Every plan keeps the pre-existing behaviour, so the Q-5
+tiering decision is untouched.
+
+Omissions, all by §7b rule 5 and all recorded in the affected manifest's
+`description`: assistant selects, Remote-Sites connection checklists, key/value
+field mappings, `shopify-sync.catalog_search_terms` (persisted as a **list**, so a
+textarea would change the store's shape), and `flowhub.location_id` (consumed but
+rendered by no control).
+
+**Validation:** core `ProPlanCatalogTest` + `ToolkitManifestTest` **43 / 159**;
+app `ToolkitContractTest` + `EntitlementTest` **22 / 402**; `audit-admin-manifests`
+exit 0 on **12 manifests**; mirror current; surface-ownership exit 0; phpcs clean.

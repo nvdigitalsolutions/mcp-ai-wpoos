@@ -482,10 +482,42 @@ Everything below landed **after** the v1.2.20 section, so treat §8 as the stora
 - **Command centre + telemetry** — the overview route reads dedicated telemetry stores (`nvoos_*` migrations) rather than scanning tables at request time; the schema test pins the telemetry and token tables. Nav items whose endpoint is not served are hidden client-side.
 - **Slash commands** — `SlashCommandParser` + `ToolShortcutNormaliser` in `lib/core`; the Laravel surface parses and serves shortcuts. Tool shortcuts are shared; the full WordPress command *library* is not ported (deliberate, #7744).
 - **Tool readiness (090-M)** — `lib/core/resources/tool-readiness.php` declares **223** classes with a closed vocabulary; `Application\Tool\ToolReadiness` classifies (`classify`, `isServable`, `annotations`, `hash`, `violations`); `ManifestToolRegistrar` registers only servable tools with the constructor resolved from the container; `bin/audit-tool-readiness.php` checks completeness, integrity, shadowing and probe-tier vocabulary and runs in the `Tool Readiness` CI job. **Do not add a tool to a registrar by hand** — add it to the manifest. Nineteen prompt-builder stand-ins stay unregistered because they shared a real tool's slug and returned a synthetic `success`.
+- **Toolkit renderer (Wave 3, plan §56)** — `/admin/{estate}/toolkits` lists the entitled
+  manifests; `/admin/{estate}/toolkits/{toolkit}/{screen}` renders `settings`,
+  `entities` (`?entity=…`) and `dashboard` from the manifest through
+  `App\Support\Pro\ToolkitEngine`. No toolkit name appears in the PHP or Blade —
+  a new family is a manifest commit. Setting types are
+  `text|textarea|number|boolean|select|secret`; `textarea` takes an optional
+  `rows` 2–20 and a list value is a newline-separated string (the CRM schema
+  check in `docs/project/proposals/149-toolkit-manifest-schema-check.md`).
+  **`entities` is optional**: omitting it declares a settings-only toolkit
+  (CRM, chat channels — their records live on CPT/REST surfaces); an explicitly
+  empty list is still rejected, and `ToolkitContractTest` skips the entity
+  lifecycle for such a family. `research`/`consolidate` are console-only and
+  answer **404** on the panel; an unlicensed toolkit is absent from the catalogue
+  and also 404s (indistinguishable from unknown, R4). The contract row is
+  `toolkits: subset`: list/search/armed-delete are here, create/edit stay in the
+  console workbench. `bin/audit-admin-manifests.php` gates manifest validity and
+  screen coverage in `laravel-app.yml`; it fails on an unknown/unserved screen,
+  a slug/filename mismatch, or a manifest with no screens.
+  - **A Filament 5 custom page slug may carry route parameters** —
+    `protected static ?string $slug = 'toolkits/{toolkit}/{screen}'` registers
+    `admin/{tenant}/toolkits/{toolkit}/{screen}` and `Page::getUrl(['toolkit'=>…,
+    'screen'=>…])` fills both; set `$shouldRegisterNavigation = false` or the
+    sidebar asks for a URL with no parameters. Extra params become a query string,
+    which is how `?entity=` rides the same route.
+  - **`@js()` is banned in panel Blade**, and `AdminPanelBladeTest` enforces it:
+    the component tag compiler stringifies the attribute before the directive runs.
+    Use `wire:click="method({{ \Illuminate\Support\Js::from($value) }})"` inside
+    **double** quotes.
+  - **`Filament::setTenant()` needs an authenticated user.** The `TenantSet` event
+    takes the current user, so a test that calls it in `setUp()` before
+    `actingAs()` throws a `TypeError`; sign in first, then pin the tenant.
 - **Workflow executor + triggers** — `WorkflowExecutor` (`lib/core`) walks the graph in **Kahn topological order**, one node at a time, fail-fast (the first failure names itself and downstream nodes record `skipped`). Node types: `tool`, `condition`, `agent`, `delay`, plus input/output pass-throughs; an unknown type without `toolSlug` is a no-op, so a WordPress-authored graph still runs. `WorkflowRunner` is shared by `POST /api/v1/orchestration/triggers/{id}/fire` and `php artisan nvoos:fire-triggers` (`everyMinute()->withoutOverlapping()`) so both produce the same run row (`source` = `manual`/`trigger`, plus `trigger_id`). `config.cron` beats `config.schedule` (WP interval name or five-field expression); `config.every_minutes` is the fallback and an unparseable schedule is simply never due.
 - **Endpoint availability contract** — 45 console keys, each reporting route-backed vs blank **with a reason** when it is not; `/features` reports the true/false counts — **39 true / 6 false / `endpoint_gaps: []`** measured 2026-11-16, so the runtime answer matches the contract declaration key for key. The six are `chatChannels` (`toolkit-shaped`), `mediaCc` (`connected-service`: the route exists but `oos.media_worker.url` is unset) and `contentGraph`/`docsHub`/`mediaStudio`/`documentEditor` (`external-product`: `oos.connected_apps` is unset). WordPress reads **41/4** on the same estate because the docs-hub plugin registers `nvoos-docs` locally. A discovered app is merged by `EndpointCapabilities::applyConnectedApps()`, which **recomputes `gaps`** — flipping a key without recomputing reports a surface as both available and missing. The contract is guarded on both CIs (`spa-v2/src/api/config.ts` ↔ `EndpointCapabilities::ROUTES`) — adding a route without the key (or the reverse) fails. Adapter migrations are proven to run in the app; do not add a table that only exists in the dev DB.
 - **Harness storage** — `HarnessProfileProviderInterface` + `nvoos_harness_trace_records` (one row per assistant, `TracePolicy` retention 10–200). `NullTraceStore` is the default when no storage is bound.
 - **Media ops** — health comes from the Media Worker, optimisation is proxied through it, and a sweep is scheduled; the Pro settings matrix must not report `installed` when the worker is unreachable.
+- **Conversation import (`/ops`)** — the page **names its target estate** (selector, initial `default`), because the operator panel has no ambient estate. The import pins `TenantContext` for the action only and restores it in `finally`, refuses an unknown id before any write, and records the estate on the audit row. Do not re-introduce an implicit `default` fallback.
 - **Assistant + console extras** — `POST` assistant test endpoint, blueprint catalogue + install-as-assistant, advanced assistant-editor fields, dashboards route, chat-client route.
 - **Admin panels (Proposal 149)** — `/ops` (operator) and `/admin` (tenant-scoped) are Filament 5.11 panels; resources live under `app/Filament/{Operator,Admin}/` so the two panels cannot share one. Access is `AdminAccessPolicy`: `/ops` = member of a `tenants.is_operator` estate **plus** `manage_options` (never `users.role` — a customer's estate administrator is an administrator), `/admin` = non-viewer membership. `AuditAdminRequests` writes one row per mutating panel request to `nvoos_admin_audit` (failures included; credentials redacted at any depth), and the `RecordsAdminChanges` observer trait adds a **record row** (`resource`/`record_id`/`action`/`before`/`after`) for every administrable model — `resource IS NULL` is what tells a request row from a record row, and a resource write produces one of each. Resources: `/ops/estates` (`EstateResource` over `Tenant`; `TenantPolicy` denies create/delete, `is_operator` and `slug` are not editable, the licence key is write-only — blanked with `afterStateHydrated()` because a password input still ships the value) and `/admin/{estate}/teams` (`TeamResource`; `TeamPolicy` composes estate membership → **record ownership** → team role, and writes go through `TeamServiceInterface` so tenant, slug and creator-as-owner stay in one place). `/ops/queue` is a page rather than a resource (`QueueMonitor`: retry pushes the original payload back through `FailedJobProviderInterface` and forgets the row, forget/flush never requeue, and every action writes its own audit row because Livewire traffic is excluded from the request-level audit). `/ops/credentials` rotates assistant tokens (`Credentials`: **issue first, revoke second** via the captured ids, so a failed issuance leaves the old credential working; the new plaintext lives in a page property — never a form field, the audit row, or a notification, which is cache-backed — and only `oos-assistant-{id}` names are counted). The palette is `AdminTheme::FILAMENT_COLORS`, generated from the storefront DTCG tokens by `php artisan admin:theme` and drift-gated by `AdminThemeDriftTest`.
 
@@ -541,10 +573,31 @@ tenant id is a **selector only**:
   `inEstate($id, $role)` for a single-estate actor and `withoutEstate()` for the
   one test that pins the 403. Without this, every authenticated API test fails
   with 403 and the suite looks broken (356 failures on first run).
-- **Client gap:** the console SPA does not send the header yet (headers are built
-  per API class). Single-estate users are unaffected; a multi-estate user gets 409
-  until the SPA ships the header and a picker. Do not deploy to an environment
-  with multi-estate console users before then.
+- **Client gap — closed 2026-11-18.** The console now sends the header and asks
+  when it must. `spa-v2/src/api/tenant.ts` owns the selection (localStorage
+  `nvoos-console.tenant`, max 64 chars, whitespace rejected) and the boot
+  decision: zero memberships → proceed (WordPress or unprovisioned; a Laravel
+  session reporting none also **clears** a stored id, which cannot be valid),
+  one → proceed without a selector, several and no usable stored id → the
+  estate picker, a stored id that is no longer a membership → the picker
+  (never a permanent 404). `EstatePicker` runs before the shell; the sidebar footer
+  gains a switcher when there is more than one estate and **reloads** on
+  switch so no spa-v2 store paints one estate's data under another's name.
+  Sign-out clears the selection.
+  - The header is injected in the console's single fetch wrapper
+    (`src/fetch-wrapper.ts`) and its jQuery prefilter — read **per request**,
+    scoped to same-origin `/api/v1/` paths, and **skipped under
+    `/api/v1/session/`** (identity endpoints must report the server's own
+    resolution so the picker can validate the stored id). WordPress gets no
+    selector at all: `installFetchWrapper` only receives `tenantId` for a
+    non-WordPress backend.
+  - `serve.mjs`'s proxy micro-cache key includes `x-tenant-id`. Without it a
+    tenant-scoped GET that happens to be publicly cacheable would be replayable
+    across estates — the multi-tenant cache-key rule.
+  - Pinned by `tenant-selection.test.ts`, `fetch-wrapper.test.ts`,
+    `runtime-config.test.ts`, and the console smoke's *sends the selected
+    estate on console API requests only* test (the seeded e2e user is in two
+    estates, so the picker itself is exercised by the auth setup).
 
 ## 12. Settings: two layers, one writer (149 §16–§17)
 
