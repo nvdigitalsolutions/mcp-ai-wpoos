@@ -1,0 +1,106 @@
+{
+  "slug": "flowhub",
+  "name": "FlowHub POS Sync",
+  "version": "1.0.0",
+  "description": "FlowHub API credentials, optional outbound proxy, sync cadence and CCT storage. The connection checklist reads the Remote Sites store, the field mapping is a key/value table, and the location ID has no WordPress control, so all three are absent here.",
+  "icon": "🌿",
+  "feature": "flowhub",
+  "screens": ["settings"],
+  "tab_labels": {
+    "api": "API",
+    "proxy": "Proxy",
+    "sync": "Sync",
+    "cct": "CCT"
+  },
+  "settings": [
+    {
+      "key": "client_id",
+      "label": "Client ID",
+      "type": "text",
+      "tab": "api",
+      "default": ""
+    },
+    {
+      "key": "api_key",
+      "label": "API key",
+      "type": "secret",
+      "tab": "api"
+    },
+    {
+      "key": "api_base_url",
+      "label": "API base URL",
+      "type": "text",
+      "tab": "api",
+      "default": "https://api.flowhub.co/v0/",
+      "description": "Override only when FlowHub changes or mirrors its endpoint."
+    },
+    {
+      "key": "proxy_enabled",
+      "label": "Enable proxy",
+      "type": "boolean",
+      "tab": "proxy",
+      "default": false,
+      "description": "Routes FlowHub API requests through the proxy below, for regions FlowHub blocks."
+    },
+    {
+      "key": "proxy_url",
+      "label": "Proxy URL",
+      "type": "text",
+      "tab": "proxy",
+      "default": ""
+    },
+    {
+      "key": "proxy_username",
+      "label": "Proxy username",
+      "type": "text",
+      "tab": "proxy",
+      "default": ""
+    },
+    {
+      "key": "proxy_password",
+      "label": "Proxy password",
+      "type": "secret",
+      "tab": "proxy"
+    },
+    {
+      "key": "sync_interval",
+      "label": "Sync interval (minutes)",
+      "type": "select",
+      "tab": "sync",
+      "default": "15",
+      "options": ["1", "5", "15", "30", "60"]
+    },
+    {
+      "key": "sync_direction",
+      "label": "Sync direction",
+      "type": "select",
+      "tab": "sync",
+      "default": "flowhub_to_woo",
+      "options": ["flowhub_to_woo", "bidirectional", "read_only"],
+      "description": "Read-only caches the catalog without writing to WooCommerce."
+    },
+    {
+      "key": "enable_wc_sync",
+      "label": "Update WooCommerce stock",
+      "type": "boolean",
+      "tab": "sync",
+      "default": false
+    },
+    {
+      "key": "low_stock_threshold",
+      "label": "Low stock threshold",
+      "type": "number",
+      "tab": "sync",
+      "default": 5,
+      "description": "Quantity below which an item is reported as low stock."
+    },
+    {
+      "key": "cct_slug",
+      "label": "CCT slug",
+      "type": "text",
+      "tab": "cct",
+      "default": "",
+      "description": "JetEngine CCT slug used for inventory storage, which must be unique. Leave blank to use the toolkit default."
+    }
+  ]
+}

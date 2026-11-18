@@ -104,11 +104,28 @@ final class ProPlanCatalogTest extends TestCase
      * `documents` are gated by live routes and by the toolkit manifests, but
      * were absent from the catalogue. `allows()` therefore returned false for
      * every plan, which means a LICENSED install denied its own Pro surface —
-     * invisible under the `allow` dev driver.
+     * invisible under the `allow` dev driver. `crm` joined the list when the
+     * CRM toolkit manifest declared it as its entitlement hook, and the Wave 3
+     * authoring pass added one key per authored toolkit so each manifest can
+     * gate its own surface instead of sharing `records`.
      */
     public function testSurfacesTheRuntimeGatesOnAreEntitledByEveryPlan(): void
     {
-        $gated = array('schedules', 'records', 'commerce', 'documents');
+        $gated = array(
+            'schedules',
+            'records',
+            'commerce',
+            'documents',
+            'crm',
+            'project-management',
+            'law-firm',
+            'comic-creation',
+            'chat-channels',
+            'shopify-sync',
+            'ezuite',
+            'flowhub',
+            'dietpi',
+        );
 
         foreach (ProPlanCatalog::plans() as $plan) {
             foreach ($gated as $feature) {

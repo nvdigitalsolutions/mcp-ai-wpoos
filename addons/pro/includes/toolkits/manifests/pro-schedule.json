@@ -1,0 +1,82 @@
+{
+  "slug": "pro-schedule",
+  "name": "Pro Schedules",
+  "version": "1.0.0",
+  "description": "Defaults applied to Pro schedules created without an explicit value, plus the global dispatch kill switch. The Research Assistant select is omitted because its options come from the assistant store.",
+  "icon": "⏱️",
+  "feature": "schedules",
+  "screens": ["settings"],
+  "tab_labels": {
+    "defaults": "Defaults",
+    "retries": "Retries",
+    "notifications": "Notifications",
+    "research": "Research & Add"
+  },
+  "settings": [
+    {
+      "key": "default_cadence",
+      "label": "Default cadence",
+      "type": "select",
+      "tab": "defaults",
+      "default": "daily",
+      "options": ["single", "hourly", "twicedaily", "daily", "weekly"],
+      "description": "Cadence for schedules created without one. Custom cadences registered through wp_get_schedules() are not listed here."
+    },
+    {
+      "key": "default_time",
+      "label": "Default time of day",
+      "type": "text",
+      "tab": "defaults",
+      "default": "09:00",
+      "description": "24-hour HH:MM in the site time zone. An unparseable value falls back to 09:00."
+    },
+    {
+      "key": "max_concurrent_runs",
+      "label": "Max concurrent runs",
+      "type": "number",
+      "tab": "defaults",
+      "default": 3,
+      "description": "Soft cap on simultaneously running schedules, between 1 and 20."
+    },
+    {
+      "key": "retry_count",
+      "label": "Retry count",
+      "type": "number",
+      "tab": "retries",
+      "default": 1,
+      "description": "Retries attempted after a failed run, between 0 and 10."
+    },
+    {
+      "key": "retry_backoff",
+      "label": "Retry backoff",
+      "type": "select",
+      "tab": "retries",
+      "default": "linear",
+      "options": ["linear", "exponential", "constant"]
+    },
+    {
+      "key": "notification_email",
+      "label": "Error notification email",
+      "type": "text",
+      "tab": "notifications",
+      "default": "",
+      "description": "Used when a schedule has no per-schedule override. Leave blank to fall back to the site admin address; an invalid address is discarded."
+    },
+    {
+      "key": "kill_switch",
+      "label": "Kill switch",
+      "type": "boolean",
+      "tab": "notifications",
+      "default": false,
+      "description": "Disables dispatch for every Pro schedule without editing them individually."
+    },
+    {
+      "key": "enable_research",
+      "label": "Enable Research & Add",
+      "type": "boolean",
+      "tab": "research",
+      "default": false,
+      "description": "Enables the Research & Add workflow for creating schedules with AI."
+    }
+  ]
+}

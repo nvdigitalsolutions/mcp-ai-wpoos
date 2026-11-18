@@ -84,6 +84,15 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: php bin/sync-toolkit-manifests.php --check
 
+      - name: Toolkit manifests are servable
+        # Proposal 149 Wave 3: the panel renders settings, entities and
+        # dashboard from the manifest, so a document that validates but names
+        # a screen no surface serves becomes a blank toolkit page. This gate
+        # validates every source manifest and fails on an unknown screen, a
+        # slug/filename mismatch, or a manifest with no screens at all.
+        working-directory: ${{ github.workspace }}
+        run: php bin/audit-admin-manifests.php
+
       - name: Prepare the application
         run: |
           cp .env.example .env

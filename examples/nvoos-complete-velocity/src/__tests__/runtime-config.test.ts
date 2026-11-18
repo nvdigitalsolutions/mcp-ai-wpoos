@@ -662,3 +662,95 @@ describe('fetchCurrentUser', () => {
 		expect( retryInit.headers ).toEqual( { 'X-WP-Nonce': 'stale123' } );
 	} );
 } );
+
+describe('fetchCurrentUser (laravel session estates)', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	it('reports the estate memberships the picker needs', async () => {
+		vi.stubGlobal( '__NVOOS_BACKEND__', 'laravel' );
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				jsonResponse( {
+					id: 7,
+					login: 'owner@example.com',
+					displayName: 'Owner',
+					capabilities: [ 'manage_options' ],
+					tenant: null,
+					estates: [
+						{ id: 'default', name: 'Default', slug: 'default', role: 'owner' },
+						{ id: 'acme', name: 'Acme', slug: 'acme', role: 'member', is_operator: true },
+					],
+				} ),
+			),
+		);
+
+		const result = await fetchCurrentUser( 'nonce' );
+
+		expect( result.session ).toEqual( {
+			tenant: null,
+			estates: [
+				{
+					id: 'default',
+					name: 'Default',
+					slug: 'default',
+					role: 'owner',
+					is_operator: false,
+				},
+				{
+					id: 'acme',
+					name: 'Acme',
+					slug: 'acme',
+					role: 'member',
+					is_operator: true,
+				},
+			],
+		} );
+	} );
+
+	it('drops malformed estate rows instead of rendering unselectable options', async () => {
+		vi.stubGlobal( '__NVOOS_BACKEND__', 'laravel' );
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				jsonResponse( {
+					id: 7,
+					login: 'owner@example.com',
+					displayName: 'Owner',
+					capabilities: [],
+					tenant: 'acme',
+					estates: [ null, { name: 'No id' }, { id: 'acme' } ],
+				} ),
+			),
+		);
+
+		const result = await fetchCurrentUser( 'nonce' );
+
+		expect( result.session?.tenant ).toBe( 'acme' );
+		expect( result.session?.estates ).toEqual( [
+			{
+				id: 'acme',
+				name: 'acme',
+				slug: undefined,
+				role: undefined,
+				is_operator: false,
+			},
+		] );
+	} );
+
+	it('omits the session block on WordPress (no tenant resolution there)', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				jsonResponse( { id: 3, name: 'Console Admin', slug: 'console-admin' } ),
+			),
+		);
+
+		const result = await fetchCurrentUser( 'nonce' );
+
+		expect( result.session ).toBeUndefined();
+	} );
+} );

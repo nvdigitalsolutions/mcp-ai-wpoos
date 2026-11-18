@@ -327,6 +327,8 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
         user={runtime.user}
         features={features}
         endpoints={runtime.endpoints}
+        tenantId={runtime.tenantId}
+        estates={runtime.estates}
         onSignOut={onSignOut}
       />
 

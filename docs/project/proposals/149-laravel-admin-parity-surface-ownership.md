@@ -213,7 +213,7 @@ The earlier "unproven" note was an environment fact, not a doubt about the asser
 
 ## 8. Gaps this exposes
 
-Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-17 after the transcript, memory and approval slices (`bin/audit-surface-ownership.php`): **44 surfaces · 22 built on a panel · 18 console-only · 2 planned-only**.
+Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-18 after the Wave 3 toolkit renderer (`bin/audit-surface-ownership.php`): **45 surfaces · 32 built on a panel · 8 console-only · 3 planned-only**.
 
 1. ✅ **`SettingsSchema` scope + console projection** — shipped, plan §15; asserted by `SettingsProjectionTest`.
 2. ✅ **`/admin` settings page** — shipped as `/admin/{estate}/settings` plus `/ops/settings`, plan §16–§17. One writer, a storage-key map, and the estate/platform split.
@@ -221,7 +221,9 @@ Ordered by leverage, each small enough to be one slice. Status re-measured 2026-
 4. ✅ **Tool catalogue projection** for the console — shipped, plan §22. The console's honest projection is the assistant's enabled tools plus presets, not the registry.
 5. ✅ **PAT manager** split from assistant credentials — shipped, plan §19 (contract) and §26 (the user-scoped half). **Remaining:** the operator cross-estate view; `tokens.personal` is still `ops: planned`.
 6. ✅ **`/ops` tail** — `site-health` (§31), `assets` (§33), `reports` (§34) and `conversation-import` (§37) all shipped. `identity-provider` and `datasets` remain `planned` for the reasons recorded in plan §35–§36; `onboarding` is `absent` by decision.
-7. **`/admin` tail — 13 rows still `planned`:** blueprints, portability, mcp-apps, security (planned on both panels), remote-sites, agent-skills, okf, paper-store, dashboards, toolkits, command-centre, media, chat-channels. `chat` and `automation-canvas` are deliberate `link-out`; `wordpress-bridge` and `connected-apps` carry no panel decision yet. `transcripts` (§39), `memory` (§40) and `approvals` (§41) shipped on 2026-11-17, each after its table gained an estate scope.
+7. ✅ **`/admin` consumer-port run** — blueprints, portability, MCP apps, security, remote sites, agent-skills, OKF and paper-store shipped in plan §48–§54; the toolkit renderer followed in §56. **Remaining console-only:** `dashboards` (Wave 5, pending the 10 → 7 catalogue change), `command-centre`, `media`, `chat-channels` (no manifest yet). `chat` and `automation-canvas` are deliberate `link-out`; `wordpress-bridge` and `connected-apps` carry no panel decision yet.
+
+All three planned-only rows are now `/ops`: `measurement` (needs the P3 data model), `identity-provider` (owner decision) and `datasets` (readiness classification).
 
 Passing a row from `planned` to `full` is now the unit of progress, and every transition is a one-line diff plus its test.
 
@@ -233,7 +235,7 @@ Passing a row from `planned` to `full` is now the unit of progress, and every tr
 |---|---|---|
 | S-1 | Should `/admin` settings render operator-scope fields disabled with a "managed by NV Digital" hint, or omit them entirely? | The settings slice. Omitting is safer (R3); hinting is friendlier. |
 | S-2 | Does the console need a cross-estate view of anything? Today: no. If yes, it becomes an operator surface with a different audience. | Client feedback. |
-| S-3 | For `toolkit:{slug}` gates, does an unlicensed toolkit disappear from the console nav or render an upsell? | Wave 3. Upsell is a product surface; absence is an authorisation surface. |
+| S-3 | ~~For `toolkit:{slug}` gates, does an unlicensed toolkit disappear from the console nav or render an upsell?~~ **RESOLVED 2026-11-18 — absent, and 404 on direct access.** Plan §56: an unlicensed toolkit is omitted from the catalogue and answers 404, indistinguishable from an unknown one (R4). An upsell is a product decision that belongs in the console's plan surface, not in the authorisation boundary. | Closed |
 | S-4 | Does the admin need a "view as tenant" mode for operators? | Not in v1; it would break the Q-1 trap if implemented as impersonation rather than a separate read projection. |
 | S-5 | ~~Should `ollama_endpoint` be operator-scope?~~ **RESOLVED 2026-11-17 — yes.** A URL the server fetches is platform configuration, not an estate preference; leaving it tenant-writable is an SSRF primitive. Customers keep the ability to *use* Ollama (`default_provider` and `default_model` stay tenant-scope); only the address is closed. Recorded in the contract row and implementation plan §16. | Closed |
 

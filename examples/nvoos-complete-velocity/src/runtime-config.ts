@@ -11,6 +11,7 @@
  */
 
 import type { ProSpaRuntime, ProSpaUser, ProSpaEndpoints } from '@nvoos/pro-spa-v2/api/config';
+import type { EstateSummary } from '@nvoos/pro-spa-v2/api/tenant';
 
 import {
   backendPaths,
@@ -181,6 +182,14 @@ export interface ConsoleRuntimeOptions {
   /** Platform-provisioned default assistant id, used when assistantId is 0. */
   defaultAssistantId?: number;
   /**
+   * Estate currently selected for the Laravel runtime ('' = none). Mirrors
+   * the id the fetch wrapper sends as `X-Tenant-Id`, so the sidebar switcher
+   * renders the same answer the API is acting on.
+   */
+  tenantId?: string;
+  /** Estates this session may select, as `/api/v1/session/me` reported them. */
+  estates?: EstateSummary[];
+  /**
    * Backend profile. Defaults to the build-time `VITE_NVOOS_BACKEND`,
    * falling back to `wordpress` (Proposal 090-B, ADR-6).
    */
@@ -228,6 +237,10 @@ export interface ConsoleRuntimeConfig extends ProSpaRuntime {
    * visibility decision is still the blank endpoint.
    */
   endpointReasons: Record<string, string>;
+  /** The estate the API requests act in ('' on WordPress / no membership). */
+  tenantId: string;
+  /** Estates the session may switch between ([] on WordPress). */
+  estates: EstateSummary[];
 }
 
 /**
@@ -327,6 +340,8 @@ export function buildConsoleRuntime(
     features,
     endpointReasons: options.endpointReasons ?? {},
     siteName: options.siteName ?? '',
+    tenantId: options.tenantId ?? '',
+    estates: options.estates ?? [],
   };
 }
 
@@ -433,6 +448,20 @@ export interface CurrentUserResult {
    * nonce — callers must use this value, not the original one.
    */
   nonce: string;
+  /**
+   * Estate memberships (Laravel only). WordPress has no tenant resolution, so
+   * the field is absent there rather than an empty list — the console only
+   * shows the picker when the runtime actually reports memberships.
+   */
+  session?: ConsoleSession;
+}
+
+/** The estate half of `GET /api/v1/session/me` (149 §21). */
+export interface ConsoleSession {
+  /** The estate the server resolved for this request (null = none/ambiguous). */
+  tenant: string | null;
+  /** Memberships this caller may select. */
+  estates: EstateSummary[];
 }
 
 export async function fetchCurrentUser(
@@ -499,7 +528,28 @@ async function fetchLaravelCurrentUser(
     login?: string;
     displayName?: string;
     capabilities?: string[];
+    tenant?: string | null;
+    estates?: Array<Partial<EstateSummary> | null>;
   }>(response, 'session/me');
+
+  // Defensive mapping: the picker keys by id, so an entry without a string
+  // id is dropped rather than rendered as an unselectable row.
+  const estates: EstateSummary[] = Array.isArray(data.estates)
+    ? data.estates.flatMap((estate) =>
+        estate && typeof estate.id === 'string'
+          ? [
+              {
+                id: estate.id,
+                name: typeof estate.name === 'string' ? estate.name : estate.id,
+                slug: typeof estate.slug === 'string' ? estate.slug : undefined,
+                role: typeof estate.role === 'string' ? estate.role : undefined,
+                is_operator: estate.is_operator === true,
+              },
+            ]
+          : [],
+      )
+    : [];
+
   return {
     user: {
       id: data.id ?? 0,
@@ -508,6 +558,10 @@ async function fetchLaravelCurrentUser(
       capabilities: Array.isArray(data.capabilities) ? data.capabilities : [],
     },
     nonce,
+    session: {
+      tenant: typeof data.tenant === 'string' && data.tenant !== '' ? data.tenant : null,
+      estates,
+    },
   };
 }
 

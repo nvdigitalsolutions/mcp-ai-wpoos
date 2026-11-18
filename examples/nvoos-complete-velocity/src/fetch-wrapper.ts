@@ -22,6 +22,15 @@ export interface FetchWrapperOptions {
   /** Pre-encoded `Basic …` header value for WordPress Application Password auth. */
   basic?: string;
   /**
+   * Estate selector for the Laravel runtime, read per request (never captured
+   * at install time — the picker changes it while the app is running).
+   *
+   * Leave undefined on WordPress: the header is inert there, and a host that
+   * only speaks `wp-json` must not receive an estate id it never issued.
+   * Scope and exclusions are enforced by `tenantHeaderValue()`.
+   */
+  tenantId?: () => string;
+  /**
    * Origin of the WordPress site the credentials belong to. The Basic header
    * is attached only to requests targeting this origin — never to the media
    * worker or any third-party URL. (Bearer keeps its pre-existing
@@ -54,6 +63,54 @@ export interface FetchWrapperOptions {
 let activeOptions: FetchWrapperOptions = {};
 let jqueryPrefilterInstalled = false;
 let mediaWorkerOrigin = '';
+
+/**
+ * The console API prefix estate scoping applies to. WordPress serves
+ * `wp-json/…`, so a shared path can never carry the header by accident.
+ */
+const TENANT_SCOPE = '/api/v1/';
+
+/**
+ * Identity and nonce endpoints sit outside tenant resolution by design: they
+ * are how a client learns which estates it may select, and the picker needs
+ * the server's own answer — not a stored one — to validate that selection.
+ */
+const TENANT_EXCLUDED_PREFIX = '/api/v1/session/';
+
+/**
+ * The `X-Tenant-Id` value for one request, or `''` when the header does not
+ * apply. Kept as one function so the fetch wrapper and the jQuery prefilter
+ * cannot drift: both the path scope and the identity-endpoint exclusion are
+ * contract, not cosmetics.
+ */
+function tenantHeaderValue(url: string, isSiteRequest: boolean): string {
+  if (!activeOptions.tenantId || !isSiteRequest) {
+    return '';
+  }
+
+  let id = '';
+  try {
+    id = (activeOptions.tenantId() ?? '').trim();
+  } catch {
+    return '';
+  }
+  if (!id) {
+    return '';
+  }
+
+  let path = '';
+  try {
+    path = new URL(url, window.location.origin).pathname;
+  } catch {
+    return '';
+  }
+
+  if (!path.startsWith(TENANT_SCOPE) || path.startsWith(TENANT_EXCLUDED_PREFIX)) {
+    return '';
+  }
+
+  return id;
+}
 
 function refreshMediaWorkerOrigin(): void {
   mediaWorkerOrigin = '';
@@ -105,6 +162,13 @@ function installJQueryCredentialPrefilter(): void {
       }
       if (mediaWorkerOrigin && url.startsWith(mediaWorkerOrigin) && !headers['X-Site-Token']) {
         headers['X-Site-Token'] = activeOptions.mediaWorkerToken ?? '';
+      }
+
+      // Laravel estate selector (149 §21). Scoped to the console API and
+      // skipped on identity endpoints — see tenantHeaderValue().
+      const tenantId = tenantHeaderValue(url, isSiteRequest);
+      if (tenantId && !headers['X-Tenant-Id']) {
+        headers['X-Tenant-Id'] = tenantId;
       }
 
       // The explorer always sets X-WP-Nonce (empty in token modes). Sending
@@ -207,6 +271,14 @@ export function installFetchWrapper(options: FetchWrapperOptions): () => void {
     }
     if (workerOrigin && url.startsWith(workerOrigin) && !headers.has('X-Site-Token')) {
       headers.set('X-Site-Token', options.mediaWorkerToken ?? '');
+    }
+
+    // Laravel estate selector (149 §21). Read per request so the picker can
+    // change it without re-installing the wrapper, and scoped so a WordPress
+    // or external request never sees it — see tenantHeaderValue().
+    const tenantId = tenantHeaderValue(url, isSiteRequest);
+    if (tenantId && !headers.has('X-Tenant-Id')) {
+      headers.set('X-Tenant-Id', tenantId);
     }
 
     // The SPA sets `X-WP-Nonce` unconditionally — with an empty value when no

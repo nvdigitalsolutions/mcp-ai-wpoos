@@ -1,0 +1,118 @@
+{
+  "slug": "comic-creation",
+  "name": "Comic Creation",
+  "version": "1.0.0",
+  "description": "Art style, panel geometry, export and speech-bubble defaults for the Comic Creation toolkit. Colours are stored as hex strings because the manifest vocabulary has no colour type. The AI Assistant select is omitted because its options come from the assistant store.",
+  "icon": "💥",
+  "feature": "comic-creation",
+  "screens": ["settings"],
+  "tab_labels": {
+    "style": "Art style",
+    "panels": "Panels",
+    "output": "Output",
+    "bubbles": "Speech bubbles",
+    "features": "Features"
+  },
+  "settings": [
+    {
+      "key": "default_comic_style",
+      "label": "Default comic style",
+      "type": "select",
+      "tab": "style",
+      "default": "american-comic",
+      "options": [
+        "american-comic",
+        "manga",
+        "webtoon",
+        "graphic-novel",
+        "comic-strip",
+        "noir",
+        "silver-age",
+        "euro-comic"
+      ],
+      "description": "Art style applied to newly created comics."
+    },
+    {
+      "key": "default_panel_width",
+      "label": "Default panel width (px)",
+      "type": "number",
+      "tab": "panels",
+      "default": 800,
+      "description": "Between 256 and 2048. The webtoon style conventionally uses 800."
+    },
+    {
+      "key": "default_panel_height",
+      "label": "Default panel height (px)",
+      "type": "number",
+      "tab": "panels",
+      "default": 1200,
+      "description": "Between 256 and 2048. The webtoon style conventionally uses 2000."
+    },
+    {
+      "key": "default_image_generator",
+      "label": "Default image generator",
+      "type": "select",
+      "tab": "output",
+      "default": "dalle",
+      "options": ["dalle", "midjourney", "stable_diffusion"],
+      "description": "Service used for panel images unless a request overrides it."
+    },
+    {
+      "key": "default_export_format",
+      "label": "Default export format",
+      "type": "select",
+      "tab": "output",
+      "default": "cbz",
+      "options": ["cbz", "cbr"],
+      "description": "CBZ is the open standard; CBR is the legacy RAR archive."
+    },
+    {
+      "key": "default_page_layout",
+      "label": "Default page layout",
+      "type": "select",
+      "tab": "output",
+      "default": "single",
+      "options": ["single", "double"],
+      "description": "Single page or double-page spread when a comic is viewed."
+    },
+    {
+      "key": "speech_bubble_font",
+      "label": "Speech bubble font",
+      "type": "text",
+      "tab": "bubbles",
+      "default": "ComicSans"
+    },
+    {
+      "key": "speech_bubble_font_color",
+      "label": "Speech bubble text colour",
+      "type": "text",
+      "tab": "bubbles",
+      "default": "#000000",
+      "description": "Hex colour, e.g. #000000."
+    },
+    {
+      "key": "speech_bubble_bg_color",
+      "label": "Speech bubble colour",
+      "type": "text",
+      "tab": "bubbles",
+      "default": "#FFFFFF",
+      "description": "Hex colour, e.g. #FFFFFF."
+    },
+    {
+      "key": "enable_research",
+      "label": "Enable Research & Add",
+      "type": "boolean",
+      "tab": "features",
+      "default": false,
+      "description": "Enables the AI-assisted comic script and panel workflow."
+    },
+    {
+      "key": "enable_mime_types",
+      "label": "Allow comic archive uploads",
+      "type": "boolean",
+      "tab": "features",
+      "default": true,
+      "description": "Adds CBR, CBZ, CB7 and CBT to the allowed Media Library types. Disable when the host blocks these formats."
+    }
+  ]
+}

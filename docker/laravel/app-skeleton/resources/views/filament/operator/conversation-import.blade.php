@@ -30,6 +30,34 @@
         UTF-8 and roles are mapped from a closed set.
     </p>
 
+    @php
+        $estates = $this->estates();
+    @endphp
+
+    {{-- `/ops` has no selected estate, so the write scope is named here. The
+         initial value is `default`, which is what every import did before the
+         selector existed — the difference is that it is now visible. --}}
+    <div style="margin-bottom: 1rem; max-width: 24rem;">
+        <label for="import-estate" style="display: block; font-size: 0.8rem; margin-bottom: 0.25rem;">Target estate</label>
+        <select
+            id="import-estate"
+            wire:model="estate"
+            style="width: 100%; padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(127, 127, 127, 0.35); background: transparent;"
+        >
+            @if ( array() === $estates )
+                <option value="">No estates are provisioned</option>
+            @endif
+
+            @foreach ( $estates as $option )
+                <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
+            @endforeach
+        </select>
+        <p style="font-size: 0.75rem; margin: 0.3rem 0 0; opacity: 0.75;">
+            Transcripts are written to this estate's store. The operator panel has no
+            estate of its own, so this page states the target instead of inheriting one.
+        </p>
+    </div>
+
     <div style="margin-bottom: 1rem;">
         <label for="import-body" style="display: block; font-size: 0.8rem; margin-bottom: 0.25rem;">Export body</label>
         <textarea
@@ -50,7 +78,7 @@
             Import
         </x-filament::button>
         <span style="font-size: 0.8rem; opacity: 0.8;">
-            Preview writes nothing. Import writes into this estate's transcript store.
+            Preview writes nothing. Import writes into the selected estate's transcript store.
         </span>
     </div>
 

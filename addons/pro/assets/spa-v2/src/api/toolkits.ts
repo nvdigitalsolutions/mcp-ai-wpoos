@@ -38,10 +38,12 @@ export interface ToolkitEntity {
 export interface ToolkitSettingField {
 	key: string;
 	label: string;
-	type: 'text' | 'number' | 'boolean' | 'select' | 'secret';
+	type: 'text' | 'textarea' | 'number' | 'boolean' | 'select' | 'secret';
 	default?: unknown;
 	description?: string;
 	options?: string[] | Record< string, string >;
+	/** Visible rows for a `textarea` field (2–20). */
+	rows?: number;
 }
 
 /** One dashboard filter. `value` is a literal; `setting` reads a toolkit setting. */

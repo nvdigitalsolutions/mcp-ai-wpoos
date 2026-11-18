@@ -100,7 +100,27 @@ class Phase4Test extends TestCase
 
         $slugs = array_column($response->json('data.toolkits'), 'slug');
 
-        $this->assertSame(['commerce', 'documents'], $slugs);
+        // The committed catalogue, alphabetical (the loader `ksort`s). A new
+        // manifest is a conscious addition to this list — `crm` joined it on
+        // 2026-11-18 as the first settings-only family (plan §56.6), and the
+        // authoring pass added the nine below it (plan §56.7).
+        $this->assertSame(
+            [
+                'chat-channels',
+                'comic-creation',
+                'commerce',
+                'crm',
+                'dietpi',
+                'documents',
+                'ezuite',
+                'flowhub',
+                'law-firm',
+                'pro-schedule',
+                'project-management',
+                'shopify-sync',
+            ],
+            $slugs
+        );
     }
 
     public function test_toolkit_show_returns_the_manifest(): void

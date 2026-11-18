@@ -1,0 +1,204 @@
+{
+  "slug": "dietpi",
+  "name": "DietPi",
+  "version": "1.0.0",
+  "description": "SSH access and per-application API credentials for a DietPi device. Each managed app is flattened from its nested option group into <app>_<field> keys. The private key is a textarea rather than a secret because the WordPress screen re-displays inline PEMs for editing.",
+  "icon": "🍓",
+  "feature": "dietpi",
+  "screens": ["settings"],
+  "tab_labels": {
+    "connection": "SSH connection",
+    "transmission": "Transmission",
+    "jackett": "Jackett",
+    "sonarr": "Sonarr",
+    "radarr": "Radarr",
+    "plex": "Plex",
+    "jellyfin": "Jellyfin"
+  },
+  "settings": [
+    {
+      "key": "host",
+      "label": "Hostname or IP",
+      "type": "text",
+      "tab": "connection",
+      "default": "",
+      "description": "For example 192.168.1.100 or dietpi.local."
+    },
+    {
+      "key": "ssh_port",
+      "label": "SSH port",
+      "type": "number",
+      "tab": "connection",
+      "default": 22
+    },
+    {
+      "key": "ssh_user",
+      "label": "SSH user",
+      "type": "text",
+      "tab": "connection",
+      "default": "root"
+    },
+    {
+      "key": "ssh_auth_method",
+      "label": "Authentication method",
+      "type": "select",
+      "tab": "connection",
+      "default": "key",
+      "options": ["key", "password"]
+    },
+    {
+      "key": "ssh_private_key",
+      "label": "SSH private key (PEM)",
+      "type": "textarea",
+      "tab": "connection",
+      "rows": 6,
+      "default": "",
+      "description": "Paste an Ed25519 or RSA private key, or a filesystem path to the key file."
+    },
+    {
+      "key": "ssh_key_passphrase",
+      "label": "Key passphrase",
+      "type": "secret",
+      "tab": "connection"
+    },
+    {
+      "key": "ssh_password",
+      "label": "SSH password",
+      "type": "secret",
+      "tab": "connection"
+    },
+    {
+      "key": "apps_transmission_enabled",
+      "label": "Enabled",
+      "type": "boolean",
+      "tab": "transmission",
+      "default": false
+    },
+    {
+      "key": "apps_transmission_url",
+      "label": "Base URL",
+      "type": "text",
+      "tab": "transmission",
+      "default": "",
+      "description": "Defaults to port 9091 on the host above."
+    },
+    {
+      "key": "apps_transmission_username",
+      "label": "Username",
+      "type": "text",
+      "tab": "transmission",
+      "default": ""
+    },
+    {
+      "key": "apps_transmission_password",
+      "label": "Password",
+      "type": "secret",
+      "tab": "transmission"
+    },
+    {
+      "key": "apps_jackett_enabled",
+      "label": "Enabled",
+      "type": "boolean",
+      "tab": "jackett",
+      "default": false
+    },
+    {
+      "key": "apps_jackett_url",
+      "label": "Base URL",
+      "type": "text",
+      "tab": "jackett",
+      "default": "",
+      "description": "Defaults to port 9117 on the host above."
+    },
+    {
+      "key": "apps_jackett_api_key",
+      "label": "API key",
+      "type": "secret",
+      "tab": "jackett"
+    },
+    {
+      "key": "apps_sonarr_enabled",
+      "label": "Enabled",
+      "type": "boolean",
+      "tab": "sonarr",
+      "default": false
+    },
+    {
+      "key": "apps_sonarr_url",
+      "label": "Base URL",
+      "type": "text",
+      "tab": "sonarr",
+      "default": "",
+      "description": "Defaults to port 8989 on the host above."
+    },
+    {
+      "key": "apps_sonarr_api_key",
+      "label": "API key",
+      "type": "secret",
+      "tab": "sonarr"
+    },
+    {
+      "key": "apps_radarr_enabled",
+      "label": "Enabled",
+      "type": "boolean",
+      "tab": "radarr",
+      "default": false
+    },
+    {
+      "key": "apps_radarr_url",
+      "label": "Base URL",
+      "type": "text",
+      "tab": "radarr",
+      "default": "",
+      "description": "Defaults to port 7878 on the host above."
+    },
+    {
+      "key": "apps_radarr_api_key",
+      "label": "API key",
+      "type": "secret",
+      "tab": "radarr"
+    },
+    {
+      "key": "apps_plex_enabled",
+      "label": "Enabled",
+      "type": "boolean",
+      "tab": "plex",
+      "default": false
+    },
+    {
+      "key": "apps_plex_url",
+      "label": "Base URL",
+      "type": "text",
+      "tab": "plex",
+      "default": "",
+      "description": "Defaults to port 32400 on the host above."
+    },
+    {
+      "key": "apps_plex_token",
+      "label": "Plex token",
+      "type": "secret",
+      "tab": "plex"
+    },
+    {
+      "key": "apps_jellyfin_enabled",
+      "label": "Enabled",
+      "type": "boolean",
+      "tab": "jellyfin",
+      "default": false
+    },
+    {
+      "key": "apps_jellyfin_url",
+      "label": "Base URL",
+      "type": "text",
+      "tab": "jellyfin",
+      "default": "",
+      "description": "Defaults to port 8096 on the host above."
+    },
+    {
+      "key": "apps_jellyfin_api_key",
+      "label": "API key",
+      "type": "secret",
+      "tab": "jellyfin"
+    }
+  ]
+}
