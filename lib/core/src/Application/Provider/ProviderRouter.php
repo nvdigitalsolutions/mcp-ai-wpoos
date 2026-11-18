@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Provider;
 
+use Nvoos\Core\Domain\Contract\ModelFallbackCatalogueInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
@@ -51,6 +52,16 @@ class ProviderRouter
      * @var array<string, int>
      */
     private array $cooldowns = array();
+
+    /**
+     * Optional model-fallback catalogue (Proposal 149 §69).
+     *
+     * When absent, a model-level failure goes straight to provider failover,
+     * which is the behaviour before the catalogue existed.
+     *
+     * @var ModelFallbackCatalogueInterface|null
+     */
+    private ?ModelFallbackCatalogueInterface $modelCatalogue = null;
 
     /**
      * Default cooldown TTL when the provider sends no Retry-After.
@@ -110,6 +121,33 @@ class ProviderRouter
             }
         }
         $this->fallbackChain = $normalized;
+    }
+
+    /**
+     * Attach a model-fallback catalogue (Proposal 149 §69).
+     *
+     * The catalogue answers one question — "which servable sibling model may
+     * I retry on this provider?" — and the router asks it before abandoning
+     * the provider. Without one, behaviour is unchanged.
+     *
+     * @since 1.5.0
+     *
+     * @param ModelFallbackCatalogueInterface $catalogue Catalogue implementation.
+     * @return void
+     */
+    public function setModelCatalogue(ModelFallbackCatalogueInterface $catalogue): void
+    {
+        $this->modelCatalogue = $catalogue;
+    }
+
+    /**
+     * The attached model-fallback catalogue, if any.
+     *
+     * @since 1.5.0
+     */
+    public function getModelCatalogue(): ?ModelFallbackCatalogueInterface
+    {
+        return $this->modelCatalogue;
     }
 
     /**
@@ -261,6 +299,13 @@ class ProviderRouter
                 $this->healthTracker->recordFailure($slug, $this->classifyError($result));
             }
 
+            // A single model can fail while its provider is healthy: retry the
+            // catalogue's servable sibling before giving up on the provider.
+            $modelFallback = $this->attemptModelFallback($messages, $options, $assistantConfig, $provider);
+            if (null !== $modelFallback) {
+                return $modelFallback;
+            }
+
             $fallback = $this->attemptFailover($messages, $options, $assistantConfig, $slug, null, $result);
             if (null !== $fallback) {
                 return $fallback;
@@ -304,6 +349,12 @@ class ProviderRouter
             if ($this->healthTracker) {
                 $this->healthTracker->recordFailure($slug, $this->classifyError($result));
             }
+
+            $modelFallback = $this->attemptModelFallback($messages, $options, $assistantConfig, $provider, $onChunk);
+            if (null !== $modelFallback) {
+                return $modelFallback;
+            }
+
             $fallback = $this->attemptFailover($messages, $options, $assistantConfig, $slug, $onChunk, $result);
             if (null !== $fallback) {
                 return $fallback;
@@ -406,6 +457,76 @@ class ProviderRouter
             return 'api_error';
         }
         return 'unknown';
+    }
+
+    /**
+     * Retry the request on the same provider with the catalogue's fallback.
+     *
+     * Ordering is deliberate: a model-level retry is cheaper and safer than a
+     * provider hop — same auth, same response format, same billing account — so
+     * it runs first and the ordered provider chain only gets a turn when the
+     * sibling model fails too.
+     *
+     * Returns null when there is nothing to try: no catalogue, no explicit
+     * model, no servable sibling, or the sibling failed as well. In every one
+     * of those cases the caller continues with provider-level failover.
+     *
+     * @since 1.5.0
+     *
+     * @param array<int, array<string, mixed>> $messages        Chat messages.
+     * @param array<string, mixed>             $options         Request options.
+     * @param array<string, mixed>             $assistantConfig Assistant config.
+     * @param AbstractProviderClient           $provider        The client that just failed.
+     * @param callable|null                    $onChunk         Optional stream callback.
+     * @return mixed|null Fallback result, or null when there is no retry to make.
+     */
+    private function attemptModelFallback(
+        array $messages,
+        array $options,
+        array $assistantConfig,
+        AbstractProviderClient $provider,
+        ?callable $onChunk = null
+    ): mixed {
+        if (null === $this->modelCatalogue) {
+            return null;
+        }
+
+        $modelId = (string) ( $options['model'] ?? $assistantConfig['model'] ?? '' );
+
+        // Without an explicit model the provider is already using its own
+        // default; switching it would be a provider decision, not a model one.
+        if ('' === $modelId) {
+            return null;
+        }
+
+        $slug      = $provider->getProviderSlug();
+        $fallbackId = $this->modelCatalogue->fallbackFor($slug, $modelId);
+
+        // A catalogue that names the same id as its own fallback would loop.
+        if (null === $fallbackId || '' === $fallbackId || $fallbackId === $modelId) {
+            return null;
+        }
+
+        $fallbackOptions          = $options;
+        $fallbackOptions['model'] = $fallbackId;
+
+        $result = null !== $onChunk
+            ? $provider->stream($messages, $fallbackOptions, $onChunk)
+            : $provider->chat($messages, $fallbackOptions);
+
+        if ($this->isError($result)) {
+            if ($this->healthTracker) {
+                $this->healthTracker->recordFailure($slug, $this->classifyError($result));
+            }
+
+            return null;
+        }
+
+        if ($this->healthTracker) {
+            $this->healthTracker->recordSuccess($slug, 0);
+        }
+
+        return $result;
     }
 
     /**

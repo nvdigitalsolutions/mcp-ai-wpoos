@@ -19,6 +19,7 @@ use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
+use App\Support\Models\CatalogueModelFallbacks;
 use App\Support\Pro\ToolkitEngine;
 use App\Support\Pro\ToolkitManifestLoader;
 use App\Support\RemoteSites\RemoteSiteStore;
@@ -285,6 +286,11 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('console', fn (Request $request) => Limit::perMinute($consoleLimit)->by($request->user()?->id ?: $request->ip()));
 
         $router = $this->app->make(ProviderRouter::class);
+
+        // Model-level retry before a provider hop (Proposal 149 §69). The
+        // catalogue is optional and fails closed: no table or no row means the
+        // router behaves exactly as it did before.
+        $router->setModelCatalogue($this->app->make(CatalogueModelFallbacks::class));
 
         if (! $router->has('spike')) {
             $router->register(new SpikeStreamingProvider(
