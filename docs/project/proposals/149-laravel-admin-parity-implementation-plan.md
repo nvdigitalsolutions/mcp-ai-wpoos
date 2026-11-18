@@ -6336,3 +6336,83 @@ fix it, because the keys still would not match. The honest next step there is to
 decide which of the three sets is canonical — most likely a `setting_schema()` on
 the page plus a mapping in the engine, following §61.2 — and that is a separate
 piece of work. Recorded here so it starts from evidence rather than rediscovery.
+
+## 62. Settings-port research — standards adopted (2026-11-18)
+
+The surface audit left one open question: how to port a WordPress settings surface
+that is four levels deep into a Laravel panel whose settings page is a flat,
+schema-driven form. The WordPress side, measured from the section classes and the
+settings registry:
+
+| Level | Count |
+|---|---|
+| Tabs | 14 (9 core + `ecommerce` with three children via `subtab_of` + `a2a`) |
+| Sections | 29 |
+| Sub-tabs (`get_subtab_groups`) | 76 |
+| Views (`?view=` inside a section) | 21 — 12 in `orchestration`, 9 in `token_manager` |
+
+Laravel's `/admin/settings` renders `SettingsSchema::fields()`: **9 fields, 3 tabs,
+3 sections**. The console's `/settings` renders the same schema catalogue. So the
+port is essentially "everything", and the shape of the port is the decision that
+matters.
+
+### 62.1 Sources consulted
+
+| Area | Source | Finding |
+|---|---|---|
+| Filament form layout | [richdynamix — Filament Form Layout: Sections, Tabs and Flex in v5](https://richdynamix.com/articles/filament-v5-form-layout-tabs-sections-split) | Reach for tabs as the exception, not the default. Layout components carry no state, and if tabs are used an **error badge** is required — otherwise a validation failure on an inactive tab is invisible. |
+| Filament custom pages | [Filament docs — Custom pages](https://filamentphp.com/docs/4.x/navigation/custom-pages) | A custom page accepts a form schema; content width is capped by `getMaxContentWidth()`. |
+| Per-tab save | [filament#7644](https://github.com/filamentphp/filament/discussions/7644), [answeroverflow 1249967088756330537](https://www.answeroverflow.com/m/1249967088756330537) | Tabs in the form schema are supported, but a **per-tab submit is not a primitive**. The community workaround is one form that persists only the keys that changed. |
+| Write-only secrets | [write-only secret](https://nhimg.org/glossary/write-only-secret), [API secret checklist](https://devtoolshub.net/blog/api-secret-best-practices), [famlin #133](https://github.com/TimVanOnckelen/famlin/issues/133) | A secret should be masked on read with **no retrievable value** — encryption at rest is not the same thing. The famlin issue is the exact failure mode: a settings GET returning SMTP password, OIDC secret and an API key in plaintext. Checklist: masked in the admin UI, rotatable, revocable, never logged. |
+| Multi-tenant settings store | [spatie/laravel-settings #39](https://github.com/spatie/laravel-settings/discussions/39), [#176](https://github.com/spatie/laravel-settings/discussions/176) | Per-tenant settings work only with integration effort; the repository/model is configurable. A first-party scoped store is a defensible choice rather than a shortcut. |
+
+### 62.2 Decisions
+
+1. **Two navigation levels, not four.** `tab → section`. The 76 sub-tabs stop being a
+   third nav row and become form `Section`s inside their parent tab (or, where a
+   sub-tab is genuinely a different mode rather than more fields, a secondary in-page
+   rail). Four nav levels is the thing that makes the WP page hard to use; copying it
+   would port the problem.
+2. **The 21 views are pages, not tabs.** They are dashboards, not settings —
+   orchestration `agents` / `teams` / `professions` / `observability`, token
+   `analytics` / `anomalies` / `patterns` / `trends` / `model_manager`. They map to
+   Filament pages or resources, which is also what the console already does for two of
+   them (`/orchestration-stats`, `/token-manager`).
+3. **One form, whole-surface save, partial persistence.** Since per-tab submit is not
+   supported, the page keeps a single submit; `SettingsService::write()` already writes
+   only the keys it is given, so untouched settings keep their `updated_at`. This is
+   the same contract the WP sanitiser has used since §10 — and the same one the
+   community workaround arrives at.
+4. **If tabs are used, ship the error badge.** Filament's layout guidance makes this
+   conditional on using tabs; without it a validation error on a tab the operator is
+   not looking at is silent. Treat the badge as part of the tab work, not a later polish.
+5. **Secrets stay write-only, and a test proves it.** Keep `MASKED_PLACEHOLDER`; blank
+   or masked submission means "keep the stored value"; GET never returns plaintext; the
+   `sensitive` flag in `SettingsSchema` is the contract, so assert it per field rather
+   than relying on the flag being honoured. Reveal-on-demand only if a rotation flow
+   needs it — and then through a separate, audited route.
+6. **Search and progressive disclosure for the provider surface.** 146 fields under one
+   tab is the one place a flat schema genuinely fails. A filter box over `providers`
+   plus collapsed per-provider sections is the mitigation; this is also how the nine
+   ported fields differ from the 146 on the WordPress side.
+7. **No `spatie/laravel-settings` adoption.** The estate already has a schema + scope +
+   surface model that the WordPress REST contract mirrors field for field. Adding a
+   settings package would create a second source of truth for the same keys — the exact
+   class of bug §60.3 and §61.1 were spent fixing on the WordPress side.
+8. **Operator/tenant scope is the spine of the port.** Credentials are operator scope,
+   defaults are tenant scope; `scope` already encodes this and must survive unchanged.
+   A provider API key must not become a tenant-writable field on the way across.
+
+### 62.3 What this changes about sequencing
+
+The earlier order (providers → authentication → external tools → tools & features →
+security → advanced → general/chat client) still holds, but **the unit of port is a
+tab, not a sub-tab**:
+
+- one Filament page per tab, with that tab's sections inlined;
+- its view-siblings landed separately, as pages;
+- the provider tab split further by provider *section*, so the credential work is
+  reviewable in pieces rather than as a 146-field drop.
+
+That keeps each PR reviewable and avoids both a 76-item mega-PR and the "one god page"
+that the WordPress surface became.
