@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added — CI gate for settings field registration
+
+- **A settings field can no longer ship invisible.** A section that defines `get_subtab_groups()` renders and saves only the keys named in a group: `render()` iterates the active group's `fields`, and `sanitize_with_subtabs()` whitelists submitted input to the same list. A field declared in `get_fields()` but in no group therefore renders nowhere and is dropped on save — with no PHP error and no PHPCS finding, because both methods are individually valid. `.github/scripts/check-settings-field-registration.php` (new `settings-field-registration` job in `php-linting.yml`) tokenises every sub-tabbed section in `includes/admin/sections/` and `addons/pro/includes/admin/sections/` and fails on that shape, including in a newly added section. It also fails on a stale baseline entry, so `.github/scripts/settings-field-registration.txt` cannot rot.
+- **Baseline: 61 pre-existing offenders, recorded not approved.** 22 are `_heading_*` pseudo-fields in the Security section that no group references — no `render_field()` case handles `type => 'heading'` outside the sub-tab-less A2A section, so those sub-tab headings do not render today (a UI fix, not a one-line registration). The remainder are credential and feature-flag fields with no UI group, concentrated in Tools, Integrations and Providers.
+- **Documented** in `.context/settings-storage.md` → "Adding a Field to a Sub-Tabbed Section", plus a Common Pitfalls row.
+
 ### Fixed — SSE long-run offload measured the wrong clock
 
 - **A healthy long turn no longer hands off to the background worker.** The Phase 4b gate compared **total turn duration** against `wp_mcp_ai_sse_offload_elapsed_seconds` (now 110 s by default), and read it immediately after a keepalive that had just reset the proxy's idle timer — so any turn merely *running* 75 s offloaded, even while bytes were flowing. A Gmail search taking 30 s inside a 75 s agentic turn was interrupted and resumed in the background for no reason. The gate now compares the **longest silent gap** the stream has actually observed (`WP_MCP_AI_SSE_Handler::get_max_idle_gap()`), which is the only figure that predicts a proxy reset: Cloudflare resets at 125 s, AWS load balancers at 60 s and nginx `proxy_read_timeout` defaults to 60 s — all **idle**-based, reset by every byte including keepalive comments. Turns that stream steadily never offload; a blocking step that already consumed the idle budget still offloads the next one instead of risking a mid-turn reset that loses the turn.

@@ -285,3 +285,27 @@ jobs:
         # .github/scripts/public-write-routes.txt, or an allowlisted route
         # goes stale. PHPCS and Plugin Check cannot reason about this pattern.
         run: php .github/scripts/check-public-write-routes.php
+
+  settings-field-registration:
+    name: Settings Field Registration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Run the settings field-registration gate
+        # Fails when a field declared in a sub-tabbed section's get_fields()
+        # appears in no get_subtab_groups() entry: `render()` iterates the
+        # active group's fields and `sanitize_with_subtabs()` whitelists input
+        # to the same list, so the field renders nowhere and is dropped on
+        # save — silently, because both methods are individually valid. This is
+        # how sse_offload_elapsed_seconds shipped invisible in #7905. Also
+        # fails on a stale baseline entry in settings-field-registration.txt.
+        run: php .github/scripts/check-settings-field-registration.php
