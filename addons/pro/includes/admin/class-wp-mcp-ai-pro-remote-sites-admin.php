@@ -2496,7 +2496,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="text" name="mcp_header_name" id="mcp_header_name" class="regular-text" value="<?php echo $is_edit ? esc_attr( isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '' ) : ''; ?>" placeholder="Authorization">
-						<p class="description"><?php esc_html_e( 'For custom-header authentication. The header value goes in the token field (e.g. "Bearer user:application-password").', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'The header name — most APIs expect "Authorization". Enter the full value in the token field, including the scheme (e.g. "Bearer user:application-password"). Do not enter "Bearer" here: that is a scheme, not a header name, and the request would go out unauthenticated.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

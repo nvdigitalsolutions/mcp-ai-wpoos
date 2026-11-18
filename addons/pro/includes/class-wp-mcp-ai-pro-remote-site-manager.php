@@ -4649,6 +4649,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				);
 			}
 
+			// A scheme word in the header-name field silently produces a request
+			// with no Authorization header at all (`Bearer: <token>`), so the
+			// remote end replies 401/403 with nothing in the logs to explain it.
+			if ( 'custom_header' === $auth_type ) {
+				$header_name  = strtolower( trim( (string) $connection['mcp_header_name'] ) );
+				$scheme_words = array( 'bearer', 'basic', 'token', 'oauth', 'apikey', 'api_key', 'jwt' );
+
+				if ( in_array( $header_name, $scheme_words, true ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_mcp_header_is_scheme',
+						sprintf(
+							/* translators: 1: the scheme word that was entered as a header name, 2: the header name to use instead. */
+							__( '"%1$s" is an authentication scheme, not a header name — the request would go out unauthenticated. Use Header Name "%2$s" and prefix the value with "%1$s " (for example: "%1$s your-token"). Alternatively, switch Authentication Type to Bearer Token and paste the bare token.', 'mcp-ai-wpoos-pro' ),
+							$connection['mcp_header_name'],
+							'Authorization'
+						)
+					);
+				}
+			}
+
 			if ( 'bearer' === $auth_type && empty( $connection['token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_mcp_bearer',
