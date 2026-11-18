@@ -2,12 +2,14 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\Assistant;
 use App\Models\Transcript;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\TenantContext;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -46,9 +48,11 @@ class Transcripts extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Activity;
+
     // Content surfaces sit above the operational logs and below configuration:
     // transcripts are what the estate's users produced, not how the runtime runs.
-    protected static ?int $navigationSort = 65;
+    protected static ?int $navigationSort = 10;
 
     protected string $view = 'filament.admin.transcripts';
 

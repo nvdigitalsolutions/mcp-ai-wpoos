@@ -2,10 +2,12 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\Memory;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -48,9 +50,11 @@ class AgentMemory extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;
 
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Knowledge;
+
     // Content surfaces sit together: memory is what the estate's assistants
     // retained, not how the runtime runs.
-    protected static ?int $navigationSort = 62;
+    protected static ?int $navigationSort = 40;
 
     protected string $view = 'filament.admin.agent-memory';
 

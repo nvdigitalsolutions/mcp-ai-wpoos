@@ -1187,6 +1187,15 @@ Legend: **P** ported · **N** not-applicable (WP-only) · **R** retired
 | `admin-create-assistant-button`, `admin-create-team-button` | nav | **R** | 7 |
 | `admin-workflow-triggers` | records | P (console `triggers`) | — |
 | `admin-test-page-base` | base | **R** | 7 |
+| `settings-dashboard` (+ `settings-dashboard-init`) | settings | **P** — the tabbed settings interface and the file that registers the top-level "NV oOS" menu; served by `settings.estate` + `settings.platform` | 1 |
+| `pro-dashboard` | command-center | **P (folded)** — the ISO 27001 compliance dashboard; its content is served by `assets` (register), `reports` (compliance reports) and the plan/entitlement rows in `settings.platform`. No separate page | 2 |
+| `pro-settings` | settings | **P (folded)** — plan and toolkit status in `settings.platform`; the npm-package version list is a WordPress plugin artefact and is not ported | 2 |
+| `dashboard-diagnostic`, `pro-dashboard-diagnostic`, `pro-dashboard-chart-settings` | probe / chart admin | **N** — diagnostics for WP screens that do not exist here, plus a chart-data editor for a dashboard this runtime does not render | 7 |
+| `admin-profession-settings`, `admin-team-settings` | settings | **P** — global provider/model/temperature defaults, as settings **sections** on the existing settings pages, not two new pages | 3 |
+| `admin-transparency-settings` | settings | **P** — AI disclosure, consent and provenance settings section (a real compliance surface, not a WP idiom) | 3 |
+| `analytics-dashboard` | dashboard (widgets) | **N** — wp-admin dashboard widgets for token usage; the data is served by `cost` and `reports`. A panel widget would be new work, not a port | 7 |
+| `pro-dashboard-helper`, `pro-dashboard-rest` | infrastructure | **R** — asset/script and REST helpers for a dashboard this runtime does not have | 7 |
+| `settings-registry`, `settings-validator`, `simple-settings-saver` | infrastructure | **R** — superseded by `SettingsSchema` and `SettingsService` (the one writer, 149 §17) | 7 |
 
 ### Pro (`addons/pro/includes/admin/`, 159 files)
 
@@ -1209,7 +1218,21 @@ Legend: **P** ported · **N** not-applicable (WP-only) · **R** retired
 
 > The Pro appendix is grouped rather than enumerated because Wave 3 replaces
 > 45 of these files with two renderers. A full per-file disposition is a Wave 7
-> deliverable and is enforced by the CI test described in §11.
+> deliverable, measured by `bin/audit-wp-admin-surfaces.php`. The script is not
+> yet wired into CI — run it by hand before quoting a coverage number.
+
+### Outside the counted unit (3 pages)
+
+The two headings above count `maxdepth 1` (85 and 159 files — figures that match
+`find` exactly). Three further screens register an admin menu from **outside**
+those trees, so a `maxdepth`-scoped inventory could not see them. Found by scope
+3 of `bin/audit-wp-admin-surfaces.php` on 2026-11-17.
+
+| Surface | File | Disposition | Wave |
+|---|---|---|---|
+| Measurement (`admin-measurement-dashboard`) | `includes/admin/measurement/` | **P** — but a **new surface**, not a port: metrics, eval-suite runs, budget envelopes and persisted metric events. Contract row recorded (`measurement`, `ops: planned`) — 149 §45; it is product data, not a runtime probe, so it does not belong to `platform-operations` | 3 |
+| Job Queue (`async-job-queue`) | `includes/class-wp-mcp-ai-async-job-queue.php` | **P (partial)** — counts and the DLQ drain are served by `queue`; the pending-job listing is not exposed. Recorded on the `queue` row | 2 |
+| Markup Editor (`markup-admin-page`) | `includes/markup/` | **N** — a hidden page (no parent menu) that serves MCP URL-mode elicitation; the chat surface serves the same interaction here | 7 |
 
 ---
 

@@ -64,41 +64,37 @@
         Read-only: the catalogue is identical on the console, and nothing here writes to it.
     </p>
 
-    @if ( array() === $rows )
-        <p style="font-size: 0.85rem;">No tool matches that filter.</p>
-    @else
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-            <thead>
-                <tr style="text-align: left; border-bottom: 1px solid rgba(127, 127, 127, 0.35);">
-                    <th style="padding: 0.5rem 0.5rem 0.5rem 0;">Tool</th>
-                    <th style="padding: 0.5rem;">Readiness</th>
-                    <th style="padding: 0.5rem;">Capability</th>
-                    <th style="padding: 0.5rem;">Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ( $rows as $row )
-                    @php( $colours = $badge( (string) $row['readiness'] ) )
-                    <tr style="border-bottom: 1px solid rgba(127, 127, 127, 0.15); vertical-align: top;">
-                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">
-                            <div>{{ $row['name'] }}</div>
-                            <code style="font-size: 0.75rem; opacity: 0.75;">{{ $row['slug'] }}</code>
-                        </td>
-                        <td style="padding: 0.5rem;">
-                            <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; color: {{ $colours[0] }}; background: {{ $colours[1] }};">
-                                {{ $row['readiness'] }}
-                            </span>
-                            @unless ( $this->isServable( (string) $row['readiness'] ) )
-                                <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 0.15rem;">not served</div>
-                            @endunless
-                        </td>
-                        <td style="padding: 0.5rem;">
-                            <code style="font-size: 0.75rem;">{{ $row['required_capability'] }}</code>
-                        </td>
-                        <td style="padding: 0.5rem;">{{ $row['description'] }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @endif
+    <x-admin.data-table
+        caption="Tools in the catalogue"
+        :columns="[
+            ['label' => 'Tool'],
+            ['label' => 'Readiness'],
+            ['label' => 'Capability'],
+            ['label' => 'Description'],
+        ]"
+        :rows="count( $rows )"
+        empty="No tool matches that filter."
+    >
+        @foreach ( $rows as $row )
+            @php( $colours = $badge( (string) $row['readiness'] ) )
+            <tr>
+                <td>
+                    <div>{{ $row['name'] }}</div>
+                    <code style="font-size: 0.75rem; opacity: 0.75;">{{ $row['slug'] }}</code>
+                </td>
+                <td>
+                    <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; color: {{ $colours[0] }}; background: {{ $colours[1] }};">
+                        {{ $row['readiness'] }}
+                    </span>
+                    @unless ( $this->isServable( (string) $row['readiness'] ) )
+                        <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 0.15rem;">not served</div>
+                    @endunless
+                </td>
+                <td>
+                    <code style="font-size: 0.75rem;">{{ $row['required_capability'] }}</code>
+                </td>
+                <td>{{ $row['description'] }}</td>
+            </tr>
+        @endforeach
+    </x-admin.data-table>
 </x-filament-panels::page>

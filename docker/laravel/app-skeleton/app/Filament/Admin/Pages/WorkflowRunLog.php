@@ -2,11 +2,13 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\User;
 use App\Models\WorkflowRun;
 use App\Policies\AdminAccessPolicy;
 use App\Support\WorkflowRuns;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -46,9 +48,11 @@ class WorkflowRunLog extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPlayCircle;
 
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Automation;
+
     // Below the resources, above settings: it is an operational log, not a
     // configuration page.
-    protected static ?int $navigationSort = 80;
+    protected static ?int $navigationSort = 20;
 
     protected string $view = 'filament.admin.workflow-runs';
 

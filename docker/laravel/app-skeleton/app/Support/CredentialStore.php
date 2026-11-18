@@ -35,6 +35,17 @@ use Illuminate\Support\Facades\Crypt;
 final class CredentialStore
 {
     /**
+     * The uniform read mask.
+     *
+     * Public because a caller that accepts a round-tripped read payload needs to
+     * recognise it: `McpAppsStore` treats an incoming token equal to this value
+     * as "no token", so a read → write cycle cannot seal the mask as a
+     * credential. Deliberately constant — no length, tail or per-field
+     * variation, because a mask that varies leaks information about the value.
+     */
+    public const MASK = "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}";
+
+    /**
      * Seal a credential map.
      *
      * @param array<string, mixed> $fields Field name to plaintext value.
@@ -98,7 +109,7 @@ final class CredentialStore
      */
     public function mask(?string $payload): string
     {
-        return $this->has($payload) ? "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}" : '';
+        return $this->has($payload) ? self::MASK : '';
     }
 
     /**

@@ -17,11 +17,16 @@ use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
+use App\Support\Pro\ToolkitEngine;
+use App\Support\Pro\ToolkitManifestLoader;
 use App\Support\RemoteSites\RemoteSiteStore;
+use App\Support\Security\SecuritySnapshotStore;
 use App\Support\Settings\SettingsService;
 use App\Support\TenantContext;
 use App\Support\TenantEntitlement;
 use App\Spike\SpikeStreamingProvider;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Table;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
@@ -126,6 +131,33 @@ class AppServiceProvider extends ServiceProvider
             RemoteSiteStore::class,
             static fn ($app): RemoteSiteStore => new RemoteSiteStore(
                 $app->make(CredentialStore::class),
+                static fn (): string => TenantContext::current()
+            )
+        );
+
+        // Toolkit records are estate data as well (149 §47). `ToolkitsController`
+        // resolved an estate on every `/pro/toolkits` request and then ignored it,
+        // so one estate listed and deleted another's records, and the global
+        // unique key refused two estates the same SKU. The engine now starts
+        // every statement at one estate-scoped query; the resolver is per-query
+        // for the same reason as the store above.
+        $this->app->bind(
+            ToolkitEngine::class,
+            static fn ($app): ToolkitEngine => new ToolkitEngine(
+                $app->make(ToolkitManifestLoader::class),
+                $app->make(SettingsStoreInterface::class),
+                static fn (): string => TenantContext::current()
+            )
+        );
+
+        // Security snapshots hold an estate's settings payload (149 §51). The table
+        // had no estate column, so `GET /security/snapshots` listed every estate's
+        // labels and `POST /security/restore` accepted any id — copying another
+        // estate's configuration into the caller's settings. BIND, not scoped, for
+        // the same reason as the stores above.
+        $this->app->bind(
+            SecuritySnapshotStore::class,
+            static fn (): SecuritySnapshotStore => new SecuritySnapshotStore(
                 static fn (): string => TenantContext::current()
             )
         );
@@ -271,6 +303,29 @@ class AppServiceProvider extends ServiceProvider
         // behind for the retry or for the next job.
         Event::listen(JobProcessed::class, static fn () => TenantContext::forget());
         Event::listen(JobExceptionOccurred::class, static fn () => TenantContext::forget());
+
+        // ── Table defaults (Proposal 149 §55.5, step 5) ────────────
+        //
+        // One place for the decisions every resource table shares, so a
+        // resource's `table()` stays about *its* columns. The visible one is
+        // pagination: Filament's defaults are `[5, 10, 25, 50]` with a page
+        // size of 10, and a 69-row catalogue reads best at 25.
+        //
+        // `filtersLayout` is already Filament's default — naming it pins the
+        // behaviour against a framework default change rather than expressing
+        // a preference. `loadingSkeleton()` only renders with `deferLoading()`,
+        // which no table enables yet; it is set here so the first deferred
+        // table inherits a skeleton instead of flashing an empty body.
+        // `persistInSession()` keeps sort, search and column toggles across a
+        // navigation, which is what the console does.
+        Table::configureUsing(
+            static fn (Table $table): Table => $table
+                ->persistInSession()
+                ->loadingSkeleton()
+                ->paginated(array(10, 25, 50))
+                ->defaultPaginationPageOption(25)
+                ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+        );
     }
 
     /**

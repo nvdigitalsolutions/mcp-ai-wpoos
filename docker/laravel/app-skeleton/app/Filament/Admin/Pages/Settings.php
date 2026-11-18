@@ -2,11 +2,13 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Filament\Concerns\BuildsSettingsForm;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Settings\SettingsService;
 use BackedEnum;
+use UnitEnum;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -40,9 +42,11 @@ class Settings extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    // After the resource pages: configuration is the last thing an operator
-    // looks for, not the first.
-    protected static ?int $navigationSort = 90;
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Settings;
+
+    // The group is last and holds one page; `AdminNavigationGroup` records why
+    // a single-item group is deliberate rather than noise.
+    protected static ?int $navigationSort = 10;
 
     protected string $view = 'filament.settings-form';
 

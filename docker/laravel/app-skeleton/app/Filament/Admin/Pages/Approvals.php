@@ -2,10 +2,12 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\Approval;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -45,7 +47,9 @@ class Approvals extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCheckBadge;
 
-    protected static ?int $navigationSort = 57;
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Automation;
+
+    protected static ?int $navigationSort = 30;
 
     protected string $view = 'filament.admin.approvals';
 

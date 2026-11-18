@@ -79,57 +79,55 @@
     @if ( array() === $rows )
         <p style="font-size: 0.85rem;">You have no personal tokens. Minting one creates a credential for API access that is separate from your browser session.</p>
     @else
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-            <thead>
-                <tr style="text-align: left; border-bottom: 1px solid rgba(127, 127, 127, 0.35);">
-                    <th style="padding: 0.5rem 0.5rem 0.5rem 0;">Label</th>
-                    <th style="padding: 0.5rem;">Status</th>
-                    <th style="padding: 0.5rem;">Created</th>
-                    <th style="padding: 0.5rem;">Last used</th>
-                    <th style="padding: 0.5rem;">Expires</th>
-                    <th style="padding: 0.5rem;">Action</th>
+        <x-admin.data-table
+            caption="Your personal access tokens"
+            :columns="[
+                ['label' => 'Label'],
+                ['label' => 'Status'],
+                ['label' => 'Created'],
+                ['label' => 'Last used'],
+                ['label' => 'Expires'],
+                ['label' => 'Action'],
+            ]"
+        >
+            @foreach ( $rows as $row )
+                @php( $armed = (string) $row['id'] === $this->pendingRevoke )
+                <tr>
+                    <td>
+                        <div>{{ '' !== $row['label'] ? $row['label'] : 'token' }}</div>
+                        <code style="font-size: 0.75rem; opacity: 0.75;">#{{ (int) $row['id'] }}</code>
+                    </td>
+                    <td>
+                        @if ( 'active' === $row['status'] )
+                            <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; color: #065f46; background: rgba(16, 185, 129, 0.15);">active</span>
+                        @else
+                            <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; color: #991b1b; background: rgba(239, 68, 68, 0.15);">expired</span>
+                        @endif
+                    </td>
+                    <td>{{ '' !== $row['created_at'] ? $row['created_at'] : '—' }}</td>
+                    <td>{{ '' !== $row['last_used_at'] ? $row['last_used_at'] : 'never' }}</td>
+                    <td>{{ '' !== $row['expires_at'] ? $row['expires_at'] : '—' }}</td>
+                    <td>
+                        @if ( $armed )
+                            <x-filament::button type="button" color="danger" size="sm" wire:click="revoke">
+                                Confirm revoke
+                            </x-filament::button>
+                            <x-filament::button type="button" color="gray" size="sm" wire:click="cancelRevoke" style="margin-top: 0.35rem;">
+                                Cancel
+                            </x-filament::button>
+                        @else
+                            <x-filament::button
+                                type="button"
+                                color="gray"
+                                size="sm"
+                                wire:click="confirmRevoke('{{ $row['id'] }}')"
+                            >
+                                Revoke
+                            </x-filament::button>
+                        @endif
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach ( $rows as $row )
-                    @php( $armed = (string) $row['id'] === $this->pendingRevoke )
-                    <tr style="border-bottom: 1px solid rgba(127, 127, 127, 0.15); vertical-align: top;">
-                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">
-                            <div>{{ '' !== $row['label'] ? $row['label'] : 'token' }}</div>
-                            <code style="font-size: 0.75rem; opacity: 0.75;">#{{ (int) $row['id'] }}</code>
-                        </td>
-                        <td style="padding: 0.5rem;">
-                            @if ( 'active' === $row['status'] )
-                                <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; color: #065f46; background: rgba(16, 185, 129, 0.15);">active</span>
-                            @else
-                                <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; color: #991b1b; background: rgba(239, 68, 68, 0.15);">expired</span>
-                            @endif
-                        </td>
-                        <td style="padding: 0.5rem;">{{ '' !== $row['created_at'] ? $row['created_at'] : '—' }}</td>
-                        <td style="padding: 0.5rem;">{{ '' !== $row['last_used_at'] ? $row['last_used_at'] : 'never' }}</td>
-                        <td style="padding: 0.5rem;">{{ '' !== $row['expires_at'] ? $row['expires_at'] : '—' }}</td>
-                        <td style="padding: 0.5rem;">
-                            @if ( $armed )
-                                <x-filament::button type="button" color="danger" size="sm" wire:click="revoke">
-                                    Confirm revoke
-                                </x-filament::button>
-                                <x-filament::button type="button" color="gray" size="sm" wire:click="cancelRevoke" style="margin-top: 0.35rem;">
-                                    Cancel
-                                </x-filament::button>
-                            @else
-                                <x-filament::button
-                                    type="button"
-                                    color="gray"
-                                    size="sm"
-                                    wire:click="confirmRevoke('{{ $row['id'] }}')"
-                                >
-                                    Revoke
-                                </x-filament::button>
-                            @endif
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+            @endforeach
+        </x-admin.data-table>
     @endif
 </x-filament-panels::page>

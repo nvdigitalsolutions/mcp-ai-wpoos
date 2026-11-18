@@ -2,11 +2,13 @@
 
 namespace App\Filament\Admin\Resources\Teams;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Filament\Admin\Resources\Teams\Pages\ManageTeams;
 use App\Models\Team;
 use App\Models\User;
 use App\Support\CapabilityMap;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
@@ -17,6 +19,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
 
@@ -49,6 +52,10 @@ class TeamResource extends Resource
     protected static ?string $model = Team::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
+
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Workspace;
+
+    protected static ?int $navigationSort = 30;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -185,5 +192,45 @@ class TeamResource extends Resource
         }
 
         return true;
+    }
+
+    /**
+     * Global search — Proposal 149 §55 step 3.
+     *
+     * Default Filament searches only `$recordTitleAttribute` (the team name).
+     * The description is what an operator remembers about a team they did not
+     * create.
+     *
+     * @return list<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return array('name', 'slug', 'description');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array('Slug' => (string) $record->slug);
+    }
+
+    /**
+     * Open the record's edit action on the manage page.
+     *
+     * Same reason as `AssistantResource`: the default `?tableAction=view` has no
+     * action behind it on this resource, so the result was a dead link.
+     */
+    public static function getGlobalSearchResultUrl(Model $record): ?string
+    {
+        if (! static::canEdit($record)) {
+            return static::getUrl();
+        }
+
+        return static::getUrl(parameters: array(
+            'tableAction' => 'edit',
+            'tableActionRecord' => $record->getKey(),
+        ));
     }
 }

@@ -14,6 +14,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -76,6 +77,29 @@ class AdminPanelProvider extends PanelProvider
             // Both panels share one palette: a customer estate and the vendor
             // panel must not disagree on what "danger" looks like.
             ->colors(AdminTheme::FILAMENT_COLORS)
+            // Collapsible rail (Proposal 149 §55 step 2). The sidebar is the
+            // primary navigation and it grows with every slice, so it must be
+            // reclaimable without leaving the page. With this on, a group that
+            // declares an icon renders as that icon opening a dropdown instead
+            // of listing its items — which is why every `AdminNavigationGroup`
+            // case carries one (a group without an icon falls back to
+            // twenty-one individual rail icons).
+            //
+            // Consequence worth knowing: when a group has an icon and the
+            // sidebar is collapsible, Filament drops the per-item icon from the
+            // expanded list (`sidebar/group.blade.php`, `$hasDropdown` ⇒
+            // `$itemIcon = null`) and keeps it in the rail dropdown. The
+            // expanded sidebar is therefore group-icon + label, then text links.
+            ->sidebarCollapsibleOnDesktop()
+            // Group headers are `<div>`s with an Alpine click handler in Filament,
+            // so folding a group is mouse-only. This restores the disclosure
+            // semantics the W3C pattern requires (role, tabindex, Enter/Space,
+            // aria-expanded/-controls) without replacing vendor markup — see the
+            // partial's docblock for the exact contract and the failure mode.
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_END,
+                static fn () => view('filament.admin.sidebar-disclosure'),
+            )
             ->tenant(Tenant::class, 'slug', 'tenant')
             ->tenantMiddleware([
                 SetTenantContext::class,

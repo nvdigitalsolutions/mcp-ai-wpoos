@@ -1,9 +1,9 @@
 # Proposal 149 — Implementation Plan
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **27 numbered slices** (§8–§41; §38 is the branding fix rather than a slice) **shipped**, and **the Wave 2 exit gate (key rotation + DLQ drain) is met**.
-**Scoreboard** — re-measured 2026-11-17 with `bin/audit-surface-ownership.php`: **44 surfaces · 22 built on a Filament panel** (10 `/ops`, 13 `/admin`; `settings.platform` is on both) · **29 console-served** · **18 console-only** · **2 planned-only** (`identity-provider`, `datasets`, both `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
-**Validation** — app suite: **1101 tests / 6160 assertions**, 4 failures, all `WifiKpisTest` (the documented pre-existing unbound-addon gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **37 numbered slices** (§8–§54) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, and **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
+**Scoreboard** — re-measured 2026-11-17 with `bin/audit-surface-ownership.php`: **45 surfaces · 31 built on a Filament panel** (11 `/ops`, 21 `/admin`; `settings.platform` is on both) · **29 console-served** · **9 console-only** · **3 planned-only** (`measurement`, `identity-provider`, `datasets`, all `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Validation** — app suite: **1262 tests / 6755 assertions**, 4 failures, all `WifiKpisTest` (the documented pre-existing unbound-addon gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-17
 **Scope (Wave 0):** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -1533,10 +1533,10 @@ early. It matches `app/Filament/*/Resources/*/*Resource.php` and
 not rows.
 
 `bin/audit-surface-ownership.php` prints the burn-down from the same contract
-(`--json` for tooling). **Re-measured 2026-11-17, after the tail closed: 44
-surfaces, 22 built on a Filament panel** (10 `/ops`, 13 `/admin` —
-`settings.platform` is on both), **29 served by the console**, **18 console-only**,
-**2 planned only** (both `/ops`), **2 recorded `absent`**. That is the real Wave 2
+(`--json` for tooling). **Re-measured 2026-11-17, after §45: 45
+surfaces, 24 built on a Filament panel** (10 `/ops`, 15 `/admin` —
+`settings.platform` is on both), **29 served by the console**, **16 console-only**,
+**3 planned only** (all `/ops`), **2 recorded `absent`**. That is the real Wave 2
 scoreboard — the console covering a surface does not count as admin parity.
 
 The figures this section carried when it was written — 42 / 6 / 29 / 27 / 9 —
@@ -3659,3 +3659,2045 @@ estate's gated action**, writing `resolved_by` as themselves.
   worth a lookup.
 - **Expired approvals are not auto-resolved.** Nothing sweeps them; the queue
   shows them past their window so a human can see the gate failed open.
+
+---
+
+## 42. Wave 2 — twenty-eighth slice: remote sites (`/admin/remote-sites`)
+
+**State:** shipped 2026-11-17. The surface §27 explicitly deferred ("the `/admin`
+page follows in a later slice"), now built over the store that made it safe.
+
+### 42.1 The decision that shaped it: the console owns authoring
+
+The console's Remote sites wizard renders a **per-type field schema** from
+`RemoteSiteTypes`, posts the values flat, and lets `RemoteSitesController` split
+them back into `config` + `credentials` using each field's `secret` flag. That
+split is the security boundary — get it wrong and a password lands in a JSON bag
+that is echoed on every list.
+
+Rebuilding that in Livewire would be the same wizard twice, with a second place
+to keep the secret/non-secret split correct. So the panel is a **subset**: it
+lists, tests, enables/disables and deletes; the console authors. This is the
+§13.1 ruling applied to a second surface — not a missing feature, a recorded
+split of ownership.
+
+| Piece | Path | Note |
+|---|---|---|
+| Page | `app/Filament/Admin/Pages/RemoteSitesPage.php` | list + Test + enable/disable + two-step delete |
+| View | `resources/views/filament/admin/remote-sites.blade.php` | inline styles; presence, never a credential |
+| Test | `tests/Feature/AdminRemoteSitesTest.php` | 13 tests |
+| Contract | `contracts/surface-ownership.json` → `remote-sites` | `admin: planned` → `subset`, `files`, projection extended |
+
+### 42.2 Three properties, each with a test
+
+- **The store is the boundary.** `RemoteSiteStore::query()` filters on
+  `tenant_id`, so a foreign id is `null` before any action runs. That matters
+  most for `test`, the verb that *acts*: it sends the row's sealed credentials to
+  the URL the row names. A refused test must not reach the network, and the test
+  asserts `$http->requests === []`.
+- **No credential is rendered.** The Credentials column says `stored`/`none`;
+  the store's uniform mask is deliberately **not** printed, because a mask beside
+  a row invites the "where is show?" question this page answers with "never".
+  The endpoint is rendered as **host + path** — query and fragment are dropped,
+  because a provider can put a token there (the §30 `webhook_url` rule). A live
+  check with `?token=abc123` rendered `smoke.test/path`.
+- **Every action is audited.** `AuditAdminRequests` skips `/livewire/update` as
+  UI mechanics, so test/enable/disable/delete each call
+  `AdminAuditLogger::recordResource()`. The audit diff carries the host and the
+  outcome, never the URL's path and never a secret.
+
+Access is `manage_options` **plus** panel membership. `/admin` admits any
+non-viewer member, but `RemoteSitesApiTest` already pins `manage_options` on the
+REST surface, and a presentation that admits someone the endpoint refuses is the
+button-and-endpoint disagreement the contract exists to stop.
+
+### 42.3 Validation record — executed
+
+- `AdminRemoteSitesTest`: **13 passed, 45 assertions** — including the foreign
+  test/delete refusals (row intact, `last_tested_at` untouched, no outbound
+  request), the two-step delete, the audit rows, and the `manage_options` 403.
+- `SurfaceOwnershipTest`: **4 passed, 437 assertions** — the new page is declared,
+  and the `subset` state carries its projection.
+- Full app suite: **1114 tests / 6207 assertions, 4 failures** — all
+  `WifiKpisTest` (the documented pre-existing unbound-addon gap).
+- Surface audit: **44 surfaces · 23 panel-built** (10 `/ops`, 14 `/admin`) ·
+  **17 console-only**.
+- `phpcs` PSR-12: clean on the page and the test. `php artisan view:cache`:
+  compiles. Live check on `:8001`: create → row renders (secret absent, query
+  stripped) → arm → confirm → deleted, audit row `deleted | tenant=default |
+  method=DELETE`.
+
+### 42.4 Follow-ups recorded
+
+- **A panel authoring form, if ever wanted, must be generated from
+  `RemoteSiteTypes`** — not hand-written — or the field split drifts from the
+  controller.
+- **The Test action is synchronous.** An outbound call inside a Livewire request
+  holds the page for as long as the endpoint takes; queue it if a slow site
+  becomes a real complaint. A per-row timeout would be the second thing to add.
+- **No bulk "test all".** One click per row means one outbound request per click;
+  a bulk action multiplies that by the estate's connection count.
+
+---
+
+## 43. Wave 2 — twenty-ninth slice: MCP apps (`/admin/mcp-apps`)
+
+**State:** shipped 2026-11-17. A `full` surface: the panel edits the same
+per-assistant list the console edits, through the same writer.
+
+### 43.1 Why this one is `full` and the last two were not
+
+Remote sites (§42) and MCP apps look similar — assistant-adjacent, credential
+bearing — but the unit of edit differs, and that decides the shape:
+
+- A remote site is **created** from a per-type field schema. Authoring it in the
+  panel would duplicate the wizard and its secret/non-secret split.
+- An MCP app list is **replaced whole**. `McpAppsClient::save()` sends
+  `{apps: [...]}` and `McpAppsStore::replace()` validates, caps and carries
+  tokens by identity. A Filament `Repeater` is the same editor in a different
+  renderer, and one Save is one writer call.
+
+So the list is the form, not a record.
+
+### 43.2 Two credential defects this slice found (and fixed)
+
+1. **The read projection could be written back as a token.** `read()` projects
+   `token` as the uniform mask (`••••••••`). `replace()` only treated *blank* as
+   "keep the stored one", so a client that reads the list and writes it straight
+   back would seal the mask as the credential — silently replacing a working
+   token with eight bullets. The console avoided it by stripping the field
+   (`toWritableApp()`), i.e. by convention, not by contract. `CredentialStore`
+   now exposes the mask as `CredentialStore::MASK` and `McpAppsStore` treats it
+   as absent. `McpAppsTest::test_a_read_projection_cannot_be_saved_back_as_a_token`
+   pins the round trip.
+2. **A present `null` boolean meant `false`.** `enabled`/`verify_ssl` used
+   `array_key_exists()`, so `"verify_ssl": null` — what a partial payload (or a
+   panel row whose toggle was never hydrated) actually sends — **disabled TLS
+   verification**. Both now use `?? `, so null means "not supplied" and the
+   default holds. Pinned by
+   `McpAppsTest::test_null_boolean_fields_fall_back_to_defaults`.
+
+### 43.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Page | `app/Filament/Admin/Pages/McpAppsPage.php` | assistant selector + `Repeater` over the list; one Save |
+| View | `resources/views/filament/admin/mcp-apps.blade.php` | inline styles; states the identity/token rule |
+| Store | `app/Support/McpAppsStore.php` | mask guard + null-safe booleans |
+| Store seam | `app/Support/CredentialStore.php` | `MASK` made public (behaviour unchanged) |
+| Tests | `tests/Feature/AdminMcpAppsTest.php` (12), `McpAppsTest.php` (+2) | |
+| Contract | `contracts/surface-ownership.json` → `mcp-apps` | `admin: planned` → `full`, `files`, projection + notes |
+
+**What the panel adds over the console:** a **write-only token field**. The
+console's `toWritableApp()` strips `token`, so a connection created there could
+never be given one from that screen. The panel accepts one, seals it through
+`CredentialStore`, and never hydrates it back — the field is empty on load and a
+blank save keeps the sealed value.
+
+**The disclosed limitation:** identity is `connection_ref`, or `server_url` when
+the ref is blank. Changing either makes it a *different* connection, so the
+stored token is not carried. The form says so in a warning above the repeater
+rather than guessing which row the user meant; the save notification then reports
+how many apps hold a stored token, so a loss is visible.
+
+### 43.4 Estate scope and access
+
+`Assistant` has **no global tenant scope**, so the selected id is re-resolved
+through `assistants.tenant_id` on mount, on every selector change, and again on
+save. A tampered `?assistant=` (the property is `#[Url]`) resolves to null: the
+page shows "choose an assistant" and a save is refused, rather than reading or
+writing another estate's assistant. `mount()` falls back to the estate's first
+assistant **only when nothing was requested**.
+
+Access is `manage_options` **plus** panel membership, matching the
+`can:manage_options` group the REST routes sit in
+(`McpAppsTest::test_a_subscriber_cannot_read_or_write`).
+
+### 43.5 Validation record — executed
+
+- `AdminMcpAppsTest` + `McpAppsTest`: **25 passed, 97 assertions** — including
+  no-token-rendered, the form state carrying no token value, blank-token
+  carry-over, mask round-trip, cap refusal, non-http refusal, the foreign
+  selector, and the audit projection.
+- `SurfaceOwnershipTest`: **4 passed, 438 assertions**.
+- Full app suite: **1128 tests / 6258 assertions, 4 failures** — all
+  `WifiKpisTest` (pre-existing).
+- Surface audit: **44 surfaces · 24 panel-built** (10 `/ops`, 15 `/admin`) ·
+  **16 console-only**.
+- `phpcs` PSR-12: clean on the page, the two stores and both test files.
+  `php artisan view:cache`: compiles.
+- Live check on `:8001`: seeded one app with a token → page rendered the label
+  and **no mask and no plaintext** → **Save with no changes** → notification
+  "1 app(s) assigned; 1 hold a stored token", `token_sealed` **byte-identical**
+  and still decryptable, audit row `updated | hosts: [mcp.smoke.test] |
+  sealed_count: 1`. The seed was then removed; the two audit rows remain by
+  design (append-only).
+
+### 43.6 Follow-ups recorded
+
+- **`oauth_data` is still unsupported.** The console never sends it and the
+  store does not whitelist it, so an OAuth-capable app is configured with a
+  bearer token here. Supporting the blob means modelling refresh semantics, not
+  adding a field.
+- **The Repeater edits the list positionally.** There are no stable ids, so a
+  row's identity is its `connection_ref`/`server_url` — which is also what the
+  token carry-over uses. Adding stable ids is a store change (and a WordPress
+  parity question), not a UI tweak.
+- **`sealed_count` is deliberately not named `with_token`.** The audit logger
+  redacts any key containing `token`, so the original name recorded `[redacted]`
+  and nothing else; the test pins the rename.
+
+---
+
+## 44. Coverage accounting: the WordPress admin inventory
+
+**State:** recorded 2026-11-17. **Docs and one script — no runtime surface
+shipped.** Tool: `bin/audit-wp-admin-surfaces.php`.
+
+### 44.1 The question
+
+"Are all the wp-admin screens accounted for — Test Provider, etc?" The proposal
+dispositions the admin tree in one table, but nothing checked that table
+mechanically. The only claim that looked like a gate ("enforced by the CI test
+described in §11") pointed at a section that describes migration waves.
+
+### 44.2 What the audit found
+
+| Scope | Files | Named | Unnamed |
+|---|---:|---:|---:|
+| `includes/admin/*.php` — the inventory unit | 85 | 69 | **16** (8 register a menu) |
+| `includes/admin/**` — nested | 42 | — | 1 page: Measurement |
+| `includes/**` minus `admin/` | 1,179 | — | 2 pages: Job Queue, Markup Editor |
+| `addons/pro/includes/admin/*.php` | 159 | 147 | 12 (grouped by design) |
+
+The headings' counts (85 / 159) are exactly `maxdepth 1`, so there is **no count
+drift**, and no disposition token named a file that does not exist.
+
+**`dashboard-diagnostic` — the page that prompted the question — was one of
+eleven.** The set is dominated by settings and menu plumbing, and the sharpest
+omission is `settings-dashboard`: the file that registers the top-level
+"NV oOS" menu was never named, because the table's `admin-settings` token
+matched a *different* file (`admin-settings.php`). The three outside-tree pages
+were invisible for a simpler reason: the inventory only walked `admin/`, one
+level deep.
+
+### 44.3 Dispositions added
+
+Sixteen files across ten rows appended to the core table, three files in a new
+"Outside the counted unit" subsection. P = port, N = not-applicable,
+R = retired/superseded.
+
+| File | Disposition | Why |
+|---|---|---|
+| `settings-dashboard` (+ `-init`) | **P** | the tabbed settings interface + menu host; served by `settings.estate` + `settings.platform` |
+| `pro-dashboard` | **P (folded)** | ISO 27001 dashboard; served by `assets`, `reports` and the plan rows in `settings.platform` |
+| `pro-settings` | **P (folded)** | plan/status in `settings.platform`; the npm version list is a plugin artefact |
+| `admin-profession-settings`, `admin-team-settings` | **P** (Wave 3) | provider/model/temperature defaults as settings **sections**, not two pages |
+| `admin-transparency-settings` | **P** (Wave 3) | AI disclosure / consent / provenance — a real compliance surface |
+| `dashboard-diagnostic`, `pro-dashboard-diagnostic`, `pro-dashboard-chart-settings` | **N** | diagnostics and chart admin for WP screens that do not exist here |
+| `analytics-dashboard` | **N** | wp-admin dashboard widgets; the data is already served by `cost` and `reports` |
+| `pro-dashboard-helper`, `pro-dashboard-rest` | **R** | helpers for a dashboard this runtime does not have |
+| `settings-registry`, `settings-validator`, `simple-settings-saver` | **R** | superseded by `SettingsSchema` + `SettingsService` (the one writer) |
+| `admin-measurement-dashboard` | **P** — new surface | Measurement (metrics, eval runs, budgets); needs its own contract row, *not* `platform-operations` |
+| `async-job-queue` | **P (partial)** | counts + DLQ drain are `queue`; the pending-job listing is unexposed, now recorded on that row |
+| `markup-admin-page` | **N** | hidden MCP URL-mode elicitation fallback; the chat surface serves it |
+
+Two calls are deliberately marked as judgement, not fact:
+
+- **`analytics-dashboard` → N.** A token-usage *widget* on the Laravel dashboard
+  would be new work with its own design, not a port of a wp-admin widget.
+- **`admin-profession-settings` / `admin-team-settings` → P.** Their content is
+  global defaults for entities that do exist here. They are settings sections;
+  building them as pages would create two more surfaces to maintain.
+
+### 44.4 What changed
+
+- **Proposal:** 16 core files across 10 rows, the new outside-unit
+  subsection, and the stale "CI test described in §11" sentence replaced with
+  the real tool.
+- **Contract:** the `queue` row's note records the pending-job gap.
+  `measurement` was added later the same day as a `planned` row (§45) — proposing
+  a surface is not scheduling it, which is why the row carries no slice.
+
+### 44.5 Validation — executed
+
+- `php bin/audit-wp-admin-surfaces.php` → **exit 0** (was 1): core **85/85
+  named**, the nested page and both outside pages `[named]`, Pro unchanged at
+  147/159 grouped.
+- `php -l` clean. `bin/` is excluded from the WPCS ruleset, so no style run
+  applies.
+- `SurfaceOwnershipTest` re-run after the `queue` note change: **4 passed, 438
+  assertions**.
+- JSON parses; no console key was added or removed, so the key-partition test is
+  untouched.
+
+### 44.6 Follow-ups
+
+1. **Wired 2026-11-17.** The `admin-surface-coverage` job in
+   `php-linting.yml` runs the script on every PR and on pushes to `main`. It is a
+   separate job on purpose: the WPCS job's `Get changed PHP files` step has
+   wedged in the past, and a step placed after it would be decorative.
+2. **`measurement` decided (§45).** Contract row added (`ops: planned`,
+   `writer: ops`); the slice waits on the data model.
+3. **Pending-job listing.** Add `GET /api/v1/operations/jobs`, or leave the
+   recording on the `queue` row as the answer.
+4. **Pro per-file disposition stays grouped** (12 files) and remains the Wave 7
+   deliverable; the script makes the number visible, it does not close it.
+
+---
+
+## 45. `measurement` — a new surface, recorded rather than built
+
+**State:** decided 2026-11-17. Contract row `measurement` added (`ops: planned`,
+`writer: ops`); **no page shipped**. This closes §44.6 item 2.
+
+### 45.1 Why a row, and why not `platform-operations`
+
+§44 found the WordPress page outside both counted trees: `includes/admin/measurement/`
+attaches "Measurement" to the settings dashboard menu (`wp-mcp-ai-dashboard`,
+falling back to Tools when that menu is absent). Two homes were considered:
+
+- **`platform-operations`** (already `planned`, keys `operations` / `diagnostics` /
+  `cost`): rejected. That row is runtime probes and cost aggregates, read-only by
+  design — "every probe re-runs on page load and nothing is persisted" (§31's
+  `site-health` rule).
+- **A new row:** accepted. The Measurement page is **product data with a writer**.
+
+### 45.2 What the WordPress surface does
+
+The dashboard lists five catalogues:
+
+- registered **metrics**, with privacy tier and counter-metric pairing;
+- registered **verifiers**, with an independence profile;
+- registered **reward functions**, with anti-gaming text;
+- registered **eval suites**, with case counts;
+- the most recent events from the in-memory **collector buffer**.
+
+Its `admin_post` handler offers three actions: **clear the buffer**, **download a
+JSON export**, and **reset a persistent budget envelope**. The page's own docblock
+calls it read-only ("before PR 4 adds the OTel exporter and writable admin
+actions") — the *display* writes nothing, but `reset_budget` persists, which is why
+`writer` is `ops` rather than `none`. That is the same distinction `reports`
+records (read-only document, audit row on download).
+
+### 45.3 Why `planned`, not `absent`
+
+Nothing here is a WordPress idiom: metrics, eval suites and budget envelopes are
+product features a multi-tenant runtime would want. `absent` would claim they
+cannot exist here, which is false. But this is also not a *port of a page*: the
+prerequisite is the **data model**, and the WordPress page is itself a pre-export
+read-only view over in-memory structures. A page built now would be a blank shell
+over stores that do not exist — the objection §32 raised for `assets`, `datasets`
+and `reports`, applied to the one surface that audit left unresolved.
+
+### 45.4 What the slice needs, when it is prioritised
+
+In order — the same rule §32 applied to the `/ops` tail:
+
+1. **A metric registry + persistence**, or a documented projection over existing
+   tables. `nvoos_harness_trace_records` is the nearest neighbour and is not a
+   substitute: it stores per-assistant trace policy records, not metric events.
+2. **Eval-run records**, if the eval-suite counts are to be real rather than
+   registered-case counts.
+3. **Budget envelopes + a reset path** — the only write, and therefore the reason
+   the row says `writer: ops`.
+4. **Only then the page:** five read-only sections, three audited actions, and a
+   `LIMIT`-ed buffer view with the ceiling printed in the header (the
+   `/ops/audit-log` rule: never a silent truncation).
+
+### 45.5 Validation — executed
+
+- `bin/audit-surface-ownership.php`: **45 surfaces · 24 panel-built** (10 `/ops`,
+  15 `/admin`) · **29 console-served** · **16 console-only** · **3 planned-only**
+  (`measurement`, `identity-provider`, `datasets`, all `/ops`).
+- `SurfaceOwnershipTest`: **4 passed, 444 assertions** — the new row parses, uses
+  the closed vocabularies and names no console key. (Six assertions more than the
+  §44 run, which is the new row being validated.)
+- `bin/audit-wp-admin-surfaces.php`: still **exit 0** — the row does not change
+  file matching, because the proposal already named the file.
+
+### 45.6 Follow-ups
+
+- **No writer exists yet.** `writer: ops` records the *intended* write (budget
+  reset). When the slice starts, the row is the place to re-check that claim rather
+  than trusting this note.
+- **Do not fold it into `reports`.** Reports render compliance documents over the
+  asset register; measurement is product telemetry. They share a word ("report"),
+  not a store.
+
+---
+
+## 46. Parallel tracks (P1–P4)
+
+**State:** opened 2026-11-17. **Docs only — no code, no contract change** (except
+where a track records a decision). These are not slices: the numbered order in the
+delivery plan stays authoritative, and each track exists so that order does not end
+with three empty shells and one unbuilt engine.
+
+Four tracks, because four items cannot be done *as slices* until something else is
+decided or designed:
+
+| Track | Doc | Type | Unblocks | Done when |
+|---|---|---|---|---|
+| **P1** | [`149-datasets-readiness-worksheet.md`](./149-datasets-readiness-worksheet.md) | classification decision | order item **18** (`datasets`) | the eleven HuggingFace slugs carry a hand-written readiness value + reason, and `bin/audit-tool-readiness.php` passes |
+| **P2** | [`149-identity-provider-decision.md`](./149-identity-provider-decision.md) | **owner decision** | order item **19** (`identity-provider`) | OIDC / OIDC+SAML / defer is chosen and recorded; the row becomes buildable or `absent` |
+| **P3** | [`149-measurement-data-model.md`](./149-measurement-data-model.md) | data-model design | order item **17** (`measurement`) | the five tables, retention rule and API are agreed; the slice can start at migrations |
+| **P4** | [`149-toolkit-manifest-renderer.md`](./149-toolkit-manifest-renderer.md) | engine design | order item **10** (`toolkits`, `chat-channels`, 45 Pro pages) | **engine extracted 2026-11-17**; **record tenancy scoped 2026-11-17** (§47); next: `tab` schema + manifest lint |
+
+### 46.1 Why these four, and why now
+
+- **P1 and P2 are decisions that cost nothing to make and everything to defer.** Both
+  rows are `planned` today; a row that stays planned for a year is the placeholder
+  problem §32 fixed for the `/ops` tail.
+- **P3 is the only genuinely new data model left.** Everything else in the numbered
+  order reuses a shipped store; building its page before its tables would be a shell.
+- **P4 is the multiplier and the only item that changes the shape of what follows.**
+  Designing it alongside items 1–9 is what stops it being a serial bottleneck before
+  Wave 3.
+
+### 46.2 What each track found that the plan did not already say
+
+- **P1:** the eleven tools share one base class and one API, so the classification is
+  family-wide — one decision, eleven rows. The blocker was never eleven decisions.
+- **P2:** there is **no** OIDC/SAML code or dependency on either runtime, and
+  `auth0-setup` is MCP API auth, not panel SSO. This is new product, so the row must
+  not be described as parity.
+- **P3:** `nvoos_harness_trace_records` and the token/data budget interfaces are **not**
+  substitutes for metric events or budget envelopes; the page has five sections, but
+  only three need storage (verifiers and reward functions are code registries).
+- **P4:** the manifest schema already expresses four of the five screens, but **not the
+  7-tab settings page**, and `ToolkitsController` owned its SQL directly. The engine
+  extraction shipped 2026-11-17 (`ToolkitEngine` + `ToolkitException`; the controller
+  is a thin adapter), and it exposed a **blocker**: `nvoos_toolkit_records` has no
+  `tenant_id`, so toolkit records are shared across estates — the sixth store of the
+  §19/§27/§39/§40/§41 class. §47 scoped it the next day, before the renderer could
+  make the leak visible from a panel table.
+
+### 46.3 Rules these tracks inherit
+
+- A track records a **decision or a design**, never a half-built surface. Nothing here
+  adds a contract row except P2's `absent` outcome (if chosen).
+- A track's output is one document plus, at most, a contract/proposal edit. If a track
+  needs code, it becomes a numbered slice.
+- The per-slice invariants (contract row → cross-tenant test → audit row → presence-only
+  credentials → `manage_options` parity) apply to the slices these tracks unblock, not
+  to the tracks themselves.
+
+### 46.4 Status
+
+All four are **open**. P2 is the only one blocked on a person; P1, P3 and P4 are
+blocked on work that can start immediately. Suggested parallel assignment while order
+items 1–9 run:
+
+- **P1** — one half-day of classification + fixtures.
+- **P2** — one owner conversation; no engineering.
+- **P3** — design review first (§8 of its doc has three open questions);
+  migrations after.
+- **P4** — engine extraction and record tenancy **done 2026-11-17** (§46, §47); next is
+  the tab schema and the renderer. Two manifests exist against ~25 toolkits.
+
+---
+
+## 47. Toolkit-record tenancy — the P4 prerequisite
+
+**State:** shipped 2026-11-17. One migration, one engine scope, six cross-estate
+tests. **No page shipped.** Closes the blocker §46.2 recorded and track doc §1a
+listed as "the renderer must not ship before this".
+
+### 47.1 The defect
+
+`nvoos_toolkit_records` was created with `toolkit`, `entity`, `external_id`,
+`data` and timestamps, a **globally unique** `(toolkit, entity, external_id)` and
+an index on `(toolkit, entity)`. Every `/pro/toolkits` route already sat inside
+`ResolveApiTenant`, so an estate was resolved on every request and then discarded:
+`ToolkitEngine` filtered on toolkit + entity only.
+
+That is both halves of the defect §27 fixed for remote sites:
+
+- **A cross-estate READ.** One estate listed, edited and deleted another's
+  records. Nothing failed, so no route test noticed.
+- **A cross-estate COLLISION.** The unique key was global, so the second estate
+  to create `SKU-1` in `commerce` got `duplicate_record` — an error about a row
+  it could not see. The only visible symptom pointed at the wrong record.
+
+Sixth store in the §19/§27/§39/§40/§41 class. It was invisible until the engine
+extraction (§46) gave one class to read, because `ToolkitsController` interleaved
+the SQL with HTTP concerns.
+
+### 47.2 The migration
+
+`2026_11_17_170000_add_tenant_to_toolkit_records.php`, every step guarded:
+
+1. add `tenant_id` `string(64)` default `'default'`;
+2. **backfill nulls explicitly** — a column that grew nullable out of band would
+   otherwise keep them, and `where tenant_id = ?` never matches null;
+3. drop the global unique, add
+   `nvoos_toolkit_records_tenant_toolkit_entity_external_id_unique`;
+4. drop `nvoos_toolkit_records_toolkit_entity_index`, add
+   `nvoos_toolkit_records_tenant_toolkit_entity_index` (the list read leads with
+   the estate).
+
+Default `'default'`, not null: existing rows predate the column and no signal
+attributes them elsewhere, so they belong where a single-estate install would
+have created them — §27's reasoning.
+
+Steps 1 and 3 must ship together. Adding the column alone converts the silent
+cross-estate read into a constraint failure on write, which is a worse bug with a
+better error message.
+
+`down()` is a deliberate no-op. Records are user data; dropping `tenant_id` would
+re-expose every estate's rows and restore a unique key the data can no longer
+satisfy. The column is removed by hand if it ever should be.
+
+### 47.3 The one-helper rule
+
+`ToolkitEngine` gained a single accessor and a resolver:
+
+```php
+private function query(): Builder
+{
+    return DB::table(self::TABLE)->where('tenant_id', $this->tenantId());
+}
+```
+
+Every record statement now starts there — `listRecords`, `findRecord`,
+`createRecord`, `updateRecord`, `deleteRecord`, `duplicates`, `import` (both the
+duplicate check and the inserts) and `dashboard`'s per-card query. `findRow()` is
+scoped too, which fixes four call sites at once: `findRecord`, the duplicate check
+in `createRecord`, the lookup in `updateRecord`, and `import`'s "already exists"
+test.
+
+`insert()` ignores the builder's where clause, so writes still carry
+`tenant_id` explicitly; the helper is what stops a *new* method from being written
+without the scope, not what writes it.
+
+The estate is a `Closure` constructor argument, bound in `AppServiceProvider`
+with `bind()` — not `scoped()` — for the reason `RemoteSiteStore` records: the
+engine can be resolved before `ResolveApiTenant` has run, and a value captured at
+construction would be the default estate forever.
+
+### 47.4 Tests
+
+`ToolkitTenancyTest` (6 tests / 42 assertions) drives the engine with no HTTP,
+because the engine is the single writer for both the API and the future panel.
+The engine is resolved **once per test** and the estate switched beneath it —
+which is the query-time resolver proving itself.
+
+| Test | Pins |
+|---|---|
+| two estates may hold the same business key | the old global unique is gone; both rows carry their own `tenant_id` |
+| a list never includes another estate's records | list isolation + total |
+| a foreign record is invisible and immutable | `find` null, `update` `record_not_found`, `delete` false, row unchanged |
+| import does not treat a foreign record as a duplicate | created 1 / duplicates 0, then idempotent on re-import |
+| the dashboard counts only the current estate | `count` and `sum` over the scoped base |
+| duplicate detection never groups across estates | `scanned` and `groups` |
+
+`RuntimeSchemaTest` changed in two ways: `tenant_id` joins the columns assertion,
+and `test_the_toolkit_record_identity_is_unique` now asserts the composite name
+exists **and** the global name is absent. The absence assertion is the one that
+catches a future "add the column, forget the key" edit.
+
+### 47.5 Validation — executed
+
+- `--filter 'Toolkit|RuntimeSchemaTest'`: **38 passed, 265 assertions**. The two
+  PHPUnit deprecations reported are pre-existing doc-comment metadata in
+  `ConnectedAppsTest` and `SecurityPostureTest`.
+- `ToolkitContractTest` + `ToolkitResearchTest`: **18 unchanged** — the console
+  contract did not move.
+- `phpcs --standard=phpcs-laravel.xml.dist`: clean on the engine, the provider,
+  the migration and both test files.
+- **Full suite: 1139 tests, 6337 assertions, 4 failures** — all four are the
+  pre-existing `WifiKpisTest` group (`Interface_WiFi_Controller_Adapter` is not
+  instantiable; neither runtime ships it). Against the §46 run that is **+6 tests
+  and +43 assertions** — the tenancy file plus the schema test's new absence
+  assertion — with no new failure class.
+
+### 47.6 Follow-ups
+
+- **The package migration still creates the table without `tenant_id`.**
+  `lib/laravel-adapter/database/migrations/2026_01_01_000019_...` predates this
+  slice; whichever creator runs first, §47's migration adds the column and moves
+  the key afterwards. If the package ever adopts the column itself, keep §47's
+  guards so the older install path still converges.
+- **Item 10 still needs a page-level cross-estate test.** This slice pins the
+  store; a Filament table has its own resolution path (`Filament::getTenant()`),
+  and §42/§43 showed that panel state is where the second bug lives.
+- **Not a tenancy fix:** `AssetRegister` lists `nvoos_toolkit_records` as
+  `confidential`. That is a descriptive catalogue, not a query; it needs no
+  change and should not be cited as coverage.
+
+---
+
+## 48. `platform-operations` — the probe renderer (`/ops/diagnostics`)
+
+**State:** shipped 2026-11-17. Contract row moved `ops: planned` → `ops:
+read-only`, `writer: ops` → `writer: none`, with `files` and a projection. One
+page, four probes, one extracted service. **Wave 2 scoreboard: 45 surfaces · 25
+built.**
+
+This was order item 1 because it was the only row planned on both panels and
+the last place WordPress had screens this runtime did not: Tools → **Provider
+Test**, **MCP Server Diagnostic** and **REST Context Diagnostic**. The handoff
+that opened the item named the real gap: `GET /api/v1/diagnostics/overview`
+reports `has_credentials`, which cannot distinguish a valid key from a revoked
+one. §31's own provider probe says so in its detail text — "Presence of a client
+is not proof of a valid key."
+
+### 48.1 The defect the provider probe had to avoid
+
+The obvious implementation is `ProviderRouter::get($slug)->listModels()` and a
+non-empty check. It would have been wrong twice:
+
+| Client | `listModels()` | Why it cannot prove a key |
+|---|---|---|
+| `OpenAiCompatibleClient` (10 providers) | real `GET /models` | returns `[]` for a 401 — the HTTP adapter does not throw on 4xx, and the client only looks for a `data` key |
+| `GeminiClient` | real `GET /models?key=` | same: non-2xx bodies have no `models` key, so a rejected key reads as "0 models" |
+| `AnthropicClient` | **static array** | no network call at all; a wrong key would report five healthy models |
+
+That is the "misleading native-source error" class. So the capability was added
+to the provider layer, where the endpoint and auth scheme already live:
+
+- `Nvoos\Core\Domain\ValueObject\ProviderConnectivity` — `attempted`, `ok`,
+  `status`, `modelCount`, `detail`. Three factories: `ok()`, `failed()`,
+  `notSupported()`.
+- `AbstractProviderClient::connectivity()` — **default: not supported.** A
+  client that has not opted in can never report a false success.
+- Overrides in `OpenAiCompatibleClient`, `GeminiClient` and `AnthropicClient`
+  that read the real status code and count models from the provider's own
+  shape (`data[].id` / `models[].name`).
+- `listModels()` is **unchanged**. Its callers want a list and already treat an
+  error object as "no list"; changing it would have moved a silent failure into
+  another surface without fixing the probe. `OpenAiClientTest` still pins the
+  old behaviour deliberately.
+
+No completion tokens are spent: every path is an authenticated `GET /models`.
+The result `detail` names the **host only** — Gemini carries the key in the
+query string, so echoing a URL would put it in the panel and the log.
+
+### 48.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Probe runner | `app/Support/Diagnostics/ProbeRunner.php` | four probes, one result shape |
+| Result type | `app/Support/Diagnostics/ProbeResult.php` | status + sentence + rows; no field for a payload or a credential |
+| Page | `app/Filament/Operator/Pages/DiagnosticsPage.php` | diagnostics, probes and cost |
+| View | `resources/views/filament/operator/diagnostics.blade.php` | badge + rows, inline styles |
+| Shared plan | `app/Services/AssistantTestPlan.php` | extracted from `AssistantTestController` |
+| Tests | `tests/Feature/AdminDiagnosticsTest.php` | 11 |
+| Tests | `lib/core/tests/.../ProviderConnectivityTest.php` | 7 |
+
+Four probes, not six:
+
+- **`provider`** — the real connectivity check above, per provider slug.
+- **`rest`** — route facts from the router: `/api/v1` count, contract, MCP
+  route presence.
+- **`mcp`** — the POST `/mcp` route, its auth and limiter, and the tool
+  catalogue it serves.
+- **`assistant`** — the **dry-run plan** `POST /assistants/{id}/test` returns
+  before a turn. Free: it resolves the provider and compares assigned tools to
+  the registry without calling one. Extracted so the probe and the endpoint
+  cannot disagree.
+
+### 48.3 What was deliberately not built
+
+`test model`, `test profession` and `test team` were proposed as probes (§7.8).
+They are **not probes on WordPress** — `WP_MCP_AI_Admin_Test_Model` and its
+siblings render the chat shortcode with a selector; the "test" is a
+conversation. A panel copy would be a second chat surface whose only difference
+is which config it hydrates, which is the "two presentations, two write paths"
+problem §46 exists to prevent. The console owns chat, so these stay unbuilt and
+are recorded on the row rather than faked with a one-shot turn.
+
+If they are ever wanted, the honest shape is one probe that runs a single
+non-streaming turn through `ChatOrchestrator` with a config resolved per target
+— a product decision (token spend per click), not a renderer feature.
+
+### 48.4 Two defects found while testing
+
+- **`gatherMiddleware()` returns aliases, not class names.** The MCP probe first
+  matched `Illuminate\Auth\Middleware\Authenticate:sanctum` and reported
+  `Authentication: missing` on a healthy runtime — a false **critical**. It now
+  accepts the alias (`auth:sanctum`, `throttle:mcp`) and the FQCN, because the
+  route file and a future refactor may spell either.
+- **`getApiKey()`, not `all()[key]`, is the credentials question.** The overview
+  first read `SettingsSchema::providerCredentialKey()` out of `all()`, which
+  misses `services.*.key` and `oos.api_keys.*`; a deployment configured by env
+  would have been reported as having no credentials. It now asks
+  `getApiKey()`, the same method the client calls — the same reasoning
+  `DiagnosticsController` records.
+
+### 48.5 Validation — executed
+
+- `AdminDiagnosticsTest` + `AssistantTestTest`: **18 passed / 78 assertions**.
+  The assistant group is unchanged, which is the proof the extraction did not
+  move the endpoint.
+- `ProviderConnectivityTest` (core): **7 / 37**.
+- `SurfaceOwnershipTest`: **4 / 446** — the new row parses, the page file is
+  declared, and the plan-gate vocabulary is intact.
+- `bin/audit-surface-ownership.php`: **45 surfaces · 25 built** (11 `/ops`, 15
+  `/admin`) · 29 console-served · **15 console-only**.
+- `bin/audit-wp-admin-surfaces.php`: exit 0 (no WP file moved).
+- `phpcs --standard=phpcs-laravel.xml.dist`: clean on all 12 touched files,
+  including the core package's spaced-concatenation rule.
+- **Full suite: 1150 tests, 6379 assertions, 4 failures** — all four are the
+  pre-existing `WifiKpisTest` group. Against §47 that is **+11 tests and +42
+  assertions** (this page's suite), with no new failure class.
+
+### 48.6 Follow-ups
+
+- **The console's `operations` key still serves cron/DLQ/timeline from
+  `OperationsController`**, while the panel links those to `/ops/scheduler` and
+  `/ops/queue`. That is not a gap: the row's `operations` key here means "run a
+  probe", and the two dedicated pages own their stores. Do not merge them.
+- **`cost` is read-only by design.** The row has no budget-reset action; that is
+  `measurement` (§45), which owns a writer. Keep the split.
+- **A provider probe is one call per click.** The page does not probe every
+  provider on load — that would make a page view cost twelve network calls and
+  would fail slowly in an outage. If a fleet view is wanted later, it belongs in
+  `site-health` as a summarized probe, not as twelve silent requests.
+
+---
+
+## 49. `agent-skills` (`/admin/agent-skills`)
+
+**State:** shipped 2026-11-17. `admin: planned` → `admin: read-only`, with a
+projection and `files`. **Wave 2 scoreboard: 45 surfaces · 26 built.**
+
+### 49.1 What the row needed
+
+Three console keys, one subject — what an assistant can be told to do without
+typing it out:
+
+| Key | Console endpoint | Source here |
+|---|---|---|
+| `skills` | `GET /api/v1/skills` | `SkillCatalogue` over `config('oos.skills.path')` |
+| `shortcuts` | `GET /api/v1/pro/tool-shortcuts` | the assistant's `meta`, normalised in `lib/core` |
+| `slashCommands` | `GET /api/v1/pro/slash-commands` | `SlashCommandExecutor::available($user)` |
+
+The WordPress manager (install from raw `SKILL.md` or a remote catalogue,
+replace, delete) stays absent, as the row always said. Two of the three lists
+are estate data; the third is capability-filtered, which is why the page asks
+the executor rather than re-deriving the rule.
+
+### 49.2 The defect building it exposed
+
+`ToolShortcutsController` resolved the assistant twice, both times unscoped:
+
+```php
+$assistantId = (int) Assistant::query()->where('is_default', true)->value('id');
+$assistant   = Assistant::find($assistantId);
+```
+
+- **A cross-estate read.** An `assistant_id` from another estate returned that
+  estate's shortcut configuration. A panel row would have turned the leak into
+  something an operator could click.
+- **A foreign default could win the fallback.** `value('id')` does not care
+  whose row it returns, so an estate with no default of its own could be handed
+  another estate's — the §27/§39/§40/§47 class with a friendlier failure mode.
+
+Both are fixed at the root: `App\Services\AssistantShortcutCatalogue` owns
+resolution (assistants list, default lookup, per-assistant normalisation) and
+both callers use it. The controller is now a thin adapter; `ToolShortcutsTest`
+passes unchanged, which is the proof the console contract did not move.
+
+### 49.3 What is deliberately not built
+
+- **Install / replace / delete a skill.** File writes driven by HTTP input; the
+  row says `writer: console` and WordPress's manager deserves its own security
+  pass before it is ported anywhere.
+- **Execute a slash command, execute a workflow, clear history.** The WordPress
+  dashboard has all three; every one is a write, and the console owns the
+  command path. A panel control would be a second executor.
+- **Execution history.** Not a scope decision — a **schema** one.
+  `nvoos_slash_command_audit` has no `tenant_id`, so a tenant-scoped page could
+  only render it by leaking across estates or joining through users. That is the
+  same gap §47 fixed for toolkit records. It is recorded here so the next person
+  does not "just add a table" and ship the leak.
+
+### 49.4 Validation — executed
+
+- `AdminAgentSkillsTest` + `ToolShortcutsTest` + `SurfaceOwnershipTest`: **24
+  passed / 514 assertions**. The shortcut group is unchanged, which is the proof
+  the extraction is invisible to the console.
+- `bin/audit-surface-ownership.php`: **45 surfaces · 26 built** (11 `/ops`, 16
+  `/admin`) · 29 console-served · **14 console-only** · 3 planned-only.
+- `phpcs --standard=phpcs-laravel.xml.dist`: clean on the service, the
+  controller, the page and the test.
+- **Full suite: 1161 tests, 6417 assertions, 4 failures** — all four are the
+  pre-existing `WifiKpisTest` group. Against §48 that is **+11 tests and +38
+  assertions**, with no new failure class.
+
+### 49.5 Follow-ups
+
+- **`nvoos_slash_command_audit` needs `tenant_id`** before a history view can
+  exist. The migration shape is §47's: add the column with the request estate,
+  backfill to `default`, and make any unique key composite. Until then the row
+  shows no history on purpose.
+- **`SkillCatalogue` re-reads the directory on every call.** Fine for a handful
+  of skills and for the page's twice-per-render use; if a deployment ever holds
+  hundreds, cache by directory mtime rather than by request.
+- **The shortcut drawer and this page can disagree about *defaults* only in
+  one way:** the console sends `assistant_id=0` to mean "the estate default" and
+  so does the page. If a future console change makes 0 mean "none", the
+  controller and the page must change together — that is why the resolution
+  lives in the service rather than in either caller.
+
+---
+
+## 50. `okf` (`/admin/okf`)
+
+**State:** shipped 2026-11-17. `admin: planned` → `admin: read-only`;
+`console: full` → `console: read-only`; `writer: console` → `writer: none`, with
+a projection and `files`. **Wave 2 scoreboard: 45 surfaces · 27 built.**
+
+### 50.1 What the row named, and what shipped
+
+The disposition table named `okf-bundle-manager-admin-page` — bundle **CRUD**.
+Only the read half is portable:
+
+| Capability | WordPress | Here |
+|---|---|---|
+| list / describe bundles | yes | yes |
+| list / filter concepts | yes | yes |
+| concept detail (frontmatter, body, links) | yes | yes |
+| cross-bundle search | yes (console) | yes |
+| assistant skill grants | yes (bridge) | **no store** — `okf/skills` is honest-empty |
+| create / replace / delete a bundle | yes (`WP_MCP_AI_OKF_Writer`) | **not ported** |
+
+So the page is four read-only sections — search, bundles, concepts, detail —
+over the same `OkfCatalogue` the controller uses.
+
+### 50.2 `writer` moved, and the console state with it
+
+The row said `writer: console` and `console: full`. Both were aspirational:
+all five `/api/v1/pro/okf` routes are `GET`s, there is no OKF writer on this
+runtime, and the bundle manager's writes live in the plugin. `full` means
+"rendered, writes allowed" in the contract vocabulary, so keeping it would have
+been a claim with nothing behind it. Both are now `read-only` / `none`.
+
+That is a **deliberate** edit, not a tidy-up: if an OKF writer is ever added,
+the row has to move back and the writer has to be named.
+
+### 50.3 One allowlist, not two
+
+The controller owned a private `FRONTMATTER_ALLOWLIST` and a private
+`allowlisted()`. A page that re-declared them would be the second, quieter
+allowlist this repository keeps producing. The constant and method moved to
+`OkfCatalogue` and the controller delegates. `OkfTest` passes unchanged, which
+is the proof the REST payload did not move.
+
+### 50.4 Knowledge is deployment-global, and the page says so
+
+Bundles live in one directory (`config('oos.okf.path')`), not per estate. That
+matches the console drawer, which any authenticated reader can use, and it is
+the right model for reference knowledge — but a tenant-scoped `/admin` page that
+silently rendered global data would invite an operator to read it as the
+estate's own. The header states it explicitly.
+
+### 50.5 Two honesty rules applied
+
+- **Truncation is printed.** The concept list caps at 200 and reports the
+  pre-cap total; cross-bundle search caps at 50 and says so. The API keeps its
+  own post-slice `total` (a published shape `OkfTest` pins), which is why the
+  page computes its own totals rather than reusing the payload.
+- **A traversing concept id is an error, not a blank.** Opening
+  `../../etc/passwd` shows "That concept could not be read." — the reader refuses
+  it, and the page does not turn the refusal into an empty panel.
+
+### 50.6 Validation — executed
+
+- `AdminOkfTest` + `OkfTest` + `SurfaceOwnershipTest`: **29 passed / 537
+  assertions**. The API group is unchanged.
+- `bin/audit-surface-ownership.php`: **45 surfaces · 27 built** (11 `/ops`, 17
+  `/admin`) · 29 console-served · **13 console-only** · 3 planned-only.
+- `phpcs --standard=phpcs-laravel.xml.dist`: clean on the page, the catalogue,
+  the controller and the test.
+- **Full suite: 1175 tests, 6456 assertions, 4 failures** — all four the
+  pre-existing `WifiKpisTest` group. Against §49 that is **+14 tests and +39
+  assertions**, with no new failure class.
+
+### 50.7 Follow-ups
+
+- **`describe()` is O(concepts × links).** It calls `findBrokenLinks()` per
+  concept, and the bundles table calls `describe()` for every bundle on every
+  render. Fine for a handful of bundles; if a deployment reaches thousands of
+  concepts, cache descriptors by bundle mtime.
+- **No `tag` filter on the page.** The reader supports it and the controller
+  does not expose it; adding one to the page alone would make the two surfaces
+  disagree. Add it to both, or neither.
+- **Grants.** A skills section can only appear once this runtime has a grant
+  store; until then `okf/skills` stays honest-empty and the page stays silent
+  about it, rather than rendering a permanently empty table.
+
+---
+
+## 51. `security` (`/admin/security`) — and the snapshot tenancy it needed
+
+**State:** the `/admin` half shipped 2026-11-17 as `/admin/security`; the `/ops`
+half stays `planned`. `writer: shared` → `console`. **Wave 2 scoreboard: 45
+surfaces · 28 built.**
+
+### 51.1 The defect, which is why this was not a pure consumer slice
+
+`nvoos_security_snapshots` stored an **estate's settings payload** while the
+table itself had no estate column. `SecurityController` named the table in four
+methods and never filtered:
+
+- `GET /security/snapshots` listed **every estate's** labels and timestamps.
+- `POST /security/restore` accepted **any** snapshot id and wrote that payload
+  into the caller's settings. An estate administrator could copy another
+  estate's configuration — provider, model, endpoints, feature flags — into
+their own, then read it back from the settings surface.
+
+Secrets were already masked at write time, so this was configuration disclosure
+rather than credential theft. That is mitigation, not a fix: the payload is
+the thing an attacker wanted.
+
+### 51.2 The migration
+
+`2026_11_17_180000_add_tenant_to_security_snapshots.php`: add `tenant_id`
+(default `default`), backfill nulls explicitly, add
+`(tenant_id, created_at)`. There is **no unique key to move** — the primary key
+is a UUID — which makes this the simplest of the §19/§27/§39/§40/§41/§47 family,
+and the most consequential per line.
+
+### 51.3 The store
+
+`App\Support\Security\SecuritySnapshotStore` owns every statement, with the
+estate read through a resolver closure at query time (`bind`, not `scoped`).
+**Restore stays in the controller** on purpose: it is a settings write with its
+own masking rule ("a masked placeholder is skipped, never written back"), and
+moving it here would put a settings writer behind a snapshot store. The
+controller asks the store for a **scoped** `find()` and does the rest.
+
+`Phase3bTest` — the pre-existing save/list/restore round trip — passes
+unchanged, which is the proof the refactor is invisible to the console.
+
+### 51.4 The page is a projection, not a scan
+
+The row's note said: "Security snapshots are a dedicated store; the admin
+read-only view is a projection, never a scan at request time." So the page reads
+snapshots and nothing else. It does **not** compute the posture report, preview
+headers or run the self-test: those are live checks, the console owns them, and
+running them on page load would turn a records view into a slow request that
+fails when a dependency is down.
+
+Two safety properties:
+
+- **Scoped reads.** A foreign id renders "Snapshot not found.", the same answer
+  the API gives.
+- **Masked twice.** The write path masks sensitive keys; the page masks against
+  `SettingsSchema::sensitiveKeys()` again on render, so a row that predates the
+  write-path mask (or was inserted by hand) still cannot put a stored secret on
+  a screen. There is a test that seeds exactly that row.
+
+### 51.5 What is not ported
+
+The row covers four WordPress pages; only the snapshot records are built:
+
+| WordPress page | Here |
+|---|---|
+| `security-audit-admin` (audit dashboard) | the durable audit trail is already `/ops/audit-log`; a second page over the same rows would be a duplicated surface |
+| `security-monitor-admin` (live metrics) | **Wave 6** — canvas bundle, §7.10 |
+| `security-training-admin` (course tracking) | no training store on this runtime |
+| `supplier-security-admin` (vendor assessments) | no supplier store on this runtime |
+
+The `/ops` half of the row stays `planned`; it would be the same projection with
+a cross-estate scope, which is a deliberate operator decision rather than a
+by-product of this slice.
+
+### 51.6 Validation — executed
+
+- `AdminSecurityTest` + `SecuritySnapshotTenancyTest` + `Phase3bTest` +
+  `SecurityPostureTest` + `RuntimeSchemaTest` + `SurfaceOwnershipTest`: **63
+  passed / 942 assertions**. The two pre-existing security suites are unchanged.
+- `bin/audit-surface-ownership.php`: **45 surfaces · 28 built** (11 `/ops`, 18
+  `/admin`) · 29 console-served · **12 console-only** · 3 planned-only.
+- `phpcs --standard=phpcs-laravel.xml.dist`: clean on the store, the controller,
+  the provider, the migration, the page and both test files.
+- **Full suite: 1191 tests, 6499 assertions, 4 failures** — all four the
+  pre-existing `WifiKpisTest` group. Against §50 that is **+16 tests and +43
+  assertions**, with no new failure class.
+
+### 51.7 Follow-ups
+
+- **A diff view is the obvious next step.** Today the page shows a snapshot's
+  settings; it cannot show what changed since. A comparison against the current
+  values is read-only and would make "before upgrade" actually useful. It needs
+  a decision about masking in the diff (a masked key must read as "unchanged or
+  unknown", never as a difference).
+- **Retention is unbounded.** Every save inserts a row and nothing prunes. The
+  settings surface's `audit_retention_days` does not apply here; a snapshot cap
+  (keep N, or keep 90 days) belongs in the store, not in a controller.
+- **The `/ops` half.** If it is built, do not give it a create/restore action
+  either: snapshots are written by whoever owns the settings, and that is the
+  console today.
+
+---
+
+## 52. `paper-store` (`/admin/paper-store`)
+
+**State:** shipped 2026-11-17. `admin: planned` → `admin: read-only`;
+`writer: shared` → `writer: console`, with a projection and `files`. **Wave 2
+scoreboard: 45 surfaces · 29 built.**
+
+### 52.1 The decision that shaped it: this one is *not* estate-scoped
+
+Three slices in a row (§47, §49, §51) found estate data with no estate column,
+so the first question here was whether the Paper Store is the fourth. It is
+not, and the difference is worth writing down because the next reader will ask:
+
+- The store holds **curated shared knowledge** — research records, prompts,
+  workflows, brand kits — not records an estate owns.
+- `PaperStoreInterface` has no owner concept on **either** runtime, and the
+  contract's explicit promise is that "a record written by WordPress is
+  readable here and vice versa". Adding `tenant_id` would break that property
+  and split one library into N.
+- `OKF` (§50) is the same shape and was treated the same way.
+
+So the page states the sharing rather than implying the list is the tenant's
+own. If the product ever wants per-estate libraries, that is a schema change to
+the contract plus a migration on both runtimes — not a column added quietly in
+a panel slice.
+
+### 52.2 What the page renders
+
+Both console keys on the row:
+
+| Key | Section |
+|---|---|
+| `paperStore` | collections with counts → records filtered by status and tag → one record's description, body, tags and meta; plus cross-collection search |
+| `recordsSchema` | the four entities `GET /pro/records/schema` advertises, with post type, REST base and (empty) columns |
+
+The record list caps at 50 and prints the pre-cap total; search caps at 50 and
+says so. No create, edit or delete control.
+
+### 52.3 One catalogue for the record schemas
+
+The four-entity map lived as a private constant in `RecordsController`. The page
+needs the same list, and a second copy would drift the moment an entity is
+added. It moved to `App\Support\RecordsSchema::entities()` and the controller
+delegates. `Phase3cTest` and `ProjectManagementAdminTest` pin the payload and
+pass unchanged — including key order, which is part of the published shape.
+
+### 52.4 Why the search loop is duplicated (temporarily)
+
+The page mirrors `PaperStoreController`'s per-collection search rather than
+extracting a service. That is deliberate: this row is slated for the **manifest
+engine** (Wave 3, order item 10), which will render schema-driven records and
+replace this glue on both surfaces. Refactoring a tested controller for a
+surface that is about to be replaced is churn with a regression risk and no
+shelf life. The duplication is named in the class docblock so it cannot be
+mistaken for an oversight.
+
+### 52.5 What is not built
+
+- **Record CRUD.** The console owns it; the panel would be a second writer that
+  Wave 3 immediately replaces.
+- **Remote record browsing, create-from-research.** `RecordsController` answers
+  501 for both on this runtime — they are WordPress-to-WordPress and
+  Pro-research features, and the page does not pretend otherwise.
+
+### 52.6 Validation — executed
+
+- `AdminPaperStoreTest` + `PaperStoreTest` + `Phase3cTest` +
+  `ProjectManagementAdminTest` + `SurfaceOwnershipTest`: **49 passed / 727
+  assertions**. The three pre-existing suites are unchanged.
+- `bin/audit-surface-ownership.php`: **45 surfaces · 29 built** (11 `/ops`, 19
+  `/admin`) · 29 console-served · **11 console-only** · 3 planned-only.
+- `phpcs --standard=phpcs-laravel.xml.dist`: clean on the page, the catalogue,
+  the controller and the test.
+- **Full suite: 1202 tests, 6534 assertions, 4 failures** — all four the
+  pre-existing `WifiKpisTest` group. Against §51 that is **+11 tests and +35
+  assertions**, with no new failure class.
+
+### 52.7 Follow-ups
+
+- **The manifest engine is the real answer.** When order item 10 lands, this
+  page should become a manifest-rendered records view and the duplicated search
+  loop should disappear with the controller's.
+- **Collection counts cost a full read.** `collections()` calls `query()` per
+  collection to get `total`, and a flat-file store has to read the directory.
+  Fine for a handful of collections; if a deployment grows many, cache by
+  directory mtime.
+- **A body is rendered as preformatted text, not markdown.** The console's
+  editor owns formatting; the panel shows what is stored. If rendered markdown
+  is wanted later, it needs the same sanitizer the Astro forge uses — not a
+  second escaping rule.
+
+---
+
+## 53. `blueprints` (`/admin/blueprints`)
+
+**State:** shipped 2026-11-17. `admin: planned` → `admin: full` (no projection),
+with `files`. `writer` stays `shared`. **Wave 2 scoreboard: 45 surfaces · 30
+built.**
+
+### 53.1 The finding: nothing to fix, and that is itself the finding
+
+§47, §49 and §51 each shipped a tenancy repair, so the first job here was to
+find the defect. There isn't one:
+
+- `BlueprintInstaller::install()` resolves the existing assistant with
+  `where('tenant_id', …)` and stamps `tenant_id` on create, so "already exists"
+  means *in this estate* and a create lands in the caller's estate.
+- `BlueprintCatalogue::installedMap()` filters assistants by
+  `TenantContext::current()`, so a blueprint installed in estate B neither
+  renders as installed here nor supplies an id.
+- `BlueprintCatalogue::detail()` and the loader behind it (`raw()` / `load()`)
+  read `blueprints/`, which holds reference JSON and no estate data at all.
+
+That is written down because a reader who has just watched three consecutive
+slices open with a migration will assume a fourth is due. `AdminBlueprintsTest`
+carries the cross-estate case as a **regression guard** rather than a repair:
+seed a same-title install in `estate-b`, install here, and assert both rows
+exist, each inside its own estate.
+
+### 53.2 Why the row is `full`, not `read-only`
+
+Every consumer slice so far reduced a surface to avoid a second writer. This one
+has a write that *is* the same writer:
+
+| Presentation | Path to the write |
+|---|---|
+| console | `POST /blueprints/{toolkit}/{slug}/install` → `BlueprintController::install()` |
+| `/admin` | `Blueprints::install()` |
+
+Both call `BlueprintInstaller`. The page calls the service, never the route
+(§46's rule), so there is no loopback HTTP hop, no second conflict rule and no
+second `_blueprint_source` writer. `writer` stays `shared` and `projection`
+stays null, because nothing is reduced.
+
+Overwrite is a separate, confirmed control rather than a flag on Install, so an
+install cannot silently clobber an edited assistant. The installer *merges*
+`meta` instead of replacing it, and
+`test_reinstall_updates_in_place_and_keeps_operator_keys` pins the promise the
+confirm text makes.
+
+### 53.3 Access parity: `manage_options`, not just membership
+
+The console's blueprint routes sit inside its `can:manage_options` group. A page
+gated only on non-viewer membership would offer a write the API refuses, so
+`canAccess()` requires both, exactly as `RemoteSitesPage` does.
+`test_a_member_without_manage_options_is_refused` signs in an editor (estate role
+`manager`, so panel-eligible) and expects 403.
+
+### 53.4 One catalogue read per render
+
+`catalogue()`, `toolkits()`, `installedCount()` and `open()` all need the decoded
+catalogue. The first draft called `BlueprintCatalogue::listing()` from each —
+four directory walks and roughly 70 JSON decodes per render. The listing is now
+memoised in a **private** property:
+
+- private, so Livewire never serialises it into the snapshot;
+- per request, so an install can never be followed by a stale "not installed"
+  render. Livewire rebuilds the component from the snapshot for every action,
+  which is what makes a request-scoped memo safe at all.
+
+The row that renders the table also decides the detail panel's control, so the
+table cannot offer Install while the detail offers Reinstall.
+
+### 53.5 The 409 has two causes, and the notice names the control that exists
+
+The installer identifies an existing assistant by **title** — as WordPress does
+(`WP_Query` on `post_title` in `WP_MCP_AI_Blueprint_Installer`) — while the
+catalogue's `installed` flag is **provenance** (`_blueprint_source`, the same
+`meta_key` the WordPress catalogue queries). The two disagree in exactly one
+case: an assistant an operator created by hand with a blueprint's title. It is a
+conflict without being an install, so the row offers Install and no Reinstall.
+
+The API's own 409 text ("Set overwrite=true") is meaningless on a screen with no
+such field, and "Use Reinstall" would point at a button that is not rendered.
+The page therefore branches on its own catalogue row: an installed blueprint
+gets "already installed … use Reinstall"; a title collision without provenance
+gets "… was not installed from a blueprint. Rename or delete it in Assistants,
+then install again." Both are pinned by tests.
+
+### 53.6 A defect the PHP tests could not see: every row button was dead
+
+Building this page surfaced a defect that had already shipped on three earlier
+slices. In a browser, `wire:click` on the row buttons threw
+`Missing closing parenthesis for method "open"` and did nothing. The page
+returned 200 and rendered perfectly, and every `Livewire::test()->call('open', $id)`
+passed — because the test harness invokes the method directly and never parses
+the attribute. §51 (`/admin/security`), §52 (`/admin/paper-store`) and §50
+(`/admin/okf`) each had the same dead controls.
+
+Two variants of one mistake:
+
+| Placement | What happens |
+|---|---|
+| `@js()` inside a `<x-filament::…>` attribute | the component tag compiler turns the attribute value into a PHP **string literal** before the directive pass, so `@js($row["id"])` ships verbatim — quoted, never evaluated |
+| `@js()` inside a **single-quoted** attribute on a plain element | the directive does compile here, but on this stack `Js::from()` emits a **single-quoted** JS literal, so `wire:click='open(@js($id))'` renders `wire:click='open('abc')'` and the attribute ends at the first inner quote |
+
+One form works in both places: an **echo** inside a **double-quoted** attribute.
+An echo is compiled as a bound attribute, and `Js::from()`'s single quotes then
+sit safely inside the double quotes.
+
+```blade
+wire:click="install({{ \Illuminate\Support\Js::from($toolkit) }}, {{ \Illuminate\Support\Js::from($slug) }})"
+```
+
+The fix is applied to all four pages (11 call sites), and
+`AdminPanelBladeTest` now fails the build on either variant: no `@js(` anywhere
+in `resources/views/filament/**`, and no single-quoted `wire:*` attribute. Both
+rules name the rendering defect in the failure message rather than the style
+preference, because that is what they are.
+
+**The lesson for the remaining slices is the test one.** A panel test that calls
+Livewire methods directly proves the server action and proves nothing about the
+control. Every `/admin` page added after this one needs at least one assertion
+on the rendered HTML — the paper-store and blueprints suites now assert on
+control text and status markers as well as on DB state.
+
+### 53.7 What is not ported
+
+| WordPress behaviour | Here |
+|---|---|
+| install | **ported** — the one write, through the shared installer |
+| toolkit enablement filter | **not applied.** WordPress hides blueprints whose toolkit is disabled in `wp_mcp_ai_settings`; this runtime has no equivalent settings surface, and hiding a blueprint nobody could enable would be worse than showing it |
+| authoring / editing | not ported — blueprints are authored beside the Pro toolkits and mirrored by `bin/sync-blueprints.php`; the panel is a catalogue, not an editor |
+| delete | not ported — the catalogue is code, not a record; removing a blueprint means removing the JSON from the mirror |
+
+Toolkit labels for `dietpi` and `food-beverage` fall back to `ucfirst()` on both
+runtimes (`Dietpi`, `Food-beverage`) because neither is in WordPress's label map.
+That is parity, not drift: do not "fix" one side.
+
+### 53.8 Validation — executed
+
+- `AdminBlueprintsTest` + `AdminPaperStoreTest` + `AdminSecurityTest` +
+  `AdminOkfTest` + `BlueprintTest` + `SurfaceOwnershipTest` +
+  `AdminPanelBladeTest`: **63 passed / 659 assertions**. The five pre-existing
+  suites are unchanged, `BlueprintTest` included.
+- `bin/audit-surface-ownership.php`: **45 surfaces · 30 built** (11 `/ops`, 20
+  `/admin`) · 29 console-served · **10 console-only** · 3 planned-only.
+- `bin/audit-wp-admin-surfaces.php`: exit 0, 0 orphans, no count drift.
+- `phpcs --standard=phpcs-laravel.xml.dist`: clean on the page and both tests.
+- **Browser smoke test** on `:8001`, which is what found §53.6: opened a
+  blueprint, installed it (assistant #2 in the dev estate), saw the notice flip
+  the control to "Reinstall assistant #2", and exercised paper-store browse →
+  record view and the plain search-result button. The dev assistant was deleted
+  afterwards. The OKF page has no bundle in this estate and `/admin/security`
+  has no snapshot, so those two pages' row controls were verified by the lint
+  and by the shared idiom rather than by a click.
+- **Full suite: 1218 tests, 6595 assertions, 4 failures** — all four the
+  pre-existing `WifiKpisTest` group. Against §52 that is **+16 tests and +61
+  assertions** (14 blueprints tests, 2 blade lints), with no new failure class.
+
+### 53.9 Follow-ups
+
+- **No uninstall, deliberately.** Removing an installed assistant belongs to
+  `/admin/assistants`, which already owns delete; a second delete on the
+  catalogue would be a second path to the same row.
+- **The installed map is keyed by title.** Two blueprints sharing a `name`
+  would both read as installed. Today's mirror has 69 blueprints and 69 unique
+  names, and WordPress's map has the same property, so this is recorded rather
+  than changed — but it is the thing to check first if the catalogue ever ships
+  a name twice.
+- **Adopting a hand-made assistant is a manual step.** The 409 tells the operator
+  to rename or delete it in Assistants. A "Reinstall" control on a title
+  collision would adopt the row (the installer would stamp
+  `_blueprint_source`), but that needs a second status on the page — "name
+  taken" — that the console does not have, so it was not invented here.
+- **A browser pass belongs in the slice routine.** §53.6 was found in ten
+  minutes of clicking and had survived three slices and ~1,100 green tests. A
+  rendered-HTML assertion catches the server half; only a click catches the
+  client half.
+
+---
+
+## 54. `portability` (`/admin/portability`)
+
+**State:** shipped 2026-11-17. `admin: planned` → `admin: full`, with `files`.
+`writer` stays `shared`. **Wave 2 scoreboard: 45 surfaces · 31 built.**
+
+### 54.1 The finding: three cross-estate paths, not one
+
+§47, §49 and §51 each had a store with a missing `where`; this one had three
+independent leaks in one controller, and the first was not a scoping bug at all:
+
+| Path | Consequence |
+|---|---|
+| `export()` — `Assistant::query()` with no filter | a `manage_options` user in one estate received **every** estate's assistants, system prompts and free-form `meta` included. A bulk disclosure, and `ids[]` could name any estate's id. |
+| `import()` — `where('slug')` / `where('title')` unscoped | `mode=overwrite` resolved another estate's row and `fill()->save()` wrote to it. |
+| `import()` — `Assistant::create($data)` | the model has no `creating` hook, so `tenant_id` came from the column default: an import in estate B wrote into `default`. The `is_default` reset was `update()` over the whole table, un-defaulting every estate. |
+
+### 54.2 Fixed by construction, not clause by clause
+
+Adding three `where()` calls would have left the fourth path for the next
+reader. Instead the behaviour moved into `App\Services\AssistantPortability`:
+
+- every read goes through `estate()` — one scoped query builder;
+- every write goes through `AssistantWriter`, which already owned estate
+  assignment, per-estate slug uniqueness and per-estate default exclusivity;
+- the controller's private `uniqueSlug()` copy is deleted. That removes its
+  third definition of a rule the writer owns, and changes the `duplicate` suffix
+  from `-copy` to `-2` — which is what WordPress's `wp_insert_post()` does, so it
+  is a move *toward* parity, not away.
+
+The controller is now transport only: validate, call, map a refusal to its
+status. The panel page is the second caller, so the two cannot drift.
+
+### 54.3 Contract decisions
+
+- **A bundle is a document, not authority.** `tenant_id` inside an entry is
+  never read; the estate comes from the runtime. Pinned by
+  `test_a_bundle_cannot_choose_its_estate`.
+- **A foreign or unknown `ids[]` entry is refused (422), not dropped.** A bundle
+  that quietly contains fewer assistants than were asked for is how a restore
+  lands incomplete. The message says "not in this estate" and deliberately does
+  not distinguish absent from foreign — whether the row exists elsewhere is not
+  the caller's business.
+- **A slug-less entry is identified by its title.** The old expression,
+  `Str::slug($entry['slug'] ?? $title)`, fell through to the literal `assistant`
+  whenever the key existed but was empty — so every slug-less entry in a bundle
+  collided with the previous one. Found by the first run of the new tests.
+- **An overwrite of a slug-less entry keeps the stored slug.** Re-deriving it
+  from the title would silently re-slug an assistant that had been suffixed at
+  creation, breaking saved links — the rule `AssistantWriter::update()` already
+  applies to a payload without a slug.
+
+### 54.4 What the page renders
+
+- **Export.** The estate's assistants with checkboxes; tick none to export all.
+  The bundle renders into a read-only textarea rather than a download, so the
+  operator sees exactly what is leaving, and nothing is stored server-side.
+- **Import.** Paste a bundle, pick `skip` / `overwrite` / `duplicate`, and read
+  a per-entry report. **Preview only** is ticked by default and disables the
+  Import button; the write is behind `wire:confirm`.
+- **Audit.** Each import writes a record-level row (`resource: portability`,
+  `action: import`) carrying mode and counts — never the bundle. Export is not
+  audited; see the follow-ups.
+
+Access requires `manage_options` as well as non-viewer membership, matching the
+console's `can:manage_options` group around both routes.
+
+### 54.5 What is not ported
+
+| Console capability | Here |
+|---|---|
+| `attachment_id` (import a bundle uploaded as media) | not supported — the request validator has never accepted it on this runtime, so an attachment-only import was already a 422. The panel pastes JSON. |
+| `include_a2a` on export | ignored; this runtime stores no A2A surface to include |
+| `format: 'json'` | ignored; JSON is the only representation here |
+| download-as-file | the panel shows the bundle instead of writing a file |
+
+### 54.6 Validation — executed
+
+- `PortabilityTenancyTest` (9) + `AdminPortabilityTest` (11): **20 passed / 65
+  assertions** on the first green run after the two fixes above.
+- With `AssistantStudioTest` + `AssistantTenancyTest` + `AdminAssistantsTest` +
+  `SurfaceOwnershipTest` + `AdminPanelBladeTest` + `AdminBlueprintsTest`: **48
+  passed / 633 assertions**. The pre-existing assistant suites are unchanged.
+- `bin/audit-surface-ownership.php`: **45 surfaces · 31 built** (11 `/ops`, 21
+  `/admin`) · 29 console-served · **9 console-only** · 3 planned-only.
+- `bin/audit-wp-admin-surfaces.php`: exit 0, 0 orphans, no count drift.
+- `phpcs --standard=phpcs-laravel.xml.dist`: clean on the service, the exception,
+  the controller, the page and both test files.
+- **Browser smoke test** on `:8001`: exported the estate's single assistant (the
+  bundle rendered in the textarea), previewed a pasted bundle (report row,
+  Import disabled while "Preview only" was ticked), then imported it — the
+  assistant appeared as #3 — and confirmed the audit row
+  `import / bundle / default / {"mode":"skip",…,"imported":1}`. The smoke
+  assistant was deleted afterwards.
+- **Full suite: 1238 tests, 6661 assertions, 4 failures** — all four the
+  pre-existing `WifiKpisTest` group. Against §53 that is **+20 tests and +66
+  assertions** (the two new portability suites), with no new failure class.
+
+### 54.7 Follow-ups
+
+- **Export is an unaudited read that moves data out.** A bundle contains every
+  system prompt in the estate. Auditing it would need a read-row kind in
+  `nvoos_admin_audit` (today's rows describe writes); that is a contract change,
+  not a line of code, so it was not invented here. Until then the request-level
+  audit answers "who loaded the page", not "who took the bundle".
+- **Retention and size.** A 69-assistant bundle is fine in a Livewire property;
+  a deployment with thousands would need a streaming response and an upload
+  limit rather than a textarea. The console has the same property today.
+- **`status_override` is not exposed on the page.** The service supports it and
+  the route accepts it; the panel keeps the bundle's own status. Adding a select
+  is trivial, but it is a third way to change what an import means and nothing
+  has asked for it yet.
+
+---
+
+## 55. Admin navigation and table UX (planned, approved 2026-11-17)
+
+**State:** **steps 1–6 shipped 2026-11-17 — §55 complete.** Steps 1–2 changed code
+(an enum, `$navigationGroup` on 20 classes, one partial, two tests), step 3
+changed the two resources plus one test, step 4 added one Blade component and
+migrated eight tables, step 5 added a `Table::configureUsing()` callback, and step
+6 migrated nine more pages — but **no contract row**: the scoring surfaces are
+unchanged.
+
+**Where it slots in:** after §54 and **before the Wave 3 manifest engine**. The
+engine (order item 10) will add tabbed record surfaces to every toolkit page,
+which multiplies the nav problem; and steps 1–3 of §55.8 are configuration, not
+code, so deferring them buys nothing. It does **not** block item 10 — the two are
+independent.
+
+### 55.1 The measurement, not the impression
+
+The `/admin` sidebar renders **21 links in a single unnamed group**, ordered only
+by `$navigationSort`:
+
+> Dashboard · Assistants · Teams · Blueprints · Portability · MCP apps ·
+> Credentials · Remote sites · Personal tokens · Approvals · Professions ·
+> Agent skills · Memory · Knowledge (OKF) · Paper Store · Transcripts ·
+> Security · Tools · Automations · Workflow runs · Settings
+
+(`document.querySelectorAll('.fi-sidebar-nav a')` on `/admin/default/blueprints`;
+the only group is `data-group-label=""`. `grep -c navigationGroup` over
+`app/Filament` is **0**.)
+
+The order encodes *when each page shipped*, not what it is for: `Blueprints`
+sits at sort 25 between `Teams` and `MCP apps`, and `Tools` shares sort 70 with
+`Security`. Every future slice makes the list longer and the structure weaker.
+
+### 55.2 What the standards say
+
+| Finding | Source |
+|---|---|
+| Cluster items under small headers; **make headers collapsible once the sidebar runs past one screen height, and remember the collapsed state per user** | [Setproduct, sidebar patterns](https://www.setproduct.com/blog/sidebar-navigation-ui-design) |
+| A 35-item flat sidebar "is a maze"; plan for **grouping, collapsible sections, and a search fallback when items exceed ~20** | [Orbix, admin dashboard design](https://www.orbix.studio/blogs/saas-admin-dashboard-design-rebuilds) |
+| A disclosure must be a **real button** with `aria-expanded`, optionally `aria-controls`, and Enter/Space activation | [W3C APG — Disclosure](https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/) |
+| Progressive disclosure improves learnability, efficiency and error rate, but **beyond two levels usability drops**; get the initial/secondary split right and chunk the advanced set | [NN/g — Progressive Disclosure](https://www.nngroup.com/articles/progressive-disclosure/) |
+| Pointer targets **≥ 24×24 CSS px**, or spaced so 24px circles do not intersect | [WCAG 2.2 SC 2.5.8](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html) |
+| Tables want a **sticky header with the control row in the fixed part**, few essential columns by default, visible filter chips, an always-present total, an explicit select-all scope, and a contextual bulk toolbar with destructive actions guarded | [Pencil & Paper](https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-data-tables), [Setproduct](https://www.setproduct.com/blog/data-table-ui-design) |
+
+The 21-link figure is the trigger both practitioner sources name, and it is the
+state the panel is in today.
+
+### 55.3 What Filament 5 already gives us — do not rebuild the console
+
+Most of the reference implementation would be a second copy of the framework.
+Verified against the installed release and its docs:
+
+| Capability | API |
+|---|---|
+| Groups, icons, default-collapsed, non-collapsible | `$navigationGroup`; `NavigationGroup::make()->label()->icon()->collapsed()->collapsible(false)` |
+| Group order | `->navigationGroups([...])`, or an **enum** implementing `HasLabel`/`HasIcon` so label, icon and order live in one file | [Navigation reference](https://filamentphp.com/docs/5.x/navigation/overview) |
+| Collapsible rail on desktop, with a dropdown per group icon | `->sidebarCollapsibleOnDesktop()`, `->collapsedSidebarWidth()` | same |
+| **Group collapse already persisted** + active group auto-expands | `localStorage['filament:sidebar:collapsed_groups']` — `vendor/filament/filament/resources/views/livewire/sidebar.blade.php:168-191` | installed source |
+| Breadcrumbs that include the group | `->breadcrumbs(hasNavigationHierarchy: true)` | Navigation reference |
+| Global search (⌘K) over resources | resource `getGloballySearchableAttributes()` | same |
+| Table state persistence, skeleton, filter placement, page sizes, column manager | `->persistInSession()`, `->loadingSkeleton()`, `->filtersLayout(FiltersLayout::AboveContentCollapsible)`, `->paginated([...])->defaultPaginationPageOption(25)`, `toggleable` columns | [Tables reference](https://filamentphp.com/docs/5.x/tables/overview) |
+| One place for table defaults | `Table::configureUsing()` in `AppServiceProvider::boot()` | same |
+
+So the work is **configuration and one shared table contract**, not a rewrite of
+the shell. The in-repo reference for behaviour parity is
+`examples/nvoos-complete-velocity/src/console/ConsoleSidebar.tsx` (collapsible
+rail + W3C disclosure groups + `localStorage` persistence + single-item groups
+flattening) and `addons/pro/assets/spa-v2/src/components/shared/DataTable.tsx`
+(sticky header inside a capped scroll wrapper, hidden caption, `aria-sort`,
+empty state, keep-previous-data busy state).
+
+### 55.4 Proposed `/admin` grouping
+
+Six groups by **task**, not by when the page shipped. No group gets fewer than
+two items, except `Settings` (below).
+
+| Group (stable id) | Items | Why together |
+|---|---|---|
+| **Workspace** (`workspace`) | Assistants, Teams, Blueprints, Portability | what an estate runs day to day; every item is create/edit-a-thing |
+| **Knowledge** (`knowledge`) | Tools, Knowledge (OKF), Paper Store, Memory, Agent skills, Professions | reference data and recall — read-mostly catalogues |
+| **Automation** (`automation`) | Automations, Workflow runs, Approvals | trigger → run → approve is one loop |
+| **Connections** (`connections`) | MCP apps, Remote sites, Credentials, Personal tokens | everything that authenticates to somewhere else |
+| **Activity** (`activity`) | Transcripts, Security | what happened; read-only or snapshot-only |
+| **Settings** (`settings`) | Settings | the one page that configures the rest |
+
+Two exceptions, both deliberate:
+
+- **Dashboard is ungrouped.** It is Filament's own page, and grouping it would
+  require an `app/Filament/Admin/Pages/Dashboard.php` subclass — which
+  `SurfaceOwnershipTest` demands be declared in `contracts/surface-ownership.json`,
+  and the dashboard is not a ported WordPress surface. Filament sorts ungrouped
+  items first, so it renders above Workspace, which is where a dashboard belongs.
+- **Settings is a group of one.** A label over a single link is normally noise,
+  but filing Settings under Activity or Connections would mis-describe it, and
+  leaving it ungrouped would move it above the groups. The lint allows exactly
+  this one single-item group.
+
+Within a group, sort by task order (Assistants, then Teams, then Blueprints…),
+not alphabetically — alphabetical is how a settings page ends up next to a
+roster. The operator panel keeps its flat 11-page list for now; the same enum can
+be adopted there if it grows, and adopting it early would be structure for its
+own sake.
+
+### 55.5 One table contract, not fifteen hand-rolled tables
+
+**Twelve** custom pages hand-roll `<table>` with inline styles — agent-skills,
+automations, blueprints, estate credentials, OKF, paper-store, personal tokens,
+portability, professions, remote sites, security and tools. Their accessibility
+varied for a concrete reason rather than an accident: the markup was copied per
+page and then edited, so **none had a `<caption>`** (WCAG 1.3.1 — a data table
+with no accessible name), `scope="col"` appeared on some headers and not others,
+none had a sticky header, and every cell repeated its own padding.
+
+Step 4 shipped the component and migrated the three longest pages; step 6 migrated
+the other **nine** (`agent-skills`, `automations`, estate credentials, personal
+tokens, portability, professions, remote sites, security, tools), so all fourteen
+admin data tables now render through it. The four `/ops` views that still
+hand-roll a header are outside this section's scope.
+
+Two moves, in order:
+
+1. ✅ **Extract `<x-admin.data-table>`** — shipped in step 4 (§55.14). The
+   component owns the shell: a visually-hidden `<caption>`, `scope="col"`, a
+   sticky header inside a viewport-capped scroll wrapper, and an empty state
+   rendered in-body. Inline styles moved into the component so one edit fixes
+   every table. Three parts of the SPA `DataTable` contract are deliberately
+   **not** in it yet — `aria-sort` header buttons, a footer slot, and numeric
+   right-alignment — because no page on this runtime can drive them; §55.14
+   records each reason and what would unblock it.
+2. **Use Filament's native tables where a resource already owns one**
+   (`Assistants`, `Teams`): `persistInSession()`, the column manager via
+   `toggleable`, filters above content and collapsible, `loadingSkeleton()`,
+   `[10, 25, 50]` page sizes with 25 as the default.
+
+Migration order: blueprints (69 rows), paper-store, OKF concepts — the three
+where the current table is longest — **shipped in step 4**; the remaining six
+custom pages were all that was left, and converting them is mechanical now.
+
+Migration order: blueprints (69 rows), paper-store, OKF concepts — the three
+where the current table is longest — then the remaining nine as they are
+touched. The component lands first with those three; converting the rest is
+mechanical and should not block anything.
+
+### 55.6 Findability beyond the sidebar
+
+- **Global search on the two resources** (`Assistants`, `Teams`): title, slug and
+  description. ⌘K is already bound by the panel, so this is an attribute addition
+  rather than a new surface.
+- **No command palette, no dock, no second router.** The console has those; the
+  panel is the product surface for operators who live in one estate, and a
+  palette over 21 items would be a second thing to keep in sync.
+- **Badges only where a count is already loaded** (`getNavigationBadge()`). A
+  badge that fires a query per render is a self-inflicted N+1.
+
+### 55.7 Accessibility acceptance criteria
+
+- Every group header exposes `role="button"`, `tabindex="0"`, `aria-expanded`
+  and a stable `aria-controls` region. **Filament does not render these** — the
+  header is a `<div>` with an Alpine click handler (§55.12) — so the panel's
+  `SIDEBAR_NAV_END` hook adds them and a test asserts the hook reaches the page.
+- Keyboard: Tab reaches each group header and link; Enter/Space toggles; focus
+  ring visible on the group header in both themes. ✅ Verified for
+  Enter/Space and focus retention; the visible ring still needs a theme check.
+- **24×24 CSS px** minimum for every interactive target, including the collapsed
+  rail's group icons and row actions (§55.2).
+- Collapsed rail keeps **every** surface reachable through the group-icon
+  dropdown; the tooltip names the group, and items keep their own labels.
+- Group labels are muted today; they must still clear 4.5:1 against the sidebar
+  background in light and dark.
+
+### 55.8 Implementation order (each step independently shippable)
+
+1. ✅ **Grouping only — shipped 2026-11-17.** `AdminNavigationGroup` (six cases,
+   `HasLabel`, label + item map per case) plus `$navigationGroup` and re-sorted
+   `$navigationSort` on **20** classes (18 pages + 2 resources; the dashboard is
+   not subclassed). **No `->navigationGroups()` call was needed**: Filament sorts
+   enum-backed groups by the case's position in `cases()`, verified against
+   `NavigationManager::get()`. No new components, no custom CSS.
+2. ✅ **Collapsible rail — shipped 2026-11-17.** `->sidebarCollapsibleOnDesktop()`
+   plus `HasIcon` on every enum case. Group icons are what makes the rail work:
+   Filament renders a group as an icon that opens a dropdown **only when the
+   group has an icon**, otherwise it falls back to listing every item as a rail
+   icon (21 of them). `AdminNavigationTest` now enforces one icon per group for
+   that reason, not for decoration.
+
+   **Correction to what this section predicted:** Filament does not throw when a
+   group and its items both have icons *if the sidebar is collapsible*. The
+   exception only fires when it is not — without the rail there is no dropdown to
+   hold the item icons. With the rail on, `sidebar/group.blade.php` nulls each
+   item's icon in the expanded list (`$hasDropdown ⇒ $itemIcon = null`) and the
+   rail's dropdown prints it. Observed, not inferred: expanded groups render
+   icon-plus-label with **0** item icons; the Workspace dropdown renders all four
+   items **with** their icons. The expanded sidebar therefore reads group icon →
+   label → text links, plus a small dot per item in the grouped style.
+3. ✅ **Global search — shipped 2026-11-17.** Title, slug and description on both
+   resources, and the result now opens the record's **edit** action instead of a
+   `view` action that does not exist (§55.13). No contract row changed: no new
+   page, no new file under `app/Filament/`.
+4. ✅ **`<x-admin.data-table>` + the three longest pages — shipped 2026-11-17.**
+   Eight data tables across blueprints, paper-store and OKF now render through
+   one component (§55.14). The empty state moved into the table body, the
+   sticky header was measured in both themes, and a lint keeps the next table
+   from being hand-rolled.
+5. ✅ **`Table::configureUsing()` defaults — shipped 2026-11-17.** One callback in
+   `AppServiceProvider::boot()`: pagination at `[10, 25, 50]` with **25** as the
+   page size, filters above content and collapsible, skeleton on, state persisted
+   in the session. Both resources inherit it without opting in (§55.15).
+6. ✅ **The remaining custom-page tables — shipped 2026-11-17.** Nine `/admin`
+   pages migrated (fourteen tables); the guard now scans **every** admin view
+   instead of a hardcoded list (§55.16). The four `/ops` views keep their
+   hand-rolled headers, on purpose — that panel's navigation was left flat, so
+   its tables follow whenever it next changes.
+
+Steps 1–3 are configuration and can ship as one change — they shipped as three,
+because each needed its own browser measurement; 4 is the only one with a real
+design surface. Step 4's component is now the reference for step 6: converting a
+remaining page is `columns` + a slot, no styling. **§55 is complete.**
+
+### 55.9 Validation
+
+- ✅ `AdminNavigationTest` (3 tests, 13 assertions) fails the build when: the
+  rendered sidebar differs from the enum (labels, contents **or group order**);
+  anything other than the dashboard is ungrouped; a group has fewer than two
+  items (Settings excepted). It asserts on `Panel::getNavigation()` — the array
+  the sidebar renders — so a Filament class rename cannot turn it red.
+- ✅ Browser pass: expanded at 1400px (seven group nodes, icon-plus-label, no
+  loose items); rail at 1400px and 1024px (72px, seven icons); 768px mobile
+  drawer closed by default, opens at 320px with all six groups and the active
+  item marked. Rail state persists in `localStorage['filament:sidebar:desktop_open']`
+  alongside `…:collapsed_groups`, so both are per browser and need no account
+  setting.
+- ⬜ Still to do: keyboard-only pass (Tab/Enter/Space), and the contrast check on
+  group labels and rail icons.
+- No assertion on Filament's internal DOM beyond the documented `data-group-label`
+  attribute.
+
+### 55.10 Non-goals and risks
+
+- **Not a visual redesign.** The shell, NDS tokens and inline-style discipline
+  stay; this is information architecture plus one table component.
+- **Clusters are explicitly not adopted.** Filament recommends clusters for a
+  second navigation layer, but a cluster **re-prefixes URLs** (`/admin/{tenant}/
+  cluster/…`) and the surface URLs are part of the contract the console mirrors.
+  Grouping is reversible; clustering is a URL migration. Revisit only if a third
+  level becomes necessary.
+- **Grouping is a hypothesis until it is used.** The split above is reasoned from
+  tasks, not measured from usage; there is no panel analytics on this runtime.
+  Because the labels live in one enum, re-grouping after feedback is a one-file
+  change — which is the reason to do it as an enum rather than 21 string edits.
+- **Collapse state is per browser, not per account.** Filament persists it in
+  `localStorage`; the console's reference implementation does the same. Fine for
+  an admin tool; do not build a settings row for it.
+- **i18n.** Labels are hard-coded English today, like the rest of the panel.
+  Keeping them in the enum means the eventual `__()` wrapper touches one file.
+
+### 55.11 Steps 1–2 — shipped 2026-11-17
+
+**Step 1 — grouping.**
+
+| File | Change |
+|---|---|
+| `app/Filament/Admin/Navigation/AdminNavigationGroup.php` | new — six cases, `HasLabel`, and `items()` holding each group's labels in order |
+| 18 pages under `app/Filament/Admin/Pages/` | `$navigationGroup` + re-sorted `$navigationSort` (10/20/30… per group) |
+| `AssistantResource`, `TeamResource` | same; neither had any navigation properties before, so both were alphabetical and sort 0 |
+| `tests/Feature/AdminNavigationTest.php` | new — the invariants above |
+
+Eight `$navigationSort` comments described the old **global** order (“after the
+run log and before settings”, “credentials (50) before personal tokens (55)”) and
+became wrong the moment sort turned into a within-group value. They were
+rewritten to describe the position inside their group — a stale comment that
+contradicts the code is worse than none, and these were the only places that
+recorded the old ordering.
+
+Finding: **the dev server needed `php artisan octane:reload`, not just
+`optimize:clear`.** The first request after the sync rendered the grouped
+sidebar; a second hit the other Octane worker and rendered the old flat one,
+because both workers had loaded the page classes before the edit. New *files*
+autoload fine; a slice that **modifies existing classes** must reload the
+workers before a browser check, or the check lies. (phpunit is unaffected —
+each run is a fresh process.) This is the first slice in the run to modify 20
+existing classes, which is why it surfaced now.
+
+**Step 2 — collapsible rail.**
+
+| File | Change |
+|---|---|
+| `AdminNavigationGroup` | implements `HasIcon`; one icon per case, chosen to be distinct from the items inside the group |
+| `AdminPanelProvider` | `->sidebarCollapsibleOnDesktop()` + the disclosure render hook (§55.12) |
+| `resources/views/filament/admin/sidebar-disclosure.blade.php` | new — see §55.12 |
+
+Observed in the browser, not inferred: the expanded sidebar renders group
+icon + label with **zero** item icons and a small dot per item; the rail is
+72px with seven icons (Dashboard + six groups) at both 1400px and 1024px; each
+rail icon opens a dropdown that renders its items **with** their icons; at 768px
+the sidebar is the mobile drawer, closed behind the hamburger and opening at
+320px with all six groups. Rail state persists in
+`localStorage['filament:sidebar:desktop_open']`, alongside the group list — both
+per browser, no account setting.
+
+**Validation — both steps.** `AdminNavigationTest` **5 passed / 21 assertions**;
+full suite **1243 tests / 6683 assertions / 4 failures** — all four the
+pre-existing `WifiKpisTest` group, i.e. **+5 tests and +22 assertions** against
+§54 with no new failure class; phpcs clean on the enum, the provider and the
+test. Browser: grouped/expanded at 1400px, rail at 1400px and 1024px, mobile
+drawer at 768px, and keyboard toggling verified with Enter and Space.
+
+One decision left open, deliberately: **a collapsed group still hides the
+active page.** Filament persists collapse and does not re-expand the group
+holding the current route, while the console's `ConsoleSidebar` does. Matching
+it means overriding a stored preference, which is a product call rather than a
+bug fix — recorded here rather than decided in a rendering patch.
+
+### 55.12 Filament's group header is not a disclosure
+
+Shipping the rail exposed a defect in a feature we had just made reachable:
+Filament 5 renders a collapsible group's header as
+
+```html
+<div x-on:click="$store.sidebar.toggleCollapsedGroup(label)" class="fi-sidebar-group-btn">
+```
+
+— a `<div>` with **no `role`, no `tabindex`, no `aria-expanded` and no
+`aria-controls`**. So folding a group was mouse-only, and a screen reader was
+never told the group was collapsible at all. That contradicts WCAG 2.1.1
+(Keyboard) and the W3C APG disclosure pattern §55.2 cites, and it directly
+violates this section's own acceptance criterion in §55.7.
+
+It was not introduced here — groups have always been collapsible — but with one
+unnamed group and nothing to fold, it could not be observed. Six groups made it
+obvious.
+
+**The fix is additive and delegates state.** `sidebar-disclosure.blade.php` is
+rendered through `PanelsRenderHook::SIDEBAR_NAV_END` (inside the `<nav>`) and,
+for every header it finds:
+
+- sets `role="button"`, `tabindex="0"` and `aria-controls` to the item list's
+existing id;
+- handles Enter/Space by calling `header.click()` — **Filament's own handler** —
+so the Alpine store and the persisted collapse list stay authoritative; the
+script never writes state;
+- keeps `aria-expanded` in sync by observing the class Filament toggles, so the
+attribute cannot drift from the visible state;
+- re-runs when the sidebar re-renders (a `MutationObserver`), and no-ops if a
+future Filament renames those hooks.
+
+Verified with the keyboard, not by reading the code: focus a header, Enter
+collapses it (`aria-expanded="false"`), Space expands it (`"true"`), focus stays
+put. `AdminNavigationTest` asserts the hook's output reaches the page, so a
+provider edit cannot silently drop it.
+
+**What this costs.** One small script that patches vendor DOM. That is a
+maintenance liability — hence the narrow contract, the no-op failure mode, and
+the docblock naming the vendor file and line. The alternative was disabling
+collapsible groups (`->collapsibleNavigationGroups(false)`), which removes the
+defect and the feature: the rail already solves the space problem, but per-group
+folding is what the research in §55.2 recommends past one screen, and the console
+has it. Worth revisiting if Filament ships the semantics itself —
+search their issue tracker for `aria-expanded` before touching this partial.
+
+### 55.13 Step 3 — global search (shipped 2026-11-17)
+
+Two defects, both reproduced in a browser before anything changed.
+
+**A. Search was title-only.** Filament's default attribute list is
+`[$recordTitleAttribute]` (`HasGlobalSearch::getGloballySearchableAttributes()`),
+so an assistant could be found by name and nothing else. The operator who
+remembers "the one that handles refunds" has the description — which is also the
+field the catalogue and the blueprint installer write.
+
+**B. The result link was dead.** Clicking a result navigated to
+`/admin/default/assistants?tableAction=view&tableActionRecord=1` and opened
+**nothing**. The vendor default is a cascade: a `view` page, then an `edit` page,
+then `tableAction=view` when `canView()` is true, then `tableAction=edit` when
+`canEdit()` is.
+
+```php
+if (static::hasPage('view') && $canView) { return static::getUrl('view', …); }
+if (static::hasPage('edit') && $canEdit) { return static::getUrl('edit', …); }
+if ($canView) { return static::getUrl(parameters: ['tableAction' => 'view', …]); }
+```
+
+`AssistantResource` and `TeamResource` are **index-only** — one `Manage…` page,
+no `view` and no `edit` page — but both policies allow `view`, so the third branch
+fires and points at a table action that does not exist. The link looked like a
+working one, which is why it survived from Wave 2 until now: the tests assert on
+the resource list, not on the URL a search result produces.
+
+| File | Change |
+|---|---|
+| `Resources/Assistants/AssistantResource.php` | searchable `title`, `slug`, `description`; result detail `Status`; result URL → **edit** |
+| `Resources/Teams/TeamResource.php` | searchable `name`, `slug`, `description`; result detail `Slug`; result URL → **edit** |
+| `tests/Feature/AdminGlobalSearchTest.php` | new — 7 tests / 14 assertions |
+
+The URL is `getUrl(parameters: ['tableAction' => 'edit', 'tableActionRecord' => $key])`,
+falling back to the index when `canEdit()` is false. `tableAction` is the name
+`EditAction::make()` registers on the table; `tableActionRecord` is the query key
+`InteractsWithActions` reads. The fallback is unreachable for these two resources
+today (search is already estate-scoped, so a result is always editable) — it is
+there for the per-record ACL that a team-derived ownership rule would introduce,
+where a findable record may not be editable.
+
+**The tenancy subtlety that would have made the test a lie.** Filament's global
+search calls `getEloquentQuery()`, which is tenancy-scoped by a **per-model global
+scope registered in `Panel::bootTenancy()`** — not by anything the resource
+declares. `Livewire::test()` and a direct provider call never run the middleware
+that bootstraps it, so the cross-estate test calls `bootTenancy()` itself;
+without it the "does not leak" assertion would pass because *no* scope was
+applied, which is the wrong reason.
+
+`bootTenancy()` has a second effect that cost one red run: it registers a
+`creating` hook that associates every new tenant-owned record with
+`Filament::getTenant()`. That is the right rule for a panel write, and it is
+poisonous for a fixture — a row built for estate B while the panel points at
+default is silently **re-homed to default**, so the foreign row is never foreign
+and the scoping test goes green on nothing. Fixture writes in the test therefore
+pin both `TenantContext` and the panel tenant for their duration (`writingAs()`)
+and restore afterwards.
+
+**Two smaller findings.**
+
+- The result-group heading is `Resource::getPluralModelLabel()` **verbatim**, so
+  it renders lowercase ("assistants", "teams"), matching the rest of the
+  panel's copy and the page titles. It is asserted as lowercase, not
+  case-insensitively, so a future sentence-case change updates one place.
+- A team's search query carries a **second** rule — non-administrators see only
+  their own teams (`TeamResource::getEloquentQuery()`). The cross-estate test
+  signs in as an administrator, which isolates the estate scope; the membership
+  rule already has its own tests in `AdminTeamsTest`.
+
+**Validation.** `AdminGlobalSearchTest` **7 passed / 14 assertions**; the
+regression set (`AdminGlobalSearchTest`, `AdminAssistantsTest`, `AdminTeamsTest`,
+`SurfaceOwnershipTest`) **39 / 599**; full suite **1250 tests / 6697 assertions /
+4 failures** — the same four `WifiKpisTest` addon-binding failures, i.e. **+7
+tests and +14 assertions** against §55 steps 1–2 with no new failure class. phpcs
+clean on the two resources and the test. Both surface audits exit 0 with the
+counts unchanged (**45 surfaces · 31 built**), which is the point: this step
+added reachability, not a surface.
+
+Browser, after the change: typed `Gemini` — a word present **only** in the
+description of the one seeded assistant — into the topbar field and got a result
+under the heading "assistants" with `Status: publish`; the link carried
+`?tableAction=edit&tableActionRecord=1`; clicking it opened the **Edit Console
+Test Assistant** dialog with the record loaded (title, description, system
+prompt, provider). The dead link was measured in the same browser *before* the
+change, per paragraph B, so both ends of the defect are observations rather than
+readings of the code.
+
+### 55.14 Step 4 — the shared data table (shipped 2026-11-17)
+
+**What was measured first.** The three pages hold **eight** data tables in
+source — blueprints 1, paper-store 4, OKF 3 — but at runtime the blueprints page
+alone renders **27** of them, one per toolkit group. That ratio is why the
+duplication survived review: nobody reads 27 copies, and each copy drifted a
+little (a `scope` here, a `white-space: nowrap` there). Measured in the browser
+before the change: 27 shared-or-not tables, **0** `<caption>` elements.
+
+**The contract.** Narrow on purpose.
+
+| Prop | Owned by the component |
+|---|---|
+| `caption` (required) | rendered visually hidden with Filament's own `fi-sr-only` class — a table's accessible name, and the reason the browser now announces "Paper Store collections in this estate" for the table role |
+| `columns` | the whole `<thead>`: `scope="col"` per column, `srLabel` for the actions column so its empty heading is still announced |
+| `rows` + `empty` | the empty state, **as a body row** with the right `colspan` |
+| `maxHeight` (default `70vh`) | the scroll cap; the sticky header lives inside it |
+| the slot | the body rows themselves |
+
+| File | Change |
+|---|---|
+| `resources/views/components/admin/data-table.blade.php` | new — the shell, plus one `@once` style block scoped by `[data-admin-data-table]` |
+| `blueprints.blade.php` | 1 table migrated |
+| `paper-store.blade.php` | 4 tables migrated |
+| `okf.blade.php` | 3 tables migrated |
+| `tests/Feature/AdminDataTableTest.php` | new — 11 tests |
+
+**Why the body stays in the page.** A cell here holds `<x-filament::button>`,
+`<code>`, nested `<div>`s and interpolated rows. A component that rendered cells
+from values would need `{!! !!}` to keep that markup, which hands an escaping
+hole to every page at once. So the component owns the *shell* and the page owns
+cell content — the same split the SPA's `DataTable` makes with React nodes, just
+at Blade's escape boundary.
+
+**Page rhythm did not move into the component.** Three tables had
+`margin-bottom: 1.5rem` and the rest relied on the next heading's top margin.
+Rather than add a `margin` prop (a component owning page spacing is how spacing
+becomes unfixable), the bottom margin moved onto the following `<h3>` — where
+the gap belongs to whatever starts the next section. Adjoining margins collapse,
+so the rendered spacing is unchanged.
+
+**The empty state moved inside the table, and that is the point.** Filtering to
+nothing used to replace the entire table with a sentence — which also removed the
+column headings, so the operator lost the answer to "what am I filtering on?" at
+exactly the moment they needed it. Now `<td colspan="4">No record matches that
+query.</td>` renders under a live header row. Verified in the browser by typing a
+nonsense query on both pages: headers still present, `colspan` correct, message
+inside `tbody`.
+
+**One defect the browser found that no PHP test could.** The sticky header's
+first draft used `background: var(--gray-50)`, on the assumption that Filament's
+palette is theme-scoped. It is not: `--gray-50` keeps its light value when
+`.dark` is on, so the header was a **white band on a dark page** while `.fi-body`
+switched to `--gray-950`. Measured both ways in the browser rather than assumed —
+`th` and body were equal in light mode and differed in dark mode. Fixed by
+mirroring Filament's own rule, `.fi-body:where(.dark, .dark *) { background-color:
+var(--gray-950) }`, which now computes **identically to the body in both themes**.
+`AdminDataTableTest` asserts the pair of declarations and their order, because
+equal specificity means the later one wins — that is the most CI can check about
+a computed style.
+
+**Two test traps worth carrying forward.**
+
+- **`@once` outlives a test.** Its key is stored on the shared view factory, so a
+  later test in the same PHP process renders *no* `<style>` block and the count
+  assertion becomes order-dependent. `setUp()` calls
+  `$this->app['view']->flushState()`; without it the test passes or fails
+  depending on which class ran first.
+- **The migration guard tests `<thead>`, not `<table>`.** The surviving `<table>`
+  elements on these pages are definition lists with no header row, so banning
+  `<table>` would need an exception per page. Banning `<thead>` says exactly what
+  is meant: every header-bearing table goes through the component. It stays
+  green when a page adds a new table *correctly* and red only when one is
+  hand-rolled.
+
+**Deferred, with reasons — not forgotten.**
+
+- **`aria-sort` header buttons.** None of the three pages has an ordering input:
+  blueprints is a code-shipped array, paper-store is file-backed, OKF is a parsed
+  tree. A sortable header here would be a prop nothing passes and a code path
+  nothing exercises. The component grows `sort`/`direction`/`sortAction` in the
+  slice that gives a page an ordering path — and that slice can test it.
+- **A footer slot.** Nothing on these pages paginates; the "Showing N" totals sit
+  in the filter block, where they describe the filter rather than the table.
+- **Numeric right-alignment.** Every count column is left-aligned today, and
+  alignment has to be applied to the body cells too (page-owned), so adding it to
+  the header alone would create the drift this component exists to remove.
+- **The nine remaining custom pages.** Mechanical now: `columns` plus a slot.
+  The four `/ops` views that also hand-roll a header are out of scope here — the
+  operator panel kept its flat navigation (§55.4), so its tables can follow
+  whenever that panel next changes.
+
+**Validation.** `AdminDataTableTest` **11 passed / 33 assertions**; the four-page
+regression set (`AdminDataTableTest`, `AdminBlueprintsTest`, `AdminPaperStoreTest`,
+`AdminOkfTest`) **50 / 158**; full suite **1261 tests / 6730 assertions / 4
+failures** — the same four `WifiKpisTest` addon-binding failures, i.e. **+11 tests
+and +33 assertions** against step 3 with no new failure class. phpcs clean on the
+test files. Both surface audits exit 0 with the counts unchanged (**45 surfaces ·
+31 built**) — a table is not a surface.
+
+Browser, on the seeded estate: blueprints rendered **27** tables, every one
+`data-admin-data-table`, each with its own toolkit caption and four `scope="col"`
+headers, and **one** shared `<style>` block for all 27 (`@once`, verified by
+counting blocks whose text contains the selector rather than assuming it). The
+header computed `position: sticky` and stayed pinned while its wrapper scrolled
+40px; the last row's separator computed to `0px`. On paper-store and OKF, a
+nonsense query typed into each search box produced the message **inside `tbody`**
+at `colspan="4"` with all four headers still visible. Theme: the `th` background
+equalled `.fi-body` both in light (`oklch(0.977176 0 89.876)`) and in dark
+(`oklch(0.277882 0 89.876)`) — the dark case is the one that failed before the
+fix, and it is why the component carries two declarations.
+
+`AdminPanelBladeTest` now scans `views/components` as well as `views/filament`,
+so the new component is inside the `@js()` and single-quoted-`wire:*` lint instead
+of being the one Blade tree the rule could not see.
+
+### 55.15 Step 5 — one place for the table defaults (shipped 2026-11-17)
+
+**What changed, in numbers.** Filament's out-of-the-box pagination is
+`[5, 10, 25, 50]`, and `getDefaultPaginationPageOption()` resolves to **10**
+whenever 10 is in the options — so "the default page size" was 10, not 25. The
+panel default is now `[10, 25, 50]` at **25**. One callback, at the end of
+`AppServiceProvider::boot()`:
+
+```php
+Table::configureUsing(
+    static fn (Table $table): Table => $table
+        ->persistInSession()
+        ->loadingSkeleton()
+        ->paginated(array(10, 25, 50))
+        ->defaultPaginationPageOption(25)
+        ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+);
+```
+
+**Two of those five are deliberately no-ops today**, and saying so is the point:
+
+- `filtersLayout(AboveContentCollapsible)` is already Filament's default. Naming
+  it pins the behaviour so a framework default change cannot move the filters
+  without a test noticing.
+- `loadingSkeleton()` only renders with `deferLoading()`, and no table enables
+  deferred loading. It is set now so the first table that does inherits a
+  skeleton instead of flashing an empty body.
+
+**Why `configureUsing` and not the two resources.** A resource's `table()` should
+be about *its* columns, actions and scope. Three lines of chrome copied into
+every future resource is exactly the drift the data table removed in step 4. The
+callback runs at construction, so a resource that wants something different still
+overrides it in its own `table()` — this sets a default, it does not take the
+choice away.
+
+**What the test can and cannot see.** `AdminTableDefaultsTest` resolves the
+**real** page tables —
+`Livewire::test(ManageAssistants::class, array('tenant' => $tenant))->instance()->getTable()`
+— rather than a synthetic table, because the claim is that both resources inherit
+the defaults *without opting in*; a hand-built table would prove the callback runs
+but not that it reaches them. Pagination, the option list, the default option and
+the filters layout all have getters and are asserted. `persistInSession()` and
+`loadingSkeleton()` have **no getters**, so asserting them would mean reflecting
+on protected properties — that tests the framework's shape, not our behaviour;
+their effect is only observable across a navigation, or under `deferLoading()`.
+
+**Validation.** `AdminTableDefaultsTest` **1 passed / 8 assertions** — four per
+page, both resources; the resource regression set (`AdminTableDefaultsTest`,
+`AdminAssistantsTest`, `AdminTeamsTest`) **29 / 136**; full suite **1262 tests /
+6738 assertions / 4 failures** — the same four `WifiKpisTest` addon-binding
+failures, i.e. **+1 test and +8 assertions** against step 4 with no new failure
+class. phpcs clean on the provider and the test.
+
+Browser: `/admin/default/assistants` now renders a paginator whose per-page select
+offers exactly **10 / 25 / 50** with **25** selected. Asserted on the resolved
+value rather than on the callback existing, because the framework default would
+have shown 10 — a callback that ran and lost would look identical from the code.
+
+### 55.16 Step 6 — the remaining pages (shipped 2026-11-17)
+
+**Fourteen tables across nine pages**, mechanical once the component existed:
+
+| Page | Tables migrated |
+|---|---|
+| `agent-skills` | 3 — skills, tool shortcuts, slash commands |
+| `automation-definitions` | 2 — workflows, triggers |
+| `estate-credentials` | 1 |
+| `personal-tokens` | 1 |
+| `portability` | 2 — export selection, import report |
+| `professions` | 1 |
+| `remote-sites` | 1 |
+| `security` | 2 — snapshots, and a definition table that lost its header row |
+| `tools` | 1 |
+
+**One table was corrected rather than migrated.** Security's snapshot detail is a
+two-column key/value list. Its header row ("Setting | Value") repeated what every
+row already said through its `<th>`, so the row was dropped and the row headers
+took `scope="row"`. That makes it a **definition table**, which is what it always
+was; the other three definition tables (blueprints' defaults, paper-store's record
+detail, OKF's frontmatter) never had a header row and needed no change.
+
+**The empty state moved in-body only where a filter produced it.** One rule across
+nine pages: a filter that matches nothing keeps the columns visible, while a state
+that explains *why there is no data at all* — "This estate has no assistants
+yet.", "No connections in this estate yet. Create one in the console, then return
+here to verify it.", "Credentials are issued by NV Digital support" — stays a
+page-level paragraph with no table. Rendering those inside a body row would put a
+long explanation under a header row that describes nothing, in a table whose only
+job is to say there is nothing to list.
+
+So `tools`, `professions`, `agent-skills`, `automation-definitions` and the OKF and
+paper-store searches use `rows` + `empty`; `estate-credentials`, `personal-tokens`,
+`remote-sites` and `portability` keep their `@if` and pass no `rows` prop.
+
+**The guard became a glob, not a list.** `AdminDataTableTest` now walks every
+`views/filament/admin/*.blade.php` and fails on any `<thead>` (Blade comments
+stripped first, the precedent `AdminPanelBladeTest` set). A hardcoded three-file
+list was right for step 4's scope and wrong here — it would have stayed green
+while nine pages stayed hand-rolled, which is the failure mode a migration guard
+exists to prevent.
+
+**Validation.** `AdminDataTableTest` **11 passed / 50 assertions** — the same 11
+tests, 17 more assertions than step 4 because the guard now asserts on **21**
+files instead of three; the nine-page regression set (`AdminDataTableTest` +
+the nine page suites + `AdminPanelBladeTest`) **109 / 389**; full suite **1262
+tests / 6755 assertions / 4 failures** — the same four `WifiKpisTest`
+addon-binding failures. Same test count as step 5, **+17 assertions**, no new
+failure class. phpcs clean on the test.
+
+Browser, every migrated page walked and read back: `agent-skills` 3 shared tables
+(captions naming skills, shortcuts and slash commands), `automations` 2, plus
+`portability`, `professions`, `tools` 1 each — and **0** `<thead>` elements
+outside a shared table on any of them. `credentials`, `personal-tokens`,
+`remote-sites` and `security` render their explanatory empty states with no table
+because the estate has no such data, which is the intended shape rather than a
+missing migration. Driving the filter to nothing on `tools` and `professions`
+produced `colspan="4"` messages **inside `tbody`** with all four headers still
+visible. Every shared header computed `position: sticky`.

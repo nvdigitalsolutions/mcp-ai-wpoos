@@ -59,36 +59,32 @@
         Read-only: professions are code-owned reference data, and the write path is not served by this runtime.
     </p>
 
-    @if ( array() === $rows )
-        <p style="font-size: 0.85rem;">No profession matches that filter.</p>
-    @else
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-            <thead>
-                <tr style="text-align: left; border-bottom: 1px solid rgba(127, 127, 127, 0.35);">
-                    <th style="padding: 0.5rem 0.5rem 0.5rem 0;">Profession</th>
-                    <th style="padding: 0.5rem;">Category</th>
-                    <th style="padding: 0.5rem;">Description</th>
-                    <th style="padding: 0.5rem;">Tools</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ( $rows as $row )
-                    <tr style="border-bottom: 1px solid rgba(127, 127, 127, 0.15); vertical-align: top;">
-                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">
-                            <div>{{ $row['title'] }}</div>
-                            <code style="font-size: 0.75rem; opacity: 0.75;">{{ $row['slug'] }}</code>
-                        </td>
-                        <td style="padding: 0.5rem;">
-                            {{ $row['category'] }}
-                            @if ( '' !== (string) $row['category_slug'] )
-                                <div style="font-size: 0.7rem; opacity: 0.7;">{{ $row['category_slug'] }}</div>
-                            @endif
-                        </td>
-                        <td style="padding: 0.5rem;">{{ $row['description'] }}</td>
-                        <td style="padding: 0.5rem;">{{ (int) $row['tools_count'] }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @endif
+    <x-admin.data-table
+        caption="Professions in the catalogue"
+        :columns="[
+            ['label' => 'Profession'],
+            ['label' => 'Category'],
+            ['label' => 'Description'],
+            ['label' => 'Tools'],
+        ]"
+        :rows="count( $rows )"
+        empty="No profession matches that filter."
+    >
+        @foreach ( $rows as $row )
+            <tr>
+                <td>
+                    <div>{{ $row['title'] }}</div>
+                    <code style="font-size: 0.75rem; opacity: 0.75;">{{ $row['slug'] }}</code>
+                </td>
+                <td>
+                    {{ $row['category'] }}
+                    @if ( '' !== (string) $row['category_slug'] )
+                        <div style="font-size: 0.7rem; opacity: 0.7;">{{ $row['category_slug'] }}</div>
+                    @endif
+                </td>
+                <td>{{ $row['description'] }}</td>
+                <td>{{ (int) $row['tools_count'] }}</td>
+            </tr>
+        @endforeach
+    </x-admin.data-table>
 </x-filament-panels::page>

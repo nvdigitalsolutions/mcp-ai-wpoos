@@ -2,10 +2,12 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\ToolCatalogue;
 use BackedEnum;
+use UnitEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Nvoos\Core\Application\Tool\ToolReadiness;
@@ -44,8 +46,10 @@ class Tools extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Knowledge;
+
     // Below the resources, above the run log and settings: a reference page.
-    protected static ?int $navigationSort = 70;
+    protected static ?int $navigationSort = 10;
 
     protected string $view = 'filament.admin.tools';
 

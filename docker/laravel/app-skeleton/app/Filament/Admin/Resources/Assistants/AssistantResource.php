@@ -2,11 +2,13 @@
 
 namespace App\Filament\Admin\Resources\Assistants;
 
+use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Filament\Admin\Resources\Assistants\Pages\ManageAssistants;
 use App\Models\Assistant;
 use App\Services\AssistantWriter;
 use App\Support\EstateScope;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -21,6 +23,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 
 /**
@@ -51,6 +54,10 @@ class AssistantResource extends Resource
     protected static ?string $model = Assistant::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCpuChip;
+
+    protected static string|UnitEnum|null $navigationGroup = AdminNavigationGroup::Workspace;
+
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -236,5 +243,50 @@ class AssistantResource extends Resource
         ksort($options);
 
         return $options;
+    }
+
+    /**
+     * Global search — Proposal 149 §55 step 3.
+     *
+     * Filament's default searches only `$recordTitleAttribute`, so an assistant
+     * could only be found by name. An operator looking for "the one that handles
+     * refunds" has the description, not the title, and the description is the
+     * field the catalogue and the blueprint installer both write.
+     *
+     * @return list<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return array('title', 'slug', 'description');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return array('Status' => (string) $record->status);
+    }
+
+    /**
+     * Open the record's edit action on the manage page.
+     *
+     * Filament's default resolves to `?tableAction=view`, but this resource has
+     * no `view` page and no `view` action — only `edit` — so the default was a
+     * dead link: measured in a browser, the result navigated to the index and
+     * opened nothing. The action name here is the one `EditAction::make()`
+     * registers on the table above, and `tableActionRecord` is the key
+     * `InteractsWithActions` reads from the query string.
+     */
+    public static function getGlobalSearchResultUrl(Model $record): ?string
+    {
+        if (! static::canEdit($record)) {
+            return static::getUrl();
+        }
+
+        return static::getUrl(parameters: array(
+            'tableAction' => 'edit',
+            'tableActionRecord' => $record->getKey(),
+        ));
     }
 }

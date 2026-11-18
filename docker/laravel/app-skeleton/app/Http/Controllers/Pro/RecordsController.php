@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Pro;
 
+use App\Support\RecordsSchema;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -9,70 +10,15 @@ use Illuminate\Http\JsonResponse;
  *
  * The WordPress catalogue covers CRM, PM, professions, F&B and commerce CPTs.
  * The Laravel runtime owns no such post types, so the honest subset is the
- * two core content entities — `posts` and `pages` — served from
- * `nvoos_posts` by the `wp/v2`-compatible shim at `/api/v1/wp`.
- *
- * Content entities ship no meta columns on WordPress either (the Records page
- * falls back to title/date/status), so `columns` stays empty.
+ * entities whose `wp/v2` shim is mounted here. The catalogue lives in
+ * {@see RecordsSchema} because the `/admin/paper-store` page (149 §52) renders
+ * the same list.
  */
 class RecordsController
 {
-    /**
-     * @var array<string, array<string, string>>
-     */
-    private const ENTITIES = [
-        'post' => [
-            'post_type' => 'post',
-            'rest_base' => 'posts',
-            'label' => 'Posts',
-            'singular' => 'Post',
-            'icon' => '📰',
-            'group' => 'content',
-        ],
-        'page' => [
-            'post_type' => 'page',
-            'rest_base' => 'pages',
-            'label' => 'Pages',
-            'singular' => 'Page',
-            'icon' => '📄',
-            'group' => 'content',
-        ],
-        'task' => [
-            'post_type' => 'mcp_ai_task',
-            'rest_base' => 'tasks',
-            'label' => 'Tasks',
-            'singular' => 'Task',
-            'icon' => '✅',
-            'group' => 'pm',
-        ],
-        'project' => [
-            'post_type' => 'mcp_ai_project',
-            'rest_base' => 'projects',
-            'label' => 'Projects',
-            'singular' => 'Project',
-            'icon' => '📁',
-            'group' => 'pm',
-        ],
-    ];
-
     public function schema(): JsonResponse
     {
-        $entities = [];
-
-        foreach (self::ENTITIES as $key => $config) {
-            $entities[$key] = [
-                'key' => $key,
-                'postType' => $config['post_type'],
-                'restBase' => $config['rest_base'],
-                'label' => $config['label'],
-                'singular' => $config['singular'],
-                'icon' => $config['icon'],
-                'group' => $config['group'],
-                'columns' => [],
-            ];
-        }
-
-        return response()->json(['entities' => $entities]);
+        return response()->json(['entities' => RecordsSchema::entities()]);
     }
 
     /**
