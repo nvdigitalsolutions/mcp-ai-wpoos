@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Fixed — Security posture UI read a good grade as a failure
+
+- **An `A-` (or any `+`/`-` band) no longer renders in the error red.** The Overview score card coloured the grade through a five-key map (`A`/`B`/`C`/`D`/`F`), so every band the shared catalogue introduced — `A+`, `A-`, `B+` and the rest — missed the lookup and fell through to `#d63638`. The map is now keyed on the grade's letter family, so a band cannot fall through: 88/100 always scored the same, but it now shows as a green `A-` instead of a red one.
+- **Not-applicable controls stay off the scoreboard.** `PostureScorer` reports the four Laravel-only controls (`csrf`, `secure_cookies`, `provider_keys`, `memory_controls`) with `applicable: false`, `passed: false`; the Security Center table read only `passed`, so they rendered as ❌ failures with weights of 10–15 while contributing nothing to the score. They now render with a neutral dash and no weight, and the header reads "computed from 23 of 27 weighted signals" (`includes/admin/sections/class-wp-mcp-ai-section-security.php`).
+- **The fallback grade bands are parity-tested.** `WP_MCP_AI_Security_Posture::score_to_grade()` now delegates to `PostureScorer::gradeFor()` whenever lib/core is loaded; the local table remains only for the wp.org base build, where lib/core is stripped, and `tests/test-security-center.php` asserts the two agree at every score 0–100 so the copy cannot drift.
+
 ### Added — CI gate for settings field registration
 
 - **A settings field can no longer ship invisible.** A section that defines `get_subtab_groups()` renders and saves only the keys named in a group: `render()` iterates the active group's `fields`, and `sanitize_with_subtabs()` whitelists submitted input to the same list. A field declared in `get_fields()` but in no group therefore renders nowhere and is dropped on save — with no PHP error and no PHPCS finding, because both methods are individually valid. `.github/scripts/check-settings-field-registration.php` (new `settings-field-registration` job in `php-linting.yml`) tokenises every sub-tabbed section in `includes/admin/sections/` and `addons/pro/includes/admin/sections/` and fails on that shape, including in a newly added section. It also fails on a stale baseline entry, so `.github/scripts/settings-field-registration.txt` cannot rot.
