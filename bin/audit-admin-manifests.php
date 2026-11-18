@@ -12,9 +12,10 @@
  *  1. every source document decodes and validates through `ToolkitManifest`;
  *  2. the document's `slug` matches its filename, because the loader keys by
  *     slug and skips a mismatched pair rather than guessing;
- *  3. every manifest declares at least one screen, and a screen is either one
- *     this panel routes (`settings`, `entities`, `dashboard`) or a documented
- *     console-only screen (`research`, `consolidate` — Wave 4 on the panel).
+ *  3. every manifest declares at least one screen, and a screen is either one this
+ *     panel routes (`settings`, `entities`, `research`, `consolidate`, `dashboard`
+ *     since Wave 4) or a documented console-only screen. The console-only list is
+ *     empty today, so an unknown screen fails outright.
  *
  * The **mirror** (`docker/laravel/app-skeleton/resources/pro-toolkits`) is
  * guarded by `bin/sync-toolkit-manifests.php --check` in the same workflow, so
@@ -42,10 +43,13 @@ $source = $root . '/addons/pro/includes/toolkits/manifests';
 $json   = in_array( '--json', array_slice( $argv, 1 ), true );
 
 /** Screens the Filament renderer routes (App\Filament\Admin\Pages\ToolkitPage). */
-$panelScreens = array( 'settings', 'entities', 'dashboard' );
+$panelScreens = array( 'settings', 'entities', 'research', 'consolidate', 'dashboard' );
 
-/** Screens the console serves and the panel deliberately does not route yet. */
-$consoleOnlyScreens = array( 'research', 'consolidate' );
+// Wave 4 routed `research` and `consolidate` on the panel, so the console-only
+// allowance is now empty: every screen a manifest may declare is servable by at
+// least one surface. The list stays (rather than being deleted) because a future
+// screen that only the console serves belongs here, with its wave noted.
+$consoleOnlyScreens = array();
 
 $errors = array();
 $report = array();
@@ -146,7 +150,10 @@ foreach ( $report as $row ) {
 echo PHP_EOL;
 printf( "manifests             : %d%s", count( $files ), PHP_EOL );
 printf( "panel-servable        : %d (declares at least one of %s)%s", $panelServable, implode( '/', $panelScreens ), PHP_EOL );
-printf( "console-only screens  : %s (Wave 4 on the panel)%s", implode( '/', $consoleOnlyScreens ), PHP_EOL );
+
+if ( array() !== $consoleOnlyScreens ) {
+	printf( "console-only screens  : %s%s", implode( '/', $consoleOnlyScreens ), PHP_EOL );
+}
 echo 'mirror check          : php bin/sync-toolkit-manifests.php --check' . PHP_EOL;
 echo PHP_EOL;
 

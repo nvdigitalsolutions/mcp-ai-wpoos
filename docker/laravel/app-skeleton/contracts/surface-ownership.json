@@ -369,7 +369,7 @@
       "console": { "state": "full", "keys": ["toolkits", "proOps"] },
       "writer": "shared",
       "plan_gate": "toolkit:{slug}",
-      "projection": "Settings, the entity workbench (list + server-side search + armed delete) and dashboard cards render from the manifest through ToolkitEngine; create and edit stay in the console workbench. research/consolidate are Wave 4 and are not routed on the panel.",
+      "projection": "Settings, the entity workbench (list + server-side search + armed delete), the dashboard cards, the research wizard and the consolidate scan all render from the manifest through ToolkitEngine. The free-form record editor stays in the console workbench; the ONE write the panel performs beyond deletion is the research draft save, which goes through createRecord so the manifest's column validation remains the single gate into the table. research/consolidate shipped on the panel in Wave 4 (2026-11-18) and are entity-scoped: a manifest with no entities answers 404 on both rather than render an empty wizard.",
       "files": ["app/Filament/Admin/Pages/ToolkitsPage.php", "app/Filament/Admin/Pages/ToolkitPage.php"],
       "notes": "Wave 3 renderer shipped 2026-11-18 (plan §56). One index page lists the manifests the estate's entitlement allows; one parameterised page renders `/admin/{estate}/toolkits/{toolkit}/{screen}` from data — a new toolkit is a manifest commit, not a page. Settings tabs come from `tab_labels`/`tab` (single General tab when absent). An unlicensed toolkit is absent from the catalogue and answers 404 to a direct URL, indistinguishable from an unknown one (R4). Entity delete is armed two-step and audited with keys only — a diff never carries a secret value."
     },

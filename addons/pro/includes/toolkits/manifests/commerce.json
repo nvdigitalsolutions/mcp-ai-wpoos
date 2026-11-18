@@ -5,7 +5,7 @@
   "description": "Catalog and stock operations for a product business.",
   "icon": "🛍️",
   "feature": "commerce",
-  "screens": ["settings", "entities", "consolidate", "dashboard"],
+  "screens": ["settings", "entities", "research", "consolidate", "dashboard"],
   "settings": [
     {
       "key": "currency",

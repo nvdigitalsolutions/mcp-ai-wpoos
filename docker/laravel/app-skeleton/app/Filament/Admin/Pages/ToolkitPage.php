@@ -19,6 +19,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
+use Nvoos\Core\Application\Toolkit\ToolkitResearchService;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\ValueObject\ToolkitManifest;
 
@@ -30,7 +31,7 @@ use Nvoos\Core\Domain\ValueObject\ToolkitManifest;
  * (`?entity=product`) because the entity set is manifest data, not a fixed
  * route shape.
  *
- * THREE SCREENS, ALL FROM DATA:
+ * FIVE SCREENS, ALL FROM DATA:
  *
  * - **settings** — fields and tabs come from `ToolkitManifest::settingTabs()`.
  *   A manifest without `tab_labels` renders one "General" tab; one with them
@@ -40,12 +41,21 @@ use Nvoos\Core\Domain\ValueObject\ToolkitManifest;
  *   and delete rules the console applies. Deletion is armed two-step and
  *   audited; cross-estate ids answer "not in this estate" because the engine's
  *   one `query()` helper scopes every read (149 §47).
+ * - **research** — draft one record from a natural-language query through
+ *   `ToolkitResearchService`, review the fields, then save. The save is a
+ *   one-shot `createRecord`, not an editor: the engine's column validation
+ *   stays the single gate into the table, which is why the free-form editor
+ *   can remain console-side (§56.4).
+ * - **consolidate** — group an entity by one text/list column through
+ *   `ToolkitEngine::duplicates()` and delete the collisions. The scan runs
+ *   server-side as one `GROUP BY`, so the panel never loads the whole entity
+ *   to find duplicates; deletion re-scans so the list is never stale.
  * - **dashboard** — the manifest's cards, computed by `ToolkitEngine::dashboard()`.
  *
- * `research` and `consolidate` are deliberately **not** routed: they are Wave 4
- * and share renderers that do not exist yet, so a link here would be a blank
- * shell. A manifest may declare them (the console serves both); the panel's
- * index narrows the advertised screens to the three below.
+ * `research` and `consolidate` are entity-scoped: a manifest with no `entities`
+ * cannot fill either screen, so both 404 rather than render an empty shell.
+ * Wave 4 shipped them 2026-11-18; before that the panel advertised only three
+ * screens and a link to either was a blank page.
  *
  * SUBSET, not full, and the contract row says so: the panel lists and deletes
  * records, while create/edit stay in the console's workbench. Rebuilding that
@@ -61,7 +71,7 @@ class ToolkitPage extends Page implements HasForms
     use InteractsWithForms;
 
     /** Screens this renderer routes. Everything else stays console-only. */
-    public const PANEL_SCREENS = array('settings', 'entities', 'dashboard');
+    public const PANEL_SCREENS = array( 'settings', 'entities', 'research', 'consolidate', 'dashboard' );
 
     protected static ?string $slug = 'toolkits/{toolkit}/{screen}';
 
@@ -92,6 +102,38 @@ class ToolkitPage extends Page implements HasForms
 
     /** Entity page, read from `?page=` on mount. */
     public int $recordPage = 1;
+
+    /** Research query text (Wave 4). */
+    public string $query = '';
+
+    /**
+     * Draft returned by the research service, keyed by manifest column.
+     *
+     * @var array<string, mixed>
+     */
+    public array $draft = array();
+
+    /** Provider attribution for the current draft; empty when none. */
+    public string $provider = '';
+
+    /** Consolidate: the column duplicates are grouped by. */
+    public string $duplicateColumn = '';
+
+    /**
+     * Consolidate: groups from the last scan.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $duplicateGroups = array();
+
+    /** Consolidate: rows the last scan counted. */
+    public int $duplicateScanned = 0;
+
+    /** Consolidate: whether the last scan capped its group list. */
+    public bool $duplicateTruncated = false;
+
+    /** Consolidate: whether a scan has run since the page loaded. */
+    public bool $duplicateScannedOnce = false;
 
     /** Record id armed for deletion; empty when nothing is armed. */
     public string $pendingDelete = '';
@@ -138,6 +180,19 @@ class ToolkitPage extends Page implements HasForms
             );
             $this->search = trim((string) request()->query('search', ''));
             $this->recordPage = max(1, (int) request()->query('page', 1));
+        }
+
+        // Both Wave 4 screens address one entity, so they share the resolver
+        // (and its 404 when the manifest declares none).
+        if ($this->screen === 'research' || $this->screen === 'consolidate') {
+            $this->entity = $this->resolveEntity(
+                $manifest,
+                (string) request()->query('entity', '')
+            );
+        }
+
+        if ($this->screen === 'consolidate') {
+            $this->duplicateColumn = $this->defaultDuplicateColumn();
         }
 
         if ($this->screen === 'settings') {
@@ -207,6 +262,197 @@ class ToolkitPage extends Page implements HasForms
             'success',
             array() === $changed ? 'No changes.' : count($changed).' setting(s) saved.'
         );
+    }
+
+    // ── Wave 4: research ─────────────────────────────────────────────────────
+
+    /**
+     * Draft one record from the query, for review. Nothing is written here.
+     *
+     * The service filters the model's answer down to the manifest's own
+     * columns, so a field the model invents never reaches the form.
+     */
+    public function draftWithAi(): void
+    {
+        $query = trim($this->query);
+
+        if ('' === $query) {
+            $this->report('danger', 'Describe what the record should contain.');
+
+            return;
+        }
+
+        $manifest = $this->manifest();
+        $config = $this->entityConfig();
+
+        if (array() === $config) {
+            abort(404);
+        }
+
+        $result = app(ToolkitResearchService::class)->draft($manifest, $config, $query);
+
+        if (null !== $result['error']) {
+            $this->report('danger', (string) $result['message']);
+
+            return;
+        }
+
+        $this->draft = (array) $result['draft'];
+        $this->provider = (string) $result['provider'];
+
+        $this->report('success', count($this->draft).' field(s) drafted. Review before saving.');
+    }
+
+    /**
+     * Save the reviewed draft through the engine.
+     *
+     * Not an editor: `createRecord` applies the manifest's column validation,
+     * so the panel cannot become a second, laxer gate into the record table.
+     * That distinction is what keeps the free-form editor console-side (§56.4).
+     */
+    public function saveDraft(): void
+    {
+        if (array() === $this->draft) {
+            return;
+        }
+
+        $manifest = $this->manifest();
+
+        try {
+            $created = app(ToolkitEngine::class)->createRecord($manifest, $this->entity, $this->draft);
+        } catch (ToolkitException $exception) {
+            $this->report('danger', $exception->getMessage());
+
+            return;
+        }
+
+        app(AdminAuditLogger::class)->recordResource(
+            'toolkits',
+            $manifest->slug().':'.$this->entity.':'.(string) ( $created['id'] ?? '' ),
+            'created',
+            array(),
+            array('fields' => array_keys($this->draft))
+        );
+
+        $fields = count($this->draft);
+
+        $this->draft = array();
+        $this->provider = '';
+        $this->query = '';
+
+        $this->report('success', 'Record created from '.$fields.' drafted field(s).');
+    }
+
+    /** Throw the draft away without writing anything. */
+    public function discardDraft(): void
+    {
+        $this->draft = array();
+        $this->provider = '';
+
+        $this->report('info', 'Draft discarded.');
+    }
+
+    /**
+     * Manifest columns the draft actually filled, in declared order.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function draftColumns(): array
+    {
+        $config = $this->entityConfig();
+        $filled = array();
+
+        foreach ((array) ( $config['columns'] ?? array() ) as $column) {
+            $key = (string) ( $column['key'] ?? '' );
+
+            if ('' !== $key && array_key_exists($key, $this->draft)) {
+                $filled[] = $column;
+            }
+        }
+
+        return $filled;
+    }
+
+    // ── Wave 4: consolidate ──────────────────────────────────────────────────
+
+    /**
+     * Columns the duplicate scan can group by.
+     *
+     * Text and enum only, because the engine groups with `GROUP BY
+     * json_extract(...)` and a numeric or boolean group would be a different
+     * question (ranges vs exact values) than "the same value twice".
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function duplicateColumns(): array
+    {
+        $config = $this->entityConfig();
+        $groupable = array();
+
+        foreach ((array) ( $config['columns'] ?? array() ) as $column) {
+            if (in_array((string) ( $column['type'] ?? '' ), array('string', 'enum'), true)) {
+                $groupable[] = $column;
+            }
+        }
+
+        return $groupable;
+    }
+
+    /** Group the whole entity by the chosen column. */
+    public function scanDuplicates(): void
+    {
+        if (null === $this->scan(trim($this->duplicateColumn))) {
+            return;
+        }
+
+        $this->report(
+            'info',
+            array() === $this->duplicateGroups
+                ? 'No duplicates found in '.number_format($this->duplicateScanned).' record(s).'
+                : count($this->duplicateGroups).' group(s) collide across '.number_format($this->duplicateScanned).' record(s).'
+        );
+    }
+
+    /**
+     * Run the scan and store the result, or report why it could not run.
+     *
+     * Split from `scanDuplicates()` so a post-delete refresh can reuse the
+     * scan without overwriting the success message with an info one.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function scan(string $column): ?array
+    {
+        if ('' === $column) {
+            $this->report('danger', 'Choose a column to group by.');
+
+            return null;
+        }
+
+        $manifest = $this->manifest();
+
+        try {
+            $result = app(ToolkitEngine::class)->duplicates($manifest, $this->entity, $column);
+        } catch (ToolkitException $exception) {
+            $this->report('danger', $exception->getMessage());
+
+            return null;
+        }
+
+        $this->duplicateGroups = (array) $result['groups'];
+        $this->duplicateScanned = (int) $result['scanned'];
+        $this->duplicateTruncated = (bool) $result['truncated'];
+        $this->duplicateScannedOnce = true;
+
+        return $result;
+    }
+
+    /** First groupable column, so the screen has a usable default. */
+    private function defaultDuplicateColumn(): string
+    {
+        $columns = $this->duplicateColumns();
+
+        return array() === $columns ? '' : (string) $columns[0]['key'];
     }
 
     /**
@@ -361,6 +607,12 @@ class ToolkitPage extends Page implements HasForms
         );
 
         $this->report('success', 'Record deleted.');
+
+        // The consolidate list is a snapshot of a scan; deleting a record
+        // invalidates it, so re-scan rather than leave a stale group on screen.
+        if ('consolidate' === $this->screen && '' !== trim($this->duplicateColumn)) {
+            $this->scan(trim($this->duplicateColumn));
+        }
     }
 
     /**
@@ -401,6 +653,12 @@ class ToolkitPage extends Page implements HasForms
         // manifest declared a screen it cannot fill, so treat it as absent.
         if ('settings' === $screen) {
             abort_if(array() === $manifest->settings(), 404);
+        }
+
+        // research/consolidate address an entity, so a settings-only manifest
+        // cannot fill them. 404 rather than an empty wizard.
+        if ('research' === $screen || 'consolidate' === $screen) {
+            abort_if(array() === $manifest->entities(), 404);
         }
 
         return $screen;
