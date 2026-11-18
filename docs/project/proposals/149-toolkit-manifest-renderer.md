@@ -149,9 +149,10 @@ screen for no gain.
       "one manifest per settings page" (10 pages persist nothing, 2 render no
       controls), so the committed map has to come from §9b/§9c of the check doc
       rather than from filenames.
-- [x] `toolkits` moves off `planned` (`chat-channels` stays `planned` until a manifest
-      declares it). **`toolkits` is `subset`** — the panel lists/searches/deletes
-      records while create/edit remain console-side (§56.4).
+- [x] `toolkits` moves off `planned`, and so does `chat-channels` once its manifest
+      exists. **Both are `subset`** — the panel lists/searches/deletes records
+      while create/edit remain console-side (§56.4), and `chat-channels` renders
+      its four persisted settings with the credential panels projected out.
 - [x] Audit rows for settings and entity writes; a diff never carries a `secret` value.
       Keys only: the engine masks secrets on read, so a secret change is reported as a
       changed **name**, never a value.

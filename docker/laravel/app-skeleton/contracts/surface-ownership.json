@@ -401,12 +401,12 @@
       "title": "Chat channels",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "subset" },
       "console": { "state": "full", "keys": ["chatChannels"] },
       "writer": "shared",
       "plan_gate": "feature:chat-channels",
-      "projection": null,
-      "notes": "toolkit-shaped: the manifest (chat-channels.json) is the entitlement hook and renders its settings under /admin/{estate}/toolkits/chat-channels/settings. The dedicated surface stays planned; the per-platform credential panels on the WordPress screen are display-only, so the manifest declares only the four settings that persist."
+      "projection": "Settings only. The four settings the WordPress screen actually persists \u2014 enable_logging, enable_rate_limiting, verify_webhook_signatures and optimization_message_retention_days \u2014 render from chat-channels.json through ToolkitEngine at /admin/{estate}/toolkits/chat-channels/settings. The per-platform credential panels are absent by evidence, not by omission: they are not in the option's sanitize_settings() whitelist, so the WordPress screen discards them on save, and channel credentials belong to Connections. No entity workbench and no dashboard cards, because the family owns no nvoos_toolkit_records rows.",
+      "notes": "toolkit-shaped: the manifest (chat-channels.json) is the entitlement hook and renders the settings screen. The row moved planned -> subset when that manifest shipped (PR #7906): a settings-only reduction is a rendered surface with a projection, not an absence."
     },
     {
       "id": "wordpress-bridge",

@@ -213,7 +213,7 @@ The earlier "unproven" note was an environment fact, not a doubt about the asser
 
 ## 8. Gaps this exposes
 
-Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-18 after the Wave 3 toolkit renderer (`bin/audit-surface-ownership.php`): **45 surfaces · 32 built on a panel · 8 console-only · 3 planned-only**.
+Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-18 after the Wave 3 toolkit renderer (`bin/audit-surface-ownership.php`): **45 surfaces · 33 built on a panel · 7 console-only · 3 planned-only**.
 
 1. ✅ **`SettingsSchema` scope + console projection** — shipped, plan §15; asserted by `SettingsProjectionTest`.
 2. ✅ **`/admin` settings page** — shipped as `/admin/{estate}/settings` plus `/ops/settings`, plan §16–§17. One writer, a storage-key map, and the estate/platform split.
@@ -221,7 +221,7 @@ Ordered by leverage, each small enough to be one slice. Status re-measured 2026-
 4. ✅ **Tool catalogue projection** for the console — shipped, plan §22. The console's honest projection is the assistant's enabled tools plus presets, not the registry.
 5. ✅ **PAT manager** split from assistant credentials — shipped, plan §19 (contract) and §26 (the user-scoped half). **Remaining:** the operator cross-estate view; `tokens.personal` is still `ops: planned`.
 6. ✅ **`/ops` tail** — `site-health` (§31), `assets` (§33), `reports` (§34) and `conversation-import` (§37) all shipped. `identity-provider` and `datasets` remain `planned` for the reasons recorded in plan §35–§36; `onboarding` is `absent` by decision.
-7. ✅ **`/admin` consumer-port run** — blueprints, portability, MCP apps, security, remote sites, agent-skills, OKF and paper-store shipped in plan §48–§54; the toolkit renderer followed in §56. **Remaining console-only:** `dashboards` (Wave 5, pending the 10 → 7 catalogue change), `command-centre`, `media`, `chat-channels` (no manifest yet). `chat` and `automation-canvas` are deliberate `link-out`; `wordpress-bridge` and `connected-apps` carry no panel decision yet.
+7. ✅ **`/admin` consumer-port run** — blueprints, portability, MCP apps, security, remote sites, agent-skills, OKF and paper-store shipped in plan §48–§54; the toolkit renderer followed in §56. **Remaining console-only:** `dashboards` (Wave 5, pending the 10 → 7 catalogue change), `command-centre`, `media`. `chat-channels` left this list when the manifest shipped and the row moved `planned → subset` (PR #7906 + the burn-down PR); `chat` and `automation-canvas` are deliberate `link-out`; `wordpress-bridge` and `connected-apps` carry no panel decision yet.
 
 All three planned-only rows are now `/ops`: `measurement` (needs the P3 data model), `identity-provider` (owner decision) and `datasets` (readiness classification).
 
