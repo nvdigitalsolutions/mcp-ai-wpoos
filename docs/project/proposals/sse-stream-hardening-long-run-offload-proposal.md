@@ -65,8 +65,8 @@ a 300 s budget (`WP_MCP_AI_SSE_Stream::stream_job_status()`).
    `WP_MCP_AI_SSE_Handler` records each write and exposes `get_max_idle_gap()`.
    At each safe boundary — before each tool execution and before each in-loop
    LLM call — compare that figure against the threshold. The threshold defaults
-   to **Settings → General → Background Hand-off (seconds)**
-   (`sse_offload_elapsed_seconds`, 110) and is filterable through
+   to **NV oOS → General Settings → Behavior & Limits → Background Hand-off
+   (seconds)** (`sse_offload_elapsed_seconds`, 110) and is filterable through
    `apply_filters( 'wp_mcp_ai_sse_offload_elapsed_seconds', $default )`; a value
    of 0 disables the feature (4a keepalive behavior only). It must sit **below**
    the proxy's idle timeout to be useful — at or above it the connection has

@@ -381,6 +381,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						'summary_max_tokens',
 						'tool_result_summarize_threshold',
 						'request_timeout',
+						'sse_offload_elapsed_seconds',
 						'query_posts_limit',
 					),
 				),
@@ -819,6 +820,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 
 				if ( is_wp_error( $result ) ) {
 					$errors[] = $result->get_error_message();
+				}
+			}
+
+			// Validate sse_offload_elapsed_seconds. Zero is valid — it disables
+			// offload; anything above 600 s can no longer sit below a proxy's
+			// idle timeout, so it would make the gate fire only after a reset.
+			if ( isset( $input['sse_offload_elapsed_seconds'] ) && '' !== $input['sse_offload_elapsed_seconds'] ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['sse_offload_elapsed_seconds'],
+					0,
+					600
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Background Hand-off: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
