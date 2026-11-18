@@ -1,0 +1,32 @@
+{
+  "slug": "ecommerce",
+  "name": "E-Commerce",
+  "version": "1.0.0",
+  "description": "Currency, stock alert and multi-store sync defaults for the E-commerce toolkit.",
+  "icon": "🛒",
+  "feature": "ecommerce",
+  "screens": ["settings"],
+  "settings": [
+    {
+      "key": "default_currency",
+      "label": "Default currency",
+      "type": "text",
+      "default": "USD",
+      "description": "Currency assumed when a product or report does not declare one."
+    },
+    {
+      "key": "low_stock_threshold",
+      "label": "Low stock threshold",
+      "type": "number",
+      "default": 5,
+      "description": "Products at or below this stock level are reported as low."
+    },
+    {
+      "key": "enable_multistore",
+      "label": "Enable multi-store sync",
+      "type": "boolean",
+      "default": false,
+      "description": "Synchronise inventory and orders across connected stores."
+    }
+  ]
+}

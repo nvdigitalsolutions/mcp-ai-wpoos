@@ -236,6 +236,12 @@ naming their controls `<option_name>[key]` and extending `sanitize_settings()` �
 a WordPress-side change that must land before any of them can be authored. It is
 worth a follow-up issue rather than a parity workaround.
 
+**Status:** that follow-up landed as §10, and the nine toolkit pages it unblocked
+were authored as §11. The remaining rows stay unauthorable for their own reasons:
+`architect-agent` and `cloudways` render no controls, `ai-tool-builder`,
+`calendar-booking` and `dj-management` are placeholders, and `pro-packages` says
+so explicitly.
+
 ### 9d. Fields omitted by rule
 
 - **Assistant selects** (`research_assistant_id`, `default_assistant`): options
@@ -316,7 +322,7 @@ from three directions:
 
 All nine pages now meet §7b's authoring rule (a field persists when it is named
 `<option_name>[key]` **and** the sanitiser accepts it), so they can be authored
-as manifests — **nine more, 12 → 21**. That is the next pass, not this one.
+as manifests — **nine more, 12 → 21**. That pass shipped as §11 below.
 
 ### 10e. What is still broken
 
@@ -327,3 +333,95 @@ so `options.php` never processes them, and the main settings sanitiser registers
 none of the three keys — yet `WP_MCP_AI_YFinance_Service` reads all three. The
 fix belongs in the main settings form. The gate lists this page as its one
 documented exception, so the pattern cannot spread silently.
+
+## 11. Batch 2 — the nine authorable toolkits (2026-11-18)
+
+§10 fixed the persistence defect and named the follow-up explicitly: the nine
+pages now met §7b's rule, so they could be authored. This is that pass. It
+closes the first row of §9c and takes the catalogue **12 → 21 manifests /
+218 settings**, all settings-only.
+
+### 11a. What was authored
+
+| Manifest | Slug registered by the page | Settings |
+|---|---|---|
+| `analytics` | `analytics` | 3 |
+| `architectural-design` | `architectural-design` | 9 |
+| `ecommerce` | `ecommerce` | 3 |
+| `financial-planner` | `financial_planner` → manifest kebab | 4 |
+| `media` | `media` (class `…media-toolkit…`) | 22 |
+| `multilingual` | `multilingual` | 3 |
+| `regulatory-registration` | `regulatory_registration` → manifest kebab | 10 |
+| `social-media` | `social_media` → manifest kebab | 3 |
+| `video-production` | `video_production` → manifest kebab | 3 |
+
+Four pages register an underscored `toolkit_slug`; the validator's
+`SLUG_PATTERN` is kebab, so the manifest slug is the kebab form. `media` is the
+one place the two conventions disagree in the other direction — the class name
+says `media-toolkit` but the page registers `media`, so the manifest is `media`
+(precedent: `flowhub`, `ezuite`).
+
+Every key is a straight read of the page's `setting_schema()`; the labels,
+options and defaults come from the markup. `media` is the only family with
+`tab_labels`, because it is the only one of the nine whose configuration tab is
+divided into sections (five `<h2>`s → five tabs).
+
+Nine kebab-case feature keys were added to `ProPlanCatalog` in all three plans
+and to `ProPlanCatalogTest::testSurfacesTheRuntimeGatesOnAreEntitledByEveryPlan`.
+
+### 11b. Four defaults that the first pass had wrong
+
+The scoping notes recorded `enable_ocr`, `enable_image_preprocess`,
+`enable_background_processing` and `auto_cleanup_temp` as `false`. Every one of
+them renders `checked` in the markup, so each defaults **true**:
+
+```php
+checked( $options['enable_ocr'] ?? true, 1 );
+checked( $options['enable_image_preprocess'] ?? true, 1 );
+checked( $options['enable_background_processing'] ?? true, 1 );
+checked( $options['auto_cleanup_temp'] ?? true, 1 );
+```
+
+This is the §7b corollary worth stating plainly: **the default comes from the
+rendered control, not from the option's name or from anyone's notes.** A panel
+whose default disagrees with the page it replaces is a parity bug even when the
+key is correct.
+
+### 11c. What is still not authorable
+
+- `financial-planner`'s three `wp_mcp_ai_settings[...]` controls (§10e). Cross
+  option, so §7b excludes them; the manifest carries 4 of the page's 7 controls.
+- `pro-packages` — renders no controls.
+- `architect-agent`, `cloudways` — informational panels only.
+- `ai-tool-builder`, `calendar-booking`, `dj-management` — placeholders.
+
+That accounts for every toolkit settings page without a manifest. Twenty-five
+classes extend `WP_MCP_AI_Toolkit_Settings_Base`; **nineteen** of them have a
+manifest after this pass, and the remaining six are the ones above. The
+catalogue's other two families, `commerce` and `documents`, are authored from
+non-toolkit Pro screens — which is what takes the total from 19 to 21.
+
+### 11d. Still open — eight of the nine tabs do not render what they store
+
+§10 made the writes correct; it did not make the reads correct. Only
+`media-toolkit` calls `get_option( $this->option_name )` (line 247) and passes
+the array into its controls. The other eight print literal defaults. The stored
+value is right after a save, but reopening the tab shows the default, and the
+next save posts that default back over the stored value.
+
+So the honest statement of parity for this batch is: **`media` is editable from
+either surface; the other eight are editable only from the panel** until the
+WordPress render side reads the option. Tracked as plan §59.3.
+
+### 11e. Validation
+
+- Core: `ProPlanCatalogTest` **9 tests / 141 assertions**, `ToolkitManifestTest`
+  **34 / 63** — both green, run against this worktree's `lib/core`.
+- App: `ToolkitContractTest` **12 tests / 713 assertions** (every one of the 21
+  shipped manifests is driven through catalogue → settings → dashboard),
+  `EntitlementTest` + `Phase4Test` **26 / 150**, full app suite **1284 / 7483,
+  0 failures** (plan §59.4).
+- `php bin/audit-admin-manifests.php` exit 0 — **21 manifests**, all
+  panel-servable; `php bin/sync-toolkit-manifests.php --check` current;
+  `php bin/audit-surface-ownership.php` unchanged at **45 surfaces · 33 built ·
+  7 console-only · 3 planned**; phpcs clean on every changed PHP file.

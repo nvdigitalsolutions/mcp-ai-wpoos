@@ -5862,7 +5862,8 @@ persist. A toolkit settings page persists a field only if it is named
 pages failed that test, which is why the manifest count is 12 rather than 25.
 **That is no longer true:** the nine pages behind the rule now declare a
 `sanitize_settings()` schema and namespace their controls (plan §58), so they
-qualify for authoring.
+qualify for authoring — and were authored as batch 2 (plan §59), taking the
+catalogue to **21 manifests / 218 settings**.
 
 `pro-schedule` reuses the existing `schedules` feature. The other eight added a
 kebab-case feature key to `ProPlanCatalog` in all three plans — the validator
@@ -6012,8 +6013,8 @@ schema entry now fails the build instead of dropping data.
 
 ### 58.4 What it unblocks, and what it does not
 
-All nine now meet §7b's authoring rule, so the next pass can take the manifest
-catalogue from **12 to 21**. Not attempted here.
+All nine now meet §7b's authoring rule, and the pass that took the manifest
+catalogue from **12 to 21** shipped as §59.
 
 Still broken: `financial-planner` renders three `wp_mcp_ai_settings[...]`
 controls that are inert twice over — wrong option group, and three keys the main
@@ -6028,3 +6029,113 @@ PHPUnit file was **not** executed here — CI's suite runs it. Everything that
 could run did: `php -l` on all eleven changed files, phpcs clean on all of them,
 and a stub harness (the same three assertions, without WordPress) passed for all
 nine pages and all 60 keys.
+
+## 59. Manifest batch 2 — the nine unblocked toolkits (2026-11-18)
+
+§58 fixed the WordPress persistence defect behind nine toolkit pages and stopped
+short of authoring them. This is that pass: **12 → 21 manifests, 158 → 218
+settings**, every one of them settings-only.
+
+### 59.1 What shipped
+
+| Manifest | WP settings page | Settings |
+|---|---|---|
+| `analytics` | Analytics | 3 |
+| `architectural-design` | Architectural Design | 9 |
+| `ecommerce` | E-commerce | 3 |
+| `financial-planner` | Financial Planner | 4 |
+| `media` | Media Toolkit | 22 |
+| `multilingual` | Multilingual | 3 |
+| `regulatory-registration` | Regulatory Registration | 10 |
+| `social-media` | Social Media | 3 |
+| `video-production` | Video Production | 3 |
+
+### 59.2 Decisions
+
+**All nine are `screens: ["settings"]` with no entities.** None owns
+`nvoos_toolkit_records` rows, so the workbench screens would render empty — the
+same rationale as `crm` (§56.6). Only `commerce` and `documents` carry entities.
+
+**`media` is one manifest across five tabs.** The PHP class is
+`WP_MCP_AI_Media_Toolkit_Settings_Page` but it registers `toolkit_slug = 'media'`,
+so the manifest takes the short slug (precedent: `flowhub` vs `flowhub-toolkit`,
+`ezuite` vs `ezuite-toolkit`). Its five `<h2>` sections became five tabs and all
+22 settings carry a `tab`. The other eight are flat and stay on the single
+General tab, because `tab_labels` is all-or-nothing in the validator.
+
+**Nine feature keys were added to all three plans.** `analytics`,
+`architectural-design`, `ecommerce`, `financial-planner`, `media`,
+`multilingual`, `regulatory-registration`, `social-media`, `video-production`.
+The plan lists in `ProPlanCatalog` are hand-repeated and cumulative, so all three
+arrays plus `ProPlanCatalogTest::testSurfacesTheRuntimeGatesOnAreEntitledByEveryPlan`
+must carry them; a key present in one plan only would let `allows()` deny a
+licensed install its own surface, which is the failure mode the Q-5 note in that
+class already warns about.
+
+**Defaults were read from the rendered markup, not from the first-pass notes.**
+Four disagreed, and the pages were right: `enable_ocr`,
+`enable_image_preprocess`, `enable_background_processing` and `auto_cleanup_temp`
+all render `checked`, so they default **true**. Authoring `false` would have made
+the panel contradict the page it replaces.
+
+**Type mapping for two fields.** `sharp_microservice_api_key` is manifest `secret`
+because the page renders `type="password"`; the WP schema calls it `text` because
+the sanitiser only needs to know it is a string. `sharp_microservice_url` is
+manifest `text` for the same reason — the WP type is `url` and the sanitiser runs
+`esc_url_raw`, but the stored value is still a string, so a manifest `text`
+round-trips without loss.
+
+**Nothing cross-option was authored.** `financial-planner` renders three
+`wp_mcp_ai_settings[...]` controls (`enable_yfinance_service`,
+`yfinance_service_url`, `yfinance_cache_ttl`); they belong to the main option and
+are inert twice over (§58.4, and §10e of the schema-check doc), so §7b excludes
+them. That leaves the manifest at 4 of the page's 7 controls.
+
+### 59.3 Still open — eight of the nine WP tabs are write-only
+
+Only `media-toolkit` calls `get_option( $this->option_name )` and threads the
+result into its controls. The other eight render literal defaults
+(`value="USD"`, an unconditional `checked`, a `<select>` with no `selected()`),
+so the tab persists correctly but never *displays* what is stored. Two
+consequences:
+
+1. After saving, reopening the tab shows the defaults again.
+2. Worse, the next save re-submits those defaults and overwrites the stored
+   value — so a value set once in `ecommerce` survives until someone opens the
+   page again and clicks Save.
+
+The Laravel settings screen reads the store properly, so for these eight families
+the panel is currently the only editor that round-trips. The WordPress fix is
+small — read the option once in `render_configuration_tab()` and pass it to the
+controls, exactly as `media-toolkit` does — but it is a separate change and is
+**not** part of this pass. Until it lands, "the WP tab and the panel are
+equivalent editors" is true for `media` and false for the other eight.
+
+### 59.4 Validation
+
+- App suite (PHP 8.3.36, `oos-laravel-app-parity`): **1284 tests / 7483
+  assertions, 0 failures**, exit 0. The test count is unchanged from §58; the 210
+  extra assertions are the per-family contract suite driving nine more manifests
+  (`ToolkitContractTest` alone went 402 → 713 assertions).
+- `ToolkitContractTest` **12 / 713** — catalogue → manifest → settings → dashboard
+  for each of the 21 shipped manifests, with
+  `assertSame([], $loader->errors())` asserting every one validates.
+- `EntitlementTest` + `Phase4Test` **26 / 150**, including the gate that every
+  manifest `feature` is entitled by the base plan and the slug-pinned catalogue.
+- Core: `ProPlanCatalogTest` **9 / 141**, `ToolkitManifestTest` **34 / 63**.
+- `php bin/audit-admin-manifests.php` exit 0 on **21 manifests**;
+  `php bin/sync-toolkit-manifests.php --check` current;
+  `php bin/audit-surface-ownership.php` unchanged at **45 · 33 · 7 · 3**;
+  `php bin/audit-wp-admin-surfaces.php` exit 0 (85 core + 159 Pro, no count
+  drift); phpcs **0 errors** on the three changed PHP files (2 pre-existing
+  line-length warnings in `Phase4Test`, both outside this diff).
+
+**One environment note worth recording.** The parity container's
+`/app/vendor/nvoos/core` is a symlink to the *main* checkout's `lib/core`, not
+this worktree's. The first full run therefore exercised the pre-change catalogue
+and failed exactly one test — `EntitlementTest`'s
+`every_manifest_feature_exists_in_the_plan_catalogue`, on `analytics`. Repointing
+the symlink at the worktree made the run green. That is worth keeping: it means
+the gate does exactly what it claims, catching a manifest whose feature is
+missing from the catalogue. Anyone running these tests from a linked worktree
+should check `readlink -f /app/vendor/nvoos/core` first.
