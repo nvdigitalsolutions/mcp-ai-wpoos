@@ -46,11 +46,12 @@ keys on a live host domain whose privacy policy and EULA pages it can open.
 Rules Intuit enforces:
 
 - Production redirect URIs must use `https`.
-- **Redirect URIs must not carry query parameters.** The MCP callback above is
-  a clean path, so it registers as-is; the legacy `QuickBooks (Accounting)`
-  connection type uses `admin-post.php?action=…`, which Intuit rejects — drive
-  that flow through its `wp_mcp_ai_quickbooks_oauth_redirect_uri` filter if you
-  must use it.
+- **Redirect URIs must not carry query parameters.** Both QuickBooks flows now
+  register clean paths: the MCP callback above, and the accounting flow's
+  `/wp-json/mcp-ai/v1/quickbooks/oauth/callback`
+  (`WP_MCP_AI_QuickBooks_OAuth_Handler::get_quickbooks_oauth_redirect_uri()`).
+  Sites on plain permalinks produce a `?rest_route=` URL; switch to pretty
+  permalinks before connecting, or the Remote Sites panel disables the button.
 - Multiple redirect URIs are allowed on one app (add each with **Add URI**), so
   `console.…` plus every WordPress site that runs its own login can share one
   app. Register each site's own `rest_url()` verbatim; the plugin derives the

@@ -117,11 +117,40 @@ The following tables list the meta keys stored per connection type. All sensitiv
 
 | Meta Key | Type | Notes |
 |----------|------|-------|
-| `client_id` | string | Intuit app Client ID |
-| `client_secret` | string (encrypted) | Intuit app Client Secret |
-| `company_id` | string | QuickBooks Company / Realm ID |
-| `refresh_token` | string (encrypted) | Stored automatically after OAuth2 flow |
-| `url` | string | Auto-set to `https://appcenter.intuit.com/connect/oauth2` |
+| `client_id` | string | Intuit app Client ID. Required — it is the only credential needed to provision the connection. |
+| `client_secret` | string (encrypted) | Optional OAuth 2.0 **access token** (bearer). Used verbatim: sent as `Authorization: Bearer <value>`, so it must not include the `Bearer ` scheme. Intuit access tokens expire after 3,600 s. |
+| `company_id` | string | QuickBooks Company / Realm ID. Required for report and probe calls. |
+| `refresh_token` | string (encrypted) | Reserved. The shared OAuth handler keeps the rotating refresh token in `wp_mcp_ai_settings`, not on the connection. |
+| `url` | string | Base API URL (`https://quickbooks.api.intuit.com`). Stored with a trailing slash; the report tool builds its own endpoint and does not read this value. |
+
+Credential resolution order (`WP_MCP_AI_Pro_Remote_Site_Manager::resolve_quickbooks_credentials()`):
+
+1. the bearer token pasted on the connection (manual mode);
+2. the OAuth-managed grant stored in `wp_mcp_ai_settings` by the connect flow below (refreshed automatically, and only when its realm matches the connection's `company_id`);
+3. the legacy `quickbooks_api_key` setting (realm-matched, same rule).
+
+#### OAuth connect flow
+
+The edit form renders a **QuickBooks OAuth** panel for this type:
+
+- **App credentials** (Client ID / Client Secret) are read from **NV oOS → External Tools**
+  (`admin.php?page=wp-mcp-ai-gmail-crawl4ai`), not from the connection.
+- **Redirect URI** — register it byte-for-byte in the Intuit app (Settings → Redirect URIs):
+  `rest_url( 'mcp-ai/v1/quickbooks/oauth/callback' )`. Intuit rejects URIs that carry
+  query parameters, so a site on plain permalinks (which yields `?rest_route=…`) has
+  the Connect button disabled.
+- **Connect** posts `admin-post.php?action=wp_mcp_ai_quickbooks_oauth_start` with a
+  nonce and the connection's edit URL. The handler stores a single-use, user-bound
+  state (10-minute TTL) carrying the return URL and the exact redirect URI.
+- Intuit redirects to the clean REST callback
+  (`WP_MCP_AI_QuickBooks_OAuth_Controller`), which validates the state, exchanges the
+  code (HTTP Basic, RFC 6749 §2.3.1), and persists the grant.
+- Tokens are **encrypted at rest** (`WP_MCP_AI_Encryption`, `v2:` AEAD); the latest
+  rotated refresh token is always persisted.
+
+A token minted for one realm is never spent against another. `test_connection()` probes
+`GET /v3/company/{realm}/companyinfo/{realm}` so “Test” reports the real company name,
+a 401 for an expired token, and a clear error for a realm mismatch.
 
 ### `quickbooks_mcp`
 
