@@ -2970,6 +2970,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return array<string, array{meta_key:string, sanitizer:callable, type:string}> Field map.
 		 */
 		public static function get_assistant_advanced_field_map() {
+			// This is a field map (field name → post-meta key + sanitizer), not a
+			// WP_Query argument list: no SQL is built here and no meta query runs.
+			// The sniff matches the literal 'meta_key' array keys, so scope it to
+			// this method rather than reword the map.
+			// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Field map, not a query.
 			return array(
 				'fallback_chain'          => array(
 					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_FALLBACK_CHAIN,
@@ -3052,6 +3057,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'type'      => 'bool',
 				),
 			);
+			// phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 		}
 
 		/**
@@ -5024,12 +5030,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Track request start time for timing indicators.
 			$request_start_timestamp = time();
 
-			// Phase 4b (long-run offload): high-resolution start time for the
-			// proxy-idle deadline check. A blocking tool or LLM call that
-			// outlives the proxy read-timeout (~60-100 s) gets the stream reset
-			// mid-turn, so before each blocking step we compare this against
-			// wp_mcp_ai_sse_offload_elapsed_seconds.
-			$stream_started_at = microtime( true );
+			// Phase 4b (long-run offload): a proxy bounds a stream by its IDLE
+			// time, not by its total duration — every byte written resets the
+			// read timer (Cloudflare 125 s, AWS ALB 60 s, nginx
+			// `proxy_read_timeout` 60 s by default). A turn can therefore
+			// stream happily for minutes. The reset risk is the longest SILENT
+			// stretch (a blocking tool or non-streamed LLM call, during which
+			// PHP can emit nothing), which the SSE handler records as
+			// get_max_idle_gap(). Both offload boundaries read that figure
+			// instead of wall-clock turn time.
 
 			// Send initial status.
 			$this->send_sse_event(
@@ -5345,13 +5354,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// proxy_read_timeout) from resetting the connection.
 					$this->send_sse_keepalive();
 
-					// Phase 4b (long-run offload): when the stream is close to
-					// the proxy idle-read deadline, hand the remaining work to
-					// the background job queue BEFORE blocking inside this tool
-					// call — no in-process mechanism can emit bytes while the
+					// Phase 4b (long-run offload): when the longest silent step
+					// has already spent the proxy idle budget, hand the remaining
+					// work to the background job queue BEFORE blocking inside this
+					// tool call — no in-process mechanism can emit bytes while the
 					// tool runs, so the connection would otherwise reset and
 					// lose the whole turn.
-					if ( $this->sse_offload_deadline_exceeded( $stream_started_at ) ) {
+					if ( $this->sse_offload_threshold_reached( $this->sse_handler->get_max_idle_gap() ) ) {
 						if ( $this->offload_stream_to_job(
 							$messages,
 							$options,
@@ -5760,11 +5769,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// when native streaming is disabled).
 				$this->send_sse_keepalive();
 
-				// Phase 4b (long-run offload): same deadline check before the
-				// in-loop LLM call. Tool results are already appended to
+				// Phase 4b (long-run offload): same idle-budget check before
+				// the in-loop LLM call. Tool results are already appended to
 				// $messages, so the worker resumes with an LLM call (no
 				// pending tool batch).
-				if ( $this->sse_offload_deadline_exceeded( $stream_started_at ) ) {
+				if ( $this->sse_offload_threshold_reached( $this->sse_handler->get_max_idle_gap() ) ) {
 					if ( $this->offload_stream_to_job(
 						$messages,
 						$options,
@@ -6260,26 +6269,62 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
-		 * Whether the stream is close enough to the proxy idle-read deadline
-		 * that the remaining work should be handed to the background queue.
+		 * Whether the stream has already spent its proxy idle budget and the
+		 * remaining work should be handed to the background queue.
 		 *
-		 * Phase 4b (SSE long-run offload). The threshold is filterable via
-		 * `wp_mcp_ai_sse_offload_elapsed_seconds` (default 75 — safely inside
-		 * the common 60-100 s Cloudflare/nginx read-timeout window); returning
-		 * 0 disables offload entirely (4a keepalive behavior only).
+		 * Phase 4b (SSE long-run offload). Proxies reset their read timer on
+		 * every byte written, so total turn duration is NOT the risk signal: a
+		 * turn that keeps emitting (streamed tokens, keepalive comments) can run
+		 * for minutes without being reset. The only quantity that predicts a
+		 * reset is the longest silent stretch the stream has actually seen — a
+		 * blocking tool or non-streamed LLM call emits nothing for its whole
+		 * duration. When that stretch already approached the idle budget, the
+		 * next one plausibly will too, so hand the turn off instead of risking
+		 * a mid-turn reset that loses the whole turn.
+		 *
+		 * The threshold is filterable via `wp_mcp_ai_sse_offload_elapsed_seconds`
+		 * (Settings → General → "Background Hand-off"; default 110, a margin
+		 * below Cloudflare's 125 s origin read timeout so the `job_offload`
+		 * frame still lands before the reset). It must sit BELOW the proxy's idle
+		 * timeout to be useful — at or above it the connection has already been
+		 * reset and no `job_offload` frame can be delivered — so lower it when
+		 * the host resets sooner. Returning 0 disables offload entirely (4a
+		 * keepalive behavior only).
 		 *
 		 * @since 1.2.10
+		 * @since 1.2.24 Accepts the observed idle gap instead of the stream
+		 *               start time, and reads the configured default rather
+		 *               than hardcoding 75.
 		 *
-		 * @param float $stream_started_at microtime(true) captured at stream start.
+		 * @param float $max_idle_gap Longest silent gap observed so far, in seconds.
 		 * @return bool True when the remaining agentic work should offload.
 		 */
-		protected function sse_offload_deadline_exceeded( $stream_started_at ) {
-			$threshold = (float) apply_filters( 'wp_mcp_ai_sse_offload_elapsed_seconds', 75 );
+		protected function sse_offload_threshold_reached( $max_idle_gap ) {
+			$default = 110;
+
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+				$settings = WP_MCP_AI_Admin_Settings::get_settings();
+				if ( isset( $settings['sse_offload_elapsed_seconds'] ) && '' !== $settings['sse_offload_elapsed_seconds'] ) {
+					$default = absint( $settings['sse_offload_elapsed_seconds'] );
+				}
+			}
+
+			/**
+			 * Filter the silent-gap threshold that triggers the long-run offload.
+			 *
+			 * Return 0 to disable offload entirely (keepalive-only behavior).
+			 *
+			 * @since 1.2.10
+			 *
+			 * @param float $threshold Seconds of silence before handing off.
+			 */
+			$threshold = (float) apply_filters( 'wp_mcp_ai_sse_offload_elapsed_seconds', $default );
+
 			if ( $threshold <= 0 ) {
 				return false;
 			}
 
-			return ( microtime( true ) - (float) $stream_started_at ) >= $threshold;
+			return (float) $max_idle_gap >= $threshold;
 		}
 
 		/**
