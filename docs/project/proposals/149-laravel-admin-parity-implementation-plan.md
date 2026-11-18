@@ -6525,3 +6525,104 @@ the failure mode is silent until an operator tries to save.
    test suite, but nobody has looked at the page. The provider tab alone is 20
    sections; information architecture at that density is a design review, not a
    test.
+
+## 64. Provider tab — scope review and credential split (2026-11-18)
+
+§63 ported 142 provider fields as `tenant`/`console: hidden` and left the scope
+re-tiering as follow-up 2. This is the provider tab's review: five fields move to
+operator scope, and five over-long provider cards split in two.
+
+### 64.1 The rule, taken from the runtime's own precedents
+
+| Precedent | Scope | Why |
+|---|---|---|
+| `openai_api_key`, `google_api_key`, `anthropic_api_key` | tenant | the estate brings its own provider credentials |
+| `ollama_endpoint` | operator | a local model server is deployment infrastructure |
+
+Generalised: **local / self-hosted endpoints, their bind interfaces, and the keys
+that authenticate to them are operator; everything an estate can meaningfully
+choose for itself stays tenant.**
+
+Hosted-provider base URLs (`openai_base_url`, `typesafe_base_url`, …) stay tenant
+deliberately. A base-URL override is a bring-your-own-gateway choice made with a
+credential the estate already owns, and marking it operator would be scope
+theatre rather than a security boundary — the key is theirs either way.
+
+### 64.2 What moved to operator (5 fields)
+
+| Field | Why |
+|---|---|
+| `ollama_network_interface` | bind interface on the host running Ollama |
+| `lm_studio_endpoint_url` | a local model server — the peer of `ollama_endpoint` |
+| `lm_studio_network_interface` | same |
+| `lm_studio_api_key` | authenticates to that local server, so it belongs with the endpoint |
+| `embedded_server_model` | which model the server side of Embedded LLM runs |
+
+Left on tenant, and deliberately: `enable_ollama`, `ollama_model`,
+`enable_lm_studio`, `lm_studio_model`, `enable_embedded`, `embedded_model`. A model
+choice and a feature toggle are estate preferences even when the endpoint behind
+them is ours.
+
+**One judgement to confirm rather than assume:** `lm_studio_api_key` is operator
+because its endpoint is. If estates are expected to run their own LM Studio and
+point the deployment at it, that field and `lm_studio_endpoint_url` should both go
+back to tenant. The rule is stated above so the reversal is one line, not a
+rethink.
+
+### 64.3 The split
+
+Five sections exceeded 8 fields and divided into **`<Provider> — Connection`** and
+**`<Provider> — Models & behaviour`**:
+
+| Section | Before | Connection | Behaviour |
+|---|---|---|---|
+| OpenAI | 27 | 5 | 22 |
+| Google Gemini | 19 | 3 | 16 |
+| Cloudflare | 11 | 2 | 9 |
+| TypeSafe (Jev) | 11 | 4 | 7 |
+| Anthropic | 9 | 3 | 6 |
+
+A provider's **own** master switch (`enable_<provider>`) sits in Connection, next to
+the credential it gates. Nothing else that starts with `enable_` does.
+
+That last sentence is a correction worth recording. The first rule was a broad
+`enable_.*` match, which put `enable_typesafe_cache` and the five `enable_jev_*`
+toggles into TypeSafe's Connection card and produced a **10 fields / 1 field**
+split — the exact opposite of the intent. The rule is now: the master switch by
+name, plus credential, endpoint, network-interface, organisation/project/account id
+and attribution keys.
+
+Sections at or under 8 fields stay whole (Embedded, Kimi, Z.AI, Baseten, DeepSeek,
+OpenRouter, NVIDIA, Hugging Face, Google Maps, …). Splitting a four-field card
+would add a heading, not clarity.
+
+### 64.4 Counts
+
+| | Before this section | After |
+|---|---|---|
+| Fields | 585 | **585** (unchanged) |
+| Sections | 79 | **84** |
+| Provider sections | 21 | **26** |
+| tenant / operator | 585 / 0 | **580 / 5** (plus core `ollama_endpoint`) |
+
+### 64.5 Validation
+
+- `SettingsCatalogueTest` **16 / 8841**, including two new tests:
+  - every infrastructure field is operator **and** still renders on `/admin`
+    (disabled), hosted base URLs stay tenant, and an operator field is absent from
+    the admin write projection;
+  - the five big provider sections expose both halves, the master switch is in
+    Connection, and no provider section exceeds 22 controls.
+- Settings cluster **78 / 10397**, 0 failures. Full suite recorded in the PR.
+- phpcs **0 errors**.
+
+### 64.6 Still open
+
+1. **The rest of the port is still tenant scope.** The provider tab was the named
+   review; `security` (77 fields), `tools` (171) and `orchestration` (99) have not
+   been reviewed, and some of them plainly contain infrastructure
+   (OpenTelemetry endpoint, RabbitMQ host).
+2. **`/ops` now renders six provider fields.** That panel had no provider controls
+   before; it has not been looked at, same caveat as §63.5 item 4.
+3. **`lm_studio_*` ownership** — see the note in §64.2. Confirm before estates rely
+   on it.
