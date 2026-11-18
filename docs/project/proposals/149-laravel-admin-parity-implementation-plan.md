@@ -6626,3 +6626,118 @@ would add a heading, not clarity.
    before; it has not been looked at, same caveat as §63.5 item 4.
 3. **`lm_studio_*` ownership** — see the note in §64.2. Confirm before estates rely
    on it.
+
+## 65. Endpoint wiring — the names the adapters read (2026-11-18)
+
+The settings port (§63) made 585 WordPress fields editable in the panel, and §64
+re-tiered the provider tab. Neither asked whether the adapters read the keys the
+surface writes. Four did not, and three providers had no entry at all.
+
+### 65.1 The bug
+
+| Provider slug | Adapter read | Surface writes | Effect |
+|---|---|---|---|
+| `gemini` | `gemini_api_base_url` | `gemini_base_url` | saved endpoint ignored |
+| `lm_studio` | `lm_studio_base_url` | `lm_studio_endpoint_url` | saved endpoint ignored |
+| `nvidia_nim` | `nvidia_nim_base_url` | `nvidia_endpoint_url` | saved endpoint ignored |
+| `ollama` (WP + Craft) | `ollama_base_url` | `ollama_endpoint_url` | saved endpoint ignored |
+| `huggingface` | — | `huggingface_endpoint_url` | no override at all |
+| `baseten` | — | `baseten_base_url` | no override at all |
+| `crawl4ai` | — | `crawl4ai_base_url` | no override, and a tool already asked for it |
+
+“Saved endpoint ignored” is silent: `getApiBaseUrl()` returns `null`, and the
+provider client falls back to `getDefaultBaseUrl()` without an error or a log
+line. The only symptom is that traffic continues to go to the default host.
+
+The Crawl4AI row had a second edge: `Crawl4AiPriceLookupTool` already called
+`getApiBaseUrl('crawl4ai')`, so a domain contract was being asked for a key the
+contract did not know.
+
+The Ollama row is the instructive one. The Laravel adapter had already been fixed
+to read `ollama_endpoint_url` with a comment explaining the old name “nothing
+wrote” — and the same bug was still present in the WordPress and Craft adapters
+and in three other providers. Someone fixed one instance and did not sweep the
+family.
+
+### 65.2 The surface names are canonical
+
+The tempting fix — rename the catalogue's `storage` keys to match the adapters —
+would have been wrong. WordPress-only clients read the surface names directly and
+are outside the adapter contract:
+
+- `includes/class-wp-mcp-ai-gemini-client.php` (`gemini_base_url`)
+- `includes/class-wp-mcp-ai-lm-studio-client.php` (`lm_studio_endpoint_url`)
+- `includes/class-wp-mcp-ai-nvidia-client.php` (`nvidia_endpoint_url`)
+- `includes/class-wp-mcp-ai-baseten-client.php` (`baseten_base_url`)
+- `includes/class-wp-mcp-ai-huggingface-client.php` (`huggingface_endpoint_url`)
+- `includes/class-wp-mcp-ai-typesafe-client.php` and
+  `includes/class-wp-mcp-ai-zai-client.php` for their own keys
+
+Renaming the catalogue would have made the Laravel panel agree with the adapters
+and broken WordPress. So the settings surface is the source of truth, the
+adapters were wrong, and `catalogue.json` is unchanged by this section.
+
+### 65.3 The fix
+
+All three adapters (`lib/laravel-adapter`, `lib/wordpress-adapter`,
+`lib/craft-adapter`) now read the surface keys and gained entries for
+`huggingface`, `baseten` and `crawl4ai`.
+
+Each keeps a `$legacyMap` fallback: the old name is read only when the surface key
+is empty, so rows written before the fix still resolve and a row holding both
+prefers the surface key. `cloudflare_base_url` stays in the map even though no
+surface field writes it — the client derives its URL from
+`cloudflare_account_id`, so the entry is inert rather than wrong.
+
+Provider slugs come from `lib/core/src/Infrastructure/Provider/*Client.php`
+(`nvidia_nim`, not `nvidia`). `typesafe` and `zai` have no `nvos/core` client and
+therefore no adapter entry; their WordPress clients are the only consumers.
+
+### 65.4 The gates
+
+Two, both cheap enough to run every time:
+
+1. **`bin/check-endpoint-wiring.php`** — holds the catalogue to all three adapters
+   in three directions:
+   - every provider section's endpoint field is the exact key each adapter reads;
+   - every key an adapter reads is a catalogue field or a documented exception
+     (`ollama_endpoint_url` from `SettingsSchema`, `cloudflare_base_url`);
+   - every non-provider endpoint field names a consumer file that mentions it
+     (`filter_default_*`, Gravatar, OpenTelemetry).
+   Wired into `composer run ci:all` as `quality:endpoint-wiring` and into the
+   `laravel-app` workflow next to the manifest audits.
+2. **`SettingsStoreEndpointWiringTest`** — exercises the real `getApiBaseUrl()`
+   through a store double: one case per catalogue provider, surface-key
+   precedence over the legacy name, the legacy fallback itself, and the
+   empty/unknown cases.
+
+Both were run against the **old** mapping as well as the fixed one: the script
+reports 2 failures and exits 1, and the test reports 2 failures. A gate that has
+only ever seen the fixed tree is not evidence.
+
+### 65.5 Validation
+
+| Run | Result |
+|---|---|
+| `php bin/check-endpoint-wiring.php` | **52 checks, 0 failures** |
+| `SettingsStoreEndpointWiringTest` | **20 tests, 37 assertions, 0 failures** |
+| `SettingsStoreContractTest` (neighbour) | **6 / 28**, unchanged |
+| phpcs (`phpcs-laravel.xml.dist`, Laravel adapter + new test) | **0 errors** |
+| Full suite | not run in this worktree; the parity container was removed by a Docker Desktop restart and is not in compose. CI runs the full suite. |
+
+The WordPress and Craft adapters are outside `phpcs-laravel.xml.dist`'s `<file>`
+list because they are WPCS-styled; they are covered by the wiring gate and the
+shared test rather than by PSR-12.
+
+### 65.6 Still open
+
+1. **`lm_studio_*` remains operator.** §64.2's note stands and this section does
+   not change it. The wiring now works; the scope question is still the product
+   call described there.
+2. **The catalogue has no committed generator.** `SettingsCatalogue` documents
+   that `catalogue.json` is generated from the section classes, but the script
+   that produced it is not in `bin/`. Until it is, a WordPress-side rename can
+   drift from the catalogue, and this gate holds the adapters to the catalogue
+   rather than to WordPress itself.
+3. **`cloudflare_base_url` has no writer.** Harmless today; adding a field or
+   removing the entry is the follow-up.

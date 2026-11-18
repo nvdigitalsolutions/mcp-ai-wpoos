@@ -89,12 +89,14 @@
         "quality:domain-purity": "@php bin/check-domain-purity.php",
         "quality:domain-purity:strict": "@php bin/check-domain-purity.php --strict",
         "quality:wifi-host": "@php bin/check-wifi-host-adapters.php",
+        "quality:endpoint-wiring": "@php bin/check-endpoint-wiring.php",
         "build:autoload": "composer install --no-dev --classmap-authoritative --no-interaction",
         "skills:sync": "@php bin/sync-agent-skills.php",
         "ci:all": [
             "@lint:errors-only",
             "@docs:check-folder-readmes",
             "@quality:domain-purity",
+            "@quality:endpoint-wiring",
             "@vendor:check",
             "@test:gaps:check",
             "@test:coverage"

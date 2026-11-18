@@ -84,6 +84,15 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: php bin/sync-toolkit-manifests.php --check
 
+      - name: Provider endpoints are wired to the surface
+        # Proposal 149 §65: an adapter that reads a second name for a provider
+        # endpoint returns null without an error, so a saved custom endpoint is
+        # silently ignored and the client falls back to its built-in default.
+        # This gate holds all three adapters to the keys the ported catalogue
+        # publishes, in both directions.
+        working-directory: ${{ github.workspace }}
+        run: php bin/check-endpoint-wiring.php
+
       - name: Toolkit manifests are servable
         # Proposal 149 Wave 3: the panel renders settings, entities and
         # dashboard from the manifest, so a document that validates but names

@@ -301,22 +301,35 @@ class SettingsStore implements SettingsStoreInterface {
 	 * @return string|null
 	 */
 	public function getApiBaseUrl( string $provider ): ?string {
+		// The settings surface is the source of truth for these names. Several of
+		// them were read under a second name that nothing wrote (`gemini_api_base_url`,
+		// `lm_studio_base_url`, `nvidia_nim_base_url`, `ollama_base_url`), so a custom
+		// endpoint configured by an administrator never reached the provider client.
+		// `legacy` keeps those old names readable for rows that predate the fix.
 		$urlMap = array(
 			'openai'       => 'openai_base_url',
-			'gemini'       => 'gemini_api_base_url',
+			'gemini'       => 'gemini_base_url',
 			'anthropic'    => 'anthropic_base_url',
 			'deepseek'     => 'deepseek_base_url',
-			// The settings surface calls this `ollama_endpoint` and the WordPress
-			// twin stores it as `ollama_endpoint_url`; the adapter used to read a
-			// third name (`ollama_base_url`) that nothing wrote. One name now, with
-			// the old one kept as a fallback below so existing rows still resolve.
 			'ollama'       => 'ollama_endpoint_url',
-			'lm_studio'    => 'lm_studio_base_url',
+			'lm_studio'    => 'lm_studio_endpoint_url',
 			'openrouter'   => 'openrouter_base_url',
 			'kimi'         => 'kimi_base_url',
 			'digitalocean' => 'digitalocean_base_url',
-			'nvidia_nim'   => 'nvidia_nim_base_url',
+			'nvidia_nim'   => 'nvidia_endpoint_url',
 			'cloudflare'   => 'cloudflare_base_url',
+			'huggingface'  => 'huggingface_endpoint_url',
+			'baseten'      => 'baseten_base_url',
+			// Not an AI provider: the Crawl4AI tools call this contract for their
+			// service root, and the missing entry made their override unreachable.
+			'crawl4ai'     => 'crawl4ai_base_url',
+		);
+
+		$legacyMap = array(
+			'ollama'     => 'ollama_base_url',
+			'gemini'     => 'gemini_api_base_url',
+			'lm_studio'  => 'lm_studio_base_url',
+			'nvidia_nim' => 'nvidia_nim_base_url',
 		);
 
 		$optionKey = $urlMap[ $provider ] ?? null;
@@ -326,8 +339,8 @@ class SettingsStore implements SettingsStoreInterface {
 
 		$url = $this->get( $optionKey );
 
-		if ( ( ! is_string( $url ) || '' === $url ) && 'ollama' === $provider ) {
-			$url = $this->get( 'ollama_base_url' );
+		if ( ( ! is_string( $url ) || '' === $url ) && isset( $legacyMap[ $provider ] ) ) {
+			$url = $this->get( $legacyMap[ $provider ] );
 		}
 
 		return is_string( $url ) && '' !== $url ? rtrim( $url, '/' ) : null;
