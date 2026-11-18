@@ -101,6 +101,7 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 	 * Render configuration tab
 	 */
 	protected function render_configuration_tab() {
+		$options = $this->stored_options();
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'Video Production Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -110,9 +111,9 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 					<th scope="row"><?php esc_html_e( 'Default Output Format', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<select name="<?php echo esc_attr( $this->option_name ); ?>[default_output_format]">
-							<option value="mp4" selected><?php esc_html_e( 'MP4 (H.264)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="webm"><?php esc_html_e( 'WebM (VP9)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="mov"><?php esc_html_e( 'MOV (ProRes)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="mp4" <?php selected( $options['default_output_format'] ?? 'mp4', 'mp4' ); ?>><?php esc_html_e( 'MP4 (H.264)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="webm" <?php selected( $options['default_output_format'] ?? 'mp4', 'webm' ); ?>><?php esc_html_e( 'WebM (VP9)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="mov" <?php selected( $options['default_output_format'] ?? 'mp4', 'mov' ); ?>><?php esc_html_e( 'MOV (ProRes)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 						<p class="description"><?php esc_html_e( 'Default format for exported videos', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -121,10 +122,10 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 					<th scope="row"><?php esc_html_e( 'Transcription Language', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<select name="<?php echo esc_attr( $this->option_name ); ?>[transcription_language]">
-							<option value="auto"><?php esc_html_e( 'Auto-detect', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="en"><?php esc_html_e( 'English', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="es"><?php esc_html_e( 'Spanish', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="fr"><?php esc_html_e( 'French', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="auto" <?php selected( $options['transcription_language'] ?? 'auto', 'auto' ); ?>><?php esc_html_e( 'Auto-detect', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="en" <?php selected( $options['transcription_language'] ?? 'auto', 'en' ); ?>><?php esc_html_e( 'English', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="es" <?php selected( $options['transcription_language'] ?? 'auto', 'es' ); ?>><?php esc_html_e( 'Spanish', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="fr" <?php selected( $options['transcription_language'] ?? 'auto', 'fr' ); ?>><?php esc_html_e( 'French', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 					</td>
 				</tr>
@@ -132,7 +133,7 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 					<th scope="row"><?php esc_html_e( 'Enable Distributed Rendering', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_distributed_rendering]" value="1" />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_distributed_rendering]" value="1" <?php checked( $options['enable_distributed_rendering'] ?? false, 1 ); ?> />
 							<?php esc_html_e( 'Use remote sites for faster video processing', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>

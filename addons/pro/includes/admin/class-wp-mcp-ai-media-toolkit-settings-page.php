@@ -244,7 +244,7 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 * Render configuration tab
 	 */
 	protected function render_configuration_tab() {
-		$options = get_option( $this->option_name, array() );
+		$options = $this->stored_options();
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'Media Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>

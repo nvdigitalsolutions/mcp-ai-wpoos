@@ -8,7 +8,7 @@
  * discarded on save — and the base sanitiser returned only its own three keys,
  * which also meant a save erased anything else stored in the option.
  *
- * These tests are the durable gate for that class of bug, in three directions:
+ * These tests are the durable gate for that class of bug, in four directions:
  *
  *  1. **Markup** — every rendered control is namespaced under the page's own
  *     option, so WordPress can route it to the sanitiser at all.
@@ -18,6 +18,9 @@
  *  3. **Behaviour** — a submitted payload round-trips through
  *     `sanitize_settings()` with the declared types, and an unchecked checkbox
  *     writes `false` rather than leaving the old value in place.
+ *  4. **Display** — the tab renders the *stored* value. Correct writes are not
+ *     enough: a page that prints a literal default hides what was saved and
+ *     re-submits that default over it on the next save.
  *
  * @package WP_MCP_AI_Pro
  * @author    NV Digital Solutions
@@ -346,6 +349,307 @@ class Test_Toolkit_Settings_Persistence extends WP_UnitTestCase {
 		$this->assertFalse( $sanitized['enable_research'] );
 
 		delete_option( 'wp_mcp_ai_test_toggle_settings' );
+	}
+
+	/**
+	 * The tab renders what is stored, not the printed default.
+	 *
+	 * #7913 made the writes correct. Eight of these pages still printed literal
+	 * values, so a saved setting was invisible on the page that saved it — and the
+	 * next save posted the printed default straight back over it. That is data
+	 * loss with no error message, which is why it needs a gate rather than a
+	 * convention.
+	 *
+	 * The assertion is behavioural: store a legal value for every declared key,
+	 * render the tab, and require the markup to carry it. A page that never reads
+	 * its option fails on the first non-boolean key.
+	 */
+	public function test_the_configuration_tab_renders_the_stored_values() {
+		foreach ( self::pages() as $label => $page ) {
+			$class = $page[0];
+
+			if ( ! class_exists( $class ) ) {
+				continue;
+			}
+
+			$instance = new $class();
+			$schema   = self::schema_for( $instance );
+
+			// financial-planner renders its yfinance block — including a live
+			// health probe — from the main settings option. Empty it so the probe
+			// is never reached, and start from a clean toolkit option.
+			delete_option( 'wp_mcp_ai_settings' );
+			delete_option( $page[2] );
+
+			$baseline = self::render_tab( $instance );
+			$booleans = array();
+			$selects  = array();
+			$radios   = array();
+			$probe    = array();
+
+			foreach ( $schema as $key => $spec ) {
+				$type = is_array( $spec ) ? (string) $spec['type'] : (string) $spec;
+
+				if ( 'boolean' === $type ) {
+					$booleans[] = $key;
+					continue;
+				}
+
+				if ( 'select' === $type ) {
+					$options = self::option_values( $baseline, $page[2], $key );
+
+					if ( array() === $options ) {
+						// A two-way choice may render as radios rather than a
+						// <select>; media-toolkit's Sharp mode does exactly that.
+						$options        = self::radio_values( $baseline, $page[2], $key );
+						$radios[ $key ] = true;
+					}
+
+					$this->assertNotEmpty(
+						$options,
+						sprintf( '%s: no options found for select "%s".', $label, $key )
+					);
+
+					// The last option is never the rendered default on these pages, so
+					// storing it always changes the markup.
+					$selects[ $key ] = (string) end( $options );
+					continue;
+				}
+
+				$probe[ $key ] = self::probe_for( $type, $key );
+			}
+
+			$probe = array_merge( $probe, $selects );
+
+			update_option( $page[2], $probe );
+			$rendered = self::render_tab( $instance );
+
+			foreach ( $probe as $key => $value ) {
+				if ( isset( $selects[ $key ] ) ) {
+					if ( isset( $radios[ $key ] ) ) {
+						$tags = array_values(
+							array_filter(
+								self::radio_tags( $rendered, $page[2], $key ),
+								static function ( $tag ) use ( $value ) {
+									return str_contains( $tag, 'value="' . $value . '"' );
+								}
+							)
+						);
+
+						$this->assertCount(
+							1,
+							$tags,
+							sprintf( '%s: "%s" is stored as "%s" but no radio carries it.', $label, $key, $value )
+						);
+						$this->assertStringContainsString(
+							'checked=',
+							$tags[0],
+							sprintf( '%s: "%s" is stored as "%s" but that radio is not checked.', $label, $key, $value )
+						);
+						continue;
+					}
+
+					$this->assertMatchesRegularExpression(
+						'/value="' . preg_quote( (string) $value, '/' ) . '"\s+selected/',
+						$rendered,
+						sprintf( '%s: "%s" is stored as "%s" but the select does not show it.', $label, $key, $value )
+					);
+					continue;
+				}
+
+				$this->assertStringContainsString(
+					'value="' . esc_attr( (string) $value ) . '"',
+					$rendered,
+					sprintf( '%s: "%s" is stored as "%s" but the control does not show it.', $label, $key, $value )
+				);
+			}
+
+			// Every boolean stored as false must leave every checkbox of this
+			// page unchecked — including the ones that default to checked.
+			foreach ( $booleans as $key ) {
+				$probe[ $key ] = false;
+			}
+
+			update_option( $page[2], $probe );
+			$rendered = self::render_tab( $instance );
+			$boxes    = self::checkbox_tags( $rendered, $page[2] );
+
+			$this->assertCount(
+				count( $booleans ),
+				$boxes,
+				sprintf( '%s: the tab renders %d checkbox(es) for %d boolean setting(s).', $label, count( $boxes ), count( $booleans ) )
+			);
+
+			foreach ( $boxes as $tag ) {
+				$this->assertStringNotContainsString(
+					'checked=',
+					$tag,
+					sprintf( '%s: a checkbox is still checked while every boolean is stored as false.', $label )
+				);
+			}
+
+			// And every boolean stored as true must check every one of them.
+			foreach ( $booleans as $key ) {
+				$probe[ $key ] = true;
+			}
+
+			update_option( $page[2], $probe );
+			$rendered = self::render_tab( $instance );
+			$boxes    = self::checkbox_tags( $rendered, $page[2] );
+
+			foreach ( $boxes as $tag ) {
+				$this->assertStringContainsString(
+					'checked=',
+					$tag,
+					sprintf( '%s: a checkbox is unchecked while every boolean is stored as true.', $label )
+				);
+			}
+
+			delete_option( $page[2] );
+		}
+	}
+
+	/**
+	 * Render a page's protected configuration tab.
+	 *
+	 * @param WP_MCP_AI_Toolkit_Settings_Base $page Page instance.
+	 * @return string
+	 */
+	private static function render_tab( $page ) {
+		$method = new ReflectionMethod( $page, 'render_configuration_tab' );
+		$method->setAccessible( true );
+
+		ob_start();
+		$method->invoke( $page );
+
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * The `<option>` values of one select, in source order.
+	 *
+	 * @param string $html   Rendered markup.
+	 * @param string $option Option name.
+	 * @param string $key    Setting key.
+	 * @return array<int, string>
+	 */
+	private static function option_values( $html, $option, $key ) {
+		$pattern = '/<select[^>]*name="' . preg_quote( $option, '/' ) . '\[' . preg_quote( $key, '/' ) . '\]"[^>]*>(.*?)<\/select>/s';
+
+		if ( ! preg_match( $pattern, $html, $select ) ) {
+			return array();
+		}
+
+		preg_match_all( '/<option value="([^"]*)"/', $select[1], $matches );
+
+		return $matches[1];
+	}
+
+	/**
+	 * The `<input type="checkbox">` tags this page renders for its own option.
+	 *
+	 * Scoped by option name because financial-planner also renders a checkbox for
+	 * the main settings option, which is not part of its schema.
+	 *
+	 * @param string $html   Rendered markup.
+	 * @param string $option Option name.
+	 * @return array<int, string>
+	 */
+	private static function checkbox_tags( $html, $option ) {
+		preg_match_all(
+			'/<input[^>]*name="' . preg_quote( $option, '/' ) . '\[[a-z0-9_]+\]"[^>]*>/',
+			$html,
+			$matches
+		);
+
+		return array_values(
+			array_filter(
+				$matches[0],
+				static function ( $tag ) {
+					return str_contains( $tag, 'type="checkbox"' );
+				}
+			)
+		);
+	}
+
+	/**
+	 * The `<input type="radio">` tags this page renders for one setting key.
+	 *
+	 * @param string $html   Rendered markup.
+	 * @param string $option Option name.
+	 * @param string $key    Setting key.
+	 * @return array<int, string>
+	 */
+	private static function radio_tags( $html, $option, $key ) {
+		preg_match_all(
+			'/<input[^>]*name="' . preg_quote( $option, '/' ) . '\[' . preg_quote( $key, '/' ) . '\]"[^>]*>/',
+			$html,
+			$matches
+		);
+
+		return array_values(
+			array_filter(
+				$matches[0],
+				static function ( $tag ) {
+					return str_contains( $tag, 'type="radio"' );
+				}
+			)
+		);
+	}
+
+	/**
+	 * The values a radio group offers, in source order.
+	 *
+	 * @param string $html   Rendered markup.
+	 * @param string $option Option name.
+	 * @param string $key    Setting key.
+	 * @return array<int, string>
+	 */
+	private static function radio_values( $html, $option, $key ) {
+		$values = array();
+
+		foreach ( self::radio_tags( $html, $option, $key ) as $tag ) {
+			if ( preg_match( '/value="([^"]*)"/', $tag, $match ) ) {
+				$values[] = $match[1];
+			}
+		}
+
+		return $values;
+	}
+
+	/**
+	 * A legal, per-key probe value for one declared type.
+	 *
+	 * Distinct per key on purpose: a shared sentinel would let a field that
+	 * ignores the option pass because a sibling field rendered the same string.
+	 *
+	 * @param string $type Declared type.
+	 * @param string $key  Setting key.
+	 * @return string
+	 */
+	private static function probe_for( $type, $key ) {
+		switch ( $type ) {
+			case 'number':
+				return (string) ( 4200 + ( crc32( $key ) % 700 ) );
+
+			case 'url':
+				return 'https://example.com/' . $key;
+
+			case 'email':
+				return $key . '@example.com';
+
+			case 'color':
+				return '#123456';
+
+			case 'key':
+				return 'key-' . $key;
+
+			case 'textarea':
+				return 'line one for ' . $key;
+
+			default:
+				return 'example-' . $key;
+		}
 	}
 
 	/**

@@ -409,9 +409,9 @@ the array into its controls. The other eight print literal defaults. The stored
 value is right after a save, but reopening the tab shows the default, and the
 next save posts that default back over the stored value.
 
-So the honest statement of parity for this batch is: **`media` is editable from
+So the honest statement of parity for this batch was: **`media` is editable from
 either surface; the other eight are editable only from the panel** until the
-WordPress render side reads the option. Tracked as plan §59.3.
+WordPress render side reads the option. **Fixed in §12.**
 
 ### 11e. Validation
 
@@ -425,3 +425,72 @@ WordPress render side reads the option. Tracked as plan §59.3.
   panel-servable; `php bin/sync-toolkit-manifests.php --check` current;
   `php bin/audit-surface-ownership.php` unchanged at **45 surfaces · 33 built ·
   7 console-only · 3 planned**; phpcs clean on every changed PHP file.
+
+## 12. The read half — tabs now render what they store (2026-11-18)
+
+§10 made the writes correct and §11 authored the manifests. §11d recorded what
+neither fixed: eight of the nine tabs printed literal defaults, so a stored value
+was invisible on the page that stored it, and the next save posted the default
+back over it. This is that fix.
+
+### 12a. What changed
+
+- `WP_MCP_AI_Toolkit_Settings_Base::stored_options()` — reads the page's own
+  option once and normalises it to an array. One call site per page, so the
+  option name cannot be mistyped and a non-array option cannot raise a
+  `TypeError` on PHP 8.
+- All nine pages render from it. Text and number inputs take
+  `value="<?php echo esc_attr( $options['key'] ?? '<old literal>' ) ?>"`;
+  checkboxes take `checked( $options['key'] ?? <old default>, 1 )`; every
+  `<option>` takes `selected( $options['key'] ?? '<old default>', '<value>' )`.
+- The literals survive as the `??` fallback, because `setting_schema()` carries
+  types and not defaults (§10b). The rendered defaults are unchanged, so the
+  manifests in §11 did not have to move.
+
+### 12b. The gate grew a fourth direction
+
+`test_the_configuration_tab_renders_the_stored_values` stores a legal, per-key
+probe for every declared setting, renders the tab, and requires the markup to
+carry it; then stores every boolean `false` and `true` and requires every checkbox
+of that page to follow. Two refinements were needed in practice:
+
+- **Radios.** `media-toolkit` renders `sharp_processing_mode` as radio buttons
+  although its schema type is `select`. The gate accepts a `<select>` or a radio
+  group, because the schema type describes the value, not the widget.
+- **Per-key probes.** A single shared sentinel would let a field that ignores the
+  option pass on a sibling's output.
+
+Running the same assertions against the `HEAD` revisions of all ten classes:
+**38 failures across the eight broken pages, 0 for `media-toolkit`** — correct,
+since `media` already read its option. Against the fixed tree: **0**.
+
+### 12c. What this did not fix
+
+Rendering correctly is not consuming. Auditing the readers produced the finding
+that now dominates this track (plan §60.3):
+
+| Store | Read outside its writer? |
+|---|---|
+| `wp_mcp_ai_<toolkit>_toolkit_settings` | `media` only. **Zero** for the other eight. |
+| `wp_mcp_ai_pro_toolkit_settings[<slug>]` | the Pro toolkit REST controller and the records layer — not the toolkit tools |
+| Laravel `toolkit.<slug>.<key>` | `ToolkitEngine` only |
+
+`architectural-design` is the worked example: the page writes
+`wp_mcp_ai_architectural_design_toolkit_settings` while
+`class-wp-mcp-ai-architectural-engine.php` reads
+`wp_mcp_ai_arch_design_settings`, which nothing writes — and the page's help text
+names the engine's option, so the split is a mistake rather than a design.
+
+So: **saving these settings is no longer lossy, and is still inert.** Choosing a
+single canonical store per toolkit, pointing the tools at it and deciding whether
+the manifest layer reads through is a design decision, recorded as plan §60.4
+rather than guessed at here.
+
+### 12d. Validation
+
+- Display assertions against both trees: **38 → 0** (stub harness, real classes).
+  The WP PHPUnit suite was not run locally; CI runs the gate.
+- The rendered key set of all nine pages is **unchanged from `HEAD`** (60 keys),
+  so the §10c markup↔schema check still matches.
+- phpcs **0 errors** on all eleven files (warnings all pre-existing), `php -l`
+  clean.

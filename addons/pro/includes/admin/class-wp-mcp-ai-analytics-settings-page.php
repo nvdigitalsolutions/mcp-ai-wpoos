@@ -94,6 +94,7 @@ class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 	 * Render configuration tab
 	 */
 	protected function render_configuration_tab() {
+		$options = $this->stored_options();
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'Analytics Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -103,11 +104,11 @@ class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 					<th scope="row"><?php esc_html_e( 'Data Retention Period', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<select name="<?php echo esc_attr( $this->option_name ); ?>[data_retention]">
-							<option value="90"><?php esc_html_e( '90 days', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="180"><?php esc_html_e( '180 days', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="365" selected><?php esc_html_e( '1 year', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="730"><?php esc_html_e( '2 years', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="-1"><?php esc_html_e( 'Forever', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="90" <?php selected( $options['data_retention'] ?? '365', '90' ); ?>><?php esc_html_e( '90 days', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="180" <?php selected( $options['data_retention'] ?? '365', '180' ); ?>><?php esc_html_e( '180 days', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="365" <?php selected( $options['data_retention'] ?? '365', '365' ); ?>><?php esc_html_e( '1 year', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="730" <?php selected( $options['data_retention'] ?? '365', '730' ); ?>><?php esc_html_e( '2 years', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="-1" <?php selected( $options['data_retention'] ?? '365', '-1' ); ?>><?php esc_html_e( 'Forever', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 						<p class="description"><?php esc_html_e( 'How long to keep analytics data', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -116,7 +117,7 @@ class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 					<th scope="row"><?php esc_html_e( 'Enable ML Features', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_ml]" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_ml]" value="1" <?php checked( $options['enable_ml'] ?? true, 1 ); ?> />
 							<?php esc_html_e( 'Enable machine learning-powered analytics', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -125,9 +126,9 @@ class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 					<th scope="row"><?php esc_html_e( 'Anomaly Detection Threshold', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<select name="<?php echo esc_attr( $this->option_name ); ?>[anomaly_threshold]">
-							<option value="low"><?php esc_html_e( 'Low (more alerts)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="medium" selected><?php esc_html_e( 'Medium', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="high"><?php esc_html_e( 'High (fewer alerts)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="low" <?php selected( $options['anomaly_threshold'] ?? 'medium', 'low' ); ?>><?php esc_html_e( 'Low (more alerts)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="medium" <?php selected( $options['anomaly_threshold'] ?? 'medium', 'medium' ); ?>><?php esc_html_e( 'Medium', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="high" <?php selected( $options['anomaly_threshold'] ?? 'medium', 'high' ); ?>><?php esc_html_e( 'High (fewer alerts)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 					</td>
 				</tr>

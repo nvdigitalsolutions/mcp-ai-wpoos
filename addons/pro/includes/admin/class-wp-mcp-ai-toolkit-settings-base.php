@@ -770,6 +770,26 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	}
 
 	/**
+	 * The stored settings for this page's option, normalised to an array.
+	 *
+	 * Every configuration tab must render from this rather than from literal
+	 * defaults. A control that always shows its default both hides the saved
+	 * value and re-submits that default over it on the next save, so the page
+	 * becomes a write-only form that erases itself one save at a time.
+	 *
+	 * The type check matters: `get_option()` can return a non-array when the
+	 * option was written by something other than this page, and indexing a
+	 * string with a string offset is a TypeError on PHP 8.
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function stored_options() {
+		$stored = get_option( $this->option_name, array() );
+
+		return is_array( $stored ) ? $stored : array();
+	}
+
+	/**
 	 * Settings this page persists, keyed by option key.
 	 *
 	 * A control is only persisted when its key appears here. `options.php` hands
