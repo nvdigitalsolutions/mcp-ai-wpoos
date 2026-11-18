@@ -6230,9 +6230,10 @@ records it rather than guessing:
    natural choice: it is what the pages write, what `media` already consumes, and
    what a third-party filter would expect.
 2. **Point the tools at it.** `architectural-design` first, since the intended
-   option is documented in the page copy. That one needs a decision too: repoint
-   the engine at the page's option, or rename the page's option and migrate — the
-   engine's name is the one third parties may already filter.
+   option is documented in the page copy — that shipped as §61, keeping the old
+   name as a read-only fallback. Project management has the same defect and is
+   surveyed in §61.4 but not fixed: its key sets diverge, so it needs
+   reconciliation rather than a rename.
 3. **Decide whether the manifest layer reads through or stays separate.** If it
    reads through, the panel and the WP tab become two editors of one value and
    the last write wins; if it stays separate, the manifest store needs its own
@@ -6253,3 +6254,85 @@ records it rather than guessing:
   `setting_schema()` and `file_get_contents()` in the earlier tests; the `HEAD`
   revisions produce the same ones.
 - `php -l` clean on all eleven files.
+
+## 61. Architectural Design settings wiring (2026-11-18)
+
+§60.4 step 2 named this as the worked example. It is fixed here, and the survey
+needed to fix it safely found the same defect in a second toolkit.
+
+### 61.1 The defect
+
+| | Option |
+|---|---|
+| The settings page writes | `wp_mcp_ai_architectural_design_toolkit_settings` |
+| The engine resolved from | `wp_mcp_ai_arch_design_settings` |
+| Who wrote the engine's option | **nothing** |
+
+Three tools read `WP_MCP_AI_Architectural_Engine::get_toolkit_settings()` —
+`check-building-code-compliance`, `calculate-sustainability-metrics` and
+`estimate-construction-cost` — and each takes `default_country` from it. So every
+jurisdiction and unit default an operator saved was ignored: compliance dispatch,
+wind/seismic tables, BoQ format, currency and cost rates all stayed on the
+built-in `LK` / `metric` defaults no matter what the page said.
+
+There was a second split inside the same pair of arrays. The page names the code
+pack `building_code_standard`; the engine resolves it as `default_code_pack`. A
+pure option rename would have moved the values across without ever applying them.
+
+### 61.2 The fix
+
+- `SETTINGS_OPTION` — the option the page writes — and `LEGACY_SETTINGS_OPTION`,
+  the old name, both as class constants.
+- `read_stored_settings()` merges the legacy option **underneath** and lets the
+  page win per key, translating `building_code_standard` → `default_code_pack`.
+  Only the four keys the engine actually resolves are carried across, so the
+  `wp_mcp_ai_arch_toolkit_settings` filter contract is unchanged.
+- Both call sites (`get_toolkit_settings()`, `get_currency_rates()`) now go
+  through that one reader, so `currency_rates` and the UI defaults cannot drift
+  apart again.
+- The page's help text named the engine's old option; it now names the one the
+  page actually stores and points at the method that consumes it.
+
+**Why the legacy option is kept rather than dropped:** `currency_rates` is a
+nested map the page does not render (§7b excludes key/value maps), and a site may
+already set values under the old name programmatically. Removing the read would
+silently empty the rate table for anyone who does.
+
+### 61.3 Validation
+
+- Stub harness against the real class: defaults; page-option resolution including
+  the code-pack rename; legacy `currency_rates` survival; page-over-legacy
+  precedence; and non-array options falling back to defaults instead of fataling.
+  All pass.
+- The same probe against the pre-fix engine, with the page option set to `US`,
+  resolves `default_country` to `LK` — so the tests fail on the old code and pass
+  on the new, which is the whole point.
+- Four tests in `addons/pro/tests/test-architectural-engine.php`
+  (one hardened, three new). That directory is in the PHPUnit suite, so CI runs
+  them; the WP suite itself cannot run on this host.
+- phpcs (`phpcs.xml.dist`): **0 errors, 0 warnings** on all three changed files.
+
+### 61.4 The same defect elsewhere — surveyed, not fixed
+
+| Toolkit | Engine resolves from | Page writes | State |
+|---|---|---|---|
+| CRM | `wp_mcp_ai_crm_toolkit_settings` | same | **correctly wired** — the precedent |
+| Architectural Design | the page's option | — | **fixed here** |
+| Project management | `wp_mcp_ai_pm_toolkit_settings` | `wp_mcp_ai_project_management_toolkit_settings` | same defect, **not fixed** |
+| Healthcare | `wp_mcp_ai_healthcare_settings` | no settings page | n/a — writable programmatically only |
+
+Project management is deliberately out of scope, and it needs more than a rename:
+
+1. **No schema.** Its page predates `setting_schema()` and sanitises through its
+   own whitelist, so there is no single declared key set to compare against.
+2. **Three divergent key sets.** The page's whitelist, the engine's defaults
+   (`default_project_status`, `estimation_method`, `burndown_basis`, …) and the
+   keys the tools actually read (`assignee_pool`, `enable_pm_analytics`,
+   `enable_project_management`, `estimation_method`, `portfolio_health_weights`,
+   `risk_thresholds`) do not line up.
+
+Repointing the PM engine at its page's option would move the problem rather than
+fix it, because the keys still would not match. The honest next step there is to
+decide which of the three sets is canonical — most likely a `setting_schema()` on
+the page plus a mapping in the engine, following §61.2 — and that is a separate
+piece of work. Recorded here so it starts from evidence rather than rediscovery.
