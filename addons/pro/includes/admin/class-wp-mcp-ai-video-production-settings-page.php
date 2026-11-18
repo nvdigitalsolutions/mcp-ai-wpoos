@@ -22,6 +22,17 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settin
 class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	protected function setting_schema() {
+		return array(
+			'default_output_format'          => 'select',
+			'transcription_language'         => 'select',
+			'enable_distributed_rendering'   => 'boolean',
+		);
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -98,7 +109,7 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Output Format', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="default_output_format">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[default_output_format]">
 							<option value="mp4" selected><?php esc_html_e( 'MP4 (H.264)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="webm"><?php esc_html_e( 'WebM (VP9)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="mov"><?php esc_html_e( 'MOV (ProRes)', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -109,7 +120,7 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Transcription Language', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="transcription_language">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[transcription_language]">
 							<option value="auto"><?php esc_html_e( 'Auto-detect', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="en"><?php esc_html_e( 'English', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="es"><?php esc_html_e( 'Spanish', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -121,7 +132,7 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 					<th scope="row"><?php esc_html_e( 'Enable Distributed Rendering', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_distributed_rendering" value="1" />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_distributed_rendering]" value="1" />
 							<?php esc_html_e( 'Use remote sites for faster video processing', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>

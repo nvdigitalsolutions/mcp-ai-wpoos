@@ -1,7 +1,7 @@
 # Proposal 149 — toolkit manifest renderer (track P4)
 
 **Parent:** [`149-laravel-admin-parity-implementation-plan.md`](./149-laravel-admin-parity-implementation-plan.md) §46
-**State:** design, **step 1 (engine extraction) shipped 2026-11-17** — see §1a — and **the renderer shipped 2026-11-18** as plan §56 (`/admin/toolkits`, contract row `toolkits: subset`), followed by the **first authoring pass (12 manifests)** and **Wave 4 (research + consolidate) as plan §57** — all five manifest screens are now routed. **Remaining:** the 10 toolkits that persist nothing (WordPress-side fix first), the committed settings-page ↔ manifest map, and create/edit on the panel. **Unblocks:** order item **10** (`toolkits`, `chat-channels`, and the 45 Pro settings/CPT pages behind Wave 3).
+**State:** design, **step 1 (engine extraction) shipped 2026-11-17** — see §1a — and **the renderer shipped 2026-11-18** as plan §56 (`/admin/toolkits`, contract row `toolkits: subset`), followed by the **first authoring pass (12 manifests)**, **Wave 4 (research + consolidate) as plan §57** — all five manifest screens are now routed — and **the toolkit settings persistence fix as plan §58**. **Remaining:** the nine manifests that fix unblocked, the committed settings-page ↔ manifest map, and create/edit on the panel. **Unblocks:** order item **10** (`toolkits`, `chat-channels`, and the 45 Pro settings/CPT pages behind Wave 3).
 **Why it runs in parallel with items 1–9:** it is the only remaining item that changes the *shape* of everything after it. Designing it late would serialise the whole plan.
 
 ## 1. Verified state
@@ -27,7 +27,7 @@ Missing:
 |---|---|
 | ~~**No Filament renderer**~~ | **Shipped 2026-11-18 (plan §56):** `ToolkitsPage` + `ToolkitPage`, contract row `toolkits: subset` |
 | ~~**The 7-tab settings page is not expressible**~~ | **Addressed 2026-11-18:** optional `tab_labels` map + per-setting `tab`, all-or-nothing; `ToolkitManifest::settingTabs()` groups for any renderer. Sections *within* a tab are still not expressible — no manifest needs one yet |
-| **9 of 22 manifests missing** | **12 exist** (`commerce`, `documents`, `crm`, and nine from the 2026-11-18 authoring pass). The pass stopped at 8 of 25 toolkit settings pages because 10 of them never persist what they render and 2 render nothing — see `149-toolkit-manifest-schema-check.md` §9c |
+| **9 of 22 manifests missing** | **12 exist** (`commerce`, `documents`, `crm`, and nine from the 2026-11-18 authoring pass). The pass stopped at 8 of 25 toolkit settings pages because 10 of them never persisted what they render. **That blocker is fixed (plan §58):** nine of them now qualify for authoring, so 12 → 21 is the next pass. `pro-packages` has no controls and `financial-planner`'s three main-option controls stay inert — see `149-toolkit-manifest-schema-check.md` §10 |
 | ~~**No manifest lint**~~ | **Shipped 2026-11-18:** `bin/audit-admin-manifests.php` (validation, slug/filename, servable screens) wired into `laravel-app.yml`. The settings-page ↔ manifest mapping check waits on the authoring pass |
 | ~~No in-process engine~~ | **Shipped 2026-11-17** (§1a): `ToolkitEngine` + `ToolkitException`; `ToolkitsController` is a thin adapter |
 

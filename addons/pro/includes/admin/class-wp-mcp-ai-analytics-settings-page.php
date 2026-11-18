@@ -22,6 +22,17 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settin
 class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	protected function setting_schema() {
+		return array(
+			'data_retention'    => 'select',
+			'enable_ml'         => 'boolean',
+			'anomaly_threshold' => 'select',
+		);
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -91,7 +102,7 @@ class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Data Retention Period', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="data_retention">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[data_retention]">
 							<option value="90"><?php esc_html_e( '90 days', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="180"><?php esc_html_e( '180 days', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="365" selected><?php esc_html_e( '1 year', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -105,7 +116,7 @@ class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 					<th scope="row"><?php esc_html_e( 'Enable ML Features', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_ml" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_ml]" value="1" checked />
 							<?php esc_html_e( 'Enable machine learning-powered analytics', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -113,7 +124,7 @@ class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Anomaly Detection Threshold', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="anomaly_threshold">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[anomaly_threshold]">
 							<option value="low"><?php esc_html_e( 'Low (more alerts)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="medium" selected><?php esc_html_e( 'Medium', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="high"><?php esc_html_e( 'High (fewer alerts)', 'mcp-ai-wpoos-pro' ); ?></option>

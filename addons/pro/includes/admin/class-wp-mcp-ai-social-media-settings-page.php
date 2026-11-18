@@ -22,6 +22,17 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settin
 class WP_MCP_AI_Social_Media_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	protected function setting_schema() {
+		return array(
+			'default_schedule'         => 'select',
+			'auto_optimize_images'     => 'boolean',
+			'enable_social_listening'  => 'boolean',
+		);
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -100,7 +111,7 @@ class WP_MCP_AI_Social_Media_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Posting Schedule', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="default_schedule">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[default_schedule]">
 							<option value="immediate"><?php esc_html_e( 'Immediate', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="optimal"><?php esc_html_e( 'Optimal Time (AI-determined)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="custom"><?php esc_html_e( 'Custom Time', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -112,7 +123,7 @@ class WP_MCP_AI_Social_Media_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 					<th scope="row"><?php esc_html_e( 'Auto-Optimize Images', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="auto_optimize_images" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[auto_optimize_images]" value="1" checked />
 							<?php esc_html_e( 'Automatically optimize images for each platform', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -121,7 +132,7 @@ class WP_MCP_AI_Social_Media_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 					<th scope="row"><?php esc_html_e( 'Enable Social Listening', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_social_listening" value="1" />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_social_listening]" value="1" />
 							<?php esc_html_e( 'Monitor brand mentions and industry trends', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>

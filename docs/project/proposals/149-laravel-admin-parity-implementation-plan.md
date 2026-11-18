@@ -5823,12 +5823,16 @@ declares.
 1. ~~**22 manifests.**~~ **Partly closed 2026-11-18 — 12 exist** (`commerce`,
    `documents`, `crm` + nine from the authoring pass). The pass stopped at 8 of
    the 25 `WP_MCP_AI_Toolkit_Settings_Base` subclasses because 10 of them never
-   persist what they render (base `sanitize_settings()` whitelists three keys and
-   their tabs use raw input names) and 2 render no controls. Fixing those 10 is a
-   WordPress-side change, not a manifest one. See §56.7 and §9c of the check doc.
+   persisted what they rendered and 2 rendered no controls. **The persistence
+   half is now fixed** — see §10 of `149-toolkit-manifest-schema-check.md` and
+   this plan's §58 — so nine of those pages meet §7b's authoring rule and can be
+   authored next (12 → 21). `pro-packages` remains unauthorable because its
+   configuration tab has no controls, and `financial-planner`'s three
+   `wp_mcp_ai_settings[...]` controls remain inert pending a main-settings fix.
 2. **The settings-page ↔ manifest mapping check** in the lint. The authoring pass
-   showed the map cannot be derived from filenames (10 pages persist nothing, 2
-   render nothing), so it has to be committed from §9b/§9c of the check doc.
+   showed the map cannot be derived from filenames (a page can persist nothing,
+   render nothing, or hold no controls at all), so it has to be committed from
+   §9b/§9c/§10 of the check doc.
 3. **Create/edit on the panel**, if operators ask for it — an explicit
    disagreement with §56.4, not an oversight.
 4. **`chat-channels`** is now `subset`, not `planned`. The manifest declares the four
@@ -5855,7 +5859,10 @@ Nine manifests shipped in two batches, taking the catalogue to **12 manifests /
 persist. A toolkit settings page persists a field only if it is named
 `<option_name>[key]` **and** the page's `sanitize_settings()` accepts that key,
 *or* the page reads a prefixed key straight from `$_POST`. Ten of the twenty-five
-pages fail that test, which is why the manifest count is 12 rather than 25.
+pages failed that test, which is why the manifest count is 12 rather than 25.
+**That is no longer true:** the nine pages behind the rule now declare a
+`sanitize_settings()` schema and namespace their controls (plan §58), so they
+qualify for authoring.
 
 `pro-schedule` reuses the existing `schedules` feature. The other eight added a
 kebab-case feature key to `ProPlanCatalog` in all three plans — the validator
@@ -5951,3 +5958,73 @@ Porting the 31 CPT research pages would mean moving their data model first.
   `audit-surface-ownership` unchanged at **45 · 33 · 7 · 3** (the scoreboard
   moved in the burn-down PR, not here); mirror current; phpcs clean on every
   changed PHP file.
+
+## 58. Toolkit settings persistence — the WordPress-side fix (2026-11-18)
+
+§56.7 stopped the manifest authoring pass at 8 of 25 pages because the rest did
+not persist what they rendered. That was accurate but incomplete: there were
+**three** defects behind it, and one of them was data loss.
+
+### 58.1 The defects
+
+1. **Raw control names.** Eight pages rendered `name="data_retention"` and
+   friends. `options.php` only hands `<option_name>[key]` to the registered
+   sanitiser, so no value ever reached it.
+2. **No sanitiser schema.** Nine pages — including `media-toolkit`, whose names
+   were already correct — relied on the base sanitiser, which whitelists three
+   keys. Everything else was dropped, and because the sanitiser returned only
+   those three, a save also **erased** anything else stored in the option.
+   `media-toolkit` is the one with a reader: the Media Command Center reads
+   `sharp_processing_mode`, `sharp_enable_webp`, `ocr_primary_provider` and
+   `enable_research` from an option nothing wrote.
+3. **Checkbox asymmetry.** The base wrote `enable_remote_sites` and
+   `enable_research` only when the key was present in POST. An unchecked box is
+   absent, so those tabs could be switched on but never off.
+
+`pro-packages` was never a defect — its configuration tab renders no controls
+and says so.
+
+### 58.2 The mechanism, not nine copies of it
+
+Hand-writing `sanitize_settings()` per page would have been nine copies of the
+same whitelist, which is the drift bug the manifest engine exists to remove. The
+base now offers `setting_schema()`: a page declares `key => type` and everything
+else follows.
+
+- Types: `text`, `textarea`, `number`, `boolean`, `select`, `email`, `url`,
+  `color`, `key`. A `select` may pass an `options` list to be enforced; without
+  one the value is stored as text, because a second copy of the option list would
+  be the same drift bug somewhere else.
+- `sanitize_settings()` starts from the **stored** option, so a page is never the
+  sole authority on an option another surface also reads.
+- Booleans write `false` when unchecked.
+
+Eight pages were namespaced; all nine declared a schema. **60 keys.**
+
+### 58.3 The gate
+
+`tests/pro/admin/test-toolkit-settings-persistence.php` reads each page three
+ways: every rendered control is namespaced; the declared schema equals the
+rendered key set; and a typed payload round-trips through the sanitiser, an
+unrendered stored key survives a save, and an unchecked Research toggle writes
+`false`. The first two are the ones that matter long-term — a new control with no
+schema entry now fails the build instead of dropping data.
+
+### 58.4 What it unblocks, and what it does not
+
+All nine now meet §7b's authoring rule, so the next pass can take the manifest
+catalogue from **12 to 21**. Not attempted here.
+
+Still broken: `financial-planner` renders three `wp_mcp_ai_settings[...]`
+controls that are inert twice over — wrong option group, and three keys the main
+sanitiser never registers — while `WP_MCP_AI_YFinance_Service` reads all three.
+The fix belongs in the main settings form; the gate lists this page as its one
+documented exception so the pattern cannot spread.
+
+### 58.5 Validation
+
+The WP test library is only partially installed in this environment, so the new
+PHPUnit file was **not** executed here — CI's suite runs it. Everything that
+could run did: `php -l` on all eleven changed files, phpcs clean on all of them,
+and a stub harness (the same three assertions, without WordPress) passed for all
+nine pages and all 60 keys.

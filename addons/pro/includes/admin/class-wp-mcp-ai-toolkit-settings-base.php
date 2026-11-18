@@ -770,27 +770,127 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	}
 
 	/**
+	 * Settings this page persists, keyed by option key.
+	 *
+	 * A control is only persisted when its key appears here. `options.php` hands
+	 * the submitted array to `sanitize_settings()`, and anything the sanitiser
+	 * does not return is discarded — which is how nine toolkit pages shipped a
+	 * configuration tab whose every control was silently dropped on save.
+	 *
+	 * Types: `text`, `textarea`, `number`, `boolean`, `select`, `email`, `url`,
+	 * `color`, `key`. A `select` may pass an `options` list to be enforced;
+	 * without one the value is stored as text, because a second copy of the
+	 * option list would be the same drift bug in a new place.
+	 *
+	 * @return array<string, string|array{type: string, options?: array<int, string>}>
+	 */
+	protected function setting_schema() {
+		return array();
+	}
+
+	/**
 	 * Sanitize settings.
+	 *
+	 * Starts from what is already stored, so a page is never the sole authority
+	 * on an option that another surface also reads (`wp_mcp_ai_media_toolkit_settings`
+	 * is read by the Media Command Center), and casts each key through
+	 * `setting_schema()`.
 	 *
 	 * @param array $input Settings input.
 	 * @return array Sanitized settings.
 	 */
 	public function sanitize_settings( $input ) {
-		$sanitized = array();
-
-		if ( isset( $input['enable_remote_sites'] ) ) {
-			$sanitized['enable_remote_sites'] = (bool) $input['enable_remote_sites'];
+		if ( ! is_array( $input ) ) {
+			return array();
 		}
 
-		if ( isset( $input['enable_research'] ) ) {
-			$sanitized['enable_research'] = (bool) $input['enable_research'];
+		$stored    = get_option( $this->option_name, array() );
+		$sanitized = is_array( $stored ) ? $stored : array();
+
+		if ( $this->has_remote_sites ) {
+			// An unchecked checkbox is absent from POST, so `! empty()` is what
+			// lets an operator turn the tab off; the old `isset()` guard could
+			// only ever turn it on.
+			$sanitized['enable_remote_sites'] = ! empty( $input['enable_remote_sites'] );
 		}
 
-		if ( isset( $input['research_assistant_id'] ) ) {
-			$sanitized['research_assistant_id'] = absint( $input['research_assistant_id'] );
+		if ( $this->has_research ) {
+			$sanitized['enable_research'] = ! empty( $input['enable_research'] );
+
+			if ( isset( $input['research_assistant_id'] ) ) {
+				$sanitized['research_assistant_id'] = absint( $input['research_assistant_id'] );
+			}
+		}
+
+		foreach ( $this->setting_schema() as $key => $spec ) {
+			$key  = (string) $key;
+			$type = is_array( $spec ) ? (string) ( $spec['type'] ?? 'text' ) : (string) $spec;
+
+			if ( 'boolean' === $type ) {
+				$sanitized[ $key ] = ! empty( $input[ $key ] );
+				continue;
+			}
+
+			if ( ! array_key_exists( $key, $input ) ) {
+				// Not rendered on this request; keep whatever is stored.
+				continue;
+			}
+
+			$sanitized[ $key ] = $this->sanitize_setting_value( $type, $input[ $key ], $spec, $stored[ $key ] ?? null );
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Cast one submitted value against its declared type.
+	 *
+	 * @param string       $type     Declared type.
+	 * @param mixed        $value    Submitted value.
+	 * @param string|array $spec     Schema entry.
+	 * @param mixed        $previous Currently stored value.
+	 * @return mixed
+	 */
+	private function sanitize_setting_value( $type, $value, $spec, $previous ) {
+		$value = is_scalar( $value ) ? (string) $value : '';
+
+		switch ( $type ) {
+			case 'number':
+				return is_numeric( $value ) ? 0 + $value : 0;
+
+			case 'select':
+				$allowed = is_array( $spec ) ? array_map( 'strval', (array) ( $spec['options'] ?? array() ) ) : array();
+
+				if ( array() !== $allowed && ! in_array( $value, $allowed, true ) ) {
+					// A value outside the declared list is tampering or markup drift.
+					// Keeping what was stored is the least surprising answer; writing
+					// the first option would silently change the operator's choice.
+					return $previous;
+				}
+
+				return sanitize_text_field( $value );
+
+			case 'email':
+				return sanitize_email( $value );
+
+			case 'url':
+				return esc_url_raw( $value );
+
+			case 'color':
+				$color = sanitize_hex_color( $value );
+
+				return null === $color ? '' : $color;
+
+			case 'key':
+				return sanitize_key( $value );
+
+			case 'textarea':
+				return sanitize_textarea_field( $value );
+
+			case 'text':
+			default:
+				return sanitize_text_field( $value );
+		}
 	}
 
 	/**
