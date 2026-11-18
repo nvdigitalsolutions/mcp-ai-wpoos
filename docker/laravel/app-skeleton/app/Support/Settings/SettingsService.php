@@ -188,6 +188,19 @@ final class SettingsService
         $options = $field['options'] ?? [];
 
         if (! array_key_exists($value, $options)) {
+            // A value already stored is preserved even when the catalogue no
+            // longer offers it: a retired model slug must not make every other
+            // setting on the page unsaveable. A CHANGE to an unsupported value
+            // is still refused.
+            $current = $this->store($field)->get(
+                (string) ($field['storage'] ?? $field['key']),
+                $field['default'] ?? null,
+            );
+
+            if ((string) $current === $value) {
+                return $value;
+            }
+
             abort(422, sprintf('%s is not a supported value.', $field['label']));
         }
 

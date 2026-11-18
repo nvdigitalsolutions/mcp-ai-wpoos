@@ -8,6 +8,7 @@ use App\Support\SettingsSchema;
 use App\Support\TenantContext;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -148,7 +149,7 @@ trait BuildsSettingsForm
     private function component(array $field): Field
     {
         $component = match ($field['type']) {
-            'select' => Select::make($field['key'])->options($field['options'] ?? []),
+            'select' => $this->selectField($field),
             'checkbox' => Toggle::make($field['key']),
             'number' => $this->numberField($field),
             'password' => TextInput::make($field['key'])
@@ -160,6 +161,7 @@ trait BuildsSettingsForm
                 ->dehydrated(static fn (?string $state): bool => filled($state)),
             'url' => TextInput::make($field['key'])->url(),
             'email' => TextInput::make($field['key'])->email(),
+            'textarea' => Textarea::make($field['key'])->rows(3),
             default => TextInput::make($field['key']),
         };
 
@@ -183,6 +185,31 @@ trait BuildsSettingsForm
         }
 
         return $component;
+    }
+
+    /**
+     * A select whose current value is always one of its options.
+     *
+     * The catalogue's option list comes from the plugin, and a runtime can hold
+     * a value that predates it — a retired model slug, for instance. A plain
+     * `Select` would reject that value and make the whole form unsaveable, so an
+     * unrelated field cannot be edited until someone fixes a setting they did
+     * not touch. Carrying the stored value as an extra option keeps the control
+     * honest in both directions: it shows what is stored, and it does not
+     * pretend the value is still offered.
+     *
+     * @param array<string, mixed> $field
+     */
+    private function selectField(array $field): Select
+    {
+        $options = $field['options'] ?? array();
+        $current = $this->data[ $field['key'] ] ?? null;
+
+        if (is_string($current) && '' !== $current && ! array_key_exists($current, $options)) {
+            $options[ $current ] = $current.' (current value)';
+        }
+
+        return Select::make($field['key'])->options($options);
     }
 
     /**

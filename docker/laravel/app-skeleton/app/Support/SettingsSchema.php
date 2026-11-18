@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Support\Settings\SettingsCatalogue;
+
 /**
  * The settings catalogue the console renders.
  *
@@ -37,21 +39,46 @@ final class SettingsSchema
     public const MASKED_PLACEHOLDER = '**************';
 
     /**
+     * The tab strip: the three core tabs keep their established labels, and the
+     * ported catalogue supplies the rest and their order (§62).
+     *
      * @return array<string, string>
      */
     public static function tabs(): array
     {
-        return [
-            'general' => 'General',
-            'providers' => 'Providers',
-            'advanced' => 'Advanced',
-        ];
+        $tabs = SettingsCatalogue::tabs();
+
+        $tabs['general']   = 'General';
+        $tabs['providers'] = 'Providers';
+        $tabs['advanced']  = 'Advanced';
+
+        return $tabs;
     }
 
     /**
+     * The full catalogue: the nine core fields, then the ported WordPress
+     * surface.
+     *
+     * Core first so the existing field order — and every test that pins a
+     * position — is unchanged by the port.
+     *
      * @return list<array<string, mixed>>
      */
     public static function fields(): array
+    {
+        return array_merge(self::coreFields(), SettingsCatalogue::fields());
+    }
+
+    /**
+     * The fields this runtime shipped with, before the §62 port.
+     *
+     * These stay literal on purpose: `scope: operator` and the two storage
+     * remaps are decisions the generator cannot infer from the plugin's field
+     * arrays.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function coreFields(): array
     {
         return [
             [
