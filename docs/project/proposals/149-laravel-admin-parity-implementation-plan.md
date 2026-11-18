@@ -6723,7 +6723,15 @@ only ever seen the fixed tree is not evidence.
 | `SettingsStoreEndpointWiringTest` | **20 tests, 37 assertions, 0 failures** |
 | `SettingsStoreContractTest` (neighbour) | **6 / 28**, unchanged |
 | phpcs (`phpcs-laravel.xml.dist`, Laravel adapter + new test) | **0 errors** |
-| Full suite | not run in this worktree; the parity container was removed by a Docker Desktop restart and is not in compose. CI runs the full suite. |
+| Full app suite (throwaway container, this worktree, SQLite) | **1300 tests, exit 0, 0 failures** |
+
+The app suite ran in a one-off container rather than the shared
+`oos-laravel-app`: the live container mounts the main checkout at
+`/workspace/oos` read-only, so a run there would test a different branch's
+`lib/`. The one-off mounted this worktree at `/workspace/oos`, mounted the
+vendor volume read-only, and used a cloned storage volume, leaving the running
+stack untouched. `vendor/nvoos/{core,laravel-adapter}` resolve to that worktree,
+which is what makes the run evidence.
 
 The WordPress and Craft adapters are outside `phpcs-laravel.xml.dist`'s `<file>`
 list because they are WPCS-styled; they are covered by the wiring gate and the
