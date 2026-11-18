@@ -6858,8 +6858,9 @@ Five assertions in `SettingsCatalogueTest`:
 ### 66.7 Still open
 
 1. **`/ops` now renders 29 security controls** (34 operator fields in total with
-   §64's five). The panel has grown and has not had a visual pass; §64.6 item 2
-   recorded the same caveat for the provider fields.
+   §64's five). The visual pass is recorded in §67: the ownership split and the
+   layout are correct; the one defect it found — raw WordPress markup in the
+   descriptions — is fixed there.
 2. **Most of these fields are not consulted by the Laravel runtime.** They are
    parity surface, and the posture page derives its answers from config. Wiring
    them — or marking the WordPress-only ones as such — is a separate decision;
@@ -6870,3 +6871,64 @@ Five assertions in `SettingsCatalogueTest`:
    the same pass.
 4. **The catalogue generator** is still uncommitted (§65.6), and the scope overlay
    this section creates has to be preserved by it.
+
+## 67. Settings descriptions render as plain text (2026-11-18)
+
+The §66 visual pass found the settings port's first concrete rendering defect:
+descriptions printed their WordPress markup. The Files & Media card showed
+`<strong>Advanced:</strong>`, the tools tab showed
+`<em>(Pro enables multiple connections via Remote Sites)</em>`, the provider cards
+showed `<code>OPENROUTER_API_KEY</code>` and a raw `<a href=…>` link, and the CORS
+helper showed `&quot;Same Origin&quot;`.
+
+### 67.1 The scope
+
+The catalogue carries the WordPress descriptions verbatim, and those descriptions
+are HTML because the WordPress form renders them. Filament renders `label()` and
+`helperText()` as text, so **44 fields across seven tabs** were showing markup or
+entities: general 1, providers 14, authentication 1, tools 17, orchestration 1,
+security 9, a2a 1.
+
+### 67.2 The fix
+
+`App\Support\Settings\SettingsText::fromHtml()` flattens a description:
+
+- strips inline tags (`strong`, `em`, `code`);
+- rewrites a link as `Label (URL)`, so the destination survives;
+- turns separating tags (`br`, `p`, `li`, …) into spaces;
+- decodes entities (`&quot;`, `&amp;`, `&nbsp;`);
+- collapses whitespace.
+
+`BuildsSettingsForm` applies it to labels, section headings, helper text and
+select option labels. The catalogue is unchanged: it stays the faithful mirror of
+the WordPress surface, and the conversion sits at the plain-text presentation
+boundary, so a regenerated catalogue cannot reintroduce the defect.
+
+### 67.3 Gates
+
+- `SettingsTextTest` — 5 tests / 11 assertions covering the three exact strings
+  the visual pass found, links, entities, separating tags, null and whitespace.
+- `AdminSettingsTest` — the rendered page contains `Advanced: Intercepts direct
+  media file requests` and `(Pro enables multiple connections via Remote Sites)`
+  with no escaped tags, and the OpenRouter link keeps its URL.
+
+### 67.4 Validation
+
+| Run | Result |
+|---|---|
+| `SettingsTextTest` | **5 tests / 11 assertions, 0 failures** |
+| Settings cluster (8 Feature classes + the unit test) | **113 tests / 10930 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`, changed files) | **0 errors** |
+| Browser (`/admin/default/settings`, viewer container) | the three strings render plain in Security, Tools & Features and Providers; no raw tags; narrow width stacks correctly |
+| Full app suite | **1312 tests / 17839 assertions, 0 failures** (one-off container, this worktree, SQLite) |
+
+### 67.5 Still open
+
+1. **The copy is still WordPress-shaped in places.** Descriptions mention
+   "WordPress", "plugin REST API" and "THIS WordPress server", and some fields are
+   WordPress-only. The plain-text fix makes them readable, not correct for a
+   Laravel operator. Rewriting the copy — or marking those fields WordPress-only —
+   is a separate pass.
+2. **The security tab is long.** 74 controls in 11 sections, the largest at 9; the
+   split fixed density per card, but the page is still a long scroll. Collapsing
+   sections or a secondary rail is a design follow-up, not a defect.

@@ -4,6 +4,7 @@ namespace App\Filament\Concerns;
 
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Settings\SettingsService;
+use App\Support\Settings\SettingsText;
 use App\Support\SettingsSchema;
 use App\Support\TenantContext;
 use Filament\Forms\Components\Field;
@@ -125,7 +126,7 @@ trait BuildsSettingsForm
             $sectionId = (string) $field['section_id'];
 
             $sections[$sectionId] ??= [
-                'label' => (string) $field['section'],
+                'label' => SettingsText::fromHtml((string) $field['section']),
                 'fields' => [],
             ];
 
@@ -165,7 +166,7 @@ trait BuildsSettingsForm
             default => TextInput::make($field['key']),
         };
 
-        $component->label((string) $field['label']);
+        $component->label(SettingsText::fromHtml((string) $field['label']));
 
         if (! $this->isWritableHere($field)) {
             // Read-only ON THIS SURFACE, not read-only in the abstract: an
@@ -181,7 +182,7 @@ trait BuildsSettingsForm
         }
 
         if (isset($field['description'])) {
-            $component->helperText((string) $field['description']);
+            $component->helperText(SettingsText::fromHtml((string) $field['description']));
         }
 
         return $component;
@@ -202,7 +203,10 @@ trait BuildsSettingsForm
      */
     private function selectField(array $field): Select
     {
-        $options = $field['options'] ?? array();
+        $options = array_map(
+            static fn ($label): string => SettingsText::fromHtml((string) $label),
+            $field['options'] ?? array()
+        );
         $current = $this->data[ $field['key'] ] ?? null;
 
         if (is_string($current) && '' !== $current && ! array_key_exists($current, $options)) {
