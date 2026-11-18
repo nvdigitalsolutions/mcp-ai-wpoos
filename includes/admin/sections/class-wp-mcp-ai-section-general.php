@@ -271,6 +271,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'min'         => 1,
 					'max'         => 500,
 				),
+				'sse_offload_elapsed_seconds'           => array(
+					'type'        => 'number',
+					'label'       => __( 'Background Hand-off (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long a chat stream may go silent — while a tool or non-streamed model call runs — before the remaining turn is handed to the background worker. This is a proxy idle limit, not the AI provider timeout. The default 110 sits just under Cloudflare\'s 125 s origin read timeout, leaving a margin for the hand-off to arrive; lower it if your proxy resets sooner (AWS load balancers and a default nginx proxy_read_timeout reset at 60 s). It must stay below your proxy limit — at or above it the connection is already gone when the check fires. Set to 0 to disable hand-off.', 'mcp-ai-wpoos' ),
+					'default'     => 110,
+					'placeholder' => '110',
+					'min'         => 0,
+					'max'         => 600,
+				),
 				// Custom Filters fields.
 				'filter_default_light_model'            => array(
 					'type'        => 'text',

@@ -127,6 +127,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 				// Number fields.
 				'default_assistant'                  => 'number',
 				'request_timeout'                    => 'number',
+				'sse_offload_elapsed_seconds'        => 'number',
 				'memory_max_file_bytes'              => 'number',
 				'cloudflare_image_width'             => 'number',
 				'cloudflare_image_height'            => 'number',

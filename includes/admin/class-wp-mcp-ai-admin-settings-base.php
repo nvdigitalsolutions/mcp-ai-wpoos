@@ -475,6 +475,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'google_maps_api_key'                   => '',
 				'ita_tariff_api_key'                    => '',
 				'request_timeout'                       => 200,
+				'sse_offload_elapsed_seconds'           => 110,
 				'memory_max_file_bytes'                 => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
 				'auth0_domain'                          => '',
 				'auth0_audience'                        => '',

@@ -612,6 +612,67 @@ SPIKE_TOKEN=<token> php bin/laravel-spike-soak.php --streams=5 --seconds=1800
 
 ---
 
+## 9b. Phase 6 — Long-run stream hardening parity (SSE offload, 1.2.24)
+
+**Why.** WordPress gained Phase 4a (inter-step keepalives) and Phase 4b
+(long-run offload) in 1.2.11. This runtime serves the same chat streams through
+`App\Http\Controllers\ChatStreamController` →
+`Nvoos\Core\Application\Chat\ChatOrchestrator::handleChatStreaming()` →
+`Nvoos\Core\Infrastructure\Streaming\SseHandler`, and has neither. Behind the
+same proxies (Cloudflare 125 s, AWS ALB 60 s, nginx `proxy_read_timeout` 60 s —
+all **idle**-based) a Laravel turn that blocks inside a slow tool is reset
+exactly as the WordPress stream was before 1.2.11.
+
+**Carry the 1.2.24 correction.** The watchdog must be **idle**-based. The first
+WordPress implementation compared *total turn elapsed* and misfired on healthy
+long turns (a Gmail search inside a multi-iteration turn handed off while bytes
+were flowing). Do not port that shape.
+
+### Tasks
+
+- [ ] `SseHandler` records each write and exposes `maxIdleGap()` — the longest
+      silence between two writes. Unit-test with a controlled gap (≤ ~30 ms
+      sleep, assert a lower bound only) and assert `0.0` before the first write.
+- [ ] `ChatOrchestrator::handleChatStreaming()` emits a keepalive comment after
+      the headers, before the initial model call, before each tool execution and
+      before each in-loop model call (Phase 4a parity).
+- [ ] At those same boundaries, compare `maxIdleGap()` against the threshold and,
+      when exceeded, hand the remaining turn to the queue:
+      - persist a continuation snapshot (messages + assistant config +
+        `iteration`/`max_iterations` + cost accumulator + pending tool batch);
+      - dispatch a `chat_stream_continuation` job on the `redis` queue;
+      - emit `job_offload` `{job_id, session_key, message}` then `done`.
+- [ ] The worker resumes the bounded model↔tool loop, pushes the final message
+      into the session frame buffer, and **throws** on a terminal error so the
+      queue row records `failed` (returning an error envelope would mark it
+      `completed`).
+- [ ] The threshold comes from `SettingsService` (`scope: tenant`) via
+      `SettingsStoreInterface` — never hardcoded — so it can differ per estate.
+      Add the same **Background Hand-off (seconds)** field to the settings schema
+      (`BuildsSettingsForm` is generated from it), default **110** (a margin
+      below Cloudflare's 125 s origin read timeout — lower it where the proxy
+      resets sooner), `0` = off.
+- [ ] Do **not** derive it from `oos.request_timeout` (`NVOOS_REQUEST_TIMEOUT`,
+      default 60). That bounds a single outbound provider call — a different
+      clock on a different leg. A threshold above the proxy limit is a no-op.
+- [ ] Octane: `ChatStreamController` runs in a long-lived worker, so the
+      idle-gap state belongs to the handler instance created per stream, never to
+      a singleton (the same rule as the bound-not-singleton repository note in
+      the runtime skill).
+
+### Acceptance gates
+
+| Gate | Command / check |
+|---|---|
+| Core suite | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) |
+| App suite | `docker exec -w /app oos-laravel-app php -d memory_limit=1G vendor/bin/phpunit` after the skeleton sync |
+| phpcs | `vendor/bin/phpcs --standard=phpcs-laravel.xml.dist --error-severity=1 --warning-severity=8` |
+| Behaviour | A stub tool that sleeps past the threshold offloads **before** executing; a turn whose steps stay under it completes on the stream with **no** `job_offload` frame |
+| Console | `npm run test:e2e` (`examples/nvoos-complete-velocity`) — the offload frame must not break the chat composer |
+
+**Cross-reference:** `docs/project/proposals/sse-stream-hardening-long-run-offload-proposal.md`
+(Design 1, revised) and `superseded`/`implementation` plan G1.
+
 ## 10. Contract fixture harness
 
 Shipped (4.7). Fixtures live beside the skeleton and ship with it:
