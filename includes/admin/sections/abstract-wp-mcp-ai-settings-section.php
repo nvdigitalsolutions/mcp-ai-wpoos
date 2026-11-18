@@ -638,6 +638,38 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		}
 
 		/**
+		 * Whether a field is a layout separator rather than a stored setting.
+		 *
+		 * `heading` fields emit an <h3> between field groups. They carry no input
+		 * and are never submitted, so sanitize_fields() cannot persist them — it
+		 * processes only keys present in the submitted input.
+		 *
+		 * @param array $field Field configuration.
+		 * @return bool
+		 */
+		protected function is_heading_field( $field ) {
+			return isset( $field['type'] ) && 'heading' === $field['type'];
+		}
+
+		/**
+		 * Render a heading separator between field groups.
+		 *
+		 * Closes the wrapper-opened form table, emits the heading, then reopens a
+		 * fresh form-table so the following fields render as rows under it.
+		 * Mirrors WP_MCP_AI_Section_A2A::render() (and the Orchestration section's
+		 * `html` separators), which is the established pattern in this codebase.
+		 *
+		 * @param array $field Field configuration.
+		 */
+		protected function render_heading_field( $field ) {
+			$label = isset( $field['label'] ) ? $field['label'] : '';
+
+			echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+			echo '<h3 class="wp-mcp-ai-section-subheading">' . esc_html( $label ) . '</h3>';
+			echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+		}
+
+		/**
 		 * Render a field based on its configuration.
 		 *
 		 * @param string $key Field key.
