@@ -229,7 +229,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 			<h2><?php esc_html_e( 'Architectural Design Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
 
 			<p class="description">
-				<?php esc_html_e( 'These defaults are surfaced through wp_mcp_ai_arch_design_settings and consumed by every tool in the toolkit. Settings can be overridden per project (in project meta) or filtered programmatically via wp_mcp_ai_arch_toolkit_settings.', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'These defaults are stored in wp_mcp_ai_architectural_design_toolkit_settings and consumed by every tool in the toolkit through WP_MCP_AI_Architectural_Engine::get_toolkit_settings(). Settings can be overridden per project (in project meta) or filtered programmatically via wp_mcp_ai_arch_toolkit_settings.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 
 			<table class="form-table">
