@@ -446,6 +446,21 @@
       "notes": "Licence key is write-only; is_operator and slug are not editable; TenantPolicy denies create and delete."
     },
     {
+      "id": "models",
+      "title": "Models and rates",
+      "audience": "operator",
+      "ops": { "state": "full" },
+      "admin": null,
+      "console": null,
+      "writer": "ops",
+      "plan_gate": null,
+      "projection": null,
+      "files": [
+        "app/Filament/Operator/Resources/Models/ModelConfigResource.php"
+      ],
+      "notes": "Text/chat models from resources/model-catalog.json (251 models, 18 providers): context, TPM/RPM, per-1M input/output prices, fallback and lifecycle. Operator scope because rates and limits are provider reference data; an estate selects a model, it does not rewrite the price. Sync inserts missing models and never overwrites an edited row. Media models are a separate capability catalogue (media-model-catalog.json) with per-image/per-second prices and are not part of this surface."
+    },
+    {
       "id": "queue",
       "title": "Failed jobs (DLQ)",
       "audience": "operator",

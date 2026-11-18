@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Assistant;
+use App\Models\ModelConfig;
 use App\Models\Team;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Observers\AssistantObserver;
+use App\Observers\ModelConfigObserver;
 use App\Observers\TeamObserver;
 use App\Observers\TenantObserver;
 use App\Policies\AssistantPolicy;
@@ -266,6 +268,7 @@ class AppServiceProvider extends ServiceProvider
         Tenant::observe(TenantObserver::class);
         Team::observe(TeamObserver::class);
         Assistant::observe(AssistantObserver::class);
+        ModelConfig::observe(ModelConfigObserver::class);
 
         // Local/testing soak runs need headroom; production keeps 60/min.
         $chatLimit = app()->environment(['local', 'testing']) ? 60000 : 60;

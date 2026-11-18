@@ -42,6 +42,19 @@ trait RecordsAdminChanges
      */
     abstract protected function auditResource(): string;
 
+    /**
+     * The identifier an operator would recognise on the audit row.
+     *
+     * Defaults to the primary key. A model whose public identity is a natural
+     * key (the model catalogue's `model_id`) overrides this, so the audit trail
+     * names the row the panel actually shows rather than a surrogate integer
+     * that changes between deployments.
+     */
+    protected function auditRecordId(Model $model): string
+    {
+        return (string) $model->getKey();
+    }
+
     public function created(Model $model): void
     {
         $this->recordAudit($model, 'created', array(), $this->attributesFor($model));
@@ -105,7 +118,7 @@ trait RecordsAdminChanges
 
         $this->logger->recordResource(
             $this->auditResource(),
-            (string) $model->getKey(),
+            $this->auditRecordId($model),
             $action,
             $before,
             $after

@@ -6932,3 +6932,241 @@ boundary, so a regenerated catalogue cannot reintroduce the defect.
 2. **The security tab is long.** 74 controls in 11 sections, the largest at 9; the
    split fixed density per card, but the page is still a long scroll. Collapsing
    sections or a secondary rail is a design follow-up, not a defect.
+
+## 68. The model manager — a text-model catalogue, rates and provider-scoped selects (2026-11-18)
+
+The WordPress Token Manager's **Model Manager** is where an operator edits a
+model's TPM/RPM, context window, per-1K cost, fallback and lifecycle status. The
+runtime's counterpart is `/ops/models`: a 251-row catalogue behind the same
+operator gate as Estates, Credentials and the DLQ, and the source of truth for
+the model dropdowns in `/admin/<estate>/settings`.
+
+Two catalogues exist upstream and they are not the same shape. Most of the
+decisions below follow from that one fact.
+
+### 68.1 Text and media are two catalogues, not one table
+
+| | Text / chat | Media (image, video, audio) |
+|---|---|---|
+| Source | `includes/data/model-catalog.json` | `includes/data/media-model-catalog.json` |
+| Entries | 251 across 18 providers (250 distinct ids) | 12 |
+| Shape | `model_id`, provider, context, TPM/RPM/TPD/RPD, per-1K cost, fallback, status, capability flags | `kind`, `modes`, `aspect_ratios`, `resolutions`, `duration`, `endpoint` |
+| Price unit | per token | **per image or per second** (`class-wp-mcp-ai-cost-calculator.php`; one entry is priced per 1M images) |
+| Reader | model manager, settings selects, router (later) | image/video/audio tools, cost calculator |
+| Ported? | **yes**, this section | **no** |
+
+A row in a per-1M table for `veo-3.1-generate-preview` would have a null price,
+a null context window and a meaningless TPM; worse, it would invite a per-1M
+figure on a video model. The media catalogue is a separate surface with its own
+capability schema, recorded as follow-up (§68.10). A test pins the boundary:
+the text catalogue must not contain a `kind` key and must not contain `soul-2`
+or `veo-3.1-generate-preview`.
+
+`bin/generate-laravel-model-catalog.php` regenerates
+`docker/laravel/app-skeleton/resources/model-catalog.json` from the WordPress
+canonical catalogue. The artefact carries a `_license` note: the identifiers,
+limits and prices are factual reference data derived from GPL-3.0-or-later
+source, used by the MIT runtime.
+
+### 68.2 Per-1M in the table, per-1K in the source
+
+The WordPress catalogue stores cost per 1,000 tokens; the generator multiplies
+by 1,000 and the table stores USD per 1,000,000 at `decimal(12,6)`.
+
+This is the unit operators actually compare. It is also the industry convention:
+LiteLLM publishes `input_cost_per_token` alongside per-1M displays, and
+OpenRouter's model directory shows per-1M input/output. Storing the advertised
+unit avoids a conversion on every render and a rounding question at every edit.
+
+The WordPress page shows per-1K; the runtime shows per-1M. That is a deliberate
+divergence, not an oversight — a UI that says "$0.0030" invites a decimal-place
+mistake that a "$3.00 / 1M" column does not.
+
+### 68.3 Identity is `(provider, model_id)` — the `gpt-4o` finding
+
+The first cut of the migration had `unique(model_id)`. Two tests failed with
+"250 of 251": the canonical catalogue publishes **`gpt-4o` twice** — once as an
+`azure` deployment (active, limits per region) and once as an `openai` model
+(deprecated 2026-10-14, sunset 2027-01-14, replacement `gpt-6-luna`) — and
+`insertOrIgnore` silently dropped one.
+
+WordPress's own option store is keyed by model id alone, so upstream collapses
+the pair and one row's edits overwrite the other's. That is a lossy behaviour
+worth recording rather than porting.
+
+The runtime therefore keys on the pair:
+
+- `unique(['provider', 'model_id'])`, plus a plain index on `model_id` for
+  fallback lookups (the composite index leads with `provider`).
+- `sync()` compares `provider|model_id` pairs, so both rows insert and the
+  reported counts are pair counts.
+- `options()` labels a duplicated id with its provider, and prefers the servable
+  row when a deprecated one shares the id. One option per value is unavoidable;
+  an unnamed choice between two rows would be a coin toss.
+- `resolveFallback($provider, $id)` prefers the naming row's own provider, which
+  is what "fall back to `gpt-4o`" means on an Azure row. The `fallback()` relation
+  stays for the unambiguous case and says so in its docblock.
+
+The visible consequence today is small: the OpenAI `gpt-4o` is deprecated, so the
+servable list contains only the Azure row. The schema is right for the day a
+provider re-activates an id another provider also publishes.
+
+### 68.4 Sync is additive, never destructive
+
+`sync()` inserts only rows whose `(provider, model_id)` pair is absent, in chunks
+of 100 via `insertOrIgnore`. An existing row is **never** updated.
+
+This mirrors the relationship the WordPress layer already has between its CCT
+defaults and its stored overrides, made explicit: the JSON is the seed, the table
+is the working copy. A sync that overwrote an operator's price edit would be the
+settings-port bug in reverse — the data would look refreshed while the deployment
+still used the edit.
+
+The same operation is reachable from three places:
+
+| Where | How |
+|---|---|
+| CLI | `php artisan nvoos:sync-models` |
+| `/ops/models` | "Sync catalogue" — header action and empty state, with confirmation |
+| Fresh install | `ModelConfigSeeder`, called from `DatabaseSeeder` |
+
+`sync()` also keeps a `seen` set while building rows, so a duplicate pair in the
+source cannot make `added` overstate what was written.
+
+### 68.5 Thirteen settings selects now read the catalogue
+
+`resources/settings/catalogue.json` carries `options_source: "model_catalog:<provider>"`
+on thirteen text-model fields. `BuildsSettingsForm::selectField()` merges the
+catalogue with `+=`, so a curated label wins for an id both lists carry and the
+list can only grow:
+
+| Provider | Fields |
+|---|---|
+| anthropic | `anthropic_model`, `anthropic_fallback_model` |
+| gemini | `default_gemini_model`, `gemini_fallback_model` |
+| cloudflare | `cloudflare_model` |
+| nvidia | `nvidia_model` |
+| deepseek | `deepseek_model` |
+| openrouter | `openrouter_model` |
+| typesafe | `typesafe_model` |
+| digitalocean | `digitalocean_model` |
+| kimi | `kimi_model` |
+| baseten | `baseten_model` |
+| zai | `zai_model` |
+
+Deliberately **not** marked, and enforced by a test:
+
+- media selects — `openai_image_model`, `openai_embedding_model`,
+  `openai_transcribe_model`, `openai_speech_model`, `gemini_image_model`,
+  `gemini_video_model`, `cloudflare_image_model`, `cloudflare_audio_model`;
+- local-runtime selects — `ollama_model`, `lm_studio_model`, `embedded_model`,
+  `embedded_server_model`;
+- composite selects — `deep_research_model` (`provider:model` values).
+
+`anthropic_vision_model` is also left curated: the text catalogue carries
+`supports_vision`, but the select does not filter on it yet, so pointing the
+vision dropdown at the full Anthropic list would offer non-vision models.
+Capability-filtered selects are a follow-up (§68.10).
+
+Options are read from the table on every form build — no static cache. An Octane
+worker with a process-lifetime cache would serve a list that predates an
+operator's create or edit.
+
+### 68.6 Audit: a model row names `model_id`, a bulk sync names itself
+
+`ModelConfigObserver` uses the shared `RecordsAdminChanges` trait, so a create,
+edit or delete through the panel records one row with the before/after diff and
+the acting operator.
+
+One addition to the trait: `auditRecordId(Model $model)`, defaulting to
+`(string) $model->getKey()`. The model catalogue overrides it to return
+`model_id`, because `/ops/models` shows the provider id — "updated 17" would be
+unreadable after a reseed, and the surrogate key is not what an operator sees.
+Existing observers are unchanged.
+
+A bulk sync bypasses Eloquent events (`insertOrIgnore`), so it records exactly one
+row instead of 251:
+
+```
+resource=models  record_id=catalogue  action=synced  after={"added":0,"existing":251}
+```
+
+Both the audit row and the count come from the Filament action, so the CLI and
+the seeder (which have no actor) write no audit rows and are covered by the
+table's own timestamps — the rule the trait already applied elsewhere.
+
+### 68.7 The page
+
+`/ops/models` is a `ManageRecords` resource rather than a List/Create/Edit trio:
+251 rows are managed in one searchable table, and a page per row would add
+navigation without adding an action.
+
+- **Columns:** model id (copyable), name, provider badge, status badge, context,
+  in/out per 1M. TPM, RPM, fallback and `updated_at` are toggleable, hidden by
+  default. Explicit widths keep the row actions inside the panel without a
+  horizontal scrollbar at the default desktop width.
+- **Filters:** provider and status.
+- **Form:** `model_id` is fixed after creation (settings and fallbacks resolve it,
+  so a rename would silently break both); prices use a `$` prefix and a
+  `0.000001` step; the fallback select cannot name the row itself and must name a
+  catalogue id; `supports_streaming` defaults on to match the schema.
+- **Navigation:** directly after Estates, because the catalogue is what an estate
+  chooses from.
+
+### 68.8 Gates
+
+`tests/Feature/ModelConfigManagerTest.php` — 10 tests / 56 assertions:
+
+| Test | Pins |
+|---|---|
+| catalogue completeness | ≥200 entries, the three big providers, no media schema, no media ids, fewer distinct ids than entries (the `gpt-4o` pair) |
+| additive sync | 250 added / 1 existing, the edited name survives, a second sync adds 0 |
+| two providers, one id | both `gpt-4o` rows survive, provider-scoped lists do not cross, the servable row labels the option, `resolveFallback` prefers its own provider |
+| servable options | active + preview only; deprecated and retired excluded |
+| reachability | operator reaches `/ops/models`, an estate administrator gets 403 |
+| table render | a catalogue row appears in the Livewire table |
+| audit | a create writes `resource=models`, `record_id=<model_id>`, `action=created` |
+| artisan sync | the command adds the distinct catalogue |
+| select marking | 13 marked, 13 media/local fields unmarked |
+| provider scoping | a Gemini model appears in the Gemini select and an OpenAI-only model does not |
+
+`SurfaceOwnershipTest` requires the new resource to have a contract row; `models`
+was added after `estates` with `audience: operator`, `ops.state: full`, no
+`console` key and the resource path in `files`.
+
+### 68.9 Validation
+
+| Run | Result |
+|---|---|
+| `ModelConfigManagerTest` | **10 tests / 56 assertions, 0 failures** (two PHPUnit test-runner deprecations, both in other test classes and pre-existing) |
+| Settings classes (`AdminSettingsTest`, `SettingsCatalogueTest`, `SettingsOwnershipTest`, `SettingsProjectionTest`, `SettingsTextTest`) | **58 tests / 10466 assertions, 0 failures** |
+| `php artisan migrate` on MySQL 8 | `2026_11_18_210000_create_nvoos_model_configs_table … DONE` |
+| `php artisan nvoos:sync-models` on MySQL 8 | `251 model(s) added; 0 already present.` then `0 model(s) added; 251 already present.` |
+| phpcs (`phpcs-laravel.xml.dist`, 12 changed/added files) | **0 errors** |
+| Browser (`/ops/models`, viewer container, 251 rows) | table fits the panel; status renders `Active`; create form renders all 18 fields; "Sync catalogue" → one `synced` audit row with `{added:0, existing:251}` |
+| Browser (`/admin/default/settings`) | `deepseek_model` lists `deepseek-v4-pro` (catalogue-only), provider selects list only their own provider |
+| Full app suite | **1322 tests / 17902 assertions, 0 failures** (one-off container, this worktree, SQLite; 2 pre-existing PHPUnit runner deprecations) |
+
+### 68.10 Still open
+
+1. **The media catalogue is not ported.** `media-model-catalog.json` needs its own
+   surface: capability fields, per-image/per-second prices, and the cost
+   calculator's unit rules. A per-1M table cannot represent it.
+2. **Fallback is one id, not a chain.** The WordPress page also stores a single
+   fallback; a chain is a router decision, not a column.
+3. **The catalogue feeds selects, not routing.** `ProviderRouter` and the token
+   budget still use their own model knowledge. Reading `nvoos_model_configs` for
+   limits and fallbacks is a separate change with its own failure modes.
+4. **Capability-filtered selects.** `anthropic_vision_model` stays curated until
+   the select filters on `supports_vision` the way the WordPress fallback list
+   filters on capability flags.
+5. **No OpenAI model select to point at.** The settings catalogue has
+   `openai_fallback_model` and `high_token_fallback_model`, but no `openai_model`
+   field, so the OpenAI rows are served by nothing yet.
+6. **Catalogue provenance.** Rows do not record which catalogue version they came
+   from, so "is this deployment current?" is answered by re-running sync and
+   reading the counts. A `catalogue_version` column would answer it directly.
+7. **Two generated artefacts, one pattern.** `bin/generate-laravel-model-catalog.php`
+   is committed; the WordPress settings-catalogue generator (§65.6) still is not.
+   Making both generators committed and both artefacts regenerated by one command
+   is the consistent end state.
