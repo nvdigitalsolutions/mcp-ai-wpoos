@@ -255,6 +255,73 @@ class SettingsCatalogueTest extends TestCase
         $this->assertSame(array(), $applied);
     }
 
+    public function test_infrastructure_endpoints_are_operator_scope(): void
+    {
+        $ops   = array_column(SettingsSchema::forSurface('ops'), 'key');
+        $admin = array_column(SettingsSchema::forSurface('admin'), 'key');
+
+        // Local / self-hosted infrastructure: NV manages the deployment's
+        // endpoints and the keys that authenticate to them. `ollama_endpoint`
+        // set this precedent before the port.
+        foreach (array(
+            'ollama_endpoint',
+            'ollama_network_interface',
+            'lm_studio_endpoint_url',
+            'lm_studio_network_interface',
+            'lm_studio_api_key',
+            'embedded_server_model',
+        ) as $key) {
+            $this->assertContains($key, $ops, $key.' should be operator scope.');
+            $this->assertContains($key, $admin, $key.' must still render on /admin (disabled).');
+        }
+
+        // Hosted-provider base URLs are a bring-your-own-gateway choice made with
+        // a credential the estate already owns, so they stay tenant scope.
+        $this->assertContains('openai_base_url', $admin);
+        $this->assertContains('typesafe_base_url', $admin);
+        $this->assertNotContains('openai_base_url', $ops);
+
+        $writable = array_column(SettingsSchema::writableFor('admin'), 'key');
+        $this->assertNotContains('lm_studio_endpoint_url', $writable);
+    }
+
+    public function test_large_provider_sections_split_into_connection_and_behaviour(): void
+    {
+        $sections = array();
+
+        foreach (SettingsCatalogue::fields() as $field) {
+            $sections[ $field['section_id'] ][] = $field['key'];
+        }
+
+        $split = array(
+            'providers__openai',
+            'providers__anthropic',
+            'providers__gemini',
+            'providers__cloudflare',
+            'providers__typesafe',
+        );
+
+        foreach ($split as $sid) {
+            $token = substr($sid, (int) strrpos($sid, '__') + 2);
+
+            $this->assertArrayHasKey($sid.'__connection', $sections, $sid.' has no connection section.');
+            $this->assertArrayHasKey($sid.'__models', $sections, $sid.' has no behaviour section.');
+
+            // The provider's master switch belongs with the credential it gates.
+            $this->assertContains('enable_'.$token, $sections[ $sid.'__connection' ]);
+        }
+
+        // No provider section is a wall of controls any more: the largest is
+        // OpenAI's behaviour block at 22, down from 27 in one card.
+        foreach ($sections as $sid => $keys) {
+            if (! str_starts_with((string) $sid, 'providers__')) {
+                continue;
+            }
+
+            $this->assertLessThanOrEqual(22, count($keys), $sid.' is still one undifferentiated block.');
+        }
+    }
+
     /**
      * @return list<array<string, mixed>>
      */
