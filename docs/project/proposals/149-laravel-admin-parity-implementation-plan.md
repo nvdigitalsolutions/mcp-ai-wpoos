@@ -6105,11 +6105,12 @@ consequences:
    page again and clicks Save.
 
 The Laravel settings screen reads the store properly, so for these eight families
-the panel is currently the only editor that round-trips. The WordPress fix is
-small — read the option once in `render_configuration_tab()` and pass it to the
-controls, exactly as `media-toolkit` does — but it is a separate change and is
-**not** part of this pass. Until it lands, "the WP tab and the panel are
-equivalent editors" is true for `media` and false for the other eight.
+the panel was, at the time of this pass, the only editor that round-tripped. The
+WordPress fix turned out to be small — read the option once in
+`render_configuration_tab()` and pass it to the controls, exactly as
+`media-toolkit` did — and it shipped as **§60**. Until it landed, "the WP tab and
+the panel are equivalent editors" was true for `media` and false for the other
+eight.
 
 ### 59.4 Validation
 
@@ -6139,3 +6140,116 @@ the symlink at the worktree made the run green. That is worth keeping: it means
 the gate does exactly what it claims, catching a manifest whose feature is
 missing from the catalogue. Anyone running these tests from a linked worktree
 should check `readlink -f /app/vendor/nvoos/core` first.
+
+## 60. Toolkit settings display — and the three stores it exposed (2026-11-18)
+
+§59.3 recorded the read half of the persistence defect: eight pages printed
+literal defaults instead of reading their option, so a saved value was invisible
+and the next save overwrote it. This is the fix, plus what looking closely at it
+revealed about where toolkit settings actually live.
+
+### 60.1 What shipped
+
+| Change | Files |
+|---|---|
+| `stored_options()` on the base class — one place to read the page's own option, normalised to an array | `class-wp-mcp-ai-toolkit-settings-base.php` |
+| Eight pages now render from it: `checked()`, `selected()` and `value="<?php echo esc_attr( … ) ?>"` against the stored array, with the old literal kept as the fallback | `analytics`, `architectural-design`, `ecommerce`, `financial-planner`, `multilingual`, `regulatory-registration`, `social-media`, `video-production` |
+| `media-toolkit` migrated onto the helper — it was already correct, and is the pattern the others now follow | `class-wp-mcp-ai-media-toolkit-settings-page.php` |
+| Fourth direction on the persistence gate: **display** | `tests/pro/admin/test-toolkit-settings-persistence.php` |
+
+The helper's type check is not decoration. `get_option()` can return a string if
+something else wrote the option, and indexing a string with a string offset is a
+`TypeError` on PHP 8 — which would turn a cosmetic bug into a fatal error on the
+settings screen.
+
+The literal defaults stay in the markup as the `??` fallback. `setting_schema()`
+deliberately carries types and not defaults (§58.2), so a first-ever render has
+nothing stored and must fall through to what the control used to print. The
+defaults are unchanged, which is why the manifests authored in §59 did not have
+to move.
+
+### 60.2 The gate, and proof it is not vacuous
+
+`test_the_configuration_tab_renders_the_stored_values` renders each tab twice:
+
+1. store a legal, **per-key** probe for every declared setting and require the
+   markup to carry it — `value="…"` for inputs, `value="…" selected` for selects,
+   a checked radio for radio groups;
+2. store every boolean `false` and require every checkbox of that page to be
+   unchecked, then `true` and require every one checked.
+
+Two details worth keeping:
+
+- The probe is distinct per key. A shared sentinel would let a field that ignores
+  the option pass because a sibling field rendered the same string.
+- Checkboxes are filtered by option name, not counted globally.
+  `financial-planner` also renders a checkbox for `wp_mcp_ai_settings[...]`, which
+  is not part of its schema (§58.4), so a naive count would report 4 for 3.
+
+`media-toolkit` renders `sharp_processing_mode` as **radios**, not a `<select>`,
+even though its WP schema type is `select`. The gate therefore accepts either
+shape, which is the honest model: the schema type says what the value is, not
+what widget draws it.
+
+Verified by running the same assertions against the pre-fix files (the `HEAD`
+revisions of all ten classes, loaded from an overlay): **38 failures across the
+eight broken pages, 0 for `media-toolkit`** — which is exactly right, because
+`media` was already reading its option. Against the fixed tree: **0 failures for
+all nine**.
+
+### 60.3 What this exposed — toolkit settings live in three disjoint stores
+
+Auditing the readers while wiring the pages produced a finding that matters more
+than the display bug:
+
+| Store | Written by | Read by |
+|---|---|---|
+| `wp_mcp_ai_<toolkit>_toolkit_settings` | the toolkit settings page | **`media` only** (Media Command Center, 2 call sites). The other eight have **zero** readers outside their own page. |
+| `wp_mcp_ai_pro_toolkit_settings[<slug>]` | `WP_MCP_AI_Pro_Toolkit_Manifests::save_settings()` | the Pro toolkit REST controller (GET settings) and the records layer. Not the toolkit tools. |
+| Laravel `store`, key `toolkit.<slug>.<key>` | `ToolkitEngine::writeSettings()` | `ToolkitEngine` only. |
+
+And the toolkit **tools** read a fourth, ad-hoc set. The clearest case is
+`architectural-design`: the page persists to
+`wp_mcp_ai_architectural_design_toolkit_settings`, while
+`class-wp-mcp-ai-architectural-engine.php` reads
+`wp_mcp_ai_arch_design_settings` at lines 149 and 771 — an option **nothing
+writes**. The page's own help text even names the engine's option, so the split
+is a wiring mistake, not a design.
+
+So the accurate statement of parity after §59 and this section is: **the schema
+and the rendering match, and both editors now round-trip into their own store —
+but the stores are not connected, and for eight toolkits nothing consumes the
+values at all.** Saving a setting is no longer lossy; it is still inert.
+
+### 60.4 Recommendation — not done here
+
+Unifying the stores is a design decision, not a mechanical fix, so this section
+records it rather than guessing:
+
+1. **Pick the canonical WP store per toolkit.** The per-toolkit option is the
+   natural choice: it is what the pages write, what `media` already consumes, and
+   what a third-party filter would expect.
+2. **Point the tools at it.** `architectural-design` first, since the intended
+   option is documented in the page copy. That one needs a decision too: repoint
+   the engine at the page's option, or rename the page's option and migrate — the
+   engine's name is the one third parties may already filter.
+3. **Decide whether the manifest layer reads through or stays separate.** If it
+   reads through, the panel and the WP tab become two editors of one value and
+   the last write wins; if it stays separate, the manifest store needs its own
+   documented owner rather than a single option nothing else reads.
+
+### 60.5 Validation
+
+- The new gate direction was executed against both trees via a stub harness
+  (WordPress functions stubbed, real page classes loaded): **38 failures pre-fix,
+  0 post-fix**. The WordPress PHPUnit suite itself was not run locally — the test
+  library is only partially installed — so CI runs
+  `tests/pro/admin/test-toolkit-settings-persistence.php`.
+- The gate's existing directions were re-checked structurally: the rendered key
+  set of all nine pages is **identical to `HEAD`** (3 / 9 / 3 / 4 / 22 / 3 / 10 /
+  3 / 3 = 60 keys), so the markup↔schema test still matches.
+- phpcs (`phpcs.xml.dist`): **0 errors** on all eleven files. The 24 warnings on
+  the nine pages and 2 on the gate are pre-existing — array-alignment in
+  `setting_schema()` and `file_get_contents()` in the earlier tests; the `HEAD`
+  revisions produce the same ones.
+- `php -l` clean on all eleven files.

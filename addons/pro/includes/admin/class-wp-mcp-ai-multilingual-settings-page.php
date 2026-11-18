@@ -102,6 +102,7 @@ class WP_MCP_AI_Multilingual_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 	 * Render configuration tab
 	 */
 	protected function render_configuration_tab() {
+		$options = $this->stored_options();
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'Multilingual Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -111,10 +112,10 @@ class WP_MCP_AI_Multilingual_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 					<th scope="row"><?php esc_html_e( 'Default Target Language', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<select name="<?php echo esc_attr( $this->option_name ); ?>[default_target_language]">
-							<option value="es"><?php esc_html_e( 'Spanish', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="fr"><?php esc_html_e( 'French', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="de"><?php esc_html_e( 'German', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="zh"><?php esc_html_e( 'Chinese', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="es" <?php selected( $options['default_target_language'] ?? 'es', 'es' ); ?>><?php esc_html_e( 'Spanish', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="fr" <?php selected( $options['default_target_language'] ?? 'es', 'fr' ); ?>><?php esc_html_e( 'French', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="de" <?php selected( $options['default_target_language'] ?? 'es', 'de' ); ?>><?php esc_html_e( 'German', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="zh" <?php selected( $options['default_target_language'] ?? 'es', 'zh' ); ?>><?php esc_html_e( 'Chinese', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 						<p class="description"><?php esc_html_e( 'Default language for translations', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -123,9 +124,9 @@ class WP_MCP_AI_Multilingual_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 					<th scope="row"><?php esc_html_e( 'Translation Provider', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<select name="<?php echo esc_attr( $this->option_name ); ?>[translation_provider]">
-							<option value="openai"><?php esc_html_e( 'OpenAI GPT-4', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="google"><?php esc_html_e( 'Google Translate', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="deepl"><?php esc_html_e( 'DeepL', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="openai" <?php selected( $options['translation_provider'] ?? 'openai', 'openai' ); ?>><?php esc_html_e( 'OpenAI GPT-4', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="google" <?php selected( $options['translation_provider'] ?? 'openai', 'google' ); ?>><?php esc_html_e( 'Google Translate', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="deepl" <?php selected( $options['translation_provider'] ?? 'openai', 'deepl' ); ?>><?php esc_html_e( 'DeepL', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 					</td>
 				</tr>
@@ -133,7 +134,7 @@ class WP_MCP_AI_Multilingual_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 					<th scope="row"><?php esc_html_e( 'Enable Translation Memory', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_translation_memory]" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_translation_memory]" value="1" <?php checked( $options['enable_translation_memory'] ?? true, 1 ); ?> />
 							<?php esc_html_e( 'Store and reuse previous translations', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>

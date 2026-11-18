@@ -119,6 +119,7 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 	 * Render configuration tab
 	 */
 	protected function render_configuration_tab() {
+		$options = $this->stored_options();
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'Financial Planner Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -127,14 +128,14 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Currency', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="text" name="<?php echo esc_attr( $this->option_name ); ?>[default_currency]" value="USD" class="regular-text" />
+						<input type="text" name="<?php echo esc_attr( $this->option_name ); ?>[default_currency]" value="<?php echo esc_attr( $options['default_currency'] ?? 'USD' ); ?>" class="regular-text" />
 						<p class="description"><?php esc_html_e( 'Default currency for financial calculations', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Interest Rate', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[default_interest_rate]" value="7" step="0.1" min="0" max="100" class="small-text" />
+						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[default_interest_rate]" value="<?php echo esc_attr( $options['default_interest_rate'] ?? '7' ); ?>" step="0.1" min="0" max="100" class="small-text" />
 						<span>%</span>
 						<p class="description"><?php esc_html_e( 'Default annual interest rate for investment calculations', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -142,7 +143,7 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Inflation Rate', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[default_inflation_rate]" value="3" step="0.1" min="0" max="100" class="small-text" />
+						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[default_inflation_rate]" value="<?php echo esc_attr( $options['default_inflation_rate'] ?? '3' ); ?>" step="0.1" min="0" max="100" class="small-text" />
 						<span>%</span>
 						<p class="description"><?php esc_html_e( 'Default annual inflation rate for future value calculations', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -151,7 +152,7 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 					<th scope="row"><?php esc_html_e( 'Enable Bank Account Sync', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_bank_sync]" value="1" />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_bank_sync]" value="1" <?php checked( $options['enable_bank_sync'] ?? false, 1 ); ?> />
 							<?php esc_html_e( 'Allow optional syncing with bank accounts via third-party services', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description">
