@@ -88,6 +88,24 @@ class AdminSettingsTest extends TestCase
         $this->assertDatabaseMissing('nvoos_settings', array('key' => 'default_model'));
     }
 
+    public function test_a_wordpress_description_renders_as_plain_text(): void
+    {
+        $response = $this->actingAs($this->estateAdmin(Tenant::DEFAULT_ID))
+            ->get('/admin/default/settings')
+            ->assertOk();
+
+        // 149 §67: the catalogue keeps WordPress's HTML, the panel renders text.
+        $response->assertSee('Advanced: Intercepts direct media file requests', false);
+        $response->assertDontSee('&lt;strong&gt;Advanced:', false);
+
+        // A link keeps its destination instead of being dropped with the tag.
+        $response->assertSee('Hugging Face Settings (https://huggingface.co/settings/tokens)', false);
+
+        // The tools tab's Google credential aside is emphasis, not markup.
+        $response->assertSee('(Pro enables multiple connections via Remote Sites)', false);
+        $response->assertDontSee('&lt;em&gt;(Pro enables multiple connections via Remote Sites)', false);
+    }
+
     public function test_the_admin_page_cannot_write_an_operator_scope_field(): void
     {
         $tenant = Tenant::query()->findOrFail(Tenant::DEFAULT_ID);
