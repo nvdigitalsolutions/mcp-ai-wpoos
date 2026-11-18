@@ -22,12 +22,10 @@
 # Format:  <repo-relative-path>:<field-key>
 # Lines starting with '#' and trailing ' # ...' comments are ignored.
 #
-# Notable clusters as recorded (61 entries):
-#   - security.php  22 x `_heading_*` pseudo-fields. No group references them,
-#                   and no `render_field()` case handles type `heading` (only
-#                   the sub-tab-less A2A section does), so these sub-tab
-#                   headings do not render today. Registering them is a UI
-#                   change, not a one-line fix.
+# Notable clusters as recorded (39 entries):
+#   - authentication.php  3 x pseudo-fields (2 `heading`, 1 `html`) that no
+#                   group references, so they render nowhere. Same registration
+#                   work as the Security headings, which are now fixed.
 #   - tools.php     credential and feature-flag fields with no UI group. Some
 #                   are almost certainly written by integrations rather than the
 #                   admin form; each needs confirmation before it is either
@@ -44,28 +42,6 @@ includes/admin/sections/class-wp-mcp-ai-section-integrations.php:plaid_client_id
 includes/admin/sections/class-wp-mcp-ai-section-integrations.php:plaid_environment
 includes/admin/sections/class-wp-mcp-ai-section-integrations.php:plaid_secret
 includes/admin/sections/class-wp-mcp-ai-section-providers.php:enable_omni_api
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_a2a_auth
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_advanced_security
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_ai_cost_control
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_ai_safety
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_ai_transparency
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_audit_logging
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_auth_brute_force
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_connection_limits
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_error_verbosity
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_global_access
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_guest_policy
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_hitl
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_media_protection
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_network_security
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_otel_security
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_pii_filter
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_rate_limiting
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_rest_api
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_role_controls
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_sandbox
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_security_headers
-includes/admin/sections/class-wp-mcp-ai-section-security.php:_heading_tool_rate_limiting
 includes/admin/sections/class-wp-mcp-ai-section-tools.php:cloudflare_api_token
 includes/admin/sections/class-wp-mcp-ai-section-tools.php:cloudflare_zone_id
 includes/admin/sections/class-wp-mcp-ai-section-tools.php:cloudways_api_key
