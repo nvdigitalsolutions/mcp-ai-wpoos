@@ -6416,3 +6416,112 @@ tab, not a sub-tab**:
 
 That keeps each PR reviewable and avoids both a 76-item mega-PR and the "one god page"
 that the WordPress surface became.
+
+## 63. The settings port — the WordPress catalogue into Laravel (2026-11-18)
+
+§62 decided the shape; this is the port. The Laravel settings surface goes from
+**9 fields / 3 tabs / 3 sections** to **594 fields / 12 tabs / 79 sections**, with
+the console projection deliberately unchanged.
+
+### 63.1 What shipped
+
+| Piece | Detail |
+|---|---|
+| `resources/settings/catalogue.json` | 585 fields, 12 tabs, 79 sections, generated from the plugin's own `get_fields()` / `get_subtab_groups()` / `get_tab()` |
+| `App\Support\Settings\SettingsCatalogue` | Loads and caches it; **fails closed** with a `RuntimeException` if the file is missing or malformed, because a settings page that silently drops to nine fields looks like data loss |
+| `SettingsSchema::fields()` | `array_merge(coreFields(), SettingsCatalogue::fields())` — core first, so existing field order and every position-pinning test are unchanged |
+| `SettingsSchema::tabs()` | 12 tabs; the three core tabs keep their established labels |
+| `BuildsSettingsForm` | Gains `textarea`; selects now carry a stored value the option list no longer offers |
+| `SettingsService` | A select accepts a value **already stored** even when the catalogue dropped it; a *change* to an unsupported value is still a 422 |
+| `SettingsCatalogueTest` | 14 tests / 8762 assertions |
+
+Sub-tabs became `Section`s, not a third nav row (§62 decision 1): a field's
+`section_id` is `<wp-section>__<wp-sub-tab>` and its `section` label is the
+sub-tab's label.
+
+### 63.2 What was not ported, and why
+
+| Excluded | Count | Reason |
+|---|---|---|
+| `html` rows | 23 | Informational markup, not values |
+| `hidden` rows | 8 | Nonces and internal form state |
+| `custom` rows | 4 | They name a bespoke renderer with no schema behind it |
+| `multiselect` rows | 2 | The store holds a list; a single control would change the stored shape (§7b's rule, applied on this side) |
+| the `__hidden__` tab | 11 | Its fields mirror `general/custom_filters` |
+| the empty-tab section (`plugins_integration`) | 8 | WordPress cannot render it either — the section declares no tab |
+| duplicate keys | 22 | Sections mirroring each other: `comments` vs `tools`, `custom_filters` vs `general`; first occurrence wins |
+| `gemini_api_key` | 1 | Storage collision: the core `google_api_key` field already stores under it, and two controls for one value is the bug the port must not create |
+
+The nine core fields stay in code because they carry decisions the generator
+cannot infer: `scope: operator` on `ollama_endpoint`, and the storage remaps
+(`google_api_key` → `gemini_api_key`, `ollama_endpoint` → `ollama_endpoint_url`).
+
+Every ported field is `scope: tenant` and `console: hidden`. Tenant because the
+estate administrator is the parity target; hidden because rendering 585 new
+controls in a reduced product surface is not a decision this pass gets to make.
+
+### 63.3 A ported enum broke an unrelated save — and the fix
+
+The first full settings run failed:
+
+```
+AdminSettingsTest::test_saving_writes_the_estate_layer
+  data.default_gemini_model => The selected default Gemini Model is invalid.
+```
+
+The deployment held `default_gemini_model = gemini-2.0-flash`, a slug the
+plugin's option list no longer offers. Filament validates a select against its
+options, so an untouched legacy value made **the whole form unsaveable** — an
+operator could not change any setting until they fixed one they had never
+touched.
+
+Fixed in both places, because either alone leaves a half-fix:
+
+1. **The control** carries the stored value as an extra option labelled
+   "(current value)", so the page shows what is actually stored instead of
+   pretending the value is still offered.
+2. **The writer** accepts a value that equals the stored one, and still refuses a
+   *change* to an unsupported value.
+
+This is the general lesson of the port, worth recording beyond this catalogue:
+**adding an enum to a settings surface can break saves of unrelated fields**, and
+the failure mode is silent until an operator tries to save.
+
+### 63.4 Validation
+
+- `SettingsCatalogueTest` **14 / 8762** — uniqueness of surface keys *and* storage
+  keys, every field in a declared tab, every select default among its options,
+  numeric bounds coherent, sensitivity not over-matched (`max_tokens` is not a
+  secret), every sensitive field either a password input or a named credential,
+  the admin/console projection split, a ported field writing through the one
+  writer, a ported secret masked and never echoed, the mask not rewriting, and an
+  operator field still refused on `/admin`.
+- Settings cluster (`SettingsOwnership`, `SettingsProjection`, `AdminSettings`,
+  `AdminSecurity`, `Phase3b`, `SecuritySnapshotTenancy`, `SettingsCatalogue`)
+  **76 / 10318**, 0 failures.
+- Full app suite: **1298 tests / 17415 assertions, 0 failures**, exit 0. The
+  count is +14 over §62 (the new test class); the assertion jump is the
+  catalogue's per-field invariants. phpcs **0 errors** on the five changed files
+  (one pre-existing line-length warning in `SettingsService`).
+
+### 63.5 Still open
+
+1. **The 21 views are not ported.** They are dashboards (§62 decision 2) and need
+   pages or resources, not form fields: orchestration `agents` / `teams` /
+   `professions` / `observability`, token `analytics` / `anomalies` / `patterns` /
+   `trends` / `model_manager`.
+2. **Per-field scope review.** All 585 are tenant-scope. Some are plainly
+   infrastructure (RabbitMQ host, OpenTelemetry endpoint) and belong in operator
+   scope; each is a one-line change in the JSON plus a decision about who owns it.
+3. **The generator is scaffolding, not committed.** Regenerating means loading the
+   section classes under a WordPress stub harness, filtering by type and tab,
+   deduping keys, excluding the nine core keys and their storage keys, mapping
+   `slider` → `number`, computing sensitivity by suffix, and emitting
+   `{tabs, fields}`. The counts in §63.2 are the assertions to check a
+   regeneration against. If the catalogue is to be refreshed with each WordPress
+   release, the generator should become a `bin/` script on both sides of the
+   boundary.
+4. **No visual pass.** 594 controls across 12 tabs render without error under the
+   test suite, but nobody has looked at the page. The provider tab alone is 20
+   sections; information architecture at that density is a design review, not a
+   test.
