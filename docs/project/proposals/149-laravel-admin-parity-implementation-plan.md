@@ -2,7 +2,7 @@
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
 **Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **38 numbered slices** (§8–§56) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25), and **§56 opens Wave 3** with the toolkit manifest renderer (`/admin/toolkits`). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
-**Scoreboard** — re-measured 2026-11-18 with `bin/audit-surface-ownership.php`: **45 surfaces · 32 built on a Filament panel** (11 `/ops`, 22 `/admin`; `settings.platform` is on both) · **29 console-served** · **8 console-only** · **3 planned-only** (`measurement`, `identity-provider`, `datasets`, all `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Scoreboard** — re-measured 2026-11-18 with `bin/audit-surface-ownership.php`: **45 surfaces · 33 built on a Filament panel** (11 `/ops`, 23 `/admin`; `settings.platform` is on both) · **29 console-served** · **7 console-only** · **3 planned-only** (`measurement`, `identity-provider`, `datasets`, all `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
 **Validation** — app suite: **1277 tests / 7243 assertions, 0 failures** (with the `NVOOS_PM_*` fixtures present; four `WifiKpisTest` cases fail without them, a documented environment gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-18
 **Scope (Wave 0):** ~3–4 weeks, one engineer
@@ -5810,8 +5810,10 @@ declares.
   `NVOOS_PM_*` fixtures are absent, and this run passed both). **Re-measured
   2026-11-18 after the authoring pass** — the added assertions are the nine new
   manifests round-tripping settings in `ToolkitContractTest`.
-- `php bin/audit-surface-ownership.php` → **45 surfaces · 32 built** (11 `/ops`,
-  22 `/admin`) · **8 console-only** · 3 planned · 2 absent.
+- `php bin/audit-surface-ownership.php` → **45 surfaces · 33 built** (11 `/ops`,
+  23 `/admin`) · **7 console-only** · 3 planned · 2 absent. **Re-measured after
+  `chat-channels` moved `planned → subset`** (it had a manifest but the row was
+  never flipped); that row is the burn-down's unit of progress, not a manifest.
 - `php bin/audit-admin-manifests.php` → exit 0 on the committed catalogue; exit
   1 with a planted unknown screen.
 - `phpcs --standard=phpcs-laravel.xml.dist` clean on every changed PHP file.
@@ -5829,14 +5831,15 @@ declares.
    render nothing), so it has to be committed from §9b/§9c of the check doc.
 3. **Create/edit on the panel**, if operators ask for it — an explicit
    disagreement with §56.4, not an oversight.
-4. **`chat-channels`** stays `planned` as a dedicated surface, but its manifest now exists,
-   so its four persisted settings render under
-   `/admin/{estate}/toolkits/chat-channels/settings`. The contract row's
-   `plan_gate` was aligned from `feature:chat_channels` to
-   `feature:chat-channels` to match the manifest's entitlement hook (the
-   underscore form was referenced by no code). The per-platform credential
-   panels on the WordPress screen are display-only — they are absent from the
-   option's `sanitize_settings()` whitelist — so they are not in the manifest.
+4. **`chat-channels`** is now `subset`, not `planned`. The manifest declares the four
+   settings the WordPress screen actually persists, so the panel renders them at
+   `/admin/{estate}/toolkits/chat-channels/settings` and the row's `projection`
+   names the reduction. The contract row's `plan_gate` was also aligned from
+   `feature:chat_channels` to `feature:chat-channels` to match the manifest's
+   entitlement hook (the underscore form was referenced by no code). The
+   per-platform credential panels on the WordPress screen are display-only —
+   they are absent from the option's `sanitize_settings()` whitelist — so they
+   are not in the manifest and not in the projection.
 
 ### 56.7 The authoring pass (2026-11-18)
 

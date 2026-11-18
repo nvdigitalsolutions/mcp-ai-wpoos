@@ -93,6 +93,15 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: php bin/audit-admin-manifests.php
 
+      - name: WP admin surfaces are all dispositioned
+        # Proposal 149 Wave 7 exit gate: the parity claim is only measurable if
+        # every `includes/admin/` and `addons/pro/includes/admin/` page carries a
+        # recorded disposition in Appendix A of the proposal. The sweep was
+        # hand-run until now, so a new admin page could join the inventory
+        # silently and shrink the reported coverage without failing anything.
+        working-directory: ${{ github.workspace }}
+        run: php bin/audit-wp-admin-surfaces.php
+
       - name: Prepare the application
         run: |
           cp .env.example .env
