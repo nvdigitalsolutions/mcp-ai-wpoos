@@ -20,6 +20,7 @@ namespace Nvoos\Core\Infrastructure\Provider;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\ValueObject\ProviderConnectivity;
 
 class GeminiClient extends AbstractProviderClient
 {
@@ -206,6 +207,55 @@ class GeminiClient extends AbstractProviderClient
         } catch (\Exception $e) {
             return $this->errors->create('http_request_failed', $e->getMessage());
         }
+    }
+
+    /**
+     * Authenticated `GET /models` — proves reachability and key validity
+     * without spending completion tokens.
+     *
+     * Gemini carries the key in the query string, so the result detail names
+     * the host only; echoing the URL would put the key in the panel.
+     */
+    public function connectivity(): ProviderConnectivity
+    {
+        $apiKey = $this->getApiKey();
+
+        if ('' === $apiKey) {
+            return ProviderConnectivity::failed(null, 'No API key is configured for gemini.');
+        }
+
+        try {
+            $response = $this->http->send(
+                'GET',
+                $this->getBaseUrl() . '/models?key=' . \urlencode($apiKey)
+            );
+        } catch (\Exception $e) {
+            return ProviderConnectivity::failed(null, $e->getMessage());
+        }
+
+        $decoded = \json_decode($response->body, true);
+        $count   = 0;
+
+        if (is_array($decoded) && isset($decoded['models']) && is_array($decoded['models'])) {
+            foreach ($decoded['models'] as $model) {
+                if (is_array($model) && isset($model['name'])) {
+                    ++$count;
+                }
+            }
+        }
+
+        if ($response->statusCode < 200 || $response->statusCode >= 300) {
+            return ProviderConnectivity::failed(
+                $response->statusCode,
+                $this->probeFailure($response->statusCode, $decoded)
+            );
+        }
+
+        return ProviderConnectivity::ok(
+            $response->statusCode,
+            $count,
+            \sprintf('%s answered %d with %d model(s).', $this->probeHost(), $response->statusCode, $count)
+        );
     }
 
     public function listModels(): mixed

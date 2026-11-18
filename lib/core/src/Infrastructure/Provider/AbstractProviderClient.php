@@ -24,6 +24,7 @@ namespace Nvoos\Core\Infrastructure\Provider;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\ValueObject\ProviderConnectivity;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 
 abstract class AbstractProviderClient
@@ -100,6 +101,30 @@ abstract class AbstractProviderClient
      */
     abstract public function listModels(): mixed;
 
+    /**
+     * An authenticated liveness check that spends no completion tokens.
+     *
+     * Default: unsupported. A client overrides this only when it knows an
+     * endpoint that proves reachability **and** credential validity without
+     * generating output.
+     *
+     * Do not implement this by delegating to listModels(). Two of the three
+     * shipped families would lie: AnthropicClient::listModels() is a hand-written
+     * catalogue with no network call, and OpenAiCompatibleClient::listModels()
+     * returns an empty array for a 401 because the HTTP adapter does not throw
+     * on 4xx — a wrong key would read as "reachable, 0 models". The default is
+     * therefore unsupported rather than a best guess, so a client that has not
+     * opted in can never report a false success.
+     *
+     * @since 1.5.0
+     */
+    public function connectivity(): ProviderConnectivity
+    {
+        return ProviderConnectivity::notSupported(
+            'This provider client has no liveness endpoint; only a chat call can prove its key.'
+        );
+    }
+
     // ─── Helpers for concrete providers ──────────────────────────────
 
     /**
@@ -165,6 +190,48 @@ abstract class AbstractProviderClient
             'Authorization' => "Bearer {$apiKey}",
             'Content-Type'  => 'application/json',
         );
+    }
+
+    /**
+     * One-line description of a failed probe response, safe to render.
+     *
+     * Never includes the request URL: Gemini carries the key in the query
+     * string, so echoing a URL would leak it into the panel and the log.
+     *
+     * @since 1.5.0
+     */
+    protected function probeFailure(int $status, mixed $decoded): string
+    {
+        $message = '';
+
+        if (is_array($decoded)) {
+            if (isset($decoded['error']['message']) && is_string($decoded['error']['message'])) {
+                $message = $decoded['error']['message'];
+            } elseif (isset($decoded['message']) && is_string($decoded['message'])) {
+                $message = $decoded['message'];
+            }
+        }
+
+        $collapsed = \preg_replace('/\s+/', ' ', \trim($message));
+        $message   = is_string($collapsed) ? $collapsed : '';
+
+        if ('' === $message) {
+            return 'The provider answered HTTP ' . $status . '.';
+        }
+
+        return 'HTTP ' . $status . ': ' . \mb_substr($message, 0, 200);
+    }
+
+    /**
+     * Host of the configured API base URL, for display in a probe result.
+     *
+     * @since 1.5.0
+     */
+    protected function probeHost(): string
+    {
+        $host = \parse_url($this->getBaseUrl(), \PHP_URL_HOST);
+
+        return \is_string($host) && '' !== $host ? $host : $this->providerSlug;
     }
 
     /**

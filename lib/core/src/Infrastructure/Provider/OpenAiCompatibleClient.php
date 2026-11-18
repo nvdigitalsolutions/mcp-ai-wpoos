@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Infrastructure\Provider;
 
+use Nvoos\Core\Domain\ValueObject\ProviderConnectivity;
+
 /**
  * Base for providers whose API is compatible with OpenAI's /v1/chat/completions.
  */
@@ -446,6 +448,61 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient
     private function requiresMaxCompletionTokens(string $model): bool
     {
         return $this->isReasoningModel($model) || 0 === \strpos($model, 'gpt-5');
+    }
+
+    /**
+     * Authenticated `GET /models` — proves reachability and key validity
+     * without spending completion tokens.
+     *
+     * Unlike listModels(), this reads the HTTP status: a 401 is a failure, not
+     * an empty catalogue. That distinction is the whole point of a probe, and
+     * it is why listModels() is left alone — its callers want a list and
+     * already treat an error object as "no list".
+     */
+    public function connectivity(): ProviderConnectivity
+    {
+        $apiKey = $this->getApiKey();
+
+        if ($this->requiresApiKey() && '' === $apiKey) {
+            return ProviderConnectivity::failed(
+                null,
+                'No API key is configured for ' . $this->providerSlug . '.'
+            );
+        }
+
+        try {
+            $response = $this->http->send(
+                'GET',
+                $this->getBaseUrl() . '/models',
+                $this->buildAuthHeaders($apiKey)
+            );
+        } catch (\Exception $e) {
+            return ProviderConnectivity::failed(null, $e->getMessage());
+        }
+
+        $decoded = \json_decode($response->body, true);
+        $count   = 0;
+
+        if (is_array($decoded) && isset($decoded['data']) && is_array($decoded['data'])) {
+            foreach ($decoded['data'] as $model) {
+                if (is_array($model) && isset($model['id'])) {
+                    ++$count;
+                }
+            }
+        }
+
+        if ($response->statusCode < 200 || $response->statusCode >= 300) {
+            return ProviderConnectivity::failed(
+                $response->statusCode,
+                $this->probeFailure($response->statusCode, $decoded)
+            );
+        }
+
+        return ProviderConnectivity::ok(
+            $response->statusCode,
+            $count,
+            \sprintf('%s answered %d with %d model(s).', $this->probeHost(), $response->statusCode, $count)
+        );
     }
 
     public function listModels(): mixed
