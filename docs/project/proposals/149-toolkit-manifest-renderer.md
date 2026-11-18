@@ -1,7 +1,7 @@
 # Proposal 149 — toolkit manifest renderer (track P4)
 
 **Parent:** [`149-laravel-admin-parity-implementation-plan.md`](./149-laravel-admin-parity-implementation-plan.md) §46
-**State:** design, **step 1 (engine extraction) shipped 2026-11-17** — see §1a — and **the renderer shipped 2026-11-18** as plan §56 (`/admin/toolkits`, contract row `toolkits: subset`), followed by the **first authoring pass (12 manifests)**. **Remaining:** the 10 toolkits that persist nothing (WordPress-side fix first), the committed settings-page ↔ manifest map, and create/edit on the panel. **Unblocks:** order item **10** (`toolkits`, `chat-channels`, and the 45 Pro settings/CPT pages behind Wave 3).
+**State:** design, **step 1 (engine extraction) shipped 2026-11-17** — see §1a — and **the renderer shipped 2026-11-18** as plan §56 (`/admin/toolkits`, contract row `toolkits: subset`), followed by the **first authoring pass (12 manifests)** and **Wave 4 (research + consolidate) as plan §57** — all five manifest screens are now routed. **Remaining:** the 10 toolkits that persist nothing (WordPress-side fix first), the committed settings-page ↔ manifest map, and create/edit on the panel. **Unblocks:** order item **10** (`toolkits`, `chat-channels`, and the 45 Pro settings/CPT pages behind Wave 3).
 **Why it runs in parallel with items 1–9:** it is the only remaining item that changes the *shape* of everything after it. Designing it late would serialise the whole plan.
 
 ## 1. Verified state
@@ -97,8 +97,10 @@ screen for no gain.
 ## 4. Decision 3 — the renderer's shape
 
 - **Route:** `/admin/{tenant}/toolkits/{slug}` with a screen segment
-  (`/settings`, `/entities/{entity}`, `/dashboard`); `research` and `consolidate` are
-  Wave 4 and should not be routed yet.
+  (`/settings`, `/entities/{entity}`, `/dashboard`, and — since Wave 4 — `research`
+  and `consolidate`). **Amendment 2026-11-18:** all five are routed. The two Wave 4
+  screens are entity-scoped, so a settings-only manifest 404s them rather than
+  rendering an empty wizard; that is what makes routing all five safe.
 - **Entitlement:** `pro.entitlement:{feature}` on the route group, matching the HTTP
   side. An unlicensed toolkit is **absent from the nav**, not a rendered 403.
 - **Access:** `manage_options` plus panel membership (the same rule as remote-sites and
@@ -119,9 +121,9 @@ screen for no gain.
 2. every Pro toolkit that ships a settings page has a manifest (map
    `class-wp-mcp-ai-*-settings-page.php` / `*-toolkit-settings-page.php` to slugs; the
    mapping table is committed, not inferred);
-3. no manifest declares a screen the renderer cannot serve yet (`research`,
-   `consolidate` until Wave 4 — a declared-but-unserved screen is the "blank shell"
-   problem).
+3. no manifest declares a screen no surface can serve. **Since Wave 4 the
+   console-only allowance is empty** — every screen is panel-servable, so an unknown
+   screen fails outright instead of being excused as "later".
 
 ## 6. Order item 10 — acceptance
 
@@ -164,8 +166,11 @@ screen for no gain.
 - **Do not extend the schema beyond `tab`/`tab_labels`.** Column types, aggregates and
   filter ops already cover the catalogue; a bigger schema is a bigger validation surface
   for no known toolkit.
-- **Do not build `research`/`consolidate` screens here.** Those are Wave 4 and share the
-  `probe`/wizard renderers; routing them early would ship two blank screens.
+- ~~**Do not build `research`/`consolidate` screens here.**~~ **Shipped 2026-11-18
+  (plan §57).** They are entity-scoped and share the manifest's own column schema,
+  so they belong on this page rather than on a second pair of hand-written pages.
+  The rule that survives is: a screen whose data the engine does not own stays
+  console-only, because a manifest cannot render rows it cannot reach.
 
 ## 8. Open question — answered 2026-11-18
 

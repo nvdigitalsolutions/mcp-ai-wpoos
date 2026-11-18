@@ -5872,3 +5872,82 @@ rendered by no control).
 **Validation:** core `ProPlanCatalogTest` + `ToolkitManifestTest` **43 / 159**;
 app `ToolkitContractTest` + `EntitlementTest` **22 / 402**; `audit-admin-manifests`
 exit 0 on **12 manifests**; mirror current; surface-ownership exit 0; phpcs clean.
+
+## 57. Wave 4 — research and consolidate on the panel (2026-11-18)
+
+Wave 3 shipped three of the five manifest screens and left `research` and
+`consolidate` as console-only, with the audit explicitly allowing them. That
+allowance existed only because the panel would have rendered a blank shell.
+
+### 57.1 What shipped
+
+`ToolkitPage::PANEL_SCREENS` now carries all five screens. Both new ones are
+**entity-scoped** — they address one record type, so `resolveScreen()` 404s them
+for a settings-only manifest rather than render an empty wizard. That is the same
+"declared but unservable" rule the settings screen applies when a manifest has no
+fields, and it is what lets the 9 settings-only manifests keep declaring nothing.
+
+- **research** — query → `ToolkitResearchService::draft()` → review → save. The
+  service already filters the model's answer down to the manifest's columns, so a
+  field the model invents never reaches the page.
+- **consolidate** — pick a text/enum column → `ToolkitEngine::duplicates()` →
+  groups → armed delete. The scan is one `GROUP BY json_extract(...)` with
+  `HAVING COUNT(*) > 1`, so the panel never loads the entity to find duplicates;
+  a delete re-scans, because the list is a snapshot and a stale group is a lie.
+
+### 57.2 The one decision: research may save
+
+The contract said "create and edit stay in the console workbench". Research's
+save is a create, so this looked like a contradiction.
+
+It is not, and the distinction is worth keeping: the console owns the **field
+editor** — the form with per-column widgets, partial updates and a second place
+to keep the validation correct. The research save is a **one-shot write of an
+already schema-conformed draft**, and it goes through the same
+`ToolkitEngine::createRecord()` every other write uses, so the manifest's column
+validation stays the single gate into the table. Refusing it would have left the
+panel with a screen whose only useful action was unavailable.
+
+The `toolkits` contract projection was amended to say exactly that, and
+`AdminToolkitsTest` pins both halves: a draft is saved through the engine, and
+the invented field is dropped before it can be.
+
+### 57.3 Manifest content
+
+No shipped manifest declared `research`, so the renderer would have been dead
+code on both surfaces. `commerce` and `documents` — the two families that own
+`nvoos_toolkit_records` rows — now declare it. `commerce` keeps `consolidate`;
+`documents` does not declare it, because duplicate-finding has no meaning for a
+document set keyed by an id the operator supplies.
+
+### 57.4 The audit is stricter, not looser
+
+`bin/audit-admin-manifests.php`'s `$consoleOnlyScreens` allowance is now **empty**.
+Every screen a manifest may declare is servable by at least one surface, so an
+unknown screen fails outright instead of being excused as "Wave 4". The variable
+stays, with a comment, because a future console-only screen belongs there.
+
+### 57.5 What Wave 4 did not port
+
+The proposal sized Wave 4 as "33 research pages" and "7 consolidate wizards".
+Those are WordPress pages whose records live in **CPTs**, not in
+`nvoos_toolkit_records`, which is the same structural blocker §9c found in the
+settings pass: a manifest screen can only render rows the engine stores. Two
+renderers serve **2 entity-bearing families today**, and serve every family that
+discovers the `entities` key tomorrow — which is the property Wave 3 bought.
+Porting the 31 CPT research pages would mean moving their data model first.
+
+### 57.6 Validation
+
+- Panel: `AdminToolkitsTest` **20 tests / 89 assertions** — both screens render
+  for an entity family; both 404 for a settings-only family; both require
+  `manage_options`; a draft drops the invented column and saves one record; an
+  empty query never reaches the provider; an unavailable provider reports danger
+  instead of throwing; a duplicate scan groups three records into one, and
+  deleting the second copy re-scans to two with no groups left.
+- Focused app set (`AdminToolkits`, `Toolkit*`, `SurfaceOwnership`,
+  `AdminPanelBlade`, `Phase4`, `AdminNavigation`) **76 / 1291, 0 failures**.
+- `audit-admin-manifests` exit 0 with the console-only allowance empty;
+  `audit-surface-ownership` unchanged at **45 · 33 · 7 · 3** (the scoreboard
+  moved in the burn-down PR, not here); mirror current; phpcs clean on every
+  changed PHP file.

@@ -12,7 +12,10 @@ use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Mockery\MockInterface;
+use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -25,8 +28,14 @@ use Tests\TestCase;
  *    REST API use, so the panel cannot become a second writer;
  *  - an unlicensed toolkit is absent from the catalogue and 404s on direct
  *    access — indistinguishable from an unknown one (R4);
- *  - screens the panel does not route (`research`, `consolidate`) 404, so a
- *    manifest cannot produce a blank shell;
+ *  - every declared screen the panel serves is reachable, and `research` /
+ *    `consolidate` 404 only when the family has no entities to fill them
+ *    (Wave 4), so a manifest cannot produce a blank shell;
+ *  - a research draft is reviewed before it is written, and the save goes
+ *    through `createRecord` so the manifest's column validation still governs
+ *    the write;
+ *  - a duplicate scan groups the whole entity server-side, and deleting a
+ *    collision re-scans instead of leaving a stale group on screen;
  *  - settings render from `tab_labels`/`tab`, and a save is audited with
  *    **keys only** — a secret never reaches the audit payload, the page, or
  *    the Livewire snapshot;
@@ -51,6 +60,13 @@ final class AdminToolkitsTest extends TestCase
         file_put_contents(
             $this->fixtureDir.'/workshop.json',
             json_encode($this->fixtureManifest(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        );
+
+        // A settings-only family: the Wave 4 screens address an entity, so this
+        // is the fixture that proves they 404 rather than render empty.
+        file_put_contents(
+            $this->fixtureDir.'/garage.json',
+            json_encode($this->settingsOnlyManifest(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
 
         config(array('oos.toolkit_manifests_path' => $this->fixtureDir));
@@ -127,15 +143,155 @@ final class AdminToolkitsTest extends TestCase
         $this->get('/admin/default/toolkits/workshop/settings')->assertNotFound();
     }
 
-    public function test_unknown_toolkits_and_unrouted_screens_are_404(): void
+    public function test_unknown_toolkits_are_404(): void
     {
         $this->asAdmin();
 
         $this->get('/admin/default/toolkits/nope/settings')->assertNotFound();
+    }
 
-        // `research` is declared by the manifest (the console serves it) but
-        // this panel does not route it — Wave 4 owns that renderer.
-        $this->get('/admin/default/toolkits/workshop/research')->assertNotFound();
+    /**
+     * Wave 4 routed both screens, so a manifest that declares them and carries
+     * entities must render them rather than 404.
+     */
+    public function test_research_and_consolidate_render_for_a_family_with_entities(): void
+    {
+        $this->asAdmin();
+
+        $this->get('/admin/default/toolkits/workshop/research')
+            ->assertOk()
+            ->assertSee('Research & add')
+            ->assertSee('Draft with AI');
+
+        $this->get('/admin/default/toolkits/workshop/consolidate')
+            ->assertOk()
+            ->assertSee('Group by')
+            ->assertSee('Find duplicates');
+    }
+
+    /**
+     * Both Wave 4 screens address an entity. A settings-only family would render
+     * an empty wizard, so it 404s — the same "declared but unservable" rule the
+     * settings screen applies when a manifest carries no fields.
+     */
+    public function test_research_and_consolidate_404_for_a_settings_only_family(): void
+    {
+        $this->asAdmin();
+
+        $this->get('/admin/default/toolkits/garage/research')->assertNotFound();
+        $this->get('/admin/default/toolkits/garage/consolidate')->assertNotFound();
+    }
+
+    /**
+     * The estate boundary is membership, but a Wave 4 screen reads and writes
+     * records, so it also needs the capability the catalogue requires.
+     */
+    public function test_the_wave_four_screens_require_manage_options(): void
+    {
+        $member = $this->estateMember();
+
+        $this->actingAs($member)
+            ->get('/admin/default/toolkits/workshop/research')
+            ->assertForbidden();
+
+        $this->actingAs($member)
+            ->get('/admin/default/toolkits/workshop/consolidate')
+            ->assertForbidden();
+    }
+
+    public function test_research_drafts_the_declared_columns_then_saves_through_the_engine(): void
+    {
+        $this->asAdmin();
+
+        // The model invents `ghost`, which the service must drop before the
+        // draft ever reaches the form.
+        $this->mock(ProviderRouter::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('chat')->once()->andReturn(array(
+                'model' => 'gpt-test',
+                'choices' => array(
+                    array('message' => array('content' => '{"code":"W-1","name":"Widget","ghost":"drop me"}')),
+                ),
+            ));
+        });
+
+        $component = Livewire::test(ToolkitPage::class, array('toolkit' => 'workshop', 'screen' => 'research'))
+            ->set('query', 'Add the W-1 widget')
+            ->call('draftWithAi')
+            ->assertSet('provider', 'gpt-test')
+            ->assertSet('draft.code', 'W-1')
+            ->assertSet('draft.name', 'Widget');
+
+        $this->assertArrayNotHasKey('ghost', $component->get('draft'));
+
+        $component->call('saveDraft')->assertSet('draft', array());
+
+        $this->assertSame(
+            1,
+            DB::table('nvoos_toolkit_records')->where('toolkit', 'workshop')->where('entity', 'item')->count()
+        );
+    }
+
+    public function test_research_refuses_an_empty_query_without_calling_the_provider(): void
+    {
+        $this->asAdmin();
+
+        $this->mock(ProviderRouter::class, function (MockInterface $mock): void {
+            $mock->shouldNotReceive('chat');
+        });
+
+        Livewire::test(ToolkitPage::class, array('toolkit' => 'workshop', 'screen' => 'research'))
+            ->set('query', '   ')
+            ->call('draftWithAi')
+            ->assertSet('statusTone', 'danger')
+            ->assertSet('draft', array());
+    }
+
+    public function test_research_reports_an_unavailable_provider_instead_of_throwing(): void
+    {
+        $this->asAdmin();
+
+        // The router returns the failure rather than throwing it; the service
+        // turns that into an `ai_unavailable` envelope.
+        $this->mock(ProviderRouter::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('chat')->once()->andReturn(new RuntimeException('No provider is configured.'));
+        });
+
+        Livewire::test(ToolkitPage::class, array('toolkit' => 'workshop', 'screen' => 'research'))
+            ->set('query', 'Anything')
+            ->call('draftWithAi')
+            ->assertSet('statusTone', 'danger')
+            ->assertSet('draft', array());
+    }
+
+    public function test_consolidate_groups_duplicates_and_deleting_one_rescans(): void
+    {
+        $this->asAdmin();
+        TenantContext::set(Tenant::DEFAULT_ID);
+
+        $engine = app(ToolkitEngine::class);
+        $manifest = $engine->find('workshop');
+
+        $this->assertNotNull($manifest);
+
+        $engine->createRecord($manifest, 'item', array('code' => 'A', 'name' => 'Same'));
+        $engine->createRecord($manifest, 'item', array('code' => 'B', 'name' => 'Same'));
+        $engine->createRecord($manifest, 'item', array('code' => 'C', 'name' => 'Other'));
+
+        $component = Livewire::test(ToolkitPage::class, array('toolkit' => 'workshop', 'screen' => 'consolidate'))
+            ->set('duplicateColumn', 'name')
+            ->call('scanDuplicates')
+            ->assertSet('duplicateScanned', 3);
+
+        $this->assertCount(1, $component->get('duplicateGroups'));
+
+        // Delete the second copy by its manifest id, then confirm the list was
+        // rebuilt rather than left showing a group that no longer collides.
+        $component->call('armDelete', 'B')->call('deleteRecord')
+            ->assertSet('pendingDelete', '')
+            ->assertSet('duplicateScanned', 2)
+            ->assertSet('duplicateGroups', array());
+
+        $this->assertSame(2, DB::table('nvoos_toolkit_records')->where('toolkit', 'workshop')->count());
     }
 
     public function test_the_settings_screen_renders_the_manifest_tabs(): void
@@ -364,8 +520,8 @@ final class AdminToolkitsTest extends TestCase
     }
 
     /**
-     * A manifest with the shapes the real ones do not carry yet: tabs, a
-     * secret, and a screen the panel deliberately does not route.
+     * A manifest with the shapes the real ones do carry: tabs, a secret, the
+     * entity workbench, and both Wave 4 screens.
      *
      * @return array<string, mixed>
      */
@@ -378,7 +534,7 @@ final class AdminToolkitsTest extends TestCase
             'description' => 'Bench operations.',
             'icon' => '🛠️',
             'feature' => 'workshop',
-            'screens' => array('settings', 'entities', 'research', 'dashboard'),
+            'screens' => array('settings', 'entities', 'research', 'consolidate', 'dashboard'),
             'tab_labels' => array(
                 'basics' => 'Basics',
                 'access' => 'Access',
@@ -426,6 +582,33 @@ final class AdminToolkitsTest extends TestCase
                         'source' => 'entity:item',
                         'aggregate' => 'count',
                     ),
+                ),
+            ),
+        );
+    }
+
+    /**
+     * A settings-only manifest: no `entities`, so the Wave 4 screens cannot fill
+     * themselves from it.
+     *
+     * @return array<string, mixed>
+     */
+    private function settingsOnlyManifest(): array
+    {
+        return array(
+            'slug' => 'garage',
+            'name' => 'Garage',
+            'version' => '1.0.0',
+            'description' => 'Parking defaults.',
+            'icon' => '🚗',
+            'feature' => 'garage',
+            'screens' => array('settings'),
+            'settings' => array(
+                array(
+                    'key' => 'bays',
+                    'label' => 'Bays',
+                    'type' => 'number',
+                    'default' => 2,
                 ),
             ),
         );
