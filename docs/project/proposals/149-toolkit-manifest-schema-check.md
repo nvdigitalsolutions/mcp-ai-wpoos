@@ -261,3 +261,69 @@ worth a follow-up issue rather than a parity workaround.
 - `php bin/audit-admin-manifests.php` exit 0 — **12 manifests**, all
   panel-servable; `php bin/sync-toolkit-manifests.php --check` current;
   `php bin/audit-surface-ownership.php` exit 0; phpcs clean.
+
+## 10. The WordPress-side persistence fix (2026-11-18)
+
+§9c concluded that ten pages discarded their own settings and that the fix
+belonged on the WordPress side, not in a manifest. This is that fix.
+
+### 10a. Three defects, not one
+
+1. **Raw control names.** Eight pages rendered `name="data_retention"` and
+   friends. `options.php` only hands `<option_name>[key]` values to the
+   registered sanitiser, so nothing ever reached it.
+2. **No schema.** Nine pages — including `media-toolkit`, whose names were
+   already correct — relied on the base sanitiser, which whitelists three keys.
+   Every other key was dropped; worse, because the sanitiser returned only
+   those three, a save also **erased** anything else stored in the option.
+3. **Checkbox asymmetry.** The base wrote `enable_remote_sites` and
+   `enable_research` only when the key was present in POST. An unchecked
+   checkbox is absent, so those tabs could be switched on but never off.
+
+`pro-packages` was never a defect: its configuration tab renders no controls and
+says so ("No configuration needed").
+
+### 10b. What changed
+
+- `WP_MCP_AI_Toolkit_Settings_Base::setting_schema()` — a page declares
+  `key => type`; the base sanitiser casts against it. Types: `text`, `textarea`,
+  `number`, `boolean`, `select`, `email`, `url`, `color`, `key`. A `select` may
+  carry an `options` list to be enforced; without one the value is stored as
+  text, because a second copy of the option list would be the same drift bug in
+  a new place.
+- `sanitize_settings()` starts from the **stored** option, so a save no longer
+  erases keys the form does not render — `wp_mcp_ai_media_toolkit_settings` is
+  read by the Media Command Center, which is not this page's writer.
+- Booleans write `false` when unchecked, which is what makes a toggle a toggle.
+- The eight raw pages namespace their controls under their own option; all nine
+  declare their schema. **60 keys** in total.
+
+### 10c. The gate
+
+`tests/pro/admin/test-toolkit-settings-persistence.php` checks the regression
+from three directions:
+
+1. **Markup** — every `name="…"` in each page is namespaced to that page's
+   option. A raw control fails the build.
+2. **Schema** — the declared schema keys and the rendered keys are the same set,
+   so adding a control without declaring it (or the reverse) fails here instead
+   of silently dropping data in production.
+3. **Behaviour** — a typed payload round-trips through the sanitiser, a stored
+   key the form does not render survives a save, and an unchecked Research
+   toggle writes `false`.
+
+### 10d. What this unblocks
+
+All nine pages now meet §7b's authoring rule (a field persists when it is named
+`<option_name>[key]` **and** the sanitiser accepts it), so they can be authored
+as manifests — **nine more, 12 → 21**. That is the next pass, not this one.
+
+### 10e. What is still broken
+
+`financial-planner` renders three `wp_mcp_ai_settings[...]` controls
+(`enable_yfinance_service`, `yfinance_service_url`, `yfinance_cache_ttl`). They
+are inert twice over: `settings_fields()` opens the **toolkit's** option group,
+so `options.php` never processes them, and the main settings sanitiser registers
+none of the three keys — yet `WP_MCP_AI_YFinance_Service` reads all three. The
+fix belongs in the main settings form. The gate lists this page as its one
+documented exception, so the pattern cannot spread silently.

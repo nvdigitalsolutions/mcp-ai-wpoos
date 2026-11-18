@@ -22,6 +22,23 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settin
 class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	protected function setting_schema() {
+		return array(
+			'default_country'          => 'select',
+			'default_unit_system'      => 'select',
+			'building_code_standard'   => 'select',
+			'default_export_format'    => 'select',
+			'ifc_export_version'       => 'select',
+			'rendering_quality'        => 'select',
+			'enable_gpu_rendering'     => 'boolean',
+			'sustainability_framework' => 'select',
+			'masterformat_year'        => 'select',
+		);
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -218,7 +235,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Region', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="default_country" class="regular-text">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[default_country]" class="regular-text">
 							<option value="LK"><?php esc_html_e( 'Sri Lanka (UDA + Gazette 2430/13)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="JM"><?php esc_html_e( 'Jamaica (JNBC 2018 + ASCE 7 hurricane)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="US"><?php esc_html_e( 'United States (IBC / IRC 2024 + ASCE 7-22)', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -229,7 +246,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Unit System', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="default_unit_system" class="regular-text">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[default_unit_system]" class="regular-text">
 							<option value="metric"><?php esc_html_e( 'Metric (metres, millimetres)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="imperial"><?php esc_html_e( 'Imperial (feet, inches)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
@@ -239,7 +256,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Building Code Pack', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="building_code_standard" class="regular-text">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[building_code_standard]" class="regular-text">
 							<option value="lk_uda_2021"><?php esc_html_e( 'UDA Planning & Building Regulations (Sri Lanka)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="jm_jnbc_2018"><?php esc_html_e( 'Jamaica National Building Code (JNBC) 2018', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="us_ibc_2024"><?php esc_html_e( 'International Building Code (IBC) 2024', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -252,7 +269,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Export Format', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="default_export_format" class="regular-text">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[default_export_format]" class="regular-text">
 							<option value="pdf"><?php esc_html_e( 'PDF (Universal)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="dwg"><?php esc_html_e( 'DWG (AutoCAD)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="ifc"><?php esc_html_e( 'IFC 4.3 (BIM open exchange)', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -265,7 +282,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				<tr>
 					<th scope="row"><?php esc_html_e( 'IFC Export Version', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="ifc_export_version" class="regular-text">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[ifc_export_version]" class="regular-text">
 							<option value="4.3"><?php esc_html_e( 'IFC 4.3 (recommended)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="4.0"><?php esc_html_e( 'IFC 4.0', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="2x3"><?php esc_html_e( 'IFC 2x3 (legacy)', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -276,7 +293,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Rendering Quality', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="rendering_quality" class="regular-text">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[rendering_quality]" class="regular-text">
 							<option value="draft"><?php esc_html_e( 'Draft (Fast)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="standard"><?php esc_html_e( 'Standard (Balanced)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="high"><?php esc_html_e( 'High (Photorealistic)', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -288,7 +305,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 					<th scope="row"><?php esc_html_e( 'Enable GPU Rendering', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_gpu_rendering" value="1" />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_gpu_rendering]" value="1" />
 							<?php esc_html_e( 'Use GPU acceleration for faster rendering (requires remote sites)', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -296,7 +313,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Sustainability Framework', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="sustainability_framework" class="regular-text">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[sustainability_framework]" class="regular-text">
 							<option value="edge"><?php esc_html_e( 'IFC EDGE (recommended for LK / JM tropical climates)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="leed"><?php esc_html_e( 'LEED v4 BD+C (Leadership in Energy and Environmental Design)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="breeam"><?php esc_html_e( 'BREEAM (Building Research Establishment)', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -309,7 +326,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				<tr>
 					<th scope="row"><?php esc_html_e( 'BoQ MasterFormat Year', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="masterformat_year" class="regular-text">
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[masterformat_year]" class="regular-text">
 							<option value="2020"><?php esc_html_e( 'CSI MasterFormat 2020 (recommended)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="2018"><?php esc_html_e( 'CSI MasterFormat 2018', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="2016"><?php esc_html_e( 'CSI MasterFormat 2016', 'mcp-ai-wpoos-pro' ); ?></option>
