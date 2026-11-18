@@ -58,6 +58,9 @@ class AdminSettingsTest extends TestCase
             ->get('/admin/default/settings')
             ->assertOk()
             ->assertSee('Enable logging')
+            // 149 §66: infrastructure the estate must not control still renders,
+            // so the administrator can see that it exists and who owns it.
+            ->assertSee('Root Security Key')
             ->assertSee('Managed by NV Digital');
     }
 
@@ -141,6 +144,10 @@ class AdminSettingsTest extends TestCase
 
         Livewire::test(OperatorSettings::class)
             ->assertFormFieldExists('ollama_endpoint')
+            // 149 §66: the platform owns the security infrastructure, and the
+            // estate's access policy is not a platform setting.
+            ->assertFormFieldExists('root_security_key')
+            ->assertFormFieldDoesNotExist('require_authentication_all')
             ->assertFormFieldDoesNotExist('default_model')
             ->assertFormFieldDoesNotExist('openai_api_key');
     }
