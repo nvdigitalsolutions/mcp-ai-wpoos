@@ -483,6 +483,17 @@ comm -23 /tmp/staged.txt /tmp/expected.txt   # foreign risk — must be empty
 comm -13 /tmp/staged.txt /tmp/expected.txt   # missing      — must be empty
 ```
 
+- **Derive the allowlist from the call graph, not the delivery tree
+  (2026-11-17).** A parity PR staged `docker/laravel/app-skeleton/**` because
+  that is where its pages live, and missed `lib/core/**`, where the same feature
+  added a value object and four provider methods. The container suite passed — it
+  runs the dirty worktree — while CI failed eight tests with
+  `Class "Nvoos\Core\Domain\ValueObject\ProviderConnectivity" not found`, the
+  class having never been committed. For a change that spans packages, read
+  `git status` over the whole repo as the *inventory* (staging still goes through
+  the allowlist) and reconcile the two before committing: every path outside the
+  allowlist is either another agent's work or a missed dependency.
+
 - **`.git` inside a worktree is a FILE, not a directory** (a pointer into
   `.git/worktrees/<name>`). Writing scratch to `<worktree>/.git/msg.txt` fails
   with "parent directory doesn't exist" — keep scratch in `/tmp`.
