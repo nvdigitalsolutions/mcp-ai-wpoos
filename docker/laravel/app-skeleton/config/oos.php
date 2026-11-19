@@ -113,6 +113,12 @@ return array(
     'token_usage' => array(
         'retention_days' => (int) env('NVOOS_TOKEN_USAGE_RETENTION_DAYS', 365),
         'prune_chunk' => (int) env('NVOOS_TOKEN_USAGE_PRUNE_CHUNK', 5000),
+
+        // Days re-rolled each night (§80). The rollup is idempotent, so a week
+        // of overlap heals a day a failed run skipped. `0` disables the
+        // schedule entry — and, because retention refuses to delete a day that
+        // was never rolled up, effectively disables pruning too.
+        'rollup_days' => (int) env('NVOOS_TOKEN_USAGE_ROLLUP_DAYS', 7),
     ),
 
 );

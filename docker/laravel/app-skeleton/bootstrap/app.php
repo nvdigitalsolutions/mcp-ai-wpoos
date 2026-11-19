@@ -73,6 +73,19 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->withoutOverlapping();
         }
 
+        // 149 §80 — roll the token usage up before retention (§76) prunes it.
+        // Seven days of overlap heals a day a failed run skipped; the rollup is
+        // idempotent, so overlap is cheap. `rollup_days = 0` removes the entry,
+        // and retention then refuses to prune anything (it will not delete a
+        // day that was never aggregated).
+        $tokenRollupDays = (int) config('oos.token_usage.rollup_days', 7);
+
+        if ($tokenRollupDays > 0) {
+            $schedule->command('nvoos:rollup-token-usage', ['--days' => $tokenRollupDays])
+                ->dailyAt('03:10')
+                ->withoutOverlapping();
+        }
+
         // 149 §76 — token usage retention. One row per AI call, and the rows are
         // the cost history, so the window is a year by default and the delete
         // is chunked. Ten minutes after routing retention keeps the two from

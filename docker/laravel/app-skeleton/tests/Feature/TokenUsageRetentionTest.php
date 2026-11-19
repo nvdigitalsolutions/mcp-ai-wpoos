@@ -31,6 +31,9 @@ class TokenUsageRetentionTest extends TestCase
         $this->insert(['created_at' => now()->subDays(40)]);
         $this->insert(['created_at' => now()->subDays(5)]);
 
+        // §80 — the day must be rolled up before retention may delete it.
+        $this->coverDay(now()->subDays(40)->toDateString());
+
         $this->artisan('nvoos:prune-token-usage', ['--days' => 30])
             ->assertSuccessful();
 
@@ -44,6 +47,7 @@ class TokenUsageRetentionTest extends TestCase
     public function test_a_dry_run_counts_without_deleting(): void
     {
         $this->insert(['created_at' => now()->subDays(40)]);
+        $this->coverDay(now()->subDays(40)->toDateString());
 
         $this->artisan('nvoos:prune-token-usage', ['--days' => 30, '--dry-run' => true])
             ->expectsOutputToContain('would be deleted')
@@ -69,6 +73,7 @@ class TokenUsageRetentionTest extends TestCase
 
         $this->insert(['created_at' => now()->subDays(40)]);
         $this->insert(['created_at' => now()->subDays(5)]);
+        $this->coverDay(now()->subDays(40)->toDateString());
 
         $this->artisan('nvoos:prune-token-usage')->assertSuccessful();
 
@@ -88,6 +93,10 @@ class TokenUsageRetentionTest extends TestCase
         $this->insert(['created_at' => $cutoff->copy()->subSecond()]);
         $this->insert(['created_at' => $cutoff->copy()]);
 
+        // The cutoff day is rolled up, so it is deletable — the boundary under
+        // test is the day, not the rollup.
+        $this->coverDay($cutoff->toDateString());
+
         $this->artisan('nvoos:prune-token-usage', ['--days' => 30])
             ->assertSuccessful();
 
@@ -104,6 +113,8 @@ class TokenUsageRetentionTest extends TestCase
 
         $this->insert(['created_at' => now()->subDays(5)]);
 
+        $this->coverDay(now()->subDays(40)->toDateString());
+
         $this->artisan('nvoos:prune-token-usage', ['--days' => 30])
             ->assertSuccessful();
 
@@ -112,6 +123,55 @@ class TokenUsageRetentionTest extends TestCase
             1,
             DB::table(self::TABLE)->where('created_at', '>=', now()->subDays(10))->count()
         );
+    }
+
+    public function test_pruning_refuses_when_nothing_has_been_rolled_up(): void
+    {
+        $this->insert(['created_at' => now()->subDays(400)]);
+
+        $this->artisan('nvoos:prune-token-usage', ['--days' => 30])
+            ->expectsOutputToContain('rollup')
+            ->assertSuccessful();
+
+        $this->assertSame(1, DB::table(self::TABLE)->count(), 'Unaggregated history must survive.');
+    }
+
+    public function test_pruning_stops_at_the_last_rolled_up_day(): void
+    {
+        // The 40-day-old day is aggregated; the 35-day-old day is not.
+        $this->insert(['created_at' => now()->subDays(40)]);
+        $this->insert(['created_at' => now()->subDays(35)]);
+
+        $this->coverDay(now()->subDays(40)->toDateString());
+
+        $this->artisan('nvoos:prune-token-usage', ['--days' => 30])
+            ->expectsOutputToContain('rolled up through')
+            ->assertSuccessful();
+
+        $this->assertSame(1, DB::table(self::TABLE)->count());
+        $this->assertSame(
+            1,
+            DB::table(self::TABLE)->where('created_at', '>=', now()->subDays(36))->count(),
+            'A day that was never rolled up must survive retention.'
+        );
+    }
+
+    /**
+     * Mark a day as aggregated, which is what makes it deletable (§80).
+     */
+    private function coverDay(string $date): void
+    {
+        DB::table('nvoos_token_usage_daily')->insert([
+            'day' => $date,
+            'provider' => 'openai',
+            'model_id' => 'gpt-test',
+            'events' => 1,
+            'prompt_tokens' => 1,
+            'completion_tokens' => 1,
+            'total_tokens' => 2,
+            'cost' => 0.0,
+            'updated_at' => now(),
+        ]);
     }
 
     /**

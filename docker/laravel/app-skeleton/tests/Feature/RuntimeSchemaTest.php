@@ -39,6 +39,7 @@ class RuntimeSchemaTest extends TestCase
             'nvoos_health_samples',
             'nvoos_activity_events',
             'nvoos_token_usage',
+            'nvoos_token_usage_daily',
             // Created by the adapter package's own migration, loaded through
             // package discovery rather than an app migration.
             'nvoos_jobs',
