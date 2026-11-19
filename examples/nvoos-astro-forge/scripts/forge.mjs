@@ -54,6 +54,8 @@ import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandF
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { describePropertyCoverage, propertyCoverage } from '../lib/property-coverage.ts';
+import { collectAmbiguousBoxes, describeAmbiguousBoxes } from '../lib/box-ambiguity.ts';
+import { describeInertDeclarations, findInertDeclarations } from '../lib/css-lint.ts';
 import { bandCoverage, describeBandCoverage } from '../lib/band-coverage.ts';
 import { auditChromeFacts, describeChromeFacts } from '../lib/chrome-fact-audit.ts';
 import { compareFacts, describeCompare, describeCompareVerdict, measureCompareSpecs } from '../lib/compare.ts';
@@ -1990,6 +1992,8 @@ const GATE_ORDER = [
 	'chrome facts',
 	'font coverage',
 	'media budget',
+	'property coverage',
+	'inert declarations',
 	'font render',
 	'deployed build',
 	'text parity',
@@ -1997,6 +2001,7 @@ const GATE_ORDER = [
 	'mobile menu',
 	'tracking',
 	'SEO head',
+	'box ambiguity',
 	'box geometry',
 	'interaction states',
 	'pixel parity',
@@ -2644,9 +2649,68 @@ function readBuiltStyles( target ) {
 			const note = describePropertyCoverage( coverage );
 			if ( note ) {
 				console.warn( `\u26a0 Property coverage: ${ note }` );
+				record( 'property coverage', 'warn', `${ coverage.unrendered.length } measured property(ies) unrendered` );
+			} else if ( coverage.measured.length === 0 ) {
+				record( 'property coverage', 'skip', 'the profile carries no declarations to check' );
+			} else {
+				console.log( `\u2713 Property coverage: all ${ coverage.measured.length } measured properties are declared.` );
+				record( 'property coverage', 'pass', `${ coverage.measured.length } property(ies) covered` );
 			}
 		} catch {
 			// A missing build directory is already reported by the gates above.
+		}
+	}
+
+	// A box property on a `display: contents` element is INERT: the element has no
+	// box to place, pad or paint, so the rule reads correctly and does nothing.
+	// `.site-header--brand-center .site-nav-shell { grid-column: 1 }` was written to
+	// put the header disclosure on the left and moved nothing (monicarajiv,
+	// 2026-11-20). The stylesheet gets linted, not read.
+	if ( typeof css === 'string' && css.length > 0 ) {
+		const inert = findInertDeclarations( css );
+		const note = describeInertDeclarations( inert );
+		if ( ! note ) {
+			console.log( '\u2713 Inert declarations: no box property sits on a box-less element.' );
+			record( 'inert declarations', 'pass', 'no box property on a display:contents element' );
+		} else {
+			console.warn( `\u2717 Inert declarations: ${ note }` );
+			if ( options.strictFacts ) {
+				process.exitCode = 1;
+			}
+			record(
+				'inert declarations',
+				options.strictFacts ? 'fail' : 'warn',
+				`${ inert.length } inert rule(s)`
+			);
+		}
+	}
+
+	// A measured box the profile could NOT record. `collectBandBoxFacts` drops a
+	// class that measures differently on two instances of a band — one rule cannot
+	// express both. The drop is right, but the value then vanishes: the rebuild
+	// renders the template default, which no other gate can tell from a source that
+	// never declared a box. `.col-inner` went this way and every column in the
+	// Rajiv band rendered flush (monicarajiv, 2026-11-20).
+	const hasBoxFacts =
+		Object.keys( profile.bandFacts ?? {} ).length > 0 ||
+		Object.values( profile.pageBands ?? {} ).some(
+			( page ) => Object.keys( page?.bandFacts ?? {} ).length > 0
+		);
+	if ( hasBoxFacts ) {
+		const ambiguous = collectAmbiguousBoxes( profile );
+		const note = describeAmbiguousBoxes( ambiguous );
+		if ( ! note ) {
+			console.log( '\u2713 Box ambiguity: every measured box was recorded.' );
+			record( 'box ambiguity', 'pass', 'no dropped box' );
+		} else {
+			// Reported, never silently absorbed. A utility that matches elements of
+			// different shapes (Flatsome's `.hide-for-small` over a banner) is a
+			// legitimate hit: the box belonged to the element, not the token.
+			console.warn( `\u26a0 Box ambiguity: ${ note }` );
+			if ( options.strictFacts ) {
+				process.exitCode = 1;
+			}
+			record( 'box ambiguity', options.strictFacts ? 'fail' : 'warn', `${ ambiguous.length } band(s) with a dropped box` );
 		}
 	}
 

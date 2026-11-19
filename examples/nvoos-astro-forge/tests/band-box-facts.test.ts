@@ -39,6 +39,21 @@ describe( 'boxDeclarations', () => {
 			'margin:0px 0px 24px 0px;color:rgb(146, 146, 146)'
 		);
 	} );
+
+	it( 'carries a uniform border, which changes the rendered box on every side', () => {
+		// Flatsome frames `.section-title-main` with a 2px hairline; without it the
+		// title is 4px narrow and 4px short inside a band whose height is exact
+		// (monicarajiv, 2026-11-20).
+		expect(
+			boxDeclarations( {
+				pad: '8.66px 23.09px 8.66px 23.09px',
+				mar: '0px 0px 0px 0px',
+				border: '2px solid rgba(0, 0, 0, 0.1)',
+			} )
+		).toBe(
+			'padding:8.66px 23.09px 8.66px 23.09px;margin:0px 0px 0px 0px;border:2px solid rgba(0, 0, 0, 0.1)'
+		);
+	} );
 } );
 
 describe( 'mergeBoxFacts', () => {

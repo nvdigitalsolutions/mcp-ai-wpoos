@@ -561,6 +561,31 @@ const responsiveBandCss = sections
  * Scoped to the wrap (`[data-section-id]`) and emitted after global.css, so it
  * outranks the template's own prose defaults.
  */
+/**
+ * A px `line-height` measured beside a px `font-size` is a RATIO in disguise, and
+ * emitting it as px freezes the leading at the measured level. Flatsome's
+ * `.section-title-main` sets `font-size:1.3em`, so the source's `h3` leading of
+ * 1.6 painted 46.176px on the 28.86px span, while the rebuilt span inherited the
+ * frozen 35.52px — a ratio of 1.23, and the section title rendered 15px short
+ * (monicarajiv, 2026-11-20). The source's own leading is unitless, so the
+ * inherited value must be too.
+ *
+ * A device override can carry `lineHeight` with no `size` (the diff emits only
+ * what changed); that value is px on the element itself and passes through.
+ */
+const leadingRatio = ( size?: string, lineHeight?: string ): string | undefined => {
+	if ( ! lineHeight ) {
+		return undefined;
+	}
+	const sizePx = size ? /^(-?[\d.]+)px$/.exec( size.trim() ) : null;
+	const linePx = /^(-?[\d.]+)px$/.exec( lineHeight.trim() );
+	if ( ! sizePx || ! linePx ) {
+		return lineHeight;
+	}
+	const ratio = Number( linePx[ 1 ] ) / Number( sizePx[ 1 ] );
+	return Number.isFinite( ratio ) && ratio > 0 ? String( Math.round( ratio * 10000 ) / 10000 ) : lineHeight;
+};
+
 const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
@@ -569,7 +594,7 @@ const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: 
 		// describe both — the class carries the accent, the display role carries
 		// the rest (see `.post-body :where(h1…h6)` in global.css).
 		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
-		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
+		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ leadingRatio( fact.size, fact.lineHeight ) }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
 		// The measured heading/paragraph RHYTHM. An unclassed heading has no class
@@ -600,7 +625,7 @@ const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeigh
 	[
 		fact.size && `font-size:${ fact.size }`,
 		fact.weight && `font-weight:${ fact.weight }`,
-		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
+		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ leadingRatio( fact.size, fact.lineHeight ) }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
 		fact.align && `text-align:${ fact.align }`,
@@ -865,6 +890,21 @@ const bandElementCss = sections
 	} )
 	.join( '' );
 
+/**
+ * A POSITIONAL column fact (`col:nth-child(2)`) names a lane by its INDEX, and
+ * the emitted scope is a DESCENDANT selector: `[data-section-id] .col:nth-child(2)`
+ * also matches the second column of every NESTED row — a card grid drawn inside
+ * the band's own lane. The outer lane's measured floor and inner padding then
+ * land on cards that never had them: monicarajiv's accommodation band has three
+ * card lanes that each took the 900px-wide first lane's 572px `min-height` and
+ * its 49px inner padding, and a 2298px band rendered 3418px (2026-11-20).
+ *
+ * A lane is never nested inside another lane, so `:not(.col .col)` excludes
+ * exactly the nested grid. A CLASS-keyed fact needs no guard: it names itself.
+ */
+const columnLane = ( name: string ): string =>
+	name.startsWith( 'col:nth-child(' ) ? `${ name }:not(.col .col)` : name;
+
 const bandBoxCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
@@ -915,7 +955,7 @@ const bandBoxCss = sections
 		// The column INNER padding: the same map, pointed one level in.
 		const innerCss = Object.entries( theme.columnInner ?? {} )
 			.map( ( [ name, fact ] ) => {
-				const selectors = `${ scoped } .post-body .${ name } > .col-inner, ${ scoped } .${ name } > .col-inner`;
+				const selectors = `${ scoped } .post-body .${ columnLane( name ) } > .col-inner, ${ scoped } .${ columnLane( name ) } > .col-inner`;
 				const rules: string[] = [];
 				if ( fact.base ) {
 					rules.push( `${ selectors }{${ fact.base }}` );
@@ -958,7 +998,7 @@ const bandColumnCss = sections
 				// The `.post-body` form outranks the builder shim's photo-panel
 				// `min-height` clamp (equal specificity today, order-dependent); the
 				// plain form keeps a non-passthrough band working.
-				const selector = `${ scoped } .post-body .${ name }, ${ scoped } .${ name }`;
+				const selector = `${ scoped } .post-body .${ columnLane( name ) }, ${ scoped } .${ columnLane( name ) }`;
 				const rules: string[] = [];
 				if ( fact.base ) {
 					rules.push( `${ selector }{${ fact.base }}` );

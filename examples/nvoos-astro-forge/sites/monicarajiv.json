@@ -2526,19 +2526,19 @@
 					"base": "padding:0px 0px 0px 0px;color:rgb(255, 255, 255)"
 				},
 				"button": {
-					"base": "padding:0px 18.62px 0px 18.62px",
-					"tablet": "padding:0px 17.47px 0px 17.47px",
-					"mobile": "padding:0px 12.8px 0px 12.8px"
+					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)",
+					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241)",
+					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
 				},
 				"white": {
-					"base": "padding:0px 18.62px 0px 18.62px",
-					"tablet": "padding:0px 17.47px 0px 17.47px",
-					"mobile": "padding:0px 12.8px 0px 12.8px"
+					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)",
+					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241)",
+					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
 				},
 				"is-outline": {
-					"base": "padding:0px 18.62px 0px 18.62px",
-					"tablet": "padding:0px 17.47px 0px 17.47px",
-					"mobile": "padding:0px 12.8px 0px 12.8px"
+					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)",
+					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241)",
+					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
 				}
 			},
 			"elements": [
@@ -2756,8 +2756,8 @@
 					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 8px 0px;color:rgb(255, 255, 255)"
 				},
 				"section-title-main": {
-					"base": "padding:8.66px 23.09px 8.66px 23.09px;margin:0px 0px 0px 0px",
-					"mobile": "padding:6.24px 16.64px 6.24px 16.64px;margin:0px 0px 0px 0px"
+					"base": "padding:8.66px 23.09px 8.66px 23.09px;margin:0px 0px 0px 0px;border:2px solid rgba(0, 0, 0, 0.1)",
+					"mobile": "padding:6.24px 16.64px 6.24px 16.64px;margin:0px 0px 0px 0px;border:2px solid rgba(0, 0, 0, 0.1)"
 				},
 				"icon-box": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -3131,24 +3131,24 @@
 					"mobile": "padding:0px 0px 0px 0px;margin:9.9px 0px 6.6px 0px"
 				},
 				"button": {
-					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px",
-					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px",
-					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
+					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241)",
+					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241)",
+					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
 				},
 				"white": {
-					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px",
-					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px",
-					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
+					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241)",
+					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241)",
+					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
 				},
 				"is-outline": {
-					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px",
-					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px",
-					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
+					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241)",
+					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241)",
+					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
 				},
 				"is-xlarge": {
-					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px",
-					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px",
-					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
+					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241)",
+					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241)",
+					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
 				}
 			},
 			"elements": [
@@ -3603,8 +3603,8 @@
 	"pageBands": {
 		"airport-transfer": {
 			"url": "https://monicarajiv.com/airport-transfer/",
-			"measuredAt": "2026-11-19T22:01:44.964Z",
-			"sourceHash": "0492f1a304505360",
+			"measuredAt": "2026-11-19T23:00:23.007Z",
+			"sourceHash": "906587166b844c4a",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -4145,11 +4145,11 @@
 								{
 									"selector": ":nth-child(1)",
 									"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
-									"base": "transform:translate(0%, -103.9%) scale(1, 1)",
-									"hover": "opacity:0.573749;transform:translate(0%, -49.8%) scale(1, 1)",
-									"focus": "opacity:0.638156;transform:translate(0%, -45.7%) scale(1, 1)",
-									"focusVisible": "opacity:0.638156;transform:translate(0%, -45.7%) scale(1, 1)",
-									"active": "opacity:0.671484;transform:translate(0%, -43.7%) scale(1, 1)"
+									"base": "transform:translate(0%, -107.2%) scale(1, 1)",
+									"hover": "opacity:0.176364;transform:translate(0%, -86.3%) scale(1, 1)",
+									"focus": "opacity:0.197344;transform:translate(0%, -83.9%) scale(1, 1)",
+									"focusVisible": "opacity:0.197344;transform:translate(0%, -83.9%) scale(1, 1)",
+									"active": "opacity:0.21929;transform:translate(0%, -81.5%) scale(1, 1)"
 								}
 							]
 						}
@@ -4253,16 +4253,16 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"white": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"is-outline": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
 						}
 					},
 					"classes": [
@@ -4441,16 +4441,16 @@
 							"base": "padding:7px 0px 7px 25px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px",
-							"mobile": "padding:0px 18.62px 0px 18.62px"
+							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)"
 						},
 						"white": {
-							"base": "padding:0px 20.67px 0px 20.67px",
-							"mobile": "padding:0px 18.62px 0px 18.62px"
+							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)"
 						},
 						"is-outline": {
-							"base": "padding:0px 20.67px 0px 20.67px",
-							"mobile": "padding:0px 18.62px 0px 18.62px"
+							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)"
 						}
 					},
 					"elements": [
@@ -4494,25 +4494,25 @@
 					"columns": {
 						"desktop": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(4)",
 								"height": 478,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(3)",
 								"height": 478,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(2)",
 								"height": 478,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(1)",
 								"height": 478,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
@@ -4520,25 +4520,25 @@
 						],
 						"tablet": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(4)",
 								"height": 449,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(3)",
 								"height": 362,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(2)",
 								"height": 374,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(1)",
 								"height": 406,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
@@ -4546,25 +4546,25 @@
 						],
 						"mobile": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(4)",
 								"height": 402,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(3)",
 								"height": 320,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(2)",
 								"height": 320,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(1)",
 								"height": 361,
 								"bg": "rgb(240, 240, 240)",
 								"pad": "30px"
@@ -4875,15 +4875,15 @@
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(3)",
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(2)",
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(1)",
 								"height": 333
 							}
 						],
@@ -4893,15 +4893,15 @@
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(3)",
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(2)",
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(1)",
 								"height": 333
 							}
 						],
@@ -4911,15 +4911,15 @@
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(3)",
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(2)",
 								"height": 333
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(1)",
 								"height": 333
 							}
 						]
@@ -5440,8 +5440,8 @@
 		},
 		"sri-lanka": {
 			"url": "https://monicarajiv.com/sri-lanka/",
-			"measuredAt": "2026-11-19T22:01:59.134Z",
-			"sourceHash": "3c829fe95aedb745",
+			"measuredAt": "2026-11-19T23:00:35.242Z",
+			"sourceHash": "0199e44c8c351c4c",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -5941,19 +5941,19 @@
 							"base": "margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 17.46px 0px 17.46px",
-							"tablet": "padding:0px 14.56px 0px 14.56px",
-							"mobile": "padding:0px 12.8px 0px 12.8px"
+							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
 						},
 						"white": {
-							"base": "padding:0px 17.46px 0px 17.46px",
-							"tablet": "padding:0px 14.56px 0px 14.56px",
-							"mobile": "padding:0px 12.8px 0px 12.8px"
+							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
 						},
 						"is-outline": {
-							"base": "padding:0px 17.46px 0px 17.46px",
-							"tablet": "padding:0px 14.56px 0px 14.56px",
-							"mobile": "padding:0px 12.8px 0px 12.8px"
+							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
 						},
 						"large-12": {
 							"base": "padding:0px 15px 30px 15px;margin:0px 0px 0px 0px"
@@ -6078,31 +6078,31 @@
 					"columns": {
 						"desktop": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 450
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(1)",
 								"height": 450
 							}
 						],
 						"tablet": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 450
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(1)",
 								"height": 450
 							}
 						],
 						"mobile": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 450
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(1)",
 								"height": 450
 							}
 						]
@@ -6464,8 +6464,8 @@
 		},
 		"accommodations": {
 			"url": "https://monicarajiv.com/accommodations/",
-			"measuredAt": "2026-11-19T22:02:24.302Z",
-			"sourceHash": "20d3c3480acef920",
+			"measuredAt": "2026-11-19T23:00:59.275Z",
+			"sourceHash": "9c2bc94aca25eea6",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -7259,16 +7259,6 @@
 						},
 						{
 							"tag": "div",
-							"classes": [],
-							"count": 1,
-							"focusable": false,
-							"base": "color:rgb(0, 0, 0);text-decoration-line:none;display:block;line-height:25.6px",
-							"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
-							"hover": "transform:matrix(1, 0, 0, 1, 0, -13.1205)",
-							"active": "transform:matrix(1, 0, 0, 1, 0, -11.7771)"
-						},
-						{
-							"tag": "div",
 							"classes": [
 								"banner-layer",
 								"lg-x50",
@@ -7288,11 +7278,11 @@
 								{
 									"selector": ":nth-child(1)",
 									"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
-									"base": "transform:translate(0%, -59.8%) scale(1, 1)",
-									"hover": "transform:translate(0%, -10.2%) scale(1, 1)",
-									"focus": "transform:translate(0%, -9.6%) scale(1, 1)",
-									"focusVisible": "transform:translate(0%, -9%) scale(1, 1)",
-									"active": "transform:translate(0%, -9%) scale(1, 1)"
+									"base": "transform:translate(0%, -96.2%) scale(1, 1)",
+									"hover": "opacity:0.367906;transform:translate(0%, -59.8%) scale(1, 1)",
+									"focus": "opacity:0.39534;transform:translate(0%, -57.5%) scale(1, 1)",
+									"focusVisible": "opacity:0.39534;transform:translate(0%, -57.5%) scale(1, 1)",
+									"active": "opacity:0.42347;transform:translate(0%, -55.3%) scale(1, 1)"
 								}
 							]
 						}
@@ -7405,12 +7395,12 @@
 							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255)"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)"
 						},
 						"primary": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)"
 						},
 						"img": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -7482,36 +7472,36 @@
 					"columns": {
 						"desktop": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 459,
 								"pad": "49px 0px 0px"
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(1)",
 								"height": 670,
 								"pad": "100px 0px"
 							}
 						],
 						"tablet": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 459,
 								"pad": "49px 0px 0px"
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(1)",
 								"height": 670,
 								"pad": "100px 0px"
 							}
 						],
 						"mobile": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 455,
 								"pad": "49px 0px 0px"
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(1)",
 								"height": 670,
 								"pad": "100px 0px"
 							}
@@ -7668,16 +7658,16 @@
 							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 9.6px 0px;color:rgb(255, 255, 255)"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"white": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"is-outline": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
 						}
 					},
 					"classes": [
@@ -7908,24 +7898,24 @@
 							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255)"
 						},
 						"button": {
-							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px",
-							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px",
-							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
+							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"white": {
-							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px",
-							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px",
-							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
+							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"is-outline": {
-							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px",
-							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px",
-							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
+							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"is-xlarge": {
-							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px",
-							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px",
-							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
+							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"scroll-to": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -7951,22 +7941,22 @@
 					"columns": {
 						"desktop": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 591
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(1)",
 								"height": 591,
 								"pad": "0px 0px 101px"
 							}
 						],
 						"tablet": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 591
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(1)",
 								"height": 591,
 								"pad": "0px 0px 101px"
 							}
@@ -8205,79 +8195,79 @@
 					"columns": {
 						"desktop": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(6)",
 								"height": 373
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(5)",
 								"height": 373
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(4)",
 								"height": 373
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(3)",
 								"height": 373
 							},
 							{
-								"selector": "col:nth-child(5)",
+								"selector": "col:nth-child(5):nth-last-child(2)",
 								"height": 373
 							},
 							{
-								"selector": "col:nth-child(6)",
+								"selector": "col:nth-child(6):nth-last-child(1)",
 								"height": 373
 							}
 						],
 						"tablet": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(6)",
 								"height": 413
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(5)",
 								"height": 413
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(4)",
 								"height": 413
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(3)",
 								"height": 413
 							},
 							{
-								"selector": "col:nth-child(5)",
+								"selector": "col:nth-child(5):nth-last-child(2)",
 								"height": 413
 							},
 							{
-								"selector": "col:nth-child(6)",
+								"selector": "col:nth-child(6):nth-last-child(1)",
 								"height": 413
 							}
 						],
 						"mobile": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(6)",
 								"height": 337
 							},
 							{
-								"selector": "col:nth-child(2)",
+								"selector": "col:nth-child(2):nth-last-child(5)",
 								"height": 337
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(4)",
 								"height": 337
 							},
 							{
-								"selector": "col:nth-child(4)",
+								"selector": "col:nth-child(4):nth-last-child(3)",
 								"height": 337
 							},
 							{
-								"selector": "col:nth-child(5)",
+								"selector": "col:nth-child(5):nth-last-child(2)",
 								"height": 337
 							},
 							{
-								"selector": "col:nth-child(6)",
+								"selector": "col:nth-child(6):nth-last-child(1)",
 								"height": 337
 							}
 						]
@@ -8475,19 +8465,19 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"white": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"is-outline": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
 						}
 					},
 					"elements": [
@@ -8778,7 +8768,7 @@
 					"columns": {
 						"mobile": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(2)",
 								"height": 70
 							},
 							{
@@ -9004,19 +8994,19 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"white": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
 						},
 						"is-outline": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
 						}
 					},
 					"elements": [
@@ -9217,12 +9207,12 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)"
 						},
 						"primary": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)"
 						},
 						"medium-11": {
 							"base": "padding:0px 15px 30px 15px;margin:0px 0px 0px 0px"
@@ -9335,7 +9325,7 @@
 					"columns": {
 						"desktop": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(3)",
 								"height": 572,
 								"pad": "49px 0px 0px"
 							},
@@ -9345,14 +9335,14 @@
 								"pad": "100px 0px"
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(1)",
 								"height": 670,
 								"pad": "100px 0px"
 							}
 						],
 						"tablet": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(3)",
 								"height": 629,
 								"pad": "49px 0px 0px"
 							},
@@ -9362,14 +9352,14 @@
 								"pad": "100px 0px"
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(1)",
 								"height": 670,
 								"pad": "100px 0px"
 							}
 						],
 						"mobile": [
 							{
-								"selector": "col:nth-child(1)",
+								"selector": "col:nth-child(1):nth-last-child(3)",
 								"height": 630,
 								"pad": "49px 0px 0px"
 							},
@@ -9379,7 +9369,7 @@
 								"pad": "100px 0px"
 							},
 							{
-								"selector": "col:nth-child(3)",
+								"selector": "col:nth-child(3):nth-last-child(1)",
 								"height": 670,
 								"pad": "100px 0px"
 							}
@@ -10023,8 +10013,8 @@
 		},
 		"doomsday": {
 			"url": "https://monicarajiv.com/doomsday/",
-			"measuredAt": "2026-11-19T22:02:39.405Z",
-			"sourceHash": "3c77114d2aeb5105",
+			"measuredAt": "2026-11-19T23:01:10.738Z",
+			"sourceHash": "6b469833fa3b77eb",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -10577,11 +10567,11 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
 						},
 						"flickity-button-icon": {
-							"base": "padding:7.19px 7.19px 7.19px 7.19px;margin:0px 0px 0px 0px",
-							"mobile": "padding:20px 20px 20px 20px;margin:0px 0px 0px 0px"
+							"base": "padding:7.19px 7.19px 7.19px 7.19px;margin:0px 0px 0px 0px;border:2px solid rgb(255, 255, 255)",
+							"mobile": "padding:20px 20px 20px 20px;margin:0px 0px 0px 0px;border:2px solid rgb(255, 255, 255)"
 						},
 						"arrow": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;border:2px solid rgb(255, 255, 255)"
 						},
 						"next": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
@@ -10590,7 +10580,7 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"dot": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 5px 0px 5px"
+							"base": "padding:0px 0px 0px 0px;margin:0px 5px 0px 5px;border:3px solid rgb(255, 255, 255)"
 						},
 						"loading-spin": {
 							"base": "padding:0px 0px 0px 0px;margin:-15px 0px 0px -15px"
