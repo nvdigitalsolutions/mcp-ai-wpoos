@@ -9598,7 +9598,7 @@ directive, and the paragraph now avoids the directive entirely.
 | `/(Dataset\|HuggingFace\|ToolReadiness\|ToolRegistry\|ToolCatalogue\|SurfaceOwnership\|AdminNavigation\|Budget)/` | **68 tests / 824 assertions, 0 failures** |
 | phpcs (`phpcs-laravel.xml.dist` 3 paths, `phpcs.xml.dist` 12 paths) | **0 errors** |
 | `bin/audit-surface-ownership.php` | **47 surfaces · 36 built** (14 `/ops`, 24 `/admin`); planned-only down to **2** |
-| Full app suite | *(pending — filled from CI)* |
+| Full app suite | **1511 tests / 18,743 assertions, 0 failures** (CI `App suite (SQLite)`, on the merge commit `d39c024f5e`) — the total includes two unrelated merges that landed between §94 and this branch (`Measure the panel slab on every page` and a compiled-assets commit), so §95's own share is the 8 dataset tests; the branch was cut after those merges, not before |
 
 ### 95.5 Still open
 
