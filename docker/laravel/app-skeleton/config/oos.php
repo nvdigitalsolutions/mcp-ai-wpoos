@@ -81,4 +81,27 @@ return array(
         ),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Token usage retention (Proposal 149 §76)
+    |--------------------------------------------------------------------------
+    |
+    | `nvoos_token_usage` takes one row per AI call — the highest-volume table
+    | the console reads, and the one the cost pages aggregate over. Nothing
+    | bounded it.
+    |
+    | Unlike routing metrics there is no export: these rows *are* the cost
+    | history, so the default window is a year rather than 90 days, and a row
+    | deleted past the window is gone for good. `0` disables pruning and the
+    | schedule entry entirely, for a deployment that bills from this table.
+    |
+    | `prune_chunk` bounds each delete statement, so a first run against a long
+    | unpruned history cannot hold one huge transaction.
+    |
+    */
+    'token_usage' => array(
+        'retention_days' => (int) env('NVOOS_TOKEN_USAGE_RETENTION_DAYS', 365),
+        'prune_chunk' => (int) env('NVOOS_TOKEN_USAGE_PRUNE_CHUNK', 5000),
+    ),
+
 );

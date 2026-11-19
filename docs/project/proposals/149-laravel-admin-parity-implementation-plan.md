@@ -7993,7 +7993,7 @@ was the defect (the first was the float timestamp in §73.3).
 | `RoutingExportPushTest` | **14 tests** — adds: the export carries the row id; the first failure waits 60s; the second waits 120s; `--force` bypasses; an `ok` resets the count; `backoff_base = 0` disables the gate; jitter stays within `[delay, delay × 1.2]`; `backoff_jitter = 0` makes the window exact |
 | `RoutingExportPushTest` + `RoutingRetentionExportTest` | **20 tests / 103 assertions** |
 | phpcs (`phpcs-laravel.xml.dist`, 3 changed files) | **0 errors** |
-| Full app suite | **1352 tests / 18061 assertions, 0 failures** (baseline on the stacked branch: 1348 / 18037; 2 pre-existing runner deprecations) |
+| Full app suite | **1354 tests / 18066 assertions, 0 failures** (CI `App suite (SQLite)` on the jitter tree; the pre-jitter baseline was 1352 / 18061. Two pre-existing runner deprecations remain) |
 
 ### 75.5 Still open
 
@@ -8008,4 +8008,108 @@ was the defect (the first was the float timestamp in §73.3).
 4. **A backlog larger than one batch drains one chunk per successful tick.** At
    `*/15` and 500 rows that is 48k/day, ample for deviations but not for a
    long outage followed by a large replay.
-5. **`nvoos_token_usage` is still unbounded** (§73.5).
+5. **`nvoos_token_usage` was still unbounded** (§73.5) — closed by §76.
+
+## 76. Token-usage retention (2026-11-19)
+
+§73.5 and §75.5 both ended with the same sentence — `nvoos_token_usage` is still
+unbounded — because the table needed a decision rather than a copy of §73's
+command. This is that decision.
+
+### 76.1 This table is not that table
+
+Routing metrics are deviations: rare, reconstructible from the request that
+caused them, and exported before they are pruned. Token usage is one row per AI
+call, and **the rows are the cost history** — there is no export, no rollup, and
+no way to re-derive yesterday's spend once a row is gone.
+
+| Piece | Decision |
+|---|---|
+| `oos.token_usage.retention_days` | 365 by default; `0` disables pruning **and** the schedule entry |
+| `nvoos:prune-token-usage` | `--days` overrides the config; `--dry-run` counts the whole window without deleting |
+| `oos.token_usage.prune_chunk` | 5 000 rows per delete statement, clamped to 1–50 000 |
+| Schedule | daily at 03:30, only when the window is positive, `withoutOverlapping()` |
+
+Three consequences:
+
+- the default window is **365 days**, not 90. Every consumer fits comfortably
+  inside it: the command centre's "tokens today" (`startOfDay()`), and
+  `TokenUsage::summary()`, `trend()` and `byProvider()`, which all default to 30
+  days. The `TokenUsageInterface::getUserUsage()` / `getModelUsage()` contract
+  takes arbitrary dates, so retention is the only thing bounding a long
+  look-back;
+- `0` disables pruning **and** the schedule entry. A deployment that invoices
+  from this table must set it, and that instruction belongs here rather than
+  being discovered after a year of history disappears;
+- there is no "delete only what was exported" rule, because there is nothing to
+  export to. That asymmetry with §74 is deliberate: routing retention waits for a
+  collector, token retention has no collector to wait for.
+
+A row with a `NULL` `created_at` never matches `< cutoff` and is never deleted.
+That is the safe direction for data that cannot be recovered, and it is the
+opposite of the direction §73's "unexported rows survive" rule points.
+
+The schedule runs at `03:30`, ten minutes after routing retention, so the two
+daily deletes never contend for the same database at `03:20`.
+
+### 76.2 Chunked, id-based deletion
+
+A first run against a long unpruned history would delete a year of rows in one
+statement, holding one transaction open for an unbounded time. Rows are
+therefore selected by id in bounded batches and deleted by id:
+
+```
+ids = SELECT id FROM nvoos_token_usage WHERE created_at < cutoff
+      ORDER BY id LIMIT chunk
+DELETE FROM nvoos_token_usage WHERE id IN (ids)
+repeat until a batch returns no ids
+```
+
+`prune_chunk` (default 5000, env `NVOOS_TOKEN_USAGE_PRUNE_CHUNK`, clamped to
+1–50 000 so a typo cannot make a batch unbounded) is configuration because the
+right batch size depends on the deployment's write rate.
+
+`DELETE … LIMIT` would be shorter, but MySQL supports it, SQLite only when
+compiled with `SQLITE_ENABLE_UPDATE_DELETE_LIMIT` — and the suite runs on SQLite
+while production runs MySQL. A prune path that only works in production is a
+prune path that is never tested.
+
+Two details that are easy to get wrong:
+
+- a batch that selects ids and then deletes **zero** rows breaks the loop. A
+  concurrent prune (two schedulers, or a manual run during the scheduled one)
+  would otherwise re-select the same ids forever;
+- `--dry-run` counts the whole window with one `COUNT`, not one chunk, so the
+  number it prints is the number a real run would delete.
+
+The cutoff is `now()->subDays($days)->startOfDay()`, the same boundary as §73:
+"365 days" means 365 complete days plus today, and the whole cutoff day is
+kept. A row written one second before midnight on the cutoff day survives; a row
+one second before that does not.
+
+### 76.3 Gates
+
+| Run | Result |
+|---|---|
+| `TokenUsageRetentionTest` | **6 tests / 17 assertions** — deletes only outside the window; `--dry-run` counts without deleting; `0` disables; the config window is the default when no option is given; the whole cutoff day is kept; five rows are deleted across batches of two |
+| phpcs (`phpcs-laravel.xml.dist`, 4 files) | **0 errors** |
+| Full app suite | **1360 tests / 18083 assertions, 0 failures** (CI `App suite (SQLite)`) — exactly +6 tests / +17 assertions over the jitter tree, matching this branch's focused run |
+
+### 76.4 Still open
+
+1. **No rollup.** Past the window the spend is gone — there is no aggregate
+   table to fall back on. A deployment that reports year-over-year cost must
+   raise `retention_days` or set it to `0`; the plan does not pretend otherwise.
+2. **Retention is global, not per-tenant.** A multi-tenant estate cannot keep
+   one tenant's rows longer than another's. Per-tenant retention needs a
+   `tenant_id` on the table, which is the §64 scope decision again and not a
+   change to smuggle into a prune command.
+3. **A very large first run takes time**, just in bounded statements. The
+   command prints only the final total; a progress line per batch would make a
+   multi-minute first run less alarming.
+4. **`created_at` is nullable**, and a row with a `NULL` timestamp is never
+   pruned. `trackUsage()` always writes `now()`, so this is theoretical today —
+   but it is the one path by which the table can still grow without bound.
+5. **The window is headroom, not a requirement.** Every current consumer looks
+   back at most 30 days; the default could be lowered once someone measures the
+   table's real growth.
