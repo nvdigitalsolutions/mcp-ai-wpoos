@@ -3513,7 +3513,10 @@ export async function builtStaticRoot( distDir: string ): Promise< string > {
 export async function serveDir( root: string ): Promise<{ url: string; server: Server } > {
 	const server = createServer( async ( request, response ) => {
 		try {
-			const pathname = decodeURIComponent( new URL( request.url ?? '/', 'http://localhost' ).pathname );
+			// Collapse repeated slashes: `//` reaches here from any caller that joins a
+			// base that already ends in `/` with a path that starts with one, and it
+			// 404s a request the plain path serves.
+			const pathname = decodeURIComponent( new URL( request.url ?? '/', 'http://localhost' ).pathname ).replace( /\/{2,}/g, '/' );
 			const relative = normalize( pathname ).replace( /^([/\\])+/, '' );
 			const target = relative === '' || relative.endsWith( sep ) || ! extname( relative )
 				? join( root, relative, 'index.html' )
