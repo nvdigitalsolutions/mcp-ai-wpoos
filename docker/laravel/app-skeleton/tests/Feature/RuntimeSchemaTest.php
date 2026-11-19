@@ -40,6 +40,9 @@ class RuntimeSchemaTest extends TestCase
             'nvoos_activity_events',
             'nvoos_token_usage',
             'nvoos_token_usage_daily',
+            // Proposal 154: estate spend limits, read by `BudgetGuard` before
+            // every spending entry point.
+            'nvoos_budgets',
             // Created by the adapter package's own migration, loaded through
             // package discovery rather than an app migration.
             'nvoos_jobs',

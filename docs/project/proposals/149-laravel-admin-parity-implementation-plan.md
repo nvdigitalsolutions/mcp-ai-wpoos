@@ -8723,6 +8723,11 @@ What it would take, in order:
 Then the page, then the OTLP/JSON export the WordPress page already has. Left
 `planned`; `writer: ops` still describes the WordPress page, not this runtime.
 
+*(Revisited in §92 and [Proposal 154](154-budgets.md): only one of the three
+stores was buildable. Budgets became slice A with no new writer at all — the
+spend record already existed — while `nvoos_metrics` and `nvoos_eval_runs` stay
+unbuilt because nothing would write to them.)*
+
 ### 85.3 `identity-provider` — a product decision, not a port
 
 Nothing exists on either runtime (§36 verified the grep). The page is the last
@@ -9266,3 +9271,104 @@ other. Worth remembering before deleting either.
    `datasets-server.huggingface.co` would catch an upstream contract change that
    a fake cannot.
 3. **`lib/core/tests` runs nowhere** (§91.3).
+
+## 92. Estate budgets — a limit over records that already exist (2026-11-19)
+
+§85.2 recorded `measurement` as needing three stores and left the page `planned`.
+That framing hid the fact that the three have very different readiness: one is a
+**limit over a record that already exists**, and two are tables with no producer.
+[Proposal 154](154-budgets.md) splits the row rather than pretending they are one
+surface.
+
+| Piece | Writer | Buildable then? |
+|---|---|---|
+| Budgets | none — **and none needed**: spend is already in `nvoos_token_usage`, estate-scoped since §86 | **yes** |
+| Metric registry | none | no: §81 in reverse |
+| Eval runs | none — there is no eval harness | no |
+
+This section implements slice A, the only one of the three that a page could make
+true. The `measurement` contract row stays `planned` until slice B gives it a
+surface.
+
+### 92.1 A budget stores no counter
+
+The row is `(tenant_id, window, limit_usd, warn_at, enabled)`; consumption is
+`SUM(cost)` over `nvoos_token_usage` for the estate and window. That is the same
+record the cost pages aggregate, so **a budget and the report beside it cannot
+disagree**. A stored counter would be a second truth, and §81 and §86 spent two
+slices making the first one trustworthy — the last thing it needs is a rival.
+
+Two windows, `daily` and `monthly`, bounded by `startOfDay()` and
+`startOfMonth()`. Deliberately not rolling: "daily" means today, matching the
+cost pages, so an operator is never shown two different todays. The unique key on
+`(tenant_id, window)` makes a duplicate unrepresentable rather than leaving a
+reader to pick one.
+
+`Budget` takes the global tenant scope from Proposal 153, the same rule
+`Approval`, `Memory`, `Transcript`, `WorkflowRun` and `Assistant` follow, and sets
+`tenant_id` from `TenantContext` in a `creating` hook rather than from a request
+body. The guard therefore asks for "this estate's budgets" and never for a budget
+by id.
+
+### 92.2 Where it refuses, and what it says
+
+| Entry point | Why it is one |
+|---|---|
+| `ChatStreamController::__invoke` | serves **both** `/api/v1/chat/stream` and `/api/v1/chat-client` — one guard covers both routes |
+| `AssistantTestController` | the "test" probe runs a real turn against a real provider |
+| `AgentNodeRunner` | a workflow agent spends the estate's budget like any other turn |
+
+The check runs **before the provider is called and before the stream opens**. Both
+halves matter: a limit applied afterwards is a report, and a 429 issued after
+`response()->stream()` has committed to 200 would be an error frame inside a
+successful response. Refusal is `429` with `code: budget_exceeded` carrying
+`window`, `spend` and `limit`, so a client can say which limit it hit.
+
+The workflow node is the one place the exception **propagates** instead of being
+rendered: a node that hits the limit should fail as a node, not abort the request
+that started the run.
+
+### 92.3 Failing closed, and the zero row
+
+When spend cannot be read the request is refused (`503`,
+`code: budget_unverifiable`). LiteLLM's `fail_closed_budget_enforcement` exists for
+the same reason: an unreadable counter **under-reports**, and under-reporting is
+over-spending — the one error a budget exists to prevent. The 503 is deliberately
+not a 429: "you are over" is a working budget doing its job, "we cannot tell" is
+a database problem, and an operator should not have to read the message to know
+which they have.
+
+A `limit_usd` of `0` is read as **no limit**. A zero row is a misconfiguration,
+and refusing every turn over a typo would take an estate offline for a reason
+nobody intended. The hard band and the fail-closed rule apply to configured
+limits. `warn_at` is a fraction; `0` disables the warning band rather than warning
+on every request. The band **allows and records** — a structured `budget.warn`
+line, not a table row: a warning is a log event, and a `nvoos_budget_events` store
+would be a third table with one reader.
+
+### 92.4 Gates
+
+| Run | Result |
+|---|---|
+| `BudgetEnforcementTest` | **11 tests / 36 assertions** — no budget allows; at-limit refuses with `window`/`spend`/`limit`; below-limit allows; the warn band warns **and** allows; disabled ignored; zero means no limit; yesterday does not count against daily; the whole month counts against monthly; another estate's budget does not apply; an unreadable store refuses 503; the assistant-test endpoint is guarded too |
+| `/(Budget\|SseStream\|Assistant\|Workflow\|RuntimeSchema\|AgentNode)/` | **127 tests / 664 assertions, 0 failures** |
+| `RuntimeSchemaTest` | `nvoos_budgets` added to `tables()` — the table is queried through `DB::table` by `BudgetStore`, so it belongs in the schema audit |
+| phpcs (`phpcs-laravel.xml.dist`, 8 paths) | **0 errors** |
+| Full app suite | *(pending — filled from CI)* |
+
+### 92.5 Still open
+
+1. **No page yet.** `/ops/budgets` (slice B) and the estate-facing read/write on
+   `/admin` are unbuilt; slice A enforces a limit an operator cannot set from the
+   UI. Until B, a budget is a database row.
+2. **Assistant scope** needs `assistant_id` as a column on `nvoos_token_usage`
+   (Proposal 154 D1); today spend by assistant exists only inside `metadata`, so
+   filtering by it would be a per-request row scan on the hot path.
+3. **Entry-only enforcement** means one turn may overshoot by that turn's cost.
+   Per-provider-call needs a `lib/core` contract (slice A.2).
+4. **The spend query is one indexed `SUM`** over `tenant_id` + `created_at`, the
+   same query the cost pages already run. If it ever matters, the rollup (§80) is
+   the answer, not a counter.
+5. **`nvoos_metrics` and `nvoos_eval_runs` remain unbuilt** — correctly, until
+   something produces a metric definition or an eval result. The `measurement`
+   row's `planned` state now means "slice B away", not "three stores away".
