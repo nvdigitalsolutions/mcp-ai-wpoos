@@ -771,6 +771,7 @@ return array(
 		'huggingface_dataset_filter' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetFilterTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -778,6 +779,7 @@ return array(
 		'huggingface_dataset_get_info' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetInfoTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -785,6 +787,7 @@ return array(
 		'huggingface_dataset_get_parquet' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetParquetTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -792,6 +795,7 @@ return array(
 		'huggingface_dataset_get_rows' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetRowsTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -799,6 +803,7 @@ return array(
 		'huggingface_dataset_get_size' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetSizeTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -806,6 +811,7 @@ return array(
 		'huggingface_dataset_get_statistics' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetStatisticsTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -813,6 +819,7 @@ return array(
 		'huggingface_dataset_is_valid' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetIsValidTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -820,6 +827,7 @@ return array(
 		'huggingface_dataset_list_splits' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetListSplitsTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -827,6 +835,7 @@ return array(
 		'huggingface_dataset_preview_rows' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetPreviewRowsTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -834,6 +843,7 @@ return array(
 		'huggingface_dataset_search' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetSearchTool',
 			'readiness' => 'ready',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
@@ -841,6 +851,7 @@ return array(
 		'huggingface_recommended_datasets' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceRecommendedDatasetsTool',
 			'readiness' => 'pure',
+			'parity' => 'port',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 			'reason' => 'Returns a static curated list; it makes no request. It was grouped with the ten HTTP tools by mistake in section 85 — HuggingFaceDatasetToolsTest pins that it calls nothing (Proposal 149 section 91).',
