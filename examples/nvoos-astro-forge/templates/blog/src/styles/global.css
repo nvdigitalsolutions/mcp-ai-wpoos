@@ -986,6 +986,40 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	font-family: var(--forge-font-display);
 }
 
+/* Flatsome’s SECTION TITLE — the flanking rules are MARKUP, not decoration:
+ *
+ *   <h3 class="section-title"><b></b><span class="section-title-main">Rajiv</span><b></b></h3>
+ *
+ * With no vendor sheet the two empty `<b>`s collapse to nothing, the row is not
+ * a flex line, and the title loses its uppercase + 1.3em display size
+ * (measured: `<h3>` 22.2px, `.section-title-main` 28.86px uppercase with
+ * 0.3em/0.8em padding, trailing rule 2px tall filling the remainder). The
+ * `-bold` variant shows only the TRAILING rule — the leading `<b>` is
+ * `display:none` on the source. */
+.post-body .section-title {
+	display: flex;
+	align-items: center;
+}
+
+.post-body .section-title-main {
+	display: block;
+	font-size: 1.3em;
+	text-transform: uppercase;
+	padding: 0.3em 0.8em;
+}
+
+.post-body .section-title b {
+	flex: 1 1 0;
+	/* A percentage height would collapse on an auto-height line. */
+	height: 2px;
+	background: currentColor;
+	display: block;
+}
+
+.post-body .section-title-bold > b:first-of-type {
+	display: none;
+}
+
 .ds-title {
 	font-family: var(--ds-title-font, var(--forge-font-display));
 	font-size: clamp(1.5rem, 2.5vw + 0.5rem, var(--forge-scale-h2, 1.75rem));

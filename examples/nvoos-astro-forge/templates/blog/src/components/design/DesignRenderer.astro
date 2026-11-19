@@ -559,10 +559,10 @@ const responsiveBandCss = sections
 const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
-		// The source’s own FAMILY for this level. Without it a rebuilt band that
-		// keeps the builder’s markup rendered its headings in the body face
-		// (monicarajiv’s Karma h1 came out Lato everywhere).
-		fact.family && `font-family:${ cssFamily( fact.family ) }`,
+		// The FAMILY is deliberately NOT emitted per level: a band can hold a
+		// Dancing Script `h3.alt-font` beside a Karma `h3`, and one fact cannot
+		// describe both — the class carries the accent, the display role carries
+		// the rest (see `.post-body :where(h1…h6)` in global.css).
 		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
 		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
@@ -594,7 +594,6 @@ const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: 
 const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; marginTop?: string; marginBottom?: string } ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
-		fact.family && `font-family:${ cssFamily( fact.family ) }`,
 		fact.weight && `font-weight:${ fact.weight }`,
 		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
@@ -620,7 +619,7 @@ const bandTypeCss = sections
 		// The source scales its type per device (55px hero → 22px on a phone), so a
 		// desktop-only rule made every band taller than its source at 390px. The
 		// overrides ride the template's own breakpoints.
-		const withDevices = ( selector: string, fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; tablet?: Record< string, string >; mobile?: Record< string, string > }, options: { weight?: boolean } = {} ): string[] => {
+		const withDevices = ( selector: string, fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; tablet?: Record< string, string >; mobile?: Record< string, string > }, options: { weight?: boolean } = {} ): string[] => {
 			const out: string[] = [];
 			const declarations = typeDeclarations( fact, options );
 			if ( declarations ) {

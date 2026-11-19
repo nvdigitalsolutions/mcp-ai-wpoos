@@ -2084,7 +2084,7 @@ export interface ForgeDesign {
 		unassigned: string[];
 		confidence: Record<string, 'high' | 'medium' | 'low'>;
 	};
-	typography: { display?: string; body?: string; ui?: string; scalePx: number[]; bodyWeight?: string; /**
+	typography: { display?: string; body?: string; ui?: string; accent?: string; scalePx: number[]; bodyWeight?: string; /**
 	 * The MEASURED reading size, in px — the size the source's body text
 	 * actually renders at. `scalePx` is harvested from px declarations only,
 	 * so a source that inherits the browser default (a relative `100%`/
