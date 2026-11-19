@@ -6,6 +6,7 @@ use App\Support\Admin\AdminAuditLogger;
 use App\Support\Models\ModelConfigCatalogue;
 use App\Support\Settings\SettingsService;
 use App\Support\Settings\SettingsText;
+use App\Support\Settings\UnimplementedSettings;
 use App\Support\SettingsSchema;
 use App\Support\TenantContext;
 use Filament\Forms\Components\Field;
@@ -168,6 +169,21 @@ trait BuildsSettingsForm
         };
 
         $component->label(SettingsText::fromHtml((string) $field['label']));
+
+        if (UnimplementedSettings::isInert((string) $field['key'])) {
+            // Rendered because the capability exists upstream (D8), disabled
+            // because nothing reads it, and named because "disabled" without
+            // "why" is a question. This branch precedes the writability branch
+            // below: an inert key is refused on purpose, so it would otherwise
+            // pick up the operator-scope hint and blame NV Digital for an
+            // unimplemented slice.
+            $component
+                ->disabled()
+                ->dehydrated(false)
+                ->helperText(UnimplementedSettings::hintFor((string) $field['key']));
+
+            return $component;
+        }
 
         if (! $this->isWritableHere($field)) {
             // Read-only ON THIS SURFACE, not read-only in the abstract: an
