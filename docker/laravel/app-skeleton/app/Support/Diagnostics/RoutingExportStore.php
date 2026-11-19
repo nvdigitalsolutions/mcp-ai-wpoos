@@ -196,4 +196,29 @@ final class RoutingExportStore
 
         return \Carbon\CarbonImmutable::parse((string) $last->created_at)->addSeconds($delay);
     }
+
+    /**
+     * The exporter's current backoff state, for machine readers (§78).
+     *
+     * The operator page prints this as a sentence and the diagnostics API
+     * returns it as fields. Both ask this method, so a scrape and the screen
+     * cannot disagree about whether the exporter is waiting.
+     *
+     * A window that has already elapsed is **not** "backing off": the next
+     * tick will try, and reporting the past timestamp would make a dashboard
+     * show a retry time that has already gone by.
+     *
+     * @return array{backing_off: bool, retry_after: \Carbon\CarbonImmutable|null, consecutive_failures: int}
+     */
+    public function backoffState(): array
+    {
+        $failures = $this->consecutiveFailures();
+        $until = $this->backoffUntil();
+
+        if (null === $until || ! now()->lt($until)) {
+            return ['backing_off' => false, 'retry_after' => null, 'consecutive_failures' => $failures];
+        }
+
+        return ['backing_off' => true, 'retry_after' => $until, 'consecutive_failures' => $failures];
+    }
 }
