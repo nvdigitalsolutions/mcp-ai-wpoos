@@ -110,7 +110,10 @@ class CommandCenterController
     }
 
     /**
-     * Tokens consumed since local midnight.
+     * Tokens consumed since local midnight, for this estate.
+     *
+     * Scoped like every other number on the command centre: an estate admin
+     * must not see another estate's consumption (Proposal 152 §2).
      */
     private function tokensToday(): int
     {
@@ -119,6 +122,7 @@ class CommandCenterController
         }
 
         return (int) DB::table('nvoos_token_usage')
+            ->where('tenant_id', TenantContext::current())
             ->where('created_at', '>=', now()->startOfDay())
             ->sum('total_tokens');
     }

@@ -18,9 +18,11 @@ use Filament\Support\Icons\Heroicon;
  * zeros on every real deployment.
  *
  * What is deliberately absent is in `TokenUsageReport`'s docblock — the tier
- * column, cached tokens, and a per-site view (the table has no estate scope,
- * §64). The page states the last one rather than hiding it, because a missing
- * column is less confusing than a column that is always zero.
+ * column, cached tokens, and a per-site view. The last one is now possible:
+ * Proposal 152 gave the table an estate column and the report a required
+ * `$tenantId`. The page asks for `null` (every estate) because an operator
+ * surface must see the whole deployment; an estate filter is the obvious next
+ * step, not a missing capability.
  */
 class TokenUsage extends Page
 {
@@ -72,7 +74,9 @@ class TokenUsage extends Page
      */
     public function rows(): array
     {
-        return $this->rows ??= app(TokenUsageReport::class)->byUser($this->period);
+        // `null` = every estate. Only an operator page may ask for that
+        // (Proposal 152 §3 D5).
+        return $this->rows ??= app(TokenUsageReport::class)->byUser($this->period, null);
     }
 
     /**

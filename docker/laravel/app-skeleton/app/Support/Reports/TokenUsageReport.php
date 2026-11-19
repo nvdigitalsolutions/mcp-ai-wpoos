@@ -34,9 +34,14 @@ class TokenUsageReport
     /**
      * Per-user aggregates over the window, highest spend first.
      *
+     * `$tenantId` is required rather than defaulted (Proposal 152 §3 D5): `null`
+     * means every estate, and only an operator surface may ask for that. The
+     * operator page states it explicitly so a future per-estate filter is a
+     * one-line change rather than a silent semantic shift.
+     *
      * @return list<array{user_id: int, name: string, events: int, prompt_tokens: int, completion_tokens: int, total_tokens: int, cost: float}>
      */
-    public function byUser(int $days = self::DEFAULT_PERIOD): array
+    public function byUser(int $days, ?string $tenantId): array
     {
         $days = $this->normalisePeriod($days);
 
@@ -46,6 +51,7 @@ class TokenUsageReport
 
         $rows = DB::table(self::TABLE)
             ->where('created_at', '>=', $this->windowStart($days))
+            ->when(null !== $tenantId, static fn ($query) => $query->where('tenant_id', $tenantId))
             ->groupBy('user_id')
             ->selectRaw(
                 'user_id, COUNT(*) as events,'

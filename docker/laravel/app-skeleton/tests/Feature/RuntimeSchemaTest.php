@@ -101,4 +101,37 @@ class RuntimeSchemaTest extends TestCase
             'The tenant/created_at index is missing; the snapshot list is not estate-scoped.'
         );
     }
+
+    public function test_token_usage_is_estate_scoped(): void
+    {
+        // Proposal 152: `/api/v1/cost/*` is an estate-administrator surface, so
+        // the column and its index are the difference between a cost report and
+        // another estate's spend.
+        $this->assertTrue(Schema::hasColumns('nvoos_token_usage', ['tenant_id', 'user_id', 'cost']));
+
+        $indexes = collect(Schema::getIndexes('nvoos_token_usage'));
+
+        $this->assertNotNull(
+            $indexes->firstWhere('name', 'nvoos_token_usage_tenant_id_index'),
+            'The tenant index is missing; scoped reads fall back to a full scan.'
+        );
+    }
+
+    public function test_the_token_rollup_key_includes_the_estate(): void
+    {
+        // Proposal 152 D6: the old `(day, provider, model_id)` key would make
+        // two estates' same-model day collide and the second upsert overwrite
+        // the first. The test names the composite it must be.
+        $indexes = collect(Schema::getIndexes('nvoos_token_usage_daily'));
+
+        $this->assertNotNull(
+            $indexes->firstWhere('name', 'nvoos_token_usage_daily_tenant_key'),
+            'The tenant/day/provider/model unique index is missing.'
+        );
+
+        $this->assertNull(
+            $indexes->firstWhere('name', 'nvoos_token_usage_daily_key'),
+            'The unscoped day/provider/model unique index still exists; two estates collide.'
+        );
+    }
 }

@@ -8499,7 +8499,7 @@ title is literally "Operations, diagnostics and cost" — rather than adding a
 | View | Status |
 |---|---|
 | `per_user` | **this section** |
-| `per_site` | blocked on the missing estate scope — a data gap, not a renderer |
+| `per_site` | **unblocked by §86.** The data now carries an estate; the view itself is the remaining work |
 | `per_tool` | **not a usage view.** In WordPress it is a limits *configuration* table (preferred model, multiplier, effective limits), so it is a settings surface, not an analytics one; recorded here so it is not mistaken for one |
 | `per_models` | already served by `/ops/models` (§68) — the model config table |
 | `model_manager` | catalogue sync lives in `/ops/models` too |
@@ -8749,3 +8749,124 @@ three working authentication paths for the surfaces it serves.
 1. **The dataset browser** waits on evidence (§85.1), not on a renderer.
 2. **Measurement** waits on the three stores (§85.2).
 3. **Identity provider** waits on a scope decision (§85.3).
+
+## 86. Token telemetry acquires an estate (2026-11-19)
+
+`nvoos_token_usage` recorded no estate, and `/api/v1/cost/dashboard-summary`,
+`/cost/trend` and `/cost/by-provider` sit in the `can:manage_options` group and
+read it with no scope. An estate administrator could read every estate's spend.
+`summary()` also resolves `top_users` to **names**, so the leak carried people,
+not just numbers.
+
+This is §18's workflow-run leak in a worse place: §18's rows were readable by an
+operator page, these are readable by a live estate-facing route today. The full
+implementation contract — nine decisions, the reader inventory and the test
+plan — is [Proposal 152](152-estate-scope-for-telemetry.md); this section records
+what shipped.
+
+### 86.1 What the standards say
+
+- **Row-level tenancy** (OWASP Multi-Tenant Security Cheat Sheet, §2) is the
+default model for a shared schema: every row carries the tenant, and every query
+filters on it. A separate schema per estate is the alternative, and it is not a
+fit for a runtime that already shares every other table this way (§18, §47,
+§51).
+- **OTel models tenancy as a resource attribute**, not a metric label. That
+supports the split this section makes: the *cost* rows are estate-owned, the
+*routing* metrics (§64) are deployment-wide.
+- **Per-tenant metering** bills by an explicit tenant key on the usage record.
+Deriving the tenant at read time from the user's current membership would
+re-attribute history every time somebody joins or leaves an estate.
+
+### 86.2 Decisions
+
+The eight that shaped the code; the reasoning is in Proposal 152 §3.
+
+| # | Decision |
+|---|---|
+| D1 | `tenant_id` lands on `nvoos_token_usage` and `nvoos_token_usage_daily` now; `nvoos_harness_trace_records` in a Phase 2 pass, before any estate-facing trace surface |
+| D2 | **No** `tenant_id` on `nvoos_routing_metrics`. §64/§66 decided routing is pre-estate; adding a column nobody scopes by is noise, not safety |
+| D3 | Existing rows become `default` through the column default. **No backfill** — the record does not say which estate it was, and inventing one is worse than the documented default |
+| D4 | The writer puts the estate in `metadata`; the adapter writes the column. `lib/` must not import `App\Support\TenantContext` |
+| D5 | Readers take a **required** `?string $tenantId`. `null` is platform-wide, and only an operator surface may ask for it |
+| D6 | The rollup key becomes `(tenant_id, day, provider, model_id)` |
+| D7 | Retention stays deployment-wide; per-estate windows are a separate policy question (§76.4) |
+| D8 | Phase 2 threads the run id onto `nvoos_harness_trace_records` from `TraceCapture`'s meta |
+
+D5 is the load-bearing one. A defaulted parameter would have preserved every
+bug: the leak was not a wrong argument, it was **no argument**. Making the
+parameter required turned three live call sites into compile-time prompts, and
+the two operator pages now say `null` out loud with the reason beside it.
+
+### 86.3 The change
+
+**Schema** — two app-side migrations, shaped like `add_tenant_to_workflow_runs`:
+the column carries `default('default')` so existing rows are attributed without
+a backfill pass, and the daily table's old `(day, provider, model_id)` unique key
+is dropped and replaced. Keeping both keys would have rejected the second
+estate's identical day; keeping only the old one would have made the second upsert
+**overwrite** the first, which is silent data loss rather than a scoping
+preference.
+
+**Writer** — `RecordTokenUsage` already carried the assistant and the cost; it
+now carries `TenantContext::current()` as `metadata.tenant_id`, and
+`TokenUsage::trackUsage()` writes it as a column. The metadata copy stays: a row
+is easier to debug when the estate is readable in the blob it was written with.
+
+**Readers** — `TokenUsage::summary()`, `trend()`, `byProvider()` and
+`TokenUsageRollup::dailyCosts()` take the tenant; `rows()` and `countDay()` scope
+through `->when(null !== $tenantId, …)`. Every call site now states its mode:
+
+| Call site | Mode |
+|---|---|
+| `AnalyticsController` (3 routes) | estate — `TenantContext::current()`, pinned by `ResolveApiTenant` from `X-Tenant-Id` |
+| `CommandCenterController::tokensToday()` | estate |
+| `SlashCommandExecutor::cost()` and `::tokensToday()` | estate |
+| `DiagnosticsPage::cost()` | platform — `null` |
+| `TokenUsageReport` / `TokenAnalyticsReport` (via their `/ops` pages) | platform — `null` |
+
+The two slash-command reads were the quietest part of the job: they query the
+table directly rather than through the adapter, so the adapter's new signature
+would not have caught them. Both were unscoped and both are on a chat surface an
+estate user can reach.
+
+`lastRolledUpDay()` stays deliberately platform-wide. Retention's guard has to
+know whether **every** estate's day was rolled up before it deletes that day's
+raw rows; a per-estate answer would let one estate's rollup license deleting
+another's unaggregated history.
+
+### 86.4 The honest limitation
+
+Rows written before this change cannot recover their true estate. They are
+`default`, which is correct for a single-estate deployment (every deployment
+that predates tenancy) and a documented approximation for a multi-estate one. A
+node migrating from single to multi-estate should treat pre-migration spend as
+belonging to the default estate, because that is where the rows say it went.
+
+### 86.5 Gates
+
+| Run | Result |
+|---|---|
+| `TokenUsageTenancyTest` | **8 tests / 30 assertions** — the A administrator sees A's totals and no B user name anywhere in the payload; trend and by-provider are scoped; the operator page still sees both estates; the rollup writes two rows for two estates and a re-run rewrites both; the trend falls back to one estate's rollup; an unstamped row is `default`; the listener stamps the pinned estate |
+| `TokenUsage*`, `AdminToken*`, `RuntimeSchema`, `CoreOperations`, `CommandCenter`, `SlashCommands`, `AdminObservability` | **97 tests / 384 assertions, 0 failures** |
+| `TokenUsageRollupTest` | **6 tests** — idempotency and the pruned-day fallback still hold with the wider key |
+| phpcs (`phpcs-laravel.xml.dist`, 15 files; `phpcs.xml.dist`, 2 adapter files) | **0 errors** |
+
+`RuntimeSchemaTest` gained two guards in the §47/§51 style: the token-usage
+tenant column and index must exist, and the rollup's unique key must be the
+estate-scoped one **and** the unscoped one must be gone. A future migration that
+re-adds `tenant_id` without moving the key now fails a test instead of losing an
+estate's day.
+
+### 86.6 Still open
+
+1. **The `per_site` view** is unblocked, not built. The data can now answer it;
+   the page is the remaining work.
+2. **Harness traces** (D1, Phase 2) stay estate-blind until the run id is threaded
+   through `TraceStoreInterface::append()`. No estate-facing trace surface exists
+   yet, so nothing leaks today — but the next one must not ship before that lands.
+3. **`getUserUsage()` / `getModelUsage()`** still aggregate across estates. They
+   satisfy `TokenUsageInterface` and have no callers outside the adapter, so they
+   are not a leak; if either is ever exposed, it needs the same required-tenant
+   treatment.
+4. **Per-estate retention windows** stay deferred (§76.4 item 2).

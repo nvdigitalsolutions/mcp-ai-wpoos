@@ -362,7 +362,8 @@ class DiagnosticsPage extends Page
      */
     public function cost(): array
     {
-        $summary = app(TokenUsage::class)->summary(30);
+        // `null` — the operator page sees every estate (Proposal 152 §3 D5).
+        $summary = app(TokenUsage::class)->summary(30, null);
 
         $byProvider = [];
         foreach ((array) ($summary['by_provider'] ?? []) as $provider => $cost) {

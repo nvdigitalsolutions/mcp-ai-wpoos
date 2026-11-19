@@ -33,6 +33,9 @@ class TokenUsage implements TokenUsageInterface {
 
 		DB::table( self::TABLE )->insert( array(
 			'user_id' => $userId,
+			// The estate is written as a column so queries can scope by it; the
+			// metadata copy stays for debugging (Proposal 152 §3 D4).
+			'tenant_id' => $this->tenantFrom( $metadata ),
 			'model_id' => $modelId,
 			'prompt_tokens' => max( 0, $promptTokens ),
 			'completion_tokens' => max( 0, $completionTokens ),
@@ -58,14 +61,18 @@ class TokenUsage implements TokenUsageInterface {
 	}
 
 	/**
-	 * Site-wide cost summary for the Analytics page.
+	 * Cost summary for one estate, or the whole deployment when `null`.
+	 *
+	 * `$tenantId` is required rather than defaulted: `null` means every estate,
+	 * and only an operator surface may ask for that. A default would let a new
+	 * call site leak without noticing (Proposal 152 §3 D5).
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function summary( int $days = 30 ): array {
+	public function summary( int $days, ?string $tenantId ): array {
 		$days = max( 1, $days );
 		$start = now()->subDays( $days - 1 )->startOfDay();
-		$rows = $this->rows( $start );
+		$rows = $this->rows( $start, $tenantId );
 
 		$totalCost = 0.0;
 		$totalTokens = 0;
@@ -136,12 +143,12 @@ class TokenUsage implements TokenUsageInterface {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function trend( int $days = 30 ): array {
+	public function trend( int $days, ?string $tenantId ): array {
 		$days = max( 1, $days );
 		$start = now()->subDays( $days - 1 )->startOfDay();
 		$map = array();
 
-		foreach ( $this->rows( $start ) as $row ) {
+		foreach ( $this->rows( $start, $tenantId ) as $row ) {
 			$date = substr( (string) $row->created_at, 0, 10 );
 			$map[ $date ] = ( $map[ $date ] ?? 0 ) + (float) $row->cost;
 		}
@@ -150,7 +157,7 @@ class TokenUsage implements TokenUsageInterface {
 		// outlives them. A day that still has raw rows is authoritative (it is
 		// the source the rollup was built from); a day without them falls back
 		// to the aggregate, so a long trend keeps its shape after retention.
-		$rollup = app( TokenUsageRollup::class )->dailyCosts( $start->toDateString() );
+		$rollup = app( TokenUsageRollup::class )->dailyCosts( $start->toDateString(), $tenantId );
 
 		$labels = array();
 		$data = array();
@@ -182,8 +189,8 @@ class TokenUsage implements TokenUsageInterface {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function byProvider( int $days = 30 ): array {
-		$summary = $this->summary( $days );
+	public function byProvider( int $days, ?string $tenantId ): array {
+		$summary = $this->summary( $days, $tenantId );
 		$labels = array_keys( $summary['by_provider'] );
 		$data = array_values( $summary['by_provider'] );
 		$palette = array( '#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2' );
@@ -240,14 +247,34 @@ class TokenUsage implements TokenUsageInterface {
 	}
 
 	/**
+	 * @param \Carbon\CarbonImmutable $start
+	 * @param string|null              $tenantId `null` = every estate.
 	 * @return \Illuminate\Support\Collection<int, object>
 	 */
-	private function rows( $start ) {
+	private function rows( $start, ?string $tenantId ) {
 		if ( ! Schema::hasTable( self::TABLE ) ) {
 			return collect();
 		}
 
-		return DB::table( self::TABLE )->where( 'created_at', '>=', $start )->get();
+		return DB::table( self::TABLE )
+			->where( 'created_at', '>=', $start )
+			->when( null !== $tenantId, fn ( $query ) => $query->where( 'tenant_id', $tenantId ) )
+			->get();
+	}
+
+	/**
+	 * The estate a usage row belongs to.
+	 *
+	 * The writer supplies it in metadata; a missing value is the default estate,
+	 * which is the only defensible attribution for a row that records none
+	 * (Proposal 152 §3 D3).
+	 *
+	 * @param array<string, mixed> $metadata
+	 */
+	private function tenantFrom( array $metadata ): string {
+		$tenant = trim( (string) ( $metadata['tenant_id'] ?? '' ) );
+
+		return '' !== $tenant ? substr( $tenant, 0, 64 ) : 'default';
 	}
 
 	/**

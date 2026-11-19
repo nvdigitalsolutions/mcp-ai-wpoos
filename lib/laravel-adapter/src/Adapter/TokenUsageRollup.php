@@ -39,9 +39,14 @@ class TokenUsageRollup {
 	 * Aggregate one complete day into the daily table.
 	 *
 	 * The provider comes from the row's `metadata.provider`, the model from
-	 * `model_id`. Rows are read in id batches rather than aggregated in SQL:
-	 * extracting a JSON key differs between MySQL and SQLite, and the suite runs
-	 * on SQLite while production runs on MySQL.
+	 * `model_id`, the estate from the `tenant_id` column. Rows are read in id
+	 * batches rather than aggregated in SQL: extracting a JSON key differs
+	 * between MySQL and SQLite, and the suite runs on SQLite while production
+	 * runs on MySQL.
+	 *
+	 * The estate is part of the group key: two estates running the same model on
+	 * the same day are two rows, not one upsert that overwrites the other
+	 * (Proposal 152 §3 D6).
 	 *
 	 * @return array{groups: int, rows: int} Groups written and raw rows read.
 	 */
@@ -62,17 +67,19 @@ class TokenUsageRollup {
 			->where( 'created_at', '<', $end )
 			->chunkById(
 				self::CHUNK,
-				static function ( $chunk ) use ( &$groups, &$rows, $date ): void {
+				function ( $chunk ) use ( &$groups, &$rows, $date ): void {
 					foreach ( $chunk as $row ) {
 						++$rows;
 
 						$meta     = json_decode( (string) ( $row->metadata ?? '' ), true ) ?: array();
 						$provider = (string) ( $meta['provider'] ?? 'unknown' );
 						$model    = (string) $row->model_id;
-						$key      = $provider . "\0" . $model;
+						$tenant   = $this->tenantOf( $row );
+						$key      = $tenant . "\0" . $provider . "\0" . $model;
 
 						if ( ! isset( $groups[ $key ] ) ) {
 							$groups[ $key ] = array(
+								'tenant_id' => $tenant,
 								'day' => $date,
 								'provider' => $provider,
 								'model_id' => $model,
@@ -108,7 +115,7 @@ class TokenUsageRollup {
 
 		DB::table( self::DAILY )->upsert(
 			array_values( $groups ),
-			array( 'day', 'provider', 'model_id' ),
+			array( 'tenant_id', 'day', 'provider', 'model_id' ),
 			array( 'events', 'prompt_tokens', 'completion_tokens', 'total_tokens', 'cost', 'updated_at' )
 		);
 
@@ -117,8 +124,11 @@ class TokenUsageRollup {
 
 	/**
 	 * Raw rows a rollup of this day would read.
+	 *
+	 * `$tenantId` mirrors the reader contract: `null` counts every estate, which
+	 * is what the retention guard and the rollup command ask for.
 	 */
-	public function countDay( CarbonImmutable $day ): int {
+	public function countDay( CarbonImmutable $day, ?string $tenantId = null ): int {
 		if ( ! $this->available() ) {
 			return 0;
 		}
@@ -128,6 +138,7 @@ class TokenUsageRollup {
 		return (int) DB::table( self::RAW )
 			->where( 'created_at', '>=', $start )
 			->where( 'created_at', '<', $start->addDay() )
+			->when( null !== $tenantId, fn ( $query ) => $query->where( 'tenant_id', $tenantId ) )
 			->count();
 	}
 
@@ -138,6 +149,10 @@ class TokenUsageRollup {
 	 * day has been rolled up. `null` means nothing has ever been rolled up —
 	 * including "the table does not exist" — and retention treats that as
 	 * "delete nothing" rather than "delete everything".
+	 *
+	 * Deliberately **platform-wide**: the guard has to know whether *every*
+	 * estate's day has been rolled up before it deletes that day's raw rows
+	 * (Proposal 152 §3 D7).
 	 */
 	public function lastRolledUpDay(): ?CarbonImmutable {
 		if ( ! $this->available() ) {
@@ -158,9 +173,13 @@ class TokenUsageRollup {
 	/**
 	 * Cost per day from the aggregate, for a trend that outlives retention.
 	 *
+	 * `$tenantId` is required, not defaulted, for the same reason as the raw
+	 * readers: `null` is a platform-wide read and must be an explicit choice
+	 * (Proposal 152 §3 D5).
+	 *
 	 * @return array<string, float> `YYYY-MM-DD` => cost.
 	 */
-	public function dailyCosts( string $fromDate ): array {
+	public function dailyCosts( string $fromDate, ?string $tenantId ): array {
 		if ( ! $this->available() ) {
 			return array();
 		}
@@ -168,6 +187,7 @@ class TokenUsageRollup {
 		$rows = DB::table( self::DAILY )
 			->selectRaw( 'day, SUM(cost) as cost' )
 			->where( 'day', '>=', $fromDate )
+			->when( null !== $tenantId, fn ( $query ) => $query->where( 'tenant_id', $tenantId ) )
 			->groupBy( 'day' )
 			->get();
 
@@ -178,6 +198,19 @@ class TokenUsageRollup {
 		}
 
 		return $costs;
+	}
+
+	/**
+	 * The estate a raw row belongs to.
+	 *
+	 * A row written before the tenant column existed carries no estate; the
+	 * column default makes it `default`, and reading it defensively keeps a
+	 * rollup running against a not-yet-migrated table honest (Proposal 152 §3 D3).
+	 */
+	private function tenantOf( object $row ): string {
+		$tenant = trim( (string) ( $row->tenant_id ?? '' ) );
+
+		return '' !== $tenant ? $tenant : 'default';
 	}
 
 	/**
