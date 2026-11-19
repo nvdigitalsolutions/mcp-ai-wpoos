@@ -45,7 +45,7 @@ type ManifestShape = {
 	site?: string;
 	surfaces?: Record<string, boolean>;
 	collections?: Array<{ slug?: string; restBase?: string; kind?: string }>;
-	tracking?: { enabled?: boolean; vendors?: string[]; consentMode?: string };
+	tracking?: { enabled?: boolean; vendors?: string[]; consentMode?: string; consentExempt?: string[] };
 	design?: {
 		builder?: string;
 		outline?: Array<{ id?: string; anchor?: string; via?: string; columns?: Array<{ width?: number }> }>;
@@ -106,6 +106,7 @@ export const GET: APIRoute = async ( { site } ) => {
 					enabled: meta.tracking.enabled,
 					vendors: meta.tracking.vendors,
 					consentMode: meta.tracking.consentMode,
+					consentExempt: meta.tracking.consentExempt,
 			  }
 			: undefined,
 		tokens: resolvedDesign.tokens,

@@ -72,6 +72,12 @@
 html {
 	scroll-behavior: smooth;
 	scroll-padding-top: 7rem;
+	/* A horizontal-overflow guard, not a band requirement: a builder mark-up
+	 * band (raw HTML inside a themed wrap) can still carry a wide child, and
+	 * `clip` — not `hidden` — so no scroll container is created and the sticky
+	 * header keeps working. Bands themselves no longer use `100vw`, so they no
+	 * longer manufacture an overflow to hide. */
+	overflow-x: clip;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -95,8 +101,7 @@ body {
 	line-height: 1.6;
 	color: var(--forge-ink);
 	background: var(--forge-surface);
-	/* Full-bleed bands paint 100vw — clip the scrollbar-width sliver
-	 * instead of letting it scroll horizontally. */
+	/* Same guard as `html` above: a raw builder band may still overflow. */
 	overflow-x: clip;
 }
 
@@ -329,18 +334,19 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 /* Design-rebuild pages: the themed bands are full-bleed and carry their own
  * rhythm (117/122) — the main padding would open a gap under the header and
  * above the footer the source does not have (jayainc's bands meet its
- * chrome flush). Plain/prose pages keep the padding. */
+ * chrome flush). Plain/prose pages keep the padding.
+ *
+ * The MEASURE is released too. A band used to escape this box with
+ * `width:100vw`, but `vw` counts the scrollbar while this element is sized to
+ * the CONTENT box — so on a classic 15px scrollbar the band landed 7px left of
+ * the viewport and 15px wider than it (virtuallysrilanka: wrap box
+ * left -7, width 1496 against a 1481px client). The left edge of the first
+ * card was clipped and the right edge fell short. A band is now a plain 100%
+ * child of a full-width main, which is exactly the visible width by
+ * construction, whatever the scrollbar does; each `.ds-section` still
+ * re-measures to the source's container so no copy moves. */
 .site-main:has([class*='ds-section-wrap--']) {
 	padding: 0;
-	/* The MEASURE is released too. A band used to escape this box with
-	 * `width:100vw`, but `vw` counts the scrollbar while this element is sized
-	 * to the CONTENT box — so on a classic 15px scrollbar the band landed 7px
-	 * left of the viewport and 15px wider than it (virtuallysrilanka: wrap box
-	 * left -7, width 1496 against a 1481px client). The left edge of the first
-	 * card was clipped and the right edge fell short. A band is now a plain 100%
-	 * child of a full-width main, which is exactly the visible width by
-	 * construction, whatever the scrollbar does; each `.ds-section` still
-	 * re-measures to the source's container so no copy moves. */
 	max-width: none;
 }
 
@@ -401,6 +407,14 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	text-align: center;
 	padding-top: 1rem;
 	padding-bottom: 1rem;
+	/* The source's footer is ONE line: the copyright and the generator credit
+	 * share the bar instead of stacking as two block paragraphs (a 26px row plus
+	 * a blank line, which made the bar 91px against the source's 63px). */
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem 1rem;
 }
 
 /* ------------------------------------------------------------------------
@@ -672,8 +686,14 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 
 .site-copyright,
 .site-credit {
-	margin: 0.25rem 0 0;
+	/* The bar is a flex row (`gap` owns the spacing). */
+	margin: 0;
 	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
+}
+
+/* The generator credit is subordinate to the customer's copyright. */
+.site-credit {
+	opacity: 0.8;
 }
 
 .hero {
@@ -720,6 +740,15 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	max-width: 100%;
 	height: auto;
 	border-radius: var(--forge-radius);
+}
+
+/* A raw rebuilt band keeps the builder's own markup, and builders ship SQUARE
+ * photos (flatsome.css sets no radius; monicarajiv measures 0 on every image in
+ * the section). The prose default above rounded every hero and tile photo by
+ * `--forge-radius`, which the source never had. Radius inside a band is a
+ * MEASURED fact or it is nothing. */
+.ds-section-wrap .post-body img {
+	border-radius: 0;
 }
 
 .post-body figcaption {
@@ -960,6 +989,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	 * rides as the side padding; absent → the template clamp. */
 	padding-left: var(--ds-pad-x, clamp(1rem, 4vw, 2rem));
 	padding-right: var(--ds-pad-x, clamp(1rem, 4vw, 2rem));
+}
+
+/* Flatsome's `row-full-width` breaks a row OUT of the container to the
+ * section's own edges (monicarajiv's hero intro: 1425px inside a 1425px
+ * section at a 1425px document). The band's measured container width is the
+ * CONTAINER — capping a band that holds a full-width row insets it by 28px a
+ * side. The band keeps its own padding; only the cap goes. */
+.ds-section-wrap .ds-section:has(.row-full-width) {
+	max-width: none;
+	margin-left: 0;
+	margin-right: 0;
 }
 
 /* A phone has no room for a measured zero gutter: virtuallyjamaica's contact
@@ -2010,6 +2050,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	justify-content: center;
 }
 
+/* flatsome.css: `.banner-layers>*{position:absolute!important}`. The tier
+ * blocks below are media-scoped, so the POSITION is stated once here — a
+ * layer whose offsets come from the lg tier still needs it at that width. */
+.ds-section-wrap .post-body .banner-layers > * {
+	position: absolute;
+}
+
 .ds-section-wrap .post-body .banner.is-full-height {
 	flex: 1;
 }
@@ -2019,24 +2066,163 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	width: 100%;
 }
 
-/* Banner LAYERS are absolutely positioned stages (`x50` centers on the x axis,
- * `y50`/`y100` center / bottom-anchor). The vendor utilities that express this
- * live in the builder sheet, so they ship here as part of the band shim —
- * without them the copy stacked UNDER the banner's padding and grew the band
- * (600px banner + 235px copy = 835px instead of the source's 600px). */
-.ds-section-wrap .post-body .banner-layer[class~='x50'] {
-	position: absolute;
-	left: 50%;
-	width: min(80%, 810px);
-	transform: translate(-50%, 0);
+/* Banner LAYERS are absolutely positioned stages. Flatsome expresses the
+ * position with `x`/`y` utilities (`x50` centres on the x axis, `y70` anchors
+ * 30% from the bottom) and the vendor sheet never ships, so they are restated
+ * here. Without them the copy stacked UNDER the banner's padding and grew the
+ * band (600px banner + 235px copy = 835px instead of the source's 600px) — and
+ * every layer that was not `y50` collapsed onto the same top, so doomsday's
+ * three ceremony times painted on top of each other.
+ *
+ * Transcribed from flatsome.css 3.20.7, INCLUDING its tier model: the bare
+ * classes are MOBILE-only (`@media (max-width:549px)`), `md-` is a RANGE
+ * (`550px`–`849px`) and `lg-` is a floor (`850px`). The builder emits all
+ * three tiers on one element (`x50 md-x50 lg-x5`), so a tier that is not
+ * media-scoped leaks its offsets upward. `transform` is NOT additive, so an
+ * `x50`+`y50` layer needs the combined rule — restated per tier for the same
+ * reason.
+ */
+@media (max-width: 549px) {
+.ds-section-wrap .post-body .banner-layer[class~='x0'] { position: absolute; left: 0; }
+.ds-section-wrap .post-body .banner-layer[class~='x5'] { position: absolute; left: 5%; }
+.ds-section-wrap .post-body .banner-layer[class~='x10'] { position: absolute; left: 10%; }
+.ds-section-wrap .post-body .banner-layer[class~='x15'] { position: absolute; left: 15%; }
+.ds-section-wrap .post-body .banner-layer[class~='x20'] { position: absolute; left: 20%; }
+.ds-section-wrap .post-body .banner-layer[class~='x25'] { position: absolute; left: 25%; }
+.ds-section-wrap .post-body .banner-layer[class~='x30'] { position: absolute; left: 30%; }
+.ds-section-wrap .post-body .banner-layer[class~='x35'] { position: absolute; left: 35%; }
+.ds-section-wrap .post-body .banner-layer[class~='x40'] { position: absolute; left: 40%; }
+.ds-section-wrap .post-body .banner-layer[class~='x45'] { position: absolute; left: 45%; }
+.ds-section-wrap .post-body .banner-layer[class~='x50'] { position: absolute; left: 50%; width: min(80%, 810px); transform: translateX(-50%); }
+.ds-section-wrap .post-body .banner-layer[class~='x55'] { position: absolute; right: 45%; }
+.ds-section-wrap .post-body .banner-layer[class~='x60'] { position: absolute; right: 40%; }
+.ds-section-wrap .post-body .banner-layer[class~='x65'] { position: absolute; right: 35%; }
+.ds-section-wrap .post-body .banner-layer[class~='x70'] { position: absolute; right: 30%; }
+.ds-section-wrap .post-body .banner-layer[class~='x75'] { position: absolute; right: 25%; }
+.ds-section-wrap .post-body .banner-layer[class~='x80'] { position: absolute; right: 20%; }
+.ds-section-wrap .post-body .banner-layer[class~='x85'] { position: absolute; right: 15%; }
+.ds-section-wrap .post-body .banner-layer[class~='x90'] { position: absolute; right: 10%; }
+.ds-section-wrap .post-body .banner-layer[class~='x95'] { position: absolute; right: 5%; }
+.ds-section-wrap .post-body .banner-layer[class~='x100'] { position: absolute; right: 0; }
+.ds-section-wrap .post-body .banner-layer[class~='y0'] { position: absolute; top: 0; }
+.ds-section-wrap .post-body .banner-layer[class~='y5'] { position: absolute; top: 5%; }
+.ds-section-wrap .post-body .banner-layer[class~='y10'] { position: absolute; top: 10%; }
+.ds-section-wrap .post-body .banner-layer[class~='y15'] { position: absolute; top: 15%; }
+.ds-section-wrap .post-body .banner-layer[class~='y20'] { position: absolute; top: 20%; }
+.ds-section-wrap .post-body .banner-layer[class~='y25'] { position: absolute; top: 25%; }
+.ds-section-wrap .post-body .banner-layer[class~='y30'] { position: absolute; top: 30%; }
+.ds-section-wrap .post-body .banner-layer[class~='y35'] { position: absolute; top: 35%; }
+.ds-section-wrap .post-body .banner-layer[class~='y40'] { position: absolute; top: 40%; }
+.ds-section-wrap .post-body .banner-layer[class~='y45'] { position: absolute; top: 45%; }
+.ds-section-wrap .post-body .banner-layer[class~='y50'] { position: absolute; top: 50.3%; transform: translateY(-50%); }
+.ds-section-wrap .post-body .banner-layer[class~='y55'] { position: absolute; bottom: 45%; }
+.ds-section-wrap .post-body .banner-layer[class~='y60'] { position: absolute; bottom: 40%; }
+.ds-section-wrap .post-body .banner-layer[class~='y65'] { position: absolute; bottom: 35%; }
+.ds-section-wrap .post-body .banner-layer[class~='y70'] { position: absolute; bottom: 30%; }
+.ds-section-wrap .post-body .banner-layer[class~='y75'] { position: absolute; bottom: 25%; }
+.ds-section-wrap .post-body .banner-layer[class~='y80'] { position: absolute; bottom: 20%; }
+.ds-section-wrap .post-body .banner-layer[class~='y85'] { position: absolute; bottom: 15%; }
+.ds-section-wrap .post-body .banner-layer[class~='y90'] { position: absolute; bottom: 10%; }
+.ds-section-wrap .post-body .banner-layer[class~='y95'] { position: absolute; bottom: 5%; }
+.ds-section-wrap .post-body .banner-layer[class~='y100'] { position: absolute; bottom: 0; }
+/* Both axes de-centred by one transform each — `transform` does not accumulate. */
+.ds-section-wrap .post-body .banner-layer[class~='x50'][class~='y50'] { transform: translate(-50%, -50%); }
 }
-.ds-section-wrap .post-body .banner-layer[class~='y50'] {
-	top: 50%;
-	transform: translate(-50%, -50%);
+
+/* The vendor's md tier is a RANGE, not a floor. With a bare min-width the
+ * md transforms survived into the lg tier: a `x50 md-x50 lg-x5` layer
+ * rendered at `left:5%` MINUS half its own width (x = −333 instead of 72 on
+ * krishandramikasavethe.world, 2026-11-19). */
+@media (min-width: 550px) and (max-width: 849px) {
+	.ds-section-wrap .post-body .banner-layer[class~='md-x0'] { left: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x5'] { left: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x10'] { left: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x15'] { left: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x20'] { left: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x25'] { left: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x30'] { left: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x35'] { left: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x40'] { left: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x45'] { left: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x50'] { left: 50%; transform: translateX(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x55'] { right: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x60'] { right: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x65'] { right: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x70'] { right: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x75'] { right: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x80'] { right: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x85'] { right: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x90'] { right: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x95'] { right: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x100'] { right: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y0'] { top: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y5'] { top: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y10'] { top: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y15'] { top: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y20'] { top: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y25'] { top: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y30'] { top: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y35'] { top: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y40'] { top: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y45'] { top: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y50'] { top: 50%; transform: translateY(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y55'] { bottom: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y60'] { bottom: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y65'] { bottom: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y70'] { bottom: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y75'] { bottom: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y80'] { bottom: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y85'] { bottom: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y90'] { bottom: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y95'] { bottom: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y100'] { bottom: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x50'][class~='md-y50'] { transform: translate(-50%, -50%); }
 }
-.ds-section-wrap .post-body .banner-layer[class~='y100'] {
-	top: 100%;
-	transform: translate(-50%, 0);
+
+@media (min-width: 850px) {
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x0'] { left: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x5'] { left: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x10'] { left: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x15'] { left: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x20'] { left: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x25'] { left: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x30'] { left: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x35'] { left: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x40'] { left: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x45'] { left: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x50'] { left: 50%; transform: translateX(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x55'] { right: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x60'] { right: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x65'] { right: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x70'] { right: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x75'] { right: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x80'] { right: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x85'] { right: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x90'] { right: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x95'] { right: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x100'] { right: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y0'] { top: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y5'] { top: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y10'] { top: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y15'] { top: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y20'] { top: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y25'] { top: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y30'] { top: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y35'] { top: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y40'] { top: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y45'] { top: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y50'] { top: 50%; transform: translateY(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y55'] { bottom: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y60'] { bottom: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y65'] { bottom: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y70'] { bottom: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y75'] { bottom: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y80'] { bottom: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y85'] { bottom: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y90'] { bottom: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y95'] { bottom: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y100'] { bottom: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x50'][class~='lg-y50'] { transform: translate(-50%, -50%); }
 }
 
 .ds-section-wrap .post-body .text-inner.text-center {
@@ -2046,15 +2232,24 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 /* A builder SLIDER is a one-slide stage: without the vendor JS every slide
  * stacks (doomsday's testimonial carousel rendered as a 6,000px column). The
  * first slide shows; its banner copy flows so the stage keeps a height
- * (an absolutely positioned layer inside a 0-height slide would vanish). */
-.ds-section-wrap .post-body .slider > *:not(:first-child) {
-	display: none;
-}
-
-.ds-section-wrap .post-body .slider .banner-layer {
+ * (an absolutely positioned layer inside a 0-height slide would vanish).
+ *
+ * `.banner-layer.banner-layer` is deliberate: it must out-rank the positional
+ * pack above, whose combined `x50`+`y50` rule is (0,5,0). At (0,4,0) this reset
+ * lost on `transform` while still winning on `position`, so a centred layer
+ * kept a −50% shift with no `left` to offset it and rendered half off-screen
+ * (doomsday's testimonial sat at x=−309 inside a 1050px column). */
+.ds-section-wrap .post-body .slider .banner-layer.banner-layer {
 	position: static;
+	left: auto;
+	top: auto;
+	bottom: auto;
 	width: auto;
 	transform: none;
+}
+
+.ds-section-wrap .post-body .slider > *:not(:first-child) {
+	display: none;
 }
 
 /* Flatsome's responsive VISIBILITY utilities. The source pairs a small-only
@@ -2144,6 +2339,102 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	.ds-section-wrap .post-body .col[class~='large-10'] { grid-column: span 10; }
 	.ds-section-wrap .post-body .col[class~='large-11'] { grid-column: span 11; }
 	.ds-section-wrap .post-body .col[class~='large-12'] { grid-column: span 12; }
+}
+
+/* `.row.align-center` — Flatsome's own centring model.
+ *
+ * Flatsome centres a row's flex LINES (`display:flex; flex-wrap:wrap;
+ * justify-content:center`), so a lone `large-10` column sits one 1/12 track in
+ * from each edge AND a `5 + 5` pair centres as a group. The 12-track grid above
+ * expresses neither: auto-placement always starts at track 1, so the
+ * accommodations intro ran flush left (900px inside 1080, one empty track on
+ * the right) where the source centres it. Offsetting each item's grid start
+ * fixes the lone-column case and breaks the pair (both land on the same
+ * tracks), so the row switches to the source's model and each column takes its
+ * span as a flex basis. Non-`.align-center` rows keep the grid. */
+.ds-section-wrap .post-body .row.align-center {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-1'] { flex: 0 0 8.3333%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-2'] { flex: 0 0 16.6667%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-3'] { flex: 0 0 25%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-4'] { flex: 0 0 33.3333%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-5'] { flex: 0 0 41.6667%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-6'] { flex: 0 0 50%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-7'] { flex: 0 0 58.3333%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-8'] { flex: 0 0 66.6667%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-9'] { flex: 0 0 75%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-10'] { flex: 0 0 83.3333%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-11'] { flex: 0 0 91.6667%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-12'] { flex: 0 0 100%; }
+
+@media (min-width: 550px) {
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-1'] { flex: 0 0 8.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-2'] { flex: 0 0 16.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-3'] { flex: 0 0 25%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-4'] { flex: 0 0 33.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-5'] { flex: 0 0 41.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-6'] { flex: 0 0 50%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-7'] { flex: 0 0 58.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-8'] { flex: 0 0 66.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-9'] { flex: 0 0 75%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-10'] { flex: 0 0 83.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-11'] { flex: 0 0 91.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-12'] { flex: 0 0 100%; }
+}
+
+@media (min-width: 850px) {
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-1'] { flex: 0 0 8.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-2'] { flex: 0 0 16.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-3'] { flex: 0 0 25%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-4'] { flex: 0 0 33.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-5'] { flex: 0 0 41.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-6'] { flex: 0 0 50%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-7'] { flex: 0 0 58.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-8'] { flex: 0 0 66.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-9'] { flex: 0 0 75%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-10'] { flex: 0 0 83.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-11'] { flex: 0 0 91.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-12'] { flex: 0 0 100%; }
+}
+
+/* Flatsome DECORATIVE DIVIDERS (`<div class="is-divider">`). The markup ships
+ * the element but the vendor sheet sized it, so a rebuild rendered it 0px tall
+ * with `width:auto` — the hero's two rules between the eyebrow, title and
+ * names vanished and each text box came out ~6px short on a 300px block.
+ * Values from flatsome.css 3.20.7; `1em` resolves against the band body size. */
+.ds-section-wrap .post-body .is-divider {
+	height: 3px;
+	width: 30px;
+	margin: 1em auto;
+	background-color: currentColor;
+}
+
+/* Flatsome CONVERTING buttons (`a.button.primary`).
+ *
+ * The vendor sheet makes `.button` an inline-block pill — uppercase, 700, 2.4
+ * leading, .03em tracking, .97em type, no underline. None of that is a
+ * MEASURED box, so the class facts carry only padding/margin/ink and the
+ * rebuild rendered a 16px underlined inline link where the source has a 43px
+ * button (accommodations' "Check Rates"). */
+.ds-section-wrap .post-body a.button {
+	display: inline-block;
+	font-size: .97em;
+	line-height: 2.4;
+	font-weight: 700;
+	letter-spacing: .03em;
+	text-transform: uppercase;
+	text-decoration: none;
+}
+
+/* `.button` sizes in `em` against its CONTAINER, and the builder's container
+ * inherits the source's body size (17.76px here vs the template's 13px base),
+ * so the band publishes the measured size (DesignRenderer) and the containers
+ * read it. `inherit` when a band has no body fact keeps other builders as-is. */
+.ds-section-wrap .post-body :is(.col-inner, .text-box-content, .text-inner) {
+	font-size: var(--ds-body-size, inherit);
 }
 
 /*
@@ -2660,10 +2951,19 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * DOM, so without it the header would sit behind the hero photo.
  */
 .site-header--overlay:not(.site-header--float) {
+	/* A transparent header rests OVER the first band. Without this the header
+	 * stays in flow and the hero starts one header-height lower — the source's
+	 * `#header` and its hero both start at y=0 (krishandramikasavethe.world,
+	 * 2026-11-19: hero y=79 against the source's y=0). `top:auto` keeps the
+	 * STATIC position, so a topbar still sits above it. The pinned variant is
+	 * NOT excluded: it re-states `position:absolute; top:auto` itself. */
 	position: absolute;
 	top: auto;
 	right: 0;
 	left: 0;
+	/* The band follows the header in the DOM and paints its own positioned
+	 * layers, so an overlay header needs a z-index to stay above them (the
+	 * source header sits at 1001). */
 	z-index: 2;
 	background: transparent;
 	border-bottom: none;
@@ -2690,6 +2990,24 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	animation: ds-header-pin linear both, ds-header-position linear both;
 	animation-timeline: scroll(root), scroll(root);
 	animation-range: 0 120px, 0 120px;
+}
+
+/*
+ * An overlay header that ALSO pins keeps the RESTING paint of an overlay: at
+ * scroll 0 the strip belongs to the band behind it. The block above excludes
+ * `.site-header--pinned` for `position` (the pinned variant owns its own), and
+ * that exclusion also skipped `border-bottom: none` — so the template's base
+ * hairline (`.site-header { border-bottom: 1px solid var(--forge-line) }`)
+ * survived and drew a dark line across the band behind a fully transparent
+ * header. Measured on monicarajiv 2026-11-19: `1px solid rgb(43, 43, 43)` under
+ * a transparent 158px header, at rest AND while pinned.
+ *
+ * Only the PAINT is cleared, and only the colour — `border-bottom: none` would
+ * drop the 1px box and shift the band by a pixel. The pinned keyframes already
+ * own the surface, the shadow and the height.
+ */
+.site-header--overlay.site-header--pinned {
+	border-bottom-color: transparent;
 }
 
 @keyframes ds-header-position {

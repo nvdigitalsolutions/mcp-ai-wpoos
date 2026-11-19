@@ -1201,7 +1201,10 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 		expect(yoastPost).toContain('property="og:title" content="How to care for natural fibres"');
 		expect(yoastPost).toContain('property="og:type" content="article"');
 		expect(yoastPost).toContain('name="twitter:card" content="summary_large_image"');
-		expect(yoastPost).toContain('property="og:image" content="' + origin + '/wp-content/uploads/care.png"');
+		// The Yoast image is carried but LOCALIZED (Proposal 138): media
+		// localization mirrors it and re-points the tag at the public origin, so
+		// the card no longer references the source CMS path.
+		expect(yoastPost).toMatch(/property="og:image" content="[^"]*\/media\/[^"]*care\.png"/);
 		// The site graph is rebuilt around the page node (never Yoast's @graph).
 		expect(yoastPost).toContain('"@graph"');
 		expect(yoastPost).toContain('"Organization"');

@@ -177,6 +177,14 @@ export interface ForgeTracker {
 	confidence: 'high' | 'medium' | 'low';
 	/** The source gates this behind a consent layer (banner + opt-in). */
 	sourceConsented?: boolean;
+	/**
+	 * Load WITHOUT a consent decision. Only reachable for a `cookieless` vendor
+	 * (audience measurement: no cookie, no device storage, publisher-only) and
+	 * only when the operator records that basis — the scaffold drops the flag
+	 * for any vendor whose spec allows cookies, because a cookie-setting tag
+	 * behind no decision is a compliance bug.
+	 */
+	consentExempt?: boolean;
 	/** How it was found: rendered HTML, browser probe, or operator entry. */
 	detectedVia?: 'html' | 'probe' | 'operator';
 	/** Dead vendor (Universal Analytics) — reported, never rebuilt. */
@@ -232,6 +240,14 @@ export interface ForgeTracking {
 	trackers: ForgeTracker[];
 	consent: ForgeConsent;
 	verification?: ForgeVerification;
+	/**
+	 * SPA route measurement for the Cloudflare beacon, which is ON by default
+	 * (`spa: true`) and patches the History API. The forge emits static
+	 * multi-page builds, where that work buys nothing and would double-count if
+	 * a client router were added later — so it is pinned OFF unless a profile
+	 * says otherwise.
+	 */
+	spa?: boolean;
 	delivery?: {
 		/** deferred (default) injects after consent; inline only with advanced. */
 		mode?: 'deferred' | 'inline' | 'partytown';
@@ -497,7 +513,14 @@ export interface SiteProfile {
 	 * homepage's own `<meta name="description">` is the only exact source.
 	 * The template uses it as the front page's description fallback.
 	 */
-	seo?: { description?: string; ogDescription?: string };
+	seo?: {
+		description?: string;
+		ogDescription?: string;
+		/** The site-level social image (absolute URL, e.g. the source's own
+		 * `og:image`). Used for pages that carry no image of their own; the build
+		 * mirrors it and rewrites the meta tag to the public origin. */
+		ogImage?: string;
+	};
 	/**
 	 * Per-page band facts (Proposal 115 extension) — the same home-page
 	 * measurement applied to every page the rebuild renders, keyed by page slug.
@@ -724,6 +747,17 @@ export interface ForgePageBands {
 	sections: ForgeSection[];
 	geometry: ForgeGeometry;
 	bandFacts: Record< string, ForgeBandFacts >;
+	/**
+	 * The page's own builder element rules (the id-keyed `<style>` blocks, with
+	 * the class-anchored fallback). `analyze` harvests these from the HOMEPAGE
+	 * only, so a sub-page's `#text-box-… { width }` would never reach the
+	 * rebuild: its layer classes differ from the front page's even when the
+	 * layout does not (coral's `y20 md-y90 lg-y25` at 36% against the home's
+	 * `y25 md-y20 lg-y30` at 34%). The CLI merges every page's rules into
+	 * `design.elementCss`, which ships as one scoped stylesheet — the selectors
+	 * are page-specific, so there is nothing to collide.
+	 */
+	elementCss?: ForgeElementCssRule[];
 }
 
 /**
@@ -1736,6 +1770,13 @@ export interface ForgeChromeBox {
 	 * valid for a centred brand too — unlike a brand-relative inset.
 	 */
 	padX?: number;
+	/**
+	 * The brand mark's RENDERED height at this viewport (`97px`), measured from
+	 * the brand anchor or its `<img>`. The template's fixed 2.5rem is a default,
+	 * not a fact: krishandramikasavethe.world's mark is 260×97 inside a 125px
+	 * header and rendered 2.4× too small without it (2026-11-19).
+	 */
+	logoHeight?: string;
 }
 
 /**

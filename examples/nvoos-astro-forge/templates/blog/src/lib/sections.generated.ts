@@ -17,6 +17,12 @@ export interface BandTypeFact {
 	letterSpacing?: string;
 	transform?: string;
 	align?: string;
+	/** Computed colour / narrow measure — the source's own ink and box. */
+	color?: string;
+	maxWidth?: string;
+	/** Computed margins — the builder's heading rhythm. */
+	marginTop?: string;
+	marginBottom?: string;
 	/** What the source CHANGES below the desktop breakpoint (and only that). */
 	tablet?: BandTypeProperties;
 	mobile?: BandTypeProperties;

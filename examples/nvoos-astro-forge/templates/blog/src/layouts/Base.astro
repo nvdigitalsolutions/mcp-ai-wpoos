@@ -100,7 +100,7 @@ const ogTitle = meta.ogTitle ?? fullTitle;
 const ogDescription = meta.ogDescription ?? pageDescription;
 const ogType = meta.ogType ?? 'website';
 const ogSiteName = meta.ogSiteName ?? siteTitle;
-const socialImage = ogImage ?? meta.ogImage ?? meta.twitterImage;
+const socialImage = ogImage ?? meta.ogImage ?? meta.twitterImage ?? ( manifest.seoImage || undefined );
 const twitterCard = meta.twitterCard ?? (socialImage ? 'summary_large_image' : 'summary');
 const twitterTitle = meta.twitterTitle ?? ogTitle;
 const twitterDescription = meta.twitterDescription ?? ogDescription;
@@ -301,7 +301,24 @@ const logoOverrides = ([
 const footerLogoCss = logoBaseHeight
 	? [`${footerLogoSelector}{height:${logoBaseHeight}}`, ...logoOverrides].join('\n')
 	: '';
-const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(Boolean).join('\n');
+// The HEADER mark's rendered height (measured per viewport with the header's
+// box). The template's `2.5rem` is a default, not a fact: this source's mark is
+// 260×97 inside a 125px bar, and a pinned 40px rendered it 2.4× too small
+// (krishandramikasavethe.world, 2026-11-19).
+const headerLogoHeight = (box?: { logoHeight?: string }) =>
+	box?.logoHeight && /^\d+px$/.test(box.logoHeight) ? box.logoHeight : undefined;
+const headerLogoSelector = '.site-header .brand-logo';
+const headerLogoBase = headerLogoHeight(chrome?.geometry?.wide ?? chrome?.geometry?.desktop);
+const headerLogoOverrides = ([
+	['1199px', chrome?.geometry?.tablet],
+	['767px', chrome?.geometry?.mobile],
+] as const)
+	.filter(([, box]) => box && headerLogoHeight(box) && headerLogoHeight(box) !== headerLogoBase)
+	.map(([width, box]) => `@media (max-width:${width}){${headerLogoSelector}{height:${headerLogoHeight(box)}}}`);
+const headerLogoCss = headerLogoBase
+	? [`${headerLogoSelector}{height:${headerLogoBase}}`, ...headerLogoOverrides].join('\n')
+	: '';
+const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss, headerLogoCss].filter(Boolean).join('\n');
 ---
 
 <!doctype html>
@@ -560,6 +577,10 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 				)}
 			</nav>
 		</div>
+			{/* The actions cell is a FLEX SLOT: with `space-between`, an empty one
+			 * splits brand | nav | (nothing) and centres the nav instead of
+			 * right-aligning it. Render it only when it has something to show. */}
+			{(hasInfiniteMotion || chrome?.call || chrome?.themeToggle) && (
 			<div class="header-actions">
 				{/*
 				 * WCAG 2.2.2: an infinite rebuilt animation ships only when this
@@ -585,12 +606,21 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 				 */}
 				{chrome?.themeToggle && <ThemeToggle />}
 			</div>
+			)}
 		</div>
 		</header>
 		<main class="site-main" id="main">
 			<slot />
 		</main>
 		<footer class:list={['site-footer', (chrome?.footerBg || chrome?.footerBarBg) && 'site-footer--themed']}>
+			{/* The sub-footer is a REAL strip only when it has something in it. An
+			 * empty one still carried its 24px padding, so a site with a copyright
+			 * and nothing else rendered a 48px blank band between the page and the
+			 * bar (krishandramikasavethe.world live build, 2026-11-19: footer 139px
+			 * against the source's 63px). */}
+			{((chrome?.social && chrome.social.length > 0) ||
+				Boolean(chrome?.footerLogo?.src) ||
+				(chrome?.footerBlocks && chrome.footerBlocks.length > 0)) && (
 			<div class="site-footer-sub">
 				<div class="site-footer-sub-inner">
 					{/*
@@ -658,6 +688,7 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 					)}
 				</div>
 			</div>
+			)}
 			<div class="site-footer-bar">
 				<div class="site-footer-bar-inner">
 					{chrome?.copyright ? (

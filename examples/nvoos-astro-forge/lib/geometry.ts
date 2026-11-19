@@ -2105,9 +2105,14 @@ export async function measureChromeGeometry( options: {
 					.reverse()
 					.find( ( entry ) => entry.padLeft > 0 && entry.rect.width >= headerRect.width * 0.6 );
 				const boxed = padded && padded.rect.width <= headerRect.width - 8 ? padded : null;
+				// The brand MARK's rendered height. Prefer the anchor's `<img>` (the
+				// mark itself); fall back to the anchor box.
+				const markImg = brand.querySelector( 'img, svg' );
+				const markRect = ( markImg ?? brand ).getBoundingClientRect();
 				return {
 					measure: binding ? Math.round( binding.maxWidth ) : boxed ? Math.round( boxed.rect.width ) : undefined,
 					padX: Math.round( ( padded ?? capped )?.padLeft ?? brandRect.x - headerRect.x ),
+					logoHeight: markRect.height > 0 ? `${ Math.round( markRect.height ) }px` : undefined,
 				};
 			} );
 			if ( ! box ) {
@@ -2119,6 +2124,9 @@ export async function measureChromeGeometry( options: {
 			}
 			if ( typeof box.padX === 'number' && box.padX >= 0 ) {
 				entry.padX = box.padX;
+			}
+			if ( typeof box.logoHeight === 'string' && /^\d+px$/.test( box.logoHeight ) ) {
+				entry.logoHeight = box.logoHeight;
 			}
 			if ( Object.keys( entry ).length > 0 ) {
 				out[ device ] = entry;
@@ -2507,6 +2515,34 @@ export async function measureMobileNav( options: {
 					link.textContent.trim().length > 0
 				);
 			} );
+			// A builder may TELEPORT the opened menu out of the header (Flatsome
+			// clones it into an `.mfp-wrap` off-canvas appended to <body>). The
+			// in-header walk then finds nothing and used to report `overlay: false` —
+			// "the source pushes the page down" — for a full-screen fixed sheet
+			// (krishandramikasavethe.world, 2026-11-19: a 390×844 `#0a0a0a` overlay
+			// against `#main` at y=0). Re-find the links in the document when the
+			// header holds none: they must sit inside a POSITIONED sheet that covers
+			// a real part of the viewport, so a cookie bar or a stray positioned link
+			// is not mistaken for the menu.
+			if ( menuLinks.length === 0 ) {
+				for ( const link of document.querySelectorAll( 'a' ) ) {
+					const box = link.getBoundingClientRect();
+					if ( box.height < 8 || box.width < 20 || ! link.textContent.trim() ) {
+						continue;
+					}
+					for ( let node = link.parentElement; node && node !== document.body; node = node.parentElement ) {
+						const position = getComputedStyle( node ).position;
+						if ( position !== 'fixed' && position !== 'absolute' ) {
+							continue;
+						}
+						const sheet = node.getBoundingClientRect();
+						if ( sheet.width >= innerWidth * 0.5 && sheet.height >= innerHeight * 0.4 ) {
+							menuLinks.push( link );
+						}
+						break;
+					}
+				}
+			}
 			if ( menuLinks.length === 0 ) {
 				return { overlay: false };
 			}
