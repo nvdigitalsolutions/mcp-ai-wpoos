@@ -643,6 +643,12 @@ export function collectBandBoxFacts( input: {
 	// grid, so the measured sheet restates the COLUMN and module boxes — which is
 	// where the source's layout actually lives — and leaves the scaffolding alone.
 	const SCAFFOLDING = /(^|\s)(container|container-fluid|row|vc_row|wpb_row|vc_row-fluid)(\s|$)/;
+	// A CONTENT module can carry the grid utility too: Flatsome writes
+	// `<div class="container section-title-container">`, and skipping the whole
+	// node lost its own box (a 26.64px bottom margin the rebuild never had).
+	// The scaffolding TOKENS are still excluded — `.container` is seen on pure
+	// wrappers elsewhere, so it resolves to ambiguous and is dropped anyway.
+	const CONTENT_MODULE = /(^|\s)(section-title-container|section-title|icon-box|icon-box-text|text-box)(\s|$)/;
 	const out: Record<
 		string,
 		{
@@ -729,7 +735,8 @@ export function collectBandBoxFacts( input: {
 			if ( classes.length === 0 ) {
 				continue;
 			}
-			const scaffolding = SCAFFOLDING.test( node.getAttribute( 'class' ) ?? '' );
+			const classAttribute = node.getAttribute( 'class' ) ?? '';
+			const scaffolding = SCAFFOLDING.test( classAttribute ) && ! CONTENT_MODULE.test( classAttribute );
 			const pad = boxesOf( node );
 			const mar = marginsOf( node );
 			// The class's OWN ink: a colour that differs from the one the node
@@ -1159,6 +1166,17 @@ function collectBandColumnFacts( input: {
 		for ( let guard = 0; guard < 6 && row.children.length === 1; guard++ ) {
 			row = row.children[ 0 ] as Element;
 		}
+		// The chain only follows SINGLE-child wrappers, but a builder nests the
+		// row beside its background layer (`section > section-bg + section-content
+		// > .row`), so the chain stops at the band. Resolve the row explicitly.
+		if ( ! ROW.test( row.getAttribute( 'class' ) ?? '' ) ) {
+			const explicit = [ ...band.querySelectorAll( '[class~="row"],[class~="row-collapse"],[class~="banner-grid"]' ) ].find(
+				( node ) => node.children.length >= 2
+			);
+			if ( explicit ) {
+				row = explicit;
+			}
+		}
 		const kids = [ ...row.children ].filter( ( child ) => {
 			const rect = child.getBoundingClientRect();
 			// Not a lane: a spacer column (see the twin filter in
@@ -1187,10 +1205,13 @@ function collectBandColumnFacts( input: {
 		}
 		const facts: ForgeBandColumnFact[] = [];
 		kids.forEach( ( child, index ) => {
-			const selector = tokenOf( band!, child );
-			if ( ! selector ) {
-				return;
-			}
+			// A unique class token when the band offers one; otherwise the
+			// column’s POSITION in the row. Without the fallback a band whose
+			// columns share every class (`medium-6 large-6` on both) recorded no
+			// columns at all, so per-column facts had nowhere to live.
+			const selector =
+				tokenOf( band!, child ) ??
+				`col:nth-child(${ Array.prototype.indexOf.call( row.children, child ) + 1 })`;
 			const style = getComputedStyle( child );
 			const image = style.backgroundImage !== 'none';
 			// A SOLID fill only: a photo overlay is translucent by design, and a scrim
@@ -1219,6 +1240,15 @@ function collectBandColumnFacts( input: {
 			};
 			if ( columnFill ) {
 				fact.bg = columnFill;
+			}
+			// The column’s INNER padding: per column, so it cannot live in the
+			// class-keyed box map.
+			const inner = child.querySelector( ':scope > .col-inner' ) ?? child.querySelector( ':scope > div' );
+			if ( inner ) {
+				const innerPad = getComputedStyle( inner ).padding;
+				if ( innerPad && ! /^0px( 0px)*$/.test( innerPad.trim() ) ) {
+					fact.pad = innerPad.trim();
+				}
 			}
 			if ( image ) {
 				fact.image = true;
@@ -1589,6 +1619,45 @@ export function columnDeclarations( fact: ForgeBandColumnFact | undefined, unequ
  *
  * Pure and exported so the merge is testable without a browser.
  */
+/**
+ * The per-column INNER padding, as a box map keyed by the column’s unique
+ * class. The renderer targets `.<class> > .col-inner` with it.
+ *
+ * It cannot live in the class-keyed box map: the padding differs on every
+ * column, so `.col-inner` is dropped as ambiguous and each column rendered
+ * flush (monicarajiv ’s Rajiv column: 50/180/60/108 in the source, 0 in the
+ * rebuild, 2026-11-20).
+ */
+export function columnInnerFacts( columns: BandColumnFacts ): BandBoxFacts {
+	const bySelector = new Map< string, { desktop?: string; tablet?: string; mobile?: string } >();
+	for ( const device of [ 'desktop', 'tablet', 'mobile' ] as const ) {
+		for ( const column of columns[ device ] ?? [] ) {
+			if ( ! column.pad ) {
+				continue;
+			}
+			const entry = bySelector.get( column.selector ) ?? {};
+			entry[ device ] = column.pad;
+			bySelector.set( column.selector, entry );
+		}
+	}
+	const out: BandBoxFacts = {};
+	for ( const [ selector, entry ] of bySelector ) {
+		const base = entry.desktop;
+		if ( ! base ) {
+			continue;
+		}
+		const declaration: BandBoxDeclaration = { base: `padding:${ base }` };
+		for ( const device of [ 'tablet', 'mobile' ] as const ) {
+			const value = entry[ device ];
+			if ( value && value !== base ) {
+				declaration[ device ] = `padding:${ value }`;
+			}
+		}
+		out[ selector ] = declaration;
+	}
+	return out;
+}
+
 export function columnBoxFacts( columns: BandColumnFacts ): BandBoxFacts {
 	const bySelector = new Map<
 		string,

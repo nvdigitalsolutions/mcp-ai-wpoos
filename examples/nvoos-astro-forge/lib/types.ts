@@ -983,6 +983,14 @@ export interface ForgeBandColumnFact {
 	attachment?: 'fixed' | 'scroll';
 	/** The rendered `background-size` (`cover`, `contain`, `auto`). */
 	size?: string;
+	/**
+	 * The column INNER’s padding (`50px 180px 60px 108px`).
+	 *
+	 * A builder pads the column’s inner wrapper per column, so the class-box
+	 * pass drops `.col-inner` as ambiguous (it differs on every column) and each
+	 * column rendered flush. Keyed by the column’s unique class, it survives.
+	 */
+	pad?: string;
 	/** The column paints a background image. */
 	image?: boolean;
 	/**
@@ -1603,6 +1611,8 @@ export interface ForgeSection {
 	 * CSS; absent → the columns size themselves.
 	 */
 	columnBox?: BandBoxFacts;
+	/** The per-column INNER padding, keyed by the column’s unique class. */
+	columnInner?: BandBoxFacts;
 	/**
 	 * The band's measured CAROUSEL geometry, keyed by the carousel root's unique
 	 * class (`bandFacts[id].carousel`) — the per-view slide count and the track's

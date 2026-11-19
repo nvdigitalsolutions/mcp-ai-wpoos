@@ -2025,7 +2025,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 .ds-section-wrap .post-body .banner-bg > img {
 	display: block;
 	width: 100%;
-	height: 100%;
+	/* A fill layer has no height of its own — the banner decides it, and a
+	 * full-height banner is `100vh`. The band also emits a measured
+	 * `img.bg{height:Npx}` fact whose `.post-body img.bg` selector ties this
+	 * rule on specificity and wins on order, so at a tall viewport the photo
+	 * covered 900px of a 1200px banner and the band surface showed beneath it
+	 * (monicarajiv hero, 2026-11-20). The fill is authoritative. */
+	height: 100% !important;
 	object-fit: cover;
 	/* The source's own crop anchor, measured (`analyze --geometry` →
 	 * `bandFacts.mediaPosition`). The default is the browser's centre. */
