@@ -2,7 +2,7 @@
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
 **Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **38 numbered slices** (§8–§56) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25), and **§56 opens Wave 3** with the toolkit manifest renderer (`/admin/toolkits`). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
-**Scoreboard** — re-measured 2026-11-19 with `bin/audit-surface-ownership.php`: **47 surfaces · 35 built on a Filament panel** (13 `/ops`, 24 `/admin`; `settings.platform` and `budgets` are on both) · **29 console-served** · **7 console-only** · **3 planned-only** (`measurement`, `identity-provider`, `datasets`, all `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Scoreboard** — re-measured 2026-11-19 with `bin/audit-surface-ownership.php`: **47 surfaces · 36 built on a Filament panel** (14 `/ops`, 24 `/admin`; `settings.platform` and `budgets` are on both) · **29 console-served** · **7 console-only** · **2 planned-only** (`measurement`, `identity-provider`, both `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
 **Validation** — app suite: **1277 tests / 7243 assertions, 0 failures** (with the `NVOOS_PM_*` fixtures present; four `WifiKpisTest` cases fail without them, a documented environment gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-18
 **Scope (Wave 0):** ~3–4 weeks, one engineer
@@ -9263,9 +9263,9 @@ other. Worth remembering before deleting either.
 
 ### 91.6 Still open
 
-1. **The dataset browser** is now unblocked rather than blocked: §85.1's
-   argument was that a browser needs a servable catalogue to browse. The page
-   itself is still unbuilt, and it is a UI slice rather than an evidence one.
+1. **The dataset browser shipped in §95** — unblocked here rather than blocked: §85.1's
+   argument was that a browser needs a servable catalogue to browse, and §91 made
+   one.
 2. **No live-API test.** The evidence is against a recording fake, which is what
    the section asked for. A single optional integration probe against
    `datasets-server.huggingface.co` would catch an upstream contract change that
@@ -9530,3 +9530,83 @@ been bitten before by treating one as the other.
    ceiling; it does not partition spend. Two assistants with $5 limits each can
    still spend the whole estate's $8.
 4. **Per-provider-call enforcement** remains slice A.2 (`lib/core` contract).
+
+## 95. The dataset browser, derived from the tools (2026-11-19)
+
+§85.1 marked `datasets` `unavailable`-blocked and said why: eleven HuggingFace
+tools were not servable, so a browser would have advertised datasets this
+runtime could not fetch. §91 produced the evidence — ten `ready`, one `pure` —
+and recorded that "the browser is now unblocked rather than blocked". This is the
+page, and the only parity surface §85 left in `planned` that a slice could close
+without a product decision.
+
+### 95.1 Derived, not copied
+
+The page has two tables and **neither declares its own data**:
+
+| Column | Source |
+|---|---|
+| endpoint | each tool's `ENDPOINT` constant — the very constant `apiGet()` now receives |
+| readiness | `ToolReadiness::classify()` — the same call the registrar uses to decide service |
+| starting points | `HuggingFaceRecommendedDatasetsTool::datasets()` — the list the tool itself answers from |
+| API base | `AbstractHuggingFaceTool::API_BASE`, made public for this one reader |
+
+Both were extractions of data that already existed rather than new data. The
+endpoint was a literal inside `execute()`; it is now a constant that `execute()`
+and the page both read, so a route change cannot leave the catalogue describing a
+route that no longer exists. The curated list was an array inside `execute()`; it
+is now a public method with two callers.
+
+The catalogue takes its rows from the **registry**, filtered by the
+`huggingface_` slug prefix rather than a hand-written list of eleven — so a
+twelfth tool appears without an edit, and a withdrawn one disappears without one.
+
+### 95.2 What it refuses to be
+
+- **No "run" action.** Argument validation and provider errors belong to chat and
+to `POST /api/v1/tools`. A page that both describes a catalogue and executes it
+would be two surfaces in one, and the second one would be a worse debugger than
+`/ops/observability`.
+- **No claim about an estate's token.** `getApiKey('huggingface')` resolves the
+*current* estate's key; `/ops` has no estate pinned, so reading it would report
+the `default` estate's secret as if it were platform-wide. The page states the one
+fact it can know — whether a **deployment** token exists in config/env — and names
+where a per-estate token is configured. The value is never read, let alone
+rendered; a test plants one and asserts it is absent from the payload.
+- **No reduction.** The rows are identical for every estate, which is why the
+contract row keeps `writer: none` and `projection` says "no reduction, and that is
+the decision" — the same shape §22 used for `tools`.
+
+### 95.3 A Blade trap worth recording
+
+```blade
+…built-in list@endif. Endpoints are read…
+```
+
+is **not** an `@endif`. Blade's directive regex deliberately skips a directive
+preceded by a word character, so that `name@example.com` is not treated as one.
+The page compiled with an unterminated `@if` and died with `syntax error,
+unexpected end of file, expecting "elseif" or "else" or "endif"` — reported
+against the **view**, with no line number. The fix is whitespace before the
+directive, and the paragraph now avoids the directive entirely.
+
+### 95.4 Gates
+
+| Run | Result |
+|---|---|
+| `AdminDatasetsTest` | **8 tests** — the page lists every tool with its endpoint; every API tool's shown endpoint is the one its class declares (and exactly one tool is a built-in list); the starting points are the tool's own list; the category filter narrows them; the search narrows the tools; a deployment token is reported without its value; an unconfigured deployment says where a token goes; a non-operator gets 403 |
+| `/(Dataset\|HuggingFace\|ToolReadiness\|ToolRegistry\|ToolCatalogue\|SurfaceOwnership\|AdminNavigation\|Budget)/` | **68 tests / 824 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist` 3 paths, `phpcs.xml.dist` 12 paths) | **0 errors** |
+| `bin/audit-surface-ownership.php` | **47 surfaces · 36 built** (14 `/ops`, 24 `/admin`); planned-only down to **2** |
+| Full app suite | *(pending — filled from CI)* |
+
+### 95.5 Still open
+
+1. **No live probe.** §91.6 asked for one optional integration call against
+   `datasets-server.huggingface.co`; the browser states the endpoints but does not
+   prove them reachable from this deployment.
+2. **No "try this dataset" link.** Selecting a row and prefilling a tool call is a
+   real feature, and it is the point where the page would need argument validation
+   — i.e. a different page.
+3. **`measurement` and `identity-provider`** are the last two `planned` surfaces,
+   and both are blocked on decisions rather than on code (§85.2, §85.3).

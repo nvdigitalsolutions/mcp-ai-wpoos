@@ -569,13 +569,16 @@
       "id": "datasets",
       "title": "Dataset browser",
       "audience": "operator",
-      "ops": { "state": "planned" },
+      "ops": { "state": "full" },
       "admin": null,
       "console": null,
       "writer": "none",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Researched three times, 2026-11-17, and the conclusion moved twice before it settled (§35). (1) §32 said 'blocked on an HF client, a quota'd store and a registry'. (2) The classes DO exist — lib/core ships eleven HuggingFace dataset tools including huggingface_dataset_preview_rows and huggingface_recommended_datasets — so a browser looked free. (3) Verified in the registry: none of them is registered. They are listed in lib/core/resources/tool-readiness.php as `readiness: unverified` with the reason 'Auto-added by the auditor; not classified yet.', and ManifestToolRegistrar registers only servable tools, so they are not callable. A browser now would advertise datasets this runtime cannot use — the exact objection §32 raised, now evidenced rather than assumed. UNBLOCK = classify those eleven tools (they need an HTTP client and, for real use, an HF token) or mark them deliberately unavailable; that is a readiness-classification task with network implications, not a page. `writer` corrected to `none`: browsing never writes. 2026-11-19 (§85): all eleven tools are now `unavailable` rather than `unverified`, with the datasets-server and token requirement recorded, so the remaining blocker is evidence — per-tool tests and a token path — not classification."
+      "projection": "Reference catalogue, identical for every estate and not reduced anywhere: it lists the ten HuggingFace dataset tools the registry serves, the endpoint each one calls (read from the tool's own constant), and the curated datasets the recommended-datasets tool answers from. The only estate-specific fact on the page is where a token is configured, and the page names that location rather than reading the secret.",
+      "files": [
+        "app/Filament/Operator/Pages/Datasets.php"
+      ],
+      "notes": "Researched three times, 2026-11-17, and the conclusion moved twice before it settled (§35). (1) §32 said 'blocked on an HF client, a quota'd store and a registry'. (2) The classes DO exist — lib/core ships eleven HuggingFace dataset tools including huggingface_dataset_preview_rows and huggingface_recommended_datasets — so a browser looked free. (3) Verified in the registry: none of them was registered. They were listed in lib/core/resources/tool-readiness.php as `unverified` ('Auto-added by the auditor; not classified yet') and ManifestToolRegistrar serves only servable tools, so a browser would have advertised datasets this runtime could not use — the §32 objection, evidenced rather than assumed. UNBLOCK = classify those eleven tools or mark them deliberately unavailable. 2026-11-19 (§85): all eleven became `unavailable` with the datasets-server and token requirement recorded. 2026-11-19 (§91): per-tool evidence against a recording client, ten flipped to `ready` and one (recommended_datasets) to `pure`, and `parity: port` declared. 2026-11-19 (§95): the browser shipped — READ-ONLY, deriving its endpoints from each tool's `ENDPOINT` constant and its starting points from `HuggingFaceRecommendedDatasetsTool::datasets()`, so no second declaration exists to drift. It deliberately has no 'run' action: argument validation and provider errors belong to chat and to POST /api/v1/tools, not to a page whose job is to describe the catalogue. `writer` stays `none`: browsing never writes."
     },
     {
       "id": "conversation-import",
