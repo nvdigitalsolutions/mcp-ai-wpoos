@@ -373,8 +373,10 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$post_ids = isset( $_POST['post_ids'] ) ? array_map( 'absint', $_POST['post_ids'] ) : array();
-		$action   = isset( $_POST['bulk_action'] ) ? sanitize_key( $_POST['bulk_action'] ) : '';
+		$post_ids = isset( $_POST['post_ids'] ) && is_array( $_POST['post_ids'] )
+			? array_map( 'absint', wp_unslash( $_POST['post_ids'] ) )
+			: array();
+		$action   = isset( $_POST['bulk_action'] ) ? sanitize_key( wp_unslash( $_POST['bulk_action'] ) ) : '';
 
 		if ( empty( $post_ids ) || empty( $action ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'mcp-ai-wpoos-pro' ) ) );

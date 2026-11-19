@@ -56,11 +56,71 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	const NONCE_CRE_RESEARCH  = 'wp_mcp_ai_cre_research';
 	const NONCE_ECA_RESEARCH  = 'wp_mcp_ai_research_eca';
 	const NONCE_REG_RESEARCH  = 'wp_mcp_ai_research_reg_product';
+	const NONCE_REG_DOCUMENT  = 'wp_mcp_ai_research_reg_document';
 	const NONCE_REG_CONSOL    = 'wp_mcp_ai_reg_consolidate';
 	const NONCE_BULK_IMPORT   = 'wp_mcp_ai_bulk_import';
 	const NONCE_UPLOAD_DOC    = 'wp_mcp_ai_upload_document';
 	const NONCE_VALIDATE      = 'wp_mcp_ai_validate_data';
 	const NONCE_CHECK_COMP    = 'wp_mcp_ai_check_completeness';
+
+	/**
+	 * Pages that bind this file's wp_ajax_* actions, keyed by action.
+	 *
+	 * Each entry is [ class, file slug ]. Every page registers its actions from
+	 * a static `init()` (the consolidate base registers from its constructor,
+	 * which the subclass `init()` triggers) — and production calls that from the
+	 * toolkit loader under is_admin(), never in the CLI runner. Binding in
+	 * setUp() is what makes these dispatches reach a handler instead of dying
+	 * with an empty body that the rejection assertions accept.
+	 *
+	 * @var array<string,array{0:string,1:string}>
+	 */
+	private const HANDLER_PAGES = array(
+		'wp_mcp_ai_cre_dashboard_filter'                => array( 'WP_MCP_AI_CRE_Debt_Dashboard_Page', 'cre-debt-dashboard-page' ),
+		'wp_mcp_ai_eca_dashboard_data'                  => array( 'WP_MCP_AI_ECA_Dashboard_Page', 'eca-dashboard-page' ),
+		'wp_mcp_ai_create_cre_loan_from_research'       => array( 'WP_MCP_AI_CRE_Debt_Research_Page', 'cre-debt-research-page' ),
+		'wp_mcp_ai_create_cre_property_from_research'   => array( 'WP_MCP_AI_CRE_Debt_Research_Page', 'cre-debt-research-page' ),
+		'wp_mcp_ai_create_eca_from_research'            => array( 'WP_MCP_AI_ECA_Research_Page', 'eca-research-page' ),
+		'wp_mcp_ai_import_eca'                          => array( 'WP_MCP_AI_ECA_Research_Page', 'eca-research-page' ),
+		'wp_mcp_ai_create_reg_product_from_research'    => array( 'WP_MCP_AI_Reg_Product_Research_Page', 'reg-product-research-page' ),
+		'wp_mcp_ai_import_reg_product'                  => array( 'WP_MCP_AI_Reg_Product_Research_Page', 'reg-product-research-page' ),
+		'wp_mcp_ai_bulk_import_reg_products'            => array( 'WP_MCP_AI_Reg_Product_Research_Page', 'reg-product-research-page' ),
+		'wp_mcp_ai_upload_reg_document'                 => array( 'WP_MCP_AI_Reg_Product_Research_Page', 'reg-product-research-page' ),
+		'wp_mcp_ai_import_reg_document'                 => array( 'WP_MCP_AI_Reg_Document_Research_Page', 'reg-document-research-page' ),
+		'wp_mcp_ai_upload_reg_document_from_research'   => array( 'WP_MCP_AI_Reg_Document_Research_Page', 'reg-document-research-page' ),
+		'wp_mcp_ai_consolidate_bulk_import'             => array( 'WP_MCP_AI_Product_Consolidate_Page', 'product-consolidate-page' ),
+		'wp_mcp_ai_consolidate_upload_document'         => array( 'WP_MCP_AI_Product_Consolidate_Page', 'product-consolidate-page' ),
+		'wp_mcp_ai_consolidate_validate_data'           => array( 'WP_MCP_AI_Product_Consolidate_Page', 'product-consolidate-page' ),
+		'wp_mcp_ai_consolidate_check_completeness'      => array( 'WP_MCP_AI_Product_Consolidate_Page', 'product-consolidate-page' ),
+	);
+
+	/**
+	 * Bind the handlers this class exercises for the duration of the test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			return;
+		}
+
+		foreach ( self::HANDLER_PAGES as $action => $page ) {
+			if ( false !== has_action( 'wp_ajax_' . $action ) ) {
+				continue;
+			}
+
+			list( $class, $slug ) = $page;
+			$file                 = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-' . $slug . '.php';
+
+			if ( ! class_exists( $class ) && file_exists( $file ) ) {
+				require_once $file;
+			}
+
+			if ( class_exists( $class ) && is_callable( array( $class, 'init' ) ) ) {
+				call_user_func( array( $class, 'init' ) );
+			}
+		}
+	}
 
 	// ---
 	// wp_mcp_ai_cre_dashboard_filter
@@ -539,10 +599,9 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 
 		$this->as_subscriber();
-		// This handler's nonce action is defined in the subclass; using REG_CONSOL as fallback.
 		$response = $this->dispatch(
 			'wp_mcp_ai_import_reg_document',
-			array( 'nonce' => wp_create_nonce( self::NONCE_REG_CONSOL ) )
+			array( 'nonce' => wp_create_nonce( self::NONCE_REG_DOCUMENT ) )
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -556,7 +615,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_editor();
 		$response = $this->dispatch(
 			'wp_mcp_ai_import_reg_document',
-			array( 'nonce' => wp_create_nonce( self::NONCE_REG_CONSOL ) )
+			array( 'nonce' => wp_create_nonce( self::NONCE_REG_DOCUMENT ) )
 		);
 		$this->assertIsArray( $response );
 		$this->assertArrayHasKey( 'success', $response );

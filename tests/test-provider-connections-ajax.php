@@ -49,6 +49,31 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Bind the connection-test handlers. They are registered from
+		// WP_MCP_AI_Admin_Ajax_Handlers::safe_ajax_handler() bindings that only
+		// exist on an admin request, so in CLI the dispatches would end with an
+		// empty body that reads exactly like a rejection. Bind only the actions
+		// still missing, since some are registered by bootstrap.
+		$handlers = null;
+		foreach ( array( 'anthropic', 'exa', 'perplexity' ) as $provider ) {
+			$hook = 'wp_ajax_wp_mcp_ai_test_' . $provider . '_connection';
+			if ( false !== has_action( $hook ) ) {
+				continue;
+			}
+			if ( null === $handlers ) {
+				if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php';
+				}
+				$handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+			}
+			add_action( $hook, array( $handlers, 'safe_ajax_handler' ) );
+		}
+
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_test_remote_connection' )
+			&& class_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin' ) ) {
+			new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		}
+
 		// Default stub: return a 200 with an empty JSON body.
 		// Individual tests override this with more specific responses via
 		// the inherited stub_http_response() helper.
