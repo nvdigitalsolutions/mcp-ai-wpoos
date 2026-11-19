@@ -1336,8 +1336,14 @@ function resolveCssVars( value: string, cssText: string ): string {
 	);
 }
 
-/** The legible foreground for a painted surface (white or near-black). */
-function inkForSurface( bg: string ): string {
+/**
+ * The legible foreground for a painted surface (white or near-black).
+ *
+ * Exported because the geometry pass derives the same fact for sub-pages
+ * (see `measureBandFacts`): one ink rule, so the band audit compares like
+ * with like.
+ */
+export function inkForSurface( bg: string ): string {
 	const white = contrast( '#ffffff', bg );
 	const dark = contrast( '#111111', bg );
 	return ( white ?? 0 ) >= ( dark ?? 0 ) ? '#ffffff' : '#111111';

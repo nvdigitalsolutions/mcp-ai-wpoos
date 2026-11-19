@@ -17,6 +17,8 @@ import type { AddressInfo } from 'node:net';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 
+import { inkForSurface } from './design.ts';
+
 import type {
 	BandBoxDeclaration,
 	BandBoxFacts,
@@ -1191,10 +1193,33 @@ function collectBandColumnFacts( input: {
 			}
 			const style = getComputedStyle( child );
 			const image = style.backgroundImage !== 'none';
+			// A SOLID fill only: a photo overlay is translucent by design, and a scrim
+			// is never the slab the copy sits on. Read the column AND the wrapper one
+			// level in — a builder scopes the slab rule to that wrapper (Elementor
+			// paints `.elementor-element-populated`), so the column alone reads
+			// transparent and the slab went unrecorded.
+			const solidFill = ( node: Element | null ): string | undefined => {
+				if ( ! node ) {
+					return undefined;
+				}
+				const value = getComputedStyle( node ).backgroundColor;
+				const match = /^rgba?\(([^)]*)\)$/i.exec( value );
+				if ( ! match ) {
+					return undefined;
+				}
+				const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() );
+				const alpha = parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1;
+				return alpha >= 0.95 ? value : undefined;
+			};
+			const columnFill =
+				solidFill( child ) ?? solidFill( child.firstElementChild );
 			const fact: ForgeBandColumnFact = {
 				selector,
 				height: Math.round( rects[ index ].height ),
 			};
+			if ( columnFill ) {
+				fact.bg = columnFill;
+			}
 			if ( image ) {
 				fact.image = true;
 				fact.attachment = style.backgroundAttachment.includes( 'fixed' ) ? 'fixed' : 'scroll';
@@ -1990,6 +2015,19 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				tablet: tabletColumns[ id ],
 				mobile: mobileColumns[ id ],
 			};
+			// The SLAB the content sits on: exactly one coloured column and no photo
+			// column. Two or more DIFFERENT surfaces are per-column panels, which the
+			// flat rebuilt markup cannot address — left unpainted rather than painted
+			// wrongly. This is the sub-page counterpart of the `design.ts` rule, whose
+			// absence made alpha’s panel-surface fix homepage-only.
+			{
+				const measuredColumns = columns.desktop ?? [];
+				const filled = measuredColumns.filter( ( column ) => column.bg );
+				const photos = measuredColumns.filter( ( column ) => column.image );
+				if ( filled.length === 1 && photos.length === 0 && filled[ 0 ].bg ) {
+					band.panel = { bg: filled[ 0 ].bg, ink: inkForSurface( filled[ 0 ].bg ) };
+				}
+			}
 			if ( columns.desktop || columns.tablet || columns.mobile ) {
 				band.columns = Object.fromEntries(
 					Object.entries( columns ).filter( ( [ , value ] ) => value !== undefined )

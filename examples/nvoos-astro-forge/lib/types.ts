@@ -968,6 +968,12 @@ export interface ForgeBandColumnFact {
 	size?: string;
 	/** The column paints a background image. */
 	image?: boolean;
+	/**
+	 * The column paints a SOLID colour (its computed `background-color`),
+	 * recorded so the band can report the slab its content sits on. A
+	 * translucent fill is not a slab and is left unrecorded.
+	 */
+	bg?: string;
 }
 
 /** The band's columns per device. Sparse: a device with no grid is absent. */
@@ -1136,6 +1142,15 @@ export interface ForgeInteractionFact {
 export type ForgeBandInteractions = ForgeInteractionFact[];
 
 export interface ForgeBandFacts {
+	/**
+	 * The single SLAB the band’s content sits on: a literal colour and its
+	 * legible ink.
+	 *
+	 * `design.ts` records this on the SECTION for the homepage; the geometry
+	 * pass records it here, which is the only path a sub-page takes — without
+	 * it the slab is unpainted on every page but the front one.
+	 */
+	panel?: { bg: string; ink: string };
 	/**
 	 * The width of the band's own inner container. Builder sources box their
 	 * content (`.container`, 1140px) or run fluid (`.container-fluid`, the

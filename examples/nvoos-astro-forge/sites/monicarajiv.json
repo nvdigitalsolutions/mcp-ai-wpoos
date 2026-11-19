@@ -3438,7 +3438,8 @@
 	"pageBands": {
 		"airport-transfer": {
 			"url": "https://monicarajiv.com/airport-transfer/",
-			"measuredAt": "2026-11-19T20:00:09.931Z",
+			"measuredAt": "2026-11-19T21:16:06.055Z",
+			"sourceHash": "1226fa9f984b213a",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -3979,11 +3980,11 @@
 								{
 									"selector": ":nth-child(1)",
 									"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
-									"base": "transform:translate(0%, -101.5%) scale(1, 1)",
-									"hover": "opacity:0.846531;transform:translate(0%, -34.8%) scale(1, 1)",
-									"focus": "opacity:0.883863;transform:translate(0%, -33.2%) scale(1, 1)",
-									"focusVisible": "opacity:0.921495;transform:translate(0%, -31.7%) scale(1, 1)",
-									"active": "opacity:0.960202;transform:translate(0%, -30.2%) scale(1, 1)"
+									"base": "transform:translate(0%, -105.8%) scale(1, 1)",
+									"hover": "opacity:0.242075;transform:translate(0%, -79%) scale(1, 1)",
+									"focus": "opacity:0.265699;transform:translate(0%, -76.4%) scale(1, 1)",
+									"focusVisible": "opacity:0.265699;transform:translate(0%, -76.4%) scale(1, 1)",
+									"active": "opacity:0.290168;transform:translate(0%, -73.8%) scale(1, 1)"
 								}
 							]
 						}
@@ -5138,7 +5139,8 @@
 		},
 		"sri-lanka": {
 			"url": "https://monicarajiv.com/sri-lanka/",
-			"measuredAt": "2026-11-19T20:00:49.067Z",
+			"measuredAt": "2026-11-19T21:16:19.046Z",
+			"sourceHash": "1f1252882eee7720",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -6129,7 +6131,8 @@
 		},
 		"accommodations": {
 			"url": "https://monicarajiv.com/accommodations/",
-			"measuredAt": "2026-11-19T20:01:19.889Z",
+			"measuredAt": "2026-11-19T21:16:51.075Z",
+			"sourceHash": "8f256ee46a5bde61",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -6923,16 +6926,6 @@
 						},
 						{
 							"tag": "div",
-							"classes": [],
-							"count": 1,
-							"focusable": false,
-							"base": "color:rgb(0, 0, 0);text-decoration-line:none;display:block;line-height:25.6px",
-							"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
-							"hover": "transform:matrix(1, 0, 0, 1, 0, -2.52256)",
-							"active": "transform:matrix(1, 0, 0, 1, 0, -1.66926)"
-						},
-						{
-							"tag": "div",
 							"classes": [
 								"banner-layer",
 								"lg-x50",
@@ -6952,11 +6945,11 @@
 								{
 									"selector": ":nth-child(1)",
 									"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
-									"base": "transform:translate(0%, -53.1%) scale(1, 1)",
-									"hover": "transform:translate(0%, -0.2%) scale(1, 1)",
-									"focus": "transform:translate(0%, -0.1%) scale(1, 1)",
-									"focusVisible": "transform:translate(0%, -0.1%) scale(1, 1)",
-									"active": "transform:translate(0%, -0.1%) scale(1, 1)"
+									"base": "transform:translate(0%, -92.8%) scale(1, 1)",
+									"hover": "transform:translate(0%, -17.3%) scale(1, 1)",
+									"focus": "transform:translate(0%, -16.4%) scale(1, 1)",
+									"focusVisible": "transform:translate(0%, -15.5%) scale(1, 1)",
+									"active": "transform:translate(0%, -14.6%) scale(1, 1)"
 								}
 							]
 						}
@@ -9480,7 +9473,8 @@
 		},
 		"doomsday": {
 			"url": "https://monicarajiv.com/doomsday/",
-			"measuredAt": "2026-11-19T20:01:31.421Z",
+			"measuredAt": "2026-11-19T21:17:03.035Z",
+			"sourceHash": "f8ad363010217095",
 			"builder": "flatsome",
 			"sections": [
 				{
