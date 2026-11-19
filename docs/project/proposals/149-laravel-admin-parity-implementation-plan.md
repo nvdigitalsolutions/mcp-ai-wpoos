@@ -8668,3 +8668,84 @@ be a screenshot of a decision nobody has made.
 4. **The export gauge is duplicated** between this page and diagnostics by one
    line each. They read the same store and the same `backoffState()`; a third
    consumer would be the point to extract a shared payload, not before.
+
+## 85. Unblocking what can be unblocked (2026-11-19)
+
+Three surfaces sat `planned`: `datasets`, `measurement`, `identity-provider`.
+Each was blocked on something other than a renderer. This section resolves the
+one that could be resolved and records, in the same place, why the other two
+stay where they are — so the next person starts from a decision rather than a
+`planned` label.
+
+### 85.1 `datasets` — the classification is now a decision
+
+The surface was blocked on eleven HuggingFace dataset tools sitting `unverified`
+with the reason "Auto-added by the auditor; not classified yet." That already
+meant **not served** (`ManifestToolRegistrar` serves only `ready`, `pure` and
+`delegated`), but the reason was ambiguous: nobody had decided.
+
+All eleven now read `unavailable`, with the reason recorded. They call
+`datasets-server.huggingface.co` (`AbstractHuggingFaceTool::API_BASE`), which
+caps rows per request and requires a token for gated datasets — the constraint
+the [Datasets Server API](https://deepwiki.com/huggingface/notebooks/6.1-datasets-server-api)
+documents. Serving them without evidence is the §35 objection, restated.
+
+`ToolReadinessClassificationTest` pins the consequence: the registry must be
+populated, and none of the eleven may appear in it. Flipping one to `ready` now
+requires tests, not a string edit.
+
+**The browser is still not built, and that is the correct outcome.** A dataset
+browser needs a servable catalogue to browse; with the tools deliberately
+unavailable it would advertise nothing. The blocker has moved from
+*classification* to *evidence* — per-tool tests against a faked client and a
+documented token path. That is a different job, and a smaller one.
+
+### 85.2 `measurement` — cannot be unblocked by a page
+
+The WordPress page lists registered metrics (privacy tier, counter-metric
+pairing), verifiers, reward functions, eval suites and the collector buffer, and
+its admin-post handler clears the buffer, exports JSON and resets a budget
+envelope. That is product data, not a WordPress idiom, and none of the stores
+exist here.
+
+What it would take, in order:
+
+| Piece | Minimum shape |
+|---|---|
+| `nvoos_metrics` | name, type, unit, privacy tier, counter-metric |
+| `nvoos_eval_runs` | suite, metric, value, run at |
+| `nvoos_budgets` | scope, window, limit, consumed |
+
+Then the page, then the OTLP/JSON export the WordPress page already has. Left
+`planned`; `writer: ops` still describes the WordPress page, not this runtime.
+
+### 85.3 `identity-provider` — a product decision, not a port
+
+Nothing exists on either runtime (§36 verified the grep). The page is the last
+piece, not the first:
+
+1. a scope decision — OIDC only, or SAML as well;
+2. an OIDC client: authorization code + PKCE, discovery, no implicit flow;
+3. a mapping from subject to `User` and to an estate membership;
+4. provisioning rules for a subject with no membership (deny by default, or
+   invite);
+5. only then a page.
+
+Left `planned` with `writer: none`. A half-built SSO surface — a login that maps
+some subjects and not others — is worse than none, and the runtime already has
+three working authentication paths for the surfaces it serves.
+
+### 85.4 Gates
+
+| Run | Result |
+|---|---|
+| `ToolReadinessClassificationTest` | **1 test / 12 assertions** — the registry is populated, and none of the eleven slugs is served |
+| `php -l lib/core/resources/tool-readiness.php` | clean |
+| phpcs (`phpcs.xml.dist` for lib, `phpcs-laravel.xml.dist` for the test) | **0 errors** |
+| Registry behaviour | unchanged by construction — `unavailable` and `unverified` are both non-servable |
+
+### 85.5 Still open
+
+1. **The dataset browser** waits on evidence (§85.1), not on a renderer.
+2. **Measurement** waits on the three stores (§85.2).
+3. **Identity provider** waits on a scope decision (§85.3).
