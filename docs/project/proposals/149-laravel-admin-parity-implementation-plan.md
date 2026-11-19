@@ -9354,7 +9354,7 @@ would be a third table with one reader.
 | `/(Budget\|SseStream\|Assistant\|Workflow\|RuntimeSchema\|AgentNode)/` | **127 tests / 664 assertions, 0 failures** |
 | `RuntimeSchemaTest` | `nvoos_budgets` added to `tables()` — the table is queried through `DB::table` by `BudgetStore`, so it belongs in the schema audit |
 | phpcs (`phpcs-laravel.xml.dist`, 8 paths) | **0 errors** |
-| Full app suite | *(pending — filled from CI)* |
+| Full app suite | **1460 tests / 18,506 assertions, 0 failures** (CI `App suite (SQLite)`) — the delta against §91's 1449 / 18,469 is exactly this slice: 11 tests and 36 assertions of budget behaviour, plus 1 assertion for `nvoos_budgets` in the schema audit |
 
 ### 92.5 Still open
 
