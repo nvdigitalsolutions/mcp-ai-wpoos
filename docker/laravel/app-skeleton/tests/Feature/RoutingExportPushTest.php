@@ -294,6 +294,9 @@ class RoutingExportPushTest extends TestCase
         config([
             'oos.routing.export.backoff_base' => $base,
             'oos.routing.export.backoff_max' => $max,
+            // Deterministic windows: a jittered delay would make "at +61s it
+            // retries" a coin toss. The jitter tests opt back in.
+            'oos.routing.export.backoff_jitter' => 0.0,
         ]);
     }
 
@@ -318,6 +321,35 @@ class RoutingExportPushTest extends TestCase
         Carbon::setTestNow();
 
         parent::tearDown();
+    }
+
+    public function test_backoff_is_jittered_within_bounds(): void
+    {
+        $this->configureBackoff(60, 3600);
+        config(['oos.routing.export.backoff_jitter' => 0.2]);
+
+        Carbon::setTestNow('2026-11-19 10:00:00');
+
+        app(RoutingExportStore::class)->record('failed', 0, 0, 'boom');
+
+        $until = app(RoutingExportStore::class)->backoffUntil();
+        $seconds = $until->getTimestamp() - Carbon::now()->getTimestamp();
+
+        $this->assertGreaterThanOrEqual(60, $seconds, 'Jitter must never shorten the delay below the base.');
+        $this->assertLessThanOrEqual(72, $seconds, 'Twenty percent is the ceiling, not a suggestion.');
+    }
+
+    public function test_backoff_is_exact_when_jitter_is_disabled(): void
+    {
+        $this->configureBackoff(60, 3600);
+
+        Carbon::setTestNow('2026-11-19 10:00:00');
+
+        app(RoutingExportStore::class)->record('failed', 0, 0, 'boom');
+
+        $until = app(RoutingExportStore::class)->backoffUntil();
+
+        $this->assertSame(60, $until->getTimestamp() - Carbon::now()->getTimestamp());
     }
 
     private function operatorMember(): User

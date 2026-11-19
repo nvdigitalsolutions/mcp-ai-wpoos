@@ -74,6 +74,10 @@ return array(
             // (base × 2^(n-1), capped). 0 disables backoff: every tick tries.
             'backoff_base' => (int) env('NVOOS_ROUTING_EXPORT_BACKOFF_BASE', 60),
             'backoff_max' => (int) env('NVOOS_ROUTING_EXPORT_BACKOFF_MAX', 3600),
+
+            // Additive jitter as a fraction of the computed delay (0 disables).
+            // A fleet that fails together must not retry together.
+            'backoff_jitter' => (float) env('NVOOS_ROUTING_EXPORT_BACKOFF_JITTER', 0.2),
         ),
     ),
 
