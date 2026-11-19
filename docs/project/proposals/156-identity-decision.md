@@ -231,7 +231,7 @@ this runtime, and the administrator is told so.
 
 | Slice | Scope | State |
 |---|---|---|
-| **I1** | This proposal; `inert` added to the contract vocabulary, the audit and the test; the row corrected; §100 in Proposal 149 | this PR |
+| **I1** | This proposal; `inert` added to the contract vocabulary, the audit and the test; the row corrected; §100 in Proposal 149 | **shipped** — plan §100 |
 | **I2** | A runtime `UnimplementedSettings` list, disabled-with-hint rendering, writes refused, and a source-scan test that fails when a marked key gains a reader | **shipped** — plan §101 |
 | **I3** | Auth0 bearer verification on the estate API — JWKS, `iss`/`aud`/scope, no session, no provisioning. Makes `auth0_domain`, `auth0_audience`, `auth0_required_scope` real | then |
 | **I4** | Magic-link sign-in, if D7 is accepted | then |
