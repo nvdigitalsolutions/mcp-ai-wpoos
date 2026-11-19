@@ -157,9 +157,16 @@ class ScheduleRunnerTest extends TestCase
         $id = $this->schedule();
 
         $this->postJson("/api/v1/pro/schedules/{$id}/trigger")
-            ->assertOk()
+            ->assertStatus(202)
             ->assertJsonPath('ok', true)
-            ->assertJsonPath('run.status', 'success')
-            ->assertJsonPath('schedule.run_count', 1);
+            ->assertJsonPath('queued', true);
+
+        // QUEUE_CONNECTION=sync in phpunit.xml, so the queued job ran inside the
+        // request and the history is already terminal.
+        $this->getJson("/api/v1/pro/schedules/{$id}/history")
+            ->assertOk()
+            ->assertJsonPath('history.0.status', 'success');
+
+        $this->assertSame(1, (int) DB::table('nvoos_schedules')->where('id', $id)->value('run_count'));
     }
 }

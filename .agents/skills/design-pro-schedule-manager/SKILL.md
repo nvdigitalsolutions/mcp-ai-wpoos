@@ -320,6 +320,74 @@ Always prefer pausing over deleting when:
 4. The underlying Action Scheduler event continues to run as before.
 ```
 
+## Run lifecycle and async manual runs
+
+Every execution — cron, manual, or retried — owns a history record keyed by a
+`run_id` (12 hex chars) and walks a fixed lifecycle:
+
+```
+pending ──► running ──► success
+                   └──► failure
+                   └──► timeout   (reaped; worker never reported back)
+```
+
+The **Run now** button in the Schedule Manager UI (`/wp-admin/admin.php?page=nvoos-pro-schedule-manager`)
+is asynchronous: it validates the schedule, opens a `pending` record, queues the
+work (**Action Scheduler** when usable, otherwise a `wp-cron` single event) and
+returns the `run_id` immediately. The browser then polls
+`wp_mcp_ai_sm_get_run_status` (2 s → 10 s backoff, ~5 min budget) and paints the
+row `Pending` → `Running` → `Success` / `Failed` / `Timed out`.
+
+Why: a workflow or assistant run makes provider round trips that routinely
+exceed Cloudflare's ~100 s edge read timeout. A synchronous dispatch inside
+`admin-ajax.php` therefore returns an HTML **524** (not JSON), the UI can only
+say "An error occurred", and the PHP worker keeps running invisibly. The
+queue-and-poll contract follows the same shape as Google AIP-151 long-running
+operations (return an operation, poll for status).
+
+Rules that follow from this:
+
+- **Two clicks cannot start two runs.** A second trigger while a run is in flight
+  is refused with `schedule_already_running` (HTTP 409).
+- **`pending`/`running` are not outcomes.** Fleet stats ignore them; only
+  `success`/`failure`/`timeout` count.
+- **A worker that dies is not a stuck schedule.** `RUN_STALE_AFTER` (900 s) marks
+  abandoned runs `timeout` and mirrors that onto the schedule's status column, so
+  the next run is not blocked.
+- **Use `wp_mcp_ai_pro_schedule_run_backend`** to force `wp-cron` on sites whose
+  Action Scheduler tables are missing or whose queue is backed up, or to fail the
+  enqueue with a `WP_Error`.
+- WP-CLI, MCP tools, and slash commands still call the synchronous
+  `trigger_now()` — they own their own time budget, unlike a browser request.
+- **The REST surface follows the same rule.** `POST /mcp-ai-pro/v1/schedules/{id}/trigger`
+  (what the Pro SPA calls) queues too and returns `run_id` + `backend`. Never wire
+  `trigger_now()` to a REST route. `POST …/toggle` flips the stored state when the
+  body omits `enabled`, because the SPA's Enable/Disable button sends no body, and
+  answers 404 for an unknown id instead of silently no-op'ing.
+
+### The same contract on the Laravel runtime
+
+`docker/laravel/app-skeleton` is a **port, not a wrapper** — it never calls
+`WP_MCP_AI_Pro_Schedule_Manager`. It has its own tables (`nvoos_schedules`,
+`nvoos_schedule_runs`), its own
+`App\Support\Schedules\ScheduleRunner` over `nvoos/core`'s `ToolRegistry`, and
+`App\Jobs\RunSchedule` on the queue. It answers the **same two routes** so the
+console's poll loop is written once:
+
+| | WordPress | Laravel |
+|---|---|---|
+| queue the run | `POST /mcp-ai-pro/v1/schedules/{id}/trigger` | `POST /api/v1/pro/schedules/{id}/trigger` |
+| poll it | `GET …/schedules/{id}/runs/{runId}` | same shape |
+| run id | 12 hex chars | numeric |
+| reaped by | the poll handler + hourly prune | the `nvoos:run-schedules` tick |
+
+Lifecycle, terminal vocabulary (`success`/`failure`/`timeout`), the 409 guards
+and the `finished` flag are identical on both. A reaped run counts as a failure
+in both fleet-stats aggregates; in-flight rows are ignored by both. The console
+side is one implementation — `useScheduleManager`'s poll loop (2 s → 10 s, 40
+attempts) — so a change to the polling behaviour must be made there, not per
+runtime.
+
 ## Integration with wp-plugin-cron and wp-action-scheduler
 
 The Pro Schedule Manager does NOT replace these. It delegates to them:
@@ -377,6 +445,10 @@ on the schedule's characteristics (recurrence, expected load, need for retries).
 // WRONG — creating a schedule with a hook that isn't registered yet
 // The event will fire but the callback won't run.
 // Register the callback first, then create the schedule.
+
+// WRONG — treating "queued" as "finished" after clicking Run now
+// A queued run returns a run_id and finishes later; read the history (or poll
+// wp_mcp_ai_sm_get_run_status) before concluding it failed.
 ```
 
 ## Cross-references

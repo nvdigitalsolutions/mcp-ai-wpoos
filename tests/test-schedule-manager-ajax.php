@@ -9,6 +9,7 @@
  *   - wp_mcp_ai_sm_delete_schedule    (ajax_delete_schedule)
  *   - wp_mcp_ai_sm_toggle_schedule    (ajax_toggle_schedule)
  *   - wp_mcp_ai_sm_trigger_schedule   (ajax_trigger_schedule)
+ *   - wp_mcp_ai_sm_get_run_status     (ajax_get_run_status)
  *   - wp_mcp_ai_sm_get_history        (ajax_get_history)
  *   - wp_mcp_ai_sm_clear_history      (ajax_clear_history)
  *   - wp_mcp_ai_sm_export_history_csv (ajax_export_history_csv)
@@ -26,9 +27,6 @@
 
 // phpcs:disable WordPress.NamingConventions.ValidVariableName -- inherits camelCase $_last_response from WP_Ajax_UnitTestCase.
 
-/**
- * AJAX cluster: Schedule Manager (Pro).
- */
 // Load the Pro admin class under test; the pro addon loads it only in admin
 // context, so require it here to keep the suite runnable standalone (mirrors
 // CI, where earlier admin-context tests load it).
@@ -40,6 +38,9 @@ if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 	unset( $wp_mcp_ai_schedule_manager );
 }
 
+/**
+ * AJAX cluster: Schedule Manager (Pro).
+ */
 class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/**
@@ -310,6 +311,285 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 		$this->assertIsArray( $response );
 		$this->assertArrayHasKey( 'success', $response );
+	}
+
+	// ---
+	// wp_mcp_ai_sm_trigger_schedule
+	// ---
+
+	/** Guards against a missing or invalid nonce. */
+	public function test_trigger_schedule_rejects_missing_nonce() {
+		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_trigger_schedule' );
+	}
+
+	/** Guards against insufficient capabilities. */
+	public function test_trigger_schedule_rejects_subscriber() {
+		$this->assert_rejected_for_subscriber(
+			'wp_mcp_ai_sm_trigger_schedule',
+			array( 'schedule_id' => 'some-schedule' )
+		);
+	}
+
+	/** Validates the missing schedule id parameter. */
+	public function test_trigger_schedule_validates_missing_schedule_id() {
+		$this->as_admin();
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_trigger_schedule',
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => '',
+			)
+		);
+
+		$this->assertAjaxError( $response, 'Missing schedule_id' );
+	}
+
+	/** Unknown ids report an error rather than a fatal. */
+	public function test_trigger_schedule_returns_error_for_unknown_schedule() {
+		$this->as_admin();
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_trigger_schedule',
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => 'does-not-exist-' . uniqid(),
+			)
+		);
+
+		$this->assertAjaxError( $response, 'Unknown schedule must be rejected, not dispatched.' );
+		$this->assertStringContainsString( 'not found', strtolower( (string) $response['data']['message'] ) );
+	}
+
+	/**
+	 * The manual trigger is a queue acknowledgement, not an execution.
+	 *
+	 * This is the regression guard for the gateway-timeout bug: a synchronous
+	 * dispatch inside admin-ajax outlives Cloudflare's ~100 s read timeout and
+	 * returns an HTML 524 (not JSON), which the UI can only report as a generic
+	 * failure while the worker keeps running invisibly.
+	 */
+	public function test_trigger_schedule_queues_a_run_instead_of_executing_it() {
+		$user_id = $this->as_admin();
+
+		$fired = 0;
+		$hook  = 'wp_mcp_ai_ajax_trigger_' . uniqid();
+		add_action(
+			$hook,
+			static function () use ( &$fired ) {
+				++$fired;
+			}
+		);
+
+		$schedule_id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => $hook,
+				'schedule'      => 'single',
+				'timestamp'     => time() + 3600,
+				'enabled'       => true,
+			),
+			$user_id
+		);
+
+		$this->assertIsString( $schedule_id, 'Fixture schedule could not be created.' );
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_trigger_schedule',
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => $schedule_id,
+			)
+		);
+
+		$this->assertAjaxSuccess( $response );
+		$this->assertTrue( $response['data']['queued'] );
+		$this->assertSame( $schedule_id, $response['data']['schedule_id'] );
+		$this->assertSame( 'pending', $response['data']['run_status'] );
+		$this->assertMatchesRegularExpression( '/^[0-9a-f]{12}$/', $response['data']['run_id'] );
+
+		$this->assertSame( 0, $fired, 'The trigger handler must queue the run, never execute it inline.' );
+
+		$run = WP_MCP_AI_Pro_Schedule_Manager::get_run( $schedule_id, $response['data']['run_id'] );
+		$this->assertIsArray( $run, 'The queue acknowledgement must be backed by a pending run record.' );
+		$this->assertSame( 'pending', $run['status'] );
+	}
+
+	/** A second trigger is refused while the first run is still open. */
+	public function test_trigger_schedule_refuses_a_concurrent_run() {
+		$user_id = $this->as_admin();
+
+		$schedule_id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_ajax_trigger_dup_' . uniqid(),
+				'schedule'      => 'single',
+				'timestamp'     => time() + 3600,
+				'enabled'       => true,
+			),
+			$user_id
+		);
+
+		$this->assertIsString( $schedule_id );
+
+		$payload = array(
+			'nonce'       => wp_create_nonce( self::NONCE ),
+			'schedule_id' => $schedule_id,
+		);
+
+		$this->assertAjaxSuccess( $this->dispatch( 'wp_mcp_ai_sm_trigger_schedule', $payload ) );
+
+		$second = $this->dispatch( 'wp_mcp_ai_sm_trigger_schedule', $payload );
+
+		$this->assertAjaxError( $second, 'A run already in flight must not be started twice.' );
+		$this->assertStringContainsString( 'already running', strtolower( (string) $second['data']['message'] ) );
+	}
+
+	/** Disabled schedules are refused instead of silently no-op'ing. */
+	public function test_trigger_schedule_refuses_a_disabled_schedule() {
+		$user_id = $this->as_admin();
+
+		$schedule_id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_ajax_trigger_off_' . uniqid(),
+				'schedule'      => 'single',
+				'timestamp'     => time() + 3600,
+				'enabled'       => false,
+			),
+			$user_id
+		);
+
+		$this->assertIsString( $schedule_id );
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_trigger_schedule',
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => $schedule_id,
+			)
+		);
+
+		$this->assertAjaxError( $response );
+		$this->assertStringContainsString( 'disabled', strtolower( (string) $response['data']['message'] ) );
+	}
+
+	// ---
+	// wp_mcp_ai_sm_get_run_status
+	// ---
+
+	/** Guards against a missing or invalid nonce. */
+	public function test_get_run_status_rejects_missing_nonce() {
+		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_get_run_status' );
+	}
+
+	/** Guards against insufficient capabilities. */
+	public function test_get_run_status_rejects_subscriber() {
+		$this->assert_rejected_for_subscriber(
+			'wp_mcp_ai_sm_get_run_status',
+			array(
+				'schedule_id' => 'some-schedule',
+				'run_id'      => 'abc123abc123',
+			)
+		);
+	}
+
+	/** Both identifiers are required. */
+	public function test_get_run_status_validates_required_parameters() {
+		$this->as_admin();
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_get_run_status',
+			array( 'nonce' => wp_create_nonce( self::NONCE ) )
+		);
+
+		$this->assertAjaxError( $response );
+		$this->assertStringContainsString( 'missing', strtolower( (string) $response['data']['message'] ) );
+	}
+
+	/** Unknown runs report `unknown` so the poller can stop cleanly. */
+	public function test_get_run_status_reports_unknown_run() {
+		$this->as_admin();
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_get_run_status',
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => 'does-not-exist-' . uniqid(),
+				'run_id'      => 'deadbeefcafe',
+			)
+		);
+
+		$this->assertAjaxError( $response );
+		$this->assertSame( 'unknown', $response['data']['status'] );
+	}
+
+	/** A queued run is reported as pending and unfinished. */
+	public function test_get_run_status_reports_pending_run() {
+		$user_id = $this->as_admin();
+
+		$schedule_id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_ajax_status_' . uniqid(),
+				'schedule'      => 'single',
+				'timestamp'     => time() + 3600,
+			),
+			$user_id
+		);
+
+		$this->assertIsString( $schedule_id );
+
+		$run_id = WP_MCP_AI_Pro_Schedule_Manager::begin_run( $schedule_id, $user_id, 'manual' );
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_get_run_status',
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => $schedule_id,
+				'run_id'      => $run_id,
+			)
+		);
+
+		$this->assertAjaxSuccess( $response );
+		$this->assertSame( $run_id, $response['data']['run_id'] );
+		$this->assertSame( 'pending', $response['data']['status'] );
+		$this->assertFalse( $response['data']['finished'] );
+		$this->assertSame( 'manual', $response['data']['trigger'] );
+	}
+
+	/** A closed run is reported as finished with its outcome. */
+	public function test_get_run_status_reports_completed_run() {
+		$user_id = $this->as_admin();
+
+		$schedule_id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_ajax_status_done_' . uniqid(),
+				'schedule'      => 'single',
+				'timestamp'     => time() + 3600,
+			),
+			$user_id
+		);
+
+		$this->assertIsString( $schedule_id );
+
+		$run_id = WP_MCP_AI_Pro_Schedule_Manager::begin_run( $schedule_id, $user_id, 'manual' );
+		WP_MCP_AI_Pro_Schedule_Manager::dispatch( $schedule_id, $run_id );
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_get_run_status',
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => $schedule_id,
+				'run_id'      => $run_id,
+			)
+		);
+
+		$this->assertAjaxSuccess( $response );
+		$this->assertSame( 'success', $response['data']['status'] );
+		$this->assertTrue( $response['data']['finished'] );
+		$this->assertSame( 'manual', $response['data']['trigger'] );
 	}
 
 	// ---

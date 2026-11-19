@@ -499,3 +499,38 @@ Gotchas baked into the shim (each was a real failure while building it):
 - Prefer a completed `*-vendor` volume when one exists (see cross-worktree
   runs) — this shim is the fallback, not the default.
 
+### Reading a detached run's result (9p bind mount)
+
+On the `F:` drive behind Docker's 9p mount a run spends most of its wall time
+in bootstrap (`D` state on `p9_client_rpc`), while the tests themselves take
+seconds. Launch detached and poll:
+
+```bash
+docker exec -d -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db \
+  -e WP_DB_NAME=wordpress_test -e WP_DB_USER=wordpress -e WP_DB_PASSWORD=wordpress \
+  oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && \
+  php -d memory_limit=1G tmp-dev-phpunit.php --no-coverage <files…> > /tmp/run.log 2>&1'
+
+docker exec oos-wp sh -c 'grep -oE "[0-9]+ / [0-9]+" /tmp/run.log | tail -1'   # progress
+docker exec oos-wp sh -c 'ps -o stat,etime -C php'                              # D vs R
+```
+
+`STAT D` means it is waiting on the mount, not hung; `R` means tests are
+executing. Budget from a measurement, not a guess: one bootstrap plus **134
+tests** (`test-pro-schedule-manager.php` 93 + `test-schedule-manager-ajax.php`
+41) took **~30 min wall**, of which ~15 was bootstrap. One combined invocation
+is still cheaper than two separate ones - do not split "to save time".
+
+Read the summary by pattern, never by `tail`: WordPress debug output keeps
+flushing into the same log, so the summary line gets buried and interleaved.
+
+```bash
+docker exec oos-wp sh -c 'grep -E "^(OK|FAILURES|ERRORS|Tests:|Time:)" /tmp/run.log'
+```
+
+`OK, but there were issues!` is **not** a failure - it reports warnings and
+PHPUnit deprecations while `Failures`/`Errors` stay at 0. Match `Tests:` and
+`Assertions:` against the known baseline instead of grepping for the literal
+`OK` (134 tests / 403 assertions was the clean baseline for manager + AJAX;
+the same files run alone give 93/274 and 41/129, and the totals sum).
+

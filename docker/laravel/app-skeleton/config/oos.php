@@ -127,4 +127,23 @@ return array(
         'rollup_days' => (int) env('NVOOS_TOKEN_USAGE_ROLLUP_DAYS', 7),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Schedules (090-b)
+    |--------------------------------------------------------------------------
+    |
+    | `user_id` is the actor a timed run performs as: tools routinely check a
+    | user and a cron tick has none. `0` resolves the first administrator.
+    |
+    | `stale_after` is how long an in-flight run (`pending`/`running`) may stay
+    | silent before it is treated as a dead worker and reaped to `timeout`. It is
+    | also the RunSchedule queue-uniqueness window, so the two must agree: a
+    | shorter reap window would let a re-dispatch race a live run.
+    |
+    */
+    'schedules' => array(
+        'user_id' => (int) env('NVOOS_SCHEDULES_USER_ID', 0),
+        'stale_after' => (int) env('NVOOS_SCHEDULES_STALE_AFTER', 900),
+    ),
+
 );

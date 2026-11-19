@@ -249,6 +249,33 @@ the form read fields the directory never returned).
     Pin with an end-to-end wp/v2 test that registers the CPT + meta INSIDE
     the test body (wp-phpunit's `unregister_all_meta_keys()` wipes
     bootstrap-registered keys — see the test-suite skill).
+16. **Blocking-in-browser-callback — the route exists, is contract-clean, and
+    does the work inline.** The client `await`s it, so the request is bounded
+    by the edge proxy: Cloudflare answers **524 with an HTML body** (not JSON)
+    at ~100 s, nginx gives 504. PHP keeps running, so the SPA shows a generic
+    "An error occurred" while the job finishes invisibly. Real case
+    (2026-11-20): `POST /schedules/{id}/trigger` called the synchronous
+    `trigger_now()`; the same bug sat in the classic `admin-ajax` trigger, so
+    both surfaces broke the same way. Symptom split is the tell — instant on a
+    plain task hook, 524 on anything that reaches a provider. Fix: queue and
+    return a handle (`queued`, `run_id`, `backend`), add a status route the
+    client polls, `409` a second concurrent trigger. Audit rule: any client
+    call that *can* reach a provider round trip is a poll, never a wait. Full
+    rationale in `wp-rest-api` rule 9.
+17. **Wrong-arity call from the controller — the helper takes more arguments
+    than the route passes.** Real case (2026-11-20): `toggle_schedule()` was
+    called with one argument against
+    `toggle_schedule( $schedule_id, $enabled, $user_id = 0 )`. Because
+    `$enabled` is **required**, PHP 8 raised `ArgumentCountError`; that extends
+    `Error`, not `Exception`, and `WP_REST_Server::respond_to_request()`
+    catches `Exception` only — so the route answered with an uncaught **500**,
+    not a handled `WP_Error`. The endpoint reads as contract-clean in a diff
+    and the button appears to do nothing (or shows a generic error); the fatal
+    is only in the PHP log. Audit step: for every `Some_Class::method(` inside
+    a controller, open the signature and diff the arguments, paying attention
+    to parameters that *look* optional. A route that mutates state also
+    deserves an explicit not-found branch — a toggle that cannot fail loudly
+    is indistinguishable from one that quietly did nothing.
 
 ## Audit path per client (4 hops, verify every hop)
 
