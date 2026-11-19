@@ -450,6 +450,10 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 					'site-topbar',
 					chrome.topbarAlign === 'end' && 'site-topbar--end',
 					chrome.topbarAlign === 'center' && 'site-topbar--center',
+					/* Exactly two items and no measured alignment: every builder that
+					 * ships a topbar puts the first item left and the last one right
+					 * (Flatsome's `.header-top` is flex-left + flex-right). */
+					! chrome.topbarAlign && chrome.topbar?.length === 2 && 'site-topbar--split',
 					chrome.topbarItems && chrome.topbarItems.some((item) => item.icon) && 'site-topbar--icons',
 				]}
 			>

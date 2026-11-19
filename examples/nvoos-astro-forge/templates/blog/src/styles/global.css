@@ -435,6 +435,14 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	justify-content: center;
 }
 
+/* A topbar with exactly two items is a LEFT / RIGHT bar in every builder that
+ * ships one (Flatsome's `.header-top` is `flex-left` + `flex-right`): the
+ * measured strings alone do not say that, so both landed in a 2rem gap on the
+ * left while the source pins the contact link to the far edge. */
+.site-topbar--split > .site-topbar-inner {
+	justify-content: space-between;
+}
+
 /* The leading icon-only links (the source's social glyphs) sit at the bar's
  * other end; `margin-right: auto` pushes the item group back to its measured
  * edge. They paint in the bar's own ink, not the accent. */
