@@ -9098,6 +9098,8 @@ decision than closing two routes, and it is not taken here.
 | `SseStreamTest` | **8 tests** — the console transport still frames; an unknown id and a foreign-estate assistant both 404; a body `assistant` blob cannot override the assistant's provider; an assistant-less turn is still accepted |
 | `McpAppsTest` (+ `AdminMcpAppsTest`) | **34 tests / 120 assertions** — a foreign estate's assistant is neither readable nor writable |
 | phpcs (`phpcs-laravel.xml.dist`, 4 files) | **0 errors** |
+| Full app suite | **1436 tests / 18,374 assertions, 0 failures** (CI `App suite (SQLite)`) — +5 tests / +12 assertions over §88's 1431 / 18,362, which is the four new stream tests and the one MCP-apps test |
+| CI `Console E2E (Laravel / SQLite)` | **pass** — the console's own transport runs against the server-side resolution, which is the check that matters for this change |
 
 The chat tests now build a real assistant through the API instead of posting an
 `assistant` blob — the old fixture was the hole, so it could not survive the fix.
