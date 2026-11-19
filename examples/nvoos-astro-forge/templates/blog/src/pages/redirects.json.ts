@@ -72,6 +72,25 @@ export const GET: APIRoute = async () => {
 		}
 	}
 
+	// 3. Operator-declared redirects — LAST so they win on conflict. These are
+	//    the cutover leftovers the URL structure cannot see: a front page's own
+	//    slug, a retired landing page, a path the host still answers with 403.
+	const declared = (manifest as { redirects?: unknown }).redirects;
+	if (Array.isArray(declared)) {
+		for (const raw of declared) {
+			if (typeof raw !== 'object' || raw === null) continue;
+			const entry = raw as { from?: unknown; to?: unknown; status?: unknown };
+			if (typeof entry.from !== 'string' || !entry.from.startsWith('/')) continue;
+			const status =
+				typeof entry.status === 'number' && PORTABLE_STATUSES.has(entry.status)
+					? (entry.status as RedirectStatus)
+					: 301;
+			// A 4xx rule carries no target; anything else needs one.
+			if (status < 400 && typeof entry.to !== 'string') continue;
+			push(entry.from, typeof entry.to === 'string' ? entry.to : '', status);
+		}
+	}
+
 	// Deterministic output — same content, same file, stable diffs.
 	const sorted = [...redirects.values()].sort((a, b) => a.from.localeCompare(b.from));
 	return new Response(`${JSON.stringify(sorted, null, '\t')}\n`, {

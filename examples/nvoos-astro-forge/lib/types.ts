@@ -413,7 +413,24 @@ export interface ForgeMedia {
 }
 
 /** One operator-configured WordPress site. */
+/** One operator-declared redirect (the intent; the host decides the mechanism). */
+export interface ForgeRedirect {
+	/** Source path, leading slash (`/home-page/`). */
+	from: string;
+	/** Target path or absolute URL. */
+	to: string;
+	/** Default 301 — a permanent move. */
+	status?: 301 | 302 | 303 | 307 | 308 | 404 | 410;
+}
+
 export interface SiteProfile {
+	/**
+	 * Redirects the operator declares by hand — cutover leftovers the URL
+	 * structure cannot see (a front page's own slug, a retired landing page,
+	 * a URL the host still answers with 403). They WIN over the generated map:
+	 * the operator is the authority on where an old URL should land.
+	 */
+	redirects?: ForgeRedirect[];
 	/**
 	 * Where the content comes from. `materialized` means the CMS is gone and
 	 * `<profile>.content/` — the output of `forge materialize` — is the source;

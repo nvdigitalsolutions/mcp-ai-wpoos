@@ -32,7 +32,7 @@ import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor, isCookielessVendor } from './tracking.ts';
-import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -323,6 +323,11 @@ export interface ForgeManifest {
 	 * only. No ids, no tokens: the manifest must stay safe in a public repo.
 	 */
 	tracking?: { enabled: boolean; vendors: string[]; consentMode: string; hasVerification: boolean; consentExempt: string[] };
+	/**
+	 * Operator-declared redirects (cutover leftovers). Public paths only, so the
+	 * manifest stays safe in a public repo.
+	 */
+	redirects?: ForgeRedirect[];
 	generatedAt: string;
 	collections: Array<{
 		slug: string;
@@ -4353,6 +4358,7 @@ async function scaffoldProject(
 							.filter( ( tracker ) => tracker.enabled && tracker.consentExempt === true && isCookielessVendor( tracker.vendor ) )
 							.map( ( tracker ) => tracker.vendor ),
 					},
+					redirects: profile.redirects ?? [],
 			  }
 			: {} ),
 		generatedAt: new Date().toISOString(),
