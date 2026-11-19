@@ -48,11 +48,17 @@ final class RoutingEventPusher
         $timeout = max(1, (int) config('oos.routing.export.timeout', 10));
 
         try {
+            $encoded = $this->encode($rows);
+
+            if (null !== $encoded['encoding']) {
+                $headers['Content-Encoding'] = $encoded['encoding'];
+            }
+
             $response = Http::withHeaders($headers)
                 ->timeout($timeout)
                 ->acceptJson()
-                ->asJson()
-                ->post($endpoint, $this->exporter->otel($rows));
+                ->withBody($encoded['body'], 'application/json')
+                ->post($endpoint);
         } catch (\Throwable $exception) {
             report($exception);
 
@@ -107,6 +113,45 @@ final class RoutingEventPusher
             array_map(static fn ($value): string => (string) $value, $headers),
             static fn (string $value): bool => '' !== $value
         );
+    }
+
+    /**
+     * The request body, compressed when configured and worthwhile — §77.
+     *
+     * The body is encoded here rather than by `asJson()` so the compressed and
+     * uncompressed paths produce the same bytes: only the transport wrapper
+     * differs. The flags match what Laravel's JSON body format uses.
+     *
+     * `Content-Encoding` is only claimed when a body was actually compressed.
+     * A `gzencode()` failure falls back to plain JSON — the collector would
+     * otherwise try to inflate plain text and reject the batch.
+     *
+     * @param list<object> $rows
+     * @return array{body: string, encoding: string|null}
+     *
+     * @throws \JsonException When the payload cannot be encoded.
+     */
+    private function encode(array $rows): array
+    {
+        $json = json_encode(
+            $this->exporter->otel($rows),
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        );
+
+        $compression = strtolower(trim((string) config('oos.routing.export.compression', 'none')));
+        $threshold = max(0, (int) config('oos.routing.export.compression_threshold', 1024));
+
+        if ('gzip' !== $compression || strlen($json) < $threshold || ! function_exists('gzencode')) {
+            return ['body' => $json, 'encoding' => null];
+        }
+
+        $compressed = gzencode($json, 6);
+
+        if (false === $compressed) {
+            return ['body' => $json, 'encoding' => null];
+        }
+
+        return ['body' => $compressed, 'encoding' => 'gzip'];
     }
 
     private function isHttpUrl(string $url): bool

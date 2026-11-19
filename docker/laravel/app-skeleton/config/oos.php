@@ -70,6 +70,17 @@ return array(
             'timeout' => (int) env('NVOOS_ROUTING_EXPORT_TIMEOUT', 10),
             'batch' => (int) env('NVOOS_ROUTING_EXPORT_BATCH', 500),
 
+            // Transport compression (§77). OTLP requires every receiver to
+            // accept `none` and `gzip`; anything else is treated as `none`
+            // rather than sending a header the collector may reject. The
+            // default stays `none` so an existing deployment's wire format
+            // does not change on upgrade — set `gzip` for a real collector.
+            'compression' => (string) env('NVOOS_ROUTING_EXPORT_COMPRESSION', 'none'),
+
+            // Smallest body worth gzipping. Below it the header and trailer
+            // cost more than the saving; `0` compresses every body.
+            'compression_threshold' => (int) env('NVOOS_ROUTING_EXPORT_COMPRESSION_THRESHOLD', 1024),
+
             // A failing collector is retried on an exponential schedule
             // (base × 2^(n-1), capped). 0 disables backoff: every tick tries.
             'backoff_base' => (int) env('NVOOS_ROUTING_EXPORT_BACKOFF_BASE', 60),
