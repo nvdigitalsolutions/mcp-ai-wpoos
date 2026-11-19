@@ -8503,7 +8503,7 @@ title is literally "Operations, diagnostics and cost" — rather than adding a
 | `per_tool` | **not a usage view.** In WordPress it is a limits *configuration* table (preferred model, multiplier, effective limits), so it is a settings surface, not an analytics one; recorded here so it is not mistaken for one |
 | `per_models` | already served by `/ops/models` (§68) — the model config table |
 | `model_manager` | catalogue sync lives in `/ops/models` too |
-| `analytics` (trend / anomalies / patterns) | the API already serves `cost/trend` and `cost/by-provider`; the page is the next slice |
+| `analytics` (trend / anomalies / patterns) | shipped in §83 |
 
 ### 82.4 Gates
 
@@ -8513,6 +8513,7 @@ title is literally "Operations, diagnostics and cost" — rather than adding a
 | `AdminTokenUsageTest` + `SurfaceOwnershipTest` | **10 tests / 490 assertions** |
 | phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
 | `bin/audit-surface-ownership.php` | 46 surfaces, 34 Filament-built, 3 planned only — unchanged |
+| Full app suite | **1386 tests / 18192 assertions, 0 failures** (CI `App suite (SQLite)`) — +6 tests / +22 assertions over §81, matching this section's focused run |
 
 ### 82.5 Still open
 
@@ -8523,3 +8524,72 @@ title is literally "Operations, diagnostics and cost" — rather than adding a
    short retention is partial. With the default 365-day window this is theory.
 3. **No export.** The WordPress view has none either; CSV belongs with the
    Reports page if it is ever wanted, not with this table.
+
+## 83. Token analytics — trends, patterns and anomalies (2026-11-19)
+
+§82.3 named this as the next slice. The console already served `cost/trend` and
+`cost/by-provider`, but there was no page, and the WordPress `analytics` view has
+three sub-tabs — `trends`, `patterns`, `anomalies` — that no console surface
+answered.
+
+### 83.1 One series, three sections
+
+All three read `TokenAnalyticsReport::series($days)` — the same daily totals,
+with empty days present as zeros. Sub-tabs became sections: a sub-tab inside a
+sub-tab is the navigation density §62 decision 1 rejected, and three sections of
+one page can be read together, which is the point of an analytics screen.
+
+Dropping empty days would make a weekly pattern and a trend line both lie, so a
+day with no calls is a real zero in the series rather than a gap.
+
+### 83.2 The maths, stated
+
+| Section | How |
+|---|---|
+| **Trend** | least-squares line over daily tokens. `direction` is judged by the change the line predicts **across the window**, relative to the mean (inside ±10% is `stable`) — a slope in tokens/day is unreadable without the window length. `confidence` is R² × 100: how much of the day-to-day variation the line explains. `projected_7d` is **mean × 7**, labelled a run rate, not a forecast. |
+| **Patterns** | peak hours from a SQL hour extraction; peak weekdays from the already-fetched series; `usage_type` from the coefficient of variation, in the WordPress vocabulary — consistent `< 0.5`, sporadic `< 1.0`, bursty `≥ 1.0`. |
+| **Anomalies** | day-level z-score against the window's own mean and σ. Severity: ≥ 3 high, ≥ 2.5 medium, ≥ 2 low. |
+
+Two guards are results rather than failures:
+
+- **a trend needs three active days**; with fewer it returns `insufficient`, not
+  `stable`, because "stable" on two data points is a claim the numbers do not
+  support;
+- **anomalies need at least three days with usage** (the window is always seven
+  or more), and a flat window returns "usage is flat across the window" rather
+  than dividing by a zero σ.
+
+The hour extraction is the one driver-specific expression in the report: MySQL
+has `HOUR()`, SQLite needs `strftime('%H', …)`. Everything else is `DATE()` and
+`SUM()`, which both drivers accept.
+
+### 83.3 Where this deliberately differs from WordPress
+
+| WordPress | Here | Why |
+|---|---|---|
+| per-user anomaly rows | day-level | "did spend spike" is the first question; a per-user series is the same maths over a different group, and belongs after this page proves useful |
+| signed z-scores, including quiet days | positive only | a quiet day is not a cost event, and flagging it would page somebody every Sunday |
+| canvas charts (Chart.js) | one div per day, height scaled | no chart dependency in the panel, and the output is assertable instead of pixel-inspected |
+| analytics as sub-tabs | three sections | §62 decision 1 |
+
+### 83.4 Gates
+
+| Run | Result |
+|---|---|
+| `AdminTokenAnalyticsTest` | **11 tests / 34 assertions** — the page renders; the series fills empty days with zeros; a ramp reads as rising with 100% confidence; a flat series is stable with 0% confidence; one active day is `insufficient`; a spike is an anomaly and a quiet day is not; anomalies need history; peak hour and weekday resolve; the period changes the window; an estate administrator gets 403 |
+| `AdminTokenAnalyticsTest` + `AdminTokenUsageTest` + `SurfaceOwnershipTest` | **21 tests / 525 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
+| `bin/audit-surface-ownership.php` | 46 surfaces, 34 Filament-built, 3 planned only — unchanged |
+
+### 83.5 Still open
+
+1. **Per-user anomaly rows** (the WordPress shape) are not built. The estate-level
+   answer comes first; per user is the same z-score over `groupBy user_id, day`,
+   with a row count that grows with users × days.
+2. **No alerting.** The WordPress view is read-only too. A burn-rate or
+   budget alert is a notification decision, not a chart.
+3. **A third database driver would need a third branch** in the hour extraction
+   (`EXTRACT(HOUR …)` on PostgreSQL). Two drivers, two branches, stated rather
+   than hidden.
+4. **No chart library, so no sparkline of *cost*.** The bars show tokens; a cost
+   strip is the same code with a different column, if anyone wants both.
