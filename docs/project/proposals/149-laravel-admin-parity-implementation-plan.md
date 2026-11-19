@@ -9514,7 +9514,7 @@ been bitten before by treating one as the other.
 | `RuntimeSchemaTest` | assistant column + index on the token table; the `(tenant, assistant, window)` key present and the old key gone |
 | `/(Budget\|SseStream\|Assistant\|Workflow\|AgentNode\|RuntimeSchema\|TokenUsage\|SurfaceOwnership\|AdminNavigation\|Cost\|ApiTenant)/` | **206 tests / 1443 assertions, 0 failures** |
 | phpcs (`phpcs-laravel.xml.dist` 14 paths, `phpcs.xml.dist` 1 path) | **0 errors** |
-| Full app suite | *(pending — filled from CI)* |
+| Full app suite | **1490 tests / 18,649 assertions, 0 failures** (CI `App suite (SQLite)`) — +13 tests against §93's 1477 / 18,594, which is this slice's five enforcement cases, five page cases, one schema case and two rollup assertions |
 
 ### 94.5 Still open
 
