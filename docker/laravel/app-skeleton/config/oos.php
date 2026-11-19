@@ -112,6 +112,12 @@ return array(
     */
     'token_usage' => array(
         'retention_days' => (int) env('NVOOS_TOKEN_USAGE_RETENTION_DAYS', 365),
+
+        // Record one row per completed chat turn (§81). On by default: the
+        // cost pages read this table, and an off-by-default telemetry switch
+        // is a feature nobody turns on. `false` stops the writes, not the
+        // reads — existing rows and the rollup are untouched.
+        'track' => filter_var(env('NVOOS_TOKEN_USAGE_TRACK', true), FILTER_VALIDATE_BOOLEAN),
         'prune_chunk' => (int) env('NVOOS_TOKEN_USAGE_PRUNE_CHUNK', 5000),
 
         // Days re-rolled each night (§80). The rollup is idempotent, so a week
