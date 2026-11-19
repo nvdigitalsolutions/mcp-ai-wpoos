@@ -7997,10 +7997,8 @@ was the defect (the first was the float timestamp in §73.3).
 
 ### 75.5 Still open
 
-1. **Exactly-once is the collector's job.** The event id makes dedupe possible;
-   a collector that ignores it still double-counts a resent batch. That is a
-   deployment instruction, not a code gap, but it must be written down somewhere
-   more visible than this plan.
+1. **Exactly-once is the collector's job** — the instruction now lives in
+   [`docs/operations/routing-export.md`](../../operations/routing-export.md) (§79).
 2. **Backoff is per-deployment, not per-endpoint.** One endpoint down means all
    events wait, which is correct today because there is only one endpoint.
 3. **No counter for "currently backing off"** — closed by §78.
@@ -8244,3 +8242,49 @@ the last error. A dashboard that wants "is the collector healthy" should read
    diagnostics cadence and would not be at scrape-every-second cadence.
 4. **`retry_after` carries the jitter**, so two deployments recovering together
    legitimately report different times. That is the point of §75.2, not a bug.
+
+## 79. The export contract, written for operators (2026-11-19)
+
+§75.5 item 1 ended with a sentence that was really a to-do: the collector's
+dedupe obligation "must be written down somewhere more visible than this plan".
+It is now — [`docs/operations/routing-export.md`](../../operations/routing-export.md),
+linked from the operations index.
+
+### 79.1 What the page says that the plan does not
+
+The plan records decisions; the runbook records what to do. Specifically:
+
+- **at-least-once is a section, not a footnote.** The resend behaviour is
+  explained first (a crash between the `2xx` and the watermark write), the
+  identifier is named (`nvoos.routing.event_id` as OTLP `intValue`, `id` in the
+  flat export), and the collector's obligation is spelled out: dedupe on that
+  field or double-count resent batches;
+- **every environment variable with its default**, in one table, because an
+  operator configuring a deployment needs the knob names, not the reasoning;
+- **a failure-mode table** — symptom, likely cause, action — including the two
+  that look like bugs and are not: duplicates after a crash, and retention
+  deleting nothing because the watermark never advanced;
+- **the gauge payload**, since checking `data.routing_export` is the first
+  thing to run when export is in doubt.
+
+### 79.2 One inaccuracy caught by writing it
+
+The first draft documented `NVOOS_ROUTING_EXPORT_HEADERS`. There is no such
+variable — `oos.routing.export.headers` is a map in the config file. The page now
+says so, and says why: a malformed JSON environment value would fail at request
+time rather than at boot. The plan never claimed the variable; a runbook is
+exactly where such a claim would otherwise have been invented.
+
+### 79.3 Gates
+
+| Run | Result |
+|---|---|
+| Documentation only | no unit gate; CI runs the repository's standard checks |
+
+### 79.4 Still open
+
+1. **The page lives in the plugin's `docs/operations/`**, because that is where
+   operator documentation lives and a console-only deployment reads it from the
+   repository. If the console ever ships its own docs site, this page should
+   move rather than be duplicated.
+
