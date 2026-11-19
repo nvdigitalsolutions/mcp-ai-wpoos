@@ -8939,6 +8939,7 @@ inventing a second rule.
 | `AdminTokenEstatesTest` | **10 tests / 51 assertions** — the estate table groups by estate with hand-checked totals; the selector scopes the user table and the totals; only estates with usage are listed; a URL estate with no usage stays selected and renders empty; an empty query parameter means every estate; both sections render; the estate table is hidden when scoped and the model table appears; an estate with no usage says so instead of showing zeros |
 | `TokenUsage*`, `AdminToken*`, `AdminDiagnostics`, `SurfaceOwnership` | **66 tests / 711 assertions, 0 failures** |
 | phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
+| Full app suite | **1425 tests / 18,349 assertions, 0 failures** (CI `App suite (SQLite)`) — exactly +10 tests / +51 assertions over §86's 1415 / 18,298, which is this section's focused run and nothing else |
 
 ### 87.6 Still open
 
