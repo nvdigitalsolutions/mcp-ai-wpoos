@@ -14,6 +14,7 @@
 // ---------------------------------------------------------------------------
 
 import type { SiteProfile } from './types.ts';
+import { isMaterializedContent } from './content-source.ts';
 import { DEFAULT_USER_AGENT, type WpClient } from './wp-client.ts';
 
 /** HTTP statuses a static host can express in a `_redirects` file. */
@@ -91,11 +92,18 @@ function errorMessage( error: unknown ): string {
  * (`rank_math_redirections`) into `{ source, target, type }`; this function
  * validates and re-types that contract. A 404 means "bridge not installed" and
  * is silent; every other failure is a warning so the build still completes.
+ *
+ * A `materialized` profile is not contacted AT ALL: the flag is a promise that
+ * the CMS is gone, and its URL is then the rebuilt site — the request could
+ * only ever reach the rebuild's own fallback page.
  */
 export async function fetchBridgeRedirects(
 	profile: SiteProfile,
 	options: BridgeRedirectOptions = {}
-): Promise<BridgeRedirectResult> {
+): Promise< BridgeRedirectResult > {
+	if ( isMaterializedContent( profile ) ) {
+		return { redirects: [], truncated: false, warnings: [] };
+	}
 	const base = (
 		options.endpoint ??
 		profile.forms?.endpoint ??
