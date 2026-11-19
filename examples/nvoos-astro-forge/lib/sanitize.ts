@@ -82,7 +82,7 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		'legend',
 	],
 	allowedAttributes: {
-		a: ['href', 'title', 'target', 'rel', 'class'],
+		a: ['href', 'title', 'target', 'rel', 'class', 'id'],
 		img: ['src', 'alt', 'title', 'width', 'height', 'srcset', 'sizes', 'loading', 'decoding', 'class'],
 		figure: ['class'],
 		figcaption: ['class'],
@@ -345,6 +345,18 @@ function bandAttribs( tagName: string, attribs: { [key: string]: string } ) {
 function linkAttribs(attribs: { [key: string]: string }) {
 	if (attribs.target === '_blank') {
 		attribs.rel = 'noopener noreferrer';
+	}
+	// Legacy NAMED anchors (`<a name="rates"></a>`) are how Flatsome and older
+	// builders publish an in-page target for `href="#rates"`. `name` is not an
+	// allowed attribute on `a`, so it was dropped and every such link pointed at
+	// nothing. Promote it to the modern equivalent id, behind the same safety
+	// rules as any other source anchor.
+	if ( typeof attribs.name === 'string' ) {
+		const name = attribs.name.trim();
+		if ( ! attribs.id && SAFE_ANCHOR_ID.test( name ) && ! RESERVED_ANCHOR_ID.test( name ) ) {
+			attribs.id = name;
+		}
+		delete attribs.name;
 	}
 	return { tagName: 'a', attribs };
 }

@@ -2061,6 +2061,16 @@ export interface ForgeAnimationInventory {
 }
 
 /**
+ * One recovered per-element rule from the source builder's `<style>` blocks
+ * (`lib/element-css.ts`). `media` keeps a `@media` prelude verbatim.
+ */
+export interface ForgeElementCssRule {
+	media?: string;
+	selector: string;
+	declarations: string;
+}
+
+/**
  * The v2 design block (Proposal 114) — a DTCG-flavored design language,
  * never source assets. Roles are fail-loud (098): only confident values
  * land in `roles`; everything else stays in `unassigned`.
@@ -2119,6 +2129,14 @@ export interface ForgeDesign {
 	} >;
 	/** The builder adapter that matched the source (elementor, wpbakery, divi…). */
 	builder?: string;
+	/**
+	 * The source builder's PER-ELEMENT rules (``#gap-x{padding-top:30px}``,
+	 * ``#text-box-x{width:20%}`` …). Flatsome/UX Builder and WPBakery put an
+	 * element's own layout in a `<style>` block; the sanitizer drops it, so a
+	 * rebuild otherwise re-derives the box from class conventions and loses it.
+	 * Recovered and gated by `lib/element-css.ts`, emitted scoped to a band.
+	 */
+	elementCss?: ForgeElementCssRule[];
 	/** The site-chrome pass (120 §2) — omitted when unavailable. */
 	chrome?: ForgeChrome;
 	/** The scroll-behavior pass (121) — omitted when unavailable. */

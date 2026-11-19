@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
+import { renderElementCss } from './element-css.ts';
 import { isMaterializedContent, withMaterializedDefaults } from './content-source.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './geometry.ts';
 import { animationRebuildCss, countAnimations, planAnimationRebuild, type ParallaxCarrier } from './animations.ts';
@@ -3676,6 +3677,15 @@ async function scaffoldProject(
 	const cssPath = path.join( targetDir, 'src', 'styles', 'global.css' );
 	const css = await readFile( cssPath, 'utf8' );
 	await writeFile( cssPath, rewriteGlobalCss( css, mergedTokens ), 'utf8' );
+	// The source builder's PER-ELEMENT rules (`lib/element-css.ts`), already
+	// gated + scoped to a band. The layout imports this after global.css, so a
+	// recovered `#text-box-x{width:20%}` out-ranks the class-convention shim the
+	// same way the vendor stylesheet did on the source.
+	await writeFile(
+		path.join( targetDir, 'src', 'styles', 'elements.generated.css' ),
+		renderElementCss( profile.design?.elementCss ),
+		'utf8'
+	);
 	// The resolved design module — templates without it (the builtin test
 	// fixture) skip the write; the real template always ships it.
 	try {
