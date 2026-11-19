@@ -8094,9 +8094,7 @@ one second before that does not.
 
 ### 76.4 Still open
 
-1. **No rollup.** Past the window the spend is gone — there is no aggregate
-   table to fall back on. A deployment that reports year-over-year cost must
-   raise `retention_days` or set it to `0`; the plan does not pretend otherwise.
+1. **No rollup** — closed by §80.
 2. **Retention is global, not per-tenant.** A multi-tenant estate cannot keep
    one tenant's rows longer than another's. Per-tenant retention needs a
    `tenant_id` on the table, which is the §64 scope decision again and not a
@@ -8288,3 +8286,87 @@ exactly where such a claim would otherwise have been invented.
    repository. If the console ever ships its own docs site, this page should
    move rather than be duplicated.
 
+## 80. A daily token usage rollup (2026-11-19)
+
+§76.4 item 1: "No rollup. Past the window the spend is gone — there is no
+aggregate table to fall back on." This adds the aggregate, and makes retention
+depend on it rather than hope.
+
+### 80.1 The table
+
+`nvoos_token_usage_daily` — one row per **day, provider and model**, unique on
+those three columns:
+
+| Column | Meaning |
+|---|---|
+| `day` | the complete day, `YYYY-MM-DD` |
+| `provider`, `model_id` | the axes every cost view groups by |
+| `events` | AI calls aggregated |
+| `prompt_tokens`, `completion_tokens`, `total_tokens` | summed |
+| `cost` | summed, six decimal places |
+| `updated_at` | when the aggregate was last written |
+
+Per-user and per-tool aggregates are deliberately absent: `top_users` and
+`top_tools` are 30-day views over raw rows, and putting them in a daily key
+multiplies cardinality for a projection nobody reads over a year.
+
+### 80.2 The rollup
+
+`php artisan nvoos:rollup-token-usage [--date=YYYY-MM-DD] [--days=7] [--dry-run]`
+
+- **idempotent** — `upsert` on the key, so a re-run replaces the day's aggregate
+  instead of appending a second copy;
+- **additive** — a day with no raw rows (already pruned) produces no upsert at
+  all, so a late re-run cannot zero an existing aggregate;
+- **never today** — a day is only complete once it is over; rolling a partial day
+  would write a figure a later run must correct;
+- **seven days by default** — the overlap heals a day a failed or missed run
+  skipped, at the cost of a few reads;
+- **aggregated in PHP, not SQL** — extracting `metadata.provider` differs between
+  MySQL and SQLite, and the suite runs on SQLite while production runs on MySQL.
+  Same argument as §76's id-batched delete.
+
+The schedule runs at `03:10`, twenty minutes before §76's prune at `03:30`, and
+`oos.token_usage.rollup_days = 0` removes the entry.
+
+### 80.3 Retention now depends on the rollup
+
+`nvoos:prune-token-usage` deletes a raw row only if its day has been rolled up:
+the cutoff is clamped to the day after `max(day)` in the daily table. With no
+rollup at all, it deletes nothing and says so.
+
+This is the same direction as §74's "never delete unexported rows", and for the
+same reason: a deleted raw row is gone, and only the aggregate can speak for it.
+The consequence is explicit rather than accidental — **disabling the rollup
+disables pruning** — and both the config comment and the command output say so.
+
+### 80.4 The reader
+
+`TokenUsage::trend()` now prefers raw rows for a day that still has them (they
+are the source the aggregate was built from) and falls back to the daily total
+for a day retention has emptied. A 45-day trend therefore keeps its shape after
+a 30-day window has run. `summary()` stays raw-only, because it is a 30-day view
+and the raw rows are the right answer there.
+
+### 80.5 Gates
+
+| Run | Result |
+|---|---|
+| `TokenUsageRollupTest` | **6 tests** — aggregates by provider and model; re-running a day is idempotent; the window rolls up complete days only; `--dry-run` writes nothing; `2026-02-31` is rejected rather than rolled forward; `trend()` falls back to the aggregate for a pruned day |
+| `TokenUsageRollupTest` + `TokenUsageRetentionTest` | **14 tests / 48 assertions** |
+| phpcs (`phpcs-laravel.xml.dist` 7 app files; `phpcs.xml.dist` 3 lib files) | **0 errors** |
+| Full app suite | **1376 tests / 18148 assertions, 0 failures** (CI `App suite (SQLite)`) — +8 tests over §78: the six rollup tests and two new retention guard tests |
+
+### 80.6 Still open
+
+1. **No backfill for history that was pruned before §80 existed.** `--date` can
+   be run per day while the raw rows still exist; once gone, they are gone. A
+   deployment upgrading with a window shorter than its history should raise
+   retention, roll up, then lower it.
+2. **Per-user and per-tool aggregates are not rolled up**, by the §80.1
+   cardinality decision. Those views remain bounded by raw retention.
+3. **The rollup is deployment-wide**, like all token usage today — there is no
+   `tenant_id` on either table (§64's scope decision).
+4. **Rollup cost is a PHP sum** over the day's rows. A deployment with very high
+   volume may eventually want it in SQL, at the price of driver-specific JSON
+   extraction.

@@ -146,13 +146,21 @@ class TokenUsage implements TokenUsageInterface {
 			$map[ $date ] = ( $map[ $date ] ?? 0 ) + (float) $row->cost;
 		}
 
+		// §80 — raw rows are pruned at the retention window; the daily rollup
+		// outlives them. A day that still has raw rows is authoritative (it is
+		// the source the rollup was built from); a day without them falls back
+		// to the aggregate, so a long trend keeps its shape after retention.
+		$rollup = app( TokenUsageRollup::class )->dailyCosts( $start->toDateString() );
+
 		$labels = array();
 		$data = array();
 
 		for ( $i = $days - 1; $i >= 0; $i-- ) {
 			$date = now()->subDays( $i )->toDateString();
 			$labels[] = $date;
-			$data[] = (float) ( $map[ $date ] ?? 0 );
+			$data[] = array_key_exists( $date, $map )
+				? $map[ $date ]
+				: (float) ( $rollup[ $date ] ?? 0 );
 		}
 
 		return array(
