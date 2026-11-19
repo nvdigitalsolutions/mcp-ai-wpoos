@@ -144,10 +144,41 @@ class AdminObservabilityTest extends TestCase
             ->assertForbidden();
     }
 
-    private function record(int $assistantId, string $runId, string $type, array $payload = [], ?string $at = null): void
+    public function test_a_run_names_the_estate_its_assistant_belongs_to(): void
+    {
+        Tenant::query()->create(array(
+            'id' => 'estate-a',
+            'name' => 'Estate A',
+            'slug' => 'estate-a',
+        ));
+
+        $this->record(42, 'run-estate', 'start', array(), null, 'estate-a');
+        $this->record(42, 'run-estate', 'end', array('provider_calls' => 1), null, 'estate-a');
+
+        $this->actingAs($this->operator())
+            ->get('/ops/observability')
+            ->assertOk()
+            ->assertSee('Estate')
+            ->assertSee('Estate A');
+    }
+
+    public function test_a_run_without_an_estate_still_renders_as_the_default(): void
+    {
+        // Pre-tenancy rows are `default` by the column default (Proposal 152 §3
+        // D3); the page must say so rather than leave the cell blank.
+        $this->record(42, 'run-legacy', 'start');
+
+        $this->actingAs($this->operator())
+            ->get('/ops/observability')
+            ->assertOk()
+            ->assertSee('Default estate');
+    }
+
+    private function record(int $assistantId, string $runId, string $type, array $payload = [], ?string $at = null, ?string $tenantId = null): void
     {
         DB::table(self::TABLE)->insert([
             'assistant_id' => $assistantId,
+            'tenant_id' => $tenantId ?? Tenant::DEFAULT_ID,
             'run_id' => $runId,
             'artifact' => 'run.jsonl',
             'payload' => json_encode(array_merge(['type' => $type, 'run_id' => $runId], $payload)),

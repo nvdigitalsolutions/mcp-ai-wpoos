@@ -8949,3 +8949,74 @@ inventing a second rule.
 2. **`per_tool`** stays a settings surface, not a usage one (§82.3).
 3. **No export.** The WordPress view has none either; CSV belongs with the
    Reports page if it is ever wanted.
+
+## 88. Estate scope for harness traces (2026-11-19)
+
+Proposal 152 D1 put `nvoos_harness_trace_records` in Phase 2: the column lands
+**before** the estate-facing surface, not after the first estate administrator
+asks for one. `/ops/observability` is operator-only today, so nothing leaks — and
+that is exactly the window in which the schema change is cheap.
+
+### 88.1 What changed
+
+| Layer | Change |
+|---|---|
+| Schema | `tenant_id varchar(64) default 'default'` + index, no backfill — the §86 shape |
+| Writer | `DatabaseTraceStore::append()` stamps the estate of the assistant the run belongs to |
+| Reader | `/ops/observability` names the estate beside the assistant, so the write is visible |
+
+The reader matters as much as the writer: §81's lesson was a table read by five
+surfaces and written by nobody. A column written and read by nobody is the same
+failure from the other side, and it is unverifiable until a page shows it.
+
+### 88.2 A deliberate departure from D8
+
+D8 proposed threading the estate through `TraceStoreInterface::append()` as an
+optional argument, set from `TraceCapture`'s `$meta`. This ships it from the
+**assistant** instead, without touching the contract. Three reasons:
+
+1. `assistant_id` is already a required, trusted argument, and the assistant is
+   the estate-owned record. Proposal 152 §9.3 said exactly this: the writer
+   should read the assistant's estate rather than trust a header.
+2. `$meta` derives from `$options`, and `ChatStreamController` passes the
+   client's `options` straight through. A caller-supplied estate would be a
+   second, forgeable truth — the store would prefer it to the real one.
+3. No contract change means no change to `NullTraceStore` or to the two
+   anonymous stores in `lib/core`'s tests, so the blast radius is the adapter.
+
+The cost is one primary-key lookup per appended record, and only for a traced
+turn (capture is opt-in per assistant). It is **uncached on purpose**: a store
+resolved as a singleton in a queue worker or an Octane process would otherwise
+hold one request's estate for the next.
+
+### 88.3 The table name is configuration, and the namespace traps
+
+`assistants` is an app-owned table and `lib/laravel-adapter` is a package, so the
+name is `oos.assistants_table` (default `assistants`), following the existing
+`oos.settings_table` precedent.
+
+The namespace is worth stating because it cost a bug: the package merges
+`config/nvoos.php` under the **`oos`** key (`NvoosServiceProvider::register`), so
+the obvious `config('nvoos.assistants_table')` is dead and silently falls back to
+the hardcoded default. A test now pins the namespace rather than the value.
+
+### 88.4 Gates
+
+| Run | Result |
+|---|---|
+| `HarnessTraceStoreTest` | **12 tests** — the record is stamped with its assistant's estate; an unknown assistant is `default`; the config namespace resolves; pruning is unchanged |
+| `AdminObservabilityTest` | the run list names the estate, and a pre-tenancy row renders as the default estate rather than a blank cell |
+| `RuntimeSchemaTest` | the column and its index must exist |
+| `HarnessTraceStore`, `AdminObservability`, `RuntimeSchema`, `TraceCaptureWiring`, `TokenUsage*`, `AdminToken*` | **84 tests / 298 assertions, 0 failures** |
+| phpcs (`phpcs.xml.dist` 1 file, `phpcs-laravel.xml.dist` 1 file) | **0 errors** |
+
+### 88.5 Still open
+
+1. **No estate-facing trace surface exists**, so nothing scopes on the column
+   yet. When one is built it takes a required tenant argument, per §86 D5.
+2. **Retention stays per assistant** (§84). An assistant is estate-owned, so a
+   per-estate window would be a product decision rather than a schema one.
+3. **The trace writer trusts `assistant_id` from the request** on
+   `/api/v1/chat/stream`, a pre-existing hole this section does not widen (the
+   estate simply follows the assistant) and does not close. Closing it means
+   validating the assistant on that route, which is its own change.
