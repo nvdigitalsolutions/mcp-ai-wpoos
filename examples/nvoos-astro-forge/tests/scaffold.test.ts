@@ -712,6 +712,36 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 		expect( module ).toContain( "family: 'rubik', weights: [ 300, 400, 500, 600, 700 ]" );
 	} );
 
+	it( 'carries the measured heading FAMILY into the band facts', () => {
+		// A band can wear several faces (monicarajiv: a Karma h1 beside a Dancing
+		// Script `alt-font` h3), so the family belongs to the LEVEL. Emitting it is
+		// what lets a raw band stop rendering every heading in the body face.
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [ { id: 's1', type: { headings: { h1: { size: '56px', family: 'Karma' } } } } ],
+			},
+		} );
+		expect( module ).toContain( "family: 'Karma'" );
+	} );
+
+	it( 'loads a family a BAND wears that neither role uses (the alt-font accent)', () => {
+		// Loading only display+body left a per-level rule pointing at a family
+		// with no @font-face: the browser fell back and the rule did nothing.
+		// A one-off accent only needs its measured weight, not a 300-700 ladder.
+		const withAccent: SiteProfile = {
+			...profile,
+			bandFacts: {
+				'834b9c9': {
+					headings: { h3: { size: '32px', family: 'Dancing Script' } },
+				},
+			},
+		};
+		const module = renderDesignGenerated( withAccent, { accent: '#0b5f4e' } );
+		expect( module ).toContain( "family: 'Dancing Script', weights: [ 400 ]" );
+	} );
+
 	it( 'skips system stacks in the webfont list', () => {
 		const systemDesign: ForgeDesign = {
 			...design,
