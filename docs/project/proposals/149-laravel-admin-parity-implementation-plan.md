@@ -9017,7 +9017,97 @@ the hardcoded default. A test now pins the namespace rather than the value.
    yet. When one is built it takes a required tenant argument, per §86 D5.
 2. **Retention stays per assistant** (§84). An assistant is estate-owned, so a
    per-estate window would be a product decision rather than a schema one.
-3. **The trace writer trusts `assistant_id` from the request** on
-   `/api/v1/chat/stream`, a pre-existing hole this section does not widen (the
-   estate simply follows the assistant) and does not close. Closing it means
-   validating the assistant on that route, which is its own change.
+3. **The trace writer trusted `assistant_id` from the request** on
+   `/api/v1/chat/stream`, a pre-existing hole this section did not widen (the
+   estate simply followed the assistant) and did not close. **Closed in §89.**
+
+## 89. The chat stream selects an assistant, it does not describe one (2026-11-19)
+
+§88.5 named the hole this track could see. Tracing it turned up a second
+instance of the same defect — in a route that **writes**.
+
+Both are one mistake: a route took an identifier from the request and used it
+without asking whether the caller may act on the thing it names. `Assistant`
+carries no global tenant scope, so `find()` and route-model binding both reach
+every estate's rows, and the scoping has to be written at each call site.
+
+### 89.1 What was reachable
+
+`/api/v1/chat/stream` and its console alias `/api/v1/chat-client`:
+
+| Field | What it drove |
+|---|---|
+| `assistant_id` | any assistant in the deployment — `nvoos_token_usage` and `nvoos_harness_trace_records` rows were written against it |
+| `assistant.provider` / `.model` | the provider and model, i.e. whose key is spent |
+| `assistant.system_prompt` | the instructions, replacing the assistant's own |
+| `assistant.max_agentic_iterations` | clamped to 50 — five times the default of 10, and each iteration is a provider call |
+
+`/api/v1/mcp-apps/{assistant}` (`GET` and `PUT`), inside the `manage_options`
+group: route-model binding resolved any id, so an estate administrator could
+read — and **overwrite** — another estate's assistant MCP app configuration.
+`McpAppsStore::read()` masks the sealed tokens, so this is not a secret leak; it
+is a cross-estate read and write of configuration, and the write is worse than
+the read.
+
+`AssistantController` was already correct — `ensureInCurrentEstate()` on show,
+update and destroy. It was the model that had no scope, not every caller.
+
+### 89.2 The rule
+
+A client-supplied identifier is a **selector**, and the server verifies the
+principal may use it (OWASP Multi-Tenant Security Cheat Sheet, §1 — the rule
+`ResolveApiTenant` already applies to `X-Tenant-Id`).
+
+- The chat route resolves `assistant_id` server-side, takes the assistant's
+  estate from the row, and answers **404** for a missing or foreign assistant.
+- The body can no longer describe the turn: `assistant` is not read at all. The
+  config comes from `$assistant->toRecord()`.
+- The MCP apps routes call the same `ensureInCurrentEstate()` the assistant
+  routes use, so there is one implementation of the check rather than two.
+
+404 rather than 403, in both places: an estate the caller cannot enter should be
+indistinguishable from one that does not exist, or the response itself becomes
+the enumeration oracle.
+
+An assistant-less turn is still accepted. It is the shape the console sends
+before an assistant is picked, it carries no tools and no capture, and it is
+exactly what `assistant_id = 0` produced before.
+
+### 89.3 What is still caller-controlled
+
+`options.provider` / `options.model` still win over the assistant, because
+`ProviderRouter::resolveForChat()` gives `$options` priority. That is the
+console's model picker, and it is a *preference inside the caller's own estate*
+rather than a claim about identity — so it is not an authorization question. It
+is a **spend** question: validating the pair against the estate's configured
+models means §68's catalogue and its own slice. Recorded, not done.
+
+### 89.4 A note on the model
+
+`Assistant` has no global tenant scope while `Approval`, `Memory`, `Transcript`
+and `WorkflowRun` all do. That asymmetry is why these two routes leaked and the
+others do not. Adding the scope to `Assistant` is the structural fix, but it
+would change every query in the app — including the ones that deliberately cross
+estates (`TraceRuns::titles()` uses `withoutGlobalScopes()`). That is a larger
+decision than closing two routes, and it is not taken here.
+
+### 89.5 Gates
+
+| Run | Result |
+|---|---|
+| `SseStreamTest` | **8 tests** — the console transport still frames; an unknown id and a foreign-estate assistant both 404; a body `assistant` blob cannot override the assistant's provider; an assistant-less turn is still accepted |
+| `McpAppsTest` (+ `AdminMcpAppsTest`) | **34 tests / 120 assertions** — a foreign estate's assistant is neither readable nor writable |
+| phpcs (`phpcs-laravel.xml.dist`, 4 files) | **0 errors** |
+| Full app suite | **1436 tests / 18,374 assertions, 0 failures** (CI `App suite (SQLite)`) — +5 tests / +12 assertions over §88's 1431 / 18,362, which is the four new stream tests and the one MCP-apps test |
+| CI `Console E2E (Laravel / SQLite)` | **pass** — the console's own transport runs against the server-side resolution, which is the check that matters for this change |
+
+The chat tests now build a real assistant through the API instead of posting an
+`assistant` blob — the old fixture was the hole, so it could not survive the fix.
+
+### 89.6 Still open
+
+1. **`options.provider` / `options.model`** are unvalidated (§89.3).
+2. **`Assistant` has no tenant scope** (§89.4); each call site checks for itself.
+3. **Any other route that binds an assistant by id** should be audited the same
+   way. The two here were found by reading every `Assistant` lookup in
+   `app/Http`, which is a manual sweep, not a guard.

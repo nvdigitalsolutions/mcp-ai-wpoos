@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Assistant;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -250,6 +251,29 @@ final class McpAppsTest extends TestCase
     public function test_an_unknown_assistant_is_a_404(): void
     {
         $this->getJson('/api/v1/mcp-apps/999')->assertNotFound();
+    }
+
+    /**
+     * Route-model binding resolved any id: `Assistant` has no global tenant
+     * scope, so without this check an estate administrator could read — and
+     * overwrite — another estate's assistant configuration.
+     */
+    public function test_a_foreign_estate_assistant_is_not_readable_or_writable(): void
+    {
+        Tenant::query()->create(array(
+            'id' => 'estate-b',
+            'name' => 'Estate B',
+            'slug' => 'estate-b',
+        ));
+
+        Sanctum::actingAs(User::factory()->admin()->inEstate('estate-b', 'owner')->create());
+        $foreignId = $this->assistant('Estate B assistant');
+
+        // A caller whose request resolves to the default estate.
+        Sanctum::actingAs(User::factory()->admin()->create());
+
+        $this->getJson("/api/v1/mcp-apps/{$foreignId}")->assertNotFound();
+        $this->putJson("/api/v1/mcp-apps/{$foreignId}", array('apps' => array()))->assertNotFound();
     }
 
     public function test_the_endpoint_is_reported_available(): void
