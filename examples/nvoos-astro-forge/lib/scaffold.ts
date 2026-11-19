@@ -1516,6 +1516,17 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			entry.push( `bg: ${ tsString( bg ) }` );
 		}
 	}
+	// The band's MARK STRIP (analyzer-measured logo wall — see
+	// `ForgeSection.logos`). Emitted for every theme: a logo wall is as often a
+	// transparent band as a light one.
+	if ( section.logos && section.logos.length > 0 ) {
+		entry.push( `logos: ${ JSON.stringify( section.logos ) }` );
+	}
+	// The band's PANEL surface (`ForgeSection.panel`) — a literal colour + its
+	// legible ink, so the item group renders on the source's slab.
+	if ( section.panel ) {
+		entry.push( `panel: { bg: ${ tsString( section.panel.bg ) }, ink: ${ tsString( section.panel.ink ) } }` );
+	}
 	// The band's padding: an explicit profile fact wins; otherwise the MEASURED
 	// source padding (114 §3.6) — see `measuredBandPadding`.
 	const padding = section.padding ?? measuredBandPadding( section, profile.geometry );
@@ -1845,6 +1856,12 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			if ( column.hiddenDesktop ) {
 				parts.push( 'hiddenDesktop: true' );
 			}
+			if ( column.bgColor ) {
+				parts.push( `bgColor: ${ tsString( column.bgColor ) }` );
+			}
+			if ( column.bgImage ) {
+				parts.push( `bgImage: ${ tsString( column.bgImage ) }` );
+			}
 			return `{ ${ parts.join( ', ' ) } }`;
 		} );
 		entry.push( `columns: [${ columns.join( ', ' ) }]` );
@@ -2040,6 +2057,14 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbgImage?: string;',
 		'\t/** The overlay tint over the hero photo. */',
 		'\toverlay?: string;',
+		'\t/** The band\u2019s MARK STRIP \u2014 logos the source publishes as carousel',
+		'\t * `background-image` slides, which the classifier (reading `<img>` only)',
+		'\t * cannot see. Rendered as a `.ds-logos` row inside the band. */',
+		'\tlogos?: Array<{ src: string; alt?: string }>;',
+		'\t/** The band\u2019s PANEL surface \u2014 the source sets its content on ONE',
+		'\t * coloured slab (see `ForgeSection.panel`). `ink` is the legible foreground',
+		'\t * on that slab. */',
+		'\tpanel?: { bg: string; ink: string };',
 		'\t/** The source band padding (the declared padding fact). */',
 		'\tpadding?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\t/** The boxed container width (the source constrains its content —',
@@ -2134,6 +2159,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t\thiddenMobile?: boolean;',
 		'\t\thiddenTablet?: boolean;',
 		'\t\thiddenDesktop?: boolean;',
+		'\t\t/** The column\u2019s own painted SURFACE (see ForgeSectionColumn) \u2014 a',
+		'\t\t * builder panel. Measured, never guessed: the vendor stylesheet never',
+		'\t\t * ships and the sanitiser drops the inline style. */',
+		'\t\tbgColor?: string;',
+		'\t\tbgImage?: string;',
 		'\t}>;',
 		'\t/** The content rhythm (125 §1) — \'split\' = a copy column beside a',
 		'\t * media collage column (the source\'s two-column hero bands). */',

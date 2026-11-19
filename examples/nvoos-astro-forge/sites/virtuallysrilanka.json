@@ -222,9 +222,14 @@
 						"width": 50
 					},
 					{
-						"width": 50
+						"width": 50,
+						"bgColor": "#DD3333"
 					}
-				]
+				],
+				"panel": {
+					"bg": "#DD3333",
+					"ink": "#ffffff"
+				}
 			},
 			{
 				"id": "bfaba9f",
@@ -240,10 +245,12 @@
 				"marginTop": "100px",
 				"columns": [
 					{
-						"width": 33
+						"width": 33,
+						"bgColor": "#DD3333"
 					},
 					{
-						"width": 33
+						"width": 33,
+						"bgImage": "https://virtuallysrilanka.com/wp-content/uploads/2018/11/phone-2.jpg"
 					},
 					{
 						"width": 33
@@ -257,7 +264,30 @@
 				"marginTop": "150px",
 				"marginBottom": "150px",
 				"measure": "1140px",
-				"paddingX": "10px"
+				"paddingX": "10px",
+				"logos": [
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/6.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/11.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/1.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/10.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/9.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/2.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/4.png"
+					}
+				]
 			},
 			{
 				"id": "ccdbf50",
@@ -445,7 +475,9 @@
 			],
 			"mobileNav": {
 				"overlay": false
-			}
+			},
+			"headerTransparent": true,
+			"headerInk": "rgb(255, 255, 255)"
 		},
 		"behavior": {
 			"headerSticky": false,
@@ -3173,7 +3205,12 @@
 		}
 	},
 	"stickyHeader": {
-		"sticky": false
+		"sticky": false,
+		"position": "absolute",
+		"restInk": "rgb(255, 255, 255)",
+		"restHeight": 80,
+		"bgChanged": false,
+		"heightChanged": false
 	},
 	"pageBackground": "rgb(247, 250, 252)",
 	"text": {

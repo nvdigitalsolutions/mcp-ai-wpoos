@@ -294,6 +294,11 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	if ( theme.type?.body?.size || bodyFallback ) {
 		parts.push( `--ds-body-size:${ theme.type?.body?.size ?? bodyFallback }` );
 	}
+	// The band's PANEL surface (a source slab the content sits on) — the item
+	// group paints it; the CSS reads the vars so no inline background is needed.
+	if ( theme.panel ) {
+		parts.push( `--ds-panel-bg:${ theme.panel.bg }`, `--ds-panel-ink:${ theme.panel.ink }` );
+	}
 	// The band’s own DISPLAY face. A source can put a script accent beside a
 	// sans heading in the same band (monicarajiv: Karma h1 + Dancing Script
 	// `alt-font` h3), so the family rides the band’s title and the per-level
@@ -1104,7 +1109,7 @@ const bandParallaxCss = sections
 			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
-				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (
@@ -1127,6 +1132,21 @@ const bandParallaxCss = sections
 							{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
 							{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
 						</>
+					)}
+					{/* The band's MARK STRIP. A builder carousel publishes each logo as a
+					 * `background-image` DIV, so no classifier (<img> only, and on
+					 * sanitised HTML) can see it — the band rendered as its heading alone.
+					 * Analyzer-measured, so it renders even though the classifier found
+					 * no media; the band's own copy still renders above it, so nothing
+					 * the source said is dropped. */}
+					{theme?.logos && theme.logos.length > 0 && (
+						<section class="ds-section ds-body">
+							<div class="ds-logos" aria-label="Featured brands">
+								{theme.logos.map((mark) => (
+									<img src={mark.src} alt={mark.alt ?? ''} width="240" height="120" loading="lazy" />
+								))}
+							</div>
+						</section>
 					)}
 				</div>
 			);

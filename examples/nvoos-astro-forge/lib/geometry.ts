@@ -3031,8 +3031,16 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 				[ rest, pinned, stripInfo ]
 					.filter( ( value ): value is NonNullable< typeof value > => Boolean( value ) )
 					.some( ( value ) => value.position === 'fixed' || value.position === 'sticky' );
+			// OUT OF FLOW at rest (`absolute` / `fixed`) is a different fact from
+			// PINNING on scroll. An `absolute` header sits at y=0 with the first band
+			// flowing beneath it — the source's overlay — and it never pins. The early
+			// return below used to discard every resting fact for it (virtuallysrilanka:
+			// `position:absolute` over a red hero), so the rebuild kept the header in
+			// the flow: the band started one header-height lower and a white+grey SVG
+			// wordmark sat on the near-white page background instead of the red band.
+			const floats = rest.position === 'absolute' || rest.position === 'fixed';
 			const sticky = pinsByStyle || classGained;
-			if ( ! sticky ) {
+			if ( ! sticky && ! floats ) {
 				return { sticky: false };
 			}
 			const clean = ( value: string | undefined ) => ( value === undefined || /^rgba\(0, 0, 0, 0\)$/.test( value ) ? undefined : value );
@@ -3049,10 +3057,10 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 					? pinned.height
 					: stripFill?.height;
 			return {
-				sticky: true,
-				// `fixed` — not `sticky` — is the source's own overlay: the header
-				// floats OVER the first band, so a sticky rebuild pushes that band down
-				// and leaves white chrome on the page background.
+				sticky,
+				// `fixed` / `absolute` is the source's own overlay: the header floats
+				// OVER the first band, so a rebuild that keeps it in the flow pushes
+				// that band down and leaves chrome sitting on the page background.
 				position: rest.position,
 				...( restBg ? { restBg } : {} ),
 				...( clean( restInk ) ? { restInk: clean( restInk ) } : {} ),
@@ -3061,12 +3069,14 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 				// omitting it left a 47px header where the source has 75px (and the
 				// opened mobile panel then sat 28px too high, 2026-11-12).
 				restHeight: rest.height,
-				...( bgChanged && pinnedBg ? { pinnedBg } : {} ),
-				...( bgChanged && stripInk && stripInk !== restInk ? { pinnedInk: stripInk } : {} ),
-				...( pinnedHeight ? { pinnedHeight } : {} ),
-				...( shadow ? { shadow } : {} ),
-				bgChanged,
-				heightChanged: headerShrank || Boolean( stripInfo && Math.abs( stripInfo.height - rest.height ) >= 2 ),
+				// Only a header that actually PINS has a pinned state; an overlay-only
+				// header that scrolled out of view is not a transition.
+				...( sticky && bgChanged && pinnedBg ? { pinnedBg } : {} ),
+				...( sticky && bgChanged && stripInk && stripInk !== restInk ? { pinnedInk: stripInk } : {} ),
+				...( sticky && pinnedHeight ? { pinnedHeight } : {} ),
+				...( sticky && shadow ? { shadow } : {} ),
+				bgChanged: sticky && bgChanged,
+				heightChanged: sticky && ( headerShrank || Boolean( stripInfo && Math.abs( stripInfo.height - rest.height ) >= 2 ) ),
 			};
 		} );
 	} finally {

@@ -28,7 +28,7 @@ import { extractBandsFromHtml } from './bands.ts';
 import { extractElementCss } from './element-css.ts';
 import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
-import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeMark, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
 
@@ -1242,6 +1242,172 @@ const BG_COLOR_RE = /background-color\s*:\s*([^;!]+)(\s*!\s*important)?/i;
 const PADDING_RE = /padding\s*:\s*([^;!]+)/i;
 const SECTION_ID_RE = /elementor-element-([0-9a-f]{4,})/;
 
+/** A band needs at least this many marks before it reads as a logo wall. */
+const MARK_STRIP_MIN = 3;
+
+/** Never carry more marks than a wall can render. */
+const MARK_STRIP_MAX = 24;
+
+/** A `url(…)` capture → an absolute http(s) src, or undefined. */
+function markSrc( value: string | undefined ): string | undefined {
+	if ( ! value ) {
+		return undefined;
+	}
+	const url = value.trim().replace( /^['"]|['"]$/g, '' );
+	return /^https?:\/\//i.test( url ) ? url : undefined;
+}
+
+/**
+ * The band's MARK STRIP — a logo wall / partner row (see `ForgeSection.logos`).
+ *
+ * Collects both `<img>` marks and `background-image` slides. The second form is
+ * the one that matters: a builder's image carousel publishes each logo as a
+ * `<div style="background-image:url(…)">`, so a classifier reading `<img>` sees
+ * nothing, and the inline `style` that carries the URL never survives
+ * sanitisation — the fact has to be recorded here, against the RAW source HTML.
+ *
+ * A band that carries prose is not a mark strip (a services band's copy panel
+ * sits beside a photo column), so prose disqualifies the whole band. Fewer than
+ * three marks is a lone illustration, not a wall.
+ */
+function markStripOf( section: HNodeLike ): ForgeMark[] | undefined {
+	const marks: ForgeMark[] = [];
+	const seen = new Set< string >();
+	let prose = false;
+
+	const add = ( src: string | undefined, alt?: string ): void => {
+		const url = markSrc( src );
+		if ( ! url || seen.has( url ) || marks.length >= MARK_STRIP_MAX ) {
+			return;
+		}
+		seen.add( url );
+		marks.push( alt ? { src: url, alt } : { src: url } );
+	};
+
+	const visit = ( node: HNodeLike ): void => {
+		for ( const child of childNodes( node ) ) {
+			if ( child.type !== 'tag' ) {
+				continue;
+			}
+			if ( child.name === 'p' && nodeText( child ).trim() ) {
+				prose = true;
+				return;
+			}
+			if ( child.name === 'img' ) {
+				add( child.attribs?.src ?? child.attribs?.[ 'data-src' ], child.attribs?.alt );
+			}
+			const style = child.attribs?.style;
+			if ( style ) {
+				for ( const match of style.matchAll( /background-image\s*:\s*url\(([^)]+)\)/gi ) ) {
+					add( match[ 1 ] );
+				}
+			}
+			visit( child );
+		}
+	};
+	visit( section );
+
+	return prose || marks.length < MARK_STRIP_MIN ? undefined : marks;
+}
+
+/**
+ * Resolve `var(--token[, fallback])` against the source's own custom-property
+ * declarations. Elementor paints a coloured panel with
+ * `background-color: var(--e-global-color-accent)`, which means nothing in the
+ * rebuild (the vendor stylesheet never ships) — the literal has to be baked.
+ * One level is enough for a builder's global colours; anything still unresolved
+ * is left verbatim so the caller can reject it.
+ */
+function resolveCssVars( value: string, cssText: string ): string {
+	if ( ! /var\(/i.test( value ) ) {
+		return value;
+	}
+	return value.replace(
+		/var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,\s*([^()]+?))?\s*\)/g,
+		( whole: string, name: string, fallback?: string ) => {
+			const escaped = name.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+			const declared = new RegExp( `${ escaped }\\s*:\\s*([^;}]+)`, 'i' ).exec( cssText );
+			const resolved = declared?.[ 1 ]?.trim();
+			if ( resolved && ! /var\(/i.test( resolved ) ) {
+				return resolved;
+			}
+			return fallback ? fallback.trim() : whole;
+		}
+	);
+}
+
+/** The legible foreground for a painted surface (white or near-black). */
+function inkForSurface( bg: string ): string {
+	const white = contrast( '#ffffff', bg );
+	const dark = contrast( '#111111', bg );
+	return ( white ?? 0 ) >= ( dark ?? 0 ) ? '#ffffff' : '#111111';
+}
+
+/**
+ * A column's own painted SURFACE (see `ForgeSectionColumn.bgColor`).
+ *
+ * Two places carry it, and both must be read:
+ *
+ *  - the COLUMN itself (an inline `style`, or a rule scoped to its own
+ *    `elementor-element-<id>`);
+ *  - the WRAPPER one level in — Elementor paints
+ *    `.elementor-widget-wrap.elementor-element-populated` and scopes the rule to
+ *    THAT element's id (virtuallysrilanka's red and black panels live here, not
+ *    on the column).
+ *
+ * A gradient is a surface too, but it is emitted as the flat `bgColor` the
+ * source's own rule declares beside it; the classifier has no gradient channel
+ * per column. Undefined when the column paints nothing.
+ */
+function columnSurfaceOf(
+	column: HNodeLike,
+	rules: Array<{ selector: string; body: string }>
+): { bgColor?: string; bgImage?: string } | undefined {
+	const read = ( node: HNodeLike ): { bgColor?: string; bgImage?: string } | undefined => {
+		const classes = sectionClasses( node );
+		const id = classes.map( ( c ) => SECTION_ID_RE.exec( c ) ).find( Boolean )?.[ 1 ];
+		let color = inlineStyle( node, 'background-color', BG_COLOR_RE );
+		let image = inlineStyle( node, 'background-image', BG_IMAGE_RE );
+		if ( id && ( ! color || ! image ) ) {
+			for ( const rule of rules ) {
+				if ( ! rule.selector.includes( `elementor-element-${ id }` ) ) {
+					continue;
+				}
+				if ( ! image ) {
+					const found = rule.body.match( BG_IMAGE_RE );
+					if ( found ) {
+						image = found[ 1 ].trim();
+					}
+				}
+				if ( ! color ) {
+					const found = rule.body.match( BG_COLOR_RE );
+					if ( found ) {
+						color = found[ 1 ].trim();
+					}
+				}
+			}
+		}
+		const surface: { bgColor?: string; bgImage?: string } = {};
+		const trimmed = color?.trim();
+		if ( trimmed && ! /^(?:transparent|rgba\(\s*0,\s*0,\s*0,\s*0\s*\)|none)$/i.test( trimmed ) ) {
+			surface.bgColor = trimmed;
+		}
+		if ( image ) {
+			surface.bgImage = image;
+		}
+		return Object.keys( surface ).length > 0 ? surface : undefined;
+	};
+
+	const own = read( column );
+	if ( own ) {
+		return own;
+	}
+	const populated =
+		collectNodes( column, ( n ) => n.type === 'tag' && sectionClasses( n ).includes( 'elementor-element-populated' ) )[ 0 ] ??
+		collectNodes( column, ( n ) => n.type === 'tag' && sectionClasses( n ).includes( 'elementor-widget-wrap' ) )[ 0 ];
+	return populated ? read( populated ) : undefined;
+}
+
 /** One top-level column's responsive facts (124 §6) — Elementor's per-device
  * width/order/visibility classes. Undefined when the column carries none. */
 function columnFactsOf( node: HNodeLike ): ForgeSectionColumn | undefined {
@@ -1581,13 +1747,58 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-container' )
 		);
 		if ( container ) {
+			// Parsed once per band for the per-column surface read (a column panel
+			// is measured against the same stylesheet the band facts came from).
+			const columnRules = topLevelRules( cssText );
 			const columns = childNodes( container )
 				.filter( ( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-column' ) )
-				.map( ( column ) => columnFactsOf( column ) )
-				.filter( ( column ) => column !== undefined );
+				.map( ( column ) => {
+					const facts = columnFactsOf( column ) ?? {};
+					const surface = columnSurfaceOf( column, columnRules );
+					if ( ! surface ) {
+						return facts;
+					}
+					// Bake the literal: `var(--e-global-color-accent)` names a stylesheet
+					// the rebuild never ships. An UNRESOLVABLE token is not a fact — drop it
+					// rather than emit CSS the rebuild cannot evaluate.
+					if ( surface.bgColor ) {
+						const resolved = resolveCssVars( surface.bgColor, cssText );
+						if ( /^(?:#[0-9a-f]{3,8}|rgba?|hsla?)/i.test( resolved ) ) {
+							surface.bgColor = resolved;
+						} else {
+							delete surface.bgColor;
+						}
+					}
+					return Object.keys( surface ).length > 0 ? { ...facts, ...surface } : facts;
+				} )
+				// A column with no width fact and no surface is not a fact at all.
+				.filter( ( column ) => Object.keys( column ).length > 0 );
 			if ( columns.length >= 2 || columns.some( ( column ) => column.widthTablet || column.widthMobile || column.reverseMobile || column.reverseTablet || column.hiddenMobile || column.hiddenTablet || column.hiddenDesktop ) ) {
 				fact.columns = columns;
+				// Exactly ONE coloured column and no photo column = the source sets the
+				// band's content on a single slab (virtuallysrilanka's "How it Works":
+				// four icon items on a #dd3333 panel). Baked to a literal — the source's
+				// own `var(--e-global-color-accent)` names a stylesheet the rebuild
+				// never ships. Two or more DIFFERENT surfaces are per-column panels,
+				// which the flat rebuilt markup cannot address; left to the geometry
+				// pass rather than painted wrongly.
+				const panelColumns = columns.filter( ( column ) => column.bgColor );
+				const photoColumns = columns.filter( ( column ) => column.bgImage );
+				if ( panelColumns.length === 1 && photoColumns.length === 0 ) {
+					const bg = resolveCssVars( panelColumns[ 0 ].bgColor as string, cssText );
+					if ( /^(?:#[0-9a-f]{3,8}|rgba?|hsla?)/i.test( bg ) ) {
+						fact.panel = { bg, ink: inkForSurface( bg ) };
+					}
+				}
 			}
+		}
+		// The band's MARK STRIP (a logo wall / partner row). A builder
+		// carousel publishes each logo as a `background-image` DIV, so the
+		// build-time classifier — which reads `<img>` only, on HTML the
+		// sanitizer has already stripped `style` from — saw an empty band.
+		const logos = markStripOf( section );
+		if ( logos ) {
+			fact.logos = logos;
 		}
 		// The boxed container's measure + column gap (124 §3): boxed sections
 		// constrain their CONTENT (the band bg stays full-width) — the rebuilt
@@ -1887,7 +2098,7 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		if ( fact.bgImage ) {
 			delete fact.bgColor;
 		}
-		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog ) {
+		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog || fact.logos || fact.panel ) {
 			facts.push( fact );
 		}
 	}
@@ -2183,13 +2394,24 @@ function paragraphNodesOf( node: HNodeLike ): HNodeLike[] {
  *     nav links paint their own colour; `restInk` is that container colour, and
  *     `chrome.navInk` (unchanged) stays the link colour.
  *
+ * PINNING is not the only reason to reconcile: a header that is merely OUT OF
+ * FLOW at rest (`position: absolute` / `fixed`) also floats over the first band.
+ * For those, only the RESTING facts are taken — the pinned ones describe a
+ * transition that never happens.
+ *
  * Pure, so the reconcile is testable without a browser.
  */
 export function applyMeasuredHeader(
 	chrome: ForgeChrome | undefined,
 	sticky: ForgeStickyHeader | undefined
 ): void {
-	if ( ! chrome || ! sticky?.sticky ) {
+	if ( ! chrome || ! sticky ) {
+		return;
+	}
+	const floats = sticky.position === 'absolute' || sticky.position === 'fixed';
+	// A header that neither pins nor floats is outside this contract: its
+	// resting background is the harvest's, not the measurement's.
+	if ( ! sticky.sticky && ! floats ) {
 		return;
 	}
 	if ( sticky.restBg ) {
@@ -2197,7 +2419,10 @@ export function applyMeasuredHeader(
 		delete chrome.headerTransparent;
 	} else {
 		// A transparent resting header paints nothing — the strip belongs to the
-		// band behind it.
+		// band behind it. This now covers the OVERLAY case too: virtuallysrilanka's
+		// header is `position:absolute` over a red hero, so the rebuild must lift
+		// the header out of the flow (`.site-header--overlay`) instead of leaving
+		// white-on-white chrome on the page background.
 		delete chrome.headerBg;
 		chrome.headerTransparent = true;
 	}
