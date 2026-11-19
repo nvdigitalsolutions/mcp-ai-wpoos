@@ -50,6 +50,14 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Skill_Manager_Admin_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Skill_Manager_Admin_Page (Pro) is not available in this environment.' );
 		}
+
+		// The page registers its actions from static init(), which nothing runs
+		// in the CLI runner; unbound dispatches return an empty body that the
+		// rejection assertions accept.
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_skill_manager_save' )
+			&& is_callable( array( 'WP_MCP_AI_Skill_Manager_Admin_Page', 'init' ) ) ) {
+			WP_MCP_AI_Skill_Manager_Admin_Page::init();
+		}
 	}
 
 	// ---

@@ -35,6 +35,45 @@ if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/**
+	 * Bind the runtime-control handlers for the duration of the test.
+	 *
+	 * The run-timeline page and Pro orchestration dashboard register from their
+	 * constructors and the queue manager from get_instance(), all triggered on
+	 * an admin request in production. Unbound, every dispatch ends with an
+	 * empty body that the rejection assertions accept.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_run_timeline_list_runs' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Admin_Run_Timeline' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-run-timeline.php';
+			}
+			if ( class_exists( 'WP_MCP_AI_Admin_Run_Timeline' ) ) {
+				new WP_MCP_AI_Admin_Run_Timeline();
+			}
+		}
+
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_queue_status' )
+			&& class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
+			// The queue manager only binds its AJAX action when RabbitMQ is
+			// enabled, and it is a singleton: init_hooks() runs once, in the
+			// constructor, so the per-test hook restore has to be repaired by
+			// re-binding the existing instance's callback.
+			add_filter( 'wp_mcp_ai_rabbitmq_enabled', '__return_true' );
+			$queue = WP_MCP_AI_Queue_Manager::get_instance();
+			if ( false === has_action( 'wp_ajax_wp_mcp_ai_queue_status' ) && method_exists( $queue, 'ajax_queue_status' ) ) {
+				add_action( 'wp_ajax_wp_mcp_ai_queue_status', array( $queue, 'ajax_queue_status' ) );
+			}
+		}
+
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_control_session' )
+			&& class_exists( 'WP_MCP_AI_Orchestration_Dashboard' ) ) {
+			new WP_MCP_AI_Orchestration_Dashboard();
+		}
+	}
+
+	/**
 	 * Nonce shared by queue_status, rabbitmq_health, rabbitmq_setup.
 	 */
 	const NONCE_ADMIN = 'wp_mcp_ai_admin';
