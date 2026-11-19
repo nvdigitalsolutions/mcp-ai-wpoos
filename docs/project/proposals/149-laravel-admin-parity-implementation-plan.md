@@ -8701,6 +8701,9 @@ unavailable it would advertise nothing. The blocker has moved from
 *classification* to *evidence* — per-tool tests against a faked client and a
 documented token path. That is a different job, and a smaller one.
 
+*(That job is §91: the evidence exists, ten tools flipped to `ready` and one to
+`pure`, so the browser is now unblocked rather than blocked.)*
+
 ### 85.2 `measurement` — cannot be unblocked by a page
 
 The WordPress page lists registered metrics (privacy tier, counter-metric
@@ -9181,3 +9184,68 @@ None of those is a bug fix; each is a product decision. Recorded, not done.
 
 1. **Spend control** waits on the three decisions in §90.3.
 2. **`options` is otherwise unvalidated** — by design, and now documented.
+
+## 91. The dataset tools' evidence — ten wrappers and one list (2026-11-19)
+
+§85.1 marked eleven HuggingFace dataset tools `unavailable` and said why:
+they call `datasets-server.huggingface.co`, a gated dataset needs a token, and
+nothing had probed them. The blocker was **evidence**, not a renderer, so this
+section is the evidence.
+
+### 91.1 What the evidence is
+
+`HuggingFaceDatasetToolsTest` constructs each tool with a recording
+`HttpClientInterface` and pins four things per tool:
+
+| Pinned | Why |
+|---|---|
+| the endpoint (`/rows`, `/filter`, `/splits`, …) | the manifest's claim is that these are thin wrappers; a wrong path would still "work" against a fake |
+| the `dataset` argument in the query | a tool that dropped it would query the wrong thing and still succeed |
+| the `Authorization: Bearer` header | the token path is the reason they were withheld |
+| a 200 is not an error envelope | the success shape is what callers branch on |
+
+Two behaviours beyond the happy path: an **unset** token omits the header rather
+than sending an empty bearer, and a **500** becomes a reported error rather than
+an empty collection that reads as "this dataset has no rows".
+
+### 91.2 One of the eleven was misclassified, not unproven
+
+`huggingface_recommended_datasets` returns a **static curated list** and makes no
+request at all. Grouping it with the ten HTTP tools in §85.1 was a
+automation artefact of the blanket sweep. It is now `pure` — "no I/O by nature" —
+and the test pins that it calls nothing.
+
+The other ten are `ready`, with `probe: call` and `readOnlyHint`/`openWorldHint`
+set, so the registry serves them.
+
+### 91.3 A process finding worth recording
+
+The evidence was first written under `lib/core/tests/Unit/Tool/`, where the tools
+live — and then moved, because **no CI workflow runs `lib/core/tests`**. The
+laravel-app workflow triggers on `lib/core/**` but executes the **app** suite,
+whose `phpunit.xml` includes only `docker/laravel/app-skeleton/tests`. A test in
+`lib/core/tests` would have been evidence in name only: green locally, invisible
+to every PR.
+
+So the test lives in the app suite, where the gate actually is. The gap itself is
+worth its own ticket — `lib/core`'s unit suite is currently decorative.
+
+### 91.4 Gates
+
+| Run | Result |
+|---|---|
+| `HuggingFaceDatasetToolsTest` | **4 tests** — ten endpoints, ten datasets, ten bearer headers; the no-token case; the 500 path; the static list makes no request |
+| `ToolReadinessClassificationTest` | **1 test** — all eleven are served; the registry is populated so "served" is not vacuous |
+| `HuggingFaceDatasetTools`, `ToolReadinessClassification`, `ToolRegistry`, `Blueprint` | **28 tests / 188 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist` 2 files, `phpcs.xml.dist` 1 file) | **0 errors** |
+
+### 91.5 Still open
+
+1. **The dataset browser** is now unblocked rather than blocked: §85.1's
+   argument was that a browser needs a servable catalogue to browse. The page
+   itself is still unbuilt, and it is a UI slice rather than an evidence one.
+2. **No live-API test.** The evidence is against a recording fake, which is what
+   the section asked for. A single optional integration probe against
+   `datasets-server.huggingface.co` would catch an upstream contract change that
+   a fake cannot.
+3. **`lib/core/tests` runs nowhere** (§91.3).
