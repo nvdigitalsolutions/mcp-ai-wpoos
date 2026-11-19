@@ -21,7 +21,12 @@ use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 
 class TokenUsage implements TokenUsageInterface {
 
-	private const TABLE = 'nvoos_token_usage';
+	/**
+	 * The spend record. Public because readers outside this package aggregate it —
+	 * the metrics catalogue (149 §99) and the budget store both name it, and a
+	 * second literal of a table name is a literal that drifts.
+	 */
+	public const TABLE = 'nvoos_token_usage';
 
 	/**
 	 * {@inheritDoc}
