@@ -37,6 +37,7 @@ use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
+use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
@@ -263,6 +264,10 @@ class NvoosServiceProvider extends ServiceProvider {
 
 			if ( $app->bound( ModelLimitCatalogueInterface::class ) ) {
 				$budget->setCatalogue( $app->make( ModelLimitCatalogueInterface::class ) );
+			}
+
+			if ( $app->bound( TiktokenServiceInterface::class ) ) {
+				$budget->setTokenizer( $app->make( TiktokenServiceInterface::class ) );
 			}
 
 			return $budget;

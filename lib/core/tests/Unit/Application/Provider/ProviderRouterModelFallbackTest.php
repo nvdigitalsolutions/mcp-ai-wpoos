@@ -22,6 +22,7 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
+use Nvoos\Core\Domain\Contract\RoutingMetricsInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Entity\HttpResponse;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
@@ -261,6 +262,98 @@ final class ProviderRouterModelFallbackTest extends TestCase
 
         $this->assertSame('gemini-answer', $result['ok']);
         $this->assertSame('gemini-3.8-flash', $this->clients['gemini']->calls[0]['options']['model']);
+    }
+
+    public function test_a_successful_fallback_is_counted(): void
+    {
+        $this->clients['openai']->responses = array(
+            $this->errorResult(),
+            array( 'ok' => 'fallback-answer' ),
+        );
+
+        $metrics = $this->metrics();
+        $this->router->setModelCatalogue($this->catalogue(array( 'gpt-5' => 'gpt-5-mini' )));
+        $this->router->setMetrics($metrics);
+
+        $this->router->chat(
+            array( array( 'role' => 'user', 'content' => 'hi' ) ),
+            array( 'model' => 'gpt-5' )
+        );
+
+        $this->assertSame(
+            array(
+                array( 'provider' => 'openai', 'from' => 'gpt-5', 'to' => 'gpt-5-mini', 'succeeded' => true ),
+            ),
+            $metrics->calls
+        );
+    }
+
+    public function test_a_failed_fallback_is_counted_and_the_chain_still_runs(): void
+    {
+        $this->clients['openai']->responses = array(
+            $this->errorResult(),
+            $this->errorResult(),
+        );
+        $this->clients['gemini']->responses = array( array( 'ok' => 'gemini-answer' ) );
+
+        $metrics = $this->metrics();
+        $this->router->setModelCatalogue($this->catalogue(array( 'gpt-5' => 'gpt-5-mini' )));
+        $this->router->setMetrics($metrics);
+        $this->router->setFallbackChain(array( 'gemini' ));
+
+        $result = $this->router->chat(
+            array( array( 'role' => 'user', 'content' => 'hi' ) ),
+            array( 'model' => 'gpt-5' )
+        );
+
+        $this->assertSame('gemini-answer', $result['ok']);
+        $this->assertCount(1, $metrics->calls);
+        $this->assertFalse($metrics->calls[0]['succeeded']);
+    }
+
+    public function test_no_fallback_means_no_record(): void
+    {
+        $this->clients['openai']->responses = array( $this->errorResult() );
+
+        $metrics = $this->metrics();
+        $this->router->setModelCatalogue($this->catalogue(array()));
+        $this->router->setMetrics($metrics);
+
+        $this->router->chat(
+            array( array( 'role' => 'user', 'content' => 'hi' ) ),
+            array( 'model' => 'gpt-5' )
+        );
+
+        $this->assertSame(array(), $metrics->calls);
+    }
+
+    /**
+     * Build a metrics sink that records every call.
+     */
+    private function metrics(): RoutingMetricsInterface
+    {
+        return new class () implements RoutingMetricsInterface {
+            /**
+             * Recorded calls.
+             *
+             * @var list<array{provider: string, from: string, to: string, succeeded: bool}>
+             */
+            public array $calls = array();
+
+            public function recordModelFallback(
+                string $provider,
+                string $fromModel,
+                string $toModel,
+                bool $succeeded
+            ): void {
+                $this->calls[] = array(
+                    'provider' => $provider,
+                    'from' => $fromModel,
+                    'to' => $toModel,
+                    'succeeded' => $succeeded,
+                );
+            }
+        };
     }
 
     /**

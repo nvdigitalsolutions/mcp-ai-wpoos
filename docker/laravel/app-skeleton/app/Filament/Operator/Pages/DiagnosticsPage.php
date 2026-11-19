@@ -5,6 +5,7 @@ namespace App\Filament\Operator\Pages;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Diagnostics\ProbeRunner;
+use App\Support\Diagnostics\RoutingMetricStore;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +15,7 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 use Nvoos\Laravel\Adapter\JobStatusStore;
 use Nvoos\Laravel\Adapter\TokenUsage;
 
@@ -155,6 +157,10 @@ class DiagnosticsPage extends Page
      * `configured` or `missing`, never a mask. A mask invites "where is the
      * reveal button?"; a boolean does not.
      *
+     *  - **Cost** (`cost`) — the 30-day aggregate from `TokenUsage`.
+     *  - **Routing** — fallback counts for the same window, and which tokenizer
+     *    the pre-flight check is using.
+     *
      * @return array<string, array<int, array{label: string, value: string}>>
      */
     public function overview(): array
@@ -164,6 +170,7 @@ class DiagnosticsPage extends Page
         $settings = app(SettingsStoreInterface::class);
         $entitlement = app(ProEntitlementInterface::class);
         $jobs = app(JobStatusStore::class);
+        $routing = app(RoutingMetricStore::class)->summary(30);
 
         $slugs = array_values(array_map('strval', $providers->getRegisteredSlugs()));
 
@@ -214,6 +221,7 @@ class DiagnosticsPage extends Page
                 ['label' => 'App version', 'value' => (string) config('app.version', '1.2.0')],
                 ['label' => 'Memory limit', 'value' => (string) ini_get('memory_limit')],
                 ['label' => 'Database', 'value' => $this->databaseLabel()],
+                ['label' => 'Tokenizer', 'value' => $this->tokenizerLabel()],
             ],
             'Catalogue' => [
                 ['label' => 'Providers registered', 'value' => (string) count($slugs)],
@@ -223,7 +231,69 @@ class DiagnosticsPage extends Page
             ],
             'Queue' => $queueRows,
             'Provider credentials' => $providerRows,
+            'Routing (30d)' => $this->routingRows($routing),
         ];
+    }
+
+    /**
+     * The tokenizer the pre-flight check is using.
+     *
+     * The number matters because a rejection is only as good as the estimate:
+     * chars/4 is a rough average, tiktoken is accurate.
+     */
+    private function tokenizerLabel(): string
+    {
+        $tokenizer = app(TokenBudgetManager::class)->getTokenizer();
+
+        if (null === $tokenizer) {
+            return 'not wired';
+        }
+
+        return $tokenizer->isAvailable()
+            ? 'tiktoken (accurate)'
+            : 'heuristic (chars/4)';
+    }
+
+    /**
+     * Fallback rows for the overview.
+     *
+     * "none recorded" is a real answer: it says the catalogue has never had
+     * to rescue a request in this window, not that the page failed to load.
+     *
+     * @param array<string, mixed> $summary
+     * @return list<array{label: string, value: string}>
+     */
+    private function routingRows(array $summary): array
+    {
+        $total = (int) ($summary['total'] ?? 0);
+
+        if (0 === $total) {
+            return [['label' => 'Model fallbacks', 'value' => 'none recorded']];
+        }
+
+        $rows = [
+            ['label' => 'Model fallbacks', 'value' => (string) $total],
+            ['label' => 'Succeeded', 'value' => (string) (int) ($summary['succeeded'] ?? 0)],
+            ['label' => 'Failed', 'value' => (string) (int) ($summary['failed'] ?? 0)],
+        ];
+
+        $last = $summary['last_at'] ?? null;
+        if (is_string($last) && '' !== $last) {
+            $rows[] = ['label' => 'Last fallback', 'value' => $last];
+        }
+
+        foreach ((array) ($summary['pairs'] ?? []) as $pair) {
+            $label = sprintf('%s → %s', (string) ($pair['from'] ?? ''), (string) ($pair['to'] ?? ''));
+            $value = sprintf('%d on %s', (int) ($pair['total'] ?? 0), (string) ($pair['provider'] ?? ''));
+
+            if ((int) ($pair['failed'] ?? 0) > 0) {
+                $value .= sprintf(', %d failed', (int) $pair['failed']);
+            }
+
+            $rows[] = ['label' => $label, 'value' => $value];
+        }
+
+        return $rows;
     }
 
     /**
