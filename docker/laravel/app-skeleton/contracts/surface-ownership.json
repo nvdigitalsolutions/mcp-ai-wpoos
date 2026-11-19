@@ -255,7 +255,7 @@
       "writer": "none",
       "plan_gate": null,
       "projection": "Aggregates only. A probe returns a rendered result summary — status, one actionable sentence and label/value rows — never a raw provider payload. Credentials appear as \"configured\"/\"no credentials\"; there is no mask, no key and no URL with a query string, because the probe result type has no field for one.",
-      "files": ["app/Filament/Operator/Pages/DiagnosticsPage.php", "app/Filament/Operator/Pages/TokenUsage.php"],
+      "files": ["app/Filament/Operator/Pages/DiagnosticsPage.php", "app/Filament/Operator/Pages/TokenUsage.php", "app/Filament/Operator/Pages/TokenAnalytics.php"],
       "notes": "Shipped on `/ops` 2026-11-17 (§48) as `/ops/diagnostics`, closing the last WordPress screens this runtime did not have: Tools → Provider Test, MCP Server Diagnostic and REST Context Diagnostic, plus the free half of Test Assistant. Six probe surfaces were proposed (§7.8) with one renderer; four shipped — `provider`, `rest`, `mcp`, `assistant`. `test model`, `test profession` and `test team` are deliberately NOT built: the WordPress pages are chat UIs with a selector, and a panel copy would be a second chat surface whose only difference is which config it hydrates. The console owns chat, so those three stay unbuilt rather than faked. `writer` moved from `ops` to `none` for §31's reason: every probe re-runs on demand and nothing is persisted, so there is no write path to own. §82 added `/ops/token-usage` beside it: per-user aggregates over the same cost table, read-only, with no new console key and no new write path."
     },
     {
