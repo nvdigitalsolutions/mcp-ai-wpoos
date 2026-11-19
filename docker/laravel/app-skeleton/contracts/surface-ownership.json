@@ -1,9 +1,9 @@
 {
-  "_comment": "Proposal 149 §14 — surface ownership contract. One row per admin surface, describing who may reach it (audience), which presentations exist (ops / admin / console), which layer owns the write path, whether a plan entitlement gates it, and what a limited surface is allowed to receive. Consumed by tests/Feature/SurfaceOwnershipTest.php, which fails when a console key in console-endpoints.json has no row, when a Filament surface file is absent from the contract, or when a row breaks the closed vocabularies. Add the row first, then the route. 'state' values: full (rendered, writes allowed), subset (rendered, reduced field set / reduced actions), read-only (rendered, no writes), link-out (a link only), absent (not present on this surface), planned (not built). A surface in state subset or read-only MUST declare a 'projection' — the server-side reduction it receives.",
+  "_comment": "Proposal 149 §14 — surface ownership contract. One row per admin surface, describing who may reach it (audience), which presentations exist (ops / admin / console), which layer owns the write path, whether a plan entitlement gates it, and what a limited surface is allowed to receive. Consumed by tests/Feature/SurfaceOwnershipTest.php, which fails when a console key in console-endpoints.json has no row, when a Filament surface file is absent from the contract, or when a row breaks the closed vocabularies. Add the row first, then the route. 'state' values: full (rendered, writes allowed), subset (rendered, reduced field set / reduced actions), read-only (rendered, no writes), inert (rendered and writable, but no runtime code reads the value - the form is not yet a behaviour), link-out (a link only), absent (not present on this surface), planned (not built). A surface in state subset, read-only or inert MUST declare a 'projection' — the server-side reduction it receives.",
   "schema_version": 1,
   "vocabulary": {
     "audience": ["operator", "tenant-admin", "tenant-user", "public"],
-    "state": ["full", "subset", "read-only", "link-out", "absent", "planned"],
+    "state": ["full", "subset", "read-only", "inert", "link-out", "absent", "planned"],
     "writer": ["ops", "admin", "console", "shared", "none"],
     "plan_gate_prefixes": ["feature:", "toolkit:"]
   },
@@ -545,15 +545,15 @@
     },
     {
       "id": "identity-provider",
-      "title": "Identity provider setup",
-      "audience": "operator",
-      "ops": { "state": "planned" },
-      "admin": null,
+      "title": "Identity and authentication",
+      "audience": "tenant-admin",
+      "ops": null,
+      "admin": { "state": "inert" },
       "console": null,
-      "writer": "none",
+      "writer": "admin",
       "plan_gate": null,
-      "projection": null,
-      "notes": "Researched 2026-11-17 (§36): nothing to port. No identity-provider implementation exists on EITHER runtime — a grep for identity_provider / IdentityProvider / saml / openid / oidc across the WordPress plugin returns only an A2A agent card, which is unrelated. So this is not a parity gap but a new feature, and it stays `planned` rather than `absent` because an operator SSO surface is a plausible product decision rather than an impossible one. What it needs, in order: (1) a decision on scope (OIDC only, or SAML as well), (2) a client that maps a subject to a `User` and an estate membership, (3) provisioning rules for a subject with no membership, (4) only then a page. `writer` corrected to `none` until (2) exists."
+      "projection": "Renders on /admin/settings in the Authentication tab: all seven WordPress sub-tabs (Auth0 Configuration, GitHub Bridge, WordPress.com/Gravatar, Simple JWT Login, Guest Access, REST API Capabilities, Magic Link Sign-In) arrive as seven sections over nineteen tenant-scope keys. The state is `inert`, not `subset`: the form is complete, and the behaviour behind it is what is missing. Every key persists and no runtime code reads any of them (Proposal 156 §3.1), so a saved value currently has no effect: Auth0 bearer verification, both identity bridges, Simple JWT Login, guest tokens and magic-link sign-in are all unbuilt. Slice I2 marks the unread keys disabled-with-hint so the form stops asserting capability it does not have.",
+      "notes": "Corrected 2026-11-20 (Proposal 156). §36's 'nothing to port' was a false negative: it grepped identity_provider / IdentityProvider / saml / openid / oidc, and the WordPress surface is named auth0, so the search could not have found it. The surface exists in full — WP_MCP_AI_Auth0_Setup (admin.php?page=wp-mcp-ai-auth0-setup), JWKS plus iss/aud/scope verification in class-wp-mcp-ai-rest-authenticator.php, and the subject-to-user bridge in class-wp-mcp-ai-integration-auth0-github.php. The row was also mis-scoped: all nineteen keys are tenant scope because each is an estate's own trust configuration, so /ops is the wrong panel (§17 — it has no estate selected), hence audience tenant-admin, ops null, admin inert, writer admin. Six of the keys are API and tool policy rather than identity and are re-homed by D5; enable_simple_jwt_login and enable_wordpress_gravatar_bridge configure WordPress software this runtime does not have and are out of scope. The WordPress one-click wizard is deliberately not ported: its auto-configure handler derives auth0_domain from an unverified JWT payload (D6). Next slices: I2 marks the unread keys, I3 makes the Auth0 trio real on the estate API, I4 is magic-link, I5 is OIDC SSO with deny-by-default provisioning."
     },
     {
       "id": "assets",

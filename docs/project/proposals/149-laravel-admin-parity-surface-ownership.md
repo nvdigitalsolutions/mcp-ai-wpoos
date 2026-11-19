@@ -84,7 +84,7 @@ These are the invariants the contract encodes. They are written as rules so a fu
 |---|---|---|
 | **R1** | **One authoritative writer per mutation.** A surface declares `writer`; two presentations may call it, but neither may reimplement it. | ASVS 4.1.1; prevents the drift class in §1.3. |
 | **R2** | **No presentation is an enforcement point.** `state: full` means the API/Filament action already allows it — not that the button exists. | "Hiding a button is UX, not authorization" (090-g). |
-| **R3** | **Every reduced surface declares its projection.** `subset` and `read-only` require a non-empty `projection`; CI fails otherwise. | API3 BOPLA. |
+| **R3** | **Every reduced surface declares its projection.** `subset`, `read-only` and `inert` require a non-empty `projection`; CI fails otherwise. | API3 BOPLA. |
 | **R4** | **404 for cross-tenant, 403 for capability, 401 for authentication.** Never 403 for a record that should not be known to exist. | ASVS 4.2.1; existing `TeamAccess` behaviour. |
 | **R5** | **No second implementation of chat or canvas.** Chat is `link-out` from the admin; the workflow builder stays React and is embedded in Wave 6. | BFF; avoids a Livewire fork of interactive surfaces. |
 | **R6** | **A surface with no console key must still have a home.** `ops` or `admin` presence is mandatory — an unowned operator surface is how parity work disappears. | ASVS 4.1.3. |
@@ -114,7 +114,7 @@ Authoritative data: `docker/laravel/app-skeleton/contracts/surface-ownership.jso
 }
 ```
 
-- `state ∈ {full, subset, read-only, link-out, absent, planned}` — closed vocabulary. `absent` is a decision; `planned` is a queued decision.
+- `state ∈ {full, subset, read-only, inert, link-out, absent, planned}` — closed vocabulary. `absent` is a decision; `planned` is a queued decision; `inert` is a **rendered surface whose values nothing reads** — a form that is not yet a behaviour. `inert` exists so that porting a settings section without its behaviour cannot be reported as parity: it is not `subset` (the field set is complete) and it is not `planned` (the form is live and writable). Added by [Proposal 156](156-identity-decision.md) §3.1.
 - `writer ∈ {ops, admin, console, shared, none}` — `none` is only legal for genuinely read-only surfaces (`tools`, `audit-log`, `connected-apps`).
 - `files` — the Filament class(es) that implement the row. Filament's derived `Manage*` resource pages are not rows; only the `*Resource` class and top-level `Pages/*` are.
 - Row count is 42; the 45 console keys are partitioned across 29 of them, with the remaining 13 rows being `/ops`-only or `/admin`-only surfaces that have no console equivalent.
@@ -192,7 +192,7 @@ So the answer to "does this consider orchestration and the token layer?" is: **y
 
 1. the contract parses and declares its vocabularies;
 2. every `route_backed` key in `console-endpoints.json` has **exactly one** row, and no row names an undeclared key;
-3. every row uses the closed vocabularies; `subset`/`read-only` rows must declare a `projection`; `plan_gate` must use a declared prefix;
+3. every row uses the closed vocabularies; `subset`/`read-only`/`inert` rows must declare a `projection`; `plan_gate` must use a declared prefix;
 4. every declared Filament file exists, and every `app/Filament/*/Resources/*/*Resource.php` plus `app/Filament/*/Pages/*.php` file has a row.
 
 Test 4 is the "new page without a decision" gate. It is deliberately file-path-based rather than reflection-based: the vendor tree is a Docker volume and is not resolvable on a host checkout, so class-name guesses would make the gate environment-dependent.
