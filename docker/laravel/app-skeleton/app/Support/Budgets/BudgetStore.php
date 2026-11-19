@@ -6,6 +6,7 @@ use App\Models\Budget;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use InvalidArgumentException;
 
 /**
  * Estate budgets — Proposal 154.
@@ -13,12 +14,32 @@ use Illuminate\Support\Facades\Schema;
  * Reads the configured limits and the spend they apply to. Spend is not stored:
  * it is `SUM(cost)` over `nvoos_token_usage`, which is the record the cost pages
  * already aggregate, so a budget can never disagree with a report.
+ *
+ * It is also the writer, because a second class that inserts rows would be a
+ * second place that has to know the window vocabulary. `put()` refuses a window
+ * it does not know, so the closed vocabulary is enforced by the store rather than
+ * only by the form that happens to call it.
  */
 class BudgetStore
 {
     public const BUDGETS_TABLE = 'nvoos_budgets';
 
     public const SPEND_TABLE = 'nvoos_token_usage';
+
+    /** The row is turned off; it is not consulted and it refuses nothing. */
+    public const STATE_DISABLED = 'disabled';
+
+    /** A limit of zero: a misconfiguration, read as "no limit". */
+    public const STATE_UNLIMITED = 'unlimited';
+
+    /** At or over the limit; the guard refuses the turn. */
+    public const STATE_EXHAUSTED = 'exhausted';
+
+    /** At or over `warn_at` but under the limit; the guard allows and logs. */
+    public const STATE_WARN = 'warn';
+
+    /** Under both bands. */
+    public const STATE_OK = 'ok';
 
     /**
      * The enabled budgets of the current estate.
@@ -42,6 +63,81 @@ class BudgetStore
     }
 
     /**
+     * Every estate's budgets, for the operator surface.
+     *
+     * `withoutGlobalScopes()` is the documented opt-out (Proposal 153): `/ops` is
+     * the vendor's view of every estate, and the page renders the estate column
+     * that makes the breadth visible. The guard must never call this — it asks
+     * for `forCurrentEstate()` so a turn cannot be judged against a limit that
+     * belongs to somebody else.
+     *
+     * @return list<Budget>
+     */
+    public function all(): array
+    {
+        if (! Schema::hasTable(self::BUDGETS_TABLE)) {
+            return array();
+        }
+
+        return Budget::query()
+            ->withoutGlobalScopes()
+            ->with('tenant')
+            ->orderBy('tenant_id')
+            ->orderBy('window')
+            ->get()
+            ->all();
+    }
+
+    /**
+     * The state of a budget, its spend and its ratio — one query, one answer.
+     *
+     * The page and the guard both read this, which is the point: a badge that
+     * says "exhausted" and an enforcement path that allows the turn would be two
+     * implementations of one rule, and they would drift.
+     *
+     * @return array{state: string, window: string, limit: float, spend: float, percent: float|null}
+     */
+    public function verdict(Budget $budget): array
+    {
+        $window = (string) $budget->window;
+        $limit = (float) $budget->limit_usd;
+
+        // The row's own estate, not the request's: this method is also called
+        // for another estate's row by the operator page.
+        $spend = $this->spend((string) $budget->tenant_id, $window);
+
+        // `warn_at` is a fraction of the limit; a zero or unset value means the
+        // deployment only wants the hard band, not a warning on every request.
+        $warnAt = min(1.0, max(0.0, (float) $budget->warn_at));
+
+        $state = match (true) {
+            ! $budget->enabled => self::STATE_DISABLED,
+            $limit <= 0.0 => self::STATE_UNLIMITED,
+            $spend >= $limit => self::STATE_EXHAUSTED,
+            $warnAt > 0.0 && $spend >= $limit * $warnAt => self::STATE_WARN,
+            default => self::STATE_OK,
+        };
+
+        return array(
+            'state' => $state,
+            'window' => $window,
+            'limit' => $limit,
+            'spend' => $spend,
+            // A disabled or unlimited row has no meaningful ratio; `null` keeps
+            // the page from printing "0%" over a real spend.
+            'percent' => $limit > 0.0 ? $spend / $limit * 100.0 : null,
+        );
+    }
+
+    /**
+     * The state alone, for callers that do not need the numbers.
+     */
+    public function state(Budget $budget): string
+    {
+        return $this->verdict($budget)['state'];
+    }
+
+    /**
      * Spend for one estate over one window.
      *
      * A missing spend table is `0.0`, not an error: a deployment that has not
@@ -57,6 +153,61 @@ class BudgetStore
             ->where('tenant_id', $tenantId)
             ->where('created_at', '>=', $this->windowStart($window))
             ->sum('cost');
+    }
+
+    /**
+     * Create or replace the limit for one estate and one window.
+     *
+     * Upsert rather than insert because `(tenant_id, window)` is unique: a second
+     * row for the same pair is a configuration mistake, and the operator editing
+     * a limit means the same thing as the operator setting it.
+     *
+     * `tenant_id` is assigned here explicitly. The model's `creating` hook is a
+     * default for the guard's own writes, not a rule that a privileged surface
+     * cannot name an estate — `/ops` exists precisely to act on another estate.
+     */
+    public function put(
+        string $tenantId,
+        string $window,
+        float $limitUsd,
+        float $warnAt,
+        bool $enabled,
+    ): Budget {
+        if (! in_array($window, Budget::WINDOWS, true)) {
+            throw new InvalidArgumentException(sprintf(
+                'Unknown budget window "%s". Known windows: %s.',
+                $window,
+                implode(', ', Budget::WINDOWS)
+            ));
+        }
+
+        $budget = Budget::query()
+            ->withoutGlobalScopes()
+            ->firstOrNew(array(
+                'tenant_id' => $tenantId,
+                'window' => $window,
+            ));
+
+        $budget->tenant_id = $tenantId;
+        $budget->window = $window;
+        $budget->limit_usd = $limitUsd;
+        $budget->warn_at = min(1.0, max(0.0, $warnAt));
+        $budget->enabled = $enabled;
+        $budget->save();
+
+        return $budget;
+    }
+
+    /**
+     * Delete a limit.
+     *
+     * Deleting rather than disabling is a real distinction: a disabled row keeps
+     * its numbers and its history, a deleted one stops appearing anywhere. The
+     * page offers both, and the confirmation says which is which.
+     */
+    public function remove(Budget $budget): void
+    {
+        $budget->delete();
     }
 
     /**

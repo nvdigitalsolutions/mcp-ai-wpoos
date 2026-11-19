@@ -1,8 +1,8 @@
 # Proposal 154 — Budgets, and why `measurement` is three problems
 
-**Status:** proposed 2026-11-19. Slice A (estate budgets) is the implementing
-slice; the metric registry and eval runs are deferred with their preconditions
-recorded.
+**Status:** proposed 2026-11-19. Slice A (estate budgets) shipped in §92 and
+slice B (both surfaces) in §93; the metric registry and eval runs are deferred
+with their preconditions recorded.
 
 **Related:** [Proposal 149](149-laravel-admin-parity-implementation-plan.md) §45
 (the `measurement` contract row), §64/§66 (routing metrics), §81 (token-usage
@@ -76,6 +76,7 @@ already obey.
 | **D5** | **Fail closed.** If spend cannot be read, the request is refused. | LiteLLM's own reasoning: an unreadable counter under-reports, and under-reporting is over-spending. |
 | **D6** | Refusal is **429** with `code: budget_exceeded`; an unverifiable budget is **503** with `code: budget_unverifiable`. | 429 is the conventional quota signal a client already retries on; 503 distinguishes "we cannot tell" from "you are over", which are different operator problems. |
 | **D7** | A budget row is estate-owned and takes the global tenant scope, like `Approval` and `Assistant`. | Proposal 153's rule, applied to the new model rather than re-derived. |
+| **D8** | **The operator owns the limit.** `/ops/budgets` writes across estates; the estate-facing `/admin/budgets` is **read-only**. | A limit the limited party can raise is a self-throttle, not a control: enforcement would be theatre the moment a 429 became inconvenient. A safe tenant write needs an **operator-set ceiling** — a second column, a second comparison, and a rule for what happens when a tenant lowers a limit the operator then lowers further. That is its own decision, so the tenant gets the half that is unambiguous and valuable: **notice**, before the limit refuses a turn rather than at the moment it does. |
 
 ## 4. Schema
 
@@ -136,8 +137,8 @@ budget like any other turn.
 
 | Slice | Content |
 |---|---|
-| **A** | `nvoos_budgets`, `BudgetStore`, `BudgetGuard`, wiring at the entry points, tests |
-| **B** | `/ops/budgets` operator page; estate-facing read/write on `/admin`; consumption shown from the same query |
+| **A** | `nvoos_budgets`, `BudgetStore`, `BudgetGuard`, wiring at the entry points, tests — §92 |
+| **B** | `/ops/budgets` (operator CRUD across estates) and `/admin/budgets` (read-only consumption, D8) — §93. Both read `BudgetStore::verdict()`, the guard's own call, so a badge and a refusal cannot disagree. |
 | **C** (deferred) | `nvoos_metrics` and `nvoos_eval_runs` — only when a producer exists |
 
 ## 7. Risks
@@ -157,3 +158,7 @@ budget like any other turn.
    designed: an override is a policy, and the 429 message is enough to start.
 3. **Currency** is USD throughout, matching `nvoos_token_usage.cost`. Multi-currency
    is a billing question, not a budget one.
+4. **A tenant self-limit** is the one shape that would make `/admin/budgets`
+   writable without making the control theatre: an operator ceiling plus a tenant
+   limit that may only lower it. Two columns and one `min()` — small, but it is a
+   product decision about who a budget protects, not a form field.

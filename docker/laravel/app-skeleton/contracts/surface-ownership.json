@@ -268,7 +268,23 @@
       "writer": "ops",
       "plan_gate": null,
       "projection": null,
-      "notes": "Recorded 2026-11-17 (149 §45) after the admin-inventory audit (§44) found it outside both counted trees: `includes/admin/measurement/` attaches a Measurement page to the settings dashboard (`wp-mcp-ai-dashboard`) and falls back to Tools when that menu is absent. It is a NEW surface, not a port of a probe: the WordPress page lists registered metrics (privacy tier, counter-metric pairing), verifiers (independence profile), reward functions (anti-gaming text), eval suites (case counts) and the most recent collector-buffer events; its admin-post handler clears the buffer, downloads a JSON export and resets a persistent budget envelope — so it has a writer, unlike a pure probe. That is product data, which is why it is not folded into `platform-operations` (runtime probes and cost aggregates). Planned rather than `absent` because metrics, evals and budgets are product features rather than WordPress idioms; the prerequisite is the data model (metric, eval-run and budget stores), not a renderer — the WordPress page is itself pre-PR-4 read-only."
+      "notes": "Recorded 2026-11-17 (149 §45) after the admin-inventory audit (§44) found it outside both counted trees: `includes/admin/measurement/` attaches a Measurement page to the settings dashboard (`wp-mcp-ai-dashboard`) and falls back to Tools when that menu is absent. It is a NEW surface, not a port of a probe: the WordPress page lists registered metrics (privacy tier, counter-metric pairing), verifiers (independence profile), reward functions (anti-gaming text), eval suites (case counts) and the most recent collector-buffer events; its admin-post handler clears the buffer, downloads a JSON export and resets a persistent budget envelope — so it has a writer, unlike a pure probe. That is product data, which is why it is not folded into `platform-operations` (runtime probes and cost aggregates). Planned rather than `absent` because metrics and evals are product features rather than WordPress idioms; the prerequisite is the data model (metric and eval-run stores), not a renderer — the WordPress page is itself pre-PR-4 read-only. The third store this row used to claim, budgets, became its own surface in §92/§93: it needed no producer, only a limit over rows already written."
+    },
+    {
+      "id": "budgets",
+      "title": "Spend and limits",
+      "audience": "operator",
+      "ops": { "state": "full" },
+      "admin": { "state": "read-only" },
+      "console": null,
+      "writer": "ops",
+      "plan_gate": null,
+      "projection": "The estate-facing page renders only the current estate's budgets (the model's tenant scope), with spend, limit, used percentage and enabled state. No mutating action: a limit the limited party can raise is a self-throttle, not a control (154 D8).",
+      "files": [
+        "app/Filament/Operator/Pages/Budgets.php",
+        "app/Filament/Admin/Pages/Budgets.php"
+      ],
+      "notes": "Split out of `measurement` in §92/§93 (Proposal 154). A budget is a limit over records that already exist: `nvoos_token_usage` is written by the §81/§86 pipeline and carries `cost` and an estate, so the store holds only `(tenant_id, window, limit_usd, warn_at, enabled)` and consumption is `SUM(cost)` over the window. Spend is deliberately not stored, so a budget and the cost pages cannot disagree. Enforcement is pre-flight at the chat entry points and `AgentNodeRunner`: 429 `budget_exceeded`, 503 `budget_unverifiable` (fail closed), and a zero limit reads as 'no limit'. §92 shipped the enforcement, §93 the two surfaces."
     },
     {
       "id": "credentials.estate",

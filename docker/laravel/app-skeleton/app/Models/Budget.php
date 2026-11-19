@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * An estate budget — Proposal 154.
@@ -69,5 +70,17 @@ class Budget extends Model
                 $budget->tenant_id = TenantContext::current();
             }
         });
+    }
+
+    /**
+     * The estate that owns this limit.
+     *
+     * Same name and arguments as `Assistant::tenant()`: the operator page names
+     * the estate when it writes a row, and the page has to resolve the label
+     * through a scoped-off query, so the relation is the only join it needs.
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id', 'id');
     }
 }
