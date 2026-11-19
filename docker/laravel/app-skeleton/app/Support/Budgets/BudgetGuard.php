@@ -2,7 +2,6 @@
 
 namespace App\Support\Budgets;
 
-use App\Models\Budget;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\Log;
 
@@ -50,46 +49,27 @@ final class BudgetGuard
         $tenantId = TenantContext::current();
 
         foreach ($this->store->forCurrentEstate() as $budget) {
-            $limit = (float) $budget->limit_usd;
+            // One verdict, computed by the store, so this path and the
+            // operator page's badge can never disagree about the state.
+            $verdict = $this->store->verdict($budget);
 
-            // A limit of zero is "no limit", not "block everything". A row that
-            // stops every turn is a misconfiguration nobody would intend, and
-            // failing it closed would take an estate offline over a typo.
-            if ($limit <= 0.0) {
-                continue;
+            if (BudgetStore::STATE_EXHAUSTED === $verdict['state']) {
+                throw new BudgetExceededException(
+                    $verdict['window'],
+                    $verdict['spend'],
+                    $verdict['limit']
+                );
             }
 
-            $window = (string) $budget->window;
-            $spend = $this->store->spend($tenantId, $window);
-
-            if ($spend >= $limit) {
-                throw new BudgetExceededException($window, $spend, $limit);
-            }
-
-            // `warn_at` is a fraction of the limit; a zero or unset value means
-            // the deployment only wants the hard band, not a warning on every
-            // single request.
-            $warnAt = min(1.0, max(0.0, (float) $budget->warn_at));
-
-            if ($warnAt > 0.0 && $spend >= $limit * $warnAt) {
+            if (BudgetStore::STATE_WARN === $verdict['state']) {
                 Log::warning('budget.warn', array(
                     'tenant_id' => $tenantId,
-                    'window' => $window,
-                    'spend' => round($spend, 6),
-                    'limit' => $limit,
-                    'percent' => round($spend / $limit * 100, 1),
+                    'window' => $verdict['window'],
+                    'spend' => round($verdict['spend'], 6),
+                    'limit' => $verdict['limit'],
+                    'percent' => round((float) $verdict['percent'], 1),
                 ));
             }
         }
-    }
-
-    /**
-     * The windows this guard knows, for callers that build a message.
-     *
-     * @return list<string>
-     */
-    public static function windows(): array
-    {
-        return Budget::WINDOWS;
     }
 }

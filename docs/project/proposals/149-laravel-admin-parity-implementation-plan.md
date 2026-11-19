@@ -2,7 +2,7 @@
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
 **Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **38 numbered slices** (§8–§56) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25), and **§56 opens Wave 3** with the toolkit manifest renderer (`/admin/toolkits`). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
-**Scoreboard** — re-measured 2026-11-18 with `bin/audit-surface-ownership.php`: **45 surfaces · 33 built on a Filament panel** (11 `/ops`, 23 `/admin`; `settings.platform` is on both) · **29 console-served** · **7 console-only** · **3 planned-only** (`measurement`, `identity-provider`, `datasets`, all `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Scoreboard** — re-measured 2026-11-19 with `bin/audit-surface-ownership.php`: **47 surfaces · 35 built on a Filament panel** (13 `/ops`, 24 `/admin`; `settings.platform` and `budgets` are on both) · **29 console-served** · **7 console-only** · **3 planned-only** (`measurement`, `identity-provider`, `datasets`, all `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
 **Validation** — app suite: **1277 tests / 7243 assertions, 0 failures** (with the `NVOOS_PM_*` fixtures present; four `WifiKpisTest` cases fail without them, a documented environment gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-18
 **Scope (Wave 0):** ~3–4 weeks, one engineer
@@ -9358,9 +9358,9 @@ would be a third table with one reader.
 
 ### 92.5 Still open
 
-1. **No page yet.** `/ops/budgets` (slice B) and the estate-facing read/write on
-   `/admin` are unbuilt; slice A enforces a limit an operator cannot set from the
-   UI. Until B, a budget is a database row.
+1. **The surfaces are §93.** Slice A enforced a limit an operator could not set
+   from a UI; slice B gave it two — `/ops/budgets` for the operator and
+   `/admin/budgets` read-only for the estate (D8).
 2. **Assistant scope** needs `assistant_id` as a column on `nvoos_token_usage`
    (Proposal 154 D1); today spend by assistant exists only inside `metadata`, so
    filtering by it would be a per-request row scan on the hot path.
@@ -9372,3 +9372,80 @@ would be a third table with one reader.
 5. **`nvoos_metrics` and `nvoos_eval_runs` remain unbuilt** — correctly, until
    something produces a metric definition or an eval result. The `measurement`
    row's `planned` state now means "slice B away", not "three stores away".
+
+## 93. Two budget surfaces — one writes, one warns (2026-11-19)
+
+§92 made the runtime refuse a turn when an estate is over its limit and left one
+thing open: **the limit was a database row.** A control nobody can operate is a
+schema, not a feature. This section gives it two surfaces and, in doing so,
+settles the question §92 deferred — who is allowed to move the line.
+
+### 93.1 The operator writes, the estate reads (D8)
+
+A spend limit that **the limited party can raise is a self-throttle, not a
+control.** If a 429 can be cleared from the same panel that received it, the
+budget stops being a ceiling and becomes a speed bump for the motivated. So:
+
+| Surface | State | Role |
+|---|---|---|
+| `/ops/budgets` | `full` | the operator sets, edits and deletes any estate's limit |
+| `/admin/budgets` (`Spend`) | `read-only` | the estate sees its limits, its spend and its share of the limit |
+
+The **write** is a small upsert: `(tenant_id, window)` is unique, so setting an
+existing pair *is* the edit, and the form disables estate and window on edit
+because changing either makes a different budget. The store refuses a window it
+does not know, so the closed vocabulary is enforced at the writer rather than
+only at the form that happens to call it.
+
+The **read** is the half that is unambiguously valuable: the hard band otherwise
+reaches an estate only as a 429 on somebody's chat turn — at the exact moment it
+is too late to act. A callout fires while there is still room.
+
+What a tenant **write** would need is an operator ceiling plus a tenant limit that
+may only lower it — two columns and one `min()`, but a product decision about who
+a budget protects (Proposal 154 §8.4), so it is recorded rather than guessed.
+
+### 93.2 One verdict, two surfaces
+
+`BudgetStore::verdict()` returns `state`, `spend`, `limit` and `percent` from the
+spend record. `BudgetGuard` now throws and logs from that verdict, and both pages
+render from it. Before this section the guard had its own inline comparison —
+correct, but a second copy of the rule, and the moment a badge exists the two
+would drift into "92%, fine" beside a refusal.
+
+That is the whole reason the extraction is worth a refactor of merged code: the
+page cannot overstate or understate enforcement, because it is not computing
+anything the guard did not already decide.
+
+### 93.3 Gates
+
+| Run | Result |
+|---|---|
+| `AdminBudgetsTest` | **11 tests** — every estate's rows render; an exhausted budget is called out with its ratio; a budget under its warning band is not; create writes for the *chosen* estate; an unknown estate is refused; setting an existing pair replaces it; edit keeps identity and changes the number; delete removes; each write leaves `created`/`updated`/`deleted` audit rows; a non-operator gets 403; the page reads the guard's own verdict |
+| `EstateBudgetsPageTest` | **6 tests** — renders; lists only the current estate's rows; `Over budget` fires from the verdict; the warning band raises `Approaching a limit`; no write action exists; empty state |
+| `/(AdminBudgets\|EstateBudgetsPage\|BudgetEnforcement\|SurfaceOwnership\|AdminNavigation)/` | **37 tests / 616 assertions, 0 failures** |
+| `bin/audit-surface-ownership.php` | **47 surfaces · 35 built** (13 `/ops`, 24 `/admin`); `budgets` is one row with both presentations |
+| phpcs (`phpcs-laravel.xml.dist`, 7 paths) | **0 errors** |
+| Full app suite | *(pending — filled from CI)* |
+
+### 93.4 What the contract row had to change
+
+`SurfaceOwnershipTest` fails a Filament page that ships without a row, and
+`AdminNavigationTest` fails a page filed into a group that does not list it. Both
+caught this section's work in the right order — the row and the grouping were
+written before the pages could render, and `budgets` is deliberately **one row
+with two `files`**: it is one surface with two presentations, the same shape
+`settings.platform` uses, not two surfaces that happen to share a noun.
+
+`measurement`'s note was also trimmed: it claimed three stores, and only the
+budget one was real. The row now says metrics and evals, and points here for the
+part that shipped.
+
+### 93.5 Still open
+
+1. **A tenant self-limit** needs the ceiling decision above (Proposal 154 §8.4).
+2. **`assistant` scope** still needs `assistant_id` as a column (§92.5.2).
+3. **Per-provider-call enforcement** is still slice A.2 and still needs a
+   `lib/core` contract.
+4. **One turn can overshoot** by that turn's cost — unchanged, and stated on both
+   pages so an operator does not read a $0.02 overshoot as a broken counter.
