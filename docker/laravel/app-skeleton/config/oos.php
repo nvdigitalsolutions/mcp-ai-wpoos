@@ -33,4 +33,21 @@ return array(
         ),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Routing metrics retention (Proposal 149 §73)
+    |--------------------------------------------------------------------------
+    |
+    | `nvoos_routing_metrics` holds one row per routing deviation (a model
+    | fallback or a provider hop), which is rare — but nothing bounded it, and
+    | an unbounded table is a slow leak rather than a decision.
+    |
+    | Days to keep. `0` disables pruning and the schedule entry entirely, for a
+    | deployment that exports the rows somewhere else first.
+    |
+    */
+    'routing' => array(
+        'retention_days' => (int) env('NVOOS_ROUTING_RETENTION_DAYS', 90),
+    ),
+
 );
