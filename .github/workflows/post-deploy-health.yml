@@ -164,7 +164,7 @@ jobs:
       - name: ZAP Baseline Scan against live site
         if: steps.target.outputs.url != ''
         id: zap
-        uses: zaproxy/action-baseline@v0.13.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: ${{ steps.target.outputs.url }}
           fail_action: 'warn'
