@@ -8,6 +8,7 @@ use App\Support\Reports\TokenUsageReport;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Livewire\Attributes\Url;
 
 /**
  * Token usage by user — Proposal 149 §82, `/ops/token-usage`.
@@ -18,11 +19,15 @@ use Filament\Support\Icons\Heroicon;
  * zeros on every real deployment.
  *
  * What is deliberately absent is in `TokenUsageReport`'s docblock — the tier
- * column, cached tokens, and a per-site view. The last one is now possible:
- * Proposal 152 gave the table an estate column and the report a required
- * `$tenantId`. The page asks for `null` (every estate) because an operator
- * surface must see the whole deployment; an estate filter is the obvious next
- * step, not a missing capability.
+ * column and cached tokens. The per-site view arrived in §87: Proposal 152 gave
+ * the table an estate column, so this page now carries the WordPress `per_site`
+ * view as its scope control, and the `per_user` table is what that scope filters.
+ *
+ * One page rather than two because both read the same rows over the same window:
+ * a second page would duplicate the period control and the totals row to say the
+ * same thing about a narrower set of rows. The WordPress views are separate
+ * because its admin is tabbed; §83 already collapsed three analysis sub-tabs into
+ * one page for the same reason.
  */
 class TokenUsage extends Page
 {
@@ -44,12 +49,43 @@ class TokenUsage extends Page
     public int $period = TokenUsageReport::DEFAULT_PERIOD;
 
     /**
+     * The estate the user table is scoped to; empty means every estate.
+     *
+     * URL-bound so a support link can name the estate it is about. A string
+     * rather than `?string` because an empty query parameter is a real value a
+     * browser sends (`?estate=`), and normalising that to "every estate" is a
+     * read-time concern, not a nullable one.
+     *
+     * This is a **filter, not an authorization**: the page is operator-only and
+     * an operator may see every estate, so the value never grants anything. It
+     * reaches the query as a parameter, so a crafted value can only fail to
+     * match.
+     */
+    #[Url]
+    public string $estate = '';
+
+    /**
      * Memoised for the request: the blade calls `rows()` and `totals()`, and
      * `totals()` reads the rows.
      *
      * @var list<array<string, mixed>>|null
      */
     private ?array $rows = null;
+
+    /**
+     * Memoised for the request; the blade calls `estates()` twice (the table and
+     * the select's options).
+     *
+     * @var list<array<string, mixed>>|null
+     */
+    private ?array $estates = null;
+
+    /**
+     * Memoised for the request; only computed for a selected estate.
+     *
+     * @var list<array<string, mixed>>|null
+     */
+    private ?array $models = null;
 
     public static function canAccess(): bool
     {
@@ -74,9 +110,9 @@ class TokenUsage extends Page
      */
     public function rows(): array
     {
-        // `null` = every estate. Only an operator page may ask for that
-        // (Proposal 152 §3 D5).
-        return $this->rows ??= app(TokenUsageReport::class)->byUser($this->period, null);
+        // `null` = every estate; a selected estate narrows both tables. Only an
+        // operator page may ask for the unscoped read (Proposal 152 §3 D5).
+        return $this->rows ??= app(TokenUsageReport::class)->byUser($this->period, $this->estateScope());
     }
 
     /**
@@ -92,6 +128,101 @@ class TokenUsage extends Page
         $start = app(TokenUsageReport::class)->windowStart($this->period);
 
         return $start->toDateString().' — '.now()->toDateString();
+    }
+
+    /**
+     * Every estate with usage in the window.
+     *
+     * Computed even when the page is scoped, because the select needs the
+     * options; the table itself is only rendered unscoped.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function estates(): array
+    {
+        return $this->estates ??= app(TokenUsageReport::class)->byEstate($this->period);
+    }
+
+    /**
+     * The select's options: "All estates" plus every estate with usage.
+     *
+     * An estate named by the URL that has no usage in this window is added back,
+     * so the control shows what the page is scoped to rather than silently
+     * falling back to "All estates" — a scope the page did not apply is worse
+     * than an empty table.
+     *
+     * @return array<string, string> value => label
+     */
+    public function estateOptions(): array
+    {
+        $options = array('' => 'All estates');
+        $seen = array();
+
+        foreach ($this->estates() as $estate) {
+            $tenantId = (string) $estate['tenant_id'];
+            $options[$tenantId] = (string) $estate['name'];
+            $seen[] = $tenantId;
+        }
+
+        $scope = $this->estateScope();
+
+        if (null !== $scope && ! in_array($scope, $seen, true)) {
+            $options[$scope] = app(TokenUsageReport::class)->estateName($scope);
+        }
+
+        return $options;
+    }
+
+    /**
+     * The model breakdown for the selected estate.
+     *
+     * Empty while unscoped on purpose: the estate table is already the overview,
+     * and a platform-wide by-model table would be a third table saying less than
+     * the two above it.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function models(): array
+    {
+        $scope = $this->estateScope();
+
+        if (null === $scope) {
+            return array();
+        }
+
+        return $this->models ??= app(TokenUsageReport::class)->byModel($this->period, $scope);
+    }
+
+    /**
+     * The estate the page is scoped to, or `null` for every estate.
+     */
+    public function estateScope(): ?string
+    {
+        $estate = trim($this->estate);
+
+        return '' === $estate ? null : $estate;
+    }
+
+    /**
+     * The scope's human label, for the section heading and the empty state.
+     */
+    public function scopeLabel(): string
+    {
+        $scope = $this->estateScope();
+
+        if (null === $scope) {
+            return 'All estates';
+        }
+
+        return app(TokenUsageReport::class)->estateName($scope);
+    }
+
+    /**
+     * Whether the page is showing one estate rather than all of them.
+     */
+    public function isScoped(): bool
+    {
+        return null !== $this->estateScope();
     }
 
     /**
