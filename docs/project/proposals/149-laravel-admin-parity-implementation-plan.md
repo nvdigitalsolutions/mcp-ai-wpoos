@@ -9108,7 +9108,8 @@ The chat tests now build a real assistant through the API instead of posting an
 
 1. **`options.provider` / `options.model`** are unvalidated (§89.3).
 2. **`Assistant` has no tenant scope** (§89.4); each call site checks for itself.
-   Scoped as a decision in [Proposal 153](153-assistant-tenant-scope-decision.md).
+   Scoped as a decision in [Proposal 153](153-assistant-tenant-scope-decision.md)
+   and implemented as option A (§8 there).
 3. **Any other route that binds an assistant by id** should be audited the same
    way. The two here were found by reading every `Assistant` lookup in
    `app/Http`, which is a manual sweep, not a guard.
