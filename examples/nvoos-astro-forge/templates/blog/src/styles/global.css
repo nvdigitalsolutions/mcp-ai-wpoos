@@ -581,6 +581,47 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	justify-self: start;
 }
 
+/* `.site-nav-shell` is `display: contents` — it has no box, so a grid
+ * placement on the SHELL does nothing. The disclosure BUTTON is the grid
+ * item, and its `margin-inline-start: auto` (which right-aligns it beside a
+ * left-hand brand in the plain flex row) then pushed it to the middle of
+ * the bar: x=524 where the source puts it at x=195 (monicarajiv,
+ * 2026-11-20). Place the button and drop the auto margin. */
+.site-header--brand-center .site-nav-shell > .site-nav-toggle {
+	grid-column: 1;
+	grid-row: 1;
+	justify-self: start;
+	margin-inline-start: 0;
+}
+
+/* The trailing icon links take the third track. */
+.site-header--brand-center .header-actions {
+	grid-column: 3;
+	grid-row: 1;
+	justify-self: end;
+}
+
+.header-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.125rem;
+	min-height: 1.125rem;
+	color: inherit;
+	opacity: 0.9;
+}
+
+.header-icon:hover {
+	opacity: 1;
+}
+
+.header-icon svg {
+	display: block;
+	width: 1.125rem;
+	height: 1.125rem;
+	fill: currentColor;
+}
+
 .brand-tagline {
 	margin: 0;
 	font-size: var(--forge-scale-small, 0.875rem);

@@ -2261,6 +2261,30 @@ export async function measureChromeGeometry( options: {
 					padX: Math.round( ( padded ?? capped )?.padLeft ?? brandRect.x - headerRect.x ),
 					logoHeight: markRect.height > 0 ? `${ Math.round( markRect.height ) }px` : undefined,
 					logoAlign: markRect.width > 0 ? stationOf( markRect ) : undefined,
+					// The trailing ICON links: an anchor with no text whose glyph is a font
+					// icon (`<i class="icon-envelop">`). The vendor font never ships, so the
+					// rebuild re-draws it instead of emitting a missing-glyph box.
+					actions: ( () => {
+						const found: Array< { icon?: string; label?: string; href?: string } > = [];
+						for ( const anchor of [ ...header.querySelectorAll( 'a' ) ] ) {
+							const rect = anchor.getBoundingClientRect();
+							if ( rect.width < 8 || rect.height < 8 ) {
+								continue;
+							}
+							const glyph = anchor.querySelector( 'i[class*="icon-"], span[class*="icon-"]' );
+							const text = ( anchor.textContent ?? '' ).trim();
+							if ( ! glyph || text.length > 0 ) {
+								continue;
+							}
+							const glyphClass = [ ...glyph.classList ].find( ( name ) => /^icon-/.test( name ) );
+							found.push( {
+								icon: glyphClass ? glyphClass.replace( /^icon-/, '' ) : undefined,
+								label: anchor.getAttribute( 'aria-label' ) ?? anchor.getAttribute( 'title' ) ?? undefined,
+								href: anchor.getAttribute( 'href' ) ?? undefined,
+							} );
+						}
+						return found.slice( 0, 4 );
+					} )(),
 				};
 			} );
 			if ( ! box ) {
@@ -2280,6 +2304,10 @@ export async function measureChromeGeometry( options: {
 			// template’s `space-between` row, which leaves it at the left edge.
 			if ( box.logoAlign === 'start' || box.logoAlign === 'center' || box.logoAlign === 'end' ) {
 				entry.logoAlign = box.logoAlign;
+			}
+			// The trailing controls are one desktop fact, like the mark.
+			if ( device === 'desktop' && Array.isArray( box.actions ) && box.actions.length > 0 ) {
+				out.actions = box.actions;
 			}
 			if ( Object.keys( entry ).length > 0 ) {
 				out[ device ] = entry;

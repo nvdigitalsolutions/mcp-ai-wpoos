@@ -1848,6 +1848,19 @@ export interface ForgeChromeBox {
 }
 
 /**
+ * One trailing control in the header (the source’s envelope, a search
+ * glyph). Rebuilt as an icon link so the bar keeps its third column.
+ */
+export interface ForgeChromeAction {
+	/** `icon-` stripped from the source’s glyph class (`envelop`). */
+	icon?: string;
+	/** The accessible name the source carries (its `aria-label`/`title`). */
+	label?: string;
+	/** The destination, already resolved to `mailto:` where possible. */
+	href?: string;
+}
+
+/**
  * The header box per viewport. Sparse: a device with nothing to say is absent.
  *
  * `wide` (1920) exists because a container cap only becomes VISIBLE above it:
@@ -1859,6 +1872,8 @@ export interface ForgeChromeGeometry {
 	desktop?: ForgeChromeBox;
 	tablet?: ForgeChromeBox;
 	mobile?: ForgeChromeBox;
+	/** The header’s trailing icon links, measured once at the desktop viewport. */
+	actions?: ForgeChromeAction[];
 }
 
 /** Where a footer group sits horizontally inside the footer's brand row. */
