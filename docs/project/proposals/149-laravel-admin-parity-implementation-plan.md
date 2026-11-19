@@ -7595,3 +7595,127 @@ mid-migration records nothing rather than failing a chat.
    (`claude-*`, `gemini-*`) get `cl100k_base` — an approximation, since those
    providers tokenize differently. A provider-specific encoder is a larger
    project than this slice.
+
+## 72. Every hop is attributed — request, response and the road between (2026-11-19)
+
+§70 annotated a result only when the router changed the *model*, and recorded
+that no consumer could see which provider answered a plain hop. §71 counted
+model fallbacks only. This section closes both: every deviation is annotated,
+cost is billed against the pair that answered, and both kinds of deviation are
+counted.
+
+### 72.1 What the standards say
+
+Three references shaped the design rather than an invented vocabulary:
+
+- **OpenTelemetry GenAI conventions** separate `gen_ai.request.model` (what was
+  asked) from `gen_ai.response.model` (what answered) and carry
+  `gen_ai.provider.name` as the provider discriminator
+  ([registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/)).
+  The lesson: request and response are different facts and both belong on the
+  record.
+- **LiteLLM** exposes fallback activity as response metadata —
+  `x-litellm-attempted-retries`, `x-litellm-attempted-fallbacks`, and
+  `_hidden_params.model_id` for the deployment that actually served
+  ([response headers](https://docs.litellm.ai/docs/proxy/response_headers),
+  [OTel integration](https://docs.litellm.ai/docs/observability/opentelemetry_integration)).
+  The lesson: a rescued request should say it was rescued, and by which
+  deployment.
+- **langchain-litellm #370** exists specifically because a fallback answered
+  but the metadata still reported the primary alias
+  ([PR](https://github.com/langchain-ai/langchain-litellm/pull/370)). The
+  lesson: attributing the *answering* deployment is a known bug class, not a
+  nicety.
+
+### 72.2 The annotation, now on every hop
+
+```php
+$response['_nvoos_routing'] = [
+    'provider'           => 'gemini',              // what answered
+    'model'              => 'gemini-3.8-flash',    // when the router knows it
+    'requested_provider' => 'openai',
+    'requested_model'    => 'gpt-5',
+    'via'                => 'provider_fallback',   // model_fallback | provider_fallback
+                                                   // | health_failover | cascade_tier_1
+    'attempt'            => 2,                     // 1-based
+];
+```
+
+`provider` and `model` keep the names §69/§70 introduced, so a consumer that
+only wants the serving pair is unaffected; the extra keys are additive. When a
+hop drops the model override (a target that does not serve it, §70.4), `model`
+is omitted and the response's own `model` field speaks — which is what the
+provider actually ran.
+
+`via` and `attempt` are the LiteLLM-style "was this rescued, and on which try"
+facts; `requested_*` is the OTel request/response split.
+
+**Billing follows automatically.** `ChatOrchestrator::billedRoute()` already
+preferred `_nvoos_routing.provider` and `.model`, so a plain provider hop is now
+costed against the provider that answered — the §70.7 item that was left open
+because the marker did not exist on those hops.
+
+### 72.3 The behaviour change, stated plainly
+
+§70 deliberately annotated only model changes, because annotating every hop
+mutated the payload of callers that had no catalogue. That constraint is
+reversed here by request: an operator cannot distinguish "answered first try"
+from "rescued by a provider hop" any other way, and the cost bug on plain hops
+was the same missing fact.
+
+The four pre-existing chain tests now compare the answer with
+`array_diff_key($result, ['_nvoos_routing' => true])`. That is honest rather
+than convenient: those tests exist to pin *chain ordering*, not payload shape,
+and the shape change is the point of this slice. Their ordering assertions are
+untouched.
+
+### 72.4 Counting both kinds
+
+`RoutingMetricsInterface` gained `recordProviderHop($from, $to, $succeeded)`,
+called from the ordered chain and from health-based failover — once per attempt,
+before the caller sees the result, exactly like the model counter.
+
+`nvoos_routing_metrics` gained:
+
+| Column | Meaning |
+|---|---|
+| `kind` | `model_fallback` (default) or `provider_hop` |
+| `from_provider` | the provider a hop came from; null for a model fallback |
+
+`from_model`/`to_model` stay non-null and are empty for a hop: no model changed.
+One table, because the operator reads one story — "the answer did not come
+straight from what was asked" — and the two kinds are fixed by different people.
+
+`/ops/diagnostics` → **Routing (30d)** now reports deviations, model fallbacks,
+provider hops, succeeded, failed, last deviation, the top model pairs and the
+top hop pairs (`hop openai → gemini`).
+
+### 72.5 Gates
+
+| Run | Result |
+|---|---|
+| `ProviderRouterModelFallbackTest` | **15 tests** — adds: every hop is counted with its source; a failed hop is counted and the next hop starts from it (`attempt` = 3, `from` = the failed candidate) |
+| `ProviderRouterFallbackChainTest` | 6 tests, ordering assertions unchanged, answers compared without the marker |
+| `RoutingMetricsTest` (app) | **5 tests** — adds: a plain hop is annotated (`via=provider_fallback`) and written as `kind=provider_hop` with `from_provider` |
+| `ModelFallbackRoutingTest` (app) | 7 tests, updated to the additive shape |
+| Core provider + token dirs | **41 tests / 110 assertions** |
+| nvoos/core unit suite | **1368 tests / 4320 assertions, 0 failures** (14 pre-existing runner deprecations) |
+| phpcs (`phpcs-laravel.xml.dist`, 10 files) | **0 errors** |
+| Full app suite | **1334 tests / 17963 assertions, 0 failures** (baseline 1333 / 17952; 2 pre-existing runner deprecations) |
+
+### 72.6 Still open
+
+1. **Payload mutation is now universal.** Every successful response that was not
+   a first-try primary answer carries `_nvoos_routing`. A result wrapper would be
+   cleaner than a reserved key; that is a contract change across every consumer
+   and is not worth making for one marker.
+2. **No OTel export.** The attribute *meanings* follow the GenAI conventions, but
+   nothing emits spans. The marker is the data a span would carry once the
+   runtime has a tracer.
+3. **`attempt` counts calls, not reasons.** A hop caused by a 429 and one caused
+   by a revoked key look identical in the annotation; the error class lives only
+   in the health tracker.
+4. **Retention.** Two kinds now share the table; still no prune policy (§71.5).
+5. **Cascade tier 1 is annotated but not counted.** It is a routing deviation
+   with its own statistics (`CascadeRouter::getStats()`), so a third `kind` would
+   duplicate them; revisit if the two counters ever disagree.

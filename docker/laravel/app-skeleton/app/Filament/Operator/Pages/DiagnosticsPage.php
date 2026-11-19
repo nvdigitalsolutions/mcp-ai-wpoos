@@ -255,10 +255,10 @@ class DiagnosticsPage extends Page
     }
 
     /**
-     * Fallback rows for the overview.
+     * Fallback and hop rows for the overview.
      *
-     * "none recorded" is a real answer: it says the catalogue has never had
-     * to rescue a request in this window, not that the page failed to load.
+     * "none recorded" is a real answer: it says routing never had to rescue a
+     * request in this window, not that the page failed to load.
      *
      * @param array<string, mixed> $summary
      * @return list<array{label: string, value: string}>
@@ -268,18 +268,20 @@ class DiagnosticsPage extends Page
         $total = (int) ($summary['total'] ?? 0);
 
         if (0 === $total) {
-            return [['label' => 'Model fallbacks', 'value' => 'none recorded']];
+            return [['label' => 'Routing deviations', 'value' => 'none recorded']];
         }
 
         $rows = [
-            ['label' => 'Model fallbacks', 'value' => (string) $total],
+            ['label' => 'Routing deviations', 'value' => (string) $total],
+            ['label' => 'Model fallbacks', 'value' => (string) (int) ($summary['model_fallbacks'] ?? 0)],
+            ['label' => 'Provider hops', 'value' => (string) (int) ($summary['provider_hops'] ?? 0)],
             ['label' => 'Succeeded', 'value' => (string) (int) ($summary['succeeded'] ?? 0)],
             ['label' => 'Failed', 'value' => (string) (int) ($summary['failed'] ?? 0)],
         ];
 
         $last = $summary['last_at'] ?? null;
         if (is_string($last) && '' !== $last) {
-            $rows[] = ['label' => 'Last fallback', 'value' => $last];
+            $rows[] = ['label' => 'Last deviation', 'value' => $last];
         }
 
         foreach ((array) ($summary['pairs'] ?? []) as $pair) {
@@ -288,6 +290,17 @@ class DiagnosticsPage extends Page
 
             if ((int) ($pair['failed'] ?? 0) > 0) {
                 $value .= sprintf(', %d failed', (int) $pair['failed']);
+            }
+
+            $rows[] = ['label' => $label, 'value' => $value];
+        }
+
+        foreach ((array) ($summary['hops'] ?? []) as $hop) {
+            $label = sprintf('hop %s → %s', (string) ($hop['from'] ?? ''), (string) ($hop['to'] ?? ''));
+            $value = sprintf('%d', (int) ($hop['total'] ?? 0));
+
+            if ((int) ($hop['failed'] ?? 0) > 0) {
+                $value .= sprintf(', %d failed', (int) $hop['failed']);
             }
 
             $rows[] = ['label' => $label, 'value' => $value];

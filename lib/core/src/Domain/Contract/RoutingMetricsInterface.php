@@ -41,4 +41,22 @@ interface RoutingMetricsInterface
         string $toModel,
         bool $succeeded
     ): void;
+
+    /**
+     * Record one provider-hop attempt and its outcome.
+     *
+     * A hop is an ordered-chain or health-failover move from one provider to
+     * another. It is the other half of fallback visibility: a model retry and a
+     * provider hop fail for different reasons and are fixed by different
+     * people.
+     *
+     * @param string $fromProvider Provider that failed.
+     * @param string $toProvider   Provider that was tried next.
+     * @param bool   $succeeded    Whether that hop produced a usable result.
+     */
+    public function recordProviderHop(
+        string $fromProvider,
+        string $toProvider,
+        bool $succeeded
+    ): void;
 }

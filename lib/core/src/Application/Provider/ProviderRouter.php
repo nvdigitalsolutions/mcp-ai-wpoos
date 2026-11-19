@@ -566,7 +566,7 @@ class ProviderRouter
             $this->healthTracker->recordSuccess($slug, 0);
         }
 
-        return $this->annotateRouting($result, $slug, $fallbackId);
+        return $this->annotateRouting($result, $slug, $fallbackId, $options, 'model_fallback', 2);
     }
 
     /**
@@ -604,48 +604,41 @@ class ProviderRouter
     }
 
     /**
-     * Annotate a hop result only when the router changed the model.
+     * Record which provider and model actually answered, and what was asked.
      *
-     * A plain provider hop carries the same model, so its payload keeps the
-     * shape it has always had — the annotation exists for the case a caller
-     * cannot otherwise see, a request that was answered by a different model
-     * than the one it asked for. (Which provider answered a plain hop is still
-     * not reported; that is pre-existing, and §70.7 records it.)
+     * Every deviation from the request is annotated — a model fallback, an
+     * ordered-chain hop, health-based failover, an accepted cascade tier 1 —
+     * because both the caller and the billing path need to know who answered.
      *
-     * @since 1.6.0
+     * The vocabulary follows the OpenTelemetry GenAI conventions: `requested_*`
+     * carries the meaning of `gen_ai.request.model`, while `provider` / `model`
+     * carry the meaning of `gen_ai.provider.name` and `gen_ai.response.model` —
+     * the pair that actually produced the answer. `via` and `attempt` mirror
+     * what gateways expose as attempted-fallback counters (LiteLLM's
+     * `x-litellm-attempted-fallbacks`), so an operator can tell a first-try
+     * answer from a rescued one.
      *
-     * @param mixed                $result           Provider response.
-     * @param array<string, mixed> $options          Original request options.
-     * @param array<string, mixed> $candidateOptions Options actually sent.
-     * @param string               $provider         Provider that answered.
-     * @return mixed
-     */
-    private function routeResult(mixed $result, array $options, array $candidateOptions, string $provider): mixed
-    {
-        if (($options['model'] ?? null) === ($candidateOptions['model'] ?? null)) {
-            return $result;
-        }
-
-        return $this->annotateRouting($result, $provider, $candidateOptions['model'] ?? null);
-    }
-
-    /**
-     * Record which provider and model actually answered.
-     *
-     * Written only when routing deviated from the request, so an ordinary call
-     * carries no extra key. The orchestrator bills the model that ran rather
-     * than the one that was asked for; the `_nvoos_` prefix keeps the marker
-     * out of the provider-shaped namespace.
+     * `provider` and `model` keep the names §69/§70 introduced, so a consumer
+     * that only wants the serving pair is unaffected by the extra keys.
      *
      * @since 1.6.0
      *
-     * @param mixed       $result   Provider response.
-     * @param string      $provider Serving provider slug.
-     * @param string|null $model    Serving model id, when the router knows it.
+     * @param mixed                $result         Provider response.
+     * @param string               $provider       Serving provider slug.
+     * @param string|null          $model          Serving model id, when known.
+     * @param array<string, mixed> $requestOptions The options the caller supplied.
+     * @param string               $via            How the serving pair was chosen.
+     * @param int                  $attempt        1-based attempt that answered.
      * @return mixed The response, annotated when it is a successful array.
      */
-    protected function annotateRouting(mixed $result, string $provider, ?string $model = null): mixed
-    {
+    protected function annotateRouting(
+        mixed $result,
+        string $provider,
+        ?string $model = null,
+        array $requestOptions = array(),
+        string $via = '',
+        int $attempt = 1
+    ): mixed {
         if (! \is_array($result) || $this->isError($result)) {
             return $result;
         }
@@ -654,6 +647,24 @@ class ProviderRouter
 
         if (null !== $model && '' !== $model) {
             $routing['model'] = $model;
+        }
+
+        $requestedProvider = (string) ( $requestOptions['provider'] ?? '' );
+        if ('' !== $requestedProvider) {
+            $routing['requested_provider'] = $requestedProvider;
+        }
+
+        $requestedModel = (string) ( $requestOptions['model'] ?? '' );
+        if ('' !== $requestedModel) {
+            $routing['requested_model'] = $requestedModel;
+        }
+
+        if ('' !== $via) {
+            $routing['via'] = $via;
+        }
+
+        if ($attempt > 1) {
+            $routing['attempt'] = $attempt;
         }
 
         $result['_nvoos_routing'] = $routing;
@@ -686,7 +697,7 @@ class ProviderRouter
         $chain = $this->resolveFallbackCandidates($assistantConfig);
         if (! empty($chain)) {
             $this->coolDown($failedSlug, $this->retryAfterSeconds($failedResult));
-            return $this->attemptChain($messages, $options, $chain, $onChunk);
+            return $this->attemptChain($messages, $options, $chain, $onChunk, $failedSlug);
         }
 
         if (! $this->failoverEnabled() || null === $this->healthTracker) {
@@ -694,6 +705,9 @@ class ProviderRouter
         }
 
         $fallbacks = $this->healthTracker->getFallbackChain($failedSlug);
+        $from      = $failedSlug;
+        $attempt   = 2;
+
         foreach ($fallbacks as $fallback) {
             $fallbackProvider = $this->get($fallback['slug']);
             if (! $fallbackProvider) {
@@ -708,12 +722,27 @@ class ProviderRouter
                 $result = $fallbackProvider->chat($messages, $candidateOptions);
             }
 
-            if (! $this->isError($result)) {
+            $succeeded = ! $this->isError($result);
+
+            if (null !== $this->metrics) {
+                $this->metrics->recordProviderHop($from, $fallback['slug'], $succeeded);
+            }
+
+            if ($succeeded) {
                 $this->healthTracker->recordSuccess($fallback['slug'], 0);
-                return $this->routeResult($result, $options, $candidateOptions, $fallback['slug']);
+                return $this->annotateRouting(
+                    $result,
+                    $fallback['slug'],
+                    $candidateOptions['model'] ?? null,
+                    $options,
+                    'health_failover',
+                    $attempt
+                );
             }
 
             $this->healthTracker->recordFailure($fallback['slug'], $this->classifyError($result));
+            $from = $fallback['slug'];
+            ++$attempt;
         }
 
         return null;
@@ -728,10 +757,19 @@ class ProviderRouter
      * @param array<string, mixed>         $options  Request options.
      * @param string[]      $chain    Ordered provider slugs.
      * @param callable|null $onChunk  Optional stream callback.
+     * @param string        $failedSlug Provider that just failed.
      * @return mixed|null First successful result, or null when exhausted.
      */
-    private function attemptChain(array $messages, array $options, array $chain, ?callable $onChunk): mixed
-    {
+    private function attemptChain(
+        array $messages,
+        array $options,
+        array $chain,
+        ?callable $onChunk,
+        string $failedSlug
+    ): mixed {
+        $from    = $failedSlug;
+        $attempt = 2;
+
         foreach ($chain as $slug) {
             if ($this->isCooledDown($slug)) {
                 continue;
@@ -748,17 +786,32 @@ class ProviderRouter
                 ? $provider->stream($messages, $candidateOptions, $onChunk)
                 : $provider->chat($messages, $candidateOptions);
 
-            if (! $this->isError($result)) {
+            $succeeded = ! $this->isError($result);
+
+            if (null !== $this->metrics) {
+                $this->metrics->recordProviderHop($from, $slug, $succeeded);
+            }
+
+            if ($succeeded) {
                 if ($this->healthTracker) {
                     $this->healthTracker->recordSuccess($slug, 0);
                 }
-                return $this->routeResult($result, $options, $candidateOptions, $slug);
+                return $this->annotateRouting(
+                    $result,
+                    $slug,
+                    $candidateOptions['model'] ?? null,
+                    $options,
+                    'provider_fallback',
+                    $attempt
+                );
             }
 
             if ($this->healthTracker) {
                 $this->healthTracker->recordFailure($slug, $this->classifyError($result));
             }
             $this->coolDown($slug, $this->retryAfterSeconds($result));
+            $from = $slug;
+            ++$attempt;
         }
 
         return null;

@@ -141,7 +141,10 @@ class CascadeRouter extends ProviderRouter
         return $this->annotateRouting(
             $tier1Result,
             $tier1Client->getProviderSlug(),
-            (string) ( $tier1Options['model'] ?? '' )
+            (string) ( $tier1Options['model'] ?? '' ),
+            $options,
+            'cascade_tier_1',
+            2
         );
     }
 

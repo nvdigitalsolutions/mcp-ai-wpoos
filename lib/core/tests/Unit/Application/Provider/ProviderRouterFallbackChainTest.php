@@ -68,7 +68,8 @@ final class ProviderRouterFallbackChainTest extends TestCase
 
         $result = $this->router->chat(array( array( 'role' => 'user', 'content' => 'hi' ) ));
 
-        $this->assertSame(array( 'ok' => 'gemini-answer' ), $result);
+        // §72: every hop is annotated, so compare the answer without the marker.
+        $this->assertSame(array( 'ok' => 'gemini-answer' ), array_diff_key($result, array( '_nvoos_routing' => true )));
         $this->assertCount(1, $this->clients['gemini']->calls);
         $this->assertCount(0, $this->clients['anthropic']->calls);
     }
@@ -89,7 +90,7 @@ final class ProviderRouterFallbackChainTest extends TestCase
 
         $result = $this->router->chat(array( array( 'role' => 'user', 'content' => 'hi' ) ));
 
-        $this->assertSame(array( 'ok' => 'anthropic-answer' ), $result);
+        $this->assertSame(array( 'ok' => 'anthropic-answer' ), array_diff_key($result, array( '_nvoos_routing' => true )));
         $this->assertCount(0, $this->clients['gemini']->calls);
     }
 
@@ -109,7 +110,7 @@ final class ProviderRouterFallbackChainTest extends TestCase
 
         $result = $this->router->chat(array( array( 'role' => 'user', 'content' => 'hi' ) ));
 
-        $this->assertSame(array( 'ok' => 'anthropic-answer' ), $result);
+        $this->assertSame(array( 'ok' => 'anthropic-answer' ), array_diff_key($result, array( '_nvoos_routing' => true )));
         $this->assertTrue($this->router->isCooledDown('openai'));
         $this->assertTrue($this->router->isCooledDown('gemini'));
         $this->assertFalse($this->router->isCooledDown('anthropic'));
@@ -149,7 +150,7 @@ final class ProviderRouterFallbackChainTest extends TestCase
             array( 'fallback_chain' => array( 'anthropic' ) )
         );
 
-        $this->assertSame(array( 'ok' => 'anthropic-answer' ), $result);
+        $this->assertSame(array( 'ok' => 'anthropic-answer' ), array_diff_key($result, array( '_nvoos_routing' => true )));
         $this->assertCount(0, $this->clients['gemini']->calls);
     }
 

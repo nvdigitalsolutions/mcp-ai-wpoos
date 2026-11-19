@@ -57,7 +57,9 @@ class ModelFallbackRoutingTest extends TestCase
         );
 
         $this->assertSame(array( 'ok' => 'backup-answer' ), array_diff_key($result, array( '_nvoos_routing' => true )));
-        $this->assertSame(array( 'provider' => 'openai', 'model' => 'backup-model' ), $result['_nvoos_routing']);
+        $this->assertSame('openai', $result['_nvoos_routing']['provider']);
+        $this->assertSame('backup-model', $result['_nvoos_routing']['model']);
+        $this->assertSame('model_fallback', $result['_nvoos_routing']['via']);
         $this->assertSame(array( 'primary-model', 'backup-model' ), $client->models);
     }
 
