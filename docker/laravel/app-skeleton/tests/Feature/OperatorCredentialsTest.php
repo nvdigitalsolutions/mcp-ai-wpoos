@@ -52,6 +52,35 @@ class OperatorCredentialsTest extends TestCase
             ->assertSee('Concierge');
     }
 
+    /**
+     * The page is the documented cross-estate opt-out (Proposal 153): `/ops` is
+     * the vendor's view, so a scope that quietly reduced this table to the
+     * default estate would be a reporting bug, not a safety win.
+     */
+    public function test_the_page_lists_assistants_from_every_estate(): void
+    {
+        Tenant::query()->create(array('id' => 'estate-b', 'name' => 'Estate B', 'slug' => 'estate-b'));
+
+        $this->assistant('Home agent');
+
+        $foreign = new Assistant(array(
+            'title' => 'Foreign agent',
+            'slug' => 'foreign-agent',
+            'status' => 'publish',
+            'provider' => 'openai',
+            'model' => 'gpt-4o',
+        ));
+        $foreign->tenant_id = 'estate-b';
+        $foreign->save();
+
+        $this->actingAs($this->operator())
+            ->get('/ops/credentials')
+            ->assertOk()
+            ->assertSee('Home agent')
+            ->assertSee('Foreign agent')
+            ->assertSee('Estate B');
+    }
+
     public function test_a_customer_administrator_is_refused(): void
     {
         $this->actingAs($this->customerAdmin())

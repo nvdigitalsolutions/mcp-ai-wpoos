@@ -221,7 +221,9 @@ class AdminAssistantsTest extends TestCase
         $other = $this->assistantIn('estate-b', 'Ops');
 
         $this->assertSame('ops', $other->slug);
-        $this->assertSame(2, Assistant::query()->where('slug', 'ops')->count());
+        // The assertion is about the `(tenant_id, slug)` index, not about the
+        // reader's scope, so it spans both estates deliberately (Proposal 153).
+        $this->assertSame(2, Assistant::query()->withoutGlobalScopes()->where('slug', 'ops')->count());
     }
 
     /**

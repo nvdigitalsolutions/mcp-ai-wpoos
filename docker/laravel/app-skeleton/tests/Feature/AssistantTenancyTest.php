@@ -41,7 +41,9 @@ class AssistantTenancyTest extends TestCase
         $this->makeAssistant('tenant-a', 'ops');
         $this->makeAssistant('tenant-b', 'ops');
 
-        $this->assertSame(2, Assistant::query()->where('slug', 'ops')->count());
+        // The property under test is the `(tenant_id, slug)` index, so the count
+        // spans estates on purpose (Proposal 153).
+        $this->assertSame(2, Assistant::query()->withoutGlobalScopes()->where('slug', 'ops')->count());
     }
 
     public function test_same_slug_is_rejected_within_a_tenant(): void

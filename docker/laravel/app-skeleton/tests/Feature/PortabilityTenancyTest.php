@@ -89,7 +89,12 @@ final class PortabilityTenancyTest extends TestCase
             'json' => $this->bundle(array($this->entry('Imported bot'))),
         ))->assertOk()->assertJsonPath('data.imported', 1);
 
+        // The scope is estate-bound (Proposal 153), so the assertion pins the
+        // estate it is asking about rather than reading whatever context the
+        // ended request left behind — which is `default`.
+        TenantContext::set('estate-b');
         $assistant = Assistant::query()->where('title', 'Imported bot')->sole();
+        TenantContext::forget();
 
         $this->assertSame('estate-b', $assistant->tenant_id);
     }

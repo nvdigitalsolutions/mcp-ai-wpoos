@@ -97,7 +97,12 @@ class Credentials extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(Assistant::query()->with('tenant'))
+            // Operated cross-estate by design: `/ops` is the vendor's view of
+            // every estate, and the Estate column below is what makes that
+            // visible. `withoutGlobalScopes()` is the documented opt-out
+            // (Proposal 153); removing it would silently reduce this table to
+            // the default estate.
+            ->query(Assistant::query()->withoutGlobalScopes()->with('tenant'))
             ->defaultSort('title')
             ->columns([
                 TextColumn::make('title')
