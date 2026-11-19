@@ -2,7 +2,7 @@
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
 **Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **38 numbered slices** (§8–§56) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25), and **§56 opens Wave 3** with the toolkit manifest renderer (`/admin/toolkits`). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
-**Scoreboard** — re-measured 2026-11-19 with `bin/audit-surface-ownership.php`: **47 surfaces · 36 built on a Filament panel** (14 `/ops`, 24 `/admin`; `settings.platform` and `budgets` are on both) · **29 console-served** · **7 console-only** · **2 planned-only** (`measurement`, `identity-provider`, both `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Scoreboard** — re-measured 2026-11-19 with `bin/audit-surface-ownership.php`: **47 surfaces · 37 built on a Filament panel** (15 `/ops`, 24 `/admin`; `settings.platform` and `budgets` are on both) · **29 console-served** · **7 console-only** · **1 planned-only** (`identity-provider`, `/ops`) · **2 recorded `absent`** (`chat-profiles`, `onboarding`). §14.2 holds the rule this measures against: a console surface is not admin parity.
 **Validation** — app suite: **1277 tests / 7243 assertions, 0 failures** (with the `NVOOS_PM_*` fixtures present; four `WifiKpisTest` cases fail without them, a documented environment gap). `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-18
 **Scope (Wave 0):** ~3–4 weeks, one engineer
@@ -9802,3 +9802,69 @@ be lying. M1 has to render the window it actually has.
    deliberate duplication across two stores with different audiences (a replay
    log for humans, a queryable record for metrics), and it is worth revisiting if
    a third reader appears.
+
+## 99. `/ops/metrics` — the catalogue, and what it refuses to claim (2026-11-19)
+
+Proposal 155 decided the shape (definitions in code, values derived, no
+`nvoos_metrics`); this is M1. The `measurement` row is now `built`, and
+**`identity-provider` is the only surface left `planned`.**
+
+### 99.1 Three classes, no new store
+
+| Class | Job |
+|---|---|
+| `MetricCatalogue` | the 21 definitions, verbatim from the WordPress packs, each with unit, direction, counter-metric, privacy tier, **state** and **note** |
+| `TraceMetrics` | decodes the run records §84/§98 write and aggregates the tool and run figures, capped at 20,000 records with `truncated` reported |
+| `MetricsReport` | one token aggregate over `nvoos_token_usage` plus the trace aggregate, joined to the definitions |
+
+A definition is a constant, so the page cannot describe a metric the runtime does
+not define, and adding one is a code change reviewed like any other.
+
+### 99.2 A dash is not a zero
+
+Two devices, both load-bearing:
+
+- **Unproduced metrics render their reason.** Ten of the 21 have no producer here;
+  each says why (`stream.*` — the SSE path persists nothing; `eval.*` — no harness;
+  `tool.execution.in_flight` — a gauge needs a start record). A zero would be a
+  claim that the metric was measured and came out at nothing.
+- **Trace-derived metrics are blank when capture is off.** `trace_capture.enabled`
+  is per assistant, and the window may contain no trace records at all. In that
+  case the tool and duration rows are `null`, not `0`, and a callout says so —
+  "nothing recorded" and "nothing ran" are different facts.
+
+That second rule is the one a reviewer would otherwise have to catch: the first
+draft returned `0` whenever the aggregate was empty, which read as "no tool was
+ever called" on a deployment where capture was simply switched off.
+
+### 99.3 What it deliberately is not
+
+- **Not a second observability page.** It shows one windowed figure per metric;
+  per-run detail stays on `/ops/observability` and the breakdowns stay on the cost
+  pages.
+- **Not an export.** D7: WordPress exports a collector buffer this runtime does not
+  have, and derived values are a different question — `/ops/reports` answers it.
+- **Not scoped to an estate.** The row is `audience: operator`; an estate's own
+  spend is its Spend page.
+
+### 99.4 Gates
+
+| Run | Result |
+|---|---|
+| `AdminMetricsTest` | **9 tests** — every definition rendered; the vocabulary is 21 unique ids across the five packs; token figures equal the cost pages' totals; tool figures come from the trace records; **trace rows are null when capture is off** (not zero); the callout explains it; unproduced rows carry no value and a reason; the period select changes the window; an unknown period falls back; a non-operator gets 403 |
+| `/(AdminMetrics\|SurfaceOwnership\|AdminNavigation\|AdminTokenUsage)/` | **25 tests / 581 assertions, 0 failures** |
+| `bin/audit-surface-ownership.php` | **47 surfaces · 37 built** (15 `/ops`, 24 `/admin`); planned-only **1** |
+| phpcs (`phpcs-laravel.xml.dist` 5 paths, `phpcs.xml.dist` 1 path) | **0 errors** |
+| Full app suite | **1521 passed / 18,798 assertions** (CI `App suite (SQLite)`, run 44631971789) — baseline was 1511 / 18,743, so this slice adds 10 tests and 55 assertions |
+
+### 99.5 Still open
+
+1. **M2 and M3** are unchanged: stream metrics need a decision about writing
+   telemetry on the SSE path, and eval suites need a harness.
+2. **The trace read is capped at 20,000 records per page load.** The cap is
+   printed when it bites, but a deployment at that volume wants a rollup, not a
+   bigger cap.
+3. **`chat.turn.count` counts token rows**, not trace runs — a turn that reported
+   no tokens writes nothing, so the figure under-counts silent turns. Stated in
+   the definition's note rather than fixed, because the alternative (traces) is
+   conditional on capture.
