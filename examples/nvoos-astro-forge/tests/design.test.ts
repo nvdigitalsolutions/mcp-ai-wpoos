@@ -1198,3 +1198,128 @@ describe( 'analyzeChrome — site-node ranking + footer widgets (jayainc shape)'
 		expect( chrome?.footerBg ).toBe( '#f3f3f3' );
 	} );
 } );
+
+describe( 'analyzeSections — the band MARK STRIP (ForgeSection.logos)', () => {
+	// A builder's image carousel publishes each logo as a `background-image`
+	// DIV, so no `<img>`-reading classifier can see the wall, and the inline
+	// `style` carrying the URL never survives sanitisation. The fact has to be
+	// measured against the raw source HTML.
+	const carouselHtml = ( extra = '' ) =>
+		'<div class="elementor">' +
+		'<section id="hardware" class="elementor-section elementor-top-section elementor-element elementor-element-a5d0ddc">' +
+		'<h2>Supported hardware</h2>' +
+		extra +
+		'<div class="elementor-carousel-image" style="background-image:url(\'https://src.test/1.png\')"></div>' +
+		'<div class="elementor-carousel-image" style="background-image:url(\'https://src.test/2.png\')"></div>' +
+		'<div class="elementor-carousel-image" style="background-image:url(\'https://src.test/3.png\')"></div>' +
+		'<div class="elementor-carousel-image" style="background-image:url(\'https://src.test/1.png\')"></div>' +
+		'</section>' +
+		'</div>';
+
+	const sectionOf = ( html: string ) =>
+		analyzeSections( { url: 'https://src.test', html, css: [] } ).find( ( s ) => s.id === 'a5d0ddc' );
+
+	it( 'records the background-image slides of a logo wall, deduped', () => {
+		expect( sectionOf( carouselHtml() )?.logos ).toEqual( [
+			{ src: 'https://src.test/1.png' },
+			{ src: 'https://src.test/2.png' },
+			{ src: 'https://src.test/3.png' },
+		] );
+	} );
+
+	it( 'records <img> marks too, keeping the alt', () => {
+		const html =
+			'<div class="elementor">' +
+			'<section id="hardware" class="elementor-section elementor-top-section elementor-element elementor-element-a5d0ddc">' +
+			'<img src="https://src.test/a.png" alt="TP-Link" /><img src="https://src.test/b.png" alt="Linksys" /><img src="https://src.test/c.png" />' +
+			'</section></div>';
+		expect( sectionOf( html )?.logos ).toEqual( [
+			{ src: 'https://src.test/a.png', alt: 'TP-Link' },
+			{ src: 'https://src.test/b.png', alt: 'Linksys' },
+			{ src: 'https://src.test/c.png' },
+		] );
+	} );
+
+	it( 'ignores a band that carries prose (a copy panel is not a mark strip)', () => {
+		expect( sectionOf( carouselHtml( '<p>Choose the access point that works best.</p>' ) )?.logos ).toBeUndefined();
+	} );
+
+	it( 'ignores fewer than three marks (one illustration is not a logo wall)', () => {
+		const html =
+			'<div class="elementor">' +
+			'<section id="hardware" class="elementor-section elementor-top-section elementor-element elementor-element-a5d0ddc">' +
+			'<img src="https://src.test/a.png" /><img src="https://src.test/b.png" />' +
+			'</section></div>';
+		expect( sectionOf( html )?.logos ).toBeUndefined();
+	} );
+
+	it( 'drops non-http marks instead of emitting them', () => {
+		const html =
+			'<div class="elementor">' +
+			'<section id="hardware" class="elementor-section elementor-top-section elementor-element elementor-element-a5d0ddc">' +
+			'<img src="data:image/png;base64,AAAA" /><img src="/relative.png" />' +
+			'<img src="https://src.test/a.png" /><img src="https://src.test/b.png" /><img src="https://src.test/c.png" />' +
+			'</section></div>';
+		expect( sectionOf( html )?.logos ).toEqual( [
+			{ src: 'https://src.test/a.png' },
+			{ src: 'https://src.test/b.png' },
+			{ src: 'https://src.test/c.png' },
+		] );
+	} );
+} );
+
+describe( 'analyzeSections — per-column PANEL surfaces (ForgeSectionColumn)', () => {
+	// The source paints a coloured panel with `var(--e-global-color-accent)` on the
+	// column's populated wrapper — a stylesheet the rebuild never ships. The band
+	// fact has to carry the LITERAL, or the panel cannot be painted at all.
+	const band = ( columns: string ) =>
+		'<div class="elementor">' +
+		'<section id="wifi" class="elementor-section elementor-top-section elementor-element elementor-element-8d6ec26">' +
+		'<div class="elementor-container">' +
+		columns +
+		'</div></section></div>';
+
+	const column = ( id: string ) =>
+		`<div class="elementor-column elementor-col-50 elementor-element elementor-element-${ id }">` +
+		'<div class="elementor-widget-wrap elementor-element-populated"><h2>Copy</h2></div></div>';
+
+	const ROOT = ':root{ --e-global-color-accent: #dd3333; }';
+	const accentRule = ( id: string ) =>
+		`.elementor-5609 .elementor-element.elementor-element-${ id } > .elementor-widget-wrap, ` +
+		`.elementor-5609 .elementor-element.elementor-element-${ id } > .elementor-element-populated { background-color: var( --e-global-color-accent ); }`;
+
+	const sectionOf = ( html: string, css: string ) =>
+		analyzeSections( { url: 'https://src.test', html, css: [ css ] } ).find( ( s ) => s.id === '8d6ec26' );
+
+	it( 'bakes the resolved column surface and derives the panel ink', () => {
+		const found = sectionOf( band( column( '1111111' ) + column( '2222222' ) ), ROOT + accentRule( '2222222' ) );
+
+		expect( found?.columns?.[ 1 ].bgColor ).toBe( '#dd3333' );
+		expect( found?.columns?.[ 0 ].bgColor ).toBeUndefined();
+		expect( found?.panel ).toEqual( { bg: '#dd3333', ink: '#ffffff' } );
+	} );
+
+	it( 'records a photo column as a surface and then refuses the uniform panel', () => {
+		const html = band(
+			'<div class="elementor-column elementor-col-50 elementor-element elementor-element-1111111">' +
+				'<div class="elementor-widget-wrap elementor-element-populated" style="background-image:url(https://src.test/phone.jpg)"><h2>Copy</h2></div></div>' +
+				column( '2222222' )
+		);
+		const found = sectionOf( html, accentRule( '2222222' ) );
+
+		expect( found?.columns?.[ 0 ].bgImage ).toBe( 'https://src.test/phone.jpg' );
+		// A photo column beside a coloured one is a SPLIT panel, not a slab.
+		expect( found?.panel ).toBeUndefined();
+	} );
+
+	it( 'refuses the panel when two columns carry DIFFERENT surfaces', () => {
+		const html = band( column( '1111111' ) + column( '2222222' ) + column( '3333333' ) );
+		const css = ROOT + accentRule( '2222222' ) + '.elementor-element-3333333 > .elementor-element-populated { background-color: #000000; }';
+		const found = sectionOf( html, css );
+
+		expect( found?.columns?.[ 1 ].bgColor ).toBe( '#dd3333' );
+		expect( found?.columns?.[ 2 ].bgColor ).toBe( '#000000' );
+		// Per-column panels are not paintable on the flat rebuilt markup.
+		expect( found?.panel ).toBeUndefined();
+	} );
+} );

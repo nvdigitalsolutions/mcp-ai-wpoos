@@ -1361,6 +1361,14 @@ export type {
 };
 
 /**
+ * One mark in a band's logo / partner strip (see `ForgeSection.logos`).
+ */
+export interface ForgeMark {
+	src: string;
+	alt?: string;
+}
+
+/**
  * One source page section's background facts (Proposal 117 §2) — the
  * per-band theming data the scaffold bakes into sections.generated.ts.
  * Keyed by the Elementor section id the semantic classifier carries on
@@ -1389,6 +1397,34 @@ export interface ForgeSection {
 	bgGradient?: string;
 	/** The background-overlay tint (Elementor's overlay layer). */
 	overlay?: string;
+	/**
+	 * The band's MARK STRIP (a logo wall / partner row).
+	 *
+	 * A builder publishes these as an image CAROUSEL whose slides are
+	 * `background-image` DIVs (`<div class="elementor-carousel-image"
+	 * style="background-image:url(…)">`), not `<img>` — so the build-time
+	 * classifier, which reads `<img>` only, saw a band with two headings and no
+	 * media and rendered it as plain text (virtuallysrilanka's SUPPORTED
+	 * HARDWARE: 8 marks, 0 `<img>`, a 474px band with 248px of dead space under
+	 * the heading).
+	 *
+	 * Captured at ANALYZE time because the inline `style` carrying the URL is
+	 * dropped by the sanitizer. Only a band with no prose qualifies, so a
+	 * decorative background elsewhere never turns into a mark.
+	 */
+	logos?: ForgeMark[];
+	/**
+	 * The band's PANEL surface: the source sets its content on ONE coloured slab
+	 * rather than on the page background (virtuallysrilanka's "How it Works" —
+	 * four icon items on a `#dd3333` panel). Derived from `columns` when exactly
+	 * one column paints a colour and none paints a photo; `ink` is the legible
+	 * foreground for that slab, decided by contrast.
+	 *
+	 * Only the UNIFORM case is captured. Two or more DIFFERENT column surfaces
+	 * describe per-column panels, which the rebuilt flat markup cannot address
+	 * positionally — that needs the computed-style column pass.
+	 */
+	panel?: { bg: string; ink: string };
 	/** The source band's declared padding — a CSS shorthand, or a per-device
 	 * map when the source scopes it (jayainc's 059421c is 125px on desktop,
 	 * 100px on tablet and mobile). Absent → the bandSpacing policy. */
@@ -1603,6 +1639,21 @@ export interface ForgeSectionColumn {
 	hiddenMobile?: boolean;
 	hiddenTablet?: boolean;
 	hiddenDesktop?: boolean;
+	/**
+	 * The column's own painted SURFACE — a builder PANEL.
+	 *
+	 * virtuallysrilanka's services band is three panels side by side (a red copy
+	 * panel, a PHOTO panel, a black copy panel) and its wifi band puts a 2×2 item
+	 * grid on one red panel; the rebuild rendered pale cards on the page
+	 * background. Neither half of the pipeline could see it: the sanitiser drops
+	 * the inline `style`, the vendor stylesheet never ships, and the classifier
+	 * only splits content — so a photo-only column was dropped outright
+	 * ("the flat model has no per-column surface to paint it with"). Measured
+	 * here, against the RAW source HTML + its stylesheets.
+	 */
+	bgColor?: string;
+	/** The column's own background PHOTO (the panel-like column with no copy). */
+	bgImage?: string;
 }
 
 /**

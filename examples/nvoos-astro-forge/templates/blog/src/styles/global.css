@@ -332,6 +332,16 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
  * chrome flush). Plain/prose pages keep the padding. */
 .site-main:has([class*='ds-section-wrap--']) {
 	padding: 0;
+	/* The MEASURE is released too. A band used to escape this box with
+	 * `width:100vw`, but `vw` counts the scrollbar while this element is sized
+	 * to the CONTENT box — so on a classic 15px scrollbar the band landed 7px
+	 * left of the viewport and 15px wider than it (virtuallysrilanka: wrap box
+	 * left -7, width 1496 against a 1481px client). The left edge of the first
+	 * card was clipped and the right edge fell short. A band is now a plain 100%
+	 * child of a full-width main, which is exactly the visible width by
+	 * construction, whatever the scrollbar does; each `.ds-section` still
+	 * re-measures to the source's container so no copy moves. */
+	max-width: none;
 }
 
 /* Same flush on the footer side — the last band meets the footer strips. */
@@ -904,21 +914,31 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 
 /* Full-bleed bands (120 §5): the source band backgrounds span the
  * viewport edge-to-edge (jayainc's hero photo was trapped inside the
- * --forge-measure container). The wrap escapes the measure; the inner
- * section re-measures. */
+ * --forge-measure container). The `.site-main` measure is released for
+ * band pages and the wrap fills it; the inner section re-measures. */
 .ds-section-wrap--hero,
 .ds-section-wrap--dark,
 .ds-section-wrap--alt,
 .ds-section-wrap--light {
-	/* Full-bleed: 100vw + self-referential centering (margin-left 50% of
-	 * the CONTAINING block, transform -50% of the ELEMENT) — the math
-	 * cancels the scrollbar so the band never sits 7px left of the
-	 * viewport. The motion keyframes below use the independent
-	 * `translate`/`scale` properties so they COMPOSE with this transform
-	 * instead of replacing it. */
-	width: 100vw;
-	margin-left: 50%;
-	transform: translateX(-50%);
+	/* Full-bleed by BLOCK FLOW, not by `vw`. This used to be
+	 * `width:100vw; margin-left:50%; transform:translateX(-50%)`, on the
+	 * premise that the two halves cancel the scrollbar. They do not: `50%`
+	 * resolves against the CONTAINING block (the centred, scrollbar-excluded
+	 * content box) while `-50%` resolves against the ELEMENT (100vw, which
+	 * INCLUDES the scrollbar) — so the band was displaced by half the
+	 * scrollbar width and overhung the other half. Measured on
+	 * virtuallysrilanka at a 15px scrollbar: band left -7, width 1496 vs a
+	 * 1481px client, the first card's left edge clipped.
+	 *
+	 * `width:auto` inherits the full-width `.site-main` (see the `:has()`
+	 * rule above), which IS the visible width — no arithmetic, no overflow,
+	 * nothing to clip. The inner `.ds-section` keeps the measured measure +
+	 * side padding, so band CONTENT is unchanged. The motion keyframes use
+	 * the independent `translate`/`scale` properties and never depended on
+	 * this transform. */
+	width: auto;
+	margin-left: 0;
+	transform: none;
 	/* The source bands that declare no padding are content-tight — a
 	 * modest default beats the old 70px (the padded bands carry their
 	 * own inline padding fact). */
@@ -1346,6 +1366,43 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	border-radius: var(--forge-radius-sm);
 }
 
+/* A PANEL band (`ForgeSection.panel`): the source sets its CONTENT on a coloured
+ * slab rather than on the page background — virtuallysrilanka's "How it Works"
+ * lays four icon items on a #dd3333 panel, and the rebuild rendered four white
+ * cards on the page surface. The item group takes the slab; the cards lose their
+ * own chrome so the items sit ON it, and the marker (an accent-filled circle,
+ * invisible on an accent panel) becomes an outlined glyph in the panel ink. */
+.ds-section-wrap--panel .ds-grid {
+	background: var(--ds-panel-bg);
+	color: var(--ds-panel-ink);
+	padding: var(--forge-space-lg);
+	border-radius: var(--forge-radius-lg);
+}
+
+.ds-section-wrap--panel .ds-grid .ds-card {
+	background: transparent;
+	border-color: transparent;
+	box-shadow: none;
+	color: inherit;
+	/* The source cards are flush on the slab (the slab IS the card); a small
+	 * inset keeps the 2×2 rhythm without the template's card chrome. */
+	padding: var(--forge-space-sm) var(--forge-space);
+}
+
+.ds-section-wrap--panel .ds-grid .ds-card :is(h3, h4, h5) {
+	color: var(--ds-panel-ink);
+}
+
+.ds-section-wrap--panel .ds-grid .ds-card p {
+	color: var(--ds-panel-ink);
+}
+
+.ds-section-wrap--panel .ds-grid .ds-icon-marker {
+	background: transparent;
+	color: var(--ds-panel-ink);
+	box-shadow: inset 0 0 0 2px currentColor;
+}
+
 /* ------------------------------------------------------------------------
  * Section theming (Proposal 117 §2) — the source band re-applied per
  * rebuilt section. The wrapper carries the source background; the theme
@@ -1420,6 +1477,23 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 .ds-section-wrap--hero > * {
 	position: relative;
 	color: #ffffff;
+}
+
+/* A card inside a PHOTO band is a LIGHT surface, but `--hero` paints its whole
+ * subtree white so copy stays legible on the photo — so an un-reset heading
+ * rendered white-on-white at 1.09:1 (virtuallysrilanka's four "How it Works"
+ * cards: LANDING PAGE / POP-UP ADS / SOCIAL INTEGRATION / EMAIL MARKETING read
+ * as ghost text on a #f5f5f4 card). `--dark` has carried this reset since 117;
+ * `--hero` never did. The two vars are the seam a THEMED card uses when the
+ * source's own panel colour is measured (`--ds-card-bg`/`--ds-card-ink`), so a
+ * red source panel can paint red with white ink instead of being flattened. */
+.ds-section-wrap--hero .ds-card {
+	background: var(--ds-card-bg, var(--forge-surface-alt));
+	color: var(--ds-card-ink, var(--forge-ink));
+}
+
+.ds-section-wrap--hero .ds-card :is(h3, h4, h5) {
+	color: var(--ds-card-ink, var(--forge-ink));
 }
 
 .ds-section-wrap--hero .ds-section {
@@ -2567,8 +2641,30 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * floats over the hero and paints nothing. Declared AFTER the sticky variant so
  * the surface fallback above cannot paint the template's own colour over the
  * photo; the hairline goes too — the strip belongs to the band behind it.
+ *
+ * It also has to LEAVE THE FLOW. A transparent header kept in flow pushes the
+ * first band down by a header height and leaves its own chrome sitting on the
+ * page background — virtuallysrilanka's source header is `position:absolute`
+ * over a red hero with a white+grey SVG wordmark, so the rebuild opened with
+ * 79px of near-white above the band and the white half of the logo vanished.
+ *
+ * The `:not(.site-header--float)` guard matters: that variant is `position:
+ * fixed` and declares it own contract, and an unconditional `absolute` here
+ * would out-rank it (equal specificity, later in the file). `--pinned` is NOT
+ * excluded — the pinned variant re-states `position:absolute; top:auto` and its
+ * keyframes take over, and excluding it here also skipped the paint reset, which
+ * left the base hairline (`1px solid var(--forge-line)`) drawn across the band
+ * behind a transparent header (measured: 1px solid rgb(43,43,43)).
+ *
+ * `z-index` is required: the bands are positioned layers painted later in the
+ * DOM, so without it the header would sit behind the hero photo.
  */
-.site-header--overlay {
+.site-header--overlay:not(.site-header--float) {
+	position: absolute;
+	top: auto;
+	right: 0;
+	left: 0;
+	z-index: 2;
 	background: transparent;
 	border-bottom: none;
 	box-shadow: none;
