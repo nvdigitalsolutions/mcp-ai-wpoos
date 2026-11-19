@@ -100,7 +100,15 @@ jobs:
           MIRROR_REPO: ${{ vars.NVOOS_FORGE_MIRROR_REPO }}
           # Opt-in post-push smoke check (Proposal 135 / C3).
           NVOOS_FORGE_SMOKE: ${{ vars.NVOOS_FORGE_SMOKE }}
-          PREVIEW: ${{ github.event.inputs.preview }}
+          # A PUSH must not repoint a client's production site. alpha-working is
+          # where library and template work lands mid-flight, so a merge that
+          # carries only half a change (2026-11-19: the Flatsome element rules
+          # merged without the stylesheet half) would redeploy every site from a
+          # tree that is not ready — it regressed monicarajiv within three
+          # minutes of a merge. A push therefore BUILDS and VERIFIES into
+          # `site/<name>-preview`; production stays an explicit dispatch, which
+          # keeps `promote` a decision a person makes.
+          PREVIEW: ${{ github.event_name == 'push' && 'true' || github.event.inputs.preview }}
           # Handoff-lock override (Proposal 141). Empty on push/dispatch-unset.
           FORCE_UNLOCK: ${{ github.event.inputs.force_unlock }}
           FORGE_WORK: ${{ runner.temp }}/forge-work
