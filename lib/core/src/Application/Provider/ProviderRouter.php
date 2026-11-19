@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Application\Provider;
 
 use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
+use Nvoos\Core\Domain\Contract\RoutingMetricsInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
@@ -62,6 +63,15 @@ class ProviderRouter
      * @var ModelRoutingCatalogueInterface|null
      */
     private ?ModelRoutingCatalogueInterface $modelCatalogue = null;
+
+    /**
+     * Optional routing metrics sink (Proposal 149 §71).
+     *
+     * A fallback succeeds silently; this is where it stops being invisible.
+     *
+     * @var RoutingMetricsInterface|null
+     */
+    private ?RoutingMetricsInterface $metrics = null;
 
     /**
      * Default cooldown TTL when the provider sends no Retry-After.
@@ -149,6 +159,26 @@ class ProviderRouter
     public function getModelCatalogue(): ?ModelRoutingCatalogueInterface
     {
         return $this->modelCatalogue;
+    }
+
+    /**
+     * Attach a metrics sink for fallback attempts (Proposal 149 §71).
+     *
+     * @since 1.7.0
+     */
+    public function setMetrics(RoutingMetricsInterface $metrics): void
+    {
+        $this->metrics = $metrics;
+    }
+
+    /**
+     * The attached metrics sink, if any.
+     *
+     * @since 1.7.0
+     */
+    public function getMetrics(): ?RoutingMetricsInterface
+    {
+        return $this->metrics;
     }
 
     /**
@@ -515,7 +545,16 @@ class ProviderRouter
             ? $provider->stream($messages, $fallbackOptions, $onChunk)
             : $provider->chat($messages, $fallbackOptions);
 
-        if ($this->isError($result)) {
+        $succeeded = ! $this->isError($result);
+
+        // Counted before the caller sees the result, and never allowed to
+        // affect routing: the operator's view of fallbacks must not cost a
+        // request.
+        if (null !== $this->metrics) {
+            $this->metrics->recordModelFallback($slug, $modelId, $fallbackId, $succeeded);
+        }
+
+        if (! $succeeded) {
             if ($this->healthTracker) {
                 $this->healthTracker->recordFailure($slug, $this->classifyError($result));
             }

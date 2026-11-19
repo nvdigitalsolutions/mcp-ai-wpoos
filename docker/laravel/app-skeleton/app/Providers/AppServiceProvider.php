@@ -19,12 +19,14 @@ use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
+use App\Support\Diagnostics\RoutingMetricStore;
 use App\Support\Models\ModelCatalogueLookup;
 use App\Support\Pro\ToolkitEngine;
 use App\Support\Pro\ToolkitManifestLoader;
 use App\Support\RemoteSites\RemoteSiteStore;
 use App\Support\Security\SecuritySnapshotStore;
 use App\Support\Settings\SettingsService;
+use App\Support\Token\TiktokenService;
 use App\Support\TenantContext;
 use App\Support\TenantEntitlement;
 use App\Spike\SpikeStreamingProvider;
@@ -47,8 +49,10 @@ use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
+use Nvoos\Core\Domain\Contract\RoutingMetricsInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
+use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\SettingsStore;
@@ -73,6 +77,15 @@ class AppServiceProvider extends ServiceProvider
         // guards serve both (Proposal 149 §69-§70).
         $this->app->bind(ModelRoutingCatalogueInterface::class, ModelCatalogueLookup::class);
         $this->app->bind(ModelLimitCatalogueInterface::class, ModelCatalogueLookup::class);
+
+        // Token counting (Proposal 149 §71). The adapter prefers real tiktoken
+        // when the optional package is installed and reports which mode is
+        // live through isAvailable(), so pre-flight accuracy is observable.
+        $this->app->bind(TiktokenServiceInterface::class, TiktokenService::class);
+
+        // Model-fallback counters (Proposal 149 §71). One row per attempt;
+        // the diagnostics page aggregates it.
+        $this->app->bind(RoutingMetricsInterface::class, RoutingMetricStore::class);
 
         // The admin palette generator reads a token tree that lives outside the
         // application (the storefront's DTCG sources), so its location is
@@ -301,6 +314,9 @@ class AppServiceProvider extends ServiceProvider
         // catalogue is optional and fails closed: no table or no row means the
         // router behaves exactly as it did before.
         $router->setModelCatalogue($this->app->make(ModelRoutingCatalogueInterface::class));
+
+        // Fallback counters (Proposal 149 §71). A write never affects routing.
+        $router->setMetrics($this->app->make(RoutingMetricsInterface::class));
 
         if (! $router->has('spike')) {
             $router->register(new SpikeStreamingProvider(

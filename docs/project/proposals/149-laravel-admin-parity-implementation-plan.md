@@ -7494,3 +7494,104 @@ exists.
    the catalogue or not passing the manager to the registrar.
 6. **The fallback counter is still unbuilt.** `_nvoos_routing` is the seam a
    diagnostics counter would read; nothing consumes it for display yet.
+
+## 71. The tokenizer seam and a fallback counter (2026-11-19)
+
+§70 made two things true at once — pre-flight context-window validation is
+live, and a model fallback is silent. This section answers both: the check now
+has a real tokenizer to measure with, and the fallback has a number on
+`/ops/diagnostics`.
+
+### 71.1 The tokenizer was a contract with no implementation
+
+`TiktokenServiceInterface` has existed since core 1.0. `lib/wordpress-adapter`
+implements it; the Laravel runtime never did, and `TokenBudgetManager` could not
+use one even if it existed — `estimateTokens()` was `mb_strlen / 4`, full stop.
+
+Two changes:
+
+- `TokenBudgetManager::setTokenizer(TiktokenServiceInterface)` — `estimateTokens()`
+  delegates when one is attached and keeps the heuristic when none is. Every
+  caller (`validateContextWindow`, `estimateMessageTokens`, `calculateBudget`)
+  inherits it.
+- `App\Support\Token\TiktokenService` — the runtime implementation, attached by
+  `NvoosServiceProvider` when the platform binds the contract (the app does).
+
+### 71.2 The dependency stays optional, and says so
+
+`rahul900day/tiktoken-php` is a **suggested** dependency, not a required one.
+That is a deliberate call, not an oversight:
+
+- the library fetches its encoding files over HTTP on first use (verified:
+  `hello world` = **2 tokens**, against 3 from chars/4), so a hard dependency
+  would add a first-request download — and a hard network requirement — to every
+  deployment, including ones that cannot make that call;
+- the pre-flight check is a safety net, not billing, so a heuristic answer is
+  acceptable when the accurate one is unavailable;
+- the adapter reports which mode is live through `isAvailable()`, and the
+  diagnostics page shows it: `tokenizer: tiktoken (accurate)` or
+  `tokenizer: heuristic (chars/4)`.
+
+Turning it on is one line — `composer require rahul900day/tiktoken-php` — and the
+`suggest` entry in `docker/laravel/app-skeleton/composer.json` says so, with the
+network caveat.
+
+`countTokensAccurate()` still throws when the library is absent: a caller that
+requires precision must not silently receive an estimate.
+
+**What this does not do:** it does not change the fallback estimate. The
+heuristic remains chars/4 rather than a hand-tuned structural guess, because
+invented constants would only trade a documented error for an undocumented one.
+
+### 71.3 The counter
+
+A fallback succeeds silently: the caller gets an answer and only the
+`_nvoos_routing` marker says anything changed. The marker is right for the
+caller and useless for an operator.
+
+- `Nvoos\Core\Domain\Contract\RoutingMetricsInterface` — one method,
+  `recordModelFallback($provider, $from, $to, $succeeded)`, called once per
+  attempt with the outcome.
+- `ProviderRouter::setMetrics()` — called from `attemptModelFallback()` **before**
+  the caller sees the result and with no return path into routing. The contract
+  requires implementations never to throw, and the store honours that.
+- `App\Support\Diagnostics\RoutingMetricStore` — one row per attempt in
+  `nvoos_routing_metrics` (`provider`, `from_model`, `to_model`, `succeeded`,
+  `created_at`). Reads aggregate over a window, so a rule change never needs a
+  backfill.
+- `/ops/diagnostics` — a **Routing (30d)** group: total, succeeded, failed, last
+  fallback, then the top five `from → to` pairs with their counts and failures.
+  Empty is reported as `none recorded`, not as a blank section.
+
+The migration and the store both guard on `Schema::hasTable()`, so a deployment
+mid-migration records nothing rather than failing a chat.
+
+### 71.4 Gates
+
+| Run | Result |
+|---|---|
+| `TokenBudgetManagerTokenizerTest` | **3 tests** — delegation, heuristic without one, message estimation |
+| `ProviderRouterModelFallbackTest` | **13 tests** — including: a successful fallback is counted, a failed one is counted and the chain still runs, no fallback means no record |
+| Core provider + token dirs | **39 tests / 102 assertions** |
+| `RoutingMetricsTest` (app) | **4 tests / 20 assertions** — row written, failure recorded, page shows the pair, tokenizer mode reported |
+| nvoos/core unit suite | **1366 tests / 4312 assertions, 0 failures** (14 pre-existing runner deprecations) |
+| phpcs (`phpcs-laravel.xml.dist`, 12 files) | **0 errors** |
+| Full app suite | **1333 tests / 17952 assertions, 0 failures** (baseline 1329 / 17932; 2 pre-existing runner deprecations) |
+
+### 71.5 Still open
+
+1. **The counter is model-fallbacks only.** Provider hops are not counted
+   because they are not annotated (§70.7 item 1); when that changes, the same
+   store takes a second method.
+2. **No retention policy.** Rows are one per fallback, which is rare, but
+   nothing prunes them. A monthly prune belongs with the migration that first
+   needs it.
+3. **The diagnostics group is a page read, not a metric.** There is no export,
+   alert or trend line — the same limitation the cost summary has.
+4. **`countTokensAccurate()` is unused in the runtime.** The pre-flight path uses
+   `countTokens()` so an offline encoder degrades instead of failing; a caller
+   that wants to *refuse* on imprecision has the method but no switch.
+5. **Encoding selection is family-prefix based.** Models outside the map
+   (`claude-*`, `gemini-*`) get `cl100k_base` — an approximation, since those
+   providers tokenize differently. A provider-specific encoder is a larger
+   project than this slice.
