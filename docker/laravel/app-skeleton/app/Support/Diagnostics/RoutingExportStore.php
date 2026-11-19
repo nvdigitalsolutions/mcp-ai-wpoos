@@ -147,9 +147,16 @@ final class RoutingExportStore
     /**
      * The time before which another push should not be attempted.
      *
-     * Exponential on the consecutive-failure count, capped. Reading the policy
-     * from configuration here (rather than in each caller) keeps the command's
-     * gate and the diagnostics page's "retry at" from drifting apart.
+     * Exponential on the consecutive-failure count, capped, then jittered.
+     * Reading the policy from configuration here (rather than in each caller)
+     * keeps the command's gate and the diagnostics page's "retry at" from
+     * drifting apart.
+     *
+     * **Jitter is additive, not full.** Full jitter (a uniform delay in
+     * `0..delay`) spreads a herd best but can turn "retry in an hour" into
+     * "retry now" for some deployments; additive keeps the floor the operator
+     * configured and only spreads the top. Twenty percent is enough to stop a
+     * fleet that failed together from knocking together.
      */
     public function backoffUntil(): ?\Carbon\CarbonImmutable
     {
@@ -175,8 +182,18 @@ final class RoutingExportStore
 
         // Cap the exponent before multiplying: 2^60 overflows into a float and
         // the cap already makes anything past ~2^6 irrelevant at these bounds.
-        $delay = min($base * (2 ** min($failures - 1, 20)), $max);
+        $delay = (int) min($base * (2 ** min($failures - 1, 20)), $max);
 
-        return \Carbon\CarbonImmutable::parse((string) $last->created_at)->addSeconds((int) $delay);
+        $jitter = min(1.0, max(0.0, (float) config('oos.routing.export.backoff_jitter', 0.2)));
+
+        if ($jitter > 0.0) {
+            $spread = (int) round($delay * $jitter);
+
+            if ($spread > 0) {
+                $delay += random_int(0, $spread);
+            }
+        }
+
+        return \Carbon\CarbonImmutable::parse((string) $last->created_at)->addSeconds($delay);
     }
 }

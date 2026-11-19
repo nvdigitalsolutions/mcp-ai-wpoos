@@ -7940,6 +7940,7 @@ The run history already knows how many times in a row the push failed: count
 
 ```
 delay = min(base × 2^(failures − 1), max)     base 60s, max 3600s
+delay = delay + random(0 … delay × jitter)     jitter 0.2
 ```
 
 - the **first** failure waits 60s, the second 120s, the third 240s … capped at
@@ -7964,6 +7965,16 @@ The exponent is capped before multiplying (`min($failures - 1, 20)`): at 60 ×
 2^60 PHP leaves integer range and the result becomes a float, and the cap of an
 hour makes anything past ~2^6 irrelevant anyway.
 
+On top of the window the delay is **jittered additively** — up to
+`backoff_jitter` (default `0.2`, i.e. +20%) is added to it. Full jitter (a
+uniform delay in `0..delay`) spreads a herd better, but it can turn "retry in an
+hour" into "retry now" for the unlucky deployment and it discards the floor the
+operator configured. Adding *on top* keeps every deployment at or after its own
+exponential window while still breaking lockstep, which is the actual goal: a
+fleet that failed together must not retry together. `backoff_jitter = 0`
+restores the exact window, and the deterministic backoff tests set it precisely
+so that "at +61s it retries" is not a coin toss.
+
 ### 75.3 A test bug worth recording
 
 `Http::fake(['url' => …])` **appends** stubs; it does not replace them. The
@@ -7979,9 +7990,9 @@ was the defect (the first was the float timestamp in §73.3).
 
 | Run | Result |
 |---|---|
-| `RoutingExportPushTest` | **12 tests** — adds: the export carries the row id; the first failure waits 60s; the second waits 120s; `--force` bypasses; an `ok` resets the count; `backoff_base = 0` disables the gate |
-| `RoutingExportPushTest` + `RoutingRetentionExportTest` | **18 tests / 98 assertions** |
-| phpcs (`phpcs-laravel.xml.dist`, 7 files) | **0 errors** |
+| `RoutingExportPushTest` | **14 tests** — adds: the export carries the row id; the first failure waits 60s; the second waits 120s; `--force` bypasses; an `ok` resets the count; `backoff_base = 0` disables the gate; jitter stays within `[delay, delay × 1.2]`; `backoff_jitter = 0` makes the window exact |
+| `RoutingExportPushTest` + `RoutingRetentionExportTest` | **20 tests / 103 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 3 changed files) | **0 errors** |
 | Full app suite | **1352 tests / 18061 assertions, 0 failures** (baseline on the stacked branch: 1348 / 18037; 2 pre-existing runner deprecations) |
 
 ### 75.5 Still open
@@ -7990,14 +8001,11 @@ was the defect (the first was the float timestamp in §73.3).
    a collector that ignores it still double-counts a resent batch. That is a
    deployment instruction, not a code gap, but it must be written down somewhere
    more visible than this plan.
-2. **No jitter.** Every deployment retries at `base × 2^n` from its own failure,
-   so a fleet that fails together retries together. Adding ±20% jitter is a few
-   lines and should happen before this runs at fleet scale.
-3. **Backoff is per-deployment, not per-endpoint.** One endpoint down means all
+2. **Backoff is per-deployment, not per-endpoint.** One endpoint down means all
    events wait, which is correct today because there is only one endpoint.
-4. **No counter for "currently backing off".** The page shows the time; a metric
+3. **No counter for "currently backing off".** The page shows the time; a metric
    a scraper could read does not exist.
-5. **A backlog larger than one batch drains one chunk per successful tick.** At
+4. **A backlog larger than one batch drains one chunk per successful tick.** At
    `*/15` and 500 rows that is 48k/day, ample for deviations but not for a
    long outage followed by a large replay.
-6. **`nvoos_token_usage` is still unbounded** (§73.5).
+5. **`nvoos_token_usage` is still unbounded** (§73.5).
