@@ -7719,3 +7719,97 @@ top hop pairs (`hop openai → gemini`).
 5. **Cascade tier 1 is annotated but not counted.** It is a routing deviation
    with its own statistics (`CascadeRouter::getStats()`), so a third `kind` would
    duplicate them; revisit if the two counters ever disagree.
+
+## 73. Retention and a portable export for routing events (2026-11-19)
+
+§71 left "no retention policy" open and §72 left the diagnostics group as "a
+page read, not a metric". Both close here: the table is bounded, and the events
+leave the runtime in a shape another tool can ingest.
+
+### 73.1 Retention: a slow leak is still a leak
+
+`nvoos_routing_metrics` holds one row per deviation, so it grows slowly — but
+nothing bounded it. Three pieces:
+
+| Piece | Decision |
+|---|---|
+| `oos.routing.retention_days` | 90 by default; `0` disables pruning **and** the schedule entry |
+| `nvoos:prune-routing-metrics` | `--days` overrides the config; `--dry-run` counts without deleting |
+| Schedule | daily at 03:20, only when the window is positive, `withoutOverlapping()` |
+
+The cutoff is `now()->subDays($days)->startOfDay()`, so a run at any hour deletes
+the same set of days. `--days=0` reports "disabled" and deletes nothing rather
+than interpreting 0 as "delete everything" — the one reading that would be
+catastrophic if it were wrong.
+
+The command prints what it removed. A deployment that ships events somewhere
+else should export first and prune second; nothing enforces that order, and the
+`--dry-run` output is the check.
+
+### 73.2 Export: flat JSON for tools, OTLP for a collector
+
+`nvoos:export-routing-metrics --days=30 --format=json|otel [--path=...]`, with
+stdout as the default so it works in a pipe.
+
+**`json`** — `{window_days, generated_at, events: [...]}`, one object per
+deviation:
+
+```json
+{"time":"2026-11-19T09:14:02+00:00","kind":"provider_hop","provider":"gemini",
+ "from_provider":"openai","from_model":null,"to_model":null,"succeeded":false}
+```
+
+Empty strings become `null`: a provider hop has no model, and `""` in a JSON
+export reads as a model named empty.
+
+**`otel`** — OTLP/JSON log records (`resourceLogs → scopeLogs → logRecords`).
+A deviation is a **log record, not a span**: it describes a request that already
+finished and has no duration of its own to measure.
+
+| Attribute | Source | Why |
+|---|---|---|
+| `gen_ai.provider.name` | serving provider | the GenAI conventions' provider discriminator |
+| `gen_ai.request.model` | `from_model` (model fallback) | `gen_ai.request.model` means "what was asked" |
+| `gen_ai.response.model` | `to_model` (model fallback) | `gen_ai.response.model` means "what answered" |
+| `nvoos.routing.kind` | `kind` | `model_fallback` / `provider_hop` |
+| `nvoos.routing.from_provider` | `from_provider` (hop) | the conventions have no name for a source provider on a hop |
+| `nvoos.routing.succeeded` | `succeeded` | boolValue, so a collector can filter failures |
+
+Severity is `INFO` (9) for a successful attempt and `WARN` (13) for a failed one.
+Body is a one-line summary (`provider_hop openai -> gemini`), because a log
+record without a body is a database row with extra steps.
+
+### 73.3 A float bug the test caught
+
+OTLP wants `timeUnixNano` as a uint64 **string**. Carbon's
+`getPreciseTimestamp(9)` returns a **float** at nanosecond precision on this
+version, and the JSON came out as `1.795079066E+18` — rejected by any collector.
+Fixed with integer arithmetic from seconds + microseconds; a database timestamp
+has no sub-microsecond precision to lose.
+
+Recorded because it is the exact class of defect a round-trip test exists for:
+the export looked right in a browser and was invalid on the wire.
+
+### 73.4 Gates
+
+| Run | Result |
+|---|---|
+| `RoutingRetentionExportTest` | **6 tests / 41 assertions** — pruning window, dry run, disabled retention, flat export of both kinds, OTel attribute mapping and severity, unknown-format failure |
+| phpcs (`phpcs-laravel.xml.dist`, 6 files) | **0 errors** |
+| Full app suite | **1340 tests / 18004 assertions, 0 failures** (baseline 1334 / 17963; 2 pre-existing runner deprecations) |
+
+### 73.5 Still open
+
+1. **No console download.** Export is CLI-only; a signed download link on
+   `/ops/diagnostics` would need a route, an auth check and a streamed response.
+2. **No push.** The OTLP shape is a file, not an exporter — nothing sends it to
+   a collector on a schedule. A `routing.export_schedule` config plus an HTTP
+   client is the next step, and it needs a failure policy (retain on failure).
+3. **`nvoos_token_usage` is still unbounded.** Same argument as §73.1, different
+   table; the cost summary reads 30 days but the rows never expire.
+4. **No PII review needed — yet.** These rows carry provider slugs and model ids
+   only. If a future annotation adds assistant or user ids, the export becomes a
+   data-sharing decision rather than a telemetry one.
+5. **Timezone.** `time` is emitted in the app's timezone. OTLP is epoch-based so
+   the OTel path is unambiguous; the flat path relies on the ISO offset, which
+   is present but easy to overlook in a spreadsheet.

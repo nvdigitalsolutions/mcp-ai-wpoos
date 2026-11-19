@@ -60,6 +60,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->cron($sweepSchedule)
                 ->withoutOverlapping();
         }
+
+        // 149 §73 — routing metrics retention. One row per deviation, so the
+        // table grows slowly; a slow leak is still a leak. The window is
+        // configuration (0 disables), and the daily slot is off-peak because
+        // the delete is the only write this table ever sees from a schedule.
+        $routingRetentionDays = (int) config('oos.routing.retention_days', 90);
+
+        if ($routingRetentionDays > 0) {
+            $schedule->command('nvoos:prune-routing-metrics', ['--days' => $routingRetentionDays])
+                ->dailyAt('03:20')
+                ->withoutOverlapping();
+        }
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Sanctum SPA cookie mode (Proposal 090-B, ADR-4). Same-origin
