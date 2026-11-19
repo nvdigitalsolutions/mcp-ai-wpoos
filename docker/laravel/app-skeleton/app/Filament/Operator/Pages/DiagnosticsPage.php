@@ -270,11 +270,12 @@ class DiagnosticsPage extends Page
             $value .= ' · '.mb_substr($error, 0, 80);
         }
 
-        $store = app(RoutingExportStore::class);
-        $backoffUntil = $store->backoffUntil();
+        // §78 — the same state the diagnostics API returns, so the sentence
+        // here and the gauge there cannot disagree about the retry time.
+        $state = app(RoutingExportStore::class)->backoffState();
 
-        if (null !== $backoffUntil && now()->lt($backoffUntil)) {
-            $value .= sprintf(' · retry after %s', $backoffUntil->toDateTimeString());
+        if ($state['backing_off'] && null !== $state['retry_after']) {
+            $value .= sprintf(' · retry after %s', $state['retry_after']->toDateTimeString());
         }
 
         return [['label' => 'OTLP export (last)', 'value' => $value]];

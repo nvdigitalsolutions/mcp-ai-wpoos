@@ -8003,8 +8003,7 @@ was the defect (the first was the float timestamp in §73.3).
    more visible than this plan.
 2. **Backoff is per-deployment, not per-endpoint.** One endpoint down means all
    events wait, which is correct today because there is only one endpoint.
-3. **No counter for "currently backing off".** The page shows the time; a metric
-   a scraper could read does not exist.
+3. **No counter for "currently backing off"** — closed by §78.
 4. **A backlog larger than one batch drains one chunk per successful tick.** At
    `*/15` and 500 rows that is 48k/day, ample for deviations but not for a
    long outage followed by a large replay.
@@ -8180,3 +8179,68 @@ wrapper differs, which is exactly what the tests compare.
 4. **Compression is per request.** A batch is one request, so there is no
    cross-batch dictionary to exploit — which matters only for very large
    replays, and those are already split by `batch`.
+
+## 78. A backoff gauge a scraper can read (2026-11-19)
+
+§75.5 item 3 read: "No counter for 'currently backing off'. The page shows the
+time; a metric a scraper could read does not exist." It exists now.
+
+### 78.1 The field, and why it lives on the diagnostics payload
+
+`GET /api/v1/diagnostics/overview` gains a `data.routing_export` block:
+
+| Field | Meaning |
+|---|---|
+| `configured` | an endpoint is set; `false` makes the other fields uninteresting rather than healthy |
+| `backing_off` | **the gauge** — true only while the exporter is inside its retry window |
+| `retry_after` | ISO-8601 instant, or `null` when `backing_off` is false |
+| `consecutive_failures` | derived from history, not stored |
+
+It goes on the existing JSON diagnostics contract rather than a new
+Prometheus-style endpoint. The console already ships `mcp-ai/v1` JSON to
+anything that can authenticate; a second exposition format for one gauge would
+be a new surface to secure, version and test. A scraper can read JSON.
+
+Two deliberate shapes:
+
+- **`retry_after` is `null` whenever `backing_off` is false.** A consumer must
+  not have to compare the timestamp against its own clock to decide whether the
+  exporter is waiting — especially since the scraper's clock is not necessarily
+  the runtime's. A window that has elapsed reports `false`/`null`, not a stale
+  time in the past;
+- **an unconfigured exporter reports `configured: false` and zeros.** "Not
+  backing off" without that flag would look identical to a healthy exporter.
+
+The state comes from `RoutingExportStore::backoffState()`, and the operator page
+now renders its sentence from the same method. Before this, the page compared
+`backoffUntil()` to `now()` itself — a second copy of the rule that could drift
+from the command's gate. There is now one copy.
+
+### 78.2 What the gauge does and does not say
+
+It says the exporter **will not attempt a push before `retry_after`**. It does
+not say the collector is down: the count is derived from the run history, so
+one `ok` row clears it even if the collector is flaky, and the page still shows
+the last error. A dashboard that wants "is the collector healthy" should read
+`consecutive_failures` too, and a paging rule should look at both.
+
+### 78.3 Gates
+
+| Run | Result |
+|---|---|
+| `RoutingExportGaugeTest` | **4 tests** — backing off inside the window with an ISO instant exactly 60s out; cleared once elapsed (`false`/`null`, count still 1); an `ok` run resets count to 0; unconfigured reports `configured: false` |
+| `RoutingExportGaugeTest` + `Phase1ConsoleTest` + `RoutingExportPushTest` | **33 tests / 139 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 5 files) | **0 errors** |
+| Full app suite | **1368 tests / 18116 assertions, 0 failures** (CI `App suite (SQLite)`) — +4 tests over §77, matching this section's focused delta |
+
+### 78.4 Still open
+
+1. **No metric name or labels.** This is a JSON field, not a Prometheus series;
+   a deployment with a metrics pipeline maps it, the runtime does not guess the
+   pipeline.
+2. **The gauge is per-deployment**, like the backoff it reports — one endpoint,
+   one window. Per-endpoint backoff (§75.5 item 2) would need a list here.
+3. **It is computed per request** (three small queries). That is fine at
+   diagnostics cadence and would not be at scrape-every-second cadence.
+4. **`retry_after` carries the jitter**, so two deployments recovering together
+   legitimately report different times. That is the point of §75.2, not a bug.
