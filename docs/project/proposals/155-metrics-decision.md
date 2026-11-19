@@ -59,12 +59,14 @@ Mapping the WordPress vocabulary onto them:
 | `chat.turn.duration_ms` | **derived** — `end.duration_ms` (already read by `TraceRuns`) |
 | `chat.agentic.iterations` | **derived** — `iteration` records per run |
 | `chat.turn.error.count` | **partial** — traces distinguish `aborted` and `incomplete`; a provider error that still returned a message is not recorded as one |
-| `tool.execution.count` | **partial** — `tool_calls` per provider call is recorded; per-tool execution is not |
-| `tool.execution.success/error/duration_ms/in_flight` | **not produced** — nothing records per-tool execution |
+| `tool.execution.count`, `.success.count`, `.error.count`, `.duration_ms` | **derived** since §98 — one `tool` record per execution, in the shape OTel's `execute_tool` span uses |
+| `tool.execution.in_flight` | **not produced** — a gauge needs a start record; the `tool` record is written when the call is over |
 | `stream.*` (7) | **not produced** — the SSE handler observes chunks and TTFB but persists nothing |
 | `eval.*` (2) | **not produced** — there is no eval harness on either runtime |
 
-Six metrics fully derivable, two partially, thirteen not produced.
+Ten derived, one partial, ten not produced. (§98 added the per-tool record, which
+moved four of these; the rest of this proposal is the decision that record belongs
+to.)
 
 ## 3. The options
 
@@ -107,9 +109,12 @@ named gaps, rather than twenty-one zeroes.
 | **M2** | Stream metrics: persist chunk count, TTFB and cancellations from the SSE handler | a decision that the SSE path should write telemetry at all; it is the hottest path in the runtime |
 | **M3** | Eval harness (suites, verifiers, rewards, `pass_rate`) | its own proposal — it needs a way to run a suite against a model and to store the result, which is a training-loop concern rather than a telemetry one |
 
-`tool.execution.*` sits between M1 and M2: it needs a per-tool execution record,
-which the orchestrator does not emit today. Naming that is part of M1's honesty,
-not a promise in it.
+`tool.execution.*` sat between M1 and M2: it needed a per-tool execution record.
+**It shipped (§98, 2026-11-19)** — four of the five metrics are now derivable, and
+`in_flight` is not, because a gauge needs a start record. M1 therefore starts
+with **ten** derived metrics rather than six, and with a settled window question: traces
+are pruned by **run count**, so a derived figure means "the last N runs of this
+assistant", never "today".
 
 ## 7. Risks
 
@@ -122,8 +127,9 @@ not a promise in it.
 
 ## 8. What would change the decision
 
-- **A per-tool execution record** (its own slice, useful beyond metrics) would move
-  five rows from "not produced" to "derived" without touching this design.
+- **A per-tool execution record** (its own slice, useful beyond metrics) has moved
+  four rows from "not produced" to "derived" without touching this design — §98,
+  2026-11-19. `in_flight` stays unproduced: it needs a start record.
 - **An eval harness** would make D5's deferral wrong, and would come with its own
   data model — at which point `eval.suite.*` becomes derivable and M3 replaces
   this section, not edits it.

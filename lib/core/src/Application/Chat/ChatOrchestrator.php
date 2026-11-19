@@ -1000,6 +1000,12 @@ class ChatOrchestrator
                 $toolDurationMs = \max(0.0, ( \microtime(true) - $toolStartedAt ) * 1000.0);
                 $toolOutcome    = $this->errors->isError($result) ? 'error' : 'success';
 
+                // One record per execution, in the shape OpenTelemetry's
+                // `execute_tool` span uses. The session log below already carries
+                // these four facts; a trace is where a reader can query them, and
+                // this is the record that makes per-tool metrics derivable.
+                $trace?->toolExecution((string) $toolName, (string) $toolCallId, $toolDurationMs, $toolOutcome);
+
                 // Normalize errors for LLM consumption.
                 if ($this->errors->isError($result)) {
                     $normalized    = $this->errors->normalize($result);
@@ -1578,6 +1584,10 @@ class ChatOrchestrator
 
                 $toolDurationMs = \max(0.0, ( \microtime(true) - $toolStartedAt ) * 1000.0);
                 $toolOutcome    = $this->errors->isError($result) ? 'error' : 'success';
+
+                // Same record on the streaming path — one shape for both, so a
+                // reader does not have to know which route produced the turn.
+                $trace?->toolExecution((string) $toolName, (string) $toolCallId, $toolDurationMs, $toolOutcome);
 
                 if ($this->errors->isError($result)) {
                     $normalized    = $this->errors->normalize($result);
