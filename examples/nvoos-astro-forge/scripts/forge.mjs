@@ -68,7 +68,7 @@ import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy, suggestedVariant } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
-import { auditTokenBlock, mergeTokens, rewriteGlobalCss, scaffold, TEMPLATE_VARIANTS } from '../lib/scaffold.ts';
+import { accentFamilyOf, auditTokenBlock, mergeTokens, rewriteGlobalCss, scaffold, TEMPLATE_VARIANTS } from '../lib/scaffold.ts';
 import { auditSeo, scanSeoHtml } from '../lib/seo-audit.ts';
 import { analyzeTracking, mergeTrackingDraft, renderTrackingReport, trackingFromReport } from '../lib/tracking.ts';
 import { auditTracking } from '../lib/tracking-audit.ts';
@@ -1248,7 +1248,7 @@ async function runTokens( profileRef, options ) {
 	if ( css === null ) {
 		fail( `Cannot read ${ cssPath} — is that a forged project?` );
 	}
-	const tokens = mergeTokens( profile.design, profile.tokens, profile.colors );
+	const tokens = mergeTokens( profile.design, profile.tokens, profile.colors, accentFamilyOf( profile ) );
 	const audit = auditTokenBlock( css, tokens );
 	if ( ! audit.markers ) {
 		fail( 'global.css has no FORGE:tokens span — re-scaffold the project.' );
@@ -2213,7 +2213,7 @@ async function runVerify( profileRef, options ) {
 		process.exitCode = 1;
 		record( 'token block', 'fail', 'global.css unreadable' );
 	} else {
-		const audit = auditTokenBlock( tokenSource, mergeTokens( profile.design, profile.tokens, profile.colors ) );
+		const audit = auditTokenBlock( tokenSource, mergeTokens( profile.design, profile.tokens, profile.colors, accentFamilyOf( profile ) ) );
 		if ( ! audit.markers ) {
 			console.warn(
 				'\u2717 Token block: global.css has no FORGE:tokens span — the tokens were never applied (re-scaffold, or run tokens_apply).'
