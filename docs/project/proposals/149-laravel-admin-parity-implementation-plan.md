@@ -6510,9 +6510,11 @@ the failure mode is silent until an operator tries to save.
    pages or resources, not form fields: orchestration `agents` / `teams` /
    `professions` / `observability`, token `analytics` / `anomalies` / `patterns` /
    `trends` / `model_manager`. The token half now has what it needs to be worth
-   building — a writer (§81) and a long-term store (§80) — so `per_user` /
-   `per_tool` / `per_site` / `analytics` are unblocked; the orchestration half
-   still needs the surfaces named above.
+   building — a writer (§81) and a long-term store (§80). `per_user` shipped in
+   §82; `per_tool` turned out to be a limits *configuration* table rather than a
+   usage view; `per_site` is blocked on the missing estate scope (§64);
+   `analytics` is the next slice. The orchestration half still needs the
+   surfaces named above.
 2. **Per-field scope review.** All 585 are tenant-scope. Some are plainly
    infrastructure (RabbitMQ host, OpenTelemetry endpoint) and belong in operator
    scope; each is a one-line change in the JSON plus a decision about who owns it.
@@ -8439,6 +8441,7 @@ needs no registration, and manual registration is a bug.
 | `TokenUsageTrackingTest` | **4 tests / 22 assertions** — a completed turn writes one row with the operator's id, 10/5 tokens and `provider`/`assistant_id` metadata; the accumulated figures beat the last iteration (300/90, not 100/30); a turn with no tokens writes nothing; tracking can be disabled |
 | Tracking + `AssistantTestTest` + `CoreOperationsTest` + `RoutingExportGaugeTest` + `Phase1ConsoleTest` | **30 tests / 180 assertions** |
 | phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
+| Full app suite | **1380 tests / 18170 assertions, 0 failures** (CI `App suite (SQLite)`) — exactly +4 tests / +22 assertions over §80, matching this section's focused run |
 
 ### 81.4 Still open
 
@@ -8453,3 +8456,70 @@ needs no registration, and manual registration is a bug.
 3. **No backfill.** Turns that ran before this listener existed left no rows.
 4. **`user_id = 0` for unauthenticated turns.** The per-user views (§63.5 item 1)
    will need to treat 0 as "anonymous" rather than as a user.
+
+## 82. Token usage by user — the first of the 21 views (2026-11-19)
+
+§63.5 item 1 has listed the 21 WordPress views as unported since the settings
+port. §81 gave the token half a writer and §80 a long-term store, so the first
+one can be built without shipping a page that is always empty.
+
+### 82.1 What the WordPress view has, and what this one keeps
+
+| WordPress column | Here | Why |
+|---|---|---|
+| User | yes | resolved through `oos.user_model`; `user_id = 0` is **Anonymous**, an unknown id is `User #id` |
+| Tier | no | a WordPress plan concept with no equivalent here; inventing one from the entitlement would be a guess |
+| Total requests | yes (`events`) | |
+| Total / prompt / completion tokens | yes | |
+| Cached tokens | no | the provider response shape carries no cached count, so the column would always be zero |
+| Est. cost (USD) | yes | the same `cost_usd` the turn recorded (§81) |
+| Actions (per-user modal) | no | the WordPress modal edits limits — that is `per_tool`'s surface, not this one |
+
+### 82.2 One page, one period control
+
+`/ops/token-usage` (`App\Filament\Operator\Pages\TokenUsage`), read-only, in the
+operator panel:
+
+- **period 7 / 30 / 90 days**, whole days from `startOfDay()` like every
+  retention boundary in this series; an out-of-range value is normalised as soon
+  as it arrives, so the select can never show a period it does not offer;
+- **aggregated in SQL** (`groupBy user_id`, `SUM` of the three token columns and
+  `cost`), ordered by spend — the page renders what the database computed, not a
+  PHP roll-up that can drift from it;
+- **column totals** in the footer, from the same rows;
+- **the page states the two absences**: no per-site breakdown (the table has no
+  estate scope, §64) and Anonymous for unauthenticated turns.
+
+The surface inventory keeps this inside `platform-operations` — the row whose
+title is literally "Operations, diagnostics and cost" — rather than adding a
+46th surface and a console key for one read-only table. No new write path.
+
+### 82.3 Where the other views stand
+
+| View | Status |
+|---|---|
+| `per_user` | **this section** |
+| `per_site` | blocked on the missing estate scope — a data gap, not a renderer |
+| `per_tool` | **not a usage view.** In WordPress it is a limits *configuration* table (preferred model, multiplier, effective limits), so it is a settings surface, not an analytics one; recorded here so it is not mistaken for one |
+| `per_models` | already served by `/ops/models` (§68) — the model config table |
+| `model_manager` | catalogue sync lives in `/ops/models` too |
+| `analytics` (trend / anomalies / patterns) | the API already serves `cost/trend` and `cost/by-provider`; the page is the next slice |
+
+### 82.4 Gates
+
+| Run | Result |
+|---|---|
+| `AdminTokenUsageTest` | **6 tests / 21 assertions** — the page renders; usage aggregates per user, highest spend first; the period changes the window; an unknown period falls back to 30; an unauthenticated turn is Anonymous; an estate administrator gets 403 |
+| `AdminTokenUsageTest` + `SurfaceOwnershipTest` | **10 tests / 490 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
+| `bin/audit-surface-ownership.php` | 46 surfaces, 34 Filament-built, 3 planned only — unchanged |
+
+### 82.5 Still open
+
+1. **No per-user detail view.** The WordPress modal edits limits; the usage part
+   of it would be a second page over the same rows, and has not been asked for.
+2. **Raw rows only.** Past the retention window the page shows nothing, and the
+   rollup has no user dimension (§80.1), so a 90-day view on a deployment with a
+   short retention is partial. With the default 365-day window this is theory.
+3. **No export.** The WordPress view has none either; CSV belongs with the
+   Reports page if it is ever wanted, not with this table.
