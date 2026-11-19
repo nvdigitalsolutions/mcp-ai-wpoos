@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 8.1
-Stable tag: 1.2.21
+Stable tag: 1.2.22
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -306,6 +306,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.22 - November 19, 2026 =
+
+Bumped to 1.2.22 across the plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md and DOCUMENTATION_INDEX.md. The window is the Laravel runtime reaching admin parity (Proposal 149) while WordPress gains the console contracts it was missing. On Laravel, settings are now two-layer and single-writer — every ported field declares an operator or tenant owner, and an endpoint-wiring gate (52 checks) caught seven providers whose adapters read a different key name than the settings surface writes, so their base-URL overrides had never applied. Toolkit settings gained one save path and a display half (eight pages had printed literal defaults and posted them back over the saved value), and nine new manifests take the catalogue 12 -> 21. The security tab re-tiers 29 of its 74 fields to operator scope and splits into eleven sections; descriptions render as plain text instead of WordPress markup. The operator panel ships runtime health probes, an audit trail, personal access tokens, estate credentials, read-only tool/automation/profession catalogues, a derived ISO 27001 asset register, compliance report exports and estate scoping for workflows, triggers, tokens and remote sites. Telemetry closes: every provider hop is attributed, routing metrics export as OTLP or flat JSON with at-least-once delivery (a per-event id is the collector's dedupe key), the push is watermark-scheduled, retryable, jittered and gzip-capable with a scraper-readable backoff gauge, and token usage is finally recorded, retention-bounded and rolled up daily before pruning. /ops/models serves a 251-row, 18-provider text-model catalogue that now drives same-provider fallback retries and pre-flight token limits (the budget manager had never been wired, so context-window validation had never run). On WordPress, org teams ship (mcp-ai/v1/org/teams, a tenant's users with roles), /features emits connected-app discovery through a registry that refuses private resolutions and pins the validated address, and connected-app tokens are encrypted. NV oOS WiFi 0.1.0 joins as the 33rd addon with a portable domain layer, one MCP tool, a REST route on both runtimes and a domain-purity gate. QuickBooks connections save with just the Client ID and gain a clean-path OAuth callback, encrypted rotated refresh tokens and a bearer fix. The AJAX test base class now fails on an unbound dispatch, which exposed 260 dispatches that had been reaching nothing and two production defects. Toolchain: ESLint 9, Node 18 dropped, patched minimatch/fflate/lopdf. Tool count unchanged: ~360 base + ~1,388 Pro (~1,747 total; live registry authoritative — the WiFi tool is addon-registered and described, not counted). Model catalog v2026.11.03 unchanged (251 models, 18 providers); addons 32 -> 33; coding-time skills 85 (in-place updates only, 32 descriptions trimmed under the now-enforced 46 KB catalog budget). Stale 1.2.20 build ZIPs removed (30 files). Fourteen in-window @since tags corrected from 1.2.23/1.2.24 to the shipping 1.2.22.
 
 = 1.2.21 - November 15, 2026 =
 

@@ -888,6 +888,16 @@ bootstrap fixture and heavy-view mocks (see `api.test.tsx`).
   with Builder at ~63 KB.
 - Lint gates: `npm run lint:a11y` (`eslint-plugin-jsx-a11y`, `--max-warnings 0`)
   must pass; typecheck with `npm run typecheck`; tests with `npm test`.
+- **ESLint is flat-config since 2026-11-16 (ESLint 9, `@wordpress/eslint-plugin`
+v25).** The root `.eslintrc.json` + `.eslintignore` pair is gone; the config is
+  `eslint.config.cjs`. v25 ships **flat configs only**, so
+  `extends: ["plugin:@wordpress/eslint-plugin/recommended"]` has no equivalent —
+  the preset is spread and **re-scoped to `src/**`** to preserve the previous
+  behaviour (it never applied to `assets/js/**`, which stays on
+  `@typescript-eslint/recommended`). Copy the existing file's scoping when adding
+  a package-level config (`addons/saas-controller/eslint.config.cjs` is the
+  model); do not reintroduce `.eslintignore` (flat config uses `ignores`). Node 18
+  is no longer a CI target (Node 20+).
 - PRs: branch `add/<slug>` from `alpha-working`, PR back to `alpha-working`,
   commit built artifacts and lockfiles.
 - Shared worktree caution: another agent or a sync process can revert a file

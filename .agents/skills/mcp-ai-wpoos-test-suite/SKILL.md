@@ -1371,6 +1371,26 @@ the changed files is the substantive gate; plan CI waits accordingly.
       same pivot; 22 call sites changed in one sweep and a mechanical
       `attach(` → `syncWithoutDetaching(` substitution would have broken all of
       them silently.
+  99. **An AJAX rejection assertion passes on a dispatch that reached no
+      code (2026-11-19).** `WP_MCP_AI_Ajax_TestCase::dispatch()` used to return
+      `{"success":false,"data":""}` for **two** different outcomes: a handler
+      calling `wp_die()`, and **no handler bound at all**. Every rejection helper
+      (`assertAjaxForbidden`, `assertAjaxError`) accepted the second shape, so
+      **260 dispatches across 22 files** asserted nothing. The base class now
+      fails when nothing is attached to `wp_ajax_{action}` — the only safe lever,
+      because an empty body cannot distinguish the two. The three ways handlers
+      went missing, all fixed by binding in `setUp()` behind `has_action()`:
+      a `static init()`/constructor that production only runs under `is_admin()`
+      (never true in the CLI runner); a file-scope `add_action()` where another
+      suite autoloads the file first and wp-phpunit's once-per-process
+      `_restore_hooks()` drops the binding while the definitions survive; and a
+      test dispatching an action that does not exist (delete those cases).
+      Two production defects fell out of the guard: `array_map()` on an
+      unvalidated `post_ids` (TypeError on any non-empty non-array) and handlers
+      that `catch ( Throwable )` around `wp_send_json_*` — under PHPUnit
+      `wp_die()` throws, so the catch swallowed it and a second response closed
+      PHPUnit's own buffer. Rethrow under the test seam only; leave production
+      behaviour alone.
 
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 

@@ -861,7 +861,7 @@ register. Carry-ons:
 |---|---|---|
 | `chat-profiles` | `absent` | Proposal 015 is WordPress-only: registry, user-meta preference and the `wp_mcp_ai_before_tool_execution` gate have no counterpart here. A toggle with no enforcement is worse than no page. A real port needs the **gate first**, then the preference (`SettingsService` already has `user` scope), then the page. |
 | `onboarding` | `absent` | Its two writes already have homes (`/ops/settings` for provider keys, `/admin/assistants` for presets). A first-run experience would be a derived checklist, not a wizard. |
-| `datasets` | `planned` | The eleven HuggingFace tools are in `lib/core` but sit at `readiness: unverified`, so `ManifestToolRegistrar` registers none and no assistant can call one. Unblocking is a **readiness classification with network implications**, not a page. |
+| `datasets` | `planned` | The eleven HuggingFace tools are in `lib/core` but are now explicitly **`unavailable`** (#7944) — they call `datasets-server.huggingface.co` (≤100 rows per request, gated datasets need a token), and serving them without evidence was the objection. `unavailable` and `unverified` are both non-servable, so registry behaviour is unchanged; what changed is that the blocker is now **evidence** (per-tool tests + a documented token path), not classification. `ToolReadinessClassificationTest` pins the consequence — flipping one to `ready` requires tests, not a string edit. The dataset browser itself is not built (a browser needs a servable catalogue to browse). |
 | `identity-provider` | `planned` | Nothing to port — no SSO implementation exists on either runtime. Needs a scope decision (OIDC, or OIDC+SAML) before any code. |
 
 ### Branding (§38)
@@ -881,3 +881,98 @@ committed SVG.
 - The tab favicon is still a **different mark** from the lockup icon (known
   inconsistency, plan §38.6). Changing it is an explicit decision, not a side
   effect of a layout change.
+
+## 16. The catalogue, the ledger and the export (149 §60–§81, v1.2.22)
+
+The admin-parity surface closed with three data-layer subsystems. All three share
+one failure mode: **something is wired, running, and reading nothing.**
+
+### The settings catalogue is the source of truth for endpoint names
+
+`docker/laravel/app-skeleton/resources/settings-catalogue.json` is generated from
+the WordPress settings surface and is authoritative for **names**. The adapters
+were wrong, not the catalogue: `getApiBaseUrl()` read `gemini_api_base_url` while
+the surface writes `gemini_base_url` (same shape for `lm_studio_*`, `nvidia_nim_*`,
+`ollama_*`), so four base URLs silently never applied and three overrides
+(Hugging Face, Baseten, Crawl4AI) were unreachable.
+
+- **`bin/check-endpoint-wiring.php` is the gate** — 52 checks, both directions,
+  wired into `composer run ci:all` (`quality:endpoint-wiring`) and the
+  `laravel-app` workflow. It fails 2 checks against the pre-fix mapping, so it is
+  not vacuous.
+- Keep a `$legacyMap` fallback when renaming a storage key: rows written under the
+  old name stay readable, and the surface key wins when both exist.
+- **`writableFor()` is the write authority**, not the form. A tenant posting an
+  operator key gets a server-side refusal; `/ops` reads operator secrets masked.
+- A page that prints a literal default instead of `stored_options()` posts that
+  default straight back over the saved value on the next save — silent data loss
+  with no error. `test-toolkit-settings-persistence.php` has **four** directions;
+  the display one is the newest and the one that catches it.
+
+### The model catalogue is seeded, not authored
+
+`resources/model-catalog.json` is generated from the plugin's
+`includes/data/model-catalog.json` by `bin/generate-laravel-model-catalog.php`
+(**per 1M** here; the source is per 1K). It seeds `nvoos_model_configs`, and the
+table is the working copy.
+
+- **Identity is `(provider, model_id)`.** A `unique(model_id)` migration silently
+  dropped one of 251 rows: the catalogue publishes `gpt-4o` twice (an Azure
+  deployment and a deprecated OpenAI model). WordPress's id-keyed option store
+  collapses the pair; this runtime keeps both and prefers the servable row for a
+  label.
+- **Sync is additive** (`insertOrIgnore`, chunks of 100, never an update) — the
+  JSON is the seed and an operator's edited price must survive a re-sync.
+- `ModelCatalogueLookup` implements `ModelRoutingCatalogueInterface`
+  (`fallbackFor()`, `serves()`) and `ModelLimitCatalogueInterface` (`limitFor()`).
+  **Null is the answer that matters**: no catalogue, no row, an unlisted id or a
+  self-referential fallback all mean "leave the request alone". Only a definite
+  `false` from `serves()` drops a model — a fine-tune or deployment name is
+  unknown to the catalogue and must keep its override.
+- **`nvidia_nim` ↔ `nvidia`.** The client reports `nvidia_nim`, the catalogue
+  stores `nvidia`; untranslated, every NVIDIA fallback was silently dead. Accept
+  either spelling in the adapter.
+- **`setTokenBudgetManager()` existed and was never called** — every client's
+  budget was null, so pre-flight context-window validation returned immediately.
+  It is now bound once in `NvoosServiceProvider` and attached by
+  `ProviderRegistrar`. When adding a client, confirm it receives the manager.
+- The seed lives under `resources/`, not `database/`, and 13 settings selects read
+  `options_source: "model_catalog:<provider>"` — a new text-model select without
+  that marker will not list a catalogue-only id.
+
+### Token usage: write, prune, roll up — in that order
+
+- `RecordTokenUsage` handles `CostCalculated` (fires on **both** chat paths and
+  carries the turn's accumulated totals). **Do not add `Event::listen()`**: the app
+  auto-discovers `app/Listeners`, and an explicit registration double-writes (two
+  rows per turn). A test asserts exactly one listener.
+- Retention (`nvoos:prune-token-usage`, 03:30) **clamps to the last rolled-up
+  day** and deletes nothing when no rollup ran — the same direction as "never
+  delete unexported rows". The consequence belongs in the config comment:
+  disabling the rollup disables pruning.
+- `nvoos:rollup-token-usage` (03:10) upserts on `(day, provider, model_id)`, never
+  rolls up today, and keeps seven days of overlap to heal a skipped run.
+  Aggregate in PHP over id-batched reads, not SQL: extracting `metadata.provider`
+  differs between MySQL and SQLite, and the suite runs on SQLite while production
+  runs on MySQL.
+- `TokenUsage::trend()` falls back to the aggregate for a day the raw rows no
+  longer cover.
+
+### Routing export is at-least-once, and the id is the contract
+
+- **Two operator pages read the chain end to end:** `/ops/token-analytics` (#7942 — `TokenAnalyticsReport` over the rollup table) and `/ops/observability` (#7943 — `TraceRuns` over harness traces). Both are read-only report pages; a report class is the right seam because the page and any future exporter must read the same figures.
+- Every event carries `nvoos.routing.event_id` (OTLP `intValue`, string on the
+  wire) / `id` (flat export). A crash between the collector's 2xx and the
+  watermark write resends the batch; **the collector dedupes on that id**, and a
+  collector that ignores it double-counts. That belongs in
+  `docs/operations/routing-export.md`, not only in the plan.
+- `RoutingExportStore::backoffState()` is the single source for the command gate,
+  the page sentence and the `routing_export` API block. A second copy of the
+  `backoffUntil() < now()` rule will drift.
+- Gauge shape: `retry_after` is `null` whenever `backing_off` is false (so a
+  scraper never compares against its own clock), and an unconfigured exporter
+  reports `configured: false` with zeroes — "not backing off" alone is
+  indistinguishable from healthy.
+- **There is no `NVOOS_ROUTING_EXPORT_HEADERS` env var.** Headers are the
+  `oos.routing.export.headers` config map; a malformed JSON env value would fail
+  at request time rather than at boot.

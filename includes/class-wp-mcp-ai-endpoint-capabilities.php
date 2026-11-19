@@ -276,7 +276,7 @@ class WP_MCP_AI_Endpoint_Capabilities {
 	 *
 	 * Public so the merge rule can be unit-tested without a registry.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.22
 	 * @param array{version:int,endpoints:array<string,bool>,reasons:array<string,string>,gaps:string[]} $manifest Manifest.
 	 * @param array<string,string>                                                                       $urls     Reached app key => base URL.
 	 * @return array{version:int,endpoints:array<string,bool>,reasons:array<string,string>,gaps:string[],endpoint_urls?:array<string,string>}

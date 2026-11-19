@@ -5,13 +5,13 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.21"
-  plugin-version-tested: "1.2.21"
-  last-updated: "2026-11-15"
+  plugin-version: "1.2.22"
+  plugin-version-tested: "1.2.22"
+  last-updated: "2026-11-19"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
-> **Spec current as of v1.2.21** (last verified 2026-11-15). The console
+> **Spec current as of v1.2.22** (last verified 2026-11-19). The console
 > install at console.nvoos.cloud runs v1.2.15 with DeepSeek as the default
 > provider. Version-tagged facts are CI-enforced by
 > `tests/test-knowledge-base-facts-sync.php` for the shipped knowledge base.

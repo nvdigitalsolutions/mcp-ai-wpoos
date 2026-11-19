@@ -182,7 +182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 		 *
 		 * This does NOT validate; pair it with {@see is_blocked_ip()}.
 		 *
-		 * @since 1.2.23
+		 * @since 1.2.22
 		 * @param string $host Hostname or IP literal.
 		 * @return array<string>|false Resolved IPs, or false when resolution fails.
 		 */
@@ -196,7 +196,7 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 		 * Public form of the per-address check {@see validate()} runs, for callers
 		 * that resolved the host themselves.
 		 *
-		 * @since 1.2.23
+		 * @since 1.2.22
 		 * @param string $ip IPv4 or IPv6 address.
 		 * @return true|WP_Error True when blocked, WP_Error describing the range.
 		 */

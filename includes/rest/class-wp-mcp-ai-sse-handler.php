@@ -49,7 +49,7 @@ class WP_MCP_AI_SSE_Handler {
 	/**
 	 * Microtime of the most recent byte written to this stream.
 	 *
-	 * @since 1.2.24
+	 * @since 1.2.22
 	 * @var float
 	 */
 	private $last_write_at = 0.0;
@@ -64,7 +64,7 @@ class WP_MCP_AI_SSE_Handler {
 	 * risk, so the long-run offload decision reads it instead of total turn
 	 * elapsed time.
 	 *
-	 * @since 1.2.24
+	 * @since 1.2.22
 	 * @var float
 	 */
 	private $max_idle_gap = 0.0;
@@ -72,7 +72,7 @@ class WP_MCP_AI_SSE_Handler {
 	/**
 	 * Record a write to the stream and update the longest silent gap.
 	 *
-	 * @since 1.2.24
+	 * @since 1.2.22
 	 */
 	private function record_write() {
 		$now = microtime( true );
@@ -93,7 +93,7 @@ class WP_MCP_AI_SSE_Handler {
 	 * Zero until the stream has written at least two frames, so a caller that
 	 * has not yet had a chance to go quiet never reads as risky.
 	 *
-	 * @since 1.2.24
+	 * @since 1.2.22
 	 *
 	 * @return float Longest gap between two writes, in seconds.
 	 */

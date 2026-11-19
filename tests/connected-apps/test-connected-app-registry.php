@@ -13,7 +13,7 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
- * @since     1.2.23
+ * @since     1.2.22
  */
 class WP_MCP_AI_Connected_App_Registry_Test extends WP_UnitTestCase {
 
