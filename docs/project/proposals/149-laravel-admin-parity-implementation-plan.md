@@ -8580,6 +8580,7 @@ has `HOUR()`, SQLite needs `strftime('%H', …)`. Everything else is `DATE()` an
 | `AdminTokenAnalyticsTest` + `AdminTokenUsageTest` + `SurfaceOwnershipTest` | **21 tests / 525 assertions** |
 | phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
 | `bin/audit-surface-ownership.php` | 46 surfaces, 34 Filament-built, 3 planned only — unchanged |
+| Full app suite | **1397 tests / 18227 assertions, 0 failures** (CI `App suite (SQLite)`) — +11 tests / +35 assertions over §82, matching this section's focused run |
 
 ### 83.5 Still open
 
@@ -8593,3 +8594,77 @@ has `HOUR()`, SQLite needs `strftime('%H', …)`. Everything else is `DATE()` an
    than hidden.
 4. **No chart library, so no sparkline of *cost*.** The bars show tokens; a cost
    strip is the same code with a different column, if anyone wants both.
+
+## 84. Observability — the runs the runtime already recorded (2026-11-19)
+
+The WordPress orchestration view called `observability` is a hub: a Run
+Timeline, a Measurement Dashboard and the OTLP exporter's status. The console
+had the exporter status (on diagnostics) but no run view at all — despite the
+runtime writing `nvoos_harness_trace_records` on every traced turn since §40.
+
+### 84.1 The store had a writer and no reader
+
+`TraceCapture` appends `start`, `routing`, `iteration` and `end` records to one
+artifact, one row per record, grouped by `run_id`; `DatabaseTraceStore` prunes
+per assistant and keeps the newest window. Nothing ever read the table back.
+
+`TraceRuns` reconstructs a run from those rows:
+
+| Field | Source |
+|---|---|
+| started / ended | `MIN` / `MAX(created_at)` per `run_id` |
+| status | `completed`, `aborted` (`cancelled` in the `end` record) or **`incomplete`** (no `end` record at all) |
+| provider calls, duration, cost | the `end` payload |
+
+`incomplete` is a status, not a hidden row: a run that died before its `end`
+record — or whose records were pruned mid-run — is exactly the thing an
+operator wants to see.
+
+The payload is parsed in PHP rather than filtered with
+`LIKE '%"type":"end"%'`. Substring matching on a JSON document works until the
+encoder changes its spacing, and the query has no way to say so.
+
+### 84.2 What the page shows
+
+`/ops/observability` (`App\Filament\Operator\Pages\Observability`), read-only:
+
+- **the capture switch** — `oos.security.trace_capture` is a master kill switch
+  on top of the per-assistant `trace_capture.enabled` profile, and the page says
+  which state it is in and why a wired store can still write nothing;
+- **the export gauge** — configured / last status / backing off + retry /
+  watermark, in the same terms `data.routing_export` uses (§78) rather than a
+  second vocabulary;
+- **the newest 50 runs**, one row per chat turn, with the assistant title
+  resolved through `withoutGlobalScopes` and `Assistant #id` as the fallback.
+  This is a platform view: an operator seeing a title from another estate is the
+  point, not a leak, and the row itself carries only the id.
+
+It **links** to Diagnostics and Token analytics rather than duplicating them —
+the aggregate probes and the spend charts already exist, and a third copy is
+the maintenance cost §18.2 warned about.
+
+The Measurement Dashboard equivalent is not built. It needs the metric, eval and
+budget stores §45 recorded as its prerequisite; a page over an empty model would
+be a screenshot of a decision nobody has made.
+
+### 84.3 Gates
+
+| Run | Result |
+|---|---|
+| `AdminObservabilityTest` | **7 tests / 24 assertions** — the page renders with capture on; a completed run shows its summary; a run with no `end` is `incomplete`; newest-first ordering and the limit hold; capture disabled hides runs and explains; the export gauge reports a failing collector; an estate administrator gets 403 |
+| `AdminObservabilityTest` + `SurfaceOwnershipTest` | **11 tests / 495 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
+| `bin/audit-surface-ownership.php` | 46 surfaces, 34 Filament-built, 3 planned only — unchanged |
+
+### 84.4 Still open
+
+1. **No run drill-down.** The WordPress timeline opens a per-run view with
+   per-step tokens and tool latency; this page shows the summary row only. The
+   `routing` and `iteration` records are stored, so the detail is a modal or a
+   second page, not a schema change.
+2. **No retention view.** `TracePolicy` prunes per assistant; the page cannot
+   say how many runs the window keeps for a given assistant.
+3. **Measurement stays planned** — §45's stores, not a renderer.
+4. **The export gauge is duplicated** between this page and diagnostics by one
+   line each. They read the same store and the same `backoffState()`; a third
+   consumer would be the point to extract a shared payload, not before.
