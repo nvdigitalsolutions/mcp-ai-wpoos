@@ -1,6 +1,7 @@
 # Proposal 153 — Should `Assistant` carry a global tenant scope?
 
-**Status:** proposed 2026-11-19. **Decision required before any code.**
+**Status:** proposed 2026-11-19; option A accepted and implemented 2026-11-19
+(§8).
 
 **Related:** [Proposal 149](149-laravel-admin-parity-implementation-plan.md) §18
 (workflow runs), §21 (`ResolveApiTenant`), §27/§39/§40/§47 (earlier assistant-scope
@@ -218,3 +219,46 @@ hide operator data in between.
 4. **Do blueprints or portability need cross-estate reads?** No: both are scoped
    to the current estate today by explicit filter, and the bundle format never
    carries a tenant (§34).
+
+## 8. Implementation record
+
+Option A shipped. The scope lives on `Assistant::booted()` with the same shape
+the other four models use; the explicit `ensureInCurrentEstate()` and
+`resolveAssistant()` checks stay, unreachable but readable as the statement of
+the rule.
+
+**Opt-outs** — five sites, each with a comment:
+
+| Site | Why |
+|---|---|
+| `Operator\Pages\Credentials` | `/ops` lists every estate; the Estate column is the point |
+| `EstateCredentials::estateAssistantIds()` | takes the estate as an argument |
+| `EstateCredentials::ownsAssistant()` | same |
+| `EstateCredentials::overview()` title lookup | titles for ids already resolved per estate |
+| `TraceRuns::titles()` | labels a run whose estate it already resolved (pre-existing) |
+
+The `EstateCredentials` ones were not optional: without them
+`ownsAssistant('estate-b', …)` returns false on `/ops` and the panel
+**misreports** the estate — the silent-data failure §2.4 predicted.
+
+**Fixtures that had to change** — four, each asserting across estates for a
+schema-level property rather than a reader's one: `AssistantTenancyTest` and
+`AdminAssistantsTest` (the `(tenant_id, slug)` index), `AdminBlueprintsTest`
+(the blueprint boundary), and `PortabilityTenancyTest` (now pins the estate it
+asks about instead of reading whatever context the ended request left behind).
+
+### Gates
+
+| Run | Result |
+|---|---|
+| `AssistantTenantScopeTest` (new) | **6 tests** — the scope hides a foreign row; the opt-out reaches it; each estate sees only its own; route binding 404s; a default is not taken from another estate; an estate with no default gets none |
+| `OperatorCredentialsTest` | **+1** — the page still lists two estates, with the Estate column |
+| `AdminAssistants`, `AssistantTenancy`, `PortabilityTenancy`, `AdminBlueprints`, `AssistantTenantScope`, `OperatorCredentials` | **63 tests / 234 assertions, 0 failures** |
+| Broad sweep (assistants, tenancy, blueprints, portability, probes, operators, chat, tokens, traces, workflows) | **423 tests / 1,807 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`, 9 files) | **0 errors** |
+| Full app suite | **1443 tests / 18,386 assertions, 0 failures** (CI `App suite (SQLite)`) — +7 tests / +12 assertions over §89's 1436 / 18,374 |
+| CI `Console E2E (Laravel / SQLite)` | **pass** |
+
+The broad sweep is the number that matters here: it covers every surface known
+to read assistants, and it is what proves the scope did not silently reduce an
+operator page to the default estate.
