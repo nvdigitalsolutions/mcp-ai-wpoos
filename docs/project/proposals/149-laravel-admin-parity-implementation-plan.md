@@ -9233,7 +9233,8 @@ whose `phpunit.xml` includes only `docker/laravel/app-skeleton/tests`. A test in
 to every PR.
 
 So the test lives in the app suite, where the gate actually is. The gap itself is
-worth its own ticket — `lib/core`'s unit suite is currently decorative.
+worth its own ticket — `lib/core`'s unit suite was decorative until §97 wired it
+into CI, which also found that both suites depend on files outside their package.
 
 ### 91.4 Gates
 
@@ -9659,3 +9660,57 @@ the scoreboard is unchanged at 47 surfaces · 36 built · 2 planned-only, and th
 second of those two now has a decision behind it.
 
 `identity-provider` is the only surface left without one.
+
+## 97. The shared packages get a gate (2026-11-19)
+
+§91.3 recorded the gap and moved on: `lib/core`'s unit suite runs **nowhere**, and
+`lib/laravel-adapter`'s with it. Both are shared by the two runtimes — WordPress
+through one adapter, Laravel through the other — so the engine everything depends
+on had no CI gate at all. `.github/workflows/laravel-app.yml` even *triggers* on
+`lib/**`; it just runs the app skeleton's suite when it gets there.
+
+### 97.1 What the audit found before the job was written
+
+Running both suites in a Linux container was the only way to know the job would
+be green on arrival, and it surfaced two facts a workflow written from the
+READMEs would have got wrong:
+
+| Finding | Consequence for the job |
+|---|---|
+| **Neither package commits a `composer.lock`.** `lib/core` has no dependencies beyond PHP; `lib/laravel-adapter` resolves illuminate and testbench at install time. | `composer install` has nothing to install from, so the step is `composer update`. A package that later commits a lock switches to `install`. |
+| **Both suites read files from outside their package.** The MCP, OAuth, OKF, MJML and tool capture corpora live in `tests/fixtures/` at the repo root, and `SettingsStoreEndpointWiringTest` reads the app skeleton's settings catalogue. | The `paths` filters include `tests/fixtures/**` and that catalogue, so a corpus edit re-runs the suite that replays it. |
+
+The first run of the copy — without those repo-root files — produced 24 core
+errors and 2 adapter failures, **all of them artefacts of the copy**. That is the
+same failure shape the test-suite skill records for a bare host: a missing
+fixture reads as a broken suite. It is also why the job runs on a full checkout
+rather than against a package extracted on its own.
+
+### 97.2 The job
+
+`.github/workflows/lib-suites.yml` — one workflow, a two-package matrix, and
+nothing else:
+
+| Choice | Why |
+|---|---|
+| `fail-fast: false` | One red package must not hide the other's result. |
+| Per-package cache key | The two resolve different dependency sets; a shared key would restore one tree over the other's. |
+| `coverage: none` | Nothing consumes coverage in this repo, and it is the slowest thing a PHP job does. |
+| PHP 8.3 for both | core requires `^8.1`, the adapter `^8.2`, and the app job already uses 8.3 — one version keeps the engine identical across both runtimes' jobs. |
+| `timeout-minutes: 20` | The slowest package takes about five; a hung run should not sit for the default 360. |
+
+### 97.3 Gates
+
+| Run | Result |
+|---|---|
+| `lib/core` in a Linux container, full checkout | **1805 tests / 6465 assertions**, 0 failures (14 PHPUnit deprecations, which the suite already carried) |
+| `lib/laravel-adapter` in the same | **306 tests / 1582 assertions**, 0 failures, ~5 min |
+| `lib/laravel-adapter` with the settings catalogue included | the 2 `SettingsStoreEndpointWiringTest` failures from the incomplete copy disappear (20/20, 37 assertions) |
+| workflow YAML | parses; one job, two-package matrix, six steps |
+| the workflow's own run on this PR | **`lib/core suite` and `lib/laravel-adapter suite` green** — the job is its own evidence, so this section quotes baselines rather than a count that only exists after the push |
+
+### 97.4 Still open
+
+1. **No static analysis.** `lib/core` ships `phpstan.neon` and `phpstan/phpstan` in `require-dev`, and nothing runs it. That is a separate slice: the first run will find things, and the config needs agreeing before it can be a gate.
+2. **The adapter suite takes five minutes** for 306 tests. Worth profiling before it grows, not after.
+3. **`lib/wordpress-adapter` and `lib/craft-adapter` have no suites** — the matrix covers the two packages with tests, not every package under `lib/`.
