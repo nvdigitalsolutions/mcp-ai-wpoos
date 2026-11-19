@@ -9707,10 +9707,10 @@ nothing else:
 | `lib/laravel-adapter` in the same | **306 tests / 1582 assertions**, 0 failures, ~5 min |
 | `lib/laravel-adapter` with the settings catalogue included | the 2 `SettingsStoreEndpointWiringTest` failures from the incomplete copy disappear (20/20, 37 assertions) |
 | workflow YAML | parses; one job, two-package matrix, six steps |
-| the workflow's own run on this PR | **`lib/core suite` and `lib/laravel-adapter suite` green** — the job is its own evidence, so this section quotes baselines rather than a count that only exists after the push |
+| the workflow's own run on PR #7981 | **`lib/core suite` pass in 1m03s, `lib/laravel-adapter suite` pass in 0m43s** — and the CI logs quote the same figures as the container runs below (1805/6465 and 306/1582), so the job proves both that it works and that it runs the suites it claims to |
 
 ### 97.4 Still open
 
 1. **No static analysis.** `lib/core` ships `phpstan.neon` and `phpstan/phpstan` in `require-dev`, and nothing runs it. That is a separate slice: the first run will find things, and the config needs agreeing before it can be a gate.
-2. **The adapter suite takes five minutes** for 306 tests. Worth profiling before it grows, not after.
+2. **The adapter suite looked like five minutes** in the container and runs in **43 seconds** in CI. The five minutes is the Windows bind mount, not the suite — file I/O through it dominates a 306-test run that boots testbench repeatedly. Worth remembering before profiling a suite that is already fast where it matters.
 3. **`lib/wordpress-adapter` and `lib/craft-adapter` have no suites** — the matrix covers the two packages with tests, not every package under `lib/`.
