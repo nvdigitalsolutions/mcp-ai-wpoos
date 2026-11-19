@@ -9855,7 +9855,7 @@ ever called" on a deployment where capture was simply switched off.
 | `/(AdminMetrics\|SurfaceOwnership\|AdminNavigation\|AdminTokenUsage)/` | **25 tests / 581 assertions, 0 failures** |
 | `bin/audit-surface-ownership.php` | **47 surfaces · 37 built** (15 `/ops`, 24 `/admin`); planned-only **1** |
 | phpcs (`phpcs-laravel.xml.dist` 5 paths, `phpcs.xml.dist` 1 path) | **0 errors** |
-| Full app suite | *(pending — filled from CI)* |
+| Full app suite | **1521 passed / 18,798 assertions** (CI `App suite (SQLite)`, run 44631971789) — baseline was 1511 / 18,743, so this slice adds 10 tests and 55 assertions |
 
 ### 99.5 Still open
 
