@@ -73,6 +73,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->withoutOverlapping();
         }
 
+        // 149 §76 — token usage retention. One row per AI call, and the rows are
+        // the cost history, so the window is a year by default and the delete
+        // is chunked. Ten minutes after routing retention keeps the two from
+        // contending for the same database at 03:20.
+        $tokenRetentionDays = (int) config('oos.token_usage.retention_days', 365);
+
+        if ($tokenRetentionDays > 0) {
+            $schedule->command('nvoos:prune-token-usage', ['--days' => $tokenRetentionDays])
+                ->dailyAt('03:30')
+                ->withoutOverlapping();
+        }
+
         // 149 §74 — the OTLP push. Configured-but-unscheduled is a valid state
         // (manual runs only), so the endpoint alone does not register anything;
         // the expression is the operator's decision, like the media sweep.
