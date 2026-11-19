@@ -7813,3 +7813,101 @@ the export looked right in a browser and was invalid on the wire.
 5. **Timezone.** `time` is emitted in the app's timezone. OTLP is epoch-based so
    the OTel path is unambiguous; the flat path relies on the ISO offset, which
    is present but easy to overlook in a spreadsheet.
+
+## 74. The scheduled OTLP push, and a cursor that keeps its promises (2026-11-19)
+
+§73 left "no push" open: the OTLP shape was a file, and a scheduled push needs
+a failure policy before it is safe to enable. This is that policy.
+
+### 74.1 The cursor is the whole safety story
+
+A scheduled exporter has one dangerous failure: sending a batch, failing to
+record that it was sent, and either duplicating or dropping it. Two rules make
+the ordinary failures safe:
+
+- **Rows are sent oldest-first, bounded by a watermark.**
+  `nvoos_routing_exports.last_metric_id` on a successful run is the highest id a
+  collector acknowledged; the next push sends only `id > watermark`.
+- **A failed run records the unchanged watermark.** Nothing advances; the next
+  run retries exactly the unacknowledged rows.
+
+`nvoos_routing_exports` therefore does double duty: the cursor, and the status
+the diagnostics page reads.
+
+**Delivery is at-least-once, not exactly-once.** A crash between the HTTP 2xx
+and the insert resends the batch. The rows carry no idempotency key, so the
+collector sees the duplicate. Making it exactly-once needs a stable event id in
+the OTLP attributes — recorded as open (§74.6), because it changes the exported
+schema.
+
+### 74.2 Retention now respects the promise
+
+This is the coupling that makes the whole thing honest. While an export endpoint
+is configured, `nvoos:prune-routing-metrics` only deletes rows **at or below the
+watermark**:
+
+```
+delete where created_at < cutoff  AND  id <= watermark
+```
+
+A collector that has been failing since Tuesday therefore causes the table to
+**grow**, not shrink. That is the correct direction to be wrong in, and the
+diagnostics page shows exactly why it is growing. With no endpoint configured
+the old behaviour stands — nothing was promised, so nothing has to wait.
+
+### 74.3 Configuration
+
+| Key (env) | Meaning |
+|---|---|
+| `oos.routing.export.endpoint` (`NVOOS_ROUTING_EXPORT_ENDPOINT`) | OTLP HTTP target. Empty disables push **and** relaxes retention |
+| `oos.routing.export.token` (`NVOOS_ROUTING_EXPORT_TOKEN`) | sent as `Authorization: Bearer …` |
+| `oos.routing.export.headers` | extra headers for vendor-specific collectors |
+| `oos.routing.export.schedule` (`NVOOS_ROUTING_EXPORT_SCHEDULE`) | cron expression; empty = configured but manual-only |
+| `oos.routing.export.timeout` / `batch` | seconds; rows per request (default 500) |
+
+The endpoint is validated as an `http(s)` URL before any request. It comes from
+**operator configuration only**, never from a request, so the push adds no SSRF
+surface beyond what a config file already grants. The command prints the host
+and path, not the query string, and never the token.
+
+`nvoos:push-routing-metrics` exits `FAILURE` on a non-2xx, so a cron wrapper that
+watches exit codes notices; `--dry-run` reports the pending count without a
+request or a row.
+
+### 74.4 Diagnostics
+
+The **Routing (30d)** group gained an `OTLP export` row:
+
+- `not configured` — no endpoint;
+- `configured, never run` — the operator has more work to do;
+- `ok · <time> · 12 event(s)`;
+- `failed · <time> · 0 event(s) · HTTP 503: collector down`.
+
+That last form is the one that explains a table which is not shrinking.
+
+### 74.5 Gates
+
+| Run | Result |
+|---|---|
+| `RoutingExportPushTest` | **8 tests** — success advances the watermark and sends once; failure keeps the rows pending and records the error; a second push sends only new rows; no endpoint sends and records nothing; dry run does neither; retention keeps unexported rows while configured; retention prunes by age when not; the page shows the last error |
+| `RoutingRetentionExportTest` | 6 tests, unchanged |
+| Both, in one run | **14 tests / 74 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 9 files) | **0 errors** |
+| Full app suite | **1348 tests / 18037 assertions, 0 failures** (baseline 1340 / 18004; 2 pre-existing runner deprecations) |
+
+### 74.6 Still open
+
+1. **At-least-once, not exactly-once.** A crash between the 2xx and the insert
+   duplicates a batch; there is no stable event id in the attributes yet. Adding
+   `nvoos.routing.event_id` (the metric row id) would let a collector dedupe.
+2. **No backoff or alerting.** A failing push retries on the next tick at the
+   same cadence; nothing escalates and nothing backs off beyond
+   `withoutOverlapping()`.
+3. **One batch per run.** A backlog larger than `batch` drains one chunk per
+   tick; at `*/15 * * * *` and 500 rows that is 48k events/day, which is ample
+   for deviations but worth stating.
+4. **No compression.** OTLP accepts gzip and a real backlog would want it.
+5. **The error body is stored truncated (2 000 chars) and shown truncated (80).**
+   A collector that echoes a token in its error would store it; the command
+   itself never logs the token.
+6. **`nvoos_token_usage` is still unbounded** (§73.5) — same argument, no export.

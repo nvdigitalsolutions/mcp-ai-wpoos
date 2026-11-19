@@ -72,6 +72,22 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->dailyAt('03:20')
                 ->withoutOverlapping();
         }
+
+        // 149 §74 — the OTLP push. Configured-but-unscheduled is a valid state
+        // (manual runs only), so the endpoint alone does not register anything;
+        // the expression is the operator's decision, like the media sweep.
+        $routingExportEndpoint = (string) config('oos.routing.export.endpoint', '');
+        $routingExportSchedule = (string) config('oos.routing.export.schedule', '');
+
+        if (
+            '' !== $routingExportEndpoint
+            && '' !== $routingExportSchedule
+            && CronExpression::isValidExpression($routingExportSchedule)
+        ) {
+            $schedule->command('nvoos:push-routing-metrics')
+                ->cron($routingExportSchedule)
+                ->withoutOverlapping();
+        }
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Sanctum SPA cookie mode (Proposal 090-B, ADR-4). Same-origin

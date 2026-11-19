@@ -5,6 +5,7 @@ namespace App\Filament\Operator\Pages;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Diagnostics\ProbeRunner;
+use App\Support\Diagnostics\RoutingExportStore;
 use App\Support\Diagnostics\RoutingMetricStore;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -231,8 +232,45 @@ class DiagnosticsPage extends Page
             ],
             'Queue' => $queueRows,
             'Provider credentials' => $providerRows,
-            'Routing (30d)' => $this->routingRows($routing),
+            'Routing (30d)' => array_merge($this->routingRows($routing), $this->exportRows()),
         ];
+    }
+
+    /**
+     * The last export attempt, next to the counts it explains.
+     *
+     * "Growing but never exported" is the one combination an operator must be
+     * able to see: retention deliberately refuses to delete unacknowledged
+     * rows, so a failing collector is the reason the table is not shrinking.
+     *
+     * @return list<array{label: string, value: string}>
+     */
+    private function exportRows(): array
+    {
+        if ('' === trim((string) config('oos.routing.export.endpoint', ''))) {
+            return [['label' => 'OTLP export', 'value' => 'not configured']];
+        }
+
+        $last = app(RoutingExportStore::class)->last();
+
+        if (null === $last) {
+            return [['label' => 'OTLP export', 'value' => 'configured, never run']];
+        }
+
+        $value = sprintf(
+            '%s · %s · %d event(s)',
+            (string) ($last->status ?? 'unknown'),
+            (string) ($last->created_at ?? ''),
+            (int) ($last->sent ?? 0)
+        );
+
+        $error = trim((string) ($last->error ?? ''));
+
+        if ('' !== $error) {
+            $value .= ' · '.mb_substr($error, 0, 80);
+        }
+
+        return [['label' => 'OTLP export (last)', 'value' => $value]];
     }
 
     /**
