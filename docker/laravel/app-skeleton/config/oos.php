@@ -69,6 +69,11 @@ return array(
             'schedule' => (string) env('NVOOS_ROUTING_EXPORT_SCHEDULE', ''),
             'timeout' => (int) env('NVOOS_ROUTING_EXPORT_TIMEOUT', 10),
             'batch' => (int) env('NVOOS_ROUTING_EXPORT_BATCH', 500),
+
+            // A failing collector is retried on an exponential schedule
+            // (base × 2^(n-1), capped). 0 disables backoff: every tick tries.
+            'backoff_base' => (int) env('NVOOS_ROUTING_EXPORT_BACKOFF_BASE', 60),
+            'backoff_max' => (int) env('NVOOS_ROUTING_EXPORT_BACKOFF_MAX', 3600),
         ),
     ),
 

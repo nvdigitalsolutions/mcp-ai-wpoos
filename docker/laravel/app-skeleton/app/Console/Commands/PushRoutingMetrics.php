@@ -15,13 +15,19 @@ use Illuminate\Console\Command;
  * not acknowledge. Retention refuses to delete rows above the watermark while
  * an endpoint is configured (§74.4), which is what makes the promise real.
  *
+ * Repeated failures back off exponentially (base × 2^(n-1), capped) so a down
+ * collector is not hammered on every tick; `--force` is the operator override.
+ * Backoff is derived from the run history, so a success resets it by existing.
+ *
  * Exit code is `FAILURE` on a failed push, so a scheduler wrapper that watches
- * exit codes notices.
+ * exit codes notices. A backoff wait exits `SUCCESS`: nothing is wrong with the
+ * command, the collector is having a bad day.
  */
 class PushRoutingMetrics extends Command
 {
     protected $signature = 'nvoos:push-routing-metrics
-                            {--dry-run : Show what would be sent without sending}';
+                            {--dry-run : Show what would be sent without sending}
+                            {--force : Push even while the exporter is backing off}';
 
     protected $description = 'Push unexported routing events to the configured OTLP endpoint.';
 
@@ -45,11 +51,31 @@ class PushRoutingMetrics extends Command
         }
 
         if ($this->option('dry-run')) {
-            $this->line(sprintf(
+            $line = sprintf(
                 '%d routing event(s) pending; would send %d to %s.',
                 count($pending),
                 count($pending),
                 $this->endpointHost()
+            );
+
+            $backoffUntil = $store->backoffUntil();
+
+            if (null !== $backoffUntil && now()->lt($backoffUntil)) {
+                $line .= sprintf(' Backing off until %s.', $backoffUntil->toDateTimeString());
+            }
+
+            $this->line($line);
+
+            return self::SUCCESS;
+        }
+
+        $backoffUntil = $store->backoffUntil();
+
+        if (null !== $backoffUntil && now()->lt($backoffUntil) && ! $this->option('force')) {
+            $this->line(sprintf(
+                'Backing off until %s after %d consecutive failed push(es); --force overrides.',
+                $backoffUntil->toDateTimeString(),
+                $store->consecutiveFailures()
             ));
 
             return self::SUCCESS;

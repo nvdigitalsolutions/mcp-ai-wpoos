@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Diagnostics\RoutingExportStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -171,12 +172,128 @@ class RoutingExportPushTest extends TestCase
             ->assertSee('HTTP 500');
     }
 
+    public function test_the_export_carries_a_stable_event_id(): void
+    {
+        $this->configureEndpoint();
+        Http::fake(['*collector.test*' => Http::response('', 200)]);
+
+        $this->insertMetric();
+        $id = (int) DB::table(self::METRICS)->max('id');
+
+        $this->artisan('nvoos:push-routing-metrics')->assertSuccessful();
+
+        Http::assertSent(static function ($request) use ($id): bool {
+            $record = $request->data()['resourceLogs'][0]['scopeLogs'][0]['logRecords'][0] ?? [];
+
+            foreach ((array) ($record['attributes'] ?? []) as $attribute) {
+                if ('nvoos.routing.event_id' === ($attribute['key'] ?? '')) {
+                    return (string) $id === (string) ($attribute['value']['intValue'] ?? '');
+                }
+            }
+
+            return false;
+        });
+    }
+
+    public function test_a_failed_push_backs_off_exponentially(): void
+    {
+        $this->configureEndpoint();
+        $this->configureBackoff(60, 3600);
+
+        Carbon::setTestNow('2026-11-19 10:00:00');
+
+        $this->insertMetric();
+        Http::fakeSequence('*collector.test*')
+            ->push('down', 503)
+            ->push('down', 503)
+            ->push('down', 503);
+
+        $this->artisan('nvoos:push-routing-metrics')->assertFailed();
+        $this->assertSame(1, app(RoutingExportStore::class)->consecutiveFailures());
+
+        // Inside the first backoff window (60s): no request.
+        Carbon::setTestNow('2026-11-19 10:00:30');
+        $this->artisan('nvoos:push-routing-metrics')
+            ->expectsOutputToContain('Backing off')
+            ->assertSuccessful();
+        Http::assertSentCount(1);
+
+        // Past it: a second attempt, which also fails.
+        Carbon::setTestNow('2026-11-19 10:01:01');
+        $this->artisan('nvoos:push-routing-metrics')->assertFailed();
+        Http::assertSentCount(2);
+        $this->assertSame(2, app(RoutingExportStore::class)->consecutiveFailures());
+
+        // Second window is 120s from the second failure: still waiting at +60s.
+        Carbon::setTestNow('2026-11-19 10:02:01');
+        $this->artisan('nvoos:push-routing-metrics')
+            ->expectsOutputToContain('Backing off')
+            ->assertSuccessful();
+        Http::assertSentCount(2);
+
+        // --force is the operator override.
+        $this->artisan('nvoos:push-routing-metrics', ['--force' => true])->assertFailed();
+        Http::assertSentCount(3);
+    }
+
+    public function test_a_successful_push_resets_the_backoff(): void
+    {
+        $this->configureEndpoint();
+        $this->configureBackoff(60, 3600);
+
+        Carbon::setTestNow('2026-11-19 10:00:00');
+
+        $this->insertMetric();
+        Http::fakeSequence('*collector.test*')
+            ->push('down', 503)
+            ->push('', 200)
+            ->push('', 200);
+
+        $this->artisan('nvoos:push-routing-metrics')->assertFailed();
+
+        Carbon::setTestNow('2026-11-19 10:01:01');
+        $this->artisan('nvoos:push-routing-metrics')->assertSuccessful();
+        $this->assertSame(0, app(RoutingExportStore::class)->consecutiveFailures());
+
+        $this->insertMetric();
+        Carbon::setTestNow('2026-11-19 10:01:02');
+        $this->artisan('nvoos:push-routing-metrics')->assertSuccessful();
+
+        Http::assertSentCount(3);
+    }
+
+    public function test_backoff_can_be_disabled(): void
+    {
+        $this->configureEndpoint();
+        $this->configureBackoff(0, 3600);
+
+        Carbon::setTestNow('2026-11-19 10:00:00');
+
+        $this->insertMetric();
+        Http::fakeSequence('*collector.test*')
+            ->push('down', 503)
+            ->push('down', 503);
+
+        $this->artisan('nvoos:push-routing-metrics')->assertFailed();
+        $this->artisan('nvoos:push-routing-metrics')->assertFailed();
+
+        Http::assertSentCount(2);
+    }
+
     private function configureEndpoint(): void
     {
         config([
             'oos.routing.export.endpoint' => 'https://collector.test/v1/logs',
             'oos.routing.export.token' => 'test-token',
             'oos.routing.export.timeout' => 5,
+        ]);
+    }
+
+    private function configureBackoff(int $base, int $max): void
+    {
+        config([
+            'oos.routing.export.backoff_base' => $base,
+            'oos.routing.export.backoff_max' => $max,
         ]);
     }
 
@@ -194,6 +311,13 @@ class RoutingExportPushTest extends TestCase
             'succeeded' => true,
             'created_at' => now(),
         ], $overrides));
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
     }
 
     private function operatorMember(): User

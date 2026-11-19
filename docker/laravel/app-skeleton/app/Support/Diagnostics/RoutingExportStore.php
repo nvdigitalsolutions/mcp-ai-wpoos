@@ -114,4 +114,69 @@ final class RoutingExportStore
             return null;
         }
     }
+
+    /**
+     * Failed attempts since the last acknowledged one.
+     *
+     * Derived rather than stored: an `ok` row is the reset, so the count can
+     * never disagree with the history it is computed from.
+     */
+    public function consecutiveFailures(): int
+    {
+        try {
+            if (! Schema::hasTable(self::EXPORTS)) {
+                return 0;
+            }
+
+            $lastOk = DB::table(self::EXPORTS)->where('status', 'ok')->max('id');
+
+            $query = DB::table(self::EXPORTS)->where('status', 'failed');
+
+            if (null !== $lastOk) {
+                $query->where('id', '>', (int) $lastOk);
+            }
+
+            return (int) $query->count();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return 0;
+        }
+    }
+
+    /**
+     * The time before which another push should not be attempted.
+     *
+     * Exponential on the consecutive-failure count, capped. Reading the policy
+     * from configuration here (rather than in each caller) keeps the command's
+     * gate and the diagnostics page's "retry at" from drifting apart.
+     */
+    public function backoffUntil(): ?\Carbon\CarbonImmutable
+    {
+        $base = (int) config('oos.routing.export.backoff_base', 60);
+
+        if ($base <= 0) {
+            return null;
+        }
+
+        $failures = $this->consecutiveFailures();
+
+        if ($failures <= 0) {
+            return null;
+        }
+
+        $last = $this->last();
+
+        if (null === $last || empty($last->created_at) || 'failed' !== (string) ($last->status ?? '')) {
+            return null;
+        }
+
+        $max = max($base, (int) config('oos.routing.export.backoff_max', 3600));
+
+        // Cap the exponent before multiplying: 2^60 overflows into a float and
+        // the cap already makes anything past ~2^6 irrelevant at these bounds.
+        $delay = min($base * (2 ** min($failures - 1, 20)), $max);
+
+        return \Carbon\CarbonImmutable::parse((string) $last->created_at)->addSeconds((int) $delay);
+    }
 }

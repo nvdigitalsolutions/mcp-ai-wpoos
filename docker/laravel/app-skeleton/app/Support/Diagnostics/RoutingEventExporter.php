@@ -27,6 +27,11 @@ use Carbon\CarbonImmutable;
  * that already finished, with no duration of its own to measure. Severity is
  * `WARN` for a failed attempt and `INFO` for a successful one — OTLP numbers
  * 13 and 9.
+ *
+ * Every record carries `nvoos.routing.event_id` (the metric row id). Delivery
+ * is at-least-once — a crash between the collector's 2xx and the watermark
+ * write resends the batch — so the id is what lets a collector drop a
+ * duplicate instead of double-counting it.
  */
 final class RoutingEventExporter
 {
@@ -113,6 +118,7 @@ final class RoutingEventExporter
         $toModel = $this->text($row->to_model ?? '');
 
         return [
+            'id' => (int) ($row->id ?? 0),
             'time' => $this->time($row),
             'kind' => $kind,
             'provider' => (string) ($row->provider ?? ''),
@@ -137,6 +143,10 @@ final class RoutingEventExporter
         $attributes = [
             $this->stringAttribute('gen_ai.provider.name', (string) $event['provider']),
             $this->stringAttribute('nvoos.routing.kind', (string) $event['kind']),
+            [
+                'key' => 'nvoos.routing.event_id',
+                'value' => ['intValue' => (string) (int) $event['id']],
+            ],
             [
                 'key' => 'nvoos.routing.succeeded',
                 'value' => ['boolValue' => (bool) $event['succeeded']],
