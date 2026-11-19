@@ -9238,8 +9238,25 @@ worth its own ticket — `lib/core`'s unit suite is currently decorative.
 | `ToolReadinessClassificationTest` | **1 test** — all eleven are served; the registry is populated so "served" is not vacuous |
 | `HuggingFaceDatasetTools`, `ToolReadinessClassification`, `ToolRegistry`, `Blueprint` | **28 tests / 188 assertions, 0 failures** |
 | phpcs (`phpcs-laravel.xml.dist` 2 files, `phpcs.xml.dist` 1 file) | **0 errors** |
+| `Tool readiness manifest` (CI) | **pass** — after §91.5 |
+| Full app suite | **1449 tests / 18,469 assertions, 0 failures** (CI `App suite (SQLite)`) — 78 of the +83 assertions are this section's evidence file |
 
-### 91.5 Still open
+### 91.5 The manifest gate caught a rule the app suite cannot
+
+The first push flipped the eleven rows and the app suite went green, but the
+`Tool readiness manifest` workflow failed. The audit enforces something the suite
+does not: **a servable slug that also exists in the WordPress plugin must declare
+`parity`** (`port` or `equivalent`), or it is an unacknowledged shadow.
+
+`unavailable` had exempted these rows from that check; making them servable
+exposed it. All eleven now declare `'parity' => 'port'` — they are the shared
+engine's implementation of the WordPress tools of the same slug.
+
+That is a second gate proving its worth in one section: the app suite verifies
+behaviour, the audit verifies the catalogue's consistency, and neither covers the
+other. Worth remembering before deleting either.
+
+### 91.6 Still open
 
 1. **The dataset browser** is now unblocked rather than blocked: §85.1's
    argument was that a browser needs a servable catalogue to browse. The page
