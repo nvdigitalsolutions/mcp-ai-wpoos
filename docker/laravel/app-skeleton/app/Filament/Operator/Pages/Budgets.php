@@ -2,6 +2,7 @@
 
 namespace App\Filament\Operator\Pages;
 
+use App\Models\Assistant;
 use App\Models\Budget;
 use App\Models\Tenant;
 use App\Models\User;
@@ -15,6 +16,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -72,9 +75,25 @@ class Budgets extends Page implements HasTable
      * each row would be summed three times, and the exhausted callout would add
      * a fourth pass over the same rows.
      *
-     * @var array<int, array{state: string, window: string, limit: float, spend: float, percent: float|null}>
+    /**
+     * The operator writes two kinds of limit: whole-estate and per-assistant.
+     * The scope column is what tells them apart, so it sits next to the estate
+     * rather than in a hidden field.
+     *
+     * @var array<int, array{state: string, window: string, assistant_id: int, limit: float, spend: float, percent: float|null}>
      */
     private array $verdicts = array();
+
+    /**
+     * Assistant titles by id, for the rows on screen.
+     *
+     * Loaded without the tenant scope on purpose: this page lists every estate,
+     * while `Assistant`'s global scope would filter to the panel's ambient
+     * (default) estate and blank every other estate's label.
+     *
+     * @var array<int, string>|null
+     */
+    private ?array $assistantNames = null;
 
     /**
      * The panel already refuses non-operators; this repeats the predicate at the
@@ -102,6 +121,11 @@ class Budgets extends Page implements HasTable
                     ->placeholder('—')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('scope')
+                    ->label('Applies to')
+                    ->badge()
+                    ->getStateUsing(fn (Budget $record): string => $this->scopeLabel($record))
+                    ->color(fn (Budget $record): string => (int) $record->assistant_id > 0 ? 'info' : 'gray'),
                 TextColumn::make('window')
                     ->badge()
                     ->color('gray')
@@ -249,6 +273,91 @@ class Budgets extends Page implements HasTable
     }
 
     /**
+     * "Whole estate" or the assistant's title.
+     *
+     * A budget can outlive its assistant (there is no foreign key, by the same
+     * convention the estate columns follow), so a missing title falls back to the
+     * id rather than to "Whole estate": mislabelling an orphaned assistant limit
+     * as an estate limit would explain a refusal with the wrong scope.
+     */
+    private function scopeLabel(Budget $record): string
+    {
+        $assistantId = (int) $record->assistant_id;
+
+        if ($assistantId <= 0) {
+            return 'Whole estate';
+        }
+
+        $name = $this->assistantNames()[$assistantId] ?? '';
+
+        return '' !== $name ? $name : 'Assistant #'.$assistantId;
+    }
+
+    /**
+     * The assistant select's options for one estate.
+     *
+     * `withoutGlobalScopes()` for the same reason the title map needs it: the
+     * operator panel has no ambient estate, and a scoped read would only ever
+     * offer the default estate's assistants.
+     *
+     * @return array<int|string, string>
+     */
+    private function assistantOptions(string $tenantId): array
+    {
+        $options = array(0 => 'Whole estate');
+
+        if ('' === $tenantId) {
+            return $options;
+        }
+
+        $rows = Assistant::query()
+            ->withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->orderBy('title')
+            ->pluck('title', 'id')
+            ->all();
+
+        foreach ($rows as $id => $title) {
+            $options[(int) $id] = (string) $title;
+        }
+
+        return $options;
+    }
+
+    /**
+     * Assistant titles for the rows currently configured, loaded once.
+     *
+     * @return array<int, string>
+     */
+    private function assistantNames(): array
+    {
+        if (null !== $this->assistantNames) {
+            return $this->assistantNames;
+        }
+
+        $ids = array();
+
+        foreach ($this->budgets() as $budget) {
+            $assistantId = (int) $budget->assistant_id;
+
+            if ($assistantId > 0) {
+                $ids[$assistantId] = $assistantId;
+            }
+        }
+
+        if (array() === $ids) {
+            return $this->assistantNames = array();
+        }
+
+        return $this->assistantNames = Assistant::query()
+            ->withoutGlobalScopes()
+            ->whereIn('id', array_values($ids))
+            ->pluck('title', 'id')
+            ->map(static fn ($title): string => (string) $title)
+            ->all();
+    }
+
+    /**
      * The fields a limit has: the identity (on create only), the number, and the
      * two switches.
      *
@@ -266,8 +375,19 @@ class Budgets extends Page implements HasTable
                     ->pluck('name', 'id')
                     ->all())
                 ->searchable()
+                ->live()
+                // Changing the estate must clear the assistant: an id from the
+                // previous estate would be refused by the store, and the select
+                // below would show a value it no longer offers.
+                ->afterStateUpdated(static fn (Set $set) => $set('assistant_id', 0))
                 ->required()
                 ->helperText('Every estate is a valid target; the estate is the subject of the limit, not the reader\'s.');
+
+            $fields[] = Select::make('assistant_id')
+                ->label('Applies to')
+                ->options(fn (Get $get): array => $this->assistantOptions((string) $get('tenant_id')))
+                ->default(0)
+                ->helperText('Whole estate, or one assistant. Both can exist for the same window: the tighter one refuses first.');
 
             $fields[] = Select::make('window')
                 ->options(array(
@@ -322,6 +442,7 @@ class Budgets extends Page implements HasTable
     {
         $tenantId = (string) ($data['tenant_id'] ?? '');
         $window = (string) ($data['window'] ?? '');
+        $assistantId = max(0, (int) ($data['assistant_id'] ?? 0));
 
         // A tampered Livewire payload must not create a limit under an estate
         // that does not exist: it would never apply to a real user, and it would
@@ -343,6 +464,7 @@ class Budgets extends Page implements HasTable
                 (float) ($data['limit_usd'] ?? 0),
                 (float) ($data['warn_at'] ?? 0),
                 (bool) ($data['enabled'] ?? true),
+                $assistantId
             );
         } catch (InvalidArgumentException $error) {
             Notification::make()
@@ -372,6 +494,7 @@ class Budgets extends Page implements HasTable
                 (float) ($data['limit_usd'] ?? 0),
                 (float) ($data['warn_at'] ?? 0),
                 (bool) ($data['enabled'] ?? true),
+                (int) $budget->assistant_id
             );
         } catch (InvalidArgumentException $error) {
             Notification::make()
@@ -435,6 +558,7 @@ class Budgets extends Page implements HasTable
     {
         return array(
             'tenant_id' => (string) $budget->tenant_id,
+            'assistant_id' => (int) $budget->assistant_id,
             'window' => (string) $budget->window,
             'limit_usd' => (float) $budget->limit_usd,
             'warn_at' => (float) $budget->warn_at,

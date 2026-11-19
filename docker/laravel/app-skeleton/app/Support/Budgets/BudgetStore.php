@@ -2,6 +2,7 @@
 
 namespace App\Support\Budgets;
 
+use App\Models\Assistant;
 use App\Models\Budget;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -95,16 +96,22 @@ class BudgetStore
      * says "exhausted" and an enforcement path that allows the turn would be two
      * implementations of one rule, and they would drift.
      *
-     * @return array{state: string, window: string, limit: float, spend: float, percent: float|null}
+     * Spend is filtered by the budget's own `assistant_id`: an estate-wide limit
+     * (`0`) sees every attributed row, an assistant limit sees only its own
+     * turns. That asymmetry is the whole semantics of the two scopes, so it lives
+     * in one place.
+     *
+     * @return array{state: string, window: string, assistant_id: int, limit: float, spend: float, percent: float|null}
      */
     public function verdict(Budget $budget): array
     {
         $window = (string) $budget->window;
+        $assistantId = (int) $budget->assistant_id;
         $limit = (float) $budget->limit_usd;
 
         // The row's own estate, not the request's: this method is also called
         // for another estate's row by the operator page.
-        $spend = $this->spend((string) $budget->tenant_id, $window);
+        $spend = $this->spend((string) $budget->tenant_id, $window, $assistantId);
 
         // `warn_at` is a fraction of the limit; a zero or unset value means the
         // deployment only wants the hard band, not a warning on every request.
@@ -121,6 +128,7 @@ class BudgetStore
         return array(
             'state' => $state,
             'window' => $window,
+            'assistant_id' => $assistantId,
             'limit' => $limit,
             'spend' => $spend,
             // A disabled or unlimited row has no meaningful ratio; `null` keeps
@@ -138,33 +146,51 @@ class BudgetStore
     }
 
     /**
-     * Spend for one estate over one window.
+     * Spend for one estate over one window, optionally for one assistant.
+     *
+     * `$assistantId = 0` sums the whole estate, which is what an estate-wide
+     * limit means. A non-zero id narrows to rows attributed to that assistant;
+     * rows written before the column existed carry `0` and are therefore counted
+     * by the estate limit and by no assistant limit — the honest reading, not a
+     * guess.
      *
      * A missing spend table is `0.0`, not an error: a deployment that has not
      * migrated the token table has no spend to measure against.
      */
-    public function spend(string $tenantId, string $window): float
+    public function spend(string $tenantId, string $window, int $assistantId = 0): float
     {
         if (! Schema::hasTable(self::SPEND_TABLE)) {
             return 0.0;
         }
 
-        return (float) DB::table(self::SPEND_TABLE)
+        $query = DB::table(self::SPEND_TABLE)
             ->where('tenant_id', $tenantId)
-            ->where('created_at', '>=', $this->windowStart($window))
-            ->sum('cost');
+            ->where('created_at', '>=', $this->windowStart($window));
+
+        if ($assistantId > 0) {
+            $query->where('assistant_id', $assistantId);
+        }
+
+        return (float) $query->sum('cost');
     }
 
     /**
-     * Create or replace the limit for one estate and one window.
+     * Create or replace the limit for one estate, one scope and one window.
      *
-     * Upsert rather than insert because `(tenant_id, window)` is unique: a second
-     * row for the same pair is a configuration mistake, and the operator editing
-     * a limit means the same thing as the operator setting it.
+     * Upsert rather than insert because `(tenant_id, assistant_id, window)` is
+     * unique: a second row for the same triple is a configuration mistake, and
+     * the operator editing a limit means the same thing as the operator setting
+     * it.
      *
-     * `tenant_id` is assigned here explicitly. The model's `creating` hook is a
-     * default for the guard's own writes, not a rule that a privileged surface
-     * cannot name an estate — `/ops` exists precisely to act on another estate.
+     * `$assistantId = 0` is a whole-estate limit. A non-zero id is validated
+     * against the estate: a limit naming an assistant from another estate would
+     * never match a turn (the guard filters by the request's estate *and* the
+     * turn's assistant) while still looking configured on the page.
+     *
+     * `tenant_id` and `assistant_id` are assigned here explicitly. The model's
+     * `creating` hook is a default for the guard's own writes, not a rule that a
+     * privileged surface cannot name an estate — `/ops` exists precisely to act
+     * on another estate.
      */
     public function put(
         string $tenantId,
@@ -172,6 +198,7 @@ class BudgetStore
         float $limitUsd,
         float $warnAt,
         bool $enabled,
+        int $assistantId = 0,
     ): Budget {
         if (! in_array($window, Budget::WINDOWS, true)) {
             throw new InvalidArgumentException(sprintf(
@@ -181,14 +208,26 @@ class BudgetStore
             ));
         }
 
+        $assistantId = max(0, $assistantId);
+
+        if ($assistantId > 0 && ! $this->assistantBelongsTo($tenantId, $assistantId)) {
+            throw new InvalidArgumentException(sprintf(
+                'Assistant %d does not belong to estate "%s".',
+                $assistantId,
+                $tenantId
+            ));
+        }
+
         $budget = Budget::query()
             ->withoutGlobalScopes()
             ->firstOrNew(array(
                 'tenant_id' => $tenantId,
+                'assistant_id' => $assistantId,
                 'window' => $window,
             ));
 
         $budget->tenant_id = $tenantId;
+        $budget->assistant_id = $assistantId;
         $budget->window = $window;
         $budget->limit_usd = $limitUsd;
         $budget->warn_at = min(1.0, max(0.0, $warnAt));
@@ -196,6 +235,22 @@ class BudgetStore
         $budget->save();
 
         return $budget;
+    }
+
+    /**
+     * Whether the assistant exists in that estate.
+     *
+     * `withoutGlobalScopes()` because the id is scoped by the argument, not by
+     * the request: on `/ops` the ambient estate is `default` and every other
+     * estate's assistants would otherwise read as missing.
+     */
+    private function assistantBelongsTo(string $tenantId, int $assistantId): bool
+    {
+        return Assistant::query()
+            ->withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereKey($assistantId)
+            ->exists();
     }
 
     /**

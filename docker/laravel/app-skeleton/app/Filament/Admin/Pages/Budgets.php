@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Filament\Admin\Navigation\AdminNavigationGroup;
+use App\Models\Assistant;
 use App\Models\Budget;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
@@ -63,9 +64,17 @@ class Budgets extends Page implements HasTable
      * `verdict()` per record, memoised for the request: the table reads state,
      * spend and percent from three columns, and the callouts add another pass.
      *
-     * @var array<int, array{state: string, window: string, limit: float, spend: float, percent: float|null}>
+    /**
+     * @var array<int, array{state: string, window: string, assistant_id: int, limit: float, spend: float, percent: float|null}>
      */
     private array $verdicts = array();
+
+    /**
+     * Assistant titles by id, for the rows on screen.
+     *
+     * @var array<int, string>|null
+     */
+    private ?array $assistantNames = null;
 
     public static function canAccess(): bool
     {
@@ -86,6 +95,11 @@ class Budgets extends Page implements HasTable
                     ->badge()
                     ->color('gray')
                     ->formatStateUsing(static fn (string $state): string => ucfirst($state)),
+                TextColumn::make('scope')
+                    ->label('Applies to')
+                    ->badge()
+                    ->getStateUsing(fn (Budget $record): string => $this->scopeLabel($record))
+                    ->color(fn (Budget $record): string => (int) $record->assistant_id > 0 ? 'info' : 'gray'),
                 TextColumn::make('limit_usd')
                     ->label('Limit')
                     ->money('USD', decimalPlaces: 2),
@@ -174,6 +188,63 @@ class Budgets extends Page implements HasTable
     {
         return $this->verdicts[(int) $budget->getKey()]
             ??= app(BudgetStore::class)->verdict($budget);
+    }
+
+    /**
+     * "Whole estate" or the assistant's title.
+     *
+     * An assistant limit the estate cannot see by name would read as an anonymous
+     * refusal, so the title matters more here than on `/ops`: this is the page a
+     * technician visits after a 429 on one agent.
+     */
+    private function scopeLabel(Budget $record): string
+    {
+        $assistantId = (int) $record->assistant_id;
+
+        if ($assistantId <= 0) {
+            return 'Whole estate';
+        }
+
+        $name = $this->assistantNames()[$assistantId] ?? '';
+
+        return '' !== $name ? $name : 'Assistant #'.$assistantId;
+    }
+
+    /**
+     * Assistant titles for the rows currently configured, loaded once.
+     *
+     * `withoutGlobalScopes()` because the map is keyed by the budget row's own
+     * assistant, not by the ambient estate; ids are unique, so a title cannot be
+     * attributed to the wrong agent.
+     *
+     * @return array<int, string>
+     */
+    private function assistantNames(): array
+    {
+        if (null !== $this->assistantNames) {
+            return $this->assistantNames;
+        }
+
+        $ids = array();
+
+        foreach ($this->budgets() as $budget) {
+            $assistantId = (int) $budget->assistant_id;
+
+            if ($assistantId > 0) {
+                $ids[$assistantId] = $assistantId;
+            }
+        }
+
+        if (array() === $ids) {
+            return $this->assistantNames = array();
+        }
+
+        return $this->assistantNames = Assistant::query()
+            ->withoutGlobalScopes()
+            ->whereIn('id', array_values($ids))
+            ->pluck('title', 'id')
+            ->map(static fn ($title): string => (string) $title)
+            ->all();
     }
 
     private function percentLabel(Budget $budget): string

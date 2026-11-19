@@ -120,6 +120,39 @@ class RuntimeSchemaTest extends TestCase
         );
     }
 
+    public function test_token_usage_is_assistant_attributed(): void
+    {
+        // Proposal 154 slice D: a per-assistant budget filters this column on
+        // the enforcement path. Without it the assistant lived only inside
+        // `metadata`, and the filter would be a JSON scan per turn.
+        $this->assertTrue(Schema::hasColumns('nvoos_token_usage', array('assistant_id')));
+
+        $indexes = collect(Schema::getIndexes('nvoos_token_usage'));
+
+        $this->assertNotNull(
+            $indexes->firstWhere('name', 'nvoos_token_usage_assistant_id_index'),
+            'The assistant index is missing; a narrowed spend query falls back to a full scan.'
+        );
+    }
+
+    public function test_the_budget_key_includes_the_assistant_scope(): void
+    {
+        // `assistant_id = 0` is the whole estate. The wider key is what lets one
+        // estate hold a whole-estate limit and an assistant limit for the same
+        // window; keeping the old key would reject the second row.
+        $indexes = collect(Schema::getIndexes('nvoos_budgets'));
+
+        $this->assertNotNull(
+            $indexes->firstWhere('name', 'nvoos_budgets_scope_window_key'),
+            'The (tenant, assistant, window) unique index is missing.'
+        );
+
+        $this->assertNull(
+            $indexes->firstWhere('name', 'nvoos_budgets_tenant_window_key'),
+            'The estate-wide-only unique index still exists; an estate cannot hold both scopes for one window.'
+        );
+    }
+
     public function test_the_token_rollup_key_includes_the_estate(): void
     {
         // Proposal 152 D6: the old `(day, provider, model_id)` key would make

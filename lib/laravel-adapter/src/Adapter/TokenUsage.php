@@ -36,6 +36,10 @@ class TokenUsage implements TokenUsageInterface {
 			// The estate is written as a column so queries can scope by it; the
 			// metadata copy stays for debugging (Proposal 152 §3 D4).
 			'tenant_id' => $this->tenantFrom( $metadata ),
+			// The assistant, for the same reason and at the same altitude
+			// (Proposal 154 slice D): a per-assistant budget must not filter a
+			// JSON blob on the enforcement path. `0` is "not attributed".
+			'assistant_id' => $this->assistantFrom( $metadata ),
 			'model_id' => $modelId,
 			'prompt_tokens' => max( 0, $promptTokens ),
 			'completion_tokens' => max( 0, $completionTokens ),
@@ -275,6 +279,20 @@ class TokenUsage implements TokenUsageInterface {
 		$tenant = trim( (string) ( $metadata['tenant_id'] ?? '' ) );
 
 		return '' !== $tenant ? substr( $tenant, 0, 64 ) : 'default';
+	}
+
+	/**
+	 * The assistant that produced the turn, or `0` when the caller did not name
+	 * one.
+	 *
+	 * Never negative: the column is unsigned, and a negative id would make the
+	 * row unattributable *and* throw on MySQL's strict mode, failing a telemetry
+	 * write after a chat that already succeeded.
+	 *
+	 * @param array<string, mixed> $metadata
+	 */
+	private function assistantFrom( array $metadata ): int {
+		return max( 0, (int) ( $metadata['assistant_id'] ?? 0 ) );
 	}
 
 	/**

@@ -6,6 +6,7 @@ use App\Filament\Admin\Pages\Budgets;
 use App\Models\Budget;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\AssistantWriter;
 use App\Support\TenantContext;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -142,16 +143,37 @@ class EstateBudgetsPageTest extends TestCase
             ->assertDontSee('Over budget');
     }
 
+    /**
+     * The estate has to be able to tell which agent a refusal is about — a
+     * nameless limit reads like the whole estate is blocked.
+     */
+    public function test_an_assistant_limit_is_listed_with_its_scope(): void
+    {
+        $assistantId = $this->assistant(Tenant::DEFAULT_ID);
+
+        $this->budget(Tenant::DEFAULT_ID, Budget::DAILY, 5.0);
+        $this->budget(Tenant::DEFAULT_ID, Budget::MONTHLY, 50.0, assistantId: $assistantId);
+
+        $this->actingAs($this->estateAdmin(Tenant::DEFAULT_ID));
+
+        Livewire::test(Budgets::class)
+            ->assertOk()
+            ->assertSee('Whole estate')
+            ->assertSee('Support triage');
+    }
+
     private function budget(
         string $tenantId,
         string $window,
         float $limit,
         float $warnAt = 0.8,
         bool $enabled = true,
+        int $assistantId = 0,
     ): Budget {
         $budget = new Budget();
 
         $budget->tenant_id = $tenantId;
+        $budget->assistant_id = $assistantId;
         $budget->window = $window;
         $budget->limit_usd = $limit;
         $budget->warn_at = $warnAt;
@@ -159,6 +181,23 @@ class EstateBudgetsPageTest extends TestCase
         $budget->save();
 
         return $budget;
+    }
+
+    /**
+     * A real assistant in the named estate, through the sanctioned writer.
+     */
+    private function assistant(string $tenantId, string $title = 'Support triage'): int
+    {
+        $previous = TenantContext::current();
+        TenantContext::set($tenantId);
+
+        try {
+            return (int) app(AssistantWriter::class)
+                ->create(array('title' => $title, 'system_prompt' => 'Be brief.'))
+                ->getKey();
+        } finally {
+            TenantContext::set($previous);
+        }
     }
 
     private function spend(float $cost, ?string $at = null, string $tenantId = Tenant::DEFAULT_ID): void

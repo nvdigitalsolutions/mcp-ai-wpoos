@@ -10,9 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * An estate budget — Proposal 154.
  *
- * A row is a limit for one estate over one window. It owns no spend total: the
- * figure is `SUM(cost)` over `nvoos_token_usage`, so the budget and the cost
- * pages read the same numbers by construction.
+ * A row is a limit for one estate over one window, optionally narrowed to one
+ * assistant. It owns no spend total: the figure is `SUM(cost)` over
+ * `nvoos_token_usage`, so the budget and the cost pages read the same numbers by
+ * construction.
+ *
+ * **Two scopes, one table.** `assistant_id = 0` is the whole estate; a non-zero
+ * id narrows the limit to that assistant. The sentinel rather than `NULL` keeps
+ * the unique key meaningful — SQL treats NULLs as distinct, so a nullable column
+ * would let two estate-wide daily rows exist for the same estate.
  *
  * The row is estate-owned and takes the global tenant scope, the same rule
  * `Approval`, `Memory`, `Transcript`, `WorkflowRun` and `Assistant` follow
@@ -30,8 +36,8 @@ class Budget extends Model
     protected $table = 'nvoos_budgets';
 
     /**
-     * `tenant_id` is deliberately absent: the estate is never supplied by a
-     * request body, it is the resolved context.
+     * `tenant_id` and `assistant_id` are deliberately absent: the estate and the
+     * scope are supplied by the store, never by a request body.
      *
      * @var list<string>
      */
@@ -48,6 +54,7 @@ class Budget extends Model
     protected function casts(): array
     {
         return [
+            'assistant_id' => 'integer',
             'limit_usd' => 'float',
             'warn_at' => 'float',
             'enabled' => 'boolean',

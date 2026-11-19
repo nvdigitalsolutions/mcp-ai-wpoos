@@ -91,7 +91,7 @@ class AssistantTestController
         // (Proposal 154). A 429 here refuses the turn; a 503 means the budget
         // could not be read, which is a different problem for the operator.
         try {
-            $budgets->assertWithinBudget();
+            $budgets->assertWithinBudget((int) $assistant->id);
         } catch (BudgetExceededException $error) {
             return response()->json(array(
                 'success' => false,
@@ -99,6 +99,7 @@ class AssistantTestController
                     'code' => 'budget_exceeded',
                     'message' => $error->getMessage(),
                     'window' => $error->window,
+                    'assistant_id' => $error->assistantId,
                     'spend' => $error->spend,
                     'limit' => $error->limit,
                 ),
