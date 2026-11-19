@@ -8,6 +8,13 @@ before debugging a "bug" that only a command produced:
   counter glued onto a later line. Run output-producing commands
   *sequentially*, redirect to a file, then read it once. An interleaved
   stream is not evidence, and "fixing" what it appears to show is wasted work.
+- **File-content reads can be mangled while the file is fine.** On the 9p
+  bind mount a `head -4` returned a single line and `php -l` printed its
+  verdict spliced through the file's own docblock text, which reads exactly
+  like a corrupt write. `wc -c` and `od -c` showed the file was byte-correct.
+  Confirm with a byte-level read before rewriting a file that "lost" its
+  first lines - and if you regenerate it anyway, re-check with `wc -l`/`md5sum`
+  rather than another `head`.
 - **Windows `python3` does not understand `/tmp`** even though bash writes
   there happily (symptom: `FileNotFoundError` on a file you just created).
   `cygpath -w /tmp` gives `C:\Users\<user>\AppData\Local\Temp`; address it in

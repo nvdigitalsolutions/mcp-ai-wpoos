@@ -125,18 +125,21 @@ class Phase3cTest extends TestCase
 
     // --------------------------------------------------------------- execution
 
-    public function test_trigger_executes_the_handler_and_records_a_run(): void
+    public function test_trigger_queues_the_run_and_the_worker_records_it(): void
     {
         $this->actAsUser();
         $this->createSchedule();
 
+        // The response is an acknowledgement, not the result: 202 + run id +
+        // a status URL. `phpunit.xml` forces QUEUE_CONNECTION=sync, so the job
+        // runs inline here and the history below proves it executed.
         $this->postJson('/api/v1/pro/schedules/nightly-digest/trigger')
-            ->assertOk()
+            ->assertStatus(202)
             ->assertJsonPath('ok', true)
-            ->assertJsonPath('run.status', 'success')
-            ->assertJsonPath('run.schedule_id', 'nightly-digest')
-            ->assertJsonPath('schedule.run_count', 1)
-            ->assertJsonStructure(['run' => ['id', 'status', 'started_at', 'finished_at', 'duration']]);
+            ->assertJsonPath('queued', true)
+            ->assertJsonPath('schedule_id', 'nightly-digest')
+            ->assertJsonStructure(['run_id', 'message'])
+            ->assertHeader('Retry-After');
 
         $this->getJson('/api/v1/pro/schedules/nightly-digest/history')
             ->assertOk()
@@ -150,12 +153,15 @@ class Phase3cTest extends TestCase
         $this->actAsUser();
         $this->createSchedule(['name' => 'Broken', 'handler' => 'not_a_registered_tool']);
 
-        $failed = $this->postJson('/api/v1/pro/schedules/broken/trigger')
-            ->assertStatus(422)
-            ->assertJsonPath('ok', true)
-            ->assertJsonPath('run.status', 'failure');
+        $this->postJson('/api/v1/pro/schedules/broken/trigger')
+            ->assertStatus(202)
+            ->assertJsonPath('queued', true);
 
-        $this->assertNotEmpty($failed->json('run.error'));
+        $run = DB::table('nvoos_schedule_runs')->first();
+
+        $this->assertNotNull($run);
+        $this->assertSame('failure', $run->status);
+        $this->assertNotEmpty($run->error);
 
         $this->getJson('/api/v1/pro/schedules/fleet-stats')
             ->assertOk()
@@ -169,7 +175,7 @@ class Phase3cTest extends TestCase
         $this->actAsUser();
         $this->createSchedule();
 
-        $this->postJson('/api/v1/pro/schedules/nightly-digest/trigger')->assertOk();
+        $this->postJson('/api/v1/pro/schedules/nightly-digest/trigger')->assertStatus(202);
 
         $this->getJson('/api/v1/pro/schedules/nightly-digest/results?limit=5')
             ->assertOk()
@@ -184,7 +190,7 @@ class Phase3cTest extends TestCase
         $this->actAsUser();
         $this->createSchedule(['name' => 'One']);
         $this->createSchedule(['name' => 'Two']);
-        $this->postJson('/api/v1/pro/schedules/one/trigger')->assertOk();
+        $this->postJson('/api/v1/pro/schedules/one/trigger')->assertStatus(202);
 
         $this->getJson('/api/v1/pro/schedules/fleet-stats')
             ->assertOk()

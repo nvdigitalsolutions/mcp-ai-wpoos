@@ -76,6 +76,38 @@ describe( 'ScheduleManagerClient', () => {
 		expect( calls[ 5 ] ).toContain( '/presets/p1/install' );
 	} );
 
+	it( 'returns the trigger acknowledgement instead of void', async () => {
+		mockFetch( { ok: true, queued: true, run_id: 'abc123', backend: 'action-scheduler' } );
+		const client = new ScheduleManagerClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		const ack = await client.trigger( 'sch_1' );
+		expect( ack ).toMatchObject( { queued: true, run_id: 'abc123' } );
+	} );
+
+	it( 'reads one run status from the poll route', async () => {
+		const calls: string[] = [];
+		global.fetch = vi.fn( ( input: RequestInfo | URL ) => {
+			calls.push( String( input ) );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () =>
+					Promise.resolve( {
+						ok: true,
+						status: 'running',
+						finished: false,
+						duration: null,
+						error: null,
+					} ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+
+		const client = new ScheduleManagerClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		const status = await client.runStatus( 'sch_1', 'abc123' );
+
+		expect( calls[ 0 ] ).toContain( '/schedules/sch_1/runs/abc123' );
+		expect( status ).toMatchObject( { status: 'running', finished: false } );
+	} );
+
 	it( 'maps the history envelope', async () => {
 		mockFetch( {
 			ok: true,

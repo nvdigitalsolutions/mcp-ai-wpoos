@@ -408,6 +408,10 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::delete('/schedules/{id}', [SchedulesController::class, 'destroy']);
                 Route::post('/schedules/{id}/toggle', [SchedulesController::class, 'toggle']);
                 Route::post('/schedules/{id}/trigger', [SchedulesController::class, 'trigger']);
+                // The poll half of the async trigger: 202 + run id is useless
+                // without a status resource the console can read.
+                Route::get('/schedules/{id}/runs/{runId}', [SchedulesController::class, 'run'])
+                    ->whereNumber('runId');
                 Route::get('/schedules/{id}/history', [SchedulesController::class, 'history']);
                 Route::get('/schedules/{id}/results', [SchedulesController::class, 'results']);
 

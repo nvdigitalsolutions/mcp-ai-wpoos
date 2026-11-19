@@ -43,6 +43,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		add_action( 'wp_ajax_wp_mcp_ai_sm_delete_schedule', array( $this, 'ajax_delete_schedule' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_toggle_schedule', array( $this, 'ajax_toggle_schedule' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_trigger_schedule', array( $this, 'ajax_trigger_schedule' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_get_run_status', array( $this, 'ajax_get_run_status' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_get_history', array( $this, 'ajax_get_history' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_clear_history', array( $this, 'ajax_clear_history' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_export_history_csv', array( $this, 'ajax_export_history_csv' ) );
@@ -260,6 +261,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'confirmDelete'          => __( 'Are you sure you want to delete this schedule and all its history?', 'mcp-ai-wpoos-pro' ),
 					'confirmClear'           => __( 'Are you sure you want to clear the run history for this schedule?', 'mcp-ai-wpoos-pro' ),
 					'confirmTrigger'         => __( 'Run this schedule now?', 'mcp-ai-wpoos-pro' ),
+					'runNow'                 => __( 'Run now', 'mcp-ai-wpoos-pro' ),
 					'loading'                => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
 					'saving'                 => __( 'Saving…', 'mcp-ai-wpoos-pro' ),
 					'saved'                  => __( 'Saved.', 'mcp-ai-wpoos-pro' ),
@@ -278,6 +280,12 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'statusSuccess'          => __( 'Success', 'mcp-ai-wpoos-pro' ),
 					'statusFailure'          => __( 'Failed', 'mcp-ai-wpoos-pro' ),
 					'statusPending'          => __( 'Pending', 'mcp-ai-wpoos-pro' ),
+					'statusRunning'          => __( 'Running', 'mcp-ai-wpoos-pro' ),
+					'statusTimeout'          => __( 'Timed out', 'mcp-ai-wpoos-pro' ),
+					// Run-tracking strings (queued runs, polling).
+					'triggerQueued'          => __( 'Schedule queued. Running in the background…', 'mcp-ai-wpoos-pro' ),
+					'runStillRunning'        => __( 'The run is still going. It keeps running in the background — check the run history in a moment.', 'mcp-ai-wpoos-pro' ),
+					'gatewayTimeout'         => __( 'The server gateway timed out before it could answer. The run keeps going in the background — check the run history.', 'mcp-ai-wpoos-pro' ),
 					'enabled'                => __( 'Enabled', 'mcp-ai-wpoos-pro' ),
 					'disabled'               => __( 'Disabled', 'mcp-ai-wpoos-pro' ),
 					'addStep'                => __( '+ Add Step', 'mcp-ai-wpoos-pro' ),
@@ -363,6 +371,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					</a>
 				</div>
 			</div>
+
+			<div id="wp-mcp-ai-sm-run-notice" class="notice notice-info" style="display:none;" role="status" aria-live="polite"></div>
 
 			<div id="wp-mcp-ai-sm-table-wrap">
 				<table class="wp-list-table widefat fixed striped wp-mcp-ai-sm-table" id="wp-mcp-ai-sm-table">
@@ -989,7 +999,19 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 	}
 
 	/**
-	 * AJAX: Trigger a schedule immediately.
+	 * AJAX: Queue a schedule run and return immediately.
+	 *
+	 * This handler must never execute the schedule inline. A workflow or
+	 * assistant run makes one or more provider round trips, which routinely
+	 * exceed the ~100 s edge timeout enforced by Cloudflare and similar proxies.
+	 * When that happens the browser receives an HTML 524 page, jQuery's `.fail()`
+	 * fires, and the user sees a generic "An error occurred" while the PHP worker
+	 * carries on running invisibly in the background.
+	 *
+	 * Instead we follow the standard long-job contract: validate, enqueue,
+	 * return a run ID, and let the client poll `wp_mcp_ai_sm_get_run_status`.
+	 *
+	 * @since 1.2.8
 	 */
 	public function ajax_trigger_schedule() {
 		if ( ! $this->verify_request() ) {
@@ -1005,18 +1027,12 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			wp_send_json_error( array( 'message' => __( 'Missing schedule_id.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		// Capture any unexpected output (PHP warnings/notices) that would
-		// corrupt the JSON response and cause jQuery's .fail() to fire.
-		ob_start();
-
 		try {
-			$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now( $schedule_id, get_current_user_id() );
+			$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $schedule_id, get_current_user_id() );
 		} catch ( \Throwable $e ) {
-			ob_end_clean();
-
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_error(
-					'Pro schedule trigger exception',
+					'Pro schedule enqueue exception',
 					array(
 						'schedule_id' => $schedule_id,
 						'error'       => $e->getMessage(),
@@ -1030,35 +1046,88 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				array(
 					'message' => sprintf(
 						/* translators: %s: error message */
-						__( 'Schedule trigger crashed: %s', 'mcp-ai-wpoos-pro' ),
+						__( 'Could not queue the schedule: %s', 'mcp-ai-wpoos-pro' ),
 						$e->getMessage()
 					),
 				)
 			);
 		}
 
-		$unexpected_output = ob_get_clean();
-
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+			$error_data  = $result->get_error_data();
+			$http_status = ( is_array( $error_data ) && isset( $error_data['status'] ) )
+				? (int) $error_data['status']
+				: 400;
+
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), $http_status );
 		}
 
-		$success = (bool) $result;
-		$status  = $success ? 'success' : 'failure';
-
-		$response = array(
-			'run_status' => $status,
-			'message'    => $success
-				? __( 'Schedule triggered successfully.', 'mcp-ai-wpoos-pro' )
-				: __( 'Schedule triggered but reported a failure. Check run history.', 'mcp-ai-wpoos-pro' ),
+		wp_send_json_success(
+			array(
+				'queued'      => true,
+				'run_id'      => $result['run_id'],
+				'schedule_id' => $result['schedule_id'],
+				'backend'     => $result['backend'],
+				'run_status'  => 'pending',
+				'message'     => $result['message'],
+			)
 		);
+	}
 
-		// Surface any unexpected output in the response for debugging.
-		if ( '' !== $unexpected_output && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$response['debug_output'] = $unexpected_output;
+	/**
+	 * AJAX: Report the status of a single run.
+	 *
+	 * Backs the client-side poller that follows a queued run to completion.
+	 * Cheaper than re-reading the whole history because it looks up one record.
+	 *
+	 * @since 1.2.8
+	 */
+	public function ajax_get_run_status() {
+		if ( ! $this->verify_request() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mcp-ai-wpoos-pro' ) ), 403 );
 		}
 
-		wp_send_json_success( $response );
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		$schedule_id = isset( $_POST['schedule_id'] ) ? sanitize_text_field( wp_unslash( $_POST['schedule_id'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		$run_id = isset( $_POST['run_id'] ) ? sanitize_text_field( wp_unslash( $_POST['run_id'] ) ) : '';
+
+		if ( ! $schedule_id || ! $run_id ) {
+			wp_send_json_error( array( 'message' => __( 'Missing schedule_id or run_id.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Lazily close runs abandoned by a killed worker, so the poller always
+		// terminates instead of spinning on a `pending` that nobody will update.
+		WP_MCP_AI_Pro_Schedule_Manager::reap_stale_runs( $schedule_id );
+
+		$run = WP_MCP_AI_Pro_Schedule_Manager::get_run( $schedule_id, $run_id );
+
+		if ( ! $run ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Run not found. It may have been cleared from the history.', 'mcp-ai-wpoos-pro' ),
+					'status'  => 'unknown',
+				),
+				404
+			);
+		}
+
+		$status   = isset( $run['status'] ) ? (string) $run['status'] : 'unknown';
+		$finished = in_array( $status, array( 'success', 'failure', 'timeout' ), true );
+
+		wp_send_json_success(
+			array(
+				'run_id'   => $run_id,
+				'status'   => $status,
+				'finished' => $finished,
+				'duration' => isset( $run['duration'] ) ? (float) $run['duration'] : 0.0,
+				'error'    => isset( $run['error'] ) ? (string) $run['error'] : '',
+				'time'     => isset( $run['start_time'] ) ? wp_date( 'Y-m-d H:i:s', (int) $run['start_time'] ) : '',
+				'trigger'  => isset( $run['trigger'] ) ? (string) $run['trigger'] : '',
+			)
+		);
 	}
 
 	/**
@@ -1083,7 +1152,9 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		$formatted = array_map(
 			function ( $entry ) {
 				return array(
+					'run_id'     => isset( $entry['run_id'] ) ? (string) $entry['run_id'] : '',
 					'status'     => $entry['status'],
+					'trigger'    => isset( $entry['trigger'] ) ? (string) $entry['trigger'] : '',
 					'time'       => wp_date( 'Y-m-d H:i:s', $entry['start_time'] ),
 					'duration'   => $entry['duration'],
 					'error'      => $entry['error'],
