@@ -9009,6 +9009,7 @@ the hardcoded default. A test now pins the namespace rather than the value.
 | `RuntimeSchemaTest` | the column and its index must exist |
 | `HarnessTraceStore`, `AdminObservability`, `RuntimeSchema`, `TraceCaptureWiring`, `TokenUsage*`, `AdminToken*` | **84 tests / 298 assertions, 0 failures** |
 | phpcs (`phpcs.xml.dist` 1 file, `phpcs-laravel.xml.dist` 1 file) | **0 errors** |
+| Full app suite | **1431 tests / 18,362 assertions, 0 failures** (CI `App suite (SQLite)`) — +6 tests / +13 assertions over §87's 1425 / 18,349, which is the three new or extended trace tests and nothing else |
 
 ### 88.5 Still open
 
