@@ -29,6 +29,13 @@ if (! is_array($contract) || ! isset($contract['surfaces']) || ! is_array($contr
 $builtStates = ['full', 'subset', 'read-only'];
 $servedStates = ['full', 'subset', 'read-only'];
 
+// `inert` is deliberately NOT built. It restores the honest middle the
+// vocabulary was missing: a surface that renders every field and accepts the
+// write while nothing reads the value. Proposal 156 §3.1 found nineteen such
+// fields in the Authentication section, so counting `inert` as built would have
+// moved the burn-down without moving any parity.
+$inertStates = ['inert'];
+
 // `subset` is built. The contract's vocabulary says a subset surface is
 // *rendered* with a reduced field set or reduced actions — the reduction is a
 // projection, not an absence. It was missing here until §24, when
@@ -41,6 +48,7 @@ $report = [
     'console_served' => [],
     'console_only' => [],
     'planned_only' => ['total' => 0, 'ops' => [], 'admin' => [], 'both' => []],
+    'inert' => ['ops' => [], 'admin' => []],
 ];
 
 foreach ($contract['surfaces'] as $surface) {
@@ -63,6 +71,14 @@ foreach ($contract['surfaces'] as $surface) {
 
     if (in_array($admin, $builtStates, true)) {
         $report['filament_built']['admin'][] = $id;
+    }
+
+    if (in_array($ops, $inertStates, true)) {
+        $report['inert']['ops'][] = $id;
+    }
+
+    if (in_array($admin, $inertStates, true)) {
+        $report['inert']['admin'][] = $id;
     }
 
     $consoleServed = in_array($console, $servedStates, true);
@@ -118,3 +134,6 @@ echo '  '.$list($report['console_only']).PHP_EOL;
 echo 'planned only        : '.$report['planned_only']['total'].PHP_EOL;
 echo '  /ops              : '.count($report['planned_only']['ops']).'  ('.$list($report['planned_only']['ops']).')'.PHP_EOL;
 echo '  /admin            : '.count($report['planned_only']['admin']).'  ('.$list($report['planned_only']['admin']).')'.PHP_EOL;
+echo 'inert (rendered, unread): '.count(array_unique(array_merge($report['inert']['ops'], $report['inert']['admin']))).PHP_EOL;
+echo '  /ops              : '.count($report['inert']['ops']).'  ('.$list($report['inert']['ops']).')'.PHP_EOL;
+echo '  /admin            : '.count($report['inert']['admin']).'  ('.$list($report['inert']['admin']).')'.PHP_EOL;

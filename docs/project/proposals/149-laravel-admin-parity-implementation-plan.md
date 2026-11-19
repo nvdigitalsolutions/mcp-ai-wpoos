@@ -2328,6 +2328,14 @@ parity.
 
 ### 36.2 `identity-provider` → stays `planned`
 
+> **Corrected 2026-11-20 — see §100.** The negative below is a false negative: the
+> grep searched `identity_provider` / `IdentityProvider` / `saml` / `openid` /
+> `oidc`, and the WordPress surface is named **auth0**. It exists in full, and
+> all nineteen of its settings were already ported to `/admin/settings` — with
+> nothing reading them. The row is now `audience: tenant-admin · admin: inert`.
+> The reasoning that survives is item (3) below: provisioning rules are the real
+> decision. What does not survive is "nothing to port".
+
 Nothing to port: a grep for `identity_provider` / `IdentityProvider` / `saml` /
 `openid` / `oidc` across the WordPress plugin returns only an A2A agent card,
 which is unrelated. No identity-provider implementation exists on **either**
@@ -4059,7 +4067,7 @@ decided or designed:
 | Track | Doc | Type | Unblocks | Done when |
 |---|---|---|---|---|
 | **P1** | [`149-datasets-readiness-worksheet.md`](./149-datasets-readiness-worksheet.md) | classification decision | order item **18** (`datasets`) | the eleven HuggingFace slugs carry a hand-written readiness value + reason, and `bin/audit-tool-readiness.php` passes |
-| **P2** | [`149-identity-provider-decision.md`](./149-identity-provider-decision.md) | **owner decision** | order item **19** (`identity-provider`) | OIDC / OIDC+SAML / defer is chosen and recorded; the row becomes buildable or `absent` |
+| **P2** | [`156-identity-decision.md`](./156-identity-decision.md) | **decision recorded 2026-11-20** | order item **19** (`identity-provider`) | Answered differently than this row expected: the settings surface was never missing, so there is nothing to decide about *building a page*. All nineteen keys are ported and unread; the row is now `admin: inert` and Proposal 156 orders the behaviour as I2–I5. Numbered 156 rather than `149-identity-provider-decision.md` to follow the 154/155 companion-proposal convention. |
 | **P3** | [`149-measurement-data-model.md`](./149-measurement-data-model.md) | data-model design | order item **17** (`measurement`) | the five tables, retention rule and API are agreed; the slice can start at migrations |
 | **P4** | [`149-toolkit-manifest-renderer.md`](./149-toolkit-manifest-renderer.md) | **renderer shipped 2026-11-18 (§56)** | order item **10** (`toolkits`, `chat-channels`, 45 Pro pages) | **engine extracted 2026-11-17**; **record tenancy scoped 2026-11-17** (§47); **tab schema + renderer + manifest lint 2026-11-18** (§56); **12 manifests 2026-11-18** (§56.7). Next: the 10 toolkits that persist nothing need a WordPress-side fix before they can be authored |
 
@@ -8730,6 +8738,13 @@ unbuilt because nothing would write to them.)*
 
 ### 85.3 `identity-provider` — a product decision, not a port
 
+> **Corrected 2026-11-20 — see §100.** "Nothing exists on either runtime" is not
+> true: the WordPress surface is named auth0 and lives in
+> `includes/admin/class-wp-mcp-ai-auth0-setup.php` plus the Authentication
+> settings section. All nineteen keys are already in this runtime's catalogue on
+> `/admin/settings`; none is read by any code. The list below remains the right
+> order for building the *behaviour*, which is still absent.
+
 Nothing exists on either runtime (§36 verified the grep). The page is the last
 piece, not the first:
 
@@ -9868,3 +9883,110 @@ ever called" on a deployment where capture was simply switched off.
    no tokens writes nothing, so the figure under-counts silent turns. Stated in
    the definition's note rather than fixed, because the alternative (traces) is
    conditional on capture.
+
+---
+
+## 100. Identity: the surface was never missing (2026-11-20)
+
+**State:** decision recorded in [Proposal 156](156-identity-decision.md). One
+contract row corrected, one vocabulary state added. **No behaviour ships** — and
+that is the finding, not a shortfall.
+
+### 100.1 §36's negative was a false negative
+
+§36 concluded that no identity surface exists on either runtime, on the strength
+of a grep for `identity_provider` / `IdentityProvider` / `saml` / `openid` /
+`oidc`. The WordPress surface is named **auth0**, which none of those patterns
+matches. It exists in full:
+
+| Piece | Path |
+|---|---|
+| 1-click setup page (`admin.php?page=wp-mcp-ai-auth0-setup`) | `includes/admin/class-wp-mcp-ai-auth0-setup.php` (415 lines) |
+| JWKS fetch + `iss`/`aud`/scope verification | `includes/rest/class-wp-mcp-ai-rest-authenticator.php` |
+| Auth0 subject → WP user bridge (userinfo, Management API) | `includes/integrations/class-wp-mcp-ai-integration-auth0-github.php` |
+| The seven-sub-tab settings section | `includes/admin/sections/class-wp-mcp-ai-section-authentication.php` |
+
+This is §95's lesson repeating: a negative result from a *name-guess* is not
+evidence of absence. The row was researched against a plausible name rather than
+the actual one.
+
+### 100.2 What the surface actually is
+
+Seven sub-tabs over nineteen keys: Auth0 Configuration (3), GitHub Bridge (3),
+WordPress.com/Gravatar (2), Simple JWT Login (1), Guest Access (2), REST API
+Capabilities (6), Magic Link Sign-In (2). They are not seven flavours of one
+thing — they are an issuer trust list, two identity-resolution bridges, six API
+policy toggles, and one login method.
+
+### 100.3 What this runtime already has — and what it does not
+
+All nineteen keys are in the generated catalogue, on the `authentication` tab, in
+seven sections that match the sub-tabs one-for-one, at **tenant** scope with
+`console: hidden`. They render on `/admin/settings` through
+`SettingsSchema::forSurface('admin')` and `BuildsSettingsForm`.
+
+**No runtime code reads any of the nineteen.** A grep for each key across
+`app/`, `config/`, `routes/` and `database/` returns **zero files for all
+nineteen**. `DiagnosticsController` reports `auth0_configured => false` as a
+literal, so diagnostics says "not configured" regardless of what the form holds.
+
+`config/auth.php` defines the session `web` guard plus Sanctum — no Auth0 guard,
+no guest token, no magic link. So the form is complete and the behaviour behind
+it is entirely absent: a saved value has no reader.
+
+### 100.4 The decision
+
+Row `identity-provider` moves from `audience: operator · ops: planned ·
+writer: none` to `audience: tenant-admin · ops: null · admin: inert ·
+writer: admin`. It was mis-scoped as well as mis-stated: all nineteen keys are
+tenant scope because each is an estate's own trust configuration, and §17 is
+explicit that a tenant field must not appear on a panel with no estate selected.
+
+The vocabulary gains one state, because neither existing word was true:
+
+> **`inert`** — rendered and writable, but no runtime code reads the value; the
+> form is not yet a behaviour.
+
+`subset` would have been wrong twice: the field set is complete, and the audit
+counts `subset` as built — so a documentation correction would have moved the
+burn-down from 36 to 37 built without a line of behaviour changing. `planned`
+would have been false in the other direction: the form is live and accepts
+writes.
+
+### 100.5 Gates
+
+| Run | Result |
+|---|---|
+| `bin/audit-surface-ownership.php` | **47 surfaces · 37 built** (15 `/ops`, 24 `/admin`) · console-served 29 · console-only 7 · planned-only **0** · **inert 1** (`identity-provider`, `/admin`) |
+| `SurfaceOwnershipTest` | **4 tests / 484 assertions, 0 failures** — the new state passes the closed-vocabulary check and its `projection` is mandatory |
+| `AdminNavigation` (5 tests) | **5 tests / 22 assertions, 0 failures** — nothing reads `state`, so navigation is unchanged |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 errors** (3 pre-existing line-length warnings, untouched lines) |
+| `php -l bin/audit-surface-ownership.php` | clean |
+
+§99's merge moved `measurement` to `full`, so the built count here is **37** with
+**no planned-only rows** — the first time the board has had none (§99.5's own
+"still open" is a different question: it asks for more metrics, not for a
+surface). The inert row does not inflate that number, which is the reason the
+state exists.
+
+### 100.6 Still open, in order
+
+1. **I2** — mark the nineteen unread keys `inert` in the catalogue, render them
+   disabled with a hint (the S-1 pattern), and add a test that fails when a
+   marked key gains a reader without the marker being removed. This is the
+   anti-fiction gate; until it lands the form still offers toggles that do
+   nothing.
+2. **I3** — Auth0 bearer verification on the estate API: JWKS, `iss`/`aud`/scope,
+   no session, no provisioning. It needs no browser flow and makes three of the
+   nineteen keys real.
+3. **I4** — magic-link sign-in, if console login without WordPress credentials is
+   wanted. Separate decision; the WordPress design (hashed single-use token,
+   15-minute TTL, rate-limited, uniform responses) is sound.
+4. **I5** — OIDC SSO with deny-by-default JIT provisioning. OIDC only; SAML is a
+   separate increment and waits for a customer who requires it.
+
+**Not ported, by decision:** the 1-click wizard (its auto-configure derives
+`auth0_domain` from an *unverified* JWT payload — deriving a trust anchor from an
+artifact you have not validated), `enable_simple_jwt_login` and
+`enable_wordpress_gravatar_bridge` (they configure WordPress software this
+runtime does not have).

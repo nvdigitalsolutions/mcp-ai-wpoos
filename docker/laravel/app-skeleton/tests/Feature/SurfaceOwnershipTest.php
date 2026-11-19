@@ -120,7 +120,7 @@ class SurfaceOwnershipTest extends TestCase
                     sprintf('Surface "%s" %s has an unknown state.', $id, $presentation)
                 );
 
-                if (in_array($state, ['subset', 'read-only'], true)) {
+                if (in_array($state, ['subset', 'read-only', 'inert'], true)) {
                     $this->assertNotSame(
                         '',
                         trim((string) ($surface['projection'] ?? '')),
