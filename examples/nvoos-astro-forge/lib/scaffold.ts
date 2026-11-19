@@ -950,9 +950,17 @@ export function accentFamilyOf( profile: SiteProfile ): string | undefined {
 export function mergeTokens(
 	design?: ForgeDesign,
 	tokens?: Record< string, string >,
-	colors?: ForgeColorModes | Record< string, { text?: string } >
+	colors?: ForgeColorModes | Record< string, { text?: string } >,
+	/** The ACCENT family a profile already measured (see `accentFamilyOf`).
+	 * It has to arrive here rather than in `scaffoldProject`, because the
+	 * token-block AUDIT compares the on-disk span against this function — two
+	 * derivations drift apart (the audit failed on its first outing). */
+	accent?: string
 ): Record< string, string > {
 	const merged = { ...DEFAULT_TOKENS, ...( design ? designToTokens( design ) : {} ), ...( tokens ?? {} ) };
+	if ( accent && ! ( tokens && tokens[ 'font-accent' ] ) ) {
+		merged[ 'font-accent' ] = `'${ accent }', ${ DEFAULT_FONT_STACK }`;
+	}
 	const ink = measuredBodyInk( colors );
 	if ( ink && ! ( tokens && typeof tokens.ink === 'string' && tokens.ink.trim() ) ) {
 		merged.ink = ink;
@@ -3767,13 +3775,7 @@ async function scaffoldProject(
 	// 3a. Apply the design language (tokens_apply v2 — Proposal 114 §3.3) over
 	//     the --forge-* defaults, gate the rendered pairs against WCAG, and
 	//     write the resolved design module the audit endpoint reads.
-	const mergedTokens = mergeTokens( profile.design, profile.tokens, profile.colors );
-	// The class-driven accent face, for a profile measured before the role
-	// existed (see `accentFamilyOf`). An explicit token always wins.
-	const accentFamily = accentFamilyOf( profile );
-	if ( accentFamily && ! ( profile.tokens && profile.tokens[ 'font-accent' ] ) ) {
-		mergedTokens[ 'font-accent' ] = `'${ accentFamily }', ${ DEFAULT_FONT_STACK }`;
-	}
+	const mergedTokens = mergeTokens( profile.design, profile.tokens, profile.colors, accentFamilyOf( profile ) );
 	const cssPath = path.join( targetDir, 'src', 'styles', 'global.css' );
 	const css = await readFile( cssPath, 'utf8' );
 	await writeFile( cssPath, rewriteGlobalCss( css, mergedTokens ), 'utf8' );
