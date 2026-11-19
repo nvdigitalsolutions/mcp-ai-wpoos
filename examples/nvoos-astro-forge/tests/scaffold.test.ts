@@ -2,7 +2,7 @@
 // scaffold.test.ts — template copy, FORGE-marker rewrite, vendoring, gates.
 // ---------------------------------------------------------------------------
 
-import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
@@ -12,6 +12,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
+import { rmTemp } from './helpers/tmp.ts';
 import { auditTokenBlock, readableBandType, mergeBandType, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
@@ -69,7 +70,7 @@ async function tempDir(): Promise<string> {
 }
 
 afterEach(async () => {
-	await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(tempDirs.splice(0).map((dir) => rmTemp(dir)));
 });
 
 describe('scaffold — built-in template fixture', () => {

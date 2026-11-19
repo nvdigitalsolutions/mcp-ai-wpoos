@@ -6,7 +6,7 @@
 // declares the copy; the form posts through Proposal 138's transport.
 // ---------------------------------------------------------------------------
 
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -14,6 +14,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { FORGE_ROOT, scaffold } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const tempDirs: string[] = [];
 
@@ -24,7 +25,7 @@ async function tempDir(): Promise<string> {
 }
 
 afterEach(async () => {
-	await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(tempDirs.splice(0).map((dir) => rmTemp(dir)));
 });
 
 const CONTACT = {

@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -18,6 +18,7 @@ import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { renderSyncDeployTree } from '../lib/managed-runtime.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const execFileAsync = promisify( execFile );
 
@@ -25,7 +26,7 @@ let dir: string;
 
 afterEach( async () => {
 	if ( dir ) {
-		await rm( dir, { recursive: true, force: true } );
+		await rmTemp( dir );
 	}
 } );
 

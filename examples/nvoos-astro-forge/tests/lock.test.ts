@@ -16,6 +16,7 @@ import {
 } from '../lib/lock.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 let dir: string;
 
@@ -57,7 +58,7 @@ beforeEach( async () => {
 } );
 
 afterEach( async () => {
-	await rm( dir, { recursive: true, force: true } );
+	await rmTemp( dir );
 } );
 
 describe( 'lock records', () => {
