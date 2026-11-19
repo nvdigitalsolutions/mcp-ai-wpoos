@@ -17,7 +17,8 @@
 // an unknown status is omitted, and every projection is reported.
 // ---------------------------------------------------------------------------
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const distDir = resolve(process.cwd(), 'dist');
@@ -27,11 +28,63 @@ const distDir = resolve(process.cwd(), 'dist');
 const candidates = [resolve(distDir, 'redirects.json'), resolve(distDir, 'client', 'redirects.json')];
 const mapPath = candidates.find((candidate) => existsSync(candidate));
 
-if (!mapPath) {
+const targetPath = mapPath ? resolve(dirname(mapPath), '_redirects') : null;
+
+// --- CSS provenance -------------------------------------------------------
+// Stamp a fingerprint of this build’s stylesheets into every document, so a
+// deploy that serves a DIFFERENT stylesheet than the artifact is detectable
+// rather than merely suspected. See lib/build-identity.ts.
+function stampStyleFingerprint() {
+	const styleNames = [];
+	const documents = [];
+	const walk = (dir) => {
+		if (!existsSync(dir)) {
+			return;
+		}
+		for (const entry of readdirSync(dir, { withFileTypes: true })) {
+			const path = resolve(dir, entry.name);
+			if (entry.isDirectory()) {
+				walk(path);
+				continue;
+			}
+			if (entry.name.endsWith('.css')) {
+				styleNames.push(entry.name);
+			}
+			if (entry.name === 'index.html') {
+				documents.push(path);
+			}
+		}
+	};
+	walk(distDir);
+	if (styleNames.length === 0) {
+		return;
+	}
+	const fingerprint = createHash('sha256')
+		.update([...styleNames].sort().join('\n'))
+		.digest('hex')
+		.slice(0, 16);
+	const marker = `<meta name="forge-css" content="${fingerprint}">`;
+	for (const document of documents) {
+		let html = readFileSync(document, 'utf8');
+		if (html.includes('name="forge-css"')) {
+			continue;
+		}
+		// Beside the build id when there is one, so the two read together.
+		const anchor = /<meta name="forge-build"[^>]*>/i.exec(html);
+		html = anchor
+			? html.replace(anchor[0], `${anchor[0]}${marker}`)
+			: html.replace(/<head[^>]*>/i, (head) => `${head}${marker}`);
+		writeFileSync(document, html, 'utf8');
+	}
+	console.log(`[forge-postbuild] forge-css ${fingerprint} on ${documents.length} document(s).`);
+}
+
+stampStyleFingerprint();
+
+if (!targetPath) {
 	console.log('[forge-postbuild] no redirects.json — skipping _redirects.');
 	process.exit(0);
 }
-const targetPath = resolve(dirname(mapPath), '_redirects');
 
 /** Faithful status → the portable code a static host will actually honour. */
 const PORTABLE_CODES = new Map([

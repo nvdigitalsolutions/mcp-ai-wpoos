@@ -22,6 +22,8 @@ import { promoteOutlineBands } from './design.ts';
 import { measureBandFacts, measureGeometry } from './geometry.ts';
 import { measureRegionColors, applyBandSurfaces } from './region-colors.ts';
 import { measureInteractions } from './interactions.ts';
+import { bandCoverage, describeBandCoverage } from './band-coverage.ts';
+import { createHash } from 'node:crypto';
 import type { ForgePageBands, ForgeSection } from './types.ts';
 
 /** One page to measure. `link` from wp/v2 (absolute) is the fetch target. */
@@ -77,6 +79,15 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 			const geometry = await measureGeometry( { url: page.url, ids, kind: 'source', selectors } );
 			const measured = await measureBandFacts( { url: page.url, ids, kind: 'source', selectors } );
 			const bandFacts = measured.bands;
+			// FAIL LOUD. A pass that resolves nothing has not measured "a page with
+			// no facts"; it has failed, and continuing quietly is what shipped a
+			// profile whose facts were EMPTY rather than absent.
+			{
+				const coverage = describeBandCoverage( `band facts (${ page.slug })`, bandCoverage( ids, bandFacts ) );
+				if ( coverage ) {
+					console.warn( `  ${ coverage }` );
+				}
+			}
 			// Interaction states (hover / focus / focus-visible / active) are part of the
 			// band's measured truth, not a homepage extra. The vendor sheet never ships, and
 			// a control's BASE declarations ride the same facts — `.button.is-outline` keeps
@@ -88,6 +99,13 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 					ids,
 					selectors,
 				} );
+				const coverage = describeBandCoverage(
+					`interaction states (${ page.slug })`,
+					bandCoverage( ids, interactions )
+				);
+				if ( coverage ) {
+					console.warn( `  ${ coverage }` );
+				}
 				for ( const [ id, facts ] of Object.entries( interactions ) ) {
 					bandFacts[ id ] = { ...( bandFacts[ id ] ?? {} ), interactions: facts };
 				}
@@ -129,6 +147,8 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 			out[ page.slug ] = {
 				url: page.url,
 				measuredAt: new Date().toISOString(),
+				// The snapshot these facts describe (see `ForgePageBands.sourceHash`).
+				sourceHash: createHash( 'sha256' ).update( html ).digest( 'hex' ).slice( 0, 16 ),
 				...( structural ? { builder: structural } : {} ),
 				sections,
 				geometry,

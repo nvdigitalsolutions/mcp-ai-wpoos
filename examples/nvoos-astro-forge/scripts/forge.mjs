@@ -31,7 +31,7 @@
 // ---------------------------------------------------------------------------
 
 import { readFile, readdir, mkdir, stat, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -53,6 +53,8 @@ import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
+import { describePropertyCoverage, propertyCoverage } from '../lib/property-coverage.ts';
+import { bandCoverage, describeBandCoverage } from '../lib/band-coverage.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
 import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
 import { measureIconFonts, usedDroppedFamilies } from '../lib/font-audit.ts';
@@ -544,6 +546,14 @@ async function runAnalyze( url, options ) {
 						selectors,
 					} );
 					profile.bandFacts = bandFacts.bands;
+					// FAIL LOUD: a pass that resolved nothing measured NOTHING, which is
+					// not the same as a homepage with no facts.
+					{
+						const coverage = describeBandCoverage( 'band facts (front page)', bandCoverage( ids, bandFacts.bands ) );
+						if ( coverage ) {
+							console.warn( `  ${ coverage }` );
+						}
+					}
 					if ( bandFacts.pageBackground ) {
 						profile.pageBackground = bandFacts.pageBackground;
 					}
@@ -584,7 +594,13 @@ async function runAnalyze( url, options ) {
 							profile.bandFacts[ id ] = { ...( profile.bandFacts[ id ] ?? {} ), interactions: facts };
 						}
 					}
-					const states = countInteractionStates( interactions );
+					{
+						const coverage = describeBandCoverage( 'interaction states (front page)', bandCoverage( ids, interactions ) );
+						if ( coverage ) {
+							console.warn( `  ${ coverage }` );
+						}
+					}
+				const states = countInteractionStates( interactions );
 					if ( states > 0 ) {
 						console.log(
 							`\u2713 Interaction states: ${ states } state(s) on ${ bandsWithStates } band(s) — hover, focus, focus-visible, active.`
@@ -2501,6 +2517,86 @@ async function runVerify( profileRef, options ) {
 			fontCoverage.note
 		);
 	}
+/**
+ * Every CSS declaration string the profile carries.
+ *
+ * A fact that reaches the profile but not the stylesheet is invisible to the
+ * band audit, which only knows what was DECLARED: `line-height` was measured at
+ * rest and dropped by the paint allowlist, so an outline button shipped 41px
+ * where the source is 43px and every gate stayed green (2026-11-20).
+ */
+function collectFactDeclarations( profile ) {
+	const out = [];
+	const push = ( value ) => {
+		if ( typeof value === 'string' && value.length > 0 ) {
+			out.push( value );
+		}
+	};
+	const addBox = ( box ) => {
+		if ( ! box ) {
+			return;
+		}
+		for ( const device of [ 'base', 'tablet', 'mobile' ] ) {
+			push( box[ device ] );
+		}
+	};
+	const addBand = ( band ) => {
+		if ( ! band ) {
+			return;
+		}
+		for ( const value of Object.values( band.box ?? {} ) ) {
+			addBox( value );
+		}
+		for ( const value of Object.values( band.media ?? {} ) ) {
+			addBox( value );
+		}
+		for ( const element of band.elements ?? [] ) {
+			push( element.bg );
+			push( element.veil );
+		}
+		for ( const fact of band.interactions ?? [] ) {
+			for ( const key of [ 'base', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] ) {
+				push( fact[ key ] );
+			}
+			for ( const child of fact.children ?? [] ) {
+				for ( const key of [ 'base', 'pseudo', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] ) {
+					push( child[ key ] );
+				}
+			}
+		}
+	};
+	for ( const band of Object.values( profile.bandFacts ?? {} ) ) {
+		addBand( band );
+	}
+	for ( const page of Object.values( profile.pageBands ?? {} ) ) {
+		for ( const band of Object.values( page.bandFacts ?? {} ) ) {
+			addBand( band );
+		}
+	}
+	return out;
+}
+
+/** Concatenate every built stylesheet and document under `dist`. */
+function readBuiltStyles( target ) {
+	const parts = [];
+	const walk = ( dir ) => {
+		if ( ! existsSync( dir ) ) {
+			return;
+		}
+		for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
+			const path = `${ dir }/${ entry.name }`;
+			if ( entry.isDirectory() ) {
+				walk( path );
+				continue;
+			}
+			if ( /\.(?:css|html)$/i.test( entry.name ) ) {
+				parts.push( readFileSync( path, 'utf8' ) );
+			}
+		}
+	};
+	walk( target );
+	return parts.join( '\n' );
+}
 	const media = await runMediaBudgetVerify( options.target );
 	if ( media.status === 'skip' ) {
 		record( 'media budget', 'skip', media.note );
@@ -2518,6 +2614,18 @@ async function runVerify( profileRef, options ) {
 			}
 		}
 		record( 'media budget', options.strictMedia && media.status !== 'pass' ? 'fail' : media.status, media.note );
+
+		// A property the profile measured but the stylesheet never declares. Report
+		// only: the emitter can legitimately drop a no-op (`line-height:normal`).
+		try {
+			const coverage = propertyCoverage( collectFactDeclarations( profile ), readBuiltStyles( options.target ) );
+			const note = describePropertyCoverage( coverage );
+			if ( note ) {
+				console.warn( `\u26a0 Property coverage: ${ note }` );
+			}
+		} catch {
+			// A missing build directory is already reported by the gates above.
+		}
 	}
 
 	// Content parity (the words gate): the design-language score and the fact

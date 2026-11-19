@@ -741,6 +741,15 @@ export interface ForgePageBands {
 	/** The source URL this page's bands were measured from. */
 	url: string;
 	measuredAt: string;
+	/**
+	 * A fingerprint of the HTML these facts were measured from.
+	 *
+	 * A builder can re-issue every band id per render, so the facts are only
+	 * valid for the snapshot they came from. Without the stamp a stale profile
+	 * is indistinguishable from a site that genuinely has no facts — the pass
+	 * returns an empty result and every gate reads it as "nothing to say".
+	 */
+	sourceHash?: string;
 	/** The builder adapter that segmented the page (`flatsome`, `elementor`…). */
 	builder?: string;
 	/** The page's bands in DOM order (surfaces + measured facts). */
