@@ -6,6 +6,7 @@ use App\Models\Assistant;
 use App\Support\TenantContext;
 use Illuminate\Http\Request;
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
+use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
 use Nvoos\Core\Domain\ValueObject\CancellationToken;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -32,11 +33,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  * `options` is still forwarded: the console's model picker uses it, and it is a
  * request-level *preference* within the caller's own estate rather than a
- * description of who they are. Narrowing it is a spend decision, not an
- * authorization one, and it is recorded separately (§89.5).
+ * description of who they are. One thing about it changed in §90 — a pair the
+ * deployment's catalogue has **retired** is refused, because routing to it buys
+ * an upstream error and nothing else.
  */
 class ChatStreamController
 {
+    public function __construct(private readonly ModelRoutingCatalogueInterface $catalogue)
+    {
+    }
+
     public function __invoke(Request $request): StreamedResponse
     {
         $validated = $request->validate([
@@ -46,12 +52,14 @@ class ChatStreamController
         ]);
 
         $assistant = $this->resolveAssistant((int) ($validated['assistant_id'] ?? 0));
+        $options = (array) ($validated['options'] ?? []);
+
+        $this->refuseRetiredModel($options);
 
         // Resolved before the stream is opened: a 404 has to be an HTTP
         // response, and `response()->stream()` has already committed to 200 by
         // the time its callback runs.
         $messages = (array) $validated['messages'];
-        $options = (array) ($validated['options'] ?? []);
         $userId = (int) ($request->user()?->id ?? 0);
         $assistantId = null === $assistant ? 0 : (int) $assistant->id;
         $assistantConfig = null === $assistant ? array() : $assistant->toRecord();
@@ -113,5 +121,41 @@ class ChatStreamController
         abort_if($assistant->tenant_id !== TenantContext::current(), 404);
 
         return $assistant;
+    }
+
+    /**
+     * Refuse a model the deployment has deliberately retired (§90).
+     *
+     * A `null` answer from the catalogue is "no opinion" and passes: a
+     * deployment name, a fine-tune or an id the catalogue has never seen says
+     * nothing about what a provider serves, and inventing a refusal there would
+     * break models that work today.
+     *
+     * This is **not** a spend control. The catalogue is deployment reference
+     * data with no tenant dimension (§90.2), so there is no per-estate allowlist
+     * to validate against, and gating `options` on a capability would break
+     * every non-admin chat — the console sends `options` on every message, set
+     * from the selected assistant.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function refuseRetiredModel(array $options): void
+    {
+        $provider = trim((string) ($options['provider'] ?? ''));
+        $model = trim((string) ($options['model'] ?? ''));
+
+        if ('' === $provider || '' === $model) {
+            return;
+        }
+
+        if (false !== $this->catalogue->serves($provider, $model)) {
+            return;
+        }
+
+        abort(422, sprintf(
+            'The deployment catalogue does not serve the model "%s" from "%s".',
+            $model,
+            $provider
+        ));
     }
 }
