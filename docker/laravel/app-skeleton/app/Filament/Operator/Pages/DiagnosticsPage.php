@@ -270,6 +270,13 @@ class DiagnosticsPage extends Page
             $value .= ' · '.mb_substr($error, 0, 80);
         }
 
+        $store = app(RoutingExportStore::class);
+        $backoffUntil = $store->backoffUntil();
+
+        if (null !== $backoffUntil && now()->lt($backoffUntil)) {
+            $value .= sprintf(' · retry after %s', $backoffUntil->toDateTimeString());
+        }
+
         return [['label' => 'OTLP export (last)', 'value' => $value]];
     }
 

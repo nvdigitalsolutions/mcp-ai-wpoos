@@ -7911,3 +7911,93 @@ That last form is the one that explains a table which is not shrinking.
    A collector that echoes a token in its error would store it; the command
    itself never logs the token.
 6. **`nvoos_token_usage` is still unbounded** (§73.5) — same argument, no export.
+
+## 75. An idempotency key and exponential backoff for the push (2026-11-19)
+
+§74.6 listed two gaps: duplicates were possible on a crash, and a failing
+collector was retried on every tick. Both close here, and the second one closes
+without a new state table.
+
+### 75.1 The event id is the metric row id
+
+Every exported record now carries `nvoos.routing.event_id` (OTLP `intValue`,
+rendered as a string) and every flat event carries `id`.
+
+The id is the identity a retry needs: the row id never changes, so the batch a
+crash resends carries the same ids the collector already saw. Delivery remains
+**at-least-once** — the runtime still cannot know whether a 2xx preceded a crash
+— but at-least-once plus a stable key is *effectively once* for any collector
+configured to dedupe on it.
+
+That last clause is the honest part: the id is a key, not a promise by the
+collector. §75.5 records what a deployment must do to get the exactly-once
+behaviour.
+
+### 75.2 Backoff derived from history, not stored
+
+The run history already knows how many times in a row the push failed: count
+`failed` rows after the last `ok` row. From that count:
+
+```
+delay = min(base × 2^(failures − 1), max)     base 60s, max 3600s
+```
+
+- the **first** failure waits 60s, the second 120s, the third 240s … capped at
+  an hour;
+- an `ok` row **resets** the count by existing — no separate reset step to
+  forget;
+- `backoff_base = 0` disables it (every tick tries), for a deployment whose
+  collector is local;
+- `--force` bypasses the gate for an operator who has fixed the collector and
+  does not want to wait.
+
+A run that is inside the window exits **`SUCCESS`**, not failure: nothing is
+wrong with the command. A scheduler that alerts on non-zero would otherwise page
+someone every tick during a collector outage — the opposite of what backoff is
+for.
+
+The gate lives in `RoutingExportStore::backoffUntil()` so the command and the
+diagnostics page cannot disagree about when the next attempt is due. The
+dashboard reads `… · retry after 2026-11-19 11:03:00`.
+
+The exponent is capped before multiplying (`min($failures - 1, 20)`): at 60 ×
+2^60 PHP leaves integer range and the result becomes a float, and the cap of an
+hour makes anything past ~2^6 irrelevant anyway.
+
+### 75.3 A test bug worth recording
+
+`Http::fake(['url' => …])` **appends** stubs; it does not replace them. The
+backoff test re-faked a 200 after a 503 and the push kept getting the 503 — the
+test was asserting the wrong thing about the wrong cause, and the failure looked
+like a code defect. Replaced with `Http::fakeSequence(...)->push(...)`, which is
+also the honest model of "first attempt fails, second succeeds".
+
+Recorded because it is the second time in this series that the *test harness*
+was the defect (the first was the float timestamp in §73.3).
+
+### 75.4 Gates
+
+| Run | Result |
+|---|---|
+| `RoutingExportPushTest` | **12 tests** — adds: the export carries the row id; the first failure waits 60s; the second waits 120s; `--force` bypasses; an `ok` resets the count; `backoff_base = 0` disables the gate |
+| `RoutingExportPushTest` + `RoutingRetentionExportTest` | **18 tests / 98 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 7 files) | **0 errors** |
+| Full app suite | **1352 tests / 18061 assertions, 0 failures** (baseline on the stacked branch: 1348 / 18037; 2 pre-existing runner deprecations) |
+
+### 75.5 Still open
+
+1. **Exactly-once is the collector's job.** The event id makes dedupe possible;
+   a collector that ignores it still double-counts a resent batch. That is a
+   deployment instruction, not a code gap, but it must be written down somewhere
+   more visible than this plan.
+2. **No jitter.** Every deployment retries at `base × 2^n` from its own failure,
+   so a fleet that fails together retries together. Adding ±20% jitter is a few
+   lines and should happen before this runs at fleet scale.
+3. **Backoff is per-deployment, not per-endpoint.** One endpoint down means all
+   events wait, which is correct today because there is only one endpoint.
+4. **No counter for "currently backing off".** The page shows the time; a metric
+   a scraper could read does not exist.
+5. **A backlog larger than one batch drains one chunk per successful tick.** At
+   `*/15` and 500 rows that is 48k/day, ample for deviations but not for a
+   long outage followed by a large replay.
+6. **`nvoos_token_usage` is still unbounded** (§73.5).

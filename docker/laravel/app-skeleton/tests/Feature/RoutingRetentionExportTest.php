@@ -88,6 +88,7 @@ class RoutingRetentionExportTest extends TestCase
         $this->assertCount(2, $document['events']);
 
         $fallback = $document['events'][0];
+        $this->assertSame(1, $fallback['id'], 'The metric row id is the idempotency key.');
         $this->assertSame('model_fallback', $fallback['kind']);
         $this->assertSame('gpt-5', $fallback['from_model']);
         $this->assertSame('gpt-5-mini', $fallback['to_model']);
