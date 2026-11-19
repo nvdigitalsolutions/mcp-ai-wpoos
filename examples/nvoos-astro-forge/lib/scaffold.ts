@@ -463,7 +463,7 @@ function tsLength( value: ResponsiveLength ): string {
  */
 function tsTypeFact( fact: BandTypeFact ): string {
 	const properties = ( value: Record< string, unknown >, dropDefaults: boolean ): string[] =>
-		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color', 'maxWidth', 'marginTop', 'marginBottom' ] as const )
+		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'family', 'color', 'maxWidth', 'marginTop', 'marginBottom' ] as const )
 			.filter( ( key ) => {
 				const entry = value[ key ];
 				if ( typeof entry !== 'string' || entry.length === 0 ) {
@@ -838,6 +838,9 @@ const DEFAULT_TOKENS: Record<string, string> = {
 	'radius-lg': '12px',
 	font: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
 	'font-display': "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+	// The nav/menu face. Degrades to the body face so a two-family source
+	// renders exactly as before.
+	'font-ui': 'var(--forge-font)',
 	space: '1rem',
 	'space-sm': '0.5rem',
 	'space-lg': '2rem',
@@ -1068,21 +1071,58 @@ export function renderDesignGenerated( profile: SiteProfile, tokens: Record<stri
 	body.push( '// when the harvested family is not a system stack (jayainc: Rubik).' );
 	body.push( 'export const webFonts: Array<{ family: string; weights: number[] }> = [' );
 	const systemFontRe = /^(system-ui|ui-sans-serif|ui-serif|ui-monospace|sans-serif|serif|monospace|cursive|fantasy|arial|helvetica|georgia|times|garamond|courier|verdana|tahoma|trebuchet|segoe|menlo|consolas|impact)$/i;
-	const families: string[] = [];
-	for ( const name of [ design?.typography.display, design?.typography.body ] ) {
+	// EVERY family the rebuild RENDERS, not just the two roles. A source can wear
+	// a third face on its headings (monicarajiv: a Dancing Script `alt-font` h3
+	// beside a Karma h1) and a fourth on its menu. Loading only display+body left
+	// those rules pointing at a family with no @font-face — the browser fell back
+	// and the per-level rule silently did nothing.
+	const familyWeights = new Map< string, { family: string; weights: Set< number >; ladder: boolean } >();
+	const addFamily = ( name: string | undefined, weight?: string, ladder = false ): void => {
 		const clean = ( name ?? '' ).trim().replace( /["']/g, '' );
-		if ( clean && ! systemFontRe.test( clean ) && ! families.includes( clean.toLowerCase() ) ) {
-			families.push( clean );
+		if ( ! clean || systemFontRe.test( clean ) ) {
+			return;
+		}
+		const key = clean.toLowerCase();
+		const entry = familyWeights.get( key ) ?? { family: clean, weights: new Set< number >(), ladder: false };
+		if ( ladder ) {
+			// The two ROLE families keep the full ladder: body/display also render
+			// prose and UI the measurements never sample (bold, small print).
+			entry.ladder = true;
+		}
+		// A measured weight is kept for EVERY family: a role can sit outside the
+		// 300-700 ladder (jayainc's body is 300), and an accent only needs the
+		// weight it actually wears.
+		const parsed = parseInt( weight ?? '', 10 );
+		entry.weights.add( parsed >= 100 && parsed <= 900 ? parsed : 400 );
+		familyWeights.set( key, entry );
+	};
+	addFamily( design?.typography.display, undefined, true );
+	addFamily( design?.typography.body, design?.typography.bodyWeight, true );
+	addFamily( design?.typography.ui );
+	const addTypeFacts = ( facts?: { headings?: Record< string, { family?: string; weight?: string } >; body?: { family?: string; weight?: string } } ): void => {
+		for ( const fact of Object.values( facts?.headings ?? {} ) ) {
+			addFamily( fact?.family, fact?.weight );
+		}
+		addFamily( facts?.body?.family, facts?.body?.weight );
+	};
+	for ( const section of design?.sections ?? [] ) {
+		addTypeFacts( section.type );
+	}
+	// The site-level measurement (the front page) + every sub-page: each carries
+	// its own measured headings, and a band can wear a family the roles never see.
+	for ( const facts of Object.values( profile.bandFacts ?? {} ) ) {
+		addTypeFacts( facts );
+	}
+	for ( const page of Object.values( profile.pageBands ?? {} ) ) {
+		for ( const facts of Object.values( page.bandFacts ?? {} ) ) {
+			addTypeFacts( facts );
 		}
 	}
-	const weights = [ 300, 400, 500, 600, 700 ];
 	const bodyWeight = parseInt( design?.typography.bodyWeight ?? '', 10 );
-	if ( bodyWeight && ! weights.includes( bodyWeight ) ) {
-		weights.push( bodyWeight );
-	}
-	weights.sort( ( a, b ) => a - b );
-	for ( const family of families ) {
-		body.push( `\t{ family: ${ tsString( family ) }, weights: [ ${ weights.join( ', ' ) } ] },` );
+	for ( const entry of familyWeights.values() ) {
+		const weights = entry.ladder ? new Set< number >( [ 300, 400, 500, 600, 700, ...entry.weights ] ) : new Set< number >( entry.weights );
+		const sorted = [ ...weights ].sort( ( a, b ) => a - b );
+		body.push( `\t{ family: ${ tsString( entry.family ) }, weights: [ ${ sorted.join( ', ' ) } ] },` );
 	}
 	body.push( '];' );
 	body.push( '' );
@@ -1900,6 +1940,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tletterSpacing?: string;',
 		'\ttransform?: string;',
 		'\talign?: string;',
+		'\t/** The first family of the computed `font-family` \u2014 the source\u2019s',
+		'\t * own face for this LEVEL. A band can wear several: monicarajiv\u2019s h1 is',
+		'\t * Karma while the `alt-font` h3 beside it is Dancing Script, so the family',
+		'\t * belongs to the heading level, not to the band. */',
+		'\tfamily?: string;',
 		'\t/** Computed `color` \u2014 the source\u2019s own ink. A builder writes it as an',
 		'\t * inline `style` the sanitizer drops, so this is the only surviving copy. */',
 		'\tcolor?: string;',

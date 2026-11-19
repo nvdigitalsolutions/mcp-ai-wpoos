@@ -208,6 +208,13 @@ const sectionHasContent = ( section: SemanticSection ): boolean => {
  * A band without a paragraph of its own still inherits the source's body size,
  * and `em`-sized children resolve against it.
  */
+/** A CSS `font-family` value for one measured family name. A single-token
+ * name may go in bare; anything with a space needs quoting (`Dancing Script`). */
+const cssFamily = ( family: string ): string => {
+	const name = family.trim();
+	return /\s/.test( name ) ? `"${ name.replace( /"/g, '' ) }"` : name;
+};
+
 const pageBodySize = ( () => {
 	const counts = new Map< string, number >();
 	sections.forEach( ( section, index ) => {
@@ -286,6 +293,13 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	// the source renders 17.23px.
 	if ( theme.type?.body?.size || bodyFallback ) {
 		parts.push( `--ds-body-size:${ theme.type?.body?.size ?? bodyFallback }` );
+	}
+	// The band’s own DISPLAY face. A source can put a script accent beside a
+	// sans heading in the same band (monicarajiv: Karma h1 + Dancing Script
+	// `alt-font` h3), so the family rides the band’s title and the per-level
+	// `bandTypeCss` rules carry the rest.
+	if ( theme.type?.title?.family ) {
+		parts.push( `--ds-title-font:${ cssFamily( theme.type.title.family ) }` );
 	}
 	if ( theme.type?.title ) {
 		const title = theme.type.title;
@@ -542,9 +556,13 @@ const responsiveBandCss = sections
  * Scoped to the wrap (`[data-section-id]`) and emitted after global.css, so it
  * outranks the template's own prose defaults.
  */
-const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
+const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
+		// The source’s own FAMILY for this level. Without it a rebuilt band that
+		// keeps the builder’s markup rendered its headings in the body face
+		// (monicarajiv’s Karma h1 came out Lato everywhere).
+		fact.family && `font-family:${ cssFamily( fact.family ) }`,
 		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
 		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
@@ -573,9 +591,10 @@ const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: 
 
 /** A device override, emitted verbatim — `diffTypeFact` already trimmed it to the
  * properties the source changes, so a reset back to `left` must survive. */
-const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string } ): string =>
+const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; marginTop?: string; marginBottom?: string } ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
+		fact.family && `font-family:${ cssFamily( fact.family ) }`,
 		fact.weight && `font-weight:${ fact.weight }`,
 		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
@@ -601,7 +620,7 @@ const bandTypeCss = sections
 		// The source scales its type per device (55px hero → 22px on a phone), so a
 		// desktop-only rule made every band taller than its source at 390px. The
 		// overrides ride the template's own breakpoints.
-		const withDevices = ( selector: string, fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; tablet?: Record< string, string >; mobile?: Record< string, string > }, options: { weight?: boolean } = {} ): string[] => {
+		const withDevices = ( selector: string, fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; tablet?: Record< string, string >; mobile?: Record< string, string > }, options: { weight?: boolean } = {} ): string[] => {
 			const out: string[] = [];
 			const declarations = typeDeclarations( fact, options );
 			if ( declarations ) {

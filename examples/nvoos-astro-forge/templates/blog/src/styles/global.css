@@ -214,6 +214,9 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	color: var(--forge-header-nav-ink, var(--forge-header-ink, var(--forge-accent)));
 	text-decoration: none;
 	/* The source nav's own typography (jayainc: 400/16px/uppercase white). */
+	/* The source menu’s own face when it wears a third family (monicarajiv’s
+	 * menu titles are Montserrat); absent → the body face, as before. */
+	font-family: var(--forge-font-ui, var(--forge-font));
 	font-weight: var(--forge-nav-weight, 400);
 	font-size: var(--forge-nav-size, inherit);
 	text-transform: var(--forge-nav-transform, none);
@@ -973,8 +976,18 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	margin: 0;
 }
 
-.ds-title {
+/* A rebuilt band that keeps the builder’s own markup renders PLAIN
+ * `h1…h6`. Nothing gave them a family, so every source heading fell back
+ * to the body face — monicarajiv’s Karma headings all rendered Lato. This is
+ * the display role, and it stays WEAK on purpose: `:where()` contributes no
+ * specificity, so the per-level fact a band measured (`[data-section-id] h3`,
+ * 0,1,1) still wins and a script accent keeps its own face. */
+.post-body :where(h1, h2, h3, h4, h5, h6) {
 	font-family: var(--forge-font-display);
+}
+
+.ds-title {
+	font-family: var(--ds-title-font, var(--forge-font-display));
 	font-size: clamp(1.5rem, 2.5vw + 0.5rem, var(--forge-scale-h2, 1.75rem));
 	font-weight: 500;
 	line-height: 1.2;

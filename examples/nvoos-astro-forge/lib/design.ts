@@ -911,6 +911,51 @@ function rootRuleFact( cssText: string, tag: 'body' | 'html', prop: string ): st
 	return best;
 }
 
+/** The NAVIGATION rule’s declaration for `prop` — the source’s UI face.
+ * Flatsome (and most builders) set the menu link typography on its own
+ * selector, so a site can carry a third family that is neither the body
+ * nor the heading face: monicarajiv’s menu titles are Montserrat while
+ * body copy is Lato and headings Karma, and the two-role harvest saw
+ * only Lato + Karma. Without it the rebuilt nav inherits the body face. */
+/** Every rule, INCLUDING those nested inside `@media`/`@supports` blocks.
+ * `topLevelRules` stops at an at-rule’s opening brace, so a builder that
+ * sets its nav typography inside a breakpoint block (Flatsome does) is
+ * invisible to a top-level scan — the menu face was never found and the
+ * rebuilt nav fell back to the body family. */
+function nestedRules( cssText: string, depth = 0 ): Array<{ selector: string; body: string }> {
+	const out: Array<{ selector: string; body: string }> = [];
+	for ( const rule of topLevelRules( cssText ) ) {
+		if ( rule.selector.trim().startsWith( '@' ) && depth < 3 ) {
+			out.push( ...nestedRules( rule.body, depth + 1 ) );
+		} else {
+			out.push( rule );
+		}
+	}
+	return out;
+}
+
+function navRuleFact( cssText: string, prop: string ): string | undefined {
+	let best: string | undefined;
+	let bestSpec = -1;
+	let ruleIndex = 0;
+	for ( const rule of nestedRules( cssText ) ) {
+		const selector = rule.selector.trim().toLowerCase();
+		// A MENU rule: `.nav`, `.menu-item`, `.header-top`, `.topbar` — but
+		// not a generic `a` rule, which is the body face again.
+		const isNav = /\b(nav|menu|topbar|header-top)\b/.test( selector ) && ! /\.nav-(?:shell|toggle|bars)/.test( selector );
+		if ( isNav ) {
+			const match = rule.body.match( new RegExp( '(?:^|;)\\s*' + prop + '\\s*:\\s*([^;!]+)', 'i' ) );
+			const value = match ? match[ 1 ].trim() : '';
+			if ( value && ! value.startsWith( 'var(' ) && ruleIndex >= bestSpec ) {
+				best = value;
+				bestSpec = ruleIndex;
+			}
+		}
+		ruleIndex++;
+	}
+	return best;
+}
+
 function bodyRuleFact( cssText: string, prop: string ): string | undefined {
 	return rootRuleFact( cssText, 'body', prop );
 }
@@ -3249,6 +3294,14 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	const bodyFamily = bodyRuleFamily && ! GENERIC_FAMILIES.has( bodyRuleFamily ) ? bodyRuleFamily : families[ 1 ];
 	const headingFamily = headingRuleFamily && ! GENERIC_FAMILIES.has( headingRuleFamily ) ? headingRuleFamily : undefined;
 	const displayFamily = headingFamily ?? ( families[ 0 ] && families[ 0 ] !== bodyFamily ? families[ 0 ] : families.find( ( family ) => family !== bodyFamily ) ?? bodyFamily );
+	// The UI face (nav links). Only a MENU rule counts, and a family already
+	// serving body or display is not a third role — the nav simply uses it.
+	const navFamilies = families.filter( ( family ) => family !== bodyFamily && family !== displayFamily );
+	const navRuleFamily = navRuleFact( cssText, 'font-family' )?.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
+	const uiFamily =
+		navRuleFamily && ! GENERIC_FAMILIES.has( navRuleFamily ) && navRuleFamily !== bodyFamily && navRuleFamily !== displayFamily
+			? navRuleFamily
+			: undefined;
 	const bodyWeight = bodyRuleFact( cssText, 'font-weight' );
 	const scale = trimScaleLadder( pxValues( cssText, FONT_SCALE_PATTERNS ) );
 	const spacing = trimSpaceLadder( pxValues( cssText, SPACE_PATTERNS ) );
@@ -3284,6 +3337,9 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		typography: {
 			display: displayFamily,
 			body: bodyFamily,
+			// A THIRD family only when the source really wears one (a menu face);
+			// absent → the nav keeps the body family, as before.
+			...( uiFamily ? { ui: uiFamily } : {} ),
 			scalePx: scale.length > 0 ? scale : [ 14, 16, 20, 28, 40 ],
 			bodyWeight,
 		},
@@ -3436,6 +3492,11 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 	}
 	if ( design.typography.display ) {
 		tokens[ 'font-display' ] = `'${ design.typography.display }', ${ DEFAULT_FONT_STACK }`;
+	}
+	if ( design.typography.ui ) {
+		// The nav/menu face, when the source wears a distinct one. It falls back
+		// to the body face in the stylesheet, so an absent token is inert.
+		tokens[ 'font-ui' ] = `'${ design.typography.ui }', ${ DEFAULT_FONT_STACK }`;
 	}
 	if ( design.typography.body ) {
 		// Always emit the body font — even when body === display the body
