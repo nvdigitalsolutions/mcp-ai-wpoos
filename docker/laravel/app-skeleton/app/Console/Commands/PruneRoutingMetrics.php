@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\Diagnostics\RoutingExportStore;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -52,15 +53,29 @@ class PruneRoutingMetrics extends Command
 
         $cutoff = now()->subDays($days)->startOfDay();
 
+        // 149 §74: while an export endpoint is configured, retention may only
+        // delete rows a collector has acknowledged. A broken exporter therefore
+        // grows the table instead of losing data — the correct direction to be
+        // wrong in, and the diagnostics page shows why it is growing.
+        $exportConfigured = '' !== trim((string) config('oos.routing.export.endpoint', ''));
+
         $query = DB::table(self::TABLE)->where('created_at', '<', $cutoff);
+
+        if ($exportConfigured) {
+            $query->where('id', '<=', app(RoutingExportStore::class)->watermark());
+        }
+
         $count = (clone $query)->count();
+
+        $scope = $exportConfigured ? ' (already exported only)' : '';
 
         if ($this->option('dry-run')) {
             $this->line(sprintf(
-                '%d routing row(s) older than %s would be deleted (keeping %d days).',
+                '%d routing row(s) older than %s would be deleted (keeping %d days)%s.',
                 $count,
                 $cutoff->toDateTimeString(),
-                $days
+                $days,
+                $scope
             ));
 
             return self::SUCCESS;
@@ -69,9 +84,10 @@ class PruneRoutingMetrics extends Command
         $deleted = $query->delete();
 
         $this->info(sprintf(
-            '%d routing row(s) deleted; kept the last %d days.',
+            '%d routing row(s) deleted; kept the last %d days%s.',
             $deleted,
-            $days
+            $days,
+            $scope
         ));
 
         return self::SUCCESS;

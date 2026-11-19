@@ -48,6 +48,28 @@ return array(
     */
     'routing' => array(
         'retention_days' => (int) env('NVOOS_ROUTING_RETENTION_DAYS', 90),
+
+        /*
+        |----------------------------------------------------------------------
+        | OTLP export (Proposal 149 §74)
+        |----------------------------------------------------------------------
+        |
+        | Push unexported routing events to an OTLP-compatible collector. An
+        | empty endpoint disables the push *and* relaxes retention (nothing is
+        | promised to a collector, so nothing must wait for one).
+        |
+        | `schedule` is a cron expression; empty means "configured, but only
+        | run when asked" — the console action and CLI still work.
+        |
+        */
+        'export' => array(
+            'endpoint' => (string) env('NVOOS_ROUTING_EXPORT_ENDPOINT', ''),
+            'token' => (string) env('NVOOS_ROUTING_EXPORT_TOKEN', ''),
+            'headers' => array(),
+            'schedule' => (string) env('NVOOS_ROUTING_EXPORT_SCHEDULE', ''),
+            'timeout' => (int) env('NVOOS_ROUTING_EXPORT_TIMEOUT', 10),
+            'batch' => (int) env('NVOOS_ROUTING_EXPORT_BATCH', 500),
+        ),
     ),
 
 );
