@@ -50,11 +50,13 @@ import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureMobileNav, loadChromium, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { describePropertyCoverage, propertyCoverage } from '../lib/property-coverage.ts';
 import { bandCoverage, describeBandCoverage } from '../lib/band-coverage.ts';
+import { auditChromeFacts, describeChromeFacts } from '../lib/chrome-fact-audit.ts';
+import { compareFacts, describeCompare, describeCompareVerdict, measureCompareSpecs } from '../lib/compare.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
 import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
 import { measureIconFonts, usedDroppedFamilies } from '../lib/font-audit.ts';
@@ -1985,6 +1987,7 @@ const GATE_ORDER = [
 	'nav anchors',
 	'built ids',
 	'fact consumption',
+	'chrome facts',
 	'font coverage',
 	'media budget',
 	'font render',
@@ -2493,6 +2496,25 @@ async function runVerify( profileRef, options ) {
 			);
 		}
 	}
+	// The CHROME half of fact consumption. A chrome fact that reaches the profile
+	// and stops is indistinguishable, to every other gate, from a fact the source
+	// never had — which is how the header mark and then the header icons shipped
+	// unrendered (2026-11-20).
+	if ( indexHtml ) {
+		const missingChrome = auditChromeFacts( profile.design?.chrome, indexHtml );
+		const chromeNote = describeChromeFacts( missingChrome );
+		if ( ! chromeNote ) {
+			console.log( '\u2713 Chrome facts: every declared chrome fact renders.' );
+			record( 'chrome facts', 'pass', 'all declared chrome facts rendered' );
+		} else {
+			console.warn( `\u2717 Chrome facts: ${ chromeNote }` );
+			if ( options.strictFacts ) {
+				process.exitCode = 1;
+			}
+			record( 'chrome facts', options.strictFacts ? 'fail' : 'warn', `${ missingChrome.length } unrendered chrome fact(s)` );
+		}
+	}
+
 	// Proposal 140 — what the artifact actually ships. The design gates prove
 	// the site LOOKS like the source; this one proves the bytes are local and
 	// modern, which is what the CMS-independence promise depends on.
@@ -3848,6 +3870,83 @@ async function runVisualVerify( profile, options ) {
 	}
 }
 
+/**
+ * `forge compare <profile> --target <dir> --elements <spec.json>`
+ *
+ * Measures the SAME selector list on the live source and on the built target,
+ * then prints a property-by-property table. It reads computed styles and
+ * bounding boxes, so it catches the three things a fact audit cannot:
+ *
+ *   - a rule that is declared but OUTRANKED (a measured `img.bg{height}` that
+ *     ties the shim on specificity and wins on order);
+ *   - a value dropped as ambiguous and silently rendered as 0;
+ *   - a layout slot that never engages (`grid-column` on a `display:contents`
+ *     wrapper).
+ *
+ * The spec is `{ "elements": [ { "name", "selector", "properties" } ] }`; a
+ * property is a CSS name or `rect.width|height|left|centre`.
+ */
+async function runCompare( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const specPath = options.elements;
+	if ( ! specPath ) {
+		console.error( 'compare needs --elements <spec.json>' );
+		process.exitCode = 1;
+		return;
+	}
+	const spec = JSON.parse( await readFile( specPath, 'utf8' ) );
+	const specs = Array.isArray( spec ) ? spec : spec.elements;
+	if ( ! Array.isArray( specs ) || specs.length === 0 ) {
+		console.error( `compare: ${ specPath } declares no elements` );
+		process.exitCode = 1;
+		return;
+	}
+
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const page = await browser.newPage( {
+			viewport: { width: Number( options.width ?? 1440 ), height: Number( options.height ?? 900 ) },
+		} );
+
+		const against = options.against ?? profile.url;
+		await page.goto( against, { waitUntil: 'load', timeout: 90000 } );
+		await page.waitForTimeout( 600 );
+		const source = await measureCompareSpecs( page, specs );
+
+		const root = await builtStaticRoot( join( options.target, 'dist' ) );
+		const served = await serveDir( root );
+		try {
+			// `served.url` already ends in `/`, so concatenating `--path` made `//`,
+			// which the static server answers 404 — the rebuilt side then measured an
+			// empty page and every property read as missing.
+			const pageUrl = new URL( String( options.path ?? '/' ).replace( /^\/+/, '' ), served.url ).toString();
+			await page.goto( pageUrl, { waitUntil: 'load', timeout: 90000 } );
+			await page.waitForTimeout( 600 );
+			const rebuilt = await measureCompareSpecs( page, specs );
+
+			const rows = compareFacts( specs, source, rebuilt );
+			console.log( `\ncompare ${ against } → ${ options.target }` );
+			for ( const line of describeCompare( rows, Number( options.tolerance ?? 1 ) ) ) {
+				console.log( line );
+			}
+			const verdict = describeCompareVerdict( rows, Number( options.tolerance ?? 1 ) );
+			if ( verdict ) {
+				console.warn( `\n\u26a0 ${ verdict }` );
+				if ( ! options.soft ) {
+					process.exitCode = 1;
+				}
+			} else {
+				console.log( '\n\u2713 every compared property agrees' );
+			}
+		} finally {
+			served.server.close();
+		}
+	} finally {
+		await browser.close();
+	}
+}
+
 // -- program -----------------------------------------------------------------
 
 const pkg = JSON.parse( await readFile( new URL( '../package.json', import.meta.url ), 'utf8' ) );
@@ -3955,6 +4054,22 @@ program
 	.option( '--write', 'save the measurement into the profile (default: dry run)' )
 	.action( async ( profileRef, options ) => {
 		await runColors( profileRef, options );
+	} );
+
+program
+	.command( 'compare' )
+	.description( 'measure the same elements on the source and the rebuilt site, and print the difference' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'scaffold target directory (its dist/ is served)' )
+	.requiredOption( '--elements <spec>', 'JSON spec: { elements: [{ name, selector, properties }] }' )
+	.option( '--against <url>', 'measure this URL as the source (default: the profile URL)' )
+	.option( '--path <path>', 'the built page to compare', '/' )
+	.option( '--width <px>', 'viewport width', '1440' )
+	.option( '--height <px>', 'viewport height', '900' )
+	.option( '--tolerance <px>', 'px difference treated as agreement', '1' )
+	.option( '--soft', 'report differences without failing the command' )
+	.action( async ( profileRef, options ) => {
+		await runCompare( profileRef, options );
 	} );
 
 program

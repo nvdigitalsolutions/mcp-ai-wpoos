@@ -1971,6 +1971,12 @@ export interface ForgeChrome {
 	/** The brand logo (the light-background variant when the source ships
 	 * dark/light pairs). */
 	logo?: { src?: string; alt?: string };
+	/**
+	 * The header’s trailing icon links (the source’s envelope, a search
+	 * glyph). A vendor icon font never ships, so the rebuild re-draws them;
+	 * measured once, at the desktop viewport (see `geometry.actions`).
+	 */
+	headerActions?: ForgeChromeAction[];
 	/** The tagline under the brand (the source's site description). */
 	tagline?: string;
 	/** The header nav (anchor links on one-pagers; page links otherwise). */
