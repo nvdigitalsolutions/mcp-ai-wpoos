@@ -24,7 +24,14 @@ use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 abstract class AbstractHuggingFaceTool extends AbstractTool
 {
-    protected const API_BASE = 'https://datasets-server.huggingface.co';
+    /**
+     * The API every dataset tool calls.
+     *
+     * Public because the dataset browser states it to the operator, and a
+     * second copy of the URL in a page is a copy that drifts. A tool that ever
+     * needs a different base overrides it rather than editing this one.
+     */
+    public const API_BASE = 'https://datasets-server.huggingface.co';
 
     public function __construct(
         ErrorFactoryInterface $errors,
