@@ -872,6 +872,18 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Assistants Database Table
+	|--------------------------------------------------------------------------
+	|
+	| The adapter reads one column from the app-owned assistant table: the
+	| estate a trace run belongs to (Proposal 152 §9.3). Configurable because
+	| the table belongs to the application, not to this package.
+	|
+	*/
+	'assistants_table' => env( 'NVOOS_ASSISTANTS_TABLE', 'assistants' ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Pro Entitlement
 	|--------------------------------------------------------------------------
 	|

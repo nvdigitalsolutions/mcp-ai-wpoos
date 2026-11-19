@@ -52,6 +52,7 @@
             <thead>
                 <tr style="text-align: left; border-bottom: 1px solid rgba(127, 127, 127, 0.35);">
                     <th style="padding: 0.4rem 0.5rem;">Started</th>
+                    <th style="padding: 0.4rem 0.5rem;">Estate</th>
                     <th style="padding: 0.4rem 0.5rem;">Assistant</th>
                     <th style="padding: 0.4rem 0.5rem;">Status</th>
                     <th style="padding: 0.4rem 0.5rem;">Run</th>
@@ -68,6 +69,7 @@
                     @endphp
                     <tr style="border-bottom: 1px solid rgba(127, 127, 127, 0.15);">
                         <td style="padding: 0.4rem 0.5rem;">{{ $run['started_at'] }}</td>
+                        <td style="padding: 0.4rem 0.5rem;">{{ $run['estate'] }}</td>
                         <td style="padding: 0.4rem 0.5rem;">{{ $run['assistant'] }}</td>
                         <td style="padding: 0.4rem 0.5rem;">
                             <span style="padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem; color: {{ $foreground }}; background: {{ $background }};">{{ $run['status'] }}</span>
@@ -86,6 +88,8 @@
             The newest {{ \App\Support\Observability\TraceRuns::LIMIT }} runs, one row per chat turn.
             <strong>Incomplete</strong> means the run has no <code>end</code> record — it died, or its
             records were pruned mid-run. Records carry identifiers and timings, never message text.
+            The estate is read from the assistant that produced the run, not from the request, so a
+            run cannot be attributed to an estate its assistant does not belong to.
         </p>
     @endif
 

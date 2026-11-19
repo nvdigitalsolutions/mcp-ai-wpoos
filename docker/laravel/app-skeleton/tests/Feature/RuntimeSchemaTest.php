@@ -134,4 +134,20 @@ class RuntimeSchemaTest extends TestCase
             'The unscoped day/provider/model unique index still exists; two estates collide.'
         );
     }
+
+    public function test_trace_records_are_estate_scoped(): void
+    {
+        // Proposal 152 D1, Phase 2: the column lands before any estate-facing
+        // trace surface, so the next one to be built cannot ship a leak.
+        $this->assertTrue(
+            Schema::hasColumns('nvoos_harness_trace_records', ['tenant_id', 'assistant_id', 'run_id'])
+        );
+
+        $indexes = collect(Schema::getIndexes('nvoos_harness_trace_records'));
+
+        $this->assertNotNull(
+            $indexes->firstWhere('name', 'nvoos_harness_trace_records_tenant_id_index'),
+            'The tenant index is missing; a scoped trace read falls back to a full scan.'
+        );
+    }
 }

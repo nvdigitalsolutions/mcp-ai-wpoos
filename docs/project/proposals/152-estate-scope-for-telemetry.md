@@ -1,8 +1,8 @@
 # Proposal 152 — Estate scope for telemetry
 
-**Status:** accepted for implementation 2026-11-19. Phase 1 (token usage and its
-rollup) is the implementing slice; Phase 2 (harness traces) is specified here and
-lands before any estate-facing trace surface exists.
+**Status:** implemented 2026-11-19. Phase 1 (token usage and its rollup) shipped in
+149 §86; Phase 2 (harness traces) shipped in 149 §88, with one decision changed —
+see D8.
 
 **Related:** [Proposal 149](149-laravel-admin-parity-implementation-plan.md) §64
 (scope decisions), §76 (retention), §80 (rollup), §81 (token-usage writer),
@@ -65,7 +65,7 @@ the first estate admin asks for it.
 | **D5** | The **readers** take an explicit `?string $tenantId`; `null` means platform-wide. | The two modes are real: `/api/v1/cost/*` must see one estate, `/ops` must see all. A default would hide the choice; every call site now states it. |
 | **D6** | The rollup's unique key becomes `(tenant_id, day, provider, model_id)` and the aggregation groups by tenant. | Without it, two estates' same-model day collide and the second upsert **overwrites** the first — silent data loss, not a scoping preference. |
 | **D7** | Retention stays deployment-wide. | Per-estate windows are a separate policy question (§76.4 item 2). The prune guard (§80.3) is unaffected because the rollup now covers every estate. |
-| **D8** | Phase 2 threads the estate through `TraceStoreInterface::append()` as an optional argument, set from `TraceCapture`'s `$meta`. | The orchestrator already receives startup facts in `$meta`; adding one is a contract-compatible change, and it keeps the store free of app-level context. |
+| **D8** | Phase 2 gives the trace store an estate. **Superseded in implementation:** the store reads it from the **assistant**, not from a parameter. | Proposal 152 §9.3 already said the writer should read the assistant's estate rather than trust a header. `$meta` derives from `$options`, and `/api/v1/chat/stream` passes the client's options through, so a parameter would be a second, forgeable truth. Recorded in 149 §88.2. |
 
 ## 4. Schema
 
@@ -179,4 +179,5 @@ Written before the implementation, and expected to fail on `main`:
 3. **Traces and `assistant_id`** — Phase 2 adds the estate to the trace store,
    but a trace row already carries `assistant_id`, which is estate-owned. The
    two must agree; the writer should read the assistant's estate rather than
-   trust a header alone if they ever diverge.
+   trust a header alone if they ever diverge. *(Implemented that way — 149
+   §88.2.)*

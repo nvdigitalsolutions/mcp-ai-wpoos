@@ -2,6 +2,7 @@
 
 namespace App\Support\Observability;
 
+use App\Models\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Nvoos\Laravel\Adapter\DatabaseTraceStore;
@@ -35,6 +36,8 @@ class TraceRuns
      *     run_id: string,
      *     assistant_id: int,
      *     assistant: string,
+     *     tenant_id: string,
+     *     estate: string,
      *     started_at: string,
      *     ended_at: string,
      *     records: int,
@@ -52,8 +55,11 @@ class TraceRuns
 
         $limit = max(1, min(self::LIMIT, $limit));
 
+        // `MIN(tenant_id)` rather than a bare column: every record of a run is
+        // written with the assistant's estate, so the aggregate is that value,
+        // and grouping by it would split a run the moment one record disagreed.
         $runs = DB::table(DatabaseTraceStore::TABLE)
-            ->selectRaw('run_id, assistant_id, MIN(created_at) as started_at, MAX(created_at) as ended_at, COUNT(*) as records')
+            ->selectRaw('run_id, assistant_id, MIN(tenant_id) as tenant_id, MIN(created_at) as started_at, MAX(created_at) as ended_at, COUNT(*) as records')
             ->groupBy('run_id', 'assistant_id')
             ->orderByRaw('MAX(created_at) DESC')
             ->limit($limit)
@@ -65,17 +71,23 @@ class TraceRuns
 
         $endRecords = $this->endRecords($runs->pluck('run_id')->all());
         $titles = $this->titles($runs->pluck('assistant_id')->map(static fn ($id): int => (int) $id)->all());
+        $estates = $this->estates(
+            $runs->pluck('tenant_id')->map(static fn ($id): string => (string) $id)->all()
+        );
 
         $out = array();
 
         foreach ($runs as $run) {
             $runId = (string) $run->run_id;
             $end = $endRecords[$runId] ?? array();
+            $tenantId = '' !== trim((string) $run->tenant_id) ? (string) $run->tenant_id : Tenant::DEFAULT_ID;
 
             $out[] = array(
                 'run_id' => $runId,
                 'assistant_id' => (int) $run->assistant_id,
                 'assistant' => $titles[(int) $run->assistant_id] ?? 'Assistant #'.(int) $run->assistant_id,
+                'tenant_id' => $tenantId,
+                'estate' => $estates[$tenantId] ?? $tenantId,
                 'started_at' => (string) $run->started_at,
                 'ended_at' => (string) $run->ended_at,
                 'records' => (int) $run->records,
@@ -119,6 +131,25 @@ class TraceRuns
         }
 
         return $ends;
+    }
+
+    /**
+     * @param array<int, string> $ids
+     * @return array<string, string>
+     */
+    private function estates(array $ids): array
+    {
+        if (array() === $ids) {
+            return array();
+        }
+
+        try {
+            return Tenant::query()->whereIn('id', $ids)->pluck('name', 'id')->all();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return array();
+        }
     }
 
     /**
