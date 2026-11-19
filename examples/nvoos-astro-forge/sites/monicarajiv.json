@@ -170,12 +170,52 @@
 			{
 				"id": "834b9c8",
 				"anchor": "section_1202442414",
-				"bgColor": "#dd3333"
+				"bgColor": "#dd3333",
+				"elements": [
+					{
+						"path": "div:nth-child(2) > div:nth-child(1)",
+						"bg": "background-color:rgb(221, 51, 51)",
+						"height": {
+							"desktop": 900,
+							"tablet": 1112,
+							"mobile": 844
+						}
+					},
+					{
+						"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)",
+						"veil": "background-color:rgba(0, 0, 0, 0.55)",
+						"height": {
+							"desktop": 900,
+							"tablet": 1112,
+							"mobile": 844
+						}
+					},
+					{
+						"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+						"height": {
+							"desktop": 72,
+							"tablet": 67,
+							"mobile": 52
+						},
+						"width": {
+							"desktop": 108,
+							"tablet": 100,
+							"mobile": 78
+						}
+					}
+				]
 			},
 			{
 				"id": "834b9c9",
 				"anchor": "section_1703629178",
-				"bgColor": "#dd3333"
+				"bgColor": "#dd3333",
+				"elements": [
+					{
+						"path": "div:nth-child(2) > div:nth-child(1)",
+						"bg": "background-color:rgb(221, 51, 51)",
+						"height": 600
+					}
+				]
 			},
 			{
 				"id": "834b9ca",
@@ -194,12 +234,61 @@
 						"width": 50
 					}
 				],
-				"bgColor": "#dd3333"
+				"bgColor": "#dd3333",
+				"elements": [
+					{
+						"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+						"bg": "background-color:rgb(221, 51, 51)",
+						"height": {
+							"desktop": 900,
+							"tablet": 1112,
+							"mobile": 844
+						}
+					},
+					{
+						"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)",
+						"veil": "background-color:rgba(0, 0, 0, 0.32)",
+						"height": {
+							"desktop": 900,
+							"tablet": 1112,
+							"mobile": 844
+						}
+					},
+					{
+						"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+						"bg": "background-color:rgb(221, 51, 51)",
+						"height": {
+							"desktop": 900,
+							"tablet": 1112,
+							"mobile": 844
+						}
+					},
+					{
+						"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)",
+						"veil": "background-color:rgba(0, 0, 0, 0.3)",
+						"height": {
+							"desktop": 900,
+							"tablet": 1112,
+							"mobile": 844
+						}
+					}
+				]
 			},
 			{
 				"id": "834b9cb",
 				"anchor": "section_2063771694",
-				"bgColor": "#dd3333"
+				"bgColor": "#dd3333",
+				"elements": [
+					{
+						"path": "div:nth-child(2) > div:nth-child(1)",
+						"bg": "background-color:rgb(221, 51, 51)",
+						"height": {
+							"desktop": 900,
+							"tablet": 1112,
+							"mobile": 844
+						}
+					}
+				]
 			}
 		],
 		"bandSource": "outline",
