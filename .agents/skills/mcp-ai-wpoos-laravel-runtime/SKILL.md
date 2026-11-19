@@ -861,7 +861,7 @@ register. Carry-ons:
 |---|---|---|
 | `chat-profiles` | `absent` | Proposal 015 is WordPress-only: registry, user-meta preference and the `wp_mcp_ai_before_tool_execution` gate have no counterpart here. A toggle with no enforcement is worse than no page. A real port needs the **gate first**, then the preference (`SettingsService` already has `user` scope), then the page. |
 | `onboarding` | `absent` | Its two writes already have homes (`/ops/settings` for provider keys, `/admin/assistants` for presets). A first-run experience would be a derived checklist, not a wizard. |
-| `datasets` | `planned` | The eleven HuggingFace tools are in `lib/core` but sit at `readiness: unverified`, so `ManifestToolRegistrar` registers none and no assistant can call one. Unblocking is a **readiness classification with network implications**, not a page. |
+| `datasets` | `planned` | The eleven HuggingFace tools are in `lib/core` but are now explicitly **`unavailable`** (#7944) — they call `datasets-server.huggingface.co` (≤100 rows per request, gated datasets need a token), and serving them without evidence was the objection. `unavailable` and `unverified` are both non-servable, so registry behaviour is unchanged; what changed is that the blocker is now **evidence** (per-tool tests + a documented token path), not classification. `ToolReadinessClassificationTest` pins the consequence — flipping one to `ready` requires tests, not a string edit. The dataset browser itself is not built (a browser needs a servable catalogue to browse). |
 | `identity-provider` | `planned` | Nothing to port — no SSO implementation exists on either runtime. Needs a scope decision (OIDC, or OIDC+SAML) before any code. |
 
 ### Branding (§38)
@@ -960,6 +960,7 @@ table is the working copy.
 
 ### Routing export is at-least-once, and the id is the contract
 
+- **Two operator pages read the chain end to end:** `/ops/token-analytics` (#7942 — `TokenAnalyticsReport` over the rollup table) and `/ops/observability` (#7943 — `TraceRuns` over harness traces). Both are read-only report pages; a report class is the right seam because the page and any future exporter must read the same figures.
 - Every event carries `nvoos.routing.event_id` (OTLP `intValue`, string on the
   wire) / `id` (flat export). A crash between the collector's 2xx and the
   watermark write resends the batch; **the collector dedupes on that id**, and a
