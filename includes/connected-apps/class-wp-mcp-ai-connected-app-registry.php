@@ -3,7 +3,7 @@
  * Connected-app discovery for the console (Proposal 090-i Phase 4 / 090-p W6).
  *
  * @package WP_MCP_AI
- * @since   1.2.23
+ * @since   1.2.22
  * @license GPL-3.0-or-later
  * SPDX-License-Identifier: GPL-3.0-or-later
  */

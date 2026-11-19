@@ -6292,7 +6292,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * keepalive behavior only).
 		 *
 		 * @since 1.2.10
-		 * @since 1.2.24 Accepts the observed idle gap instead of the stream
+		 * @since 1.2.22 Accepts the observed idle gap instead of the stream
 		 *               start time, and reads the configured default rather
 		 *               than hardcoding 75.
 		 *

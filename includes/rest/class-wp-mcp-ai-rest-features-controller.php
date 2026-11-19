@@ -100,7 +100,7 @@ class WP_MCP_AI_REST_Features_Controller {
 	 *
 	 * @since 2.4.0
 	 * @since 1.2.22 Serves the capability manifest (v2) alongside `features`.
-	 * @since 1.2.23 Adds connected-app discovery (`endpoint_urls`).
+	 * @since 1.2.22 Adds connected-app discovery (`endpoint_urls`).
 	 * @return WP_REST_Response
 	 */
 	public function get_features() {

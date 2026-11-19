@@ -24,7 +24,7 @@
  * working (repo rule).
  *
  * @package Nvoos\Laravel
- * @since   1.2.24
+ * @since   1.2.22
  */
 
 declare(strict_types=1);
