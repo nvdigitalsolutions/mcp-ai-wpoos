@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Provider;
 
-use Nvoos\Core\Domain\Contract\ModelFallbackCatalogueInterface;
+use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
@@ -54,14 +54,14 @@ class ProviderRouter
     private array $cooldowns = array();
 
     /**
-     * Optional model-fallback catalogue (Proposal 149 §69).
+     * Optional model-routing catalogue (Proposal 149 §69-§70).
      *
      * When absent, a model-level failure goes straight to provider failover,
      * which is the behaviour before the catalogue existed.
      *
-     * @var ModelFallbackCatalogueInterface|null
+     * @var ModelRoutingCatalogueInterface|null
      */
-    private ?ModelFallbackCatalogueInterface $modelCatalogue = null;
+    private ?ModelRoutingCatalogueInterface $modelCatalogue = null;
 
     /**
      * Default cooldown TTL when the provider sends no Retry-After.
@@ -124,28 +124,29 @@ class ProviderRouter
     }
 
     /**
-     * Attach a model-fallback catalogue (Proposal 149 §69).
+     * Attach a model-routing catalogue (Proposal 149 §69).
      *
-     * The catalogue answers one question — "which servable sibling model may
-     * I retry on this provider?" — and the router asks it before abandoning
-     * the provider. Without one, behaviour is unchanged.
+     * The catalogue answers two questions — "which servable sibling model may
+     * I retry on this provider?" and "does this provider publish this id?" —
+     * and the router asks them before abandoning a provider. Without one,
+     * behaviour is unchanged.
      *
      * @since 1.5.0
      *
-     * @param ModelFallbackCatalogueInterface $catalogue Catalogue implementation.
+     * @param ModelRoutingCatalogueInterface $catalogue Catalogue implementation.
      * @return void
      */
-    public function setModelCatalogue(ModelFallbackCatalogueInterface $catalogue): void
+    public function setModelCatalogue(ModelRoutingCatalogueInterface $catalogue): void
     {
         $this->modelCatalogue = $catalogue;
     }
 
     /**
-     * The attached model-fallback catalogue, if any.
+     * The attached model-routing catalogue, if any.
      *
      * @since 1.5.0
      */
-    public function getModelCatalogue(): ?ModelFallbackCatalogueInterface
+    public function getModelCatalogue(): ?ModelRoutingCatalogueInterface
     {
         return $this->modelCatalogue;
     }
@@ -526,6 +527,98 @@ class ProviderRouter
             $this->healthTracker->recordSuccess($slug, 0);
         }
 
+        return $this->annotateRouting($result, $slug, $fallbackId);
+    }
+
+    /**
+     * Prepare request options for a hop to another provider.
+     *
+     * A model id is provider-scoped: `gpt-4o` is an OpenAI id, not a Gemini
+     * one, and carrying it into a fallback hop turns the failover into a second
+     * failure. When the catalogue positively knows the target does not publish
+     * the id, the override is dropped so the provider answers with its own
+     * default.
+     *
+     * `null` from the catalogue is "no opinion" and keeps the model: an
+     * unlisted id may be a deployment name, a fine-tune, or a model released
+     * after the last sync, and none of those should lose their override.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $options Request options.
+     * @param string               $slug    Target provider slug.
+     * @return array<string, mixed>
+     */
+    private function optionsForProvider(array $options, string $slug): array
+    {
+        $modelId = (string) ( $options['model'] ?? '' );
+
+        if ('' === $modelId || null === $this->modelCatalogue) {
+            return $options;
+        }
+
+        if (false === $this->modelCatalogue->serves($slug, $modelId)) {
+            unset($options['model']);
+        }
+
+        return $options;
+    }
+
+    /**
+     * Annotate a hop result only when the router changed the model.
+     *
+     * A plain provider hop carries the same model, so its payload keeps the
+     * shape it has always had — the annotation exists for the case a caller
+     * cannot otherwise see, a request that was answered by a different model
+     * than the one it asked for. (Which provider answered a plain hop is still
+     * not reported; that is pre-existing, and §70.7 records it.)
+     *
+     * @since 1.6.0
+     *
+     * @param mixed                $result           Provider response.
+     * @param array<string, mixed> $options          Original request options.
+     * @param array<string, mixed> $candidateOptions Options actually sent.
+     * @param string               $provider         Provider that answered.
+     * @return mixed
+     */
+    private function routeResult(mixed $result, array $options, array $candidateOptions, string $provider): mixed
+    {
+        if (($options['model'] ?? null) === ($candidateOptions['model'] ?? null)) {
+            return $result;
+        }
+
+        return $this->annotateRouting($result, $provider, $candidateOptions['model'] ?? null);
+    }
+
+    /**
+     * Record which provider and model actually answered.
+     *
+     * Written only when routing deviated from the request, so an ordinary call
+     * carries no extra key. The orchestrator bills the model that ran rather
+     * than the one that was asked for; the `_nvoos_` prefix keeps the marker
+     * out of the provider-shaped namespace.
+     *
+     * @since 1.6.0
+     *
+     * @param mixed       $result   Provider response.
+     * @param string      $provider Serving provider slug.
+     * @param string|null $model    Serving model id, when the router knows it.
+     * @return mixed The response, annotated when it is a successful array.
+     */
+    protected function annotateRouting(mixed $result, string $provider, ?string $model = null): mixed
+    {
+        if (! \is_array($result) || $this->isError($result)) {
+            return $result;
+        }
+
+        $routing = array( 'provider' => $provider );
+
+        if (null !== $model && '' !== $model) {
+            $routing['model'] = $model;
+        }
+
+        $result['_nvoos_routing'] = $routing;
+
         return $result;
     }
 
@@ -568,15 +661,17 @@ class ProviderRouter
                 continue;
             }
 
+            $candidateOptions = $this->optionsForProvider($options, $fallback['slug']);
+
             if (null !== $onChunk) {
-                $result = $fallbackProvider->stream($messages, $options, $onChunk);
+                $result = $fallbackProvider->stream($messages, $candidateOptions, $onChunk);
             } else {
-                $result = $fallbackProvider->chat($messages, $options);
+                $result = $fallbackProvider->chat($messages, $candidateOptions);
             }
 
             if (! $this->isError($result)) {
                 $this->healthTracker->recordSuccess($fallback['slug'], 0);
-                return $result;
+                return $this->routeResult($result, $options, $candidateOptions, $fallback['slug']);
             }
 
             $this->healthTracker->recordFailure($fallback['slug'], $this->classifyError($result));
@@ -608,15 +703,17 @@ class ProviderRouter
                 continue;
             }
 
+            $candidateOptions = $this->optionsForProvider($options, $slug);
+
             $result = null !== $onChunk
-                ? $provider->stream($messages, $options, $onChunk)
-                : $provider->chat($messages, $options);
+                ? $provider->stream($messages, $candidateOptions, $onChunk)
+                : $provider->chat($messages, $candidateOptions);
 
             if (! $this->isError($result)) {
                 if ($this->healthTracker) {
                     $this->healthTracker->recordSuccess($slug, 0);
                 }
-                return $result;
+                return $this->routeResult($result, $options, $candidateOptions, $slug);
             }
 
             if ($this->healthTracker) {

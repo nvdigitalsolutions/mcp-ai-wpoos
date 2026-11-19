@@ -1162,10 +1162,12 @@ class ChatOrchestrator
         // Calculate cost from accumulated per-iteration usage.
         $cost = null;
         if (\is_array($response)) {
+            $billedRoute = $this->billedRoute($response, $options);
+
             $cost = $this->costs->calculateFromResponse(
                 $response,
-                $options['provider'],
-                $options['model'],
+                $billedRoute['provider'],
+                $billedRoute['model'],
             );
 
             if (
@@ -1727,10 +1729,12 @@ class ChatOrchestrator
 
         $cost = null;
         if (\is_array($response)) {
+            $billedRoute = $this->billedRoute($response, $options);
+
             $cost = $this->costs->calculateFromResponse(
                 $response,
-                $options['provider'],
-                $options['model'],
+                $billedRoute['provider'],
+                $billedRoute['model'],
             );
 
             if (
@@ -2064,6 +2068,38 @@ class ChatOrchestrator
             'total_completion_tokens' => 0,
             'cost_usd'                => 0.0,
         );
+    }
+
+    /**
+     * The provider and model to bill for a response (Proposal 149 §70).
+     *
+     * Normally the request's own values. When routing deviated — a model
+     * fallback, a provider hop or an accepted cascade tier-1 answer — the
+     * router annotates the response with what actually answered, and the cost
+     * table must be read against that. A response that echoes its own `model`
+     * also wins over the request: a client may have applied a provider default.
+     *
+     * @param mixed                $response Provider response.
+     * @param array<string, mixed> $options  Request options.
+     * @return array{provider: string, model: string}
+     */
+    private function billedRoute(mixed $response, array $options): array
+    {
+        $routing = \is_array($response) && \is_array($response['_nvoos_routing'] ?? null)
+            ? $response['_nvoos_routing']
+            : array();
+
+        $provider = (string) ( $routing['provider'] ?? $options['provider'] ?? '' );
+
+        if (\is_string($routing['model'] ?? null) && '' !== $routing['model']) {
+            $model = $routing['model'];
+        } elseif (\is_array($response) && \is_string($response['model'] ?? null) && '' !== $response['model']) {
+            $model = $response['model'];
+        } else {
+            $model = (string) ( $options['model'] ?? '' );
+        }
+
+        return array( 'provider' => $provider, 'model' => $model );
     }
 
     /**

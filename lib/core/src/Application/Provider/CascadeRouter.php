@@ -135,7 +135,14 @@ class CascadeRouter extends ProviderRouter
         }
 
         $this->stats['accepted']++;
-        return $tier1Result;
+
+        // The answer came from tier 1, so billing and diagnostics must name
+        // that provider and model, not the primary the caller asked for.
+        return $this->annotateRouting(
+            $tier1Result,
+            $tier1Client->getProviderSlug(),
+            (string) ( $tier1Options['model'] ?? '' )
+        );
     }
 
     /**

@@ -21,7 +21,7 @@ namespace Nvoos\Core\Tests\Unit\Application\Provider;
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
-use Nvoos\Core\Domain\Contract\ModelFallbackCatalogueInterface;
+use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Entity\HttpResponse;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
@@ -74,7 +74,11 @@ final class ProviderRouterModelFallbackTest extends TestCase
             array( 'model' => 'gpt-5' )
         );
 
-        $this->assertSame(array( 'ok' => 'fallback-answer' ), $result);
+        $this->assertSame(array( 'ok' => 'fallback-answer' ), array_diff_key($result, array( '_nvoos_routing' => true )));
+        $this->assertSame(
+            array( 'provider' => 'openai', 'model' => 'gpt-5-mini' ),
+            $result['_nvoos_routing']
+        );
         $this->assertCount(2, $this->clients['openai']->calls);
         $this->assertSame('gpt-5-mini', $this->clients['openai']->calls[1]['options']['model']);
         $this->assertCount(0, $this->clients['gemini']->calls);
@@ -96,7 +100,8 @@ final class ProviderRouterModelFallbackTest extends TestCase
             array( 'model' => 'gpt-5' )
         );
 
-        $this->assertSame(array( 'ok' => 'gemini-answer' ), $result);
+        $this->assertSame('gemini-answer', $result['ok']);
+        $this->assertArrayNotHasKey('_nvoos_routing', $result, 'A hop that keeps the model has nothing to report.');
         $this->assertCount(2, $this->clients['openai']->calls);
         $this->assertCount(1, $this->clients['gemini']->calls);
     }
@@ -111,7 +116,7 @@ final class ProviderRouterModelFallbackTest extends TestCase
 
         $result = $this->router->chat(array( array( 'role' => 'user', 'content' => 'hi' ) ));
 
-        $this->assertSame(array( 'ok' => 'gemini-answer' ), $result);
+        $this->assertSame('gemini-answer', $result['ok']);
         $this->assertCount(1, $this->clients['openai']->calls);
     }
 
@@ -130,7 +135,7 @@ final class ProviderRouterModelFallbackTest extends TestCase
             array( 'model' => 'gpt-5', 'provider' => 'openai' )
         );
 
-        $this->assertSame(array( 'ok' => 'fallback-answer' ), $result);
+        $this->assertSame(array( 'ok' => 'fallback-answer' ), array_diff_key($result, array( '_nvoos_routing' => true )));
         $this->assertSame('gpt-5-mini', $this->clients['openai']->calls[1]['options']['model']);
     }
 
@@ -180,30 +185,121 @@ final class ProviderRouterModelFallbackTest extends TestCase
             }
         );
 
-        $this->assertSame(array( 'ok' => 'fallback-stream' ), $result);
+        $this->assertSame(array( 'ok' => 'fallback-stream' ), array_diff_key($result, array( '_nvoos_routing' => true )));
         $this->assertCount(2, $this->clients['openai']->calls);
         $this->assertTrue($this->clients['openai']->calls[1]['stream']);
         $this->assertSame('gpt-5-mini', $this->clients['openai']->calls[1]['options']['model']);
     }
 
+    public function test_a_chain_hop_drops_a_model_the_target_provider_does_not_serve(): void
+    {
+        $this->clients['openai']->responses = array( $this->errorResult() );
+        $this->clients['gemini']->responses = array( array( 'ok' => 'gemini-answer' ) );
+
+        $this->router->setModelCatalogue($this->catalogue(
+            array(),
+            array(
+                'openai' => array( 'gpt-5' ),
+                'gemini' => array( 'gemini-3.8-flash' ),
+            )
+        ));
+        $this->router->setFallbackChain(array( 'gemini' ));
+
+        $result = $this->router->chat(
+            array( array( 'role' => 'user', 'content' => 'hi' ) ),
+            array( 'model' => 'gpt-5' )
+        );
+
+        $this->assertSame('gemini-answer', $result['ok']);
+        $this->assertArrayNotHasKey(
+            'model',
+            $this->clients['gemini']->calls[0]['options'],
+            'A model the target does not publish must not be forwarded to it.'
+        );
+        $this->assertArrayNotHasKey('model', $result['_nvoos_routing']);
+    }
+
+    public function test_a_chain_hop_keeps_a_model_the_catalogue_has_no_opinion_about(): void
+    {
+        $this->clients['openai']->responses = array( $this->errorResult() );
+        $this->clients['gemini']->responses = array( array( 'ok' => 'gemini-answer' ) );
+
+        // The catalogue knows nothing about `house-deployment` on either side.
+        $this->router->setModelCatalogue($this->catalogue(
+            array(),
+            array( 'gemini' => array( 'gemini-3.8-flash' ) )
+        ));
+        $this->router->setFallbackChain(array( 'gemini' ));
+
+        $result = $this->router->chat(
+            array( array( 'role' => 'user', 'content' => 'hi' ) ),
+            array( 'model' => 'house-deployment' )
+        );
+
+        $this->assertSame('gemini-answer', $result['ok']);
+        $this->assertSame('house-deployment', $this->clients['gemini']->calls[0]['options']['model']);
+    }
+
+    public function test_a_chain_hop_keeps_a_model_the_target_does_serve(): void
+    {
+        $this->clients['openai']->responses = array( $this->errorResult() );
+        $this->clients['gemini']->responses = array( array( 'ok' => 'gemini-answer' ) );
+
+        $this->router->setModelCatalogue($this->catalogue(
+            array(),
+            array(
+                'openai' => array( 'gemini-3.8-flash' ),
+                'gemini' => array( 'gemini-3.8-flash' ),
+            )
+        ));
+        $this->router->setFallbackChain(array( 'gemini' ));
+
+        $result = $this->router->chat(
+            array( array( 'role' => 'user', 'content' => 'hi' ) ),
+            array( 'model' => 'gemini-3.8-flash' )
+        );
+
+        $this->assertSame('gemini-answer', $result['ok']);
+        $this->assertSame('gemini-3.8-flash', $this->clients['gemini']->calls[0]['options']['model']);
+    }
+
     /**
      * Build a catalogue fake from a model => fallback map.
      *
-     * @param array<string, string> $map Fallback map.
+     * `serves()` answers from an optional pair map: provider => [model ids].
+     * A model absent from every list is "unknown" (null), which is what the
+     * router must treat as "keep the request as it is".
+     *
+     * @param array<string, string>       $map   Fallback map.
+     * @param array<string, list<string>> $served Served ids per provider.
      */
-    private function catalogue(array $map): ModelFallbackCatalogueInterface
+    private function catalogue(array $map, array $served = array()): ModelRoutingCatalogueInterface
     {
-        return new class ($map) implements ModelFallbackCatalogueInterface {
+        return new class ($map, $served) implements ModelRoutingCatalogueInterface {
             /**
-             * @param array<string, string> $map Fallback map.
+             * @param array<string, string>       $map    Fallback map.
+             * @param array<string, list<string>> $served Served ids per provider.
              */
-            public function __construct(private readonly array $map)
-            {
+            public function __construct(
+                private readonly array $map,
+                private readonly array $served,
+            ) {
             }
 
             public function fallbackFor(string $provider, string $modelId): ?string
             {
                 return $this->map[ $modelId ] ?? null;
+            }
+
+            public function serves(string $provider, string $modelId): ?bool
+            {
+                foreach ($this->served as $ids) {
+                    if (\in_array($modelId, $ids, true)) {
+                        return \in_array($modelId, $this->served[ $provider ] ?? array(), true);
+                    }
+                }
+
+                return null;
             }
         };
     }

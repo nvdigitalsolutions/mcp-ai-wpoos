@@ -19,7 +19,7 @@ use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
-use App\Support\Models\CatalogueModelFallbacks;
+use App\Support\Models\ModelCatalogueLookup;
 use App\Support\Pro\ToolkitEngine;
 use App\Support\Pro\ToolkitManifestLoader;
 use App\Support\RemoteSites\RemoteSiteStore;
@@ -44,6 +44,8 @@ use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
+use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
+use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
@@ -63,6 +65,14 @@ class AppServiceProvider extends ServiceProvider
         // models), so they are bound here rather than in the package provider.
         $this->app->bind(AssistantServiceInterface::class, LaravelAssistantService::class);
         $this->app->bind(TeamServiceInterface::class, LaravelTeamService::class);
+
+        // The model catalogue answers routing and limit questions for two
+        // consumers: ProviderRouter (fallback + hop eligibility) and the
+        // token budget (context window / output budget). Both contracts are
+        // bound to one reader, so a single query path and a single set of
+        // guards serve both (Proposal 149 §69-§70).
+        $this->app->bind(ModelRoutingCatalogueInterface::class, ModelCatalogueLookup::class);
+        $this->app->bind(ModelLimitCatalogueInterface::class, ModelCatalogueLookup::class);
 
         // The admin palette generator reads a token tree that lives outside the
         // application (the storefront's DTCG sources), so its location is
@@ -290,7 +300,7 @@ class AppServiceProvider extends ServiceProvider
         // Model-level retry before a provider hop (Proposal 149 §69). The
         // catalogue is optional and fails closed: no table or no row means the
         // router behaves exactly as it did before.
-        $router->setModelCatalogue($this->app->make(CatalogueModelFallbacks::class));
+        $router->setModelCatalogue($this->app->make(ModelRoutingCatalogueInterface::class));
 
         if (! $router->has('spike')) {
             $router->register(new SpikeStreamingProvider(

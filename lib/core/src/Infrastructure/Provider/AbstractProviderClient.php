@@ -66,6 +66,16 @@ abstract class AbstractProviderClient
     }
 
     /**
+     * The wired token-budget manager, if any (diagnostics and tests).
+     *
+     * @since 1.6.0
+     */
+    public function getTokenBudgetManager(): ?TokenBudgetManager
+    {
+        return $this->tokenBudget;
+    }
+
+    /**
      * Return the provider identifier slug.
      */
     public function getProviderSlug(): string

@@ -25,6 +25,7 @@ use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
+use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
@@ -35,6 +36,7 @@ use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
+use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
@@ -246,9 +248,24 @@ class NvoosServiceProvider extends ServiceProvider {
 				$app->make( SettingsStoreInterface::class ),
 				$app->make( HttpClientInterface::class ),
 				$app->make( ErrorFactoryInterface::class ),
+				$app->make( TokenBudgetManager::class ),
 			);
 
 			return $router;
+		} );
+
+		// Token budget — one manager shared by every provider client, so the
+		// pre-flight context-window check uses one set of limits. The platform
+		// may attach a live catalogue (Proposal 149 §70); without one the
+		// manager keeps its hardcoded snapshot.
+		$this->app->singleton( TokenBudgetManager::class, function ( $app ) {
+			$budget = new TokenBudgetManager();
+
+			if ( $app->bound( ModelLimitCatalogueInterface::class ) ) {
+				$budget->setCatalogue( $app->make( ModelLimitCatalogueInterface::class ) );
+			}
+
+			return $budget;
 		} );
 
 		// SSE and the orchestrator are request-bound.
