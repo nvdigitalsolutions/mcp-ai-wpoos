@@ -52,7 +52,7 @@ final class ProviderRouterModelFallbackTest extends TestCase
         $errors   = $this->createErrors();
         $router   = new ProviderRouter($settings, $errors);
 
-        foreach (array( 'openai', 'gemini' ) as $slug) {
+        foreach (array( 'openai', 'gemini', 'anthropic' ) as $slug) {
             $client = $this->createClient($slug, $settings, $errors);
             $router->register($client);
             $this->clients[ $slug ] = $client;
@@ -72,12 +72,19 @@ final class ProviderRouterModelFallbackTest extends TestCase
 
         $result = $this->router->chat(
             array( array( 'role' => 'user', 'content' => 'hi' ) ),
-            array( 'model' => 'gpt-5' )
+            array( 'provider' => 'openai', 'model' => 'gpt-5' )
         );
 
         $this->assertSame(array( 'ok' => 'fallback-answer' ), array_diff_key($result, array( '_nvoos_routing' => true )));
         $this->assertSame(
-            array( 'provider' => 'openai', 'model' => 'gpt-5-mini' ),
+            array(
+                'provider' => 'openai',
+                'model' => 'gpt-5-mini',
+                'requested_provider' => 'openai',
+                'requested_model' => 'gpt-5',
+                'via' => 'model_fallback',
+                'attempt' => 2,
+            ),
             $result['_nvoos_routing']
         );
         $this->assertCount(2, $this->clients['openai']->calls);
@@ -98,11 +105,14 @@ final class ProviderRouterModelFallbackTest extends TestCase
 
         $result = $this->router->chat(
             array( array( 'role' => 'user', 'content' => 'hi' ) ),
-            array( 'model' => 'gpt-5' )
+            array( 'provider' => 'openai', 'model' => 'gpt-5' )
         );
 
         $this->assertSame('gemini-answer', $result['ok']);
-        $this->assertArrayNotHasKey('_nvoos_routing', $result, 'A hop that keeps the model has nothing to report.');
+        $this->assertSame('provider_fallback', $result['_nvoos_routing']['via']);
+        $this->assertSame('openai', $result['_nvoos_routing']['requested_provider']);
+        $this->assertSame('gemini', $result['_nvoos_routing']['provider']);
+        $this->assertSame(2, $result['_nvoos_routing']['attempt']);
         $this->assertCount(2, $this->clients['openai']->calls);
         $this->assertCount(1, $this->clients['gemini']->calls);
     }
@@ -218,6 +228,7 @@ final class ProviderRouterModelFallbackTest extends TestCase
             'A model the target does not publish must not be forwarded to it.'
         );
         $this->assertArrayNotHasKey('model', $result['_nvoos_routing']);
+        $this->assertSame('provider_fallback', $result['_nvoos_routing']['via']);
     }
 
     public function test_a_chain_hop_keeps_a_model_the_catalogue_has_no_opinion_about(): void
@@ -327,6 +338,46 @@ final class ProviderRouterModelFallbackTest extends TestCase
         $this->assertSame(array(), $metrics->calls);
     }
 
+    public function test_every_provider_hop_is_counted_with_its_source(): void
+    {
+        $this->clients['openai']->responses = array( $this->errorResult() );
+        $this->clients['gemini']->responses = array( array( 'ok' => 'gemini-answer' ) );
+
+        $metrics = $this->metrics();
+        $this->router->setMetrics($metrics);
+        $this->router->setFallbackChain(array( 'gemini' ));
+
+        $this->router->chat(array( array( 'role' => 'user', 'content' => 'hi' ) ));
+
+        $this->assertSame(
+            array( array( 'from' => 'openai', 'to' => 'gemini', 'succeeded' => true ) ),
+            $metrics->hops
+        );
+        $this->assertSame(array(), $metrics->calls, 'No model fallback ran, so nothing is counted there.');
+    }
+
+    public function test_a_failed_hop_is_counted_and_the_next_hop_starts_from_it(): void
+    {
+        $this->clients['openai']->responses = array( $this->errorResult() );
+        $this->clients['gemini']->responses = array( $this->errorResult() );
+        $this->clients['anthropic']->responses = array( array( 'ok' => 'anthropic-answer' ) );
+
+        $metrics = $this->metrics();
+        $this->router->setMetrics($metrics);
+        $this->router->setFallbackChain(array( 'gemini', 'anthropic' ));
+
+        $result = $this->router->chat(array( array( 'role' => 'user', 'content' => 'hi' ) ));
+
+        $this->assertSame(
+            array(
+                array( 'from' => 'openai', 'to' => 'gemini', 'succeeded' => false ),
+                array( 'from' => 'gemini', 'to' => 'anthropic', 'succeeded' => true ),
+            ),
+            $metrics->hops
+        );
+        $this->assertSame(3, $result['_nvoos_routing']['attempt']);
+    }
+
     /**
      * Build a metrics sink that records every call.
      */
@@ -340,6 +391,13 @@ final class ProviderRouterModelFallbackTest extends TestCase
              */
             public array $calls = array();
 
+            /**
+             * Recorded provider hops.
+             *
+             * @var list<array{from: string, to: string, succeeded: bool}>
+             */
+            public array $hops = array();
+
             public function recordModelFallback(
                 string $provider,
                 string $fromModel,
@@ -350,6 +408,18 @@ final class ProviderRouterModelFallbackTest extends TestCase
                     'provider' => $provider,
                     'from' => $fromModel,
                     'to' => $toModel,
+                    'succeeded' => $succeeded,
+                );
+            }
+
+            public function recordProviderHop(
+                string $fromProvider,
+                string $toProvider,
+                bool $succeeded
+            ): void {
+                $this->hops[] = array(
+                    'from' => $fromProvider,
+                    'to' => $toProvider,
                     'succeeded' => $succeeded,
                 );
             }

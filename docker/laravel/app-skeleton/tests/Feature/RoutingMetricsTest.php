@@ -116,6 +116,45 @@ class RoutingMetricsTest extends TestCase
         $this->assertGreaterThan(0, $budget->estimateTokens('a short sentence'));
     }
 
+    public function test_a_provider_hop_is_recorded_with_its_source(): void
+    {
+        $router = app(ProviderRouter::class);
+
+        $router->register($this->recordingClient('openai', [
+            ['error' => ['code' => 'api_error', 'message' => 'down', 'data' => []]],
+        ]));
+        $router->register($this->recordingClient('gemini', [
+            ['ok' => 'gemini-answer'],
+        ]));
+
+        $router->setFallbackChain(['gemini']);
+
+        $result = $router->chat(
+            [['role' => 'user', 'content' => 'hi']],
+            ['provider' => 'openai', 'model' => 'gpt-5']
+        );
+
+        $this->assertSame('gemini-answer', $result['ok']);
+
+        // §72: a plain provider hop is annotated and reported.
+        $this->assertSame('provider_fallback', $result['_nvoos_routing']['via']);
+        $this->assertSame('gemini', $result['_nvoos_routing']['provider']);
+        $this->assertSame('openai', $result['_nvoos_routing']['requested_provider']);
+
+        $this->assertDatabaseHas('nvoos_routing_metrics', [
+            'kind' => 'provider_hop',
+            'from_provider' => 'openai',
+            'provider' => 'gemini',
+            'succeeded' => true,
+        ]);
+
+        $summary = app(RoutingMetricStore::class)->summary(30);
+        $this->assertSame(1, $summary['provider_hops']);
+        $this->assertSame(0, $summary['model_fallbacks']);
+        $this->assertSame('openai', $summary['hops'][0]['from']);
+        $this->assertSame('gemini', $summary['hops'][0]['to']);
+    }
+
     /**
      * Insert a catalogue row with sensible defaults.
      *
