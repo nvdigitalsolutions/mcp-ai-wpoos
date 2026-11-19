@@ -3302,6 +3302,12 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		navRuleFamily && ! GENERIC_FAMILIES.has( navRuleFamily ) && navRuleFamily !== bodyFamily && navRuleFamily !== displayFamily
 			? navRuleFamily
 			: undefined;
+	// The ACCENT face: the family the source uses on a marked heading but not on
+	// the body, the display role or the menu (monicarajiv: Dancing Script on
+	// `h3.alt-font`). A CLASS carries it, so it becomes a token the builder’s
+	// own utility can point at — a per-level fact cannot, because a band can
+	// hold a Dancing Script `h3.alt-font` beside a Karma `h3`.
+	const accentFamily = families.find( ( family ) => family !== bodyFamily && family !== displayFamily && family !== uiFamily );
 	const bodyWeight = bodyRuleFact( cssText, 'font-weight' );
 	const scale = trimScaleLadder( pxValues( cssText, FONT_SCALE_PATTERNS ) );
 	const spacing = trimSpaceLadder( pxValues( cssText, SPACE_PATTERNS ) );
@@ -3340,6 +3346,7 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 			// A THIRD family only when the source really wears one (a menu face);
 			// absent → the nav keeps the body family, as before.
 			...( uiFamily ? { ui: uiFamily } : {} ),
+			...( accentFamily ? { accent: accentFamily } : {} ),
 			scalePx: scale.length > 0 ? scale : [ 14, 16, 20, 28, 40 ],
 			bodyWeight,
 		},
@@ -3493,6 +3500,11 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 	if ( design.typography.display ) {
 		tokens[ 'font-display' ] = `'${ design.typography.display }', ${ DEFAULT_FONT_STACK }`;
 	}
+	if ( design.typography.accent ) {
+		// The class-driven accent face (`alt-font`). Falls back to the display
+		// face in the stylesheet, so an absent token is inert.
+		tokens[ 'font-accent' ] = `'${ design.typography.accent }', ${ DEFAULT_FONT_STACK }`;
+	}
 	if ( design.typography.ui ) {
 		// The nav/menu face, when the source wears a distinct one. It falls back
 		// to the body face in the stylesheet, so an absent token is inert.
@@ -3562,7 +3574,7 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 	return tokens;
 }
 
-const DEFAULT_FONT_STACK = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+export const DEFAULT_FONT_STACK = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 // -- adaptation + contrast fixes (114 §3.5) ----------------------------------
 

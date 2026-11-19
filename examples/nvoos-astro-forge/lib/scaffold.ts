@@ -25,7 +25,7 @@ import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './
 import { animationRebuildCss, countAnimations, planAnimationRebuild, type ParallaxCarrier } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit, readableInk } from './contrast.ts';
-import { contrast, designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
+import { contrast, DEFAULT_FONT_STACK, designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { readLock } from './lock.ts';
@@ -841,6 +841,8 @@ const DEFAULT_TOKENS: Record<string, string> = {
 	// The nav/menu face. Degrades to the body face so a two-family source
 	// renders exactly as before.
 	'font-ui': 'var(--forge-font)',
+	// The class-driven accent face; degrades to the display role.
+	'font-accent': 'var(--forge-font-display)',
 	space: '1rem',
 	'space-sm': '0.5rem',
 	'space-lg': '2rem',
@@ -899,6 +901,52 @@ function measuredBodyInk( colors?: ForgeColorModes | Record< string, { text?: st
  * derivation (tokens_apply v2) ← rendered body ink (when measured) ← explicit
  * profile.tokens overrides. Explicit operator overrides always win.
  */
+/**
+ * The ACCENT family a profile ALREADY measured, no re-analysis needed.
+ *
+ * `design.typography.accent` postdates most committed profiles, so derive it
+ * from the measured heading facts instead: the one family that is neither the
+ * body, the display role nor the menu. monicarajiv records Dancing Script on
+ * its `h3.alt-font` facts, and the builder’s own `alt-font` utility points
+ * at the resulting token.
+ */
+export function accentFamilyOf( profile: SiteProfile ): string | undefined {
+	const design = profile.design;
+	if ( design?.typography.accent ) {
+		return design.typography.accent;
+	}
+	const known = new Set(
+		[ design?.typography.body, design?.typography.display, design?.typography.ui ]
+			.map( ( name ) => ( name ?? '' ).trim().toLowerCase() )
+			.filter( Boolean )
+	);
+	const families: string[] = [];
+	const add = ( name?: string ): void => {
+		const clean = ( name ?? '' ).trim().replace( /["']/g, '' );
+		if ( clean && ! known.has( clean.toLowerCase() ) && ! families.some( ( family ) => family.toLowerCase() === clean.toLowerCase() ) ) {
+			families.push( clean );
+		}
+	};
+	const addFacts = ( facts?: { headings?: Record< string, { family?: string } >; body?: { family?: string } } ): void => {
+		for ( const fact of Object.values( facts?.headings ?? {} ) ) {
+			add( fact?.family );
+		}
+		add( facts?.body?.family );
+	};
+	for ( const section of design?.sections ?? [] ) {
+		addFacts( section.type );
+	}
+	for ( const facts of Object.values( profile.bandFacts ?? {} ) ) {
+		addFacts( facts );
+	}
+	for ( const page of Object.values( profile.pageBands ?? {} ) ) {
+		for ( const facts of Object.values( page.bandFacts ?? {} ) ) {
+			addFacts( facts );
+		}
+	}
+	return families[ 0 ];
+}
+
 export function mergeTokens(
 	design?: ForgeDesign,
 	tokens?: Record< string, string >,
@@ -1099,6 +1147,7 @@ export function renderDesignGenerated( profile: SiteProfile, tokens: Record<stri
 	addFamily( design?.typography.display, undefined, true );
 	addFamily( design?.typography.body, design?.typography.bodyWeight, true );
 	addFamily( design?.typography.ui );
+	addFamily( design?.typography.accent );
 	const addTypeFacts = ( facts?: { headings?: Record< string, { family?: string; weight?: string } >; body?: { family?: string; weight?: string } } ): void => {
 		for ( const fact of Object.values( facts?.headings ?? {} ) ) {
 			addFamily( fact?.family, fact?.weight );
@@ -3719,6 +3768,12 @@ async function scaffoldProject(
 	//     the --forge-* defaults, gate the rendered pairs against WCAG, and
 	//     write the resolved design module the audit endpoint reads.
 	const mergedTokens = mergeTokens( profile.design, profile.tokens, profile.colors );
+	// The class-driven accent face, for a profile measured before the role
+	// existed (see `accentFamilyOf`). An explicit token always wins.
+	const accentFamily = accentFamilyOf( profile );
+	if ( accentFamily && ! ( profile.tokens && profile.tokens[ 'font-accent' ] ) ) {
+		mergedTokens[ 'font-accent' ] = `'${ accentFamily }', ${ DEFAULT_FONT_STACK }`;
+	}
 	const cssPath = path.join( targetDir, 'src', 'styles', 'global.css' );
 	const css = await readFile( cssPath, 'utf8' );
 	await writeFile( cssPath, rewriteGlobalCss( css, mergedTokens ), 'utf8' );

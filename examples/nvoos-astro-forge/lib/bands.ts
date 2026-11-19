@@ -281,7 +281,7 @@ export const BUILDER_ADAPTERS: BandAdapter[] = [
 				base: 'position:relative;overflow:hidden;background-size:cover;background-position:center center;background-repeat:no-repeat',
 			},
 			'vertical-align-middle': { base: 'vertical-align:middle' },
-			'alt-font': { base: 'font-family:var(--forge-font-display)' },
+			'alt-font': { base: 'font-family:var(--forge-font-accent, var(--forge-font-display))' },
 			'text-medium': { base: 'font-size:14px;font-weight:500;line-height:24px' },
 			'text-small': { base: 'font-size:11px;font-weight:500;line-height:20px' },
 			'font-weight-300': { base: 'font-weight:300' },
@@ -371,6 +371,11 @@ export const BUILDER_ADAPTERS: BandAdapter[] = [
 			lowercase: { base: 'text-transform:lowercase' },
 			'text-bold': { base: 'font-weight:700' },
 			'text-italic': { base: 'font-style:italic' },
+			// Flatsome's script accent. The source marks the ACCENTED headings with
+			// this class, so the face belongs to the class, not to the heading level:
+			// a band can hold `h3.alt-font` (Dancing Script) beside a plain `h3`
+			// (Karma), and a single per-level fact cannot describe both.
+			'alt-font': { base: 'font-family:var(--forge-font-accent, var(--forge-font-display))' },
 		},
 	},
 	{
