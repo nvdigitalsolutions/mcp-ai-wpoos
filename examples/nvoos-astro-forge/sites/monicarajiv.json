@@ -2138,6 +2138,19 @@
 						"tablet": 1112,
 						"mobile": 844
 					}
+				},
+				{
+					"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+					"width": {
+						"desktop": 108,
+						"tablet": 100,
+						"mobile": 78
+					},
+					"height": {
+						"desktop": 72,
+						"tablet": 67,
+						"mobile": 52
+					}
 				}
 			],
 			"mediaPosition": "63% 90%",
@@ -3872,6 +3885,19 @@
 								"tablet": 1112,
 								"mobile": 844
 							}
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"width": {
+								"desktop": 97,
+								"tablet": 75,
+								"mobile": 78
+							},
+							"height": {
+								"desktop": 65,
+								"tablet": 50,
+								"mobile": 52
+							}
 						}
 					],
 					"mediaPosition": "76% 7%",
@@ -4052,7 +4078,8 @@
 						"small-12",
 						"text-center",
 						"white"
-					]
+					],
+					"elements": []
 				},
 				"834b9ca": {
 					"containerWidth": 1440,
@@ -4503,6 +4530,19 @@
 							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(1)",
 							"bg": "background-color:rgb(240, 240, 240)",
 							"height": 314
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"width": {
+								"desktop": 255,
+								"tablet": 345,
+								"mobile": 172
+							},
+							"height": {
+								"desktop": 88,
+								"tablet": 120,
+								"mobile": 60
+							}
 						}
 					],
 					"mediaPosition": "0% 0%",
@@ -5021,6 +5061,19 @@
 								"desktop": 900,
 								"tablet": 1112,
 								"mobile": 844
+							}
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"width": {
+								"desktop": 108,
+								"tablet": 83,
+								"mobile": 78
+							},
+							"height": {
+								"desktop": 72,
+								"tablet": 56,
+								"mobile": 52
 							}
 						}
 					],
@@ -6173,6 +6226,19 @@
 								"tablet": 1112,
 								"mobile": 844
 							}
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"width": {
+								"desktop": 108,
+								"tablet": 83,
+								"mobile": 78
+							},
+							"height": {
+								"desktop": 72,
+								"tablet": 56,
+								"mobile": 52
+							}
 						}
 					],
 					"mediaPosition": "60% 54%",
@@ -6392,6 +6458,15 @@
 								"desktop": 43,
 								"mobile": 39
 							}
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+							"width": {
+								"desktop": 870,
+								"tablet": 665,
+								"mobile": 360
+							},
+							"height": 440
 						}
 					],
 					"classes": [
@@ -6562,7 +6637,8 @@
 						"text-center",
 						"uppercase",
 						"white"
-					]
+					],
+					"elements": []
 				},
 				"834b9cb": {
 					"containerWidth": 1050,
@@ -7021,7 +7097,8 @@
 						"small-12",
 						"text-center",
 						"uppercase"
-					]
+					],
+					"elements": []
 				},
 				"834b9cd": {
 					"containerWidth": 1080,
@@ -7982,6 +8059,15 @@
 								"desktop": 43,
 								"mobile": 39
 							}
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1)",
+							"width": {
+								"desktop": 870,
+								"tablet": 665,
+								"mobile": 360
+							},
+							"height": 440
 						}
 					],
 					"classes": [
@@ -8883,7 +8969,8 @@
 						"text-inner",
 						"x50",
 						"y50"
-					]
+					],
+					"elements": []
 				}
 			}
 		}

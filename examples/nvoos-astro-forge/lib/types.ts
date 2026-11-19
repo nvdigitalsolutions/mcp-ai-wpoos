@@ -872,6 +872,16 @@ export interface ForgeBandElement {
 	fg?: string;
 	/** The rendered height in px, per device where the source overrides it. */
 	height?: number | { desktop?: number; tablet?: number; mobile?: number };
+	/**
+	 * The rendered WIDTH in px, per device where the source overrides it.
+	 *
+	 * A builder sizes images through CSS, never through the attributes: Flatsome
+	 * ships `width="1" height="1"` and puts the real box on the WRAPPER. The
+	 * vendor rule that did it is keyed by an `#image_*` id the source re-issues
+	 * between analysis and build, so it finds nothing; a structural PATH does
+	 * survive (monicarajiv’s hero chevron: 108x72 source, 1x1 rebuild).
+	 */
+	width?: number | { desktop?: number; tablet?: number; mobile?: number };
 }
 
 /**

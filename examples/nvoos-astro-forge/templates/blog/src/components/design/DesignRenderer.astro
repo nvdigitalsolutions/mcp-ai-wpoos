@@ -768,12 +768,20 @@ const bandElementCss = sections
 			.map( ( element ) => {
 				const heights =
 					typeof element.height === 'number' ? { desktop: element.height } : ( element.height ?? {} );
+				const widths =
+					typeof element.width === 'number' ? { desktop: element.width } : ( element.width ?? {} );
 				const base: string[] = [];
 				if ( element.bg ) {
 					base.push( element.bg );
 				}
 				if ( element.fg ) {
 					base.push( `color:${ element.fg }` );
+				}
+				// The measured WIDTH first: it is what gives a builder image its box at
+				// all (the markup carries `width="1"`, and the vendor rule that sized
+				// the wrapper is keyed by an id the source re-issues). A path survives.
+				if ( widths.desktop ) {
+					base.push( `width:${ widths.desktop }px` );
 				}
 				if ( heights.desktop ) {
 					// The `--ds-col-min-h` bridge rides with the floor. A centred band's
@@ -792,6 +800,13 @@ const bandElementCss = sections
 					base.push( 'aspect-ratio:auto' );
 				}
 				const rules: string[] = [];
+				// The Flatsome media convention rides WITH the measured width, never
+				// globally: the markup carries `width="1"`, so `.img-inner img{width:100%}`
+				// is what makes the image visible at all — but applied to an UNSIZED
+				// wrapper it would blow a 1px image up to the band width.
+				if ( widths.desktop ) {
+					rules.push( `${ anchored }${ element.path } .img-inner > img{width:100%;height:auto}` );
+				}
 				if ( base.length > 0 ) {
 					rules.push( `${ anchored }${ element.path }{${ base.join( ';' ) }}` );
 					if ( heights.desktop ) {
@@ -822,6 +837,16 @@ const bandElementCss = sections
 				if ( heights.mobile ) {
 					rules.push(
 						`@media (max-width: 767px){${ anchored }${ element.path }{--ds-col-min-h:${ heights.mobile }px;min-height:${ heights.mobile }px}}`
+					);
+				}
+				if ( widths.tablet ) {
+					rules.push(
+						`@media (min-width: 768px) and (max-width: 1024px){${ anchored }${ element.path }{width:${ widths.tablet }px}}`
+					);
+				}
+				if ( widths.mobile ) {
+					rules.push(
+						`@media (max-width: 767px){${ anchored }${ element.path }{width:${ widths.mobile }px}}`
 					);
 				}
 				return rules.join( '' );
