@@ -3307,7 +3307,14 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	// `h3.alt-font`). A CLASS carries it, so it becomes a token the builder’s
 	// own utility can point at — a per-level fact cannot, because a band can
 	// hold a Dancing Script `h3.alt-font` beside a Karma `h3`.
-	const accentFamily = families.find( ( family ) => family !== bodyFamily && family !== displayFamily && family !== uiFamily );
+	// An ICON font is never a typeface: Flatsome ships `fl-icons`, and it ranked
+	// high enough to be read as monicarajiv’s accent on the first profile
+	// refresh (`--forge-font-accent: 'fl-icons'`), which would have set every
+	// `alt-font` heading in an icon face.
+	const ICON_FAMILY = /icon|awesome|dashicons|glyph|symbol/i;
+	const accentFamily = families.find(
+		( family ) => family !== bodyFamily && family !== displayFamily && family !== uiFamily && ! ICON_FAMILY.test( family )
+	);
 	const bodyWeight = bodyRuleFact( cssText, 'font-weight' );
 	const scale = trimScaleLadder( pxValues( cssText, FONT_SCALE_PATTERNS ) );
 	const spacing = trimSpaceLadder( pxValues( cssText, SPACE_PATTERNS ) );

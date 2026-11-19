@@ -1135,7 +1135,8 @@ export function renderDesignGenerated( profile: SiteProfile, tokens: Record<stri
 	const familyWeights = new Map< string, { family: string; weights: Set< number >; ladder: boolean } >();
 	const addFamily = ( name: string | undefined, weight?: string, ladder = false ): void => {
 		const clean = ( name ?? '' ).trim().replace( /["']/g, '' );
-		if ( ! clean || systemFontRe.test( clean ) ) {
+		// An icon font is never requested from Google Fonts (it is not there).
+		if ( ! clean || systemFontRe.test( clean ) || /icon|awesome|dashicons|glyph|symbol/i.test( clean ) ) {
 			return;
 		}
 		const key = clean.toLowerCase();
@@ -1734,6 +1735,18 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 							parts.push( `height: { ${ map.join( ', ' ) } }` );
 						}
 					}
+					// The measured WIDTH (a builder sizes images on the wrapper, not on
+					// the `width="1"` attribute the markup carries).
+					if ( typeof element.width === 'number' ) {
+						parts.push( `width: ${ element.width }` );
+					} else if ( element.width ) {
+						const widthMap = Object.entries( element.width )
+							.filter( ( [ , value ] ) => typeof value === 'number' )
+							.map( ( [ device, value ] ) => `${ device }: ${ value }` );
+						if ( widthMap.length > 0 ) {
+							parts.push( `width: { ${ widthMap.join( ', ' ) } }` );
+						}
+					}
 					return `{ ${ parts.join( ', ' ) } }`;
 				} )
 				.join( ', ' ) } ]`
@@ -2090,7 +2103,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * keyed by a STRUCTURAL path relative to the band (a class name repeats',
 		'\t * across bands and elements). Raw bands keep the source markup, so the',
 		'\t * path resolves to the same node in the rebuild. */',
-		'\telements?: Array<{ path: string; bg?: string; fg?: string; height?: number | { desktop?: number; tablet?: number; mobile?: number } }>;',
+		'\telements?: Array<{ path: string; bg?: string; fg?: string; height?: number | { desktop?: number; tablet?: number; mobile?: number }; width?: number | { desktop?: number; tablet?: number; mobile?: number } }>;',
 		'\t/** The band\u2019s measured COLUMN geometry, keyed by the column\u2019s',
 		'\t * unique class: a rendered `min-height` floor plus a fixed background',
 		'\t * photo\u2019s attachment/size. Emitted as band-scoped `.class` rules \u2014 the',

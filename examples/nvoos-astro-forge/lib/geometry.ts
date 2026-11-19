@@ -872,9 +872,9 @@ export function collectBandBoxFacts( input: {
  * without recording a redundant map for the common case.
  */
 export function mergeElementFacts(
-	desktop?: Array< { path: string; bg?: string; height?: number } >,
-	tablet?: Array< { path: string; bg?: string; height?: number } >,
-	mobile?: Array< { path: string; bg?: string; height?: number } >
+	desktop?: Array< { path: string; bg?: string; height?: number; width?: number } >,
+	tablet?: Array< { path: string; bg?: string; height?: number; width?: number } >,
+	mobile?: Array< { path: string; bg?: string; height?: number; width?: number } >
 ): ForgeBandElement[] | undefined {
 	if ( ! desktop || desktop.length === 0 ) {
 		return undefined;
@@ -885,6 +885,7 @@ export function mergeElementFacts(
 			path: fact.path,
 			...( fact.bg ? { bg: fact.bg } : {} ),
 			...( typeof fact.height === 'number' ? { height: fact.height } : {} ),
+			...( typeof fact.width === 'number' ? { width: fact.width } : {} ),
 		} );
 	}
 	for ( const [ device, list ] of [
@@ -893,17 +894,26 @@ export function mergeElementFacts(
 	] as const ) {
 		for ( const fact of list ?? [] ) {
 			const entry = byPath.get( fact.path );
-			if ( ! entry || typeof fact.height !== 'number' ) {
+			if ( ! entry ) {
 				continue;
 			}
-			const base = typeof entry.height === 'number' ? entry.height : entry.height?.desktop;
-			if ( fact.height === base ) {
-				continue;
+			// Height and width merge the same way: keep the desktop value and
+			// record a per-device override only where the source changes it.
+			for ( const key of [ 'height', 'width' ] as const ) {
+				const value = fact[ key ];
+				if ( typeof value !== 'number' ) {
+					continue;
+				}
+				const current = entry[ key ];
+				const base = typeof current === 'number' ? current : current?.desktop;
+				if ( value === base ) {
+					continue;
+				}
+				entry[ key ] = {
+					...( typeof current === 'object' ? current : current ? { desktop: current } : {} ),
+					[ device ]: value,
+				};
 			}
-			entry.height = {
-				...( typeof entry.height === 'object' ? entry.height : entry.height ? { desktop: entry.height } : {} ),
-				[ device ]: fact.height,
-			};
 		}
 	}
 	return [ ...byPath.values() ];
@@ -966,7 +976,7 @@ function collectBandElementFacts( input: {
 		const index = parent ? Array.prototype.indexOf.call( parent.children, element ) + 1 : 1;
 		return `${ tag }:nth-child(${ index })`;
 	};
-	const out: Record< string, Array< { path: string; bg?: string; height?: number } > > = {};
+	const out: Record< string, Array< { path: string; bg?: string; height?: number; width?: number } > > = {};
 	for ( const id of input.ids ) {
 		const candidates =
 			input.kind === 'built'
@@ -978,7 +988,7 @@ function collectBandElementFacts( input: {
 		if ( ! band ) {
 			continue;
 		}
-		const facts: Array< { path: string; bg?: string; height?: number } > = [];
+		const facts: Array< { path: string; bg?: string; height?: number; width?: number } > = [];
 		const walk = ( element: Element, depth: number, prefix: string ): void => {
 			if ( depth > 7 || facts.length >= 48 ) {
 				return;
@@ -993,11 +1003,24 @@ function collectBandElementFacts( input: {
 					const alpha = alphaOf( style.backgroundColor );
 					const hasImage = style.backgroundImage !== 'none';
 					const paintsColor = alpha >= 0.95;
-					if ( paintsColor || hasImage ) {
-						const fact: { path: string; bg?: string; height?: number } = { path };
-						fact.bg = hasImage
-							? `background-image:${ style.backgroundImage.slice( 0, 400 ) }`
-							: `background-color:${ style.backgroundColor }`;
+					// A builder sizes IMAGES through CSS, never through the attributes:
+					// Flatsome ships `width="1" height="1"` and puts the real box on the
+					// WRAPPER. The vendor rule that did it is keyed by an `#image_*` id the
+					// source re-issues between analysis and build, so it lands on nothing;
+					// the wrapper’s own MEASURED width, keyed by a structural path, still
+					// resolves (monicarajiv’s hero chevron: 108x72 source, 1x1 rebuild).
+					const wrapsImage = /^image_/.test( child.id ) || [ ...child.classList ].includes( 'img' );
+					const holdsImage = wrapsImage && child.querySelector( 'img' ) !== null;
+					if ( paintsColor || hasImage || holdsImage ) {
+						const fact: { path: string; bg?: string; width?: number; height?: number } = { path };
+						if ( holdsImage ) {
+							fact.width = Math.round( rect.width );
+						}
+						if ( paintsColor || hasImage ) {
+							fact.bg = hasImage
+								? `background-image:${ style.backgroundImage.slice( 0, 400 ) }`
+								: `background-color:${ style.backgroundColor }`;
+						}
 						// A PINNED stage keeps its box; a card follows its copy. A builder's
 						// tile grid is often ABSOLUTE-positioned (Flatsome's banner mosaic
 						// gives every tile `position:absolute` and sizes it from the row), so
@@ -1016,6 +1039,44 @@ function collectBandElementFacts( input: {
 			}
 		};
 		walk( band, 0, '' );
+		// IMAGE WRAPPERS get their own pass: a builder nests an image five levels
+		// deep (banner > banner-layers > text-box > text-inner > .img), past the
+		// walk’s depth limit, so the hero chevron was never seen. A wrapper is
+		// identifiable outright (`#image_*` or `.img`), so a direct query is both
+		// cheaper and complete.
+		const seenPaths = new Set( facts.map( ( fact ) => fact.path ) );
+		for ( const wrapper of [ ...band.querySelectorAll( '[id^="image_"], .img' ) ] ) {
+			if ( facts.length >= 48 ) {
+				break;
+			}
+			if ( wrapper.querySelector( 'img' ) === null ) {
+				continue;
+			}
+			const wrapperRect = wrapper.getBoundingClientRect();
+			if ( wrapperRect.width < 24 || wrapperRect.height < 16 ) {
+				continue;
+			}
+			const segments: string[] = [];
+			let node: Element | null = wrapper;
+			while ( node && node !== band ) {
+				const parent: Element | null = node.parentElement;
+				if ( ! parent ) {
+					break;
+				}
+				segments.unshift( segmentOf( node ) );
+				node = parent;
+			}
+			const wrapperPath = segments.join( ' > ' );
+			if ( node !== band || ! wrapperPath || seenPaths.has( wrapperPath ) ) {
+				continue;
+			}
+			seenPaths.add( wrapperPath );
+			facts.push( {
+				path: wrapperPath,
+				width: Math.round( wrapperRect.width ),
+				height: Math.round( wrapperRect.height ),
+			} );
+		}
 		if ( facts.length > 0 ) {
 			out[ id ] = facts;
 		}
