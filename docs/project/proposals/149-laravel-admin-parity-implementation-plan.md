@@ -9610,3 +9610,52 @@ directive, and the paragraph now avoids the directive entirely.
    — i.e. a different page.
 3. **`measurement` and `identity-provider`** are the last two `planned` surfaces,
    and both are blocked on decisions rather than on code (§85.2, §85.3).
+
+## 96. `measurement` decided — metrics without a registry (2026-11-19)
+
+§85.2 assumed the surface needed three stores and left it `planned`. Proposal 154
+split the row and built the one that needed no producer (budgets, §92–§94). This
+section settles the rest by reading the WordPress side properly, which §85.2 did
+not: `includes/measurement/` is a **booted framework** — five registries, four
+observers and a metric-event table — that ships **21 metric definitions in four
+packs** (chat 7, tool 5, stream 7, eval 2). It has a producer. The question was
+never "is this vapour"; it was "which of its producers does this runtime already
+have in another form".
+
+### 96.1 What the audit found
+
+| Metric | Here today |
+|---|---|
+| prompt/completion tokens, cost | **derived** — `nvoos_token_usage` (§81) |
+| `chat.turn.count`, `chat.turn.duration_ms`, `chat.agentic.iterations` | **derived** — trace runs and their `end`/`iteration` records (§84) |
+| `chat.turn.error.count` | **partial** — aborted/incomplete are recorded; a provider error that still returned text is not |
+| `tool.execution.count` | **partial** — `tool_calls` per provider call; per-tool execution is not recorded |
+| `tool.execution.*` (4), `stream.*` (7) | **not produced** — no per-tool record, and the SSE path persists nothing |
+| `eval.suite.*` (2) | **not produced** — no harness on either runtime |
+
+**Six derived, two partial, thirteen unproduced.** That is the shape the decision
+had to be made against, and it is why "no producer" was the wrong label.
+
+### 96.2 The decision
+
+**A derived catalogue** (Proposal 155, Option B), with definitions as **code**
+rather than rows: no `nvoos_metrics`, values are queries over the three stores
+that already exist, and the page renders the unproduced thirteen **with their
+reason** rather than as zeroes. Porting the framework (Option A) was refused for
+the reason every slice since §81 has refused a second telemetry path: `CostCalculated`
+and `TraceCapture` already run on the chat pipeline, and four observers beside
+them would disagree the first time one was disabled.
+
+**Verifiers, rewards and eval suites remain `planned`, by decision.** A verifier
+judges an answer, a reward is a training signal, a suite runs both — none exists
+on either runtime, and shipping registries without a harness is the empty-list
+page §85.2 warned about. That is D5 in the proposal, not an oversight.
+
+### 96.3 Status
+
+No code in this section — it is the decision the `measurement` row was waiting
+for. The row stays `planned` until **M1** (the catalogue and `/ops/metrics`) ships;
+the scoreboard is unchanged at 47 surfaces · 36 built · 2 planned-only, and the
+second of those two now has a decision behind it.
+
+`identity-provider` is the only surface left without one.
