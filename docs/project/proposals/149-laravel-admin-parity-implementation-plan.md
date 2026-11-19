@@ -6509,7 +6509,10 @@ the failure mode is silent until an operator tries to save.
 1. **The 21 views are not ported.** They are dashboards (§62 decision 2) and need
    pages or resources, not form fields: orchestration `agents` / `teams` /
    `professions` / `observability`, token `analytics` / `anomalies` / `patterns` /
-   `trends` / `model_manager`.
+   `trends` / `model_manager`. The token half now has what it needs to be worth
+   building — a writer (§81) and a long-term store (§80) — so `per_user` /
+   `per_tool` / `per_site` / `analytics` are unblocked; the orchestration half
+   still needs the surfaces named above.
 2. **Per-field scope review.** All 585 are tenant-scope. Some are plainly
    infrastructure (RabbitMQ host, OpenTelemetry endpoint) and belong in operator
    scope; each is a one-line change in the JSON plus a decision about who owns it.
@@ -8370,3 +8373,83 @@ and the raw rows are the right answer there.
 4. **Rollup cost is a PHP sum** over the day's rows. A deployment with very high
    volume may eventually want it in SQL, at the price of driver-specific JSON
    extraction.
+
+## 81. Recording chat token usage (2026-11-19)
+
+Started as "port another admin page" and stopped at a prerequisite: the
+token-usage table was **read by five surfaces and written by nobody**.
+
+| Reader | What it shows |
+|---|---|
+| `/ops/diagnostics` | 30-day cost and token total |
+| `/api/v1/cost/dashboard-summary`, `/trend`, `/by-provider` | analytics pages |
+| `/api/v1/token-manager/overview` | the console's token surface |
+| slash commands | "tokens today" |
+| the command centre KPI | tokens since midnight |
+
+Why nobody noticed: the tests insert rows directly — `CoreOperationsTest`,
+`CommandCenterTest`, `SlashCommandsTest` — so the suite proves the *readers*
+work while a real deployment has an empty table. The pages render `0`, which
+looks like a quiet estate rather than a missing writer. Porting `per_user` /
+`per_tool` / `per_site` before this would have shipped three more pages that are
+always empty.
+
+### 81.1 The seam
+
+`App\Listeners\RecordTokenUsage` handles `CostCalculated`, which is the right
+event for three reasons:
+
+- it fires from **both** `handleChat()` and `handleChatStreaming()`, so a
+  streaming turn is recorded exactly like a blocking one;
+- it carries the **accumulated** figures for an agentic turn — the orchestrator
+  overwrites `prompt_tokens` / `completion_tokens` with the conversation total,
+  so a multi-round turn is billed once at its real size, not at the last
+  iteration's slice;
+- it is dispatched after cost is computed, so the row carries the same
+  `cost_usd` the analytics pages read. One number, not two.
+
+The row records `user_id`, `model_id`, prompt/completion/total tokens, `cost`,
+and metadata `{provider, cost, assistant_id, estimated, agentic_iterations}`.
+`oos.token_usage.track` (default on) can stop the writes; it does not touch
+existing rows or the rollup.
+
+Writes are best-effort: the adapter guards on the table existing, and a
+telemetry failure must not fail a chat that already succeeded.
+
+### 81.2 Discovery was already on — and the double-write it caught
+
+The first run wrote **two rows per turn**. The cause was not the adapter: the
+app discovers `app/Listeners` automatically and binds `Class@handle` to the
+type-hinted event, so the listener was already registered. Adding an explicit
+`Event::listen()` registered it a second time.
+
+The fix is the absence of that line, plus two guards against a repeat:
+
+- the test asserts **exactly one** listener on `CostCalculated`;
+- the class docblock says so, because the failure looks like a duplicate-row bug
+  in the adapter rather than a wiring one.
+
+This is worth recording for the whole app: adding a listener to `app/Listeners`
+needs no registration, and manual registration is a bug.
+
+### 81.3 Gates
+
+| Run | Result |
+|---|---|
+| `TokenUsageTrackingTest` | **4 tests / 22 assertions** — a completed turn writes one row with the operator's id, 10/5 tokens and `provider`/`assistant_id` metadata; the accumulated figures beat the last iteration (300/90, not 100/30); a turn with no tokens writes nothing; tracking can be disabled |
+| Tracking + `AssistantTestTest` + `CoreOperationsTest` + `RoutingExportGaugeTest` + `Phase1ConsoleTest` | **30 tests / 180 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
+
+### 81.4 Still open
+
+1. **One row per turn, not per tool call.** The WordPress side tags a `tool` on
+   the row; here a turn that called four tools is one row. That is the billing
+   unit, but a per-tool view needs either more rows or a metadata list, which is
+   a schema decision rather than a listener change.
+2. **A turn that fails before a response writes nothing.** The provider's
+   tokens for a rejected request are not in the response shape, so they cannot
+   be recorded; a cancelled agentic turn that already accumulated usage is
+   recorded, because `CostCalculated` still fires with the accumulated figures.
+3. **No backfill.** Turns that ran before this listener existed left no rows.
+4. **`user_id = 0` for unauthenticated turns.** The per-user views (§63.5 item 1)
+   will need to treat 0 as "anonymous" rather than as a user.
