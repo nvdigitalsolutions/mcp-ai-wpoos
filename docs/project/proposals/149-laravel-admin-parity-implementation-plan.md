@@ -9426,7 +9426,7 @@ anything the guard did not already decide.
 | `/(AdminBudgets\|EstateBudgetsPage\|BudgetEnforcement\|SurfaceOwnership\|AdminNavigation)/` | **37 tests / 616 assertions, 0 failures** |
 | `bin/audit-surface-ownership.php` | **47 surfaces · 35 built** (13 `/ops`, 24 `/admin`); `budgets` is one row with both presentations |
 | phpcs (`phpcs-laravel.xml.dist`, 7 paths) | **0 errors** |
-| Full app suite | *(pending — filled from CI)* |
+| Full app suite | **1477 tests / 18,594 assertions, 0 failures** (CI `App suite (SQLite)`) — +17 tests and +88 assertions against §92's 1460 / 18,506, which is this section's two test files and nothing else |
 
 ### 93.4 What the contract row had to change
 
