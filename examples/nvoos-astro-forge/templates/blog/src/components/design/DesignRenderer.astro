@@ -779,6 +779,11 @@ const bandElementCss = sections
 				if ( element.bg ) {
 					base.push( element.bg );
 				}
+				// A translucent VEIL (Flatsome's `.overlay`) is its own fact: it sits ON
+				// the surface rather than replacing it, so it never hides the photo.
+				if ( element.veil ) {
+					base.push( element.veil );
+				}
 				if ( element.fg ) {
 					base.push( `color:${ element.fg }` );
 				}

@@ -904,6 +904,15 @@ export interface ForgeBandElement {
 	bg?: string;
 	/** The ink the element's own surface needs (derived, never measured). */
 	fg?: string;
+	/**
+	 * A translucent layer painted OVER the surface, as a CSS declaration
+	 * (`background-color:rgba(0, 0, 0, 0.5)`).
+	 *
+	 * Flatsome sets a band photo's scrim on `.overlay`, which is too
+	 * transparent to count as a surface — recording it as `bg` would hide the
+	 * photo, and dropping it left the hero unshaded.
+	 */
+	veil?: string;
 	/** The rendered height in px, per device where the source overrides it. */
 	height?: number | { desktop?: number; tablet?: number; mobile?: number };
 	/**
@@ -1777,6 +1786,14 @@ export interface ForgeChromeBox {
 	 * header and rendered 2.4× too small without it (2026-11-19).
 	 */
 	logoHeight?: string;
+	/**
+	 * Where the mark STATION sits across the bar: its centre against the
+	 * header’s thirds. A source that centres its logo cannot be reproduced by
+	 * the template’s `space-between` row, which leaves the mark at the left
+	 * edge under the disclosure (monicarajiv: 273×74 centred in 1425px,
+	 * rendered 147×40 hard left, 2026-11-19).
+	 */
+	logoAlign?: 'start' | 'center' | 'end';
 }
 
 /**

@@ -21,6 +21,7 @@ import { extractElementCss } from './element-css.ts';
 import { promoteOutlineBands } from './design.ts';
 import { measureBandFacts, measureGeometry } from './geometry.ts';
 import { measureRegionColors, applyBandSurfaces } from './region-colors.ts';
+import { measureInteractions } from './interactions.ts';
 import type { ForgePageBands, ForgeSection } from './types.ts';
 
 /** One page to measure. `link` from wp/v2 (absolute) is the fetch target. */
@@ -76,6 +77,23 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 			const geometry = await measureGeometry( { url: page.url, ids, kind: 'source', selectors } );
 			const measured = await measureBandFacts( { url: page.url, ids, kind: 'source', selectors } );
 			const bandFacts = measured.bands;
+			// Interaction states (hover / focus / focus-visible / active) are part of the
+			// band's measured truth, not a homepage extra. The vendor sheet never ships, and
+			// a control's BASE declarations ride the same facts — `.button.is-outline` keeps
+			// its 2px border and its ink only through them. Without this pass a sub-page
+			// button rendered borderless and inherited the accent colour.
+			try {
+				const { facts: interactions } = await measureInteractions( {
+					url: page.url,
+					ids,
+					selectors,
+				} );
+				for ( const [ id, facts ] of Object.entries( interactions ) ) {
+					bandFacts[ id ] = { ...( bandFacts[ id ] ?? {} ), interactions: facts };
+				}
+			} catch {
+				// States are an enhancement; boxes and facts still ship.
+			}
 			// The band's own surface: a composited background equal to the page body
 			// is "transparent" (the site surface already paints it), so it is not
 			// recorded — otherwise every band would carry the body colour.

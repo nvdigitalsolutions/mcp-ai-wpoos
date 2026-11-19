@@ -872,9 +872,9 @@ export function collectBandBoxFacts( input: {
  * without recording a redundant map for the common case.
  */
 export function mergeElementFacts(
-	desktop?: Array< { path: string; bg?: string; height?: number; width?: number } >,
-	tablet?: Array< { path: string; bg?: string; height?: number; width?: number } >,
-	mobile?: Array< { path: string; bg?: string; height?: number; width?: number } >
+	desktop?: Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } >,
+	tablet?: Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } >,
+	mobile?: Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } >
 ): ForgeBandElement[] | undefined {
 	if ( ! desktop || desktop.length === 0 ) {
 		return undefined;
@@ -884,6 +884,7 @@ export function mergeElementFacts(
 		byPath.set( fact.path, {
 			path: fact.path,
 			...( fact.bg ? { bg: fact.bg } : {} ),
+			...( fact.veil ? { veil: fact.veil } : {} ),
 			...( typeof fact.height === 'number' ? { height: fact.height } : {} ),
 			...( typeof fact.width === 'number' ? { width: fact.width } : {} ),
 		} );
@@ -954,7 +955,7 @@ function collectBandElementFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, Array< { path: string; bg?: string; height?: number } > > {
+} ): Record< string, Array< { path: string; bg?: string; veil?: string; height?: number } > > {
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -976,7 +977,7 @@ function collectBandElementFacts( input: {
 		const index = parent ? Array.prototype.indexOf.call( parent.children, element ) + 1 : 1;
 		return `${ tag }:nth-child(${ index })`;
 	};
-	const out: Record< string, Array< { path: string; bg?: string; height?: number; width?: number } > > = {};
+	const out: Record< string, Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } > > = {};
 	for ( const id of input.ids ) {
 		const candidates =
 			input.kind === 'built'
@@ -988,7 +989,7 @@ function collectBandElementFacts( input: {
 		if ( ! band ) {
 			continue;
 		}
-		const facts: Array< { path: string; bg?: string; height?: number; width?: number } > = [];
+		const facts: Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } > = [];
 		const walk = ( element: Element, depth: number, prefix: string ): void => {
 			if ( depth > 7 || facts.length >= 48 ) {
 				return;
@@ -1011,8 +1012,17 @@ function collectBandElementFacts( input: {
 					// resolves (monicarajiv’s hero chevron: 108x72 source, 1x1 rebuild).
 					const wrapsImage = /^image_/.test( child.id ) || [ ...child.classList ].includes( 'img' );
 					const holdsImage = wrapsImage && child.querySelector( 'img' ) !== null;
-					if ( paintsColor || hasImage || holdsImage ) {
-						const fact: { path: string; bg?: string; width?: number; height?: number } = { path };
+					// A VEIL is a translucent layer over the band's photo. Its alpha sits
+					// below the solid-fill gate on purpose — that gate exists so a photo
+					// scrim never becomes the band surface — but dropping the layer entirely
+					// left the hero unshaded (monicarajiv, 2026-11-19). Gated on the
+					// convention's class so a decorative translucent tile stays unrecorded.
+					const isVeil = alpha > 0 && alpha < 0.95 && [ ...child.classList ].includes( 'overlay' );
+					if ( paintsColor || hasImage || holdsImage || isVeil ) {
+						const fact: { path: string; bg?: string; veil?: string; width?: number; height?: number } = { path };
+						if ( isVeil ) {
+							fact.veil = `background-color:${ style.backgroundColor }`;
+						}
 						if ( holdsImage ) {
 							fact.width = Math.round( rect.width );
 						}
@@ -2070,7 +2080,9 @@ export async function measureChromeGeometry( options: {
 				}
 				const headerRect = header.getBoundingClientRect();
 				const brand =
-					header.querySelector( 'a[rel="home"], .site-logo, .navbar-brand, a[href="/"]' ) ?? header.querySelector( 'a' );
+					header.querySelector(
+						'a[rel="home"], .site-logo, .navbar-brand, a.logo, .logo a, a[href="/"]'
+					) ?? header.querySelector( 'a' );
 				if ( ! brand ) {
 					return null;
 				}
@@ -2105,14 +2117,43 @@ export async function measureChromeGeometry( options: {
 					.reverse()
 					.find( ( entry ) => entry.padLeft > 0 && entry.rect.width >= headerRect.width * 0.6 );
 				const boxed = padded && padded.rect.width <= headerRect.width - 8 ? padded : null;
-				// The brand MARK's rendered height. Prefer the anchor's `<img>` (the
-				// mark itself); fall back to the anchor box.
-				const markImg = brand.querySelector( 'img, svg' );
+				// The brand MARK. A builder sizes it through CSS, so the tag attributes
+				// say nothing; the rendered box is the only truth. `logoHeight` sizes the
+				// rebuilt mark (a pinned 40px default rendered monicarajiv’s 74px mark
+				// 2.4x too small); `logoAlign` is its STATION across the bar, read from
+				// the mark’s CENTRE against the header’s thirds so a wide logo cell still
+				// reads as the position a reader sees.
+				// The mark is inside the brand anchor on most builders; when the anchor
+				// itself is unidentifiable it is still the header’s logo-marked image.
+				// A builder ships SEVERAL logo variants (sticky, dark, light) and hides
+				// all but one, so the first match is usually a 0x0 `display:none` sticky
+				// variant. Take the first mark that actually has a box.
+				const markImgs = [
+					...brand.querySelectorAll( 'img, svg' ),
+					...header.querySelectorAll(
+						'img[class*="logo"], img[id*="logo"], img[src*="logo"], img[src*="brand"]'
+					),
+				];
+				const markImg = markImgs.find( ( node ) => {
+					const rect = node.getBoundingClientRect();
+					return rect.width > 0 && rect.height > 0;
+				} );
 				const markRect = ( markImg ?? brand ).getBoundingClientRect();
+				const stationOf = ( rect: DOMRect ): 'start' | 'center' | 'end' => {
+					const centre = rect.x + rect.width / 2;
+					if ( centre < headerRect.x + headerRect.width / 3 ) {
+						return 'start';
+					}
+					if ( centre > headerRect.x + ( headerRect.width * 2 ) / 3 ) {
+						return 'end';
+					}
+					return 'center';
+				};
 				return {
 					measure: binding ? Math.round( binding.maxWidth ) : boxed ? Math.round( boxed.rect.width ) : undefined,
 					padX: Math.round( ( padded ?? capped )?.padLeft ?? brandRect.x - headerRect.x ),
 					logoHeight: markRect.height > 0 ? `${ Math.round( markRect.height ) }px` : undefined,
+					logoAlign: markRect.width > 0 ? stationOf( markRect ) : undefined,
 				};
 			} );
 			if ( ! box ) {
@@ -2127,6 +2168,11 @@ export async function measureChromeGeometry( options: {
 			}
 			if ( typeof box.logoHeight === 'string' && /^\d+px$/.test( box.logoHeight ) ) {
 				entry.logoHeight = box.logoHeight;
+			}
+			// The mark’s station: a centred logo cannot be reproduced by the
+			// template’s `space-between` row, which leaves it at the left edge.
+			if ( box.logoAlign === 'start' || box.logoAlign === 'center' || box.logoAlign === 'end' ) {
+				entry.logoAlign = box.logoAlign;
 			}
 			if ( Object.keys( entry ).length > 0 ) {
 				out[ device ] = entry;
