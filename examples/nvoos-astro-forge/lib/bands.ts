@@ -357,6 +357,21 @@ export const BUILDER_ADAPTERS: BandAdapter[] = [
 		band: [ /^section$/ ],
 		column: [ /^col$/ ],
 		width: ( classes ) => ofBreakpoint( classes, [ 'large', 'medium', 'small' ], undefined, 12 ),
+		// UX Builder's alignment/type utilities. These are REAL classes the markup
+		// relies on and the vendor sheet is never shipped, so `text-center` was
+		// inert: a band's `col-inner text-center` computed `text-align:start` and
+		// its button row jammed to the left edge (airport-transfer: 156px buttons
+		// at x=15 where the source centres 200px buttons at x=521).
+		utilities: {
+			'text-center': { base: 'text-align:center' },
+			'text-left': { base: 'text-align:left' },
+			'text-right': { base: 'text-align:right' },
+			uppercase: { base: 'text-transform:uppercase' },
+			'text-uppercase': { base: 'text-transform:uppercase' },
+			lowercase: { base: 'text-transform:lowercase' },
+			'text-bold': { base: 'font-weight:700' },
+			'text-italic': { base: 'font-style:italic' },
+		},
 	},
 	{
 		id: 'revolution-slider',

@@ -1,5 +1,9 @@
 ---
 import '../styles/global.css';
+/* The source builder's recovered per-element rules (element-css.ts). Loaded
+ * AFTER global.css so a measured element box out-ranks the class-convention
+ * shim, exactly as the vendor stylesheet did on the source. */
+import '../styles/elements.generated.css';
 import manifest from '../../nvoos.json';
 import { useCopy } from '../copy/index.ts';
 import ThemeToggle from '../components/ThemeToggle.astro';

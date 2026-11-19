@@ -96,10 +96,17 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 			} catch {
 				// Colour measurement is an enhancement; boxes and facts still ship.
 			}
+			// The structural adapter wins over the fingerprint "mention" pass: a
+			// Flatsome page usually carries a stray `wp-block-*` class, so `builder`
+			// came out as `gutenberg` while every band was segmented by `flatsome`.
+			// Builder utilities are keyed by this id, so the mislabel made
+			// `text-center` (and every other Flatsome convention) inert on sub-pages.
+			const structural =
+				adapter && adapter !== 'semantic' && adapter !== 'visual' ? adapter : builder;
 			out[ page.slug ] = {
 				url: page.url,
 				measuredAt: new Date().toISOString(),
-				...( builder ?? adapter ? { builder: builder ?? adapter } : {} ),
+				...( structural ? { builder: structural } : {} ),
 				sections,
 				geometry,
 				bandFacts,

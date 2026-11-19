@@ -203,7 +203,23 @@ const sectionHasContent = ( section: SemanticSection ): boolean => {
 	);
 };
 
-const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string | undefined => {
+/**
+ * The page's DOMINANT measured body size (see `wrapStyle`'s fallback).
+ * A band without a paragraph of its own still inherits the source's body size,
+ * and `em`-sized children resolve against it.
+ */
+const pageBodySize = ( () => {
+	const counts = new Map< string, number >();
+	sections.forEach( ( section, index ) => {
+		const size = themeFor( section, index )?.type?.body?.size;
+		if ( size ) {
+			counts.set( size, ( counts.get( size ) ?? 0 ) + 1 );
+		}
+	} );
+	return [ ...counts.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ]?.[ 0 ];
+} )();
+
+const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
 	}
@@ -259,6 +275,18 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	// The band's measured typography (see bandTypeCss below): the components that
 	// render a `ds-title` size from the source's own heading, not the token scale.
 	// A source band whose title is 35px must not render at the template's h1.
+	// The source's BODY size, for the containers that size their own children in
+	// `em` (Flatsome's `.button` is .97em of the column, which inherits the body
+	// size). Heading/paragraph rules cannot carry it: they set `p`/`hN`, not the
+	// wrapper a button sits in.
+	//
+	// A band with no paragraph of its own (a button row, a photo band) still
+	// inherits the source's body size, so fall back to the page's dominant
+	// measured size — without it `.button` resolved .97 × 13px = 12.6px where
+	// the source renders 17.23px.
+	if ( theme.type?.body?.size || bodyFallback ) {
+		parts.push( `--ds-body-size:${ theme.type?.body?.size ?? bodyFallback }` );
+	}
 	if ( theme.type?.title ) {
 		const title = theme.type.title;
 		if ( title.size ) {
@@ -1033,7 +1061,7 @@ const bandParallaxCss = sections
 			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
-				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (

@@ -25,6 +25,7 @@ import { expandHex, hexToRgb, hslToHex, rgbToHex } from './color.ts';
 import { contrastRatio, relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
 import { extractBandsFromHtml } from './bands.ts';
+import { extractElementCss } from './element-css.ts';
 import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
 import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
@@ -1871,7 +1872,18 @@ export function bandOutline( input: DesignFetchInput ): {
 	// `builder` is the tech that was fingerprinted; `bands[].via` is the layer
 	// that produced the boundaries (they differ when a theme rewrites the
 	// builder's row wrapper away — Brando keeps wpb_column, drops vc_row).
-	return { outline: detected.bands, builder: detected.builder ?? detected.adapter };
+	//
+	// Prefer the ADAPTER when a real builder produced the bands: the fingerprint
+	// pass records the FIRST adapter mentioned anywhere in the document, and a
+	// Flatsome page usually carries a stray `wp-block-*` class, so `builder`
+	// came out as `gutenberg` while every band was segmented by `flatsome`.
+	// Builder utilities are keyed by this id, so the mislabel silently produced
+	// the wrong table (`text-center` inert on every Flatsome band).
+	const structural =
+		detected.adapter && detected.adapter !== 'semantic' && detected.adapter !== 'visual'
+			? detected.adapter
+			: detected.builder;
+	return { outline: detected.bands, builder: structural ?? detected.builder };
 }
 
 /**
@@ -3291,6 +3303,11 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		...( input.html ? outline : {} ),
 		chrome: input.html ? analyzeChrome( input ) : undefined,
 		behavior: input.html ? analyzeScrollBehavior( input ) : undefined,
+		// The builder's PER-ELEMENT rules recovered from its own <style> blocks
+		// (lib/element-css.ts): the layout the class conventions cannot express —
+		// gap heights, column padding, element widths. Without them the rebuild
+		// re-derives the box and loses it.
+		elementCss: input.html ? extractElementCss( input.html ) : undefined,
 		ctaStyle: designCtaStyle,
 		adaptation: {
 			keep: [
