@@ -1604,6 +1604,18 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// at the site measure: virtuallyjamaica's services band is fluid (1440px)
 	// and came out at 1136px.
 	const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
+	// The geometry pass records the slab as a BAND fact — the only path a
+	// sub-page takes — while `design.ts` records it on the SECTION for the
+	// homepage. Guarded so the homepage never emits it twice.
+	if ( ! section.panel && bandFacts?.panel ) {
+		entry.push( `panel: { bg: ${ tsString( bandFacts.panel.bg ) }, ink: ${ tsString( bandFacts.panel.ink ) } }` );
+	}
+	// `design.ts` records the slab on the SECTION (homepage); the geometry pass
+	// records it as a BAND fact, which is the only path a sub-page takes.
+	const panel = section.panel ?? bandFacts?.panel;
+	if ( panel ) {
+		entry.push( `panel: { bg: ${ tsString( panel.bg ) }, ink: ${ tsString( panel.ink ) } }` );
+	}
 	// The container measure + side gutter, MEASURED per device (114 §3.6). An
 	// explicit profile fact wins; otherwise the source's own container decides.
 	const container = measuredContainer( bandFacts, section.paddingX );

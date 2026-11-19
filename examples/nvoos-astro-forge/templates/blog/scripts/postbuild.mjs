@@ -56,19 +56,27 @@ function stampStyleFingerprint() {
 		}
 	};
 	walk(distDir);
-	if (styleNames.length === 0) {
+	if (documents.length === 0) {
 		return;
 	}
-	const fingerprint = createHash('sha256')
-		.update([...styleNames].sort().join('\n'))
-		.digest('hex')
-		.slice(0, 16);
-	const marker = `<meta name="forge-css" content="${fingerprint}">`;
+	const shared = [...styleNames].sort().join('\n');
 	for (const document of documents) {
 		let html = readFileSync(document, 'utf8');
 		if (html.includes('name="forge-css"')) {
 			continue;
 		}
+		// Band CSS is INLINED per document, so the shared asset names alone
+		// cannot tell two pages apart and miss every fact-driven change. Fold in
+		// this document's own <style> blocks.
+		const inline = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)]
+			.map((match) => match[1])
+			.join('\n');
+		const fingerprint = createHash('sha256')
+			.update(shared)
+			.update(inline)
+			.digest('hex')
+			.slice(0, 16);
+		const marker = `<meta name="forge-css" content="${fingerprint}">`;
 		// Beside the build id when there is one, so the two read together.
 		const anchor = /<meta name="forge-build"[^>]*>/i.exec(html);
 		html = anchor
@@ -76,7 +84,7 @@ function stampStyleFingerprint() {
 			: html.replace(/<head[^>]*>/i, (head) => `${head}${marker}`);
 		writeFileSync(document, html, 'utf8');
 	}
-	console.log(`[forge-postbuild] forge-css ${fingerprint} on ${documents.length} document(s).`);
+	console.log(`[forge-postbuild] forge-css on ${documents.length} document(s), per page.`);
 }
 
 stampStyleFingerprint();
