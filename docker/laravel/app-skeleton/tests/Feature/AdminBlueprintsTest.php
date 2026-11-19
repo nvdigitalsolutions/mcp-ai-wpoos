@@ -256,10 +256,12 @@ final class AdminBlueprintsTest extends TestCase
             ->assertSee('Installed')
             ->assertDontSee('already exists');
 
-        $this->assertSame(2, Assistant::query()->count());
+        // The scope is estate-bound (Proposal 153), so an assertion that spans
+        // two estates opts out explicitly — which is what this test is about.
+        $this->assertSame(2, Assistant::query()->withoutGlobalScopes()->count());
 
         $mine = $this->installedAssistant();
-        $foreignRow = Assistant::query()->findOrFail($foreign['assistant_id']);
+        $foreignRow = Assistant::query()->withoutGlobalScopes()->findOrFail($foreign['assistant_id']);
 
         $this->assertNotSame($foreign['assistant_id'], (int) $mine->getKey());
         $this->assertSame('estate-b', $foreignRow->tenant_id);

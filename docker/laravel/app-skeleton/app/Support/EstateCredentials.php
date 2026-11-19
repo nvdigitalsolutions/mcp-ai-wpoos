@@ -104,7 +104,11 @@ final class EstateCredentials
 
         $titles = array() === $assistantIds
             ? array()
-            : Assistant::query()->whereIn('id', array_keys($assistantIds))->pluck('title', 'id')->all();
+            : Assistant::query()
+                ->withoutGlobalScopes()
+                ->whereIn('id', array_keys($assistantIds))
+                ->pluck('title', 'id')
+                ->all();
 
         $names = array() === $userIds
             ? array()
@@ -201,7 +205,11 @@ final class EstateCredentials
      */
     public static function estateAssistantIds(string $tenantId): array
     {
+        // The estate is an argument, so the ambient one is not this caller's to
+        // apply — see Proposal 153. Without the opt-out, every estate but the
+        // current one reports zero assistants.
         return Assistant::query()
+            ->withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
             ->pluck('id')
             ->map(static fn ($id): int => (int) $id)
@@ -214,6 +222,7 @@ final class EstateCredentials
     public static function ownsAssistant(string $tenantId, int $assistantId): bool
     {
         return Assistant::query()
+            ->withoutGlobalScopes()
             ->where('id', $assistantId)
             ->where('tenant_id', $tenantId)
             ->exists();

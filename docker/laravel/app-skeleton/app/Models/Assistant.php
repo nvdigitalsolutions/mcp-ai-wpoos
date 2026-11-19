@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Tenant;
+use App\Support\TenantContext;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -14,6 +16,42 @@ class Assistant extends Model
      * Not part of $fillable: the tenant is never supplied by a request body.
      */
     public const DEFAULT_TENANT = 'default';
+
+    /**
+     * Scope every query to the current estate.
+     *
+     * The rule `Approval`, `Memory`, `Transcript` and `WorkflowRun` already
+     * apply, and the assistant is the estate-owned record if any model is: its
+     * provider, model, system prompt and tools are the estate's configuration.
+     *
+     * Global rather than per-call-site because per-call-site had been tried.
+     * Twenty-six hand-written `tenant_id` filters across eighteen files had
+     * accumulated, one per leak (§27, §39, §40, §42, §47, §89) — each correct,
+     * and each a symptom of a model that did not carry its own invariant
+     * (Proposal 153).
+     *
+     * Route-model binding goes through `newQuery()`, so `{assistant}` now
+     * answers 404 for a foreign id without every controller remembering to ask.
+     *
+     * Three callers deliberately read across estates and opt out with
+     * `withoutGlobalScopes()`:
+     *
+     *  - `Filament\Operator\Pages\Credentials` lists every estate's assistants;
+     *  - `EstateCredentials` takes the estate as an argument, so the ambient one
+     *    is not its to apply;
+     *  - `TraceRuns::titles()` labels a run whose estate it already resolved.
+     *
+     * Adding a fourth is a reviewable diff, and it should say why.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', static function (Builder $query): void {
+            $query->where(
+                $query->getModel()->getTable().'.tenant_id',
+                TenantContext::current()
+            );
+        });
+    }
 
     /**
      * Advanced settings promoted from the flat `meta` keys to `advanced`.
