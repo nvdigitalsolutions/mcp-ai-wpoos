@@ -63,6 +63,12 @@
 			]
 		}
 	],
+	"content": {
+		"source": "materialized"
+	},
+	"media": {
+		"snapshot": true
+	},
 	"seo": {
 		"description": "Save the world. learn how to stop plastic pollution by reducing, reusing & recycling. We need to stop pollution because it is causing damage to the environment.",
 		"ogImage": "https://krishandramikasavethe.world/wp-content/uploads/2020/04/home-preview.jpg"
