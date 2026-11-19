@@ -9082,6 +9082,9 @@ rather than a claim about identity — so it is not an authorization question. I
 is a **spend** question: validating the pair against the estate's configured
 models means §68's catalogue and its own slice. Recorded, not done.
 
+**§90 checked this and found the premise wrong:** there is no estate-scoped
+model catalogue to validate against. See §90.2.
+
 ### 89.4 A note on the model
 
 `Assistant` has no global tenant scope while `Approval`, `Memory`, `Transcript`
@@ -9106,10 +9109,75 @@ The chat tests now build a real assistant through the API instead of posting an
 
 ### 89.6 Still open
 
-1. **`options.provider` / `options.model`** are unvalidated (§89.3).
+1. **`options.provider` / `options.model`** are unvalidated beyond the
+   catalogue's servability rule — see §90.2, which also records why the
+   capability gate this item once implied would break every non-admin chat.
 2. **`Assistant` has no tenant scope** (§89.4); each call site checks for itself.
    Scoped as a decision in [Proposal 153](153-assistant-tenant-scope-decision.md)
    and implemented as option A (§8 there).
 3. **Any other route that binds an assistant by id** should be audited the same
    way. The two here were found by reading every `Assistant` lookup in
-   `app/Http`, which is a manual sweep, not a guard.
+   `app/Http`, which is a manual sweep, not a guard. The global scope adopted in
+   Proposal 153 now covers binding generically, so what is left is the sweep.
+
+## 90. The model override, and a premise that did not survive contact (2026-11-19)
+
+§89.3 recorded `options.provider` / `options.model` as a spend question to be
+validated "against the estate's configured models". That sentence assumed an
+estate-scoped model catalogue. There is not one, and the console's wiring makes
+the implied fix actively harmful. This section records the finding and ships the
+one rule that is real.
+
+### 90.1 What the investigation found
+
+1. **`nvoos_model_configs` has no `tenant_id`.** The model states it outright:
+   "This is reference data, not estate data." So "the estate's configured
+   models" is not a set that exists — pricing and rate limits are deployment
+   reference data, shared by every estate.
+2. **The console sends `options` on every message.** `useModelStore` defaults to
+   `{provider: 'openai', model: 'gpt-4o'}`, `ChatSidebar` re-syncs it to the
+   selected assistant, and `createChatFetch` attaches `options` whenever both
+   fields are truthy. `options` is therefore not an admin signal; it is the
+   assistant's own pair, echoed back.
+3. **A capability gate would therefore break chat for every non-admin.** The
+   console already treats a model override as "an admin concern", but the server
+   cannot distinguish "echoed the assistant" from "chose something else"
+   without comparing the pair — and the comparison is only meaningful when the
+   assistant has one.
+
+Pausing here was the point: the obvious fix ("require `manage_options` when
+`options` is present") would have returned 403 to every subscriber on their next
+message.
+
+### 90.2 What shipped instead
+
+One rule the catalogue genuinely can enforce: a pair the deployment marked
+`deprecated` or `retired` is refused **422**. `ModelCatalogueLookup::serves()`
+returns `null` for an id it has never seen, and `null` passes — a deployment
+name or a fine-tune must keep working, and inventing a refusal there would break
+models that work today.
+
+This is a **correctness** guard, not a spend control, and the section says so
+rather than implying the question is closed.
+
+### 90.3 What a real spend control would require
+
+1. A per-estate allowlist — a `tenant_id` on the catalogue, or a join table.
+2. A decision about whether an estate may exceed it, and who grants that.
+3. A console change so the picker offers only what the API accepts, or the two
+   disagree in the direction users notice.
+
+None of those is a bug fix; each is a product decision. Recorded, not done.
+
+### 90.4 Gates
+
+| Run | Result |
+|---|---|
+| `SseStreamTest` | **10 tests** — a retired pair is refused 422; an unknown pair still passes; the nine earlier properties hold |
+| `SseStream`, `EndpointCapabilities`, `CoreOperations` | **31 tests / 176 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`, 2 files) | **0 errors** |
+
+### 90.5 Still open
+
+1. **Spend control** waits on the three decisions in §90.3.
+2. **`options` is otherwise unvalidated** — by design, and now documented.

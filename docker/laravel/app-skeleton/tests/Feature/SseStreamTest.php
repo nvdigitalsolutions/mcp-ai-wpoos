@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ModelConfig;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -155,6 +156,47 @@ class SseStreamTest extends TestCase
             ->post('/api/v1/chat-client', [
                 'messages' => [['role' => 'user', 'content' => 'Hello']],
                 'options' => [],
+            ])
+            ->assertOk();
+    }
+
+    /**
+     * §90 — the catalogue's only enforceable rule at this boundary. A model the
+     * deployment marked `retired` buys an upstream error and nothing else.
+     */
+    public function test_a_retired_model_override_is_refused(): void
+    {
+        ModelConfig::query()->create(array(
+            'model_id' => 'gpt-4o-retired',
+            'name' => 'Retired model',
+            'provider' => 'openai',
+            'status' => 'retired',
+        ));
+
+        $user = User::factory()->admin()->create();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/chat-client', [
+                'messages' => [['role' => 'user', 'content' => 'Hello']],
+                'assistant_id' => $this->assistant($user),
+                'options' => ['provider' => 'openai', 'model' => 'gpt-4o-retired'],
+            ])
+            ->assertStatus(422);
+    }
+
+    /**
+     * "No opinion" must stay a pass: a deployment name, a fine-tune or an id the
+     * catalogue has never seen says nothing about what a provider serves.
+     */
+    public function test_an_unknown_model_override_is_allowed(): void
+    {
+        $user = User::factory()->admin()->create();
+
+        $this->actingAs($user, 'sanctum')
+            ->post('/api/v1/chat-client', [
+                'messages' => [['role' => 'user', 'content' => 'Hello']],
+                'assistant_id' => $this->assistant($user),
+                'options' => ['provider' => 'spike', 'model' => 'spike-1-private-tune'],
             ])
             ->assertOk();
     }
