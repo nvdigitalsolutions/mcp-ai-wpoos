@@ -1,7 +1,7 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: November 15, 2026 (v1.2.21 — tool counts unchanged; the harness and readiness layers are shared engine, not tool registrations).
+> Last reviewed: November 19, 2026 (v1.2.22 — tool counts unchanged; the WiFi addon's `wifi_health_check` is addon-registered and described, not counted).
 > **New in v1.2.21:** the 090-K harness, the 090-M readiness manifest, the 27-signal posture catalogue and the 090-D/E classroom ports all land in **`lib/core`** (core registry only) — base/Pro totals stay **~360 base + ~1,388 Pro (~1,747 total)** with **zero plugin-registry registrations**. The Laravel runtime work (workflows, remote sites, MCP Apps, token manager, slash commands, skills catalogue, OKF drawer, media ops) is runtime/adapter code, not tool placement. The QuickBooks Online MCP connection type is a Pro Remote Sites feature; its shared OAuth/handshake policy lives in `lib/core`.
 > **New in v1.2.20:** `media_model_capabilities` and `enhance_media_prompt` are **base** tools (+2 base → ~360 base + ~1,388 Pro, ~1,747 total). The **toolkit manifest engine** (`addons/pro/includes/toolkits/`, the `mcp-ai-pro/v1/toolkit-manifests` controller and the console screens) is **Pro**; its validator, records contract and research service live in `lib/core` so the Laravel host shares them. **Commercial entitlement** (`ProPlanCatalog` + `LicensedProEntitlement`) and `ReadOnlyToolGuard` are runtime-wide concerns, not tool-placement decisions. The `lib/core` ports keep their own registry (dual-layer rule) and are never counted in base/Pro totals.
 

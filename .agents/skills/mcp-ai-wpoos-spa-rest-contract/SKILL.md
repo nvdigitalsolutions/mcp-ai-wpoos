@@ -506,6 +506,16 @@ The console no longer guesses whether a backend serves a surface — it is told,
 - **Read the response shape from the client, not from the project convention.** The MCP-apps route answers **top-level** (`success`, `assistant_id`, `apps`, `app_count`); wrapping it in `{success, data}` renders an empty panel while unit tests stay green.
 - **Laravel parity work is per-key.** A surface is "done" when its key is route-backed, its envelope matches WordPress field-for-field, and a parity test asserts the wire — not when the controller exists.
 
+## The manifest closes at `gaps=[]` (v1.2.22)
+
+The last two asymmetries between the runtimes are gone; the contract is now **complete**, and the working assumption for a new audit is that a mismatch is a bug, not a known gap.
+
+- **Org teams vs agent teams — two different resources, similar names.** `mcp-ai/v1/org/teams` (+ `/{team}`, `/{team}/members`, `/{team}/members/{user}`) is the tenant's **users with roles**, backed by the `includes/org-teams/` CPT and service. `mcp-ai/v1/teams` is the **agent**-team catalogue. They are not interchangeable and both report `route` on both runtimes; the live manifest is **41 true / 4 false / `gaps=[]`**.
+- **`/features` now emits `endpoint_urls`.** `WP_MCP_AI_Connected_App_Registry` probes each product configured in `wp_mcp_ai_connected_apps` (option or filter). Three properties are load-bearing and easy to regress: private/reserved resolutions are **refused before any request**; the validated address is **pinned** with `CURLOPT_RESOLVE` so DNS cannot rebind between validation and connection; and the cached answer **includes failures**, so a dead host is not re-probed on every call. The result flips both the `endpoints` key and the matching `features` flag.
+- **Connected products mount same-origin.** The Complete Console proxies a product through `scripts/serve.mjs`'s `/connected/<key>/*`, advertised as `connected_proxy: true`. Connected-app tokens are encrypted at rest and masked on every read — never echo one back into a config payload.
+- **A `false` key with a reason beats a blank page.** Nav items whose endpoint is unserved are hidden by design, so "the page is empty" almost always means "the key resolved false", not "the fetch failed" — check the key before DevTools.
+- **The Laravel side adds `GET|POST /api/v1/org/teams`**, `/ops/models` (a 251-row catalogue that also feeds 13 settings selects) and a `routing_export` block on `/api/v1/diagnostics/overview`. Settings fields are owner-scoped there (`operator` vs `tenant`), which is a **contract** fact: a console that offers an operator key for editing will get a server-side refusal, not a silent no-op.
+
 ## Validation matrix (coordinator)
 
 - phpcs: `phpcbf <files>` then `phpcs --standard=phpcs.xml.dist

@@ -1,6 +1,6 @@
 NV oOS Developer - Professional Knowledge Base
 
-Spec current as of v1.2.21 (2026-11-15). Facts are version-tagged; the CI
+Spec current as of v1.2.22 (2026-11-19). Facts are version-tagged; the CI
 test tests/test-knowledge-base-facts-sync.php fails when this file drifts
 from the plugin header. Refresh this document on every release.
 
@@ -529,6 +529,7 @@ Optional Plugin Dependencies:
 - WPCode: Code snippet management (1 tool)
 
 === CHANGELOG ===
+2026-11-19: Refreshed for v1.2.22 — tool count unchanged at ~360 base + ~1,388 Pro = ~1,747 (live registry authoritative; the WiFi addon's wifi_health_check registers through the addon filter and is described, not counted). Product name, the 18-provider list and the model-catalog pointers are unchanged; the addon count moves 32 → 33 (NV oOS WiFi 0.1.0). The Laravel runtime gains a two-layer settings model (operator vs tenant ownership, one writer per key), a 251-row text-model catalogue at /ops/models that mirrors includes/data/model-catalog.json, and at-least-once routing telemetry; WordPress gains the org-team REST contract (mcp-ai/v1/org/teams) and connected-app discovery on /features. Security posture adds the connected-app probing rules (private resolutions refused, CURLOPT_RESOLVE pinning, failures cached) and encrypted connected-app tokens.
 2026-11-15: Refreshed for v1.2.21 — tool count unchanged at ~360 base + ~1,388 Pro = ~1,747 (live registry authoritative; the 090-K harness ports, the 090-M readiness manifest, the 27-signal posture catalogue and the 090-D/E classroom ports are lib/core and are described, not counted). Product name, the 18-provider list and the model-catalog pointers are unchanged. Security posture adds the shared posture catalogue (SecuritySignalCatalogue + per-runtime applicability), the masked-read/restore-on-write rule for stored secrets, and the AI-safety input defaults (pii_filter and prompt_injection_detector in log mode on; output guard, necessity gate and scored router off by decision).
 2026-11-13: Refreshed for v1.2.20 — tool count moves to ~360 base + ~1,388 Pro = ~1,747 (Proposal 141 registers media_model_capabilities and enhance_media_prompt; live registry authoritative; the lib/core ports and toolkit manifests are described, not counted). Product name, the 18-provider list and the model-catalog pointers are unchanged. Security posture adds commercial Pro entitlement (ProPlanCatalog), the X-CSRF-TOKEN console header (the X-WP-Nonce shim is gone) and the deny-only ReadOnlyToolGuard.
 
