@@ -28,6 +28,9 @@ use Illuminate\Support\Facades\Schema;
  *
  * Days with no usage are part of the series as zeros: dropping them would make
  * a weekly pattern and a trend line both lie.
+ *
+ * Every public reader takes a required `?string $tenantId` (Proposal 152 §3 D5):
+ * `null` means every estate, and only an operator surface may ask for that.
  */
 class TokenAnalyticsReport
 {
@@ -47,7 +50,7 @@ class TokenAnalyticsReport
      *
      * @return array<string, array{events: int, tokens: int, cost: float}>
      */
-    public function series(int $days): array
+    public function series(int $days, ?string $tenantId): array
     {
         $start = $this->windowStart($days);
 
@@ -56,6 +59,7 @@ class TokenAnalyticsReport
         if (Schema::hasTable(self::TABLE)) {
             $rows = DB::table(self::TABLE)
                 ->where('created_at', '>=', $start)
+                ->when(null !== $tenantId, static fn ($query) => $query->where('tenant_id', $tenantId))
                 ->selectRaw('DATE(created_at) as day, COUNT(*) as events, SUM(total_tokens) as tokens, SUM(cost) as cost')
                 ->groupBy('day')
                 ->get();
@@ -96,9 +100,9 @@ class TokenAnalyticsReport
      *     active_days: int
      * }
      */
-    public function trend(int $days): array
+    public function trend(int $days, ?string $tenantId): array
     {
-        $series = array_values($this->series($days));
+        $series = array_values($this->series($days, $tenantId));
         $values = array_map(static fn (array $day): int => (int) $day['tokens'], $series);
 
         $n = count($values);
@@ -172,9 +176,9 @@ class TokenAnalyticsReport
      *
      * @return array{peak_hours: list<int>, peak_days: list<string>, usage_type: string, hourly: array<int, int>, daily: array<string, int>}
      */
-    public function patterns(int $days): array
+    public function patterns(int $days, ?string $tenantId): array
     {
-        $series = $this->series($days);
+        $series = $this->series($days, $tenantId);
 
         $daily = array();
 
@@ -192,7 +196,7 @@ class TokenAnalyticsReport
             }
         }
 
-        $hourly = $this->hourlyTokens($days);
+        $hourly = $this->hourlyTokens($days, $tenantId);
         arsort($hourly);
 
         $peakHours = array();
@@ -219,9 +223,9 @@ class TokenAnalyticsReport
      *
      * @return array{reason: string|null, points: list<array{date: string, tokens: int, expected: float, z: float, severity: string}>}
      */
-    public function anomalies(int $days): array
+    public function anomalies(int $days, ?string $tenantId): array
     {
-        $series = $this->series($days);
+        $series = $this->series($days, $tenantId);
         $values = array_map(static fn (array $day): int => (int) $day['tokens'], $series);
         $active = count(array_filter($values, static fn (int $tokens): bool => $tokens > 0));
 
@@ -281,7 +285,7 @@ class TokenAnalyticsReport
      *
      * @return array<int, int> hour => tokens, only hours with usage
      */
-    private function hourlyTokens(int $days): array
+    private function hourlyTokens(int $days, ?string $tenantId): array
     {
         if (! Schema::hasTable(self::TABLE)) {
             return array();
@@ -293,6 +297,7 @@ class TokenAnalyticsReport
 
         $rows = DB::table(self::TABLE)
             ->where('created_at', '>=', $this->windowStart($days))
+            ->when(null !== $tenantId, static fn ($query) => $query->where('tenant_id', $tenantId))
             ->selectRaw($expression.' as hour, SUM(total_tokens) as tokens')
             ->groupBy('hour')
             ->orderBy('hour')

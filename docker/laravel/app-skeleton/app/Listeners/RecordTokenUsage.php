@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use App\Support\TenantContext;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Event\CostCalculated;
 
@@ -60,6 +61,10 @@ class RecordTokenUsage
         $provider = trim((string) ($cost['provider'] ?? ''));
 
         $metadata = array(
+            // The estate travels as metadata, not as a parameter: the adapter
+            // lives outside the app and must not reach for TenantContext
+            // (Proposal 152 §3 D4).
+            'tenant_id' => TenantContext::current(),
             'provider' => '' !== $provider ? $provider : 'unknown',
             'cost' => (float) ($cost['cost_usd'] ?? 0),
             'assistant_id' => $event->assistantId,

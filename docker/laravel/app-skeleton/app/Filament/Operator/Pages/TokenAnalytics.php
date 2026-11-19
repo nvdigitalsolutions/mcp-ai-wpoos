@@ -58,7 +58,8 @@ class TokenAnalytics extends Page
      */
     public function series(): array
     {
-        return app(TokenAnalyticsReport::class)->series($this->period);
+        // `null` = every estate (Proposal 152 §3 D5).
+        return app(TokenAnalyticsReport::class)->series($this->period, null);
     }
 
     /**
@@ -66,7 +67,7 @@ class TokenAnalytics extends Page
      */
     public function trend(): array
     {
-        return app(TokenAnalyticsReport::class)->trend($this->period);
+        return app(TokenAnalyticsReport::class)->trend($this->period, null);
     }
 
     /**
@@ -74,7 +75,7 @@ class TokenAnalytics extends Page
      */
     public function patterns(): array
     {
-        return app(TokenAnalyticsReport::class)->patterns($this->period);
+        return app(TokenAnalyticsReport::class)->patterns($this->period, null);
     }
 
     /**
@@ -82,7 +83,7 @@ class TokenAnalytics extends Page
      */
     public function anomalies(): array
     {
-        return app(TokenAnalyticsReport::class)->anomalies($this->period);
+        return app(TokenAnalyticsReport::class)->anomalies($this->period, null);
     }
 
     public function windowLabel(): string

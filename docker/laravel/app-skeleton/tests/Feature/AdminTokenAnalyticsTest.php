@@ -61,7 +61,7 @@ class AdminTokenAnalyticsTest extends TestCase
     {
         $this->insert('2026-11-18 09:00:00', 100);
 
-        $series = app(TokenAnalyticsReport::class)->series(7);
+        $series = app(TokenAnalyticsReport::class)->series(7, null);
 
         $this->assertCount(7, $series);
         $this->assertSame(100, $series['2026-11-18']['tokens']);
@@ -74,7 +74,7 @@ class AdminTokenAnalyticsTest extends TestCase
             $this->insert(Carbon::parse('2026-11-13 09:00:00')->addDays($index)->toDateTimeString(), $tokens);
         }
 
-        $trend = app(TokenAnalyticsReport::class)->trend(7);
+        $trend = app(TokenAnalyticsReport::class)->trend(7, null);
 
         $this->assertSame('rising', $trend['direction']);
         $this->assertSame(100.0, (float) $trend['confidence'], 'A perfect line explains all the variation.');
@@ -88,7 +88,7 @@ class AdminTokenAnalyticsTest extends TestCase
             $this->insert(Carbon::parse('2026-11-13 09:00:00')->addDays($i)->toDateTimeString(), 50);
         }
 
-        $trend = app(TokenAnalyticsReport::class)->trend(7);
+        $trend = app(TokenAnalyticsReport::class)->trend(7, null);
 
         $this->assertSame('stable', $trend['direction']);
         $this->assertSame(0.0, (float) $trend['confidence'], 'No variation means no line to be confident about.');
@@ -98,7 +98,7 @@ class AdminTokenAnalyticsTest extends TestCase
     {
         $this->insert('2026-11-19 09:00:00', 500);
 
-        $trend = app(TokenAnalyticsReport::class)->trend(7);
+        $trend = app(TokenAnalyticsReport::class)->trend(7, null);
 
         $this->assertSame('insufficient', $trend['direction']);
         $this->assertSame(1, $trend['active_days']);
@@ -113,7 +113,7 @@ class AdminTokenAnalyticsTest extends TestCase
         $this->insert('2026-11-18 09:00:00', 0);
         $this->insert('2026-11-19 09:00:00', 1000);
 
-        $result = app(TokenAnalyticsReport::class)->anomalies(7);
+        $result = app(TokenAnalyticsReport::class)->anomalies(7, null);
 
         $this->assertNull($result['reason']);
         $this->assertCount(1, $result['points'], 'Only the spike is listed.');
@@ -131,7 +131,7 @@ class AdminTokenAnalyticsTest extends TestCase
         $this->insert('2026-11-18 09:00:00', 100);
         $this->insert('2026-11-19 09:00:00', 900);
 
-        $result = app(TokenAnalyticsReport::class)->anomalies(7);
+        $result = app(TokenAnalyticsReport::class)->anomalies(7, null);
 
         $this->assertNotNull($result['reason']);
         $this->assertSame([], $result['points']);
@@ -143,7 +143,7 @@ class AdminTokenAnalyticsTest extends TestCase
         $this->insert('2026-11-17 09:00:00', 500);
         $this->insert('2026-11-18 15:00:00', 100);
 
-        $patterns = app(TokenAnalyticsReport::class)->patterns(7);
+        $patterns = app(TokenAnalyticsReport::class)->patterns(7, null);
 
         $this->assertSame(9, $patterns['peak_hours'][0]);
         $this->assertSame('Tuesday', $patterns['peak_days'][0]);

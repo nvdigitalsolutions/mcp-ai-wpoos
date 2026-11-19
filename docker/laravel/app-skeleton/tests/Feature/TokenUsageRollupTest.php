@@ -146,7 +146,7 @@ class TokenUsageRollupTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $trend = app(TokenUsage::class)->trend(45);
+        $trend = app(TokenUsage::class)->trend(45, null);
 
         $labels = $trend['labels'];
         $data = $trend['datasets'][0]['data'];
