@@ -31,7 +31,7 @@ import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
-import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor } from './tracking.ts';
+import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor, isCookielessVendor } from './tracking.ts';
 import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
@@ -279,6 +279,8 @@ export interface ForgeManifest {
 	/** The source's own head description (131 §2.5) — the front page's
 	 * description fallback when the page carries no SEO description. */
 	seoDescription?: string;
+	/** The site-level social image (absolute URL, mirrored at build time). */
+	seoImage?: string;
 	/** Applied design-token overrides (098 output, tokens_apply). */
 	tokens?: Record<string, string>;
 	/** The design rebuild block (114 §3.3) — provenance for verify + audit. */
@@ -320,7 +322,7 @@ export interface ForgeManifest {
 	 * Tracking provenance (Proposal 130) — vendor names and the consent mode
 	 * only. No ids, no tokens: the manifest must stay safe in a public repo.
 	 */
-	tracking?: { enabled: boolean; vendors: string[]; consentMode: string; hasVerification: boolean };
+	tracking?: { enabled: boolean; vendors: string[]; consentMode: string; hasVerification: boolean; consentExempt: string[] };
 	generatedAt: string;
 	collections: Array<{
 		slug: string;
@@ -1489,6 +1491,33 @@ function elementInk( bg: string | undefined ): string | undefined {
 	return readableInk( bg.slice( prefix.length ) );
 }
 
+/**
+ * A canonical `r,g,b` key for a CSS colour (hex or an opaque `rgb()`), so a
+ * MEASURED element fill can be compared with the band's own surface. `undefined`
+ * for anything else (a translucent fill, a gradient, a keyword) — those never
+ * compare equal, which is the safe direction.
+ */
+function colourKey( value: string | undefined ): string | undefined {
+	if ( ! value ) {
+		return undefined;
+	}
+	const hex = value.trim().match( /^#([0-9a-f]{3}|[0-9a-f]{6})$/i );
+	if ( hex ) {
+		const digits = hex[ 1 ].length === 3 ? hex[ 1 ].split( '' ).map( ( c ) => c + c ).join( '' ) : hex[ 1 ];
+		const n = Number.parseInt( digits, 16 );
+		return `${ ( n >> 16 ) & 255 },${ ( n >> 8 ) & 255 },${ n & 255 }`;
+	}
+	const rgb = value.trim().match( /^rgba?\(\s*([0-9.]+)[\s,]+([0-9.]+)[\s,]+([0-9.]+)\s*(?:[,/]\s*([0-9.]+)\s*)?\)$/i );
+	if ( ! rgb ) {
+		return undefined;
+	}
+	const alpha = rgb[ 4 ] === undefined ? 1 : Number( rgb[ 4 ] );
+	if ( ! ( alpha >= 0.95 ) ) {
+		return undefined;
+	}
+	return `${ Math.round( Number( rgb[ 1 ] ) ) },${ Math.round( Number( rgb[ 2 ] ) ) },${ Math.round( Number( rgb[ 3 ] ) ) }`;
+}
+
 function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ): string {
 	const theme = resolveSectionTheme( section );
 	const entry: string[] = [];
@@ -1731,7 +1760,20 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 					const parts = [ `path: ${ tsString( element.path ) }` ];
 					if ( element.bg ) {
 						parts.push( `bg: ${ tsString( element.bg ) }` );
-						const ink = elementInk( element.bg );
+						// A stage that IS the band's own surface must not re-derive its ink.
+						// The derived black/white is a FALLBACK for a card whose own fill the
+						// band ink was never measured against — but the rule it emits
+						// (`… :is(h1…h6,p,li,span)`, 0,3,3) outranks the band's MEASURED type
+						// facts (`[data-section-id] h3`, 0,1,1). On krishandramikasavethe.world
+						// the hero's own `#f0f0f0` banner derived black and repainted a
+						// `#578050` heading and `#4a4a4a` body (2 colour-gate failures,
+						// 2026-11-19). Equal fill → the measured ink is the faithful copy.
+						const fill = colourKey( element.bg.slice( 'background-color:'.length ) );
+						const bandFill = colourKey( section.bgColor );
+						const ink =
+							fill !== undefined && bandFill !== undefined && fill === bandFill
+								? undefined
+								: elementInk( element.bg );
 						if ( ink ) {
 							parts.push( `fg: ${ tsString( ink ) }` );
 						}
@@ -2037,6 +2079,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tcolor?: string;',
 		'\t/** Computed `max-width` \u2014 a heading the source deliberately narrows. */',
 		'\tmaxWidth?: string;',
+		'\t/** Computed `margin-top` / `margin-bottom` — the builder\u2019s heading rhythm.',
+		'\t * An UNCLASSED heading has no class for a box fact to hang on, so without',
+		'\t * this the rebuilt heading falls back to the template\u2019s prose margins. */',
+		'\tmarginTop?: string;',
+		'\tmarginBottom?: string;',
 		'\t/** What the source CHANGES below the desktop breakpoint (and only that). */',
 		'\ttablet?: BandTypeProperties;',
 		'\tmobile?: BandTypeProperties;',
@@ -2349,13 +2396,14 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t\toverlay?: boolean;',
 		'\t\tfullWidth?: boolean;',
 		'\t};',
-		'\t/** The header\u2019s BOX per viewport (measured): the container\u2019s cap and',
-		'\t * gutter. `measure` is present only where the cap is binding. */',
+		'\t/** The header\u2019s BOX per viewport (measured): the container\u2019s cap,',
+		'\t * gutter and the brand mark\u2019s rendered height. `measure` is present only',
+		'\t * where the cap is binding. */',
 		'\tgeometry?: {',
-		'\t\twide?: { measure?: number; padX?: number };',
-		'\t\tdesktop?: { measure?: number; padX?: number };',
-		'\t\ttablet?: { measure?: number; padX?: number };',
-		'\t\tmobile?: { measure?: number; padX?: number };',
+		'\t\twide?: { measure?: number; padX?: number; logoHeight?: string };',
+		'\t\tdesktop?: { measure?: number; padX?: number; logoHeight?: string };',
+		'\t\ttablet?: { measure?: number; padX?: number; logoHeight?: string };',
+		'\t\tmobile?: { measure?: number; padX?: number; logoHeight?: string };',
 		'\t};',
 		'\t/** The footer brand ROW: where the brand mark and the social icons sit',
 		'\t * inside it, per viewport (measured at 1920/1440/834/390). */',
@@ -2484,6 +2532,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 			}
 			if ( typeof box.padX === 'number' ) {
 				fields.push( `padX: ${ box.padX }` );
+			}
+			if ( box.logoHeight ) {
+				fields.push( `logoHeight: ${ tsString( box.logoHeight ) }` );
 			}
 			if ( fields.length > 0 ) {
 				devices.push( `${ device }: { ${ fields.join( ', ' ) } }` );
@@ -2677,8 +2728,9 @@ export function renderTrackingGenerated( profile: SiteProfile ): string {
 		'// edits are overwritten on re-scaffold. The measured tracking surface: the',
 		'// enabled vendors with their PUBLIC ids, the consent configuration, the',
 		'// verification tokens and the delivery/ecommerce rules. The template',
-		'// rebuilds every vendor with first-party, consent-gated delivery — never',
-		'// the source\'s snippets.',
+		'// rebuilds every vendor with first-party delivery — consent-gated for a',
+		'// cookie-setting tag, static for an operator-exempt cookieless beacon — and',
+		'// never re-uses the source\'s snippets.',
 		'// ---------------------------------------------------------------------------',
 		'',
 		'export type TrackingConsentCategory = \'analytics\' | \'advertising\' | \'functional\' | \'personalization\';',
@@ -2687,6 +2739,10 @@ export function renderTrackingGenerated( profile: SiteProfile ): string {
 		'\tvendor: string;',
 		'\tcategory: string;',
 		'\tconsentCategory: TrackingConsentCategory;',
+		'\t/** Cookieless audience measurement — stores nothing on the device. */',
+		'\tcookieless?: boolean;',
+		'\t/** Operator-declared basis to load without a consent decision. */',
+		'\tconsentExempt?: boolean;',
 		'\tids: Record<string, string>;',
 		'}',
 		'',
@@ -2705,12 +2761,15 @@ export function renderTrackingGenerated( profile: SiteProfile ): string {
 		'\t\tenforceCsp?: boolean;',
 		'\t};',
 		'\tverification?: Record<string, string>;',
+		'\t/** SPA route measurement for the beacon; false for a static MPA build. */',
+		'\tspa: boolean;',
 		'\tdelivery: { mode: \'deferred\' | \'inline\' | \'partytown\' };',
 		'\tecommerce?: { events?: \'ga4\' | \'none\'; purchaseSource?: \'wordpress\' | \'forge\' };',
 		'}',
 		'',
 		'export const tracking: TrackingConfig = {',
 		`\tenabled: ${ vendors.length > 0 },`,
+		`\tspa: ${ tracking?.spa === true },`,
 	];
 	if ( vendors.length === 0 ) {
 		lines.push( '\tvendors: [],' );
@@ -2720,11 +2779,20 @@ export function renderTrackingGenerated( profile: SiteProfile ): string {
 			const ids = Object.entries( vendor.ids )
 				.map( ( [ key, value ] ) => `${ tsKey( key ) }: ${ tsString( value ) }` )
 				.join( ', ' );
-			lines.push(
-				`\t\t{ vendor: ${ tsString( vendor.vendor ) }, category: ${ tsString( vendor.category ) }, consentCategory: ${ tsString(
-					consentCategoryFor( vendor.category )
-				) }, ids: { ${ ids } } },`
-			);
+			// The consent exemption is reachable ONLY for a cookieless vendor. A
+			// cookie-setting tag marked exempt is a compliance bug, so the flag is
+			// dropped here rather than trusted — nothing downstream can re-enable it.
+			const cookieless = isCookielessVendor( vendor.vendor );
+			const exempt = cookieless && vendor.consentExempt === true;
+			const fields = [
+				`vendor: ${ tsString( vendor.vendor ) }`,
+				`category: ${ tsString( vendor.category ) }`,
+				`consentCategory: ${ tsString( consentCategoryFor( vendor.category ) ) }`,
+				...( cookieless ? [ 'cookieless: true' ] : [] ),
+				...( exempt ? [ 'consentExempt: true' ] : [] ),
+				`ids: { ${ ids } }`,
+			].join( ', ' );
+			lines.push( `\t\t{ ${ fields } },` );
 		}
 		lines.push( '\t],' );
 	}
@@ -4184,6 +4252,10 @@ async function scaffoldProject(
 		// Always emitted (never omitted): the template reads it directly and a
 		// missing key makes `astro check` fail on the inferred JSON type.
 		seoDescription: profile.seo?.description ?? '',
+		// The site-level social image (`seo.ogImage`). Emitted as an ABSOLUTE
+		// source URL: the post-build localizer mirrors it and rewrites the meta
+		// tag to the public origin (a root-relative og:image is invalid).
+		seoImage: profile.seo?.ogImage ?? '',
 		contentSource: profile.content?.source ?? 'wordpress',
 		tokens: profile.tokens,
 		design: profile.design,
@@ -4220,6 +4292,11 @@ async function scaffoldProject(
 						vendors: profile.tracking.trackers.filter( ( tracker ) => tracker.enabled ).map( ( tracker ) => tracker.vendor ),
 						consentMode: profile.tracking.consent.mode,
 						hasVerification: Boolean( profile.tracking.verification ),
+						// Cookieless vendors the operator exempted from the decision. Mirrors
+						// the generator's guard: the flag is inert for a cookie-setting tag.
+						consentExempt: profile.tracking.trackers
+							.filter( ( tracker ) => tracker.enabled && tracker.consentExempt === true && isCookielessVendor( tracker.vendor ) )
+							.map( ( tracker ) => tracker.vendor ),
 					},
 			  }
 			: {} ),

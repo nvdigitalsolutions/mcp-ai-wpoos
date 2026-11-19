@@ -29,6 +29,8 @@
 // Deterministic and pure — no network, no DOM.
 // ---------------------------------------------------------------------------
 
+import { DomHandler, Parser } from 'htmlparser2';
+
 import type { ForgeElementCssRule } from './types.ts';
 
 /** A safe HTML identifier (no spaces, quotes, or leading digit). */
@@ -242,9 +244,113 @@ function walkRules( css: string, media: string | undefined, into: ForgeElementCs
 	}
 }
 
+/** The declarations a STRUCTURAL re-anchor may carry (see `extractElementCss`). */
+const SIZE_PROPERTIES = new Set( [ 'width', 'max-width', 'min-width' ] );
+
+interface StructuralIndex {
+	byId: Map< string, string >;
+}
+
+interface HNode {
+	type: string;
+	name?: string;
+	attribs?: Record< string, string >;
+	children?: HNode[];
+}
+
+/** A class-chain selector; odd tokens fall back to `[class~=…]`. */
+function classCompound( tag: string, tokens: string[] ): string {
+	const parts = tokens.map( ( token ) =>
+		/^[a-z0-9_-]+$/i.test( token ) ? `.${ token }` : `[class~='${ token.replace( /'/g, '' ) }']`
+	);
+	return `${ tag }${ parts.join( '' ) }`;
+}
+
+/**
+ * id → a CLASS-anchored selector, but only for elements whose class set is
+ * unique in the document: a shared compound would paint one element's rule onto
+ * a sibling.
+ */
+function indexStructuralSelectors( html: string ): StructuralIndex {
+	const handler = new DomHandler();
+	const parser = new Parser( handler );
+	parser.write( html );
+	parser.end();
+	const signature = new Map< string, number >();
+	const byId = new Map< string, { tag: string; tokens: string[] } >();
+	const walk = ( nodes: HNode[] ): void => {
+		for ( const node of nodes ) {
+			if ( node.type === 'tag' && node.name ) {
+				const tokens = ( node.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
+				if ( tokens.length > 0 ) {
+					const key = `${ node.name }|${ [ ...tokens ].sort().join( ' ' ) }`;
+					signature.set( key, ( signature.get( key ) ?? 0 ) + 1 );
+					const id = node.attribs?.id;
+					if ( id ) {
+						byId.set( id, { tag: node.name, tokens } );
+					}
+				}
+			}
+			if ( node.children ) {
+				walk( node.children );
+			}
+		}
+	};
+	walk( handler.dom as HNode[] );
+
+	const unique = new Map< string, string >();
+	for ( const [ id, { tag, tokens } ] of byId ) {
+		const key = `${ tag }|${ [ ...tokens ].sort().join( ' ' ) }`;
+		if ( signature.get( key ) === 1 ) {
+			unique.set( id, classCompound( tag, tokens ) );
+		}
+	}
+	return { byId: unique };
+}
+
+/** A SIZE-only rule re-anchored from its volatile id to the stable class list. */
+function structuralFallback(
+	rule: ForgeElementCssRule,
+	index: StructuralIndex
+): ForgeElementCssRule | undefined {
+	// A selector LIST would need every id resolved; skip rather than half-apply.
+	if ( rule.selector.includes( ',' ) ) {
+		return undefined;
+	}
+	const leading = rule.selector.match( /^#([a-z][a-z0-9_-]{0,40})(?=$|[\s>+~])/i );
+	if ( ! leading ) {
+		return undefined;
+	}
+	const compound = index.byId.get( leading[ 1 ] );
+	if ( ! compound ) {
+		return undefined;
+	}
+	const properties = rule.declarations
+		.split( ';' )
+		.map( ( part ) => part.split( ':' )[ 0 ]?.trim().toLowerCase() );
+	if ( properties.length === 0 || ! properties.every( ( property ) => SIZE_PROPERTIES.has( property ) ) ) {
+		return undefined;
+	}
+	const selector = rule.selector.replace( /^#[a-z][a-z0-9_-]{0,40}/i, compound );
+	return rule.media
+		? { media: rule.media, selector, declarations: rule.declarations }
+		: { selector, declarations: rule.declarations };
+}
+
 /**
  * Extract the recovery-eligible element rules from a page's inline `<style>`
  * blocks (document order preserved, duplicates dropped).
+ *
+ * Flatsome mints its element ids per RENDER: the id a `<style>` block names is
+ * not the id the REST content carries, so an id-keyed rule can never bind in the
+ * rebuild (krishandramikasavethe.world, 2026-11-19: the analyzed page said
+ * `#text-box-4014392`, the built content `#text-box-389974702`, and a second
+ * REST fetch minted a third set). The CLASS list is stable across renders, so
+ * a SIZE rule is re-anchored to it. Only size properties are re-anchored: a
+ * structural `padding`/`min-height` would re-apply rules the source's own sheet
+ * neutralised — the hero banner's `padding-top:100%` loses to `is-full-height`
+ * there and would blow the band up here — while a width lands on exactly the box
+ * it sized in the source.
  */
 export function extractElementCss( html: string ): ForgeElementCssRule[] {
 	const styleBodies = [ ...html.matchAll( /<style[^>]*>([\s\S]*?)<\/style>/gi ) ]
@@ -256,8 +362,18 @@ export function extractElementCss( html: string ): ForgeElementCssRule[] {
 	const rules: ForgeElementCssRule[] = [];
 	walkRules( styleBodies, undefined, rules );
 
+	const index = indexStructuralSelectors( html );
+	const expanded: ForgeElementCssRule[] = [];
+	for ( const rule of rules ) {
+		expanded.push( rule );
+		const fallback = structuralFallback( rule, index );
+		if ( fallback ) {
+			expanded.push( fallback );
+		}
+	}
+
 	const seen = new Set<string>();
-	return rules.filter( ( rule ) => {
+	return expanded.filter( ( rule ) => {
 		const key = `${ rule.media ?? '' }|${ rule.selector }|${ rule.declarations }`;
 		if ( seen.has( key ) ) {
 			return false;

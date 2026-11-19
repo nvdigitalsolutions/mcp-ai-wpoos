@@ -791,6 +791,24 @@ async function runAnalyze( url, options ) {
 				} );
 				profile.pageBands = measured;
 				console.log( `\u2713 Per-page bands: ${ Object.keys( measured ).length } page(s) measured.` );
+				// Every page's own per-element rules ride the same scoped sheet (see
+				// `ForgePageBands.elementCss`): a sub-page's layer classes differ from the
+				// front page's even when the layout is identical, so the homepage harvest
+				// alone leaves its copy at full width.
+				if ( profile.design ) {
+					const merged = new Map();
+					for ( const rule of profile.design.elementCss ?? [] ) {
+						merged.set( `${ rule.media ?? '' }|${ rule.selector }|${ rule.declarations }`, rule );
+					}
+					for ( const page of Object.values( measured ) ) {
+						for ( const rule of page.elementCss ?? [] ) {
+							merged.set( `${ rule.media ?? '' }|${ rule.selector }|${ rule.declarations }`, rule );
+						}
+					}
+					if ( merged.size > 0 ) {
+						profile.design.elementCss = [ ...merged.values() ];
+					}
+				}
 				// A class whose box was dropped is invisible in the rebuild — the band
 				// simply has no rule for it and the symptom (a band at twice its source
 				// height) points everywhere except the silent omission. Named here,
@@ -1877,6 +1895,11 @@ async function runMediaBudgetVerify( target ) {
 	const isLegacy = /\.(?:jpe?g|png)$/i;
 	const images = entries.filter( ( entry ) => isImage.test( String( entry.file ?? '' ) ) );
 	const legacy = images.filter( ( entry ) => isLegacy.test( String( entry.file ?? '' ) ) );
+	// A SOCIAL image (og:image / twitter:image) keeps its original format by
+	// design — some card scrapers do not read WebP — so it is not an
+	// un-optimized leftover. The localizer marks those entries.
+	const social = legacy.filter( ( entry ) => entry.social === true );
+	const leftover = legacy.filter( ( entry ) => entry.social !== true );
 	// Documents (Proposal 139 §documents) land in the same list; they are never
 	// re-encoded, so they are reported by weight only — a 50 MB catalogue is a
 	// deploy-size fact, not a failure.
@@ -1891,10 +1914,15 @@ async function runMediaBudgetVerify( target ) {
 		`${ images.length } image(s), ${ Math.round( bytes / 1024 ) } KB shipped` +
 		( documents.length > 0 ? ` + ${ documents.length } document(s), ${ Math.round( documentBytes / 1024 ) } KB` : '' ) +
 		( saved > 0 ? `, ${ Math.round( saved / 1024 ) } KB saved by re-encoding` : '' );
-	if ( legacy.length === 0 ) {
-		return { status: 'pass', note };
+	if ( leftover.length === 0 ) {
+		return {
+			status: 'pass',
+			note:
+				note +
+				( social.length > 0 ? `; ${ social.length } social image(s) kept in their original format` : '' ),
+		};
 	}
-	return { status: 'warn', note: `${ note }; ${ legacy.length } JPEG/PNG still shipped`, legacy };
+	return { status: 'warn', note: `${ note }; ${ leftover.length } JPEG/PNG still shipped`, legacy: leftover };
 }
 
 /**

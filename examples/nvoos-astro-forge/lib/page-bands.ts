@@ -17,6 +17,7 @@
 // ---------------------------------------------------------------------------
 
 import { extractBandsFromHtml } from './bands.ts';
+import { extractElementCss } from './element-css.ts';
 import { promoteOutlineBands } from './design.ts';
 import { measureBandFacts, measureGeometry } from './geometry.ts';
 import { measureRegionColors, applyBandSurfaces } from './region-colors.ts';
@@ -66,6 +67,10 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 				continue;
 			}
 			const sections = promoteOutlineBands( bands );
+			// The page's own per-element rules. See `ForgePageBands.elementCss`: the
+			// homepage harvest cannot cover a sub-page, because the two differ in
+			// layer classes even when the layout is the same.
+			const elementCss = extractElementCss( html );
 			const ids = sections.map( ( section ) => section.id ).filter( ( id ): id is string => Boolean( id ) );
 			const selectors = selectorsFor( sections );
 			const geometry = await measureGeometry( { url: page.url, ids, kind: 'source', selectors } );
@@ -110,6 +115,7 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 				sections,
 				geometry,
 				bandFacts,
+				...( elementCss.length > 0 ? { elementCss } : {} ),
 			};
 			options.onPage?.( page.slug, out[ page.slug ] );
 		} catch ( error ) {

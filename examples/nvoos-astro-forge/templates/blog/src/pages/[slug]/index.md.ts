@@ -8,18 +8,24 @@
 // No frontmatter fence: a `.ts` endpoint with a leading `---` is a syntax error.
 import type { APIRoute, GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
+import manifest from '../../../nvoos.json';
 import { markdownFromHtml, markdownFromSource } from '../../forge/llms.ts';
 
 export const getStaticPaths: GetStaticPaths = async () => {
 	const pages = await getCollection('pages');
-	// The sanitized body is extracted HERE (server context) — props are
-	// serialized and the store's `rendered` object does not survive the trip.
-	return pages.map((page) => ({
-		params: { slug: page.data.slug },
-		// A local MDX page carries a SOURCE body rather than `rendered.html`;
-		// it is projected to markdown instead of shipped raw.
-		props: { body: page.rendered?.html, source: page.body },
-	}));
+	// The static front page renders at `/` (index.astro), so its own slug must NOT
+	// emit a route here: `/<frontPage>/` produced a directory holding only
+	// `index.md`, which the static host answered with 403 (no index.html) — and a
+	// second URL for the same content (krishandramikasavethe.world, 2026-11-19).
+	// `[slug].astro` filters the same way for the HTML route.
+	return pages
+		.filter((page) => page.data.slug !== manifest.frontPage)
+		.map((page) => ({
+			params: { slug: page.data.slug },
+			// A local MDX page carries a SOURCE body rather than `rendered.html`;
+			// it is projected to markdown instead of shipped raw.
+			props: { body: page.rendered?.html, source: page.body },
+		}));
 };
 
 export const GET: APIRoute = ({ props }) => {

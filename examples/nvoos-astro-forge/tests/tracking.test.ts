@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	cspHostsFor,
 	detectTrackers,
+	isCookielessVendor,
 	maskId,
 	mergeTrackingDraft,
 	scanTrackingHtml,
@@ -35,6 +36,59 @@ describe( 'scanTrackingHtml', () => {
 		expect( signals.inlineJs ).toContain( 'var x = 1;' );
 		expect( signals.metas[ 'google-site-verification' ] ).toBe( 'tok' );
 		expect( signals.noscriptImgSrcs ).toEqual( [ 'https://www.facebook.com/tr?id=9' ] );
+	} );
+} );
+
+describe( 'cloudflare web analytics', () => {
+	const TOKEN = '39a0cc5c9636420d99495209b1e494a8';
+
+	it( 'reads the site tag out of the canonical data-cf-beacon attribute', () => {
+		const cwa = findTracker(
+			'<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon=\'{"token":"' +
+				TOKEN +
+				'","spa":false}\'></script>',
+			'cloudflare-web-analytics'
+		);
+		expect( cwa?.ids.token ).toBe( TOKEN );
+		expect( cwa?.confidence ).toBe( 'high' );
+		// Detection never enables a tracker; the operator does.
+		expect( cwa?.enabled ).toBe( false );
+	} );
+
+	it( 'reads the site tag out of the tag-manager query string', () => {
+		const cwa = findTracker(
+			'<script src="https://static.cloudflareinsights.com/beacon.min.js?token=' + TOKEN + '&spa=false"></script>',
+			'cloudflare-web-analytics'
+		);
+		expect( cwa?.ids.token ).toBe( TOKEN );
+	} );
+
+	it( 'still reads the tag when the framework escaped the attribute', () => {
+		// Astro/React emit data-cf-beacon="{&quot;token&quot;:…}" — the parser
+		// decodes it before the id regex ever runs.
+		const cwa = findTracker(
+			'<script src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;:&quot;' +
+				TOKEN +
+				'&quot;}"></script>',
+			'cloudflare-web-analytics'
+		);
+		expect( cwa?.ids.token ).toBe( TOKEN );
+	} );
+
+	it( 'keeps the whole opening tag, not just src', () => {
+		const signals = scanTrackingHtml(
+			'<script src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon=\'{"token":"' +
+				TOKEN +
+				'"}\'></script>'
+		);
+		expect( signals.scriptTags?.join( ' ' ) ).toContain( TOKEN );
+	} );
+
+	it( 'is the only vendor class allowed a consent exemption', () => {
+		expect( isCookielessVendor( 'cloudflare-web-analytics' ) ).toBe( true );
+		expect( isCookielessVendor( 'plausible' ) ).toBe( true );
+		expect( isCookielessVendor( 'google-analytics-4' ) ).toBe( false );
+		expect( isCookielessVendor( 'meta-pixel' ) ).toBe( false );
 	} );
 } );
 

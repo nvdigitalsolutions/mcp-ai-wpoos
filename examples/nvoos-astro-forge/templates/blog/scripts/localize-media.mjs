@@ -54,6 +54,7 @@ import {
 	addFontDisplaySwap,
 	addImageDimensions,
 	collectAssetUrls,
+	collectSocialImageUrls,
 	collectCssAssetUrls,
 	collectDocumentUrls,
 	collectStylesheetUrls,
@@ -517,6 +518,10 @@ async function main() {
 		.filter( ( [ file ] ) => path.extname( file ).toLowerCase() === '.html' )
 		.map( ( [ , text ] ) => text )
 		.join( '\n' );
+	// Social images keep their ORIGINAL format (see `collectSocialImageUrls`):
+	// some card scrapers do not read WebP, and a missing card is worse than the
+	// few KB a re-encode would save.
+	const socialImageUrls = collectSocialImageUrls( htmlText );
 	for ( const url of stylesheetUrls ) {
 		try {
 			const fromSnapshot = snapshot.authoritative ? snapshotEntryFor( [ url ], snapshot ) : undefined;
@@ -696,9 +701,14 @@ async function main() {
 
 			// 140 §1 — re-encode raster images to WebP before they ship. A WebP
 			// that came out larger than the source is discarded: the source wins.
+			// A SOCIAL image (og:image / twitter:image) is never re-encoded: its
+			// only consumer is a card scraper, and format compatibility outranks
+			// the bytes.
 			let payload = buffer;
 			let size = await intrinsicSize( transformer, buffer, extension );
-			if ( transformer && isReencodableImage( extension ) ) {
+			const social =
+				socialImageUrls.has( downloadUrl ) || originals.some( ( original ) => socialImageUrls.has( original ) );
+			if ( transformer && ! social && isReencodableImage( extension ) ) {
 				const encoded = await encodeWebp( transformer, buffer, webpQuality );
 				if ( encoded && encoded.buffer.length < payload.length ) {
 					optimized.push( {
@@ -726,7 +736,17 @@ async function main() {
 				if ( size ) {
 					sizes.set( publicPath, size );
 				}
-				localized.push( { url: original, file: publicPath, bytes: payload.length, contentType, source } );
+				localized.push( {
+					url: original,
+					file: publicPath,
+					bytes: payload.length,
+					contentType,
+					source,
+					// A social image keeps its original format on purpose (see
+					// `collectSocialImageUrls`): the media-budget gate reads this flag
+					// and does not report the JPEG/PNG as an un-optimized leftover.
+					...( social ? { social: true } : {} ),
+				} );
 			}
 			totalBytes += payload.length;
 		} catch ( error ) {
@@ -840,9 +860,15 @@ async function applyRewrite( sources, map, sizes = new Map(), preconnectHosts = 
 	for ( const [ file, source ] of sources ) {
 		const isHtml = path.extname( file ).toLowerCase() === '.html';
 		// 140 §2 — the dimension fill runs after the URL rewrite so it can key on
-		// the local path the tag now carries.
+		// the local path the tag now carries. `ASTRO_SITE` is the built site's
+		// public origin: og:image/twitter:image are mirrored like any asset but
+		// must stay absolute, so they are re-pointed at it (a root-relative
+		// social image is invalid). Unset → the meta keeps the source URL.
 		const next = isHtml
-			? addImageDimensions( stripPreconnects( rewriteHtml( source, map ), preconnectHosts ), sizes )
+			? addImageDimensions(
+					stripPreconnects( rewriteHtml( source, map, { siteOrigin: env( 'ASTRO_SITE' ) } ), preconnectHosts ),
+					sizes
+			  )
 			: rewriteCss( source, map );
 		if ( next !== source ) {
 			await writeFile( file, next, 'utf8' );

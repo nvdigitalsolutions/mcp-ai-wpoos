@@ -1306,3 +1306,50 @@ Brevo/Mailjet API). SPF/DKIM/DMARC decide inbox placement. Notes:
 `reference/email-delivery.md` (now also: provider IP allowlists, secret
 hygiene, and why the throttle is proxy-wide). CMS removed, cutover, or
 rebuilding with no WordPress: `reference/cms-removal-materialized-content.md`.
+
+## Proposal 130 — consent-exempt cookieless beacon (2026-11-19)
+
+`cloudflare-web-analytics` was already in the detector's fingerprint table, but
+the template gated **every** vendor behind a stored consent decision, so a
+declared beacon could never fire. The fix is a per-tracker flag, never a blanket
+rule: `trackers[].consentExempt: true` (guarded by `isCookielessVendor()`) makes
+`renderTrackingGenerated` emit `cookieless` + `consentExempt` on the vendor row,
+and `Tracking.astro` renders that vendor as a **static**
+`<script type="module" … data-cf-beacon>` plus a preconnect — outside the
+consent loader, so an exempt-only site ships zero banner machinery (verified: 0
+`nvoos-tracking-loader` nodes, 8/8 pages carrying the tag).
+
+Rules that matter:
+
+- **The exemption is explicit and operator-declared.** `lib/tracking.ts` still
+  treats cookieless analytics as consent-gated by default; the CNIL/EDPB
+  audience-measurement frame (no cookie or device storage, publisher-only, no
+  cross-site) is narrow, so it is a decision, never an inference. The README
+  reports `consentExempt` from the manifest, so it cannot mislabel an exempt
+  beacon as "consent-gated".
+- **A cookie-setting vendor can never be exempt.** The generator drops the flag,
+  so nothing downstream re-enables it; a test pins this.
+- **`spa` is pinned false.** The beacon's default `spa: true` patches
+  `History.pushState` and uses Soft Navigations; a static MPA gains nothing and
+  would double-count if a client router were added later. Set
+  `tracking.spa: true` only for a ClientRouter/SSR site.
+- **One snippet per page.** Cloudflare's edge (automatic) injection plus a
+  manual beacon double-counts — pick one. Automatic injection is skipped
+  entirely when the origin sends `Cache-Control: public, no-transform`.
+- **Manual beacons work on any hostname** (they POST to
+  `cloudflareinsights.com/cdn-cgi/rum`), so a staging URL collects data before
+  the DNS cutover; automatic injection reports to the site's own `/cdn-cgi/rum`
+  and needs traffic through the zone.
+- **GPC is deliberately not consulted** for the beacon: it reports timing
+  metrics only, and a static tag cannot be un-loaded without losing its early
+  start. Disable the tracker if an operator wants the signal honoured.
+- **The scanner keeps the whole `<script src>` opening tag** (`scriptTags`,
+  rebuilt from DECODED attributes). A `src`-only capture cannot see
+  `data-cf-beacon`, and SSR frameworks escape it as `{&quot;token&quot;:…}` —
+  that decoding is what makes a forged site's own beacon round-trip through
+  `analyzeTracking` with the token intact.
+- **CSP:** `script-src https://static.cloudflareinsights.com` +
+  `connect-src https://cloudflareinsights.com`.
+- **Arming:** `"enabled": true` and `"ids": { "token": "<site tag>" }`. A site
+  tag is 32 lowercase hex; the extractor accepts 16–64 and reads both the
+  `data-cf-beacon` attribute and the `?token=` query-string form.

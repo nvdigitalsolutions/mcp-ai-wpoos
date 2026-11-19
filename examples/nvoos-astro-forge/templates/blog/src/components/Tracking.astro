@@ -9,8 +9,12 @@
 //   4. #nvoos-tracking-events (inert JSON — the event ownership map)
 //   5. the deferred first-party loader
 //
-// No vendor <script src> is ever emitted into the static HTML: the loader
-// injects each vendor only after its consent category is granted.
+// A consent-GATED vendor <script src> is never emitted into the static HTML:
+// the loader injects each one only after its consent category is granted. The
+// single exception is a `consentExempt` cookieless vendor (Cloudflare Web
+// Analytics), which has no decision to wait for — it ships as one static
+// `type="module"` beacon so it starts without hydration and so a re-analysis
+// of the built HTML can still read its token back off the tag.
 // ---------------------------------------------------------------------------
 import { tracking } from '../lib/tracking.generated.ts';
 
@@ -38,7 +42,37 @@ const loadable = tracking.vendors.filter(
 		vendor.category !== 'server' &&
 		! ( gtmEnabled && vendor.vendor === 'google-analytics-4' )
 );
-const hasTrackers = tracking.enabled && loadable.length > 0;
+// Exempt vendors never go through the loader (it only loads granted
+// categories), so they are split out and rendered as static beacons.
+const gated = loadable.filter( ( vendor ) => vendor.consentExempt !== true );
+const exempt = loadable.filter( ( vendor ) => vendor.consentExempt === true );
+const hasTrackers = tracking.enabled && gated.length > 0;
+
+/**
+ * Consent-exempt beacons. Only Cloudflare Web Analytics is modelled: one PUBLIC
+ * site tag, no cookie, no banner. The token is reduced to [A-Za-z0-9] before it
+ * reaches the attribute, so a corrupted profile cannot inject markup.
+ *
+ * GPC is deliberately NOT consulted here: it gates the sale/sharing of personal
+ * information, and this beacon reports timing metrics only — no identifier, no
+ * cross-site profile. A static tag also cannot be un-loaded by a runtime check
+ * without giving up its early start. Disable the tracker in the profile if an
+ * operator wants the signal honoured regardless.
+ *
+ * `spa` is pinned from the profile (default false) on purpose: the beacon's
+ * default SPA mode patches the History API and listens for soft navigations,
+ * and this build is a static MPA where neither can fire.
+ */
+const beacons = exempt.flatMap( ( vendor ) => {
+	if ( vendor.vendor !== 'cloudflare-web-analytics' ) {
+		return [];
+	}
+	const token = String( vendor.ids.token ?? '' ).replace( /[^A-Za-z0-9]/g, '' );
+	if ( ! token ) {
+		return [];
+	}
+	return [ JSON.stringify( { token, spa: tracking.spa === true } ) ];
+} );
 
 const consent = tracking.consent;
 const strategy = consent.strategy ?? 'basic';
@@ -50,7 +84,7 @@ const escapeJson = ( value: string ) => value.replace( /</g, '\\u003c' );
 
 const loaderConfig = escapeJson(
 	JSON.stringify( {
-		vendors: loadable,
+		vendors: gated,
 		consent: {
 			strategy,
 			waitForUpdate: consent.waitForUpdate ?? 500,
@@ -242,6 +276,22 @@ const loader = [
 
 {
 	verificationMeta.map( ( meta ) => <meta name={ meta.name } content={ meta.content } /> )
+}
+
+{
+	beacons.length > 0 && (
+		<>
+			<link rel="preconnect" href="https://static.cloudflareinsights.com" />
+			{ beacons.map( ( beacon ) => (
+				<script
+					type="module"
+					is:inline
+					src="https://static.cloudflareinsights.com/beacon.min.js"
+					data-cf-beacon={ beacon }
+				/>
+			) ) }
+		</>
+	)
 }
 
 {
