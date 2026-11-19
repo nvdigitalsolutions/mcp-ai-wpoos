@@ -9714,3 +9714,91 @@ nothing else:
 1. **No static analysis.** `lib/core` ships `phpstan.neon` and `phpstan/phpstan` in `require-dev`, and nothing runs it. That is a separate slice: the first run will find things, and the config needs agreeing before it can be a gate.
 2. **The adapter suite looked like five minutes** in the container and runs in **43 seconds** in CI. The five minutes is the Windows bind mount, not the suite — file I/O through it dominates a 306-test run that boots testbench repeatedly. Worth remembering before profiling a suite that is already fast where it matters.
 3. **`lib/wordpress-adapter` and `lib/craft-adapter` have no suites** — the matrix covers the two packages with tests, not every package under `lib/`.
+
+## 98. Tool execution becomes observable (2026-11-19)
+
+Proposal 155 mapped the WordPress metric vocabulary onto this runtime and found
+the tool-execution pack "not produced": nothing recorded per-tool execution. That
+was true of the **stores we query** and false of the pipeline — which is the kind
+of distinction worth checking before building a producer.
+
+### 98.1 The data was already there
+
+`ChatOrchestrator` has measured per-tool execution since the agentic loop shipped.
+At both execution sites — blocking (`handleChat`) and streaming
+(`handleChatStreaming`) — it computes:
+
+```php
+$toolStartedAt  = microtime(true);
+$result         = $this->tools->execute($toolName, $arguments, ...);
+$toolDurationMs = max(0.0, (microtime(true) - $toolStartedAt) * 1000.0);
+$toolOutcome    = $this->errors->isError($result) ? 'error' : 'success';
+```
+
+…and writes all four to `SessionLog::TYPE_TOOL_RESULT`. What was missing was not
+the measurement but a **queryable** store: the session log is behind its own
+observer, and traces received `start`, `routing`, `iteration` and `end` only.
+
+### 98.2 The record, in the standard's shape
+
+OpenTelemetry's GenAI conventions define an `execute_tool` span carrying
+`gen_ai.tool.name`, `gen_ai.tool.call.id`, a duration and a status — and the
+reference report lists the frameworks (langchain, llamaindex, openai-agents,
+autogen, pydantic-ai, vertexai…) that emit it. The vocabulary for *spans* is
+settled in a way the vocabulary for *metrics* is not: GenAI metric names are
+still Development status, which is why Proposal 155 built no metric store.
+
+So `TraceCapture::toolExecution()` writes one record per execution:
+
+```json
+{ "type": "tool", "tool": "create_post", "tool_call_id": "call_abc",
+  "duration_ms": 12.346, "outcome": "success" }
+```
+
+**No arguments, no result.** A tool's input is user content; the store's rule is
+identifiers and timings, and the session log already holds the body. The call id
+is the join between the two, which is why it is kept even when the provider does
+not supply one (as an empty string, not a fabricated value).
+
+Both execution sites emit it, so a reader does not have to know whether the turn
+was streamed.
+
+### 98.3 What it unblocks
+
+| Metric | Before | After |
+|---|---|---|
+| `tool.execution.count` | partial | **derived** |
+| `tool.execution.success.count` / `.error.count` | not produced | **derived** — from `outcome` |
+| `tool.execution.duration_ms` | not produced | **derived** — from `duration_ms` |
+| `tool.execution.in_flight` | not produced | **not produced** — a gauge needs a start record, and this record is written when the call is over |
+
+Proposal 155's tally moves from 6 derived / 2 partial / 13 unproduced to
+**10 derived / 1 partial / 10 unproduced**.
+
+**The honest limit:** trace retention is a per-assistant run count (`TracePolicy`,
+10–200 runs), not a time window. A metric derived from traces therefore means
+"the last N runs of this assistant", and a page that says "today" over it would
+be lying. M1 has to render the window it actually has.
+
+### 98.4 Gates
+
+| Run | Result |
+|---|---|
+| `TraceCaptureTest` | **3 new tests** — the record's shape (slug, call id, rounded duration, outcome); no `arguments`/`content`/`result`/`message` key on it; a blank outcome becomes `unknown` and a negative duration clamps to zero |
+| `ChatOrchestratorTest` | the existing sequence test now pins `start → routing → iteration → **tool** → iteration → end`, plus the record's slug, outcome and non-negative duration |
+| `lib/core` (full) | **1808 tests / 6482 assertions, 0 failures** (+3 tests, +17 assertions) |
+| Laravel `/(Trace\|Observability\|Harness\|Routing\|AgentNode\|BudgetEnforcement)/` | **90 tests / 332 assertions, 0 failures** — `TraceRuns` and the routing export read these records and are unaffected by a new type |
+| phpcs | run before the push |
+| The new `lib/core suite` CI job | runs the same suite this section did; it exists because of §97 |
+
+### 98.5 Still open
+
+1. **`in_flight`** needs a start record, which would double the records per tool
+   call for one gauge. Worth deciding only if an operator asks for it.
+2. **Derived metrics have a run window, not a time window** (§98.3). A time-series
+   tool metric would need its own store — and that is the point where a store
+   earns its keep, not before.
+3. **The session log and the trace now record the same four facts.** That is
+   deliberate duplication across two stores with different audiences (a replay
+   log for humans, a queryable record for metrics), and it is worth revisiting if
+   a third reader appears.

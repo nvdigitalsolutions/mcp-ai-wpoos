@@ -95,6 +95,59 @@ final class TraceCaptureTest extends TestCase
         $this->assertSame(2, $store->records()[2]['iteration']);
     }
 
+    /**
+     * The record mirrors OpenTelemetry's `execute_tool` span: name, call id,
+     * duration, status. It is the record per-tool metrics are derived from.
+     */
+    public function test_a_tool_execution_records_the_execute_tool_shape(): void
+    {
+        $store = $this->store();
+        $capture = TraceCapture::start($store, 7, $this->enabledProfile());
+
+        $capture->toolExecution('create_post', 'call_abc', 12.34567, 'success');
+
+        $record = $store->records()[1];
+
+        $this->assertSame(TraceCapture::TYPE_TOOL, $record['type']);
+        $this->assertSame('create_post', $record['tool']);
+        $this->assertSame('call_abc', $record['tool_call_id']);
+        $this->assertEqualsWithDelta(12.346, (float) $record['duration_ms'], 1e-3);
+        $this->assertSame('success', $record['outcome']);
+        $this->assertSame(2, $capture->records(), 'The start record and the tool record.');
+    }
+
+    /**
+     * A tool's arguments are user content. The trace carries the call id so a
+     * reader can join to the session log for the body; it never carries it.
+     */
+    public function test_a_tool_execution_carries_no_arguments_or_result(): void
+    {
+        $store = $this->store();
+        $capture = TraceCapture::start($store, 7, $this->enabledProfile());
+
+        $capture->toolExecution('create_post', 'call_abc', 1.0, 'error');
+
+        $record = $store->records()[1];
+
+        foreach (array( 'arguments', 'content', 'result', 'message' ) as $forbidden) {
+            $this->assertArrayNotHasKey($forbidden, $record, "A tool trace record must not carry {$forbidden}.");
+        }
+    }
+
+    public function test_an_unknown_outcome_is_marked_rather_than_guessed(): void
+    {
+        $store = $this->store();
+        $capture = TraceCapture::start($store, 7, $this->enabledProfile());
+
+        $capture->toolExecution('create_post', '', -5.0, '');
+
+        $record = $store->records()[1];
+
+        $this->assertSame('unknown', $record['outcome']);
+        $this->assertSame(0.0, (float) $record['duration_ms'], 'A negative duration is clamped, not recorded.');
+        $this->assertSame('', $record['tool_call_id']);
+    }
+
     public function test_capture_needs_an_assistant(): void
     {
         $store = $this->store();

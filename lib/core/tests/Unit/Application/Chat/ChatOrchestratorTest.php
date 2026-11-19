@@ -1621,11 +1621,22 @@ final class ChatOrchestratorTest extends TestCase
             assistantId: 7,
         );
 
-        $this->assertSame(array( 'start', 'routing', 'iteration', 'iteration', 'end' ), $store->types);
+        // The tool record sits between the two provider calls: one execution
+        // happened, and the trace says which tool, for how long and with what
+        // outcome — the shape per-tool metrics are derived from.
+        $this->assertSame(
+            array( 'start', 'routing', 'iteration', 'tool', 'iteration', 'end' ),
+            $store->types
+        );
         $this->assertSame('tool_calls', $store->records[2]['finish_reason']);
-        $this->assertSame('stop', $store->records[3]['finish_reason']);
-        $this->assertSame(2, $store->records[4]['provider_calls']);
-        $this->assertSame(1, $store->records[4]['iterations'], 'The orchestrator loop counted one continuation.');
+
+        $this->assertSame('echo_tool', $store->records[3]['tool']);
+        $this->assertSame('success', $store->records[3]['outcome']);
+        $this->assertGreaterThanOrEqual(0.0, (float) $store->records[3]['duration_ms']);
+
+        $this->assertSame('stop', $store->records[4]['finish_reason']);
+        $this->assertSame(2, $store->records[5]['provider_calls']);
+        $this->assertSame(1, $store->records[5]['iterations'], 'The orchestrator loop counted one continuation.');
     }
 
     public function test_the_streaming_path_traces_too(): void
