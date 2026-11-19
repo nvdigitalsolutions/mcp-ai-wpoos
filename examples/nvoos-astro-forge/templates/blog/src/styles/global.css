@@ -347,15 +347,6 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
  * re-measures to the source's container so no copy moves. */
 .site-main:has([class*='ds-section-wrap--']) {
 	padding: 0;
-	/* The MEASURE is released too. A band used to escape this box with
-	 * `width:100vw`, but `vw` counts the scrollbar while this element is sized
-	 * to the CONTENT box — so on a classic 15px scrollbar the band landed 7px
-	 * left of the viewport and 15px wider than it (virtuallysrilanka: wrap box
-	 * left -7, width 1496 against a 1481px client). The left edge of the first
-	 * card was clipped and the right edge fell short. A band is now a plain 100%
-	 * child of a full-width main, which is exactly the visible width by
-	 * construction, whatever the scrollbar does; each `.ds-section` still
-	 * re-measures to the source's container so no copy moves. */
 	max-width: none;
 }
 

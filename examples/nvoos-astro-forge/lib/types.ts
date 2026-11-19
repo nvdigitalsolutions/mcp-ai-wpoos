@@ -1682,7 +1682,7 @@ export interface ForgeSectionColumn {
 	 * background. Neither half of the pipeline could see it: the sanitiser drops
 	 * the inline `style`, the vendor stylesheet never ships, and the classifier
 	 * only splits content — so a photo-only column was dropped outright
-		 * ("the flat model has no per-column surface to paint it with"). Measured
+	 * ("the flat model has no per-column surface to paint it with"). Measured
 	 * here, against the RAW source HTML + its stylesheets.
 	 */
 	bgColor?: string;
@@ -2177,16 +2177,6 @@ export interface ForgeElementCssRule {
  * never source assets. Roles are fail-loud (098): only confident values
  * land in `roles`; everything else stays in `unassigned`.
  */
-/**
- * One recovered per-element rule from the source builder's `<style>` blocks
- * (`lib/element-css.ts`). `media` keeps a `@media` prelude verbatim.
- */
-export interface ForgeElementCssRule {
-	media?: string;
-	selector: string;
-	declarations: string;
-}
-
 export interface ForgeDesign {
 	mode: 'rebuild';
 	source: { url: string; analyzedAt: string };
