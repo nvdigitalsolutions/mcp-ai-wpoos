@@ -8851,6 +8851,7 @@ belonging to the default estate, because that is where the rows say it went.
 | `TokenUsage*`, `AdminToken*`, `RuntimeSchema`, `CoreOperations`, `CommandCenter`, `SlashCommands`, `AdminObservability` | **97 tests / 384 assertions, 0 failures** |
 | `TokenUsageRollupTest` | **6 tests** — idempotency and the pruned-day fallback still hold with the wider key |
 | phpcs (`phpcs-laravel.xml.dist`, 15 files; `phpcs.xml.dist`, 2 adapter files) | **0 errors** |
+| Full app suite | **1415 tests / 18,298 assertions, 0 failures** (CI `App suite (SQLite)`) — over the 1404 / 18,252 baseline, the delta is the new 8-test tenancy suite plus the two schema guards |
 
 `RuntimeSchemaTest` gained two guards in the §47/§51 style: the token-usage
 tenant column and index must exist, and the rollup's unique key must be the
