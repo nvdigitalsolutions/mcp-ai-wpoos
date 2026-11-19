@@ -319,6 +319,13 @@ const headerLogoCss = headerLogoBase
 	? [`${headerLogoSelector}{height:${headerLogoBase}}`, ...headerLogoOverrides].join('\n')
 	: '';
 const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss, headerLogoCss].filter(Boolean).join('\n');
+// Where the mark STATION sits. A source that centres its logo cannot be
+// reproduced by the template’s `space-between` row — that leaves the mark at
+// the left edge, under the disclosure (monicarajiv: 273×74 centred in 1425px,
+// rendered 147×40 hard left, 2026-11-19). The STYLESHEET owns the layout; this
+// only decides whether it engages.
+const headerLogoAlign = chrome?.geometry?.desktop?.logoAlign ?? chrome?.geometry?.wide?.logoAlign;
+const headerLogoCentre = headerLogoAlign === 'center';
 ---
 
 <!doctype html>
@@ -510,7 +517,7 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss, headerL
 				</div>
 			</div>
 		)}
-		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky', behaviors.headerPosition === 'fixed' && 'site-header--float', chrome?.headerBg && 'site-header--themed', chrome?.headerTransparent && 'site-header--overlay', (behaviors.headerRestHeight || behaviors.headerPinnedHeight) && 'site-header--sized', (behaviors.headerPinnedBg || behaviors.headerPinnedHeight) && 'site-header--pinned']}>
+		<header class:list={['site-header', headerLogoCentre && 'site-header--brand-center', behaviors.headerSticky && 'site-header--sticky', behaviors.headerPosition === 'fixed' && 'site-header--float', chrome?.headerBg && 'site-header--themed', chrome?.headerTransparent && 'site-header--overlay', (behaviors.headerRestHeight || behaviors.headerPinnedHeight) && 'site-header--sized', (behaviors.headerPinnedBg || behaviors.headerPinnedHeight) && 'site-header--pinned']}>
 			{/*
 			 * The BOX (P4). The source constrains its brand/nav row to a container
 			 * (jayainc: 1670px, 35px gutters; virtuallyjamaica: Bootstrap's 1170px,

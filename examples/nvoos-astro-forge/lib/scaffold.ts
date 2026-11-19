@@ -1813,6 +1813,11 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 							parts.push( `fg: ${ tsString( ink ) }` );
 						}
 					}
+					// A translucent VEIL (Flatsome's `.overlay`) stacks over the surface
+					// instead of replacing it, so it is emitted as its own declaration.
+					if ( element.veil ) {
+						parts.push( `veil: ${ tsString( element.veil ) }` );
+					}
 					if ( typeof element.height === 'number' ) {
 						parts.push( `height: ${ element.height }` );
 					} else if ( element.height ) {
@@ -2210,7 +2215,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * keyed by a STRUCTURAL path relative to the band (a class name repeats',
 		'\t * across bands and elements). Raw bands keep the source markup, so the',
 		'\t * path resolves to the same node in the rebuild. */',
-		'\telements?: Array<{ path: string; bg?: string; fg?: string; height?: number | { desktop?: number; tablet?: number; mobile?: number }; width?: number | { desktop?: number; tablet?: number; mobile?: number } }>;',
+		'\telements?: Array<{ path: string; bg?: string; veil?: string; fg?: string; height?: number | { desktop?: number; tablet?: number; mobile?: number }; width?: number | { desktop?: number; tablet?: number; mobile?: number } }>;',
 		'\t/** The band\u2019s measured COLUMN geometry, keyed by the column\u2019s',
 		'\t * unique class: a rendered `min-height` floor plus a fixed background',
 		'\t * photo\u2019s attachment/size. Emitted as band-scoped `.class` rules \u2014 the',
@@ -2435,10 +2440,10 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t * gutter and the brand mark\u2019s rendered height. `measure` is present only',
 		'\t * where the cap is binding. */',
 		'\tgeometry?: {',
-		'\t\twide?: { measure?: number; padX?: number; logoHeight?: string };',
-		'\t\tdesktop?: { measure?: number; padX?: number; logoHeight?: string };',
-		'\t\ttablet?: { measure?: number; padX?: number; logoHeight?: string };',
-		'\t\tmobile?: { measure?: number; padX?: number; logoHeight?: string };',
+		"\t\twide?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
+		"\t\tdesktop?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
+		"\t\ttablet?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
+		"\t\tmobile?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
 		'\t};',
 		'\t/** The footer brand ROW: where the brand mark and the social icons sit',
 		'\t * inside it, per viewport (measured at 1920/1440/834/390). */',
@@ -2570,6 +2575,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 			}
 			if ( box.logoHeight ) {
 				fields.push( `logoHeight: ${ tsString( box.logoHeight ) }` );
+			}
+			if ( box.logoAlign ) {
+				fields.push( `logoAlign: ${ tsString( box.logoAlign ) }` );
 			}
 			if ( fields.length > 0 ) {
 				devices.push( `${ device }: { ${ fields.join( ', ' ) } }` );
