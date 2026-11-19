@@ -2169,7 +2169,7 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	.ds-section-wrap .post-body .banner-layer[class~='md-x35'] { left: 35%; }
 	.ds-section-wrap .post-body .banner-layer[class~='md-x40'] { left: 40%; }
 	.ds-section-wrap .post-body .banner-layer[class~='md-x45'] { left: 45%; }
-	.ds-section-wrap .post-body .banner-layer[class~='md-x50'] { left: 50%; transform: translateX(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x50'] { left: 50%; width: fit-content; max-width: min(80%, 810px); transform: translateX(-50%); }
 	.ds-section-wrap .post-body .banner-layer[class~='md-x55'] { right: 45%; }
 	.ds-section-wrap .post-body .banner-layer[class~='md-x60'] { right: 40%; }
 	.ds-section-wrap .post-body .banner-layer[class~='md-x65'] { right: 35%; }
@@ -2215,7 +2215,7 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	.ds-section-wrap .post-body .banner-layer[class~='lg-x35'] { left: 35%; }
 	.ds-section-wrap .post-body .banner-layer[class~='lg-x40'] { left: 40%; }
 	.ds-section-wrap .post-body .banner-layer[class~='lg-x45'] { left: 45%; }
-	.ds-section-wrap .post-body .banner-layer[class~='lg-x50'] { left: 50%; transform: translateX(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x50'] { left: 50%; width: fit-content; max-width: min(80%, 810px); transform: translateX(-50%); }
 	.ds-section-wrap .post-body .banner-layer[class~='lg-x55'] { right: 45%; }
 	.ds-section-wrap .post-body .banner-layer[class~='lg-x60'] { right: 40%; }
 	.ds-section-wrap .post-body .banner-layer[class~='lg-x65'] { right: 35%; }
