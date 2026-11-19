@@ -1333,6 +1333,41 @@ function contentlessBand( facts: ForgeBandFacts | undefined ): boolean {
  * (a fact — it overrides the template rhythm); only a band with no measurement
  * at all returns `undefined`.
  */
+/**
+ * Reconcile an EXPLICIT `section.padding` fact with the per-viewport
+ * measurement.
+ *
+ * The explicit fact wins by policy, but it is a single DESKTOP shorthand: a
+ * string is emitted inline (see `wrapStyle`), and an inline `padding` outranks
+ * the media queries that would narrow it. virtuallysrilanka's hardware band
+ * measures `100px 0 0 0` at desktop and flush (`0`) at both narrow viewports,
+ * but the profile pins the desktop shorthand — so the rebuild carried the 100px
+ * down to tablet and mobile and ran 161px / 233px taller than its source.
+ *
+ * Keep the explicit value for the viewport it describes and take the narrower
+ * overrides from the measurement, only where they actually differ. An explicit
+ * per-device map is already responsive and is returned untouched.
+ */
+export function resolveBandPadding(
+	explicit: ResponsiveLength | undefined,
+	measured: ResponsiveLength | undefined
+): ResponsiveLength | undefined {
+	if ( ! explicit ) {
+		return measured;
+	}
+	if ( typeof explicit !== 'string' || ! measured || typeof measured === 'string' ) {
+		return explicit;
+	}
+	const resolved: { desktop: string; tablet?: string; mobile?: string } = { desktop: explicit };
+	if ( measured.tablet && measured.tablet !== explicit ) {
+		resolved.tablet = measured.tablet;
+	}
+	if ( measured.mobile && measured.mobile !== explicit ) {
+		resolved.mobile = measured.mobile;
+	}
+	return resolved.tablet || resolved.mobile ? resolved : explicit;
+}
+
 function measuredBandPadding(
 	section: ForgeSection,
 	geometry?: ForgeGeometry
@@ -1556,9 +1591,9 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	if ( section.panel ) {
 		entry.push( `panel: { bg: ${ tsString( section.panel.bg ) }, ink: ${ tsString( section.panel.ink ) } }` );
 	}
-	// The band's padding: an explicit profile fact wins; otherwise the MEASURED
-	// source padding (114 §3.6) — see `measuredBandPadding`.
-	const padding = section.padding ?? measuredBandPadding( section, profile.geometry );
+	// The band's padding: an explicit profile fact wins — but only for the
+	// viewport it describes; see `resolveBandPadding`.
+	const padding = resolveBandPadding( section.padding, measuredBandPadding( section, profile.geometry ) );
 	if ( padding ) {
 		entry.push( `padding: ${ tsLength( padding ) }` );
 	}
