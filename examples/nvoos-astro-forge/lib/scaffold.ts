@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
 import { renderElementCss } from './element-css.ts';
 import { isMaterializedContent, withMaterializedDefaults } from './content-source.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts, columnInnerFacts } from './geometry.ts';
 import { animationRebuildCss, countAnimations, planAnimationRebuild, type ParallaxCarrier } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit, readableInk } from './contrast.ts';
@@ -1867,6 +1867,14 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// column's own class. The sanitizer keeps the class but drops the inline
 	// min-height, and the vendor sheet never ships — without this the image
 	// column collapses to its content and its "fixed" photo scrolls.
+	const innerEntries = Object.entries( columnInnerFacts( bandFacts?.columns ?? {} ) );
+	if ( innerEntries.length > 0 ) {
+		entry.push(
+			`columnInner: { ${ innerEntries
+				.map( ( [ name, box ] ) => `${ tsKey( name ) }: ${ tsUtility( box ) }` )
+				.join( ', ' ) } }`
+		);
+	}
 	const columnEntries = Object.entries( columnBoxFacts( bandFacts?.columns ?? {} ) );
 	if ( columnEntries.length > 0 ) {
 		entry.push(
@@ -2239,6 +2247,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * sanitizer keeps the class but drops the inline layout, and the vendor',
 		'	 * sheet never ships. */',
 		'	columnBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'	/** The per-column INNER padding (targets `.<class> > .col-inner`). */',
+		'	columnInner?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'	/** The band\u2019s measured CAROUSEL geometry, keyed by the carousel\u2019s',
 		'	 * unique class: slides-per-view, gutter and the track\u2019s scroll',
 		'	 * behaviour. A vendor slider keeps `items` in its JS options, so the',

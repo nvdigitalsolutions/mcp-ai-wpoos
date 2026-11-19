@@ -912,7 +912,24 @@ const bandBoxCss = sections
 					return rules.join( '' );
 				} )
 				.join( '' );
-		return `${ emit( theme.box, '' ) }${ emit( theme.media, 'img' ) }`;
+		// The column INNER padding: the same map, pointed one level in.
+		const innerCss = Object.entries( theme.columnInner ?? {} )
+			.map( ( [ name, fact ] ) => {
+				const selectors = `${ scoped } .post-body .${ name } > .col-inner, ${ scoped } .${ name } > .col-inner`;
+				const rules: string[] = [];
+				if ( fact.base ) {
+					rules.push( `${ selectors }{${ fact.base }}` );
+				}
+				if ( fact.tablet ) {
+					rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selectors }{${ fact.tablet }}}` );
+				}
+				if ( fact.mobile ) {
+					rules.push( `@media (max-width: 767px){${ selectors }{${ fact.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+		return `${ emit( theme.box, '' ) }${ emit( theme.media, 'img' ) }${ innerCss }`;
 	} )
 	.join( '' );
 
