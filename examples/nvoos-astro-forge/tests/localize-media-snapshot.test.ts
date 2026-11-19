@@ -10,12 +10,14 @@
 // ---------------------------------------------------------------------------
 
 import { execFile } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { rmTemp } from './helpers/tmp.ts';
 
 const execFileAsync = promisify(execFile);
 const LOCALIZER = resolve('templates/blog/scripts/localize-media.mjs');
@@ -29,7 +31,7 @@ async function tempDir(): Promise<string> {
 }
 
 afterEach(async () => {
-	await Promise.all(roots.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(roots.splice(0).map((dir) => rmTemp(dir)));
 });
 
 describe('localize-media — committed snapshot', () => {

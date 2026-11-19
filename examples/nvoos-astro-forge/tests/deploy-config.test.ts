@@ -5,7 +5,7 @@
 
 import { createHmac } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { promisify } from 'node:util';
@@ -13,6 +13,7 @@ import { promisify } from 'node:util';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { DEFAULT_EVENT_TYPE, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const execFileAsync = promisify( execFile );
 
@@ -59,7 +60,7 @@ describe( 'emitDeployConfig', () => {
 				'scripts/verify-dispatch.mjs',
 			] );
 		} finally {
-			await rm( local, { recursive: true, force: true } );
+			await rmTemp( local );
 		}
 	} );
 

@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { writeMediaSnapshot } from '../lib/media-snapshot.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const roots: string[] = [];
 
@@ -23,7 +24,7 @@ async function tempDir(): Promise<string> {
 }
 
 afterEach(async () => {
-	await Promise.all(roots.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(roots.splice(0).map((dir) => rmTemp(dir)));
 });
 
 const CSS_URL = 'https://cms.example.com/wp-content/themes/x/icon.css';

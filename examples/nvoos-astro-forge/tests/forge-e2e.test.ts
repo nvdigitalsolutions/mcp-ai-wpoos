@@ -13,7 +13,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import http from 'node:http';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,7 @@ import { chromium } from 'playwright';
 
 import { scaffold } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const FIXTURE_SERVER = path.join(FORGE_ROOT, 'scripts', 'wp-fixture-server.mjs');
@@ -1047,7 +1048,7 @@ describe('forge e2e — emitted site', () => {
 
 describe('forge e2e — long-tail content tools against the fixture', () => {
 	it('audits, previews, maps redirects, and renders configs from a registered site', async () => {
-		const { mkdir, writeFile, rm } = await import('node:fs/promises');
+		const { mkdir, writeFile } = await import('node:fs/promises');
 		const { SitesStore } = await import('../lib/sites.ts');
 		const { SITE_TOOLS } = await import('../mcp/tools/sites.ts');
 		const { CONTENT_TOOLS } = await import('../mcp/tools/content.ts');
@@ -1123,7 +1124,7 @@ describe('forge e2e — long-tail content tools against the fixture', () => {
 			expect(configData.block).toContain('wc/v3/products');
 			expect(configData.block).toContain('defineCollection');
 		} finally {
-			await rm(home, { recursive: true, force: true });
+			await rmTemp(home);
 		}
 	});
 });
@@ -1163,7 +1164,7 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 			expect(base).toContain('forge-theme-policy');
 			expect(base).toContain('policy === \'light\' || policy === \'dark\'');
 		} finally {
-			await rm(darkDir, { recursive: true, force: true });
+			await rmTemp(darkDir);
 		}
 	} );
 
@@ -1256,7 +1257,7 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 			const listing = await readFile(path.join(offlineDir, 'dist', 'posts', 'index.html'), 'utf8');
 			expect(listing).not.toContain('Fjord merino sweater');
 		} finally {
-			await rm(offlineDir, { recursive: true, force: true });
+			await rmTemp(offlineDir);
 		}
 	}, 600_000);
 } );
@@ -1329,7 +1330,7 @@ describe('forge e2e — minimal preset scaffold (Proposal 104 §4.3)', () => {
 			expect(index).toContain('At Fixture Wares we serve the fjords.');
 			expect(index).not.toContain('href="/search/"');
 		} finally {
-			await rm(minimalDir, { recursive: true, force: true });
+			await rmTemp(minimalDir);
 		}
 	}, 600_000);
 } );
@@ -1411,7 +1412,7 @@ describe('forge e2e — SSR render variant (Proposal 104 Q4 + Q5)', () => {
 			expect(missing.status).toBe(404);
 		} finally {
 			serverProc?.kill();
-			await rm(ssrDir, { recursive: true, force: true });
+			await rmTemp(ssrDir);
 		}
 	}, 600_000);
 } );
@@ -1475,8 +1476,8 @@ describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)
 		const builtIndex = await readFile(path.join(wizardTarget, 'dist', 'index.html'), 'utf8');
 		expect(builtIndex).not.toMatch(/ck_test|cs_test/);
 
-		await rm(wizardHome, { recursive: true, force: true });
-		await rm(wizardTarget, { recursive: true, force: true });
+		await rmTemp(wizardHome);
+		await rmTemp(wizardTarget);
 	}, 600_000);
 });
 
@@ -1486,7 +1487,7 @@ describe( 'forge e2e — tracking capture (Proposal 130)', () => {
 
 	afterAll( async () => {
 		if ( trackingDir ) {
-			await rm( trackingDir, { recursive: true, force: true } );
+			await rmTemp( trackingDir );
 		}
 	} );
 
