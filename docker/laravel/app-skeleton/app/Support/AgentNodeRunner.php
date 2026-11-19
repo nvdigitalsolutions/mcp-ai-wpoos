@@ -43,6 +43,12 @@ final class AgentNodeRunner
 
         $record = $assistant->toRecord();
 
+        // A workflow node spends the estate's budget like any other turn, so it
+        // is checked here too. The exception propagates: a node that hits the
+        // limit should fail as a node, not abort the request that started the run
+        // (Proposal 154).
+        app(\App\Support\Budgets\BudgetGuard::class)->assertWithinBudget();
+
         $result = app(ChatOrchestrator::class)->handleChat(
             [['role' => 'user', 'content' => $prompt]],
             [

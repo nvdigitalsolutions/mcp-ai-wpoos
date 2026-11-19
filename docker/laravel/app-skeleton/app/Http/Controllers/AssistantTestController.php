@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Assistant;
 use App\Services\AssistantTestPlan;
+use App\Support\Budgets\BudgetExceededException;
+use App\Support\Budgets\BudgetGuard;
+use App\Support\Budgets\BudgetUnverifiableException;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +43,7 @@ class AssistantTestController
         ProviderRouter $router,
         ErrorFactoryInterface $errors,
         AssistantTestPlan $planBuilder,
+        BudgetGuard $budgets,
     ): JsonResponse {
         abort_if($assistant->tenant_id !== TenantContext::current(), 404);
 
@@ -82,6 +86,32 @@ class AssistantTestController
             ],
             static fn ($value): bool => null !== $value,
         );
+
+        // The estate budget is checked before the provider call, not after it
+        // (Proposal 154). A 429 here refuses the turn; a 503 means the budget
+        // could not be read, which is a different problem for the operator.
+        try {
+            $budgets->assertWithinBudget();
+        } catch (BudgetExceededException $error) {
+            return response()->json(array(
+                'success' => false,
+                'error' => array(
+                    'code' => 'budget_exceeded',
+                    'message' => $error->getMessage(),
+                    'window' => $error->window,
+                    'spend' => $error->spend,
+                    'limit' => $error->limit,
+                ),
+            ), 429);
+        } catch (BudgetUnverifiableException $error) {
+            return response()->json(array(
+                'success' => false,
+                'error' => array(
+                    'code' => 'budget_unverifiable',
+                    'message' => $error->getMessage(),
+                ),
+            ), 503);
+        }
 
         $started = microtime(true);
         $result = $orchestrator->handleChat(

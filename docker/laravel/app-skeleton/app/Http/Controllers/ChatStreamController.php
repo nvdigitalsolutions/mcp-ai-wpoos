@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assistant;
+use App\Support\Budgets\BudgetExceededException;
+use App\Support\Budgets\BudgetGuard;
+use App\Support\Budgets\BudgetUnverifiableException;
 use App\Support\TenantContext;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
@@ -39,11 +43,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ChatStreamController
 {
-    public function __construct(private readonly ModelRoutingCatalogueInterface $catalogue)
-    {
+    public function __construct(
+        private readonly ModelRoutingCatalogueInterface $catalogue,
+        private readonly BudgetGuard $budgets,
+    ) {
     }
 
-    public function __invoke(Request $request): StreamedResponse
+    public function __invoke(Request $request): StreamedResponse|JsonResponse
     {
         $validated = $request->validate([
             'messages' => ['required', 'array'],
@@ -55,6 +61,26 @@ class ChatStreamController
         $options = (array) ($validated['options'] ?? []);
 
         $this->refuseRetiredModel($options);
+
+        // Before the provider is called, and before the stream is opened: a
+        // limit applied afterwards is a report, and a 429 has to be an HTTP
+        // response rather than an error frame inside a 200 stream (Proposal 154).
+        try {
+            $this->budgets->assertWithinBudget();
+        } catch (BudgetExceededException $error) {
+            return response()->json(array(
+                'code' => 'budget_exceeded',
+                'message' => $error->getMessage(),
+                'window' => $error->window,
+                'spend' => $error->spend,
+                'limit' => $error->limit,
+            ), 429);
+        } catch (BudgetUnverifiableException $error) {
+            return response()->json(array(
+                'code' => 'budget_unverifiable',
+                'message' => $error->getMessage(),
+            ), 503);
+        }
 
         // Resolved before the stream is opened: a 404 has to be an HTTP
         // response, and `response()->stream()` has already committed to 200 by
