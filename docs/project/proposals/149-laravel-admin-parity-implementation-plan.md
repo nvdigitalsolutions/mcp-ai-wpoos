@@ -7906,7 +7906,7 @@ That last form is the one that explains a table which is not shrinking.
 3. **One batch per run.** A backlog larger than `batch` drains one chunk per
    tick; at `*/15 * * * *` and 500 rows that is 48k events/day, which is ample
    for deviations but worth stating.
-4. **No compression.** OTLP accepts gzip and a real backlog would want it.
+4. **No compression** — closed by §77.
 5. **The error body is stored truncated (2 000 chars) and shown truncated (80).**
    A collector that echoes a token in its error would store it; the command
    itself never logs the token.
@@ -8113,3 +8113,70 @@ one second before that does not.
 5. **The window is headroom, not a requirement.** Every current consumer looks
    back at most 30 days; the default could be lowered once someone measures the
    table's real growth.
+
+## 77. Compressing the OTLP body (2026-11-19)
+
+§74.6 item 4 was the last transport gap in the push: "No compression. OTLP
+accepts gzip and a real backlog would want it." The body is now compressible,
+and the choice is configuration rather than a constant.
+
+### 77.1 What the protocol requires
+
+The OTLP specification is unusually direct: every receiving component **MUST**
+support two transport compressions — `none` and `gzip` — and the choice travels
+in `Content-Encoding`. There is no negotiation and no capability probe, so a
+sender that compresses is entitled to assume the receiver can inflate.
+
+| Piece | Decision |
+|---|---|
+| `oos.routing.export.compression` | `none` (default) or `gzip`; any other value is treated as `none` |
+| `oos.routing.export.compression_threshold` | 1 024 bytes of JSON; below it the body is sent plain; `0` compresses every body |
+| Header | `Content-Encoding: gzip` **only** when a body was actually compressed |
+
+### 77.2 Why the default stays `none`
+
+Gzip is the right setting for a real collector, and it is one environment
+variable away. It is not the default because it changes the **wire format** on
+upgrade, and §74's endpoint is deliberately just "an http(s) URL" — a
+self-hosted JSON sink that logs request bodies is a legitimate deployment, and
+it would silently start receiving bytes it cannot read. Retry timing (§75) and
+retention (§73) changed behaviour without changing what an endpoint receives;
+this one does, so the operator opts in.
+
+The threshold handles the other end: gzip's header and trailer are tens of
+bytes, and a one-event batch is under a kilobyte. Compressing it can make the
+request larger and always makes the collector work harder to read it.
+
+Two failure directions are chosen deliberately:
+
+- **a `gzencode()` failure falls back to plain JSON** and drops the header.
+  Claiming `gzip` on an uncompressed body would make the collector try to
+  inflate plain text and reject a batch that was perfectly valid;
+- **an unknown compression name is treated as `none`.** A typo degrades to the
+  format every receiver must accept; it never invents an encoding.
+
+The body is encoded in the pusher rather than by `asJson()` so both paths
+produce the same bytes — `json_encode` with `JSON_UNESCAPED_SLASHES |
+JSON_UNESCAPED_UNICODE`, matching Laravel's JSON body format. Only the transport
+wrapper differs, which is exactly what the tests compare.
+
+### 77.3 Gates
+
+| Run | Result |
+|---|---|
+| `RoutingExportPushTest` | **18 tests / 70 assertions** — adds: a gzipped body carries `Content-Encoding: gzip` and inflates to the same OTLP records; a body below the threshold is sent plain; `compression = none` sends plain even at threshold 0; an unknown value falls back to plain |
+| phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
+| Full app suite | **1364 tests / 18092 assertions, 0 failures** (CI `App suite (SQLite)`) — exactly +4 tests over §76, matching this section's focused delta |
+
+### 77.4 Still open
+
+1. **The gzip level is fixed at 6.** That is the conventional CPU/ratio
+   trade-off; nothing has needed a knob, so there is no knob.
+2. **No `zstd`.** OTLP's `zstd` support is experimental and receivers are not
+   required to implement it; `gzip` is the mandatory common denominator. A
+   second encoding would need a capability probe OTLP does not define.
+3. **The threshold is bytes of JSON, not events.** An operator sizing by batch
+   count must convert; the config comment says bytes.
+4. **Compression is per request.** A batch is one request, so there is no
+   cross-batch dictionary to exploit — which matters only for very large
+   replays, and those are already split by `batch`.

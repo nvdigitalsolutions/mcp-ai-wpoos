@@ -100,6 +100,112 @@ class RoutingExportPushTest extends TestCase
         $this->assertSame(2, (int) $last->last_metric_id);
     }
 
+    public function test_the_body_is_gzipped_when_compression_is_enabled(): void
+    {
+        $this->configureEndpoint();
+        config([
+            'oos.routing.export.compression' => 'gzip',
+            // Compress regardless of size: the point is the wrapper, not the ratio.
+            'oos.routing.export.compression_threshold' => 0,
+        ]);
+        Http::fake(['*collector.test*' => Http::response('', 200)]);
+
+        $this->insertMetric();
+
+        $this->artisan('nvoos:push-routing-metrics')->assertSuccessful();
+
+        Http::assertSent(static function ($request): bool {
+            if (! $request->hasHeader('Content-Encoding', 'gzip')) {
+                return false;
+            }
+
+            $decoded = gzdecode($request->body());
+
+            if (false === $decoded) {
+                return false;
+            }
+
+            $body = json_decode($decoded, true);
+
+            return isset($body['resourceLogs'][0]['scopeLogs'][0]['logRecords'][0]);
+        });
+
+        $this->assertSame(1, app(RoutingExportStore::class)->watermark());
+    }
+
+    public function test_a_body_below_the_threshold_is_sent_uncompressed(): void
+    {
+        $this->configureEndpoint();
+        config([
+            'oos.routing.export.compression' => 'gzip',
+            // Larger than any body this fixture produces.
+            'oos.routing.export.compression_threshold' => 100000,
+        ]);
+        Http::fake(['*collector.test*' => Http::response('', 200)]);
+
+        $this->insertMetric();
+
+        $this->artisan('nvoos:push-routing-metrics')->assertSuccessful();
+
+        Http::assertSent(static function ($request): bool {
+            if ($request->hasHeader('Content-Encoding')) {
+                return false;
+            }
+
+            $body = json_decode($request->body(), true);
+
+            return isset($body['resourceLogs'][0]['scopeLogs'][0]['logRecords'][0]);
+        });
+    }
+
+    public function test_compression_can_be_disabled(): void
+    {
+        $this->configureEndpoint();
+        config([
+            'oos.routing.export.compression' => 'none',
+            'oos.routing.export.compression_threshold' => 0,
+        ]);
+        Http::fake(['*collector.test*' => Http::response('', 200)]);
+
+        $this->insertMetric();
+
+        $this->artisan('nvoos:push-routing-metrics')->assertSuccessful();
+
+        Http::assertSent(static function ($request): bool {
+            if ($request->hasHeader('Content-Encoding')) {
+                return false;
+            }
+
+            $body = json_decode($request->body(), true);
+
+            return isset($body['resourceLogs'][0]['scopeLogs'][0]['logRecords'][0]);
+        });
+    }
+
+    public function test_an_unknown_compression_setting_falls_back_to_plain_json(): void
+    {
+        $this->configureEndpoint();
+        config([
+            'oos.routing.export.compression' => 'zstd',
+            'oos.routing.export.compression_threshold' => 0,
+        ]);
+        Http::fake(['*collector.test*' => Http::response('', 200)]);
+
+        $this->insertMetric();
+
+        $this->artisan('nvoos:push-routing-metrics')->assertSuccessful();
+
+        Http::assertSent(static function ($request): bool {
+            if ($request->hasHeader('Content-Encoding')) {
+                return false;
+            }
+
+            $body = json_decode($request->body(), true);
+
+            return isset($body['resourceLogs'][0]['scopeLogs'][0]['logRecords'][0]);
+        });
+    }
+
     public function test_without_an_endpoint_nothing_is_sent_and_nothing_is_recorded(): void
     {
         config(['oos.routing.export.endpoint' => '']);
