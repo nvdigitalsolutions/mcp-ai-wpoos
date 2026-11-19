@@ -575,11 +575,9 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	justify-self: center;
 }
 
-.site-header--brand-center .site-nav-shell {
-	grid-column: 1;
-	grid-row: 1;
-	justify-self: start;
-}
+/* The SHELL is `display: contents`, so a grid placement on it is inert —
+ * found by `lib/css-lint.ts`, which reports box properties whose subject has
+ * no box. The toggle below is the real grid item. */
 
 /* `.site-nav-shell` is `display: contents` — it has no box, so a grid
  * placement on the SHELL does nothing. The disclosure BUTTON is the grid
@@ -1693,17 +1691,40 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	justify-content: center;
 }
 
+/* The centring CHAIN. Both properties here INHERIT-or-descend, so the height
+ * bridge is a SEPARATE rule below: `--ds-col-min-h` is inherited from the column
+ * that declares it, and a generic descendant selector therefore hands the
+ * column's measured height to every single-child div inside the content module.
+ * accommodations' `.box-text` took `min-height:572px` from its column,
+ * `.box-image` took it too, and a 572px box rendered 1144px tall — the band
+ * 6838px against a 2298px floor (monicarajiv, 2026-11-20). */
 .ds-section-wrap--centered .post-body :is(div, section):has(> :only-child):not(.row):not(.vc_row):not(.owl-carousel):not(.owl-stage):not([class*='brando-inner-row']):not([class*='brando_inner_row']) {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	/* A COLUMN is part of this chain too (section → container → row → column),
-	 * and its height is a MEASURED fact. The `0` here is what lets a wrapper
-	 * centre inside its parent without pinning a floor; on a column it zeroed
-	 * the source's own box (virtuallyjamaica's about band: 374px measured,
-	 * 338px rendered). Read the same `--ds-col-min-h` bridge the photo-panel
-	 * clamp uses, so a measured column height survives the centring chain
-	 * while an unmeasured wrapper still gets 0. */
+}
+
+/* A COLUMN is part of this chain too (section → container → row → column), and
+ * its height is a MEASURED fact. The `0` here is what lets a wrapper centre
+ * inside its parent without pinning a floor; on a column it zeroed the source's
+ * own box (virtuallyjamaica's about band: 374px measured, 338px rendered). Read
+ * the same `--ds-col-min-h` bridge the photo-panel clamp uses, so a measured
+ * column height survives the centring chain while an unmeasured wrapper still
+ * gets 0.
+ *
+ * `:not(.col-inner *)` is load-bearing, for the same reason the photo-panel
+ * clamp is a DIRECT-CHILD rule: the chain ends at the content box. Everything a
+ * builder draws INSIDE `.col-inner` is a content module with its own box, and
+ * it must never inherit the column's floor.
+ *
+ * `:not(.col-inner)` for the same reason one level up: the measured height is
+ * the COLUMN's (that is what `collectBandColumnFacts` measures), and the
+ * column's own generated rule already states it as `min-height`. Re-stating it
+ * on `.col-inner` — a box 30px shorter than its column, because the column pads
+ * `0 15px 30px` — grew the column by exactly that padding: monicarajiv's
+ * accommodation photo lane rendered 700px against a measured 670 (2026-11-20).
+ */
+.ds-section-wrap--centered .post-body :is(div, section):has(> :only-child):not(.col-inner):not(.col-inner *):not(.row):not(.vc_row):not(.owl-carousel):not(.owl-stage):not([class*='brando-inner-row']):not([class*='brando_inner_row']) {
 	min-height: var(--ds-col-min-h, 0);
 }
 

@@ -570,6 +570,18 @@ export interface MeasuredBox {
 	 * restating it can never fight the parent that legitimately sets it.
 	 */
 	color?: string;
+	/**
+	 * A VISIBLE border, as a CSS shorthand (`2px solid rgba(0, 0, 0, 0.1)`), when
+	 * all four sides agree.
+	 *
+	 * A border changes the rendered box: Flatsome frames a section title with a
+	 * 2px hairline, and a rebuild without it is 4px narrow and 4px short at every
+	 * breakpoint — inside a band whose height is otherwise exact, so no gate saw
+	 * it (monicarajiv, 2026-11-20). A PER-SIDE border is not recorded: one
+	 * shorthand cannot carry four different sides, and a wrong rule is worse
+	 * than the template default.
+	 */
+	border?: string;
 }
 
 /**
@@ -636,6 +648,33 @@ export function collectBandBoxFacts( input: {
 		[ 'marginTop', 'marginRight', 'marginBottom', 'marginLeft' ]
 			.map( ( side ) => px( getComputedStyle( node )[ side as 'marginTop' ] ) )
 			.join( ' ' );
+	/**
+	 * A uniform, VISIBLE border as a shorthand, or `''`.
+	 *
+	 * Four sides must agree on width, style AND colour: a shorthand cannot express
+	 * `border-bottom` alone, and emitting the wrong one would draw a frame the
+	 * source never had. A zero-width or `none` side is not a border.
+	 */
+	const borderOf = ( node: Element ): string => {
+		const style = getComputedStyle( node );
+		const sides = [ 'Top', 'Right', 'Bottom', 'Left' ] as const;
+		const width = style[ `border${ sides[ 0 ] }Width` ];
+		const line = style[ `border${ sides[ 0 ] }Style` ];
+		const ink = style[ `border${ sides[ 0 ] }Color` ];
+		if ( ! width || parseFloat( width ) === 0 || line === 'none' || line === 'hidden' ) {
+			return '';
+		}
+		for ( const side of sides ) {
+			if (
+				style[ `border${ side }Width` ] !== width ||
+				style[ `border${ side }Style` ] !== line ||
+				style[ `border${ side }Color` ] !== ink
+			) {
+				return '';
+			}
+		}
+		return `${ px( width ) } ${ line } ${ ink }`;
+	};
 	// The Bootstrap grid is a COUPLED set: `.container-fluid` carries 15px of
 	// side padding that `.row`'s -15px margin cancels. Restating one half without
 	// the other shrinks the band (virtuallyjamaica's #wifi rendered 1376px wide
@@ -705,6 +744,7 @@ export function collectBandBoxFacts( input: {
 				pads: Set< string >;
 				mars: Set< string >;
 				colors: Set< string >;
+				borders: Set< string >;
 				onModule: boolean;
 				onScaffold: boolean;
 			}
@@ -739,6 +779,7 @@ export function collectBandBoxFacts( input: {
 			const scaffolding = SCAFFOLDING.test( classAttribute ) && ! CONTENT_MODULE.test( classAttribute );
 			const pad = boxesOf( node );
 			const mar = marginsOf( node );
+			const border = borderOf( node );
 			// The class's OWN ink: a colour that differs from the one the node
 			// inherits. An inherited colour says nothing about the class (the parent
 			// already painted it), so it is recorded as the empty string and a class
@@ -788,6 +829,7 @@ export function collectBandBoxFacts( input: {
 						pads: new Set(),
 						mars: new Set(),
 						colors: new Set(),
+						borders: new Set(),
 						onModule: false,
 						onScaffold: false,
 					} );
@@ -796,12 +838,14 @@ export function collectBandBoxFacts( input: {
 					pads: Set< string >;
 					mars: Set< string >;
 					colors: Set< string >;
+					borders: Set< string >;
 					onModule: boolean;
 					onScaffold: boolean;
 				};
 				entry.pads.add( pad );
 				entry.mars.add( mar );
 				entry.colors.add( ownColor );
+				entry.borders.add( border );
 				if ( scaffolding ) {
 					entry.onScaffold = true;
 				} else {
@@ -846,6 +890,13 @@ export function collectBandBoxFacts( input: {
 			const color = [ ...entry.colors ][ 0 ];
 			if ( entry.colors.size === 1 && color ) {
 				box.color = color;
+			}
+			// Only a border every instance AGREES on, and only a visible one: an
+			// empty string is “no border”, which is the template default and needs
+			// no rule.
+			const border = [ ...entry.borders ][ 0 ];
+			if ( entry.borders.size === 1 && border ) {
+				box.border = border;
 			}
 			if ( Object.keys( box ).length > 0 ) {
 				facts[ name ] = box;
@@ -1204,14 +1255,28 @@ function collectBandColumnFacts( input: {
 			continue;
 		}
 		const facts: ForgeBandColumnFact[] = [];
+		// A lane's POSITION is recorded as a PAIR (`nth-child` + `nth-last-child`), not
+		// as a bare index. `[data-section-id] .col:nth-child(1)` matches the first
+		// column of EVERY row in the band: airport-transfer's four-card row put a
+		// 478px floor on the two single-column rows beside it and a 766px band
+		// rendered 1494px (monicarajiv, 2026-11-20). The pair names a lane in a row of
+		// exactly N lanes, so a row of another shape never matches.
+		//
+		// The count skips nodes the sanitizer drops (`<style>`, `<script>`): a builder
+		// emits `<style>` inside its rows, and counting them would offset the pair
+		// against the rebuilt markup, which carries none.
+		const lanes = [ ...row.children ].filter(
+			( node ) => ! /^(style|script|link|template|noscript)$/i.test( node.tagName )
+		);
 		kids.forEach( ( child, index ) => {
 			// A unique class token when the band offers one; otherwise the
 			// column’s POSITION in the row. Without the fallback a band whose
 			// columns share every class (`medium-6 large-6` on both) recorded no
 			// columns at all, so per-column facts had nowhere to live.
+			const laneIndex = lanes.indexOf( child ) + 1;
 			const selector =
 				tokenOf( band!, child ) ??
-				`col:nth-child(${ Array.prototype.indexOf.call( row.children, child ) + 1 })`;
+				`col:nth-child(${ laneIndex }):nth-last-child(${ lanes.length - laneIndex + 1 })`;
 			const style = getComputedStyle( child );
 			const image = style.backgroundImage !== 'none';
 			// A SOLID fill only: a photo overlay is translucent by design, and a scrim
@@ -1516,6 +1581,9 @@ export function boxDeclarations( box: MeasuredBox ): string {
 	return [
 		box.pad && `padding:${ box.pad }`,
 		box.mar && `margin:${ box.mar }`,
+		// A uniform border changes the rendered box on every side (see
+		// `MeasuredBox.border`), so it is emitted before the size facts.
+		box.border && `border:${ box.border }`,
 		// The class's own ink override (see `MeasuredBox.color`). Last on purpose:
 		// a declaration string is diffed per device by `mergeBoxFacts`, so the
 		// order only has to be stable.
