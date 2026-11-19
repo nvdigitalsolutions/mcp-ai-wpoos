@@ -404,6 +404,13 @@
 					"logoHeight": "74px",
 					"logoAlign": "center"
 				},
+				"actions": [
+					{
+						"icon": "envelop",
+						"label": "Send us an email",
+						"href": "mailto:info@monicarajiv.com"
+					}
+				],
 				"desktop": {
 					"measure": 1080,
 					"padX": 15,

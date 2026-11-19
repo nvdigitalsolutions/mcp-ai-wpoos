@@ -2466,6 +2466,8 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t/** The header\u2019s BOX per viewport (measured): the container\u2019s cap,',
 		'\t * gutter and the brand mark\u2019s rendered height. `measure` is present only',
 		'\t * where the cap is binding. */',
+		'\t/** The header trailing icon links (the source envelope / search glyph). */',
+		'\theaderActions?: Array<{ icon?: string; label?: string; href?: string }>;',
 		'\tgeometry?: {',
 		"\t\twide?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
 		"\t\tdesktop?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
@@ -2613,6 +2615,24 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		if ( devices.length > 0 ) {
 			entry.push( `geometry: { ${ devices.join( ', ' ) } }` );
 		}
+	}
+	// The trailing ICON links: a glyph from the vendor font, which never ships, so
+	// the rebuild re-draws it. One desktop fact, beside the per-viewport boxes.
+	if ( chrome.geometry?.actions && chrome.geometry.actions.length > 0 ) {
+		const actions = chrome.geometry.actions.map( ( action ) => {
+			const parts: string[] = [];
+			if ( action.icon ) {
+				parts.push( `icon: ${ tsString( action.icon ) }` );
+			}
+			if ( action.label ) {
+				parts.push( `label: ${ tsString( action.label ) }` );
+			}
+			if ( action.href ) {
+				parts.push( `href: ${ tsString( action.href ) }` );
+			}
+			return `{ ${ parts.join( ', ' ) } }`;
+		} );
+		entry.push( `headerActions: [ ${ actions.join( ', ' ) } ]` );
 	}
 	if ( chrome.footerBrand ) {
 		const parts: string[] = [];
