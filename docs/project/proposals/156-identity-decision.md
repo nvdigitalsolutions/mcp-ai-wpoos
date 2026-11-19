@@ -232,7 +232,7 @@ this runtime, and the administrator is told so.
 | Slice | Scope | State |
 |---|---|---|
 | **I1** | This proposal; `inert` added to the contract vocabulary, the audit and the test; the row corrected; §100 in Proposal 149 | this PR |
-| **I2** | A `runtime: not-implemented` marker in the catalogue, disabled-with-hint rendering, and a test that fails when a marked key gains a reader without the marker being removed | next |
+| **I2** | A runtime `UnimplementedSettings` list, disabled-with-hint rendering, writes refused, and a source-scan test that fails when a marked key gains a reader | **shipped** — plan §101 |
 | **I3** | Auth0 bearer verification on the estate API — JWKS, `iss`/`aud`/scope, no session, no provisioning. Makes `auth0_domain`, `auth0_audience`, `auth0_required_scope` real | then |
 | **I4** | Magic-link sign-in, if D7 is accepted | then |
 | **I5** | OIDC SSO with deny-by-default JIT (D3, D4) — only when a customer requires console SSO | product call |
@@ -240,6 +240,15 @@ this runtime, and the administrator is told so.
 I3 before I5 matters: accepting a bearer token on the API needs no browser
 session, no membership mapping and no provisioning rule. It is the narrow piece,
 and it is the one the documentation already promises.
+
+**Deviation on I2, recorded deliberately.** This section originally asked for a
+`runtime: not-implemented` marker in the catalogue. That is the wrong home:
+`resources/settings/catalogue.json` is generated from the WordPress plugin's
+section classes, the plugin cannot know what this runtime implements, and a
+hand-edited marker would be erased by the next regeneration. The marker is
+therefore a runtime list — `App\Support\Settings\UnimplementedSettings` — living
+next to the behaviour it describes, with a test that scans the runtime for every
+listed key.
 
 ## 7. Risks
 

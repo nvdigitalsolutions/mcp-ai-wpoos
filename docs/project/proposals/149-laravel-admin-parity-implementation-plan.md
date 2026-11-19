@@ -9990,3 +9990,89 @@ state exists.
 artifact you have not validated), `enable_simple_jwt_login` and
 `enable_wordpress_gravatar_bridge` (they configure WordPress software this
 runtime does not have).
+
+---
+
+## 101. The nineteen dead toggles are marked (2026-11-20)
+
+**State:** shipped. Slice **I2** of [Proposal 156](156-identity-decision.md);
+this closes §100.6 item 1, which found the fields and left them live.
+
+### 101.1 What an administrator saw, and what they see now
+
+Before: seven sections of the Authentication tab, nineteen controls, every one of
+them editable and saveable, none of them read by any code. An administrator could
+set an Auth0 domain, save successfully, and get no effect and no explanation.
+
+After: the same nineteen controls still render — the capability exists upstream
+and hiding it would leave the administrator unable to tell broken from absent
+(D8, the S-1 reasoning) — but each is **disabled**, each carries its own reason
+as helper text, and the writer refuses the key even when a crafted payload skips
+the component.
+
+The reason is per key, because three different situations share one state:
+
+| Situation | Keys | The hint says |
+|---|---|---|
+| Behaviour is an ordered slice | Auth0 trio, magic link (2) | "slice I3 adds it" / "slice I4 decides it" |
+| The upstream software is absent here | Simple JWT Login, WordPress.com/Gravatar (3) | "this runtime does not have / has none (D5)" |
+| Intent is re-homed or met elsewhere | six REST/tool policies, two lifetimes | "re-homed by D5" / "not driven by this setting" |
+
+### 101.2 Where the marker lives — and why not in the catalogue
+
+Proposal 156 §6 asked for a `runtime: not-implemented` marker in the catalogue.
+That would not have survived: `resources/settings/catalogue.json` is generated
+from the plugin's own section classes, the plugin cannot know what this runtime
+implements, and a hand-edited marker is erased on the next regeneration.
+
+So the list is code — `app/Support/Settings/UnimplementedSettings.php` — with a
+`REASONS` map that doubles as the helper text. Two changes consume it:
+
+- `SettingsSchema::writableFor('admin')` excludes every inert key, so
+  `SettingsService::write()` refuses it. Rendering a disabled control is
+  presentation; the projection is the control, which is the rule the trait's own
+  docblock states.
+- `BuildsSettingsForm::component()` gains an inert branch **before** the
+  writability branch. Order matters: an inert key is refused on purpose, so it
+  would otherwise pick up the S-1 operator hint and blame NV Digital for an
+  unimplemented slice.
+
+`forSurface('admin')` is untouched, which is what keeps them visible.
+
+### 101.3 The gate, and proof it has teeth
+
+`tests/Feature/UnimplementedSettingsTest.php` scans every `.php` file under
+`app/`, `config/`, `routes/`, `database/` and `resources/views/` for each listed
+key and fails naming the file. The list class itself is excluded; the catalogue
+is JSON and is data rather than a reader.
+
+The scan was validated by adding a throwaway `app/Support/ZzProbe.php` containing
+`"auth0_domain"`: the test failed with
+`auth0_domain in app/Support/ZzProbe.php`. Probe removed, suite green. A guard
+that has never failed is not known to be a guard — and given §100 is a correction
+of a false negative, a scan is exactly the check that has to be demonstrated.
+
+Implementing a key is therefore a two-part act: add the reader, delete the entry.
+
+### 101.4 Gates
+
+| Run | Result |
+|---|---|
+| `UnimplementedSettingsTest` | **6 tests / 143 assertions** — every key in the catalogue, tenant scope, `console: hidden`; none referenced by runtime source; all still rendered on `/admin`; none writable on `admin`, `ops` or `console`; a crafted payload writes nothing; the page shows the hint and the per-key reasons |
+| `--filter "Settings\|SurfaceOwnership\|AdminNavigation"` | **84 tests / 11,632 assertions, 0 failures, 0 errors** — the `writableFor` change broke no projection test |
+| `bin/audit-surface-ownership.php` | unchanged by this slice: **47 surfaces · 37 built · 0 planned-only · 1 inert** |
+| phpcs (`phpcs-laravel.xml.dist`, 4 changed files) | **0 errors, 0 warnings** |
+
+### 101.5 What this does not fix
+
+1. **Nothing became functional.** Nineteen fields are now honestly dead instead of
+   silently dead. The behaviour is still I3–I5.
+2. **Values already stored are untouched.** An estate that saved an Auth0 domain
+   before this slice still has it in `nvoos_tenant_settings`; it is simply no
+   longer writable until I3 reads it. Deliberately not deleted — I3 will want it.
+3. **`require_confirm_destructive_ops` is marked inert while its intent is met by
+   the approvals queue.** That is the honest reading of the key (nothing reads it)
+   but it does read as a gap where there is none. The reason string says so.
+4. **The console surface is unaffected** because all nineteen are `console: hidden`
+   — the test now pins that, so a key that became console-visible would fail
+   rather than ship a dead control on the product surface.

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Support\Settings\SettingsCatalogue;
+use App\Support\Settings\UnimplementedSettings;
 
 /**
  * The settings catalogue the console renders.
@@ -305,6 +306,11 @@ final class SettingsSchema
      * - `admin` renders the full form, including operator-scope fields (S-1:
      *   disabled with a hint), but may write only tenant/user scope. Rendering
      *   a control is not permission to accept it.
+     *
+     * `admin` also refuses the `inert` keys from `UnimplementedSettings`
+     * (Proposal 156). They are tenant scope and they render, but no code reads
+     * them, so accepting a write would be the same fiction as a control that
+     * does nothing — the value would persist and change no behaviour.
      * - `ops` is the platform operator: operator-scope fields only. Those
      *   values are routed to the platform layer by the writer, so one edit
      *   applies to every estate instead of to whichever estate `/ops` resolved.
@@ -326,7 +332,8 @@ final class SettingsSchema
 
         return array_values(array_filter(
             self::fields(),
-            static fn (array $field): bool => 'operator' !== ($field['scope'] ?? 'tenant'),
+            static fn (array $field): bool => 'operator' !== ($field['scope'] ?? 'tenant')
+                && ! UnimplementedSettings::isInert((string) $field['key']),
         ));
     }
 
