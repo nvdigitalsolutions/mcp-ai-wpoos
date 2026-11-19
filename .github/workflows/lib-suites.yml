@@ -1,0 +1,93 @@
+name: lib suites
+
+# The two shared packages had no CI coverage. `lib/core` is the engine both
+# runtimes use (WordPress and Laravel) and `lib/laravel-adapter` is how the
+# Laravel side reaches it; `.github/workflows/laravel-app.yml` already *triggers*
+# on both paths, but it runs the app skeleton's suite, not theirs (149 §91.3).
+# The consequence was recorded and then left standing: ~1,800 core tests that
+# only run when somebody remembers to run them.
+#
+# Two facts about these packages, both learned by running them:
+#
+#  1. Neither commits a `composer.lock`. `composer install` therefore has nothing
+#     to install from, so the step is `composer update` — deliberate, not an
+#     oversight. A package that later commits a lock should switch to install.
+#
+#  2. Both suites read files from OUTSIDE their package: the MCP, OAuth, OKF,
+#     MJML and tool capture corpora live in `tests/fixtures/`, and
+#     `SettingsStoreEndpointWiringTest` reads the app skeleton's settings
+#     catalogue. Their `paths` filters below include those files, so editing a
+#     corpus re-runs the suites that replay it.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - 'tests/fixtures/**'
+      - 'docker/laravel/app-skeleton/resources/settings/catalogue.json'
+      - '.github/workflows/lib-suites.yml'
+  pull_request:
+    paths:
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - 'tests/fixtures/**'
+      - 'docker/laravel/app-skeleton/resources/settings/catalogue.json'
+      - '.github/workflows/lib-suites.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    name: ${{ matrix.package }} suite
+    runs-on: ubuntu-latest
+    # A red package must not hide the other one's result.
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [lib/core, lib/laravel-adapter]
+    # Bounds a hung run: the slowest package takes about five minutes.
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # core requires ^8.1, the adapter ^8.2, and the app job uses 8.3 —
+          # one version for all three keeps the engine's behaviour identical
+          # between the two runtimes' jobs.
+          php-version: '8.3'
+          extensions: fileinfo, mbstring, intl, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          # Keyed per package: the two resolve different dependency sets, and a
+          # shared key would restore one package's tree onto the other's lock.
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.package }}-${{ hashFiles(format('{0}/composer.json', matrix.package)) }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.package }}-
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.package }}
+        run: composer update --no-interaction --prefer-dist --no-progress
+
+      - name: Run the suite
+        working-directory: ${{ matrix.package }}
+        # No `-d memory_limit=…`: the container recipe needs it because its CLI
+        # default is 128M, and the runner's default is high enough. If this ever
+        # dies on memory, that is a real regression, not an environment gap.
+        run: vendor/bin/phpunit --no-coverage
