@@ -8487,8 +8487,9 @@ operator panel:
   `cost`), ordered by spend — the page renders what the database computed, not a
   PHP roll-up that can drift from it;
 - **column totals** in the footer, from the same rows;
-- **the page states the two absences**: no per-site breakdown (the table has no
-  estate scope, §64) and Anonymous for unauthenticated turns.
+- **Anonymous for unauthenticated turns**, stated on the page rather than left to
+  be inferred. (The "no per-site breakdown" absence this bullet used to record was
+  closed by §87.)
 
 The surface inventory keeps this inside `platform-operations` — the row whose
 title is literally "Operations, diagnostics and cost" — rather than adding a
@@ -8499,7 +8500,7 @@ title is literally "Operations, diagnostics and cost" — rather than adding a
 | View | Status |
 |---|---|
 | `per_user` | **this section** |
-| `per_site` | **unblocked by §86.** The data now carries an estate; the view itself is the remaining work |
+| `per_site` | **shipped in §87** — the estate is the site, so the view is a scope control on `/ops/token-usage` |
 | `per_tool` | **not a usage view.** In WordPress it is a limits *configuration* table (preferred model, multiplier, effective limits), so it is a settings surface, not an analytics one; recorded here so it is not mistaken for one |
 | `per_models` | already served by `/ops/models` (§68) — the model config table |
 | `model_manager` | catalogue sync lives in `/ops/models` too |
@@ -8861,8 +8862,7 @@ estate's day.
 
 ### 86.6 Still open
 
-1. **The `per_site` view** is unblocked, not built. The data can now answer it;
-   the page is the remaining work.
+1. **The `per_site` view** was unblocked here and built in §87.
 2. **Harness traces** (D1, Phase 2) stay estate-blind until the run id is threaded
    through `TraceStoreInterface::append()`. No estate-facing trace surface exists
    yet, so nothing leaks today — but the next one must not ship before that lands.
@@ -8871,3 +8871,81 @@ estate's day.
    are not a leak; if either is ever exposed, it needs the same required-tenant
    treatment.
 4. **Per-estate retention windows** stay deferred (§76.4 item 2).
+
+## 87. Token usage by estate — the `per_site` view (2026-11-19)
+
+§82.3 left `per_site` blocked on the missing estate scope; §86 gave the table
+one. This section records what the WordPress page actually has, which of it this
+runtime can evidence, and why the port is a scope control rather than a second
+page.
+
+### 87.1 What the WordPress view has, and what this one keeps
+
+The WordPress page is titled **Site-Wide Token Statistics**: summary cards, a
+provider/model distribution, then per-provider and per-model tables. In a
+multi-estate runtime **the estate is the site**, so "site-wide" means "this
+estate's whole", not "the deployment's whole".
+
+| WordPress element | Here | Why |
+|---|---|---|
+| Active users, requests, tokens, est. cost | **yes** — columns of the estate table | the same four numbers, one row per estate |
+| "Tools used" | no | the tool is inside the metadata blob, so a distinct count is a row scan rather than an aggregate; and the WordPress `per_tool` view is a limits configuration table, not a usage one (§82.3) |
+| Provider / model distribution charts | no | `/ops/token-analytics` already charts these rows (§83); a second chart of the same data over the same window is decoration |
+| Usage by provider table | no | `/api/v1/cost/by-provider` answers it for one estate, and `provider` is a metadata key, so the aggregate would be a row scan |
+| Usage by model table | **yes**, when scoped | `model_id` is a column, so it groups in SQL |
+| Cached tokens | no | the provider response carries no cached count (§82.1) |
+| The site's identity | **yes** — the estate selector | |
+
+### 87.2 The port is a scope control, not a second page
+
+`/ops/token-usage` gains one URL-bound control, `estate`, listing every estate
+with usage in the window plus **All estates**. The page then renders two tables
+whose first is always *the dimension of the current scope*:
+
+| Scope | First table | Second table |
+|---|---|---|
+| All estates | **By estate** — one row per estate | **By user** |
+| One estate | **By model** — one row per model used | **By user**, scoped |
+
+A second page would duplicate the period control, the window label and the
+totals row to say the same thing about a narrower set of rows. The WordPress
+views are separate because its admin is tabbed; §83 already collapsed three
+analysis sub-tabs into one page for the same reason.
+
+### 87.3 Decisions
+
+| # | Decision | Rationale |
+|---|---|---|
+| **87.1** | Only estates **with usage in the window** are listed. | The table is a navigator, so an estate that spent nothing is not something to navigate to. A tenant with no rows is also not a row of zeros, which would read as a query that failed. |
+| **87.2** | `users` counts distinct **authenticated** users. | An anonymous turn (`user_id = 0`) is spend without a person. Counting it would credit the estate with a user who does not exist. The page states the rule. |
+| **87.3** | `share` is the share of **tokens**, not of cost. | A window with no priced model records `0` for every cost, and a column of `0.0%` reads as a broken query rather than as a pricing gap. Tokens are recorded on every turn. |
+| **87.4** | The estate table's rows are ordered by token volume, the same quantity `share` is computed from. | Ordering by cost while sharing by tokens made the column non-monotonic on an unpriced deployment. |
+| **87.5** | `TokenUsageReport::byEstate()` takes **no** tenant parameter. | Not an exception to Proposal 152 §3 D5: enumerating the estates *is* this reader's only query, so a scope parameter would have exactly one meaningful value. D5 exists to stop a reader being called in the wrong scope by accident, and a parameter-less reader has no wrong scope. It is reachable only from the operator page; the estate-facing cost routes go through `TokenUsage::summary()` with the caller's estate. |
+| **87.6** | The `estate` URL parameter is a **filter, not an authorization**. | The page is operator-only and an operator may see every estate, so the value grants nothing. It reaches the query as a bound parameter, so a crafted value can only fail to match — which is why an unknown estate renders an empty table rather than an error. |
+| **87.7** | An estate named by the URL that has no usage stays in the selector. | A page that silently reverted to "All estates" would show other estates' numbers under a heading naming one — the failure mode §86 exists to prevent. |
+
+### 87.4 The two fallbacks
+
+The report resolves estate ids through the `tenants` table and falls back to the
+**id** when there is no row, which is the same discipline as `User #id` on the
+user table: a missing join is not a blank cell. `normaliseEstateId()` coalesces
+an empty value to `default`, matching the adapter's own attribution rather than
+inventing a second rule.
+
+### 87.5 Gates
+
+| Run | Result |
+|---|---|
+| `AdminTokenEstatesTest` | **10 tests / 51 assertions** — the estate table groups by estate with hand-checked totals; the selector scopes the user table and the totals; only estates with usage are listed; a URL estate with no usage stays selected and renders empty; an empty query parameter means every estate; both sections render; the estate table is hidden when scoped and the model table appears; an estate with no usage says so instead of showing zeros |
+| `TokenUsage*`, `AdminToken*`, `AdminDiagnostics`, `SurfaceOwnership` | **66 tests / 711 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`, 3 files) | **0 errors** |
+| Full app suite | **1425 tests / 18,349 assertions, 0 failures** (CI `App suite (SQLite)`) — exactly +10 tests / +51 assertions over §86's 1415 / 18,298, which is this section's focused run and nothing else |
+
+### 87.6 Still open
+
+1. **Provider is not a dimension here.** It lives in the metadata blob; the
+   scoped answer exists at `/api/v1/cost/by-provider`, and a JSON aggregate that
+   works on both MySQL and SQLite is its own piece of work.
+2. **`per_tool`** stays a settings surface, not a usage one (§82.3).
+3. **No export.** The WordPress view has none either; CSV belongs with the
+   Reports page if it is ever wanted.
