@@ -6,10 +6,14 @@ use App\Filament\Operator\Pages\Budgets;
 use App\Models\Budget;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\AssistantWriter;
+use App\Support\Budgets\BudgetStore;
+use App\Support\TenantContext;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -204,6 +208,114 @@ class AdminBudgetsTest extends TestCase
         $this->assertFalse((bool) $budget->enabled);
     }
 
+    /**
+     * A narrowed limit is a different row from the estate-wide one, and it names
+     * the assistant it narrows to.
+     */
+    public function test_creating_an_assistant_budget_writes_the_scope(): void
+    {
+        $assistantId = $this->assistant(Tenant::DEFAULT_ID, 'Support triage');
+
+        $this->actingAs($this->operator());
+
+        Livewire::test(Budgets::class)
+            ->callAction('create', data: array(
+                'tenant_id' => Tenant::DEFAULT_ID,
+                'assistant_id' => $assistantId,
+                'window' => Budget::DAILY,
+                'limit_usd' => 2.0,
+                'warn_at' => 0.8,
+                'enabled' => true,
+            ))
+            ->assertNotified();
+
+        $budget = Budget::query()->withoutGlobalScopes()->sole();
+
+        $this->assertSame($assistantId, (int) $budget->assistant_id);
+        $this->assertSame(Tenant::DEFAULT_ID, $budget->tenant_id);
+    }
+
+    /**
+     * An estate-wide limit and an assistant limit coexist for the same window —
+     * the case the original `(tenant, window)` key made impossible.
+     */
+    public function test_an_estate_and_an_assistant_can_both_limit_the_same_window(): void
+    {
+        $assistantId = $this->assistant(Tenant::DEFAULT_ID, 'Support triage');
+
+        $this->actingAs($this->operator());
+
+        $page = Livewire::test(Budgets::class);
+
+        foreach (array(0, $assistantId) as $scope) {
+            $page->callAction('create', data: array(
+                'tenant_id' => Tenant::DEFAULT_ID,
+                'assistant_id' => $scope,
+                'window' => Budget::DAILY,
+                'limit_usd' => 5.0,
+                'warn_at' => 0.8,
+                'enabled' => true,
+            ));
+        }
+
+        $this->assertSame(2, Budget::query()->withoutGlobalScopes()->count());
+    }
+
+    /**
+     * Two layers refuse a foreign assistant, and both are worth pinning: the
+     * select's option set (which is what fires through the form) and the store's
+     * own check (which holds if the options closure is ever loosened).
+     */
+    public function test_the_form_refuses_a_budget_naming_an_assistant_from_another_estate(): void
+    {
+        $this->estate('estate-b');
+
+        // In `default`; the budget below names `estate-b`.
+        $assistantId = $this->assistant(Tenant::DEFAULT_ID, 'Support triage');
+
+        $this->actingAs($this->operator());
+
+        Livewire::test(Budgets::class)
+            ->callAction('create', data: array(
+                'tenant_id' => 'estate-b',
+                'assistant_id' => $assistantId,
+                'window' => Budget::DAILY,
+                'limit_usd' => 5.0,
+                'warn_at' => 0.8,
+                'enabled' => true,
+            ))
+            ->assertHasFormErrors(array('assistant_id'));
+
+        $this->assertSame(0, Budget::query()->withoutGlobalScopes()->count());
+    }
+
+    public function test_the_store_refuses_a_budget_naming_an_assistant_from_another_estate(): void
+    {
+        $this->estate('estate-b');
+
+        $assistantId = $this->assistant(Tenant::DEFAULT_ID, 'Support triage');
+
+        $this->expectException(InvalidArgumentException::class);
+
+        // A limit whose assistant is in another estate would never match a turn
+        // while still looking configured, so it must not be written at all.
+        app(BudgetStore::class)->put('estate-b', Budget::DAILY, 5.0, 0.8, true, $assistantId);
+    }
+
+    public function test_the_scope_column_names_the_assistant(): void
+    {
+        $assistantId = $this->assistant(Tenant::DEFAULT_ID, 'Support triage');
+
+        $this->budget(Tenant::DEFAULT_ID, Budget::DAILY, 5.0);
+        $this->budget(Tenant::DEFAULT_ID, Budget::MONTHLY, 50.0, assistantId: $assistantId);
+
+        $this->actingAs($this->operator())
+            ->get('/ops/budgets')
+            ->assertOk()
+            ->assertSee('Whole estate')
+            ->assertSee('Support triage');
+    }
+
     public function test_deleting_a_budget_removes_it(): void
     {
         $budget = $this->budget(Tenant::DEFAULT_ID, Budget::DAILY, 10.0);
@@ -282,10 +394,12 @@ class AdminBudgetsTest extends TestCase
         float $limit,
         float $warnAt = 0.8,
         bool $enabled = true,
+        int $assistantId = 0,
     ): Budget {
         $budget = new Budget();
 
         $budget->tenant_id = $tenantId;
+        $budget->assistant_id = $assistantId;
         $budget->window = $window;
         $budget->limit_usd = $limit;
         $budget->warn_at = $warnAt;
@@ -293,6 +407,27 @@ class AdminBudgetsTest extends TestCase
         $budget->save();
 
         return $budget;
+    }
+
+    /**
+     * A real assistant in the named estate.
+     *
+     * Created through `AssistantWriter` rather than the API: the operator is a
+     * member of two estates, so an estate-less API call answers 409 and the test
+     * would be exercising the tenant resolver instead of the page.
+     */
+    private function assistant(string $tenantId, string $title = 'Budget subject'): int
+    {
+        $previous = TenantContext::current();
+        TenantContext::set($tenantId);
+
+        try {
+            return (int) app(AssistantWriter::class)
+                ->create(array('title' => $title, 'system_prompt' => 'Be brief.'))
+                ->getKey();
+        } finally {
+            TenantContext::set($previous);
+        }
     }
 
     private function spend(float $cost, ?string $at = null, string $tenantId = Tenant::DEFAULT_ID): void

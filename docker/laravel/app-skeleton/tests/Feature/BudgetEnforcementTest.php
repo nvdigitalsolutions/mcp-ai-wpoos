@@ -162,6 +162,92 @@ class BudgetEnforcementTest extends TestCase
     }
 
     /**
+     * The two scopes, and the one rule that separates them: a narrowed limit
+     * judges only its own assistant.
+     */
+    public function test_an_assistant_budget_refuses_only_that_assistant(): void
+    {
+        $user = $this->owner();
+        $guarded = $this->assistant($user);
+        $spared = $this->assistant($user);
+
+        $this->budget(Budget::DAILY, 0.01, assistantId: $guarded);
+        $this->spend(0.02, null, Tenant::DEFAULT_ID, $guarded);
+
+        $this->chatWith($user, $guarded)
+            ->assertStatus(429)
+            ->assertJsonPath('code', 'budget_exceeded')
+            ->assertJsonPath('assistant_id', $guarded);
+
+        // The other assistant in the same estate is untouched.
+        $this->assertTurnCompleted($this->chatWith($user, $spared));
+    }
+
+    /**
+     * A narrowed limit must not let its assistant escape the estate ceiling:
+     * the assistant column adds attribution, it does not partition the estate.
+     */
+    public function test_an_estate_budget_counts_assistant_attributed_spend(): void
+    {
+        $user = $this->owner();
+        $assistant = $this->assistant($user);
+
+        $this->budget(Budget::DAILY, 0.01);
+        $this->spend(0.02, null, Tenant::DEFAULT_ID, $assistant);
+
+        $response = $this->chatWith($user, $assistant)->assertStatus(429);
+
+        // The scope that refused is the estate's, so the error says `0`.
+        $response->assertJsonPath('assistant_id', 0);
+    }
+
+    public function test_another_assistants_spend_does_not_count(): void
+    {
+        $user = $this->owner();
+        $narrowed = $this->assistant($user);
+        $other = $this->assistant($user);
+
+        $this->budget(Budget::DAILY, 1.0, assistantId: $narrowed);
+        $this->spend(5.0, null, Tenant::DEFAULT_ID, $other);
+
+        $this->assertTurnCompleted($this->chatWith($user, $narrowed));
+    }
+
+    /**
+     * Rows written before the column existed carry `0`, which means *not
+     * attributed* rather than "some assistant". Counting them against every
+     * assistant limit would refuse turns for spend they did not cause.
+     */
+    public function test_unattributed_spend_does_not_count_against_an_assistant_budget(): void
+    {
+        $user = $this->owner();
+        $assistant = $this->assistant($user);
+
+        $this->budget(Budget::DAILY, 0.01, assistantId: $assistant);
+        $this->spend(5.0);
+
+        $this->assertTurnCompleted($this->chatWith($user, $assistant));
+    }
+
+    /**
+     * When both ceilings are reached the tighter scope is the one named: an
+     * operator fixes the assistant without taking the estate offline.
+     */
+    public function test_the_assistant_limit_is_reported_before_the_estate_limit(): void
+    {
+        $user = $this->owner();
+        $assistant = $this->assistant($user);
+
+        $this->budget(Budget::DAILY, 0.01);
+        $this->budget(Budget::DAILY, 0.01, assistantId: $assistant);
+        $this->spend(0.02, null, Tenant::DEFAULT_ID, $assistant);
+
+        $this->chatWith($user, $assistant)
+            ->assertStatus(429)
+            ->assertJsonPath('assistant_id', $assistant);
+    }
+
+    /**
      * Fail closed: an unreadable budget must refuse, because a counter that
      * under-reports over-spends.
      */
@@ -208,8 +294,15 @@ class BudgetEnforcementTest extends TestCase
      */
     private function chat(User $user)
     {
-        $assistantId = $this->assistant($user);
+        return $this->chatWith($user, $this->assistant($user));
+    }
 
+    /**
+     * One chat turn naming a specific assistant — the fixture two assistants
+     * need to be told apart by the guard.
+     */
+    private function chatWith(User $user, int $assistantId)
+    {
         return $this->actingAs($user, 'sanctum')->post('/api/v1/chat-client', array(
             'messages' => array(array('role' => 'user', 'content' => 'Hello')),
             'assistant_id' => $assistantId,
@@ -230,20 +323,37 @@ class BudgetEnforcementTest extends TestCase
             ->json('id');
     }
 
-    private function budget(string $window, float $limit, float $warnAt = 0.8, bool $enabled = true): Budget
-    {
-        return Budget::query()->create(array(
-            'window' => $window,
-            'limit_usd' => $limit,
-            'warn_at' => $warnAt,
-            'enabled' => $enabled,
-        ));
+    private function budget(
+        string $window,
+        float $limit,
+        float $warnAt = 0.8,
+        bool $enabled = true,
+        int $assistantId = 0,
+    ): Budget {
+        $budget = new Budget();
+
+        // The ambient estate, which is what the original helper's `create()`
+        // relied on through the model's `creating` hook.
+        $budget->tenant_id = TenantContext::current();
+        $budget->assistant_id = $assistantId;
+        $budget->window = $window;
+        $budget->limit_usd = $limit;
+        $budget->warn_at = $warnAt;
+        $budget->enabled = $enabled;
+        $budget->save();
+
+        return $budget;
     }
 
-    private function spend(float $cost, ?string $at = null, string $tenantId = Tenant::DEFAULT_ID): void
-    {
+    private function spend(
+        float $cost,
+        ?string $at = null,
+        string $tenantId = Tenant::DEFAULT_ID,
+        int $assistantId = 0,
+    ): void {
         DB::table(self::SPEND_TABLE)->insert(array(
             'tenant_id' => $tenantId,
+            'assistant_id' => $assistantId,
             'user_id' => 1,
             'model_id' => 'spike-1',
             'prompt_tokens' => 10,

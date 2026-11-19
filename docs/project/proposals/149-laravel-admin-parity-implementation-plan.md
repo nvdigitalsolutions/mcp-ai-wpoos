@@ -9449,3 +9449,84 @@ part that shipped.
    `lib/core` contract.
 4. **One turn can overshoot** by that turn's cost — unchanged, and stated on both
    pages so an operator does not read a $0.02 overshoot as a broken counter.
+
+## 94. Assistant scope — the limit that names one agent (2026-11-19)
+
+§92's D1 deferred per-assistant budgets for a single, checkable reason: the
+assistant existed only inside `metadata`, so a narrowed limit would have meant a
+JSON scan of the spend table on the enforcement path — every turn, before the
+provider call. This section removes the reason rather than the feature.
+
+### 94.1 The column, in §86's shape
+
+`nvoos_token_usage.assistant_id`, defaulted `0`, indexed, **no backfill pass**.
+The writer already had the value: `CostCalculated` has carried `assistantId`
+since §81, and the listener was already putting it in `metadata` for debugging.
+The adapter now writes the column from the same array, exactly as it writes
+`tenant_id` (§152 D4), so `lib/core` needed no change and the interface grew no
+parameter.
+
+`0` means **not attributed**, not "some assistant". Rows written before the
+column therefore count against the estate limit and against no assistant limit.
+An assistant budget starts measuring at its first attributed turn and cannot be
+retroactively blown by history it did not cause.
+
+### 94.2 Two scopes, one table, one key
+
+`nvoos_budgets` gains `assistant_id` (`0` = whole estate) and its unique key moves
+to `(tenant_id, assistant_id, window)`. The sentinel is not cosmetic: SQL treats
+NULLs as distinct in a unique index, so a nullable column would have let two
+estate-wide daily rows coexist — the duplicate the original key was added to
+prevent. The old key had to go, or an estate could not hold a whole-estate limit
+and an assistant limit for the same window, which is the pairing this slice
+makes possible.
+
+**The scopes are additive.** An assistant limit narrows a ceiling; it does not
+replace it. A turn is judged against at most two configured limits, and the guard
+reports the **tighter scope first** — "assistant #12 is over" is actionable on the
+assistant, "the estate is over" is actionable on everybody.
+
+### 94.3 What the pages gained
+
+| Surface | Change |
+|---|---|
+| `/ops/budgets` | an **Applies to** column (`Whole estate` / assistant title) and a dependent assistant select that clears when the estate changes |
+| `/admin/budgets` | the same column, so a refusal is attributable rather than anonymous |
+
+An assistant limit can outlive its assistant: there is no foreign key, by the
+same convention every estate column follows. The label falls back to
+`Assistant #<id>` rather than to `Whole estate`, because mislabelling an orphaned
+narrowed limit as an estate limit would explain a refusal with the wrong scope.
+
+`BudgetStore::put()` refuses an assistant that does not belong to the named
+estate, and the create form's option set refuses it a layer earlier. Both are
+pinned: an option list is a UI rule and a store is a contract, and this repo has
+been bitten before by treating one as the other.
+
+### 94.4 Gates
+
+| Run | Result |
+|---|---|
+| `BudgetEnforcementTest` | **16 tests** — the 11 from §92 plus: an assistant limit refuses only its own assistant; a narrowed limit does not escape the estate ceiling; another assistant's spend does not count; unattributed rows do not count; the assistant scope is reported before the estate's |
+| `AdminBudgetsTest` | **16 tests** — the 11 from §93 plus: create writes the scope; an estate and an assistant can both limit one window; the form refuses a foreign assistant; the store refuses the same thing; the scope column names the assistant |
+| `EstateBudgetsPageTest` | **7 tests** — the 6 from §93 plus the scope column |
+| `TokenUsageTrackingTest` | **4 tests** — the two writer tests now also assert the **column**, because the metadata copy is not what a budget filters |
+| `RuntimeSchemaTest` | assistant column + index on the token table; the `(tenant, assistant, window)` key present and the old key gone |
+| `/(Budget\|SseStream\|Assistant\|Workflow\|AgentNode\|RuntimeSchema\|TokenUsage\|SurfaceOwnership\|AdminNavigation\|Cost\|ApiTenant)/` | **206 tests / 1443 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist` 14 paths, `phpcs.xml.dist` 1 path) | **0 errors** |
+| Full app suite | *(pending — filled from CI)* |
+
+### 94.5 Still open
+
+1. **Retention is a budget input.** A monthly window sums the raw table, which is
+   pruned at `oos.token_usage.retention_days` — a year by default, so a month is
+   safe. A deployment that sets retention below 31 days under-reports monthly
+   spend and therefore under-enforces it. The rollup (§80) is the answer if that
+   ever needs to hold; it is model-oriented today, so it would need the assistant
+   dimension first.
+2. **Orphaned assistant limits** are labelled, not cleaned up. A delete cascade
+   would be the tidy answer, and it is a decision about history rather than a bug.
+3. **Assistant scope is not a product-level quota.** It narrows an estate
+   ceiling; it does not partition spend. Two assistants with $5 limits each can
+   still spend the whole estate's $8.
+4. **Per-provider-call enforcement** remains slice A.2 (`lib/core` contract).

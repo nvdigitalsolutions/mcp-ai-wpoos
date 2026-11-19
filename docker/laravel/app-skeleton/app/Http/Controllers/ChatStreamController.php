@@ -66,12 +66,13 @@ class ChatStreamController
         // limit applied afterwards is a report, and a 429 has to be an HTTP
         // response rather than an error frame inside a 200 stream (Proposal 154).
         try {
-            $this->budgets->assertWithinBudget();
+            $this->budgets->assertWithinBudget(null === $assistant ? 0 : (int) $assistant->id);
         } catch (BudgetExceededException $error) {
             return response()->json(array(
                 'code' => 'budget_exceeded',
                 'message' => $error->getMessage(),
                 'window' => $error->window,
+                'assistant_id' => $error->assistantId,
                 'spend' => $error->spend,
                 'limit' => $error->limit,
             ), 429);

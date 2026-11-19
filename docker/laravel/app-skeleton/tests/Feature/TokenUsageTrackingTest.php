@@ -82,6 +82,11 @@ class TokenUsageTrackingTest extends TestCase
         $this->assertSame('openai', $metadata['provider']);
         $this->assertSame($id, $metadata['assistant_id']);
         $this->assertArrayHasKey('cost', $metadata);
+
+        // Proposal 154 slice D: the assistant is also a column, because a
+        // narrowed budget filters it on the enforcement path — the metadata copy
+        // stays for debugging, as the estate's does.
+        $this->assertSame($id, (int) $row->assistant_id);
     }
 
     public function test_the_accumulated_figures_win_over_the_last_iteration(): void
@@ -110,6 +115,7 @@ class TokenUsageTrackingTest extends TestCase
 
         $metadata = json_decode((string) $row->metadata, true);
         $this->assertSame(3, $metadata['agentic_iterations']);
+        $this->assertSame(7, (int) $row->assistant_id);
     }
 
     public function test_a_turn_without_tokens_writes_nothing(): void

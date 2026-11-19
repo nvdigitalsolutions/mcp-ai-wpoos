@@ -1,8 +1,8 @@
 # Proposal 154 — Budgets, and why `measurement` is three problems
 
-**Status:** proposed 2026-11-19. Slice A (estate budgets) shipped in §92 and
-slice B (both surfaces) in §93; the metric registry and eval runs are deferred
-with their preconditions recorded.
+**Status:** proposed 2026-11-19. Slice A (estate budgets) shipped in §92, slice
+B (both surfaces) in §93, slice D (assistant scope) in §94; the metric registry
+and eval runs are deferred with their preconditions recorded.
 
 **Related:** [Proposal 149](149-laravel-admin-parity-implementation-plan.md) §45
 (the `measurement` contract row), §64/§66 (routing metrics), §81 (token-usage
@@ -69,7 +69,7 @@ already obey.
 
 | # | Decision | Rationale |
 |---|---|---|
-| **D1** | Budgets are **estate-scoped** in slice A. Assistant scope is deferred until `assistant_id` is a column on `nvoos_token_usage`. | Spend by estate is a `WHERE tenant_id` over an existing column. Spend by assistant is currently only inside the `metadata` JSON, so it would be a per-request row scan on the hot path — the same reason §86 added a column rather than extracting one. |
+| **D1** | *(closed by D9, 2026-11-19)* Slice A is **estate-scoped**. Assistant scope waited until `assistant_id` was a column on `nvoos_token_usage`. | Spend by estate is a `WHERE tenant_id` over an existing column. Spend by assistant was only inside the `metadata` JSON, so it would have been a per-request row scan on the hot path — the same reason §86 added a column rather than extracting one. |
 | **D2** | Two windows: `daily` and `monthly`. | The cost pages already speak in whole days (`startOfDay()`); a rolling window would disagree with them. `monthly` matches how a bill is read. |
 | **D3** | Two bands: `warn_at` (a fraction of the limit) and the limit itself. Below warn → allow. Between → allow, and record. At or over → refuse. | A single hard line gives no warning before a customer's chat stops working. |
 | **D4** | Enforcement is **pre-flight**, at the chat entry points, before the provider is called. | A limit applied after the call is a report. Entry-only means one turn may overshoot by that turn's cost — the same allowance every gateway makes, and the alternative (per provider call) needs a `lib/core` contract, which is slice A.2. |
@@ -77,6 +77,7 @@ already obey.
 | **D6** | Refusal is **429** with `code: budget_exceeded`; an unverifiable budget is **503** with `code: budget_unverifiable`. | 429 is the conventional quota signal a client already retries on; 503 distinguishes "we cannot tell" from "you are over", which are different operator problems. |
 | **D7** | A budget row is estate-owned and takes the global tenant scope, like `Approval` and `Assistant`. | Proposal 153's rule, applied to the new model rather than re-derived. |
 | **D8** | **The operator owns the limit.** `/ops/budgets` writes across estates; the estate-facing `/admin/budgets` is **read-only**. | A limit the limited party can raise is a self-throttle, not a control: enforcement would be theatre the moment a 429 became inconvenient. A safe tenant write needs an **operator-set ceiling** — a second column, a second comparison, and a rule for what happens when a tenant lowers a limit the operator then lowers further. That is its own decision, so the tenant gets the half that is unambiguous and valuable: **notice**, before the limit refuses a turn rather than at the moment it does. |
+| **D9** | **Assistant scope is a second row, not a second table.** `assistant_id = 0` is the whole estate; a non-zero id narrows the limit to that assistant. Both may exist for one window, and the **tighter one refuses first**. | The sentinel rather than `NULL` keeps the unique key meaningful — SQL treats NULLs as distinct, so a nullable column would let two estate-wide daily rows exist for one estate, which is the duplicate the original key existed to prevent. `0` is also the token table's own "not attributed", so the two tables speak one dialect. The two scopes are additive by construction: an assistant limit narrows a ceiling, it does not replace it. |
 
 ## 4. Schema
 
@@ -84,18 +85,21 @@ already obey.
 CREATE TABLE nvoos_budgets (
   id            BIGINT PRIMARY KEY,
   tenant_id     VARCHAR(64) NOT NULL DEFAULT 'default',
-  window        VARCHAR(16) NOT NULL,          -- daily | monthly
+  assistant_id  BIGINT UNSIGNED NOT NULL DEFAULT 0,  -- 0 = whole estate
+  window        VARCHAR(16) NOT NULL,               -- daily | monthly
   limit_usd     DECIMAL(12,6) NOT NULL,
   warn_at       DECIMAL(5,4) NOT NULL DEFAULT 0.8,
   enabled       BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMP NULL,
   updated_at    TIMESTAMP NULL,
-  UNIQUE (tenant_id, window)
+  UNIQUE (tenant_id, assistant_id, window)
 );
 ```
 
-One budget per estate per window. A second row for the same pair is a
+One budget per estate, scope and window. A second row for the same triple is a
 configuration mistake, not a feature — the unique key makes it unrepresentable.
+An estate-wide limit and an assistant limit for the same window are *different*
+triples and therefore coexist, which is the pairing D9 exists to allow.
 
 Spend is **not** stored. It is `SUM(cost)` over `nvoos_token_usage` for the
 estate and window, which means the budget and the cost pages can never disagree.
@@ -105,20 +109,30 @@ first one trustworthy.
 ## 5. Enforcement
 
 ```
-assertWithinBudget(): void
+assertWithinBudget(assistantId = 0): void
     estate = TenantContext::current()
-    for each enabled budget of the estate:
+    for each enabled budget of the estate, tightest scope first:
+        skip when the budget is narrowed to another assistant
         spend = SUM(cost) over the window        // throws → 503 fail-closed
-        if spend >= limit        → 429 budget_exceeded
+        if spend >= limit        → 429 budget_exceeded(scope)
         if spend >= limit*warn   → Log::warning('budget.warn'), allow
 ```
 
-The signature takes no assistant: per-assistant scope needs the column D1 defers,
-so accepting an id it could not filter on would be a parameter that promises more
-than it does. The warning band writes a structured `budget.warn` line
-(`tenant_id`, `window`, `spend`, `limit`, `percent`) rather than a table row — a
-warning is a log event, and a `nvoos_budget_events` store would be a third table
-with one reader.
+The signature takes an **id**, not an `Assistant` record: `/ops` and the queue
+have no model in hand, and a caller that cannot name the assistant passes `0`
+and is judged against whole-estate limits only. It is a parameter rather than a
+required argument so every existing call site stays honest instead of acquiring
+a fabricated `0`.
+
+`spend()` applies the same rule in one place: `assistant_id = 0` sums the whole
+estate, a non-zero id filters the column. Rows written before the column existed
+carry `0` and are therefore counted by the estate limit and by **no** assistant
+limit — "not attributed" is not a guess at "some assistant".
+
+The warning band writes a structured `budget.warn` line (`tenant_id`,
+`window`, `assistant_id`, `spend`, `limit`, `percent`) rather than a table row:
+a warning is a log event, and a `nvoos_budget_events` store would be a third
+table with one reader.
 
 A limit of `0` is read as "no limit", not "refuse everything": a zero row is a
 misconfiguration, and failing it closed would take an estate offline over a typo.
@@ -140,6 +154,7 @@ budget like any other turn.
 | **A** | `nvoos_budgets`, `BudgetStore`, `BudgetGuard`, wiring at the entry points, tests — §92 |
 | **B** | `/ops/budgets` (operator CRUD across estates) and `/admin/budgets` (read-only consumption, D8) — §93. Both read `BudgetStore::verdict()`, the guard's own call, so a badge and a refusal cannot disagree. |
 | **C** (deferred) | `nvoos_metrics` and `nvoos_eval_runs` — only when a producer exists |
+| **D** | Assistant scope (D9) — §94: `nvoos_token_usage.assistant_id` written from `CostCalculated`, the budget key widened to `(tenant, assistant, window)`, the guard tightened to the turn's assistant, both pages gaining a scope column |
 
 ## 7. Risks
 
@@ -152,8 +167,7 @@ budget like any other turn.
 
 ## 8. Open questions
 
-1. **Assistant scope** needs a column (D1). Its own slice, with the same shape
-   §86 used for the token table.
+1. *(closed by D9, §94)* **Assistant scope** needed a column, and now has one.
 2. **Should an operator override exist** for a single request? Recorded, not
    designed: an override is a policy, and the 429 message is enough to start.
 3. **Currency** is USD throughout, matching `nvoos_token_usage.cost`. Multi-currency
