@@ -2,6 +2,7 @@
 
 namespace App\Filament\Operator\Pages;
 
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Datasets\DatasetCatalogue;
@@ -10,6 +11,7 @@ use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
+use UnitEnum;
 
 /**
  * Dataset browser — Proposal 149 §95, `/ops/datasets`.
@@ -38,6 +40,8 @@ class Datasets extends Page
     protected static ?string $title = 'Datasets';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;
+
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Insight;
 
     // Beside the budget page (17): both are reference surfaces about what the
     // runtime may spend — one money, one data.

@@ -7,9 +7,11 @@ use App\Policies\AdminAccessPolicy;
 use App\Support\Diagnostics\ProbeRunner;
 use App\Support\Diagnostics\RoutingExportStore;
 use App\Support\Diagnostics\RoutingMetricStore;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Nvoos\Core\Application\Provider\ProviderRouter;
@@ -59,7 +61,8 @@ class DiagnosticsPage extends Page
 
     // Before site health: this page answers "can the runtime reach its
     // dependencies", health answers "is the runtime itself sound".
-    protected static ?int $navigationSort = 12;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Health;
+    protected static ?int $navigationSort = 13;
 
     protected string $view = 'filament.operator.diagnostics';
 

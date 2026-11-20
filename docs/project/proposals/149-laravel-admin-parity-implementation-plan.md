@@ -11589,3 +11589,219 @@ Two things worth recording:
    elsewhere.
 5. **The `donut` in the catalogue still says `donut`.** §113.3 is the reason; if a
    chart library ever lands, the field is already there to act on.
+
+## 114. The operator token inventory — "reaches", not "scope" (2026-11-20)
+
+`tokens.personal` was the last row on `/ops` still marked `planned`. §26 shipped the
+owner's view on `/admin` — a user mints, lists and revokes their own tokens. This
+ships the operator's, which answers a different question: **who holds a token, how
+long it lives, and how wide it reaches.** The board moves from 15 to 16 `/ops`
+surfaces; `planned only` is now 0 on both panels.
+
+### 114.1 The one rule that shaped the page: no path may display a token
+
+Published guidance on personal access tokens converges on a single prohibition:
+there must be **no code path, for a user or for an administrator**, that can display
+a token after creation. GitLab states it plainly — "after you leave or refresh the
+page, you cannot view it again" — and the convention that follows is a visible
+prefix used as a *handle* and nothing more.
+
+So `PersonalTokens::query()` never names the `token` column, and the page has no
+column, action or export that could. That is a claim about the query, not about the
+markup, and asserting it turned out to be less obvious than it looks:
+
+1. **Asserting the rendered rows is the weaker claim.** A page can hide a column it
+   still selected.
+2. **Asserting a substring of the SQL does not work at all.** The grammar quotes
+   each segment, so a selected hash appears as `"personal_access_tokens"."token"`
+   — and the literal `personal_access_tokens.token` never occurs. Worse, that
+   substring *does* occur in `personal_access_tokens.tokenable_type`, so the
+   original assertion would have failed for the wrong reason on a query that was
+   perfectly safe.
+
+The test now inspects `PersonalTokens::query()->getQuery()->columns`, takes the last
+dot-segment of each, and asserts it is neither `*` nor `token`. That is a statement
+about the select list in any dialect.
+
+A second, smaller instance of the same class of mistake: the audit payload key was
+originally `tokens`, and `AdminAuditLogger` stores `[redacted]` for it — because the
+redactor substring-matches `token`, deliberately over-redacting on the stated trade
+that "an over-redacted log is an inconvenience, an under-redacted one is an
+incident". The logger was right; the key was wrong. It is now `count`.
+
+### 114.2 "Reaches" is the holder's memberships, not the token's scope
+
+A personal token belongs to a *person* and carries their authority in every estate
+they belong to; its routes sit outside `ResolveApiTenant` for exactly that reason.
+So the estates beside a token are **the holder's memberships**. The column heading,
+the page description and the projection all say "reaches", and `acrossEstates()`
+returns the estate list under an `estates` key that the page renders as reach.
+
+Presenting memberships as a token's *scope* would describe a narrowing that nothing
+in this runtime enforces — the same mistake the `abilities` column avoids by never
+being offered as a restriction. One holder in two estates and one token is
+therefore one row, not two, and the estate filter still finds it from either side:
+the test asserts both.
+
+The role travels with each estate because a long-lived token held by a `viewer` is a
+different fact from one held by an `owner`; a token presents whatever the role
+grants **at request time**, so a demotion takes effect on the next request.
+
+### 114.3 Why this read is audited when most `/ops` pages are not
+
+OWASP's multi-tenant guidance is that a cross-tenant administrative path must be
+"explicit, separately authorized, and auditable". This page is explicit (its own
+route), separately authorized (operator estate + `manage_options`, like every `/ops`
+page), and audited — **one row per visit**.
+
+Two consequences follow from taking the third leg seriously:
+
+- **The estate filter is a URL parameter** (`?tenant=acme`), not Livewire state. That
+  makes "the tokens that can reach Acme" a link an operator can share, and it makes
+  every narrowing a page load — so the audit row records *which estate was looked
+  at* rather than merely that the page was opened.
+- **An unknown slug is ignored, not honoured.** Fail-closed, so a hand-edited URL
+  cannot produce an empty table that reads as "this estate holds no tokens".
+
+### 114.4 Eloquent, because Filament's table requires it — and the two traps that cost
+
+`Table::query()` accepts an Eloquent builder and nothing else. The easy way out is
+`->records()`, which renders fine and silently turns every `searchable()` and
+`sortable()` into a no-op, because both are SQL-level. So the scoping point returns
+an Eloquent builder instead, from a new `App\Models\PersonalAccessToken`.
+
+That model is a **read-side projection, not an authentication model**: Sanctum
+resolves its own class from `config('sanctum.model')` (no `config/sanctum.php`
+exists here), so nothing in the request path touches it. It declares **no casts and
+`$timestamps = false`**, deliberately — Sanctum's model casts `abilities` to an
+array and the timestamps to Carbon, and `PersonalTokens` deals in the raw stored
+strings. Casting would have turned `(string) $row->abilities` into `"Array"` and
+silently emptied the ability list.
+
+Then two traps, both found by writing the two SQL-level tests first:
+
+1. **A dotted column name from another table is read as a JSON path.** Filament's
+   `getJsonSafeColumnName()` keeps a name that starts with the model's own table
+   (`personal_access_tokens.created_at` survives) and rewrites anything else by
+   joining segments with `->`. So `searchable(['users.name'])` emitted
+   `json_extract("users", '$."name"')` and the page died with
+   **`SQLSTATE[HY000]: malformed JSON`**. Joined columns must go through the
+   `query:` closure form, which bypasses name resolution entirely.
+2. **Wildcards have to be escaped by hand.** Filament's own escaping helpers are
+   marked `@internal` — "please do not use this function in your own code" — so the
+   rule was ported rather than imported: escape `!`, `[`, `%`, `_`, and use
+   `like ? escape '!'`. SQLite has no default `like` escape character, so the
+   MySQL backslash convention would not have survived the test suite.
+
+Both tests (`test_search_runs_in_sql_across_the_join`,
+`test_sorting_uses_qualified_columns_and_keeps_the_join_valid`) failed on their first
+run. They are the proof that the switch to Eloquent bought real search and sort
+rather than the *appearance* of it.
+
+One further test bug worth recording: the sort test initially asserted the rendered
+order of two **emails** while sorting by `users.name`, and passed only because the
+factory's random names happened to order that way. The fixture now names the two
+holders (`Adam Acme`, `Zoe Default`) so the sort under test has something to decide.
+
+### 114.5 The visual pass found three things no test could
+
+The suite was green while the page was a **500**.
+
+**The 500.** `sidebar/group.blade.php` throws
+
+> Navigation group [Operations] has an icon but one or more of its items also have
+> icons.
+
+unless the group renders as an icon that opens a dropdown — which only happens when
+the panel's sidebar is collapsible. `OperatorNavigationGroup` gives every case an
+icon (§115), so the panel had to gain `->sidebarCollapsibleOnDesktop()`, mirroring
+`/admin`. The guard is `test_the_grouped_sidebar_renders`, which does
+`$this->get('/ops')->assertOk()` — an actual HTTP render, because the other
+navigation tests read `getNavigation()`, which builds data and renders nothing. The
+guard was verified by deleting the provider line and watching it fail with the exact
+exception above.
+
+**Seven columns did not fit.** The table scrolled sideways and clipped the Status
+badge. `Created` and `Email` became `->toggleable(isToggledHiddenByDefault: true)`,
+which is *not* `hidden()`: a hidden-by-default column still contributes its search
+constraint, so the address is still findable from the search box and still
+sortable — it simply is not in the default six.
+
+**"Reaches" wrapped to four lines.** A comma-joined phrase with a role in
+parentheses per estate read as noise and pushed the roles — the actual risk — to the
+end of a wrapped line. It is now a bulleted list, one estate per line:
+`Default estate · owner`.
+
+### 114.6 Gates
+
+| Gate | Result |
+|---|---|
+| `OperatorTokenInventoryTest` | **14 tests / 36 assertions** — a tenant administrator is refused; an operator is allowed; the select list names its columns and never `token`; the unscoped view lists every estate; scoping narrows; **reaches is the holder's memberships and both memberships are listed in estate-name order**; a holder without a membership reads "No estate"; `estatesWithHolders()` omits empty estates; an unknown scope is ignored while a known one is honoured and named; "Never used" is spelled out; **search runs in SQL across the join**; **sorting uses qualified columns and keeps the join valid**; the read is audited with the scope in the record id |
+| `OperatorNavigationTest` | **7 tests / 43 assertions** — the sidebar is the enum, only `Dashboard` is ungrouped, ≥2 items per group except Settings, every group has an icon, no item in two groups, enum covers every page, **the grouped sidebar renders** |
+| `SurfaceOwnershipTest` | **4 tests / 498 assertions** — the new page class is declared in `files` (strict set equality with `app/Filament/`) |
+| phpcs (`phpcs-laravel.xml.dist`, CI severity) | **0 errors** across all 451 files in `app/` + `tests/`; line-length stays advisory, which is how CI runs it |
+| `PHPCompatibilityWP` (8.1–8.4) | **0 errors** on both navigation enums |
+| `bin/audit-surface-ownership.php` | **48** surfaces · **41** Filament-built · `/ops` **15 → 16** · **4** console-only · **0** planned-only · **1** inert |
+| Live (`localhost:8001`) | Table fits with no horizontal scroll; Status badges render; "Never used" is amber; `?tenant=default` activates the pill (`aria-current="page"`) and prints "Showing the 2 token(s) held by 1 member(s) of Default estate."; typing in the search box narrows to one row; a no-match search shows the scoped empty state |
+
+A note on the numbers: `filament-built` counts **surfaces**, and it does not move
+when a surface that already had one built panel gains another
+(`$filamentBuilt = in_array($ops, $builtStates) || in_array($admin, $builtStates)`).
+The honest movement is the panel-level one, `/ops` 15 → 16.
+
+### 114.7 What this does not do
+
+1. **No cross-estate revoke.** `writer` on the row stays `admin`. An operator who can
+   delete any user's credential is a different decision, and it has not been taken —
+   revocation stays the owner's own action under Connections → Personal tokens, so
+   the audit trail names the owner as the actor.
+2. **No plaintext, ever, on any path.** The mint response on `/admin` remains the only
+   place a token exists in a form anyone can use.
+3. **No last-used IP or user agent.** Sanctum stores neither, so a "where was this
+   used" column would have to be a schema change and a write on every request.
+4. **Pre-existing rows are not attributed.** A token minted before this page existed
+   has no estate history to recover — the same honest limitation §18 recorded for
+   `nvoos_workflow_runs`.
+
+## 115. `/ops` navigation groups — four sort ties (2026-11-20)
+
+`/ops` carried eighteen items in one flat list, ordered by a `navigationSort` integer
+— with **four ties**: three pages at 12 (`AssetInventory`, `AuditLog`,
+`DiagnosticsPage`), two at 13 (`SiteHealthPage`, `TokenUsage`) and two at 14
+(`Reports`, `TokenAnalytics`). `EstateResource` declared **no sort at all**. Where
+two items share a sort, the rendered order is registration order, so an unrelated
+provider change could silently reorder the vendor panel's sidebar, and nothing
+caught it because no test read the sidebar.
+
+The fix is the `AdminNavigationGroup` shape applied to the other panel:
+`OperatorNavigationGroup` is an enum whose **case order is group order**, whose
+`items()` is the ordered membership contract, and every case of which carries a
+distinct Heroicon. Seven groups, nineteen items:
+
+| Group | Items |
+|---|---|
+| Operations | Queue, Scheduler |
+| Health | Site health, Diagnostics, Asset inventory |
+| Insight | Reports, Metrics, Observability, Datasets |
+| Spend | Budgets, Token usage, Token analytics |
+| Access & audit | Credentials, Personal tokens, Audit log |
+| Platform | Estates, Models, Conversation import |
+| Settings | Settings |
+
+Every page's `$navigationSort` was renumbered 10–27 so the numeric order matches the
+enum's declared order, and `EstateResource` gained the sort it was missing.
+
+**The icon is load-bearing, and the trap is that it is not optional.** A group
+without an icon degrades the collapsed rail into one icon per item; a group *with*
+one, in a panel whose sidebar is not collapsible, throws (§114.5). Icons and the
+collapsible rail are therefore a package: `OperatorNavigationGroup` declares icons,
+`OperatorPanelProvider` calls `->sidebarCollapsibleOnDesktop()` and adds the same
+`SIDEBAR_NAV_END` disclosure hook `/admin` uses (the partial is panel-agnostic — it
+works from `document.currentScript.closest('nav')` — so one view serves both panels).
+
+`OperatorNavigationTest` reads the enum and the rendered sidebar and fails when an
+item is filed nowhere, a group is empty, a group has no icon, an item appears twice,
+or a page renders under a label the enum does not know. `Dashboard` is deliberately
+ungrouped: it is Filament's own page, registered by the panel provider, and grouping
+it would mean shipping a subclass that `SurfaceOwnershipTest` would demand a contract
+row for.

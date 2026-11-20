@@ -7,9 +7,11 @@ use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Assets\AssetRegister;
 use App\Support\Reports\ComplianceReport;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -47,7 +49,8 @@ class Reports extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentMagnifyingGlass;
 
     // With the compliance surfaces: assets, then reports.
-    protected static ?int $navigationSort = 14;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Insight;
+    protected static ?int $navigationSort = 15;
 
     protected string $view = 'filament.operator.reports';
 

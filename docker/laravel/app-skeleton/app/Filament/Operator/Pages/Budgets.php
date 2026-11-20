@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Budgets\BudgetStore;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -19,6 +20,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -64,7 +66,8 @@ class Budgets extends Page implements HasTable
     // With the spend cluster (token usage 13, token analytics 14) rather than
     // beside the scheduler: this page is about money, and an operator looking at
     // cost should find it next to the reports it constrains.
-    protected static ?int $navigationSort = 17;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Spend;
+    protected static ?int $navigationSort = 19;
 
     protected string $view = 'filament.operator.budgets';
 

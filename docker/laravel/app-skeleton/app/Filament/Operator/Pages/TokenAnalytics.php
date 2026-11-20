@@ -6,9 +6,11 @@ use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Reports\TokenAnalyticsReport;
 use App\Support\Reports\TokenUsageReport;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /**
  * Token analytics — Proposal 149 §83, `/ops/token-analytics`.
@@ -33,7 +35,8 @@ class TokenAnalytics extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
     // Immediately after Token usage (13).
-    protected static ?int $navigationSort = 14;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Spend;
+    protected static ?int $navigationSort = 21;
 
     protected string $view = 'filament.operator.token-analytics';
 

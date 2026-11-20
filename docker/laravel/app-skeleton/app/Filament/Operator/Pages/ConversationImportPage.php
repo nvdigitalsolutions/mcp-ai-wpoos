@@ -8,9 +8,11 @@ use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Import\ConversationImport;
 use App\Support\TenantContext;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 
 /**
@@ -47,7 +49,8 @@ class ConversationImportPage extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpTray;
 
     // With the data surfaces, after datasets.
-    protected static ?int $navigationSort = 16;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Platform;
+    protected static ?int $navigationSort = 27;
 
     protected string $view = 'filament.operator.conversation-import';
 

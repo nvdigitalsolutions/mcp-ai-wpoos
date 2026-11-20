@@ -6,12 +6,14 @@ use App\Models\Assistant;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -63,8 +65,9 @@ class Credentials extends Page implements HasTable
     protected static ?string $title = 'Assistant credentials';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Access;
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 22;
 
     protected string $view = 'filament.operator.credentials';
 

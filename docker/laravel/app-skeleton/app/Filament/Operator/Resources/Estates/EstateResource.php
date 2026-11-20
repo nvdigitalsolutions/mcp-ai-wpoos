@@ -4,6 +4,7 @@ namespace App\Filament\Operator\Resources\Estates;
 
 use App\Filament\Operator\Resources\Estates\Pages\ManageEstates;
 use App\Models\Tenant;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -11,6 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -46,6 +48,8 @@ class EstateResource extends Resource
     protected static ?string $model = Tenant::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Platform;
+    protected static ?int $navigationSort = 25;
 
     protected static ?string $recordTitleAttribute = 'name';
 
