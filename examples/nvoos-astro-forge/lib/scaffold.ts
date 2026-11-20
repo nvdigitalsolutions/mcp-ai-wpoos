@@ -1679,9 +1679,24 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// the geometry pass records it as a BAND fact, which is the only path a
 	// sub-page takes. ONE emission: this block used to be three, and a band that
 	// carried both shapes emitted `panel:` twice in the same object literal.
-	const panel = section.panel ?? bandFacts?.panel;
+	const panel =
+		bandFacts?.panel && ( bandFacts.panel.width || bandFacts.panel.align )
+			? bandFacts.panel
+			: section.panel ?? bandFacts?.panel;
 	if ( panel ) {
-		entry.push( `panel: { bg: ${ tsString( panel.bg ) }, ink: ${ tsString( panel.ink ) } }` );
+		// A slab that fills only PART of the band carries its own box: the source
+		// halves the band and centres the heading on that half, so the rebuild has
+		// to constrain the section — a full-bleed slab centred the eyebrow on the
+		// viewport instead (virtuallysrilanka's "How it Works").
+		const box = [
+			panel.width && `width: ${ tsString( panel.width ) }`,
+			panel.align && `align: ${ tsString( panel.align ) }`,
+		]
+			.filter( Boolean )
+			.join( ', ' );
+		entry.push(
+			`panel: { bg: ${ tsString( panel.bg ) }, ink: ${ tsString( panel.ink ) }${ box ? `, ${ box }` : '' } }`
+		);
 	}
 	// The band's measured CAROUSEL geometry — the slider's own slides-per-view and
 	// gutter. Without it a logo wall that the source ROTATES renders as a static
@@ -2288,8 +2303,9 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tcarousel?: { selector?: string; count?: number; perView?: number; gap?: number; dots?: number };',
 		'\t/** The band\u2019s PANEL surface \u2014 the source sets its content on ONE',
 		'\t * coloured slab (see `ForgeSection.panel`). `ink` is the legible foreground',
-		'\t * on that slab. */',
-		'\tpanel?: { bg: string; ink: string };',
+		'\t * on that slab; `width`/`align` place a slab that fills only PART of the',
+		'\t * band (the heading sits on it too). */',
+		"\tpanel?: { bg: string; ink: string; width?: string; align?: 'start' | 'center' | 'end' };",
 		'\t/** The measured EYEBROW — the small label the source stacks above the\n\t * title. Rendered above the heading at its own measured size: a builder\n\t * publishes the kicker as a real heading (often the SAME tag at a fraction\n\t * of the size), which no tag-level heuristic can separate from the title. */',
 		'\teyebrow?: { text: string; level?: number; size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; maxWidth?: string; marginTop?: string; marginBottom?: string };',
 		'\t/** The measured TITLE text — the LARGEST heading the band renders. */',

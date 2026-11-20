@@ -1206,7 +1206,14 @@ export interface ForgeBandFacts {
 	 * pass records it here, which is the only path a sub-page takes — without
 	 * it the slab is unpainted on every page but the front one.
 	 */
-	panel?: { bg: string; ink: string };
+	panel?: {
+		bg: string;
+		ink: string;
+		/** The slab's rendered width (`720px`); absent → it spans the band. */
+		width?: string;
+		/** Where a partial slab sits inside the band. */
+		align?: 'start' | 'center' | 'end';
+	};
 	/**
 	 * The width of the band's own inner container. Builder sources box their
 	 * content (`.container`, 1140px) or run fluid (`.container-fluid`, the
@@ -1546,8 +1553,21 @@ export interface ForgeSection {
 	 * Only the UNIFORM case is captured. Two or more DIFFERENT column surfaces
 	 * describe per-column panels, which the rebuilt flat markup cannot address
 	 * positionally — that needs the computed-style column pass.
+	 *
+	 * `width`/`align` are the SLAB's own box, measured by the browser. A builder
+	 * can fill only part of the band and put the band's heading INSIDE the slab
+	 * (virtuallysrilanka's "How it Works": a #dd3333 right half, 720 of 1440,
+	 * with the eyebrow and title centred on it). Absent → the slab spans the
+	 * band, which is the common full-bleed case.
 	 */
-	panel?: { bg: string; ink: string };
+	panel?: {
+		bg: string;
+		ink: string;
+		/** The slab's rendered width (`720px`). */
+		width?: string;
+		/** Where the slab sits inside the band. */
+		align?: 'start' | 'center' | 'end';
+	};
 	/** The source band's declared padding — a CSS shorthand, or a per-device
 	 * map when the source scopes it (jayainc's 059421c is 125px on desktop,
 	 * 100px on tablet and mobile). Absent → the bandSpacing policy. */

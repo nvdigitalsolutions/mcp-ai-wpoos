@@ -1060,6 +1060,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	 * content to the container width (jayainc's 1140px) while the band
 	 * background stays full-width. Absent → the site measure. */
 	max-width: var(--ds-measure, var(--forge-measure));
+	/* An explicit 100% is what makes that measure a CAP. The wrap is a COLUMN
+	 * flex container, so `margin-inline:auto` (the centring below) opts the
+	 * section out of `align-items:stretch` and leaves it at its FIT-CONTENT
+	 * width — a band whose copy is narrower than the measure then renders
+	 * narrower (virtuallysrilanka's hardware row: 989px inside the source's
+	 * 1280px container). Same fix the raw Flatsome branch already applies. */
+	width: 100%;
 	margin-left: auto;
 	margin-right: auto;
 	/* The container's column-gap gutter (gap-default 10px … wider 30px)
@@ -1237,6 +1244,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	margin-inline: auto;
 }
 
+/* A CENTRED icon band stacks each card on one centre line. The source's
+ * icon-box puts the glyph above the caption and centres both; a grid card
+ * left-aligns its marker, which strands the glyph at the card's edge while the
+ * heading above sits centred (virtuallysrilanka's wifi tiles). Gated on the
+ * band's own MEASURED alignment (`centeredContent`), so a left-aligned icon card
+ * keeps its leading marker. */
+.ds-section-wrap--centered .ds-grid .ds-card > .ds-icon-marker,
+.ds-body--center .ds-grid .ds-card > .ds-icon-marker {
+	justify-self: center;
+}
+
 @media (max-width: 767px) {
 	.ds-body--center .ds-lede,
 	.ds-section-wrap--hero .ds-lede {
@@ -1341,8 +1359,10 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	margin-top: var(--forge-space);
 	/* Proposal 115 §4: the wireframe's per-breakpoint column behavior rides
 	 * these custom properties; the defaults are the standard 4 → 2 → 1
-	 * collapse at the canonical Elementor widths. */
-	grid-template-columns: repeat(var(--ds-cols-desktop, 4), minmax(0, 1fr));
+	 * collapse at the canonical Elementor widths. A band whose source row is
+	 * NOT an equal split carries its measured lane ratios in
+	 * `--ds-cols-template-desktop` (virtuallysrilanka's 432 / 432 / 571). */
+	grid-template-columns: var(--ds-cols-template-desktop, repeat(var(--ds-cols-desktop, 4), minmax(0, 1fr)));
 }
 @media (max-width: 1025px) {
 	.ds-grid {
@@ -1365,6 +1385,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	box-shadow: var(--forge-shadow-card);
 	display: grid;
 	gap: var(--forge-space-sm);
+}
+
+/* A band of lane SURFACES is the band: the source's slabs run the measured
+ * height, while a content-height grid leaves the band's own floor as dead space
+ * underneath (virtuallysrilanka's services band — 448px of panels inside a 536px
+ * band, then 88px of white before the next band). The floor has to land on the
+ * SECTION: a column flex item never grows into a `min-height`-only parent, so
+ * the wrap's own floor cannot reach the grid.
+ */
+.ds-section-wrap:has(.ds-card--surface) > .ds-section {
+	min-height: var(--ds-min-h, 0);
 }
 
 /* A lane that carries the SOURCE's own surface is a panel, not a card: the
@@ -1592,6 +1623,57 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	color: var(--ds-panel-ink);
 	padding: var(--forge-space-lg);
 	border-radius: var(--forge-radius-lg);
+}
+
+/*
+ * A MEASURED panel box: the source paints its slab on ONE column and puts the
+ * band's heading INSIDE it, so the eyebrow and title centre on the SLAB, not
+ * the viewport — and the slab fills only its own share of the band
+ * (virtuallysrilanka's "How it Works" is a #dd3333 right half, 720 of 1440,
+ * with the four icon items inset 50px). Painting the grid full-bleed centred
+ * every heading 360px left of the source. The slab therefore moves up to the
+ * SECTION, which is the one that holds the heading.
+ */
+.ds-section-wrap--panel-box .ds-section {
+	background: var(--ds-panel-bg);
+	color: var(--ds-panel-ink);
+	border-radius: var(--forge-radius-lg);
+	width: var(--ds-panel-width);
+	max-width: var(--ds-panel-width);
+}
+
+/* Placement. A slab at the band's END is `margin-left:auto`; at the START it is
+ * `margin-right:auto`; centred it splits the slack both ways. */
+.ds-section-wrap--panel-end .ds-section {
+	margin-left: auto;
+	margin-right: 0;
+}
+
+.ds-section-wrap--panel-start .ds-section {
+	margin-left: 0;
+	margin-right: auto;
+}
+
+.ds-section-wrap--panel-center .ds-section {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* The slab is on the section now, so the grid it wraps must not paint a second
+ * one. */
+.ds-section-wrap--panel-box .ds-grid {
+	background: none;
+	padding: 0;
+}
+
+/* Below the tablet breakpoint a partial slab would be a 720px strip inside an
+ * 834px band; the source stacks there, so the slab goes full width. */
+@media (max-width: 1024px) {
+	.ds-section-wrap--panel-box .ds-section {
+		width: 100%;
+		max-width: none;
+		margin-inline: 0;
+	}
 }
 
 .ds-section-wrap--panel .ds-grid .ds-card {
@@ -3012,7 +3094,12 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--forge-space);
-	padding: 1rem 0;
+	/* The source's OWN disclosure metrics (`box` facts): a builder's tab title is
+	 * a padded row at `line-height: 1`, not the band's body rhythm. Without them
+	 * the row inherits the 27.2px body line-height and renders 59px against the
+	 * source's 48px, so every row of an eight-item accordion drifts. */
+	padding: var(--ds-acc-title-pad, 1rem 0);
+	line-height: var(--ds-acc-title-lh, normal);
 	cursor: pointer;
 	font-weight: 700;
 	list-style: none;
@@ -3054,7 +3141,8 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 }
 
 .ds-accordion-panel {
-	padding-bottom: 1rem;
+	/* The source's panel padding (`box` facts). */
+	padding: var(--ds-acc-content-pad, 0 0 1rem);
 }
 
 .ds-accordion-panel p {

@@ -125,6 +125,27 @@ export interface SectionItem {
 	 */
 	columnIndex?: number;
 	body?: string;
+	/**
+	 * A BOLD lead-in that opens `body` (the source's `<strong>` run).
+	 *
+	 * A builder opens most copy blocks with one — the accordion panel is
+	 * `<p><strong>Advertise Your Business</strong> with your own Wi-Fi Start
+	 * Page…` — and flattening the panel to `textContent` printed it as ordinary
+	 * copy, so the para lost the only thing distinguishing its first clause
+	 * (virtuallysrilanka's features band, 2026-11-20). Plain text, never markup:
+	 * the template wraps it in its own `<strong>`, so nothing is injected.
+	 */
+	lead?: string;
+	/**
+	 * The card's copy as SEPARATE paragraphs, when the source publishes more than
+	 * one.
+	 *
+	 * `body` joins them with a space so the card still has one string, but a
+	 * builder's services panel is four distinct paragraphs 20px apart — joined,
+	 * they render as one block of prose and the card reads as a wall of text
+	 * (virtuallysrilanka's black services column, 2026-11-20).
+	 */
+	paragraphs?: string[];
 	media?: MediaRef;
 	links?: LinkRef[];
 	/** The item renders with an icon marker (icon-list family). */
@@ -715,9 +736,33 @@ function accordionEntries( node: HNode ): SectionItem[] {
 		}
 		const panel = accordionPanelOf( node, titleNode );
 		const panelText = panel ? trimmed( textOf( panel ) ) : '';
-		items.push( panelText ? { title: label, body: panelText } : { title: label } );
+		if ( ! panelText ) {
+			items.push( { title: label } );
+			continue;
+		}
+		// The panel's opening `<strong>` is a LEAD-IN, not emphasis: the source
+		// bolds the first clause (`Advertise Your Business`) and leaves the rest
+		// plain. Kept as a separate plain-text fact so the body stays a string and
+		// the template renders the emphasis itself.
+		const lead = panel ? leadingStrongOf( panel, panelText ) : undefined;
+		items.push( lead ? { title: label, body: panelText.slice( lead.length ).trim(), lead } : { title: label, body: panelText } );
 	}
 	return items;
+}
+
+/**
+ * The `<strong>`/`<b>` run that OPENS a copy block, as plain text.
+ *
+ * Only a prefix qualifies: an emphasised phrase mid-paragraph is emphasis, not
+ * the block's lead-in, and splitting there would print the sentence twice.
+ */
+function leadingStrongOf( panel: HNode, text: string ): string | undefined {
+	const bold = findDescendant( panel, ( n ) => n.type === 'tag' && ( n.name === 'strong' || n.name === 'b' ) );
+	const lead = bold ? trimmed( textOf( bold ) ) : '';
+	if ( ! lead || lead === text || ! text.startsWith( lead ) ) {
+		return undefined;
+	}
+	return lead;
 }
 
 function titlesOfAccordion( node: HNode ): HNode[] {
@@ -791,6 +836,12 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 		}
 		if ( ( collected.body ?? [] ).length > 0 ) {
 			item.body = ( collected.body ?? [] ).join( ' ' );
+			// Two or more blocks are PARAGRAPHS, not one sentence run together: the
+			// card renders them separately so the source's inter-paragraph rhythm
+			// survives.
+			if ( ( collected.body ?? [] ).length > 1 ) {
+				item.paragraphs = collected.body;
+			}
 		}
 		if ( ( collected.media ?? [] ).length > 0 ) {
 			item.media = collected.media?.[ 0 ];
