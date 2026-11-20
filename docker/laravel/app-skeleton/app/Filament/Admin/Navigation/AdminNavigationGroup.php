@@ -1,5 +1,22 @@
 <?php
 
+// phpcs:disable PHPCompatibility.Variables.ForbiddenThisUseContexts.OutsideObjectContext
+//
+// False positive, scoped to this file and to this one sniff.
+// PHPCompatibilityWP 2.1.8 does not parse PHP 8.1 enum bodies, so it treats every
+// method in this enum as a plain function and rejects `$this` on all three of
+// them. The evidence is a two-line probe: the same `match ($this)` passes in a
+// class and fails in an enum, and so does `switch ($this)`, and so does a bare
+// `$this->value`. No rewrite of this file satisfies the sniff while the enum
+// implements `HasLabel` and `HasIcon`, which are instance methods by definition.
+//
+// The CI job only checks CHANGED files, which is why this surfaced here (§106)
+// and not before: the file fails the check whenever it is touched, so it was
+// finally touched.
+//
+// Remove this block when the standard understands enums. The rest of the file
+// is still judged — by WPCS, and by the Laravel standard.
+
 namespace App\Filament\Admin\Navigation;
 
 use BackedEnum;
@@ -100,7 +117,9 @@ enum AdminNavigationGroup: string implements HasIcon, HasLabel
     public function items(): array
     {
         return match ($this) {
-            self::Workspace => array('Assistants', 'Teams', 'Blueprints', 'Portability'),
+            self::Workspace => array(
+                'Command centre', 'Assistants', 'Teams', 'Blueprints', 'Portability',
+            ),
             self::Knowledge => array('Tools', 'Toolkits', 'Knowledge (OKF)', 'Paper Store', 'Memory', 'Agent skills', 'Professions'),
             self::Automation => array('Automations', 'Workflow runs', 'Approvals'),
             self::Connections => array('MCP apps', 'Remote sites', 'Credentials', 'Personal tokens'),

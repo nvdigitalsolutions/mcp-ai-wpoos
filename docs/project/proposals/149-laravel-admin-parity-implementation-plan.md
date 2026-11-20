@@ -10490,3 +10490,232 @@ front end.
 **When an endpoint replaces a WordPress one, the client is the contract.** Writing
 the request from the client's existing behaviour, rather than from a fresh reading
 of the spec, would have found this before review.
+
+## 106. The command centre — the last ported row with nothing in front of it (2026-11-20)
+
+§8 named three remaining `/admin` rows and four that were not gaps. Two of the
+four turned out to be decided already — their contract rows record `none`
+(`wordpress-bridge`: WordPress-only, Appendix B: N) and `external-product …
+never ported` (`connected-apps`) — so the ownership document's "carry no panel
+decision yet" was stale prose rather than an open question. Of the three real
+rows, `dashboards` waits on the 10 → 7 catalogue change and `media` waits on an
+estate on the media tables. `command-centre` was the only one with nothing in
+front of it, so it went first.
+
+### 106.1 What was actually missing
+
+Nothing on the API side. `GET /api/v1/pro/command-center/overview` has served
+six KPIs, an agent status map and an activity feed since 090-i, and the console
+renders them. The gap was the panel: `command-centre` was `planned` on `/admin`
+with no page behind it.
+
+The WordPress surface it ports has **seven tabs** — overview, activity, tasks,
+approvals, analytics, uptime, strategy. This runtime can source one of them
+honestly, so the page is the overview, and it names where the rest lives rather
+than growing a second copy of each: `approvals`, `automation-runs`,
+`token-analytics`, `site-health` and `diagnostics` are already rows of their
+own, and the dashboards review had already recommended removing exactly that
+kind of duplication. `strategy` has no producer here at all.
+
+### 106.2 The estate the feed did not have
+
+`nvoos_activity_events` had no `tenant_id`. That was invisible while its only
+reader was the console: `/api/v1` pins one estate per deployment, so every
+reader already saw a single estate's rows. Putting the same feed on
+`/admin/{estate}/command-centre` makes it a leak — and the feed's `context`
+column carries workflow run detail, which is the object property API3/BOLA is
+about.
+
+So the column came first, in the shape §18 used for `nvoos_workflow_runs` and
+§152 used for the token tables:
+
+- `2026_11_20_120000_add_tenant_to_activity_events` adds `tenant_id`
+  (`string(64)`, default `'default'`, indexed), guarded per column so it replays
+  on SQLite.
+- `ActivityRecorder::record()` writes `TenantContext::current()`. The estate is
+  never an argument: a second source would be a second truth to keep in step
+  (§152 §9.3).
+- `ActivityRecorder::recent()` takes `?string $tenantId` **required**. `null`
+  means every estate and must be asked for deliberately (§152 §3 D5).
+- `prune()` stays platform-wide: retention is a storage policy, not a read, and
+  a per-estate prune command would let one estate's silent failure grow the
+  table for everyone (§152 §3 D7).
+
+**The honest limitation, stated:** rows written before this migration cannot
+recover their true estate and read as `default`.
+
+**A second one, also stated:** three writers run without a pinned context — the
+media sweeper, the media optimiser job and the health sampler. Their events land
+on `default` rather than on the estate whose media or health they describe,
+because `nvoos_files` carries no tenant either and there is nothing to pin
+*from*. Fixing that is the `media` row's slice, not this one.
+
+### 106.3 One projection, two readers
+
+The assembly moved out of `CommandCenterController` into
+`App\Support\CommandCentre\CommandCentreReport`. The controller keeps the two
+things the page does not own: the JSON envelope, and the one shape difference it
+implies — `agent_statuses` is cast to an object, because a PHP array of integer
+keys encodes as a JSON list and renders empty in the console.
+
+The alternative was a Livewire component calling its own HTTP endpoint, or a
+second copy of six definitions. §105 is the argument against the second copy: a
+console and a panel that each define the same number will disagree, and a user
+will find the disagreement.
+
+`report(string $tenantId)` **drops `Assistant`'s `tenant` global scope** rather
+than layering on top of it. That looks wrong and is not: the model's scope ANDs
+against ambient `TenantContext`, so `report('acme')` called from a request
+pinned to `globex` would return an empty estate rather than acme's. The tenant is
+an argument here, so it is the only scope —
+`test_the_report_uses_the_estate_it_is_given_not_the_ambient_one` pins it.
+
+### 106.4 Why a page and not a widget
+
+The panel's dashboard is `Filament\Pages\Dashboard` carrying `AccountWidget` and
+nothing else — framework furniture, not a ported surface. `SurfaceOwnershipTest`
+recognises only `Pages/*.php` and `*Resource.php` as surfaces, so a dashboard
+widget would be an undeclarable surface: exactly what §14 exists to prevent. The
+page sits first in the Workspace group (`navigationSort` 10, before Assistants'
+20), which is where the WordPress menu put it.
+
+Two honesty devices carried over from `/ops/metrics`:
+
+- an unsampled `uptime` renders **—** with the note "no sample recorded yet —
+  not zero", because `0%` beside five real tiles reads as an outage;
+- an empty feed renders the callout "No activity recorded" and the line
+  "Nothing recorded in this estate", because a quiet estate and a silent one
+  look identical from this point of view.
+
+The contract row moved `planned → read-only`, gained its `files` entry and a
+`projection`, and `writer` moved `shared → none`: neither surface writes, and
+`none` is the vocabulary's word for exactly that (`tools`, `audit-log`,
+`connected-apps`).
+
+### 106.5 What this does not fix
+
+1. **`media` still has no estate.** `nvoos_files` has no `tenant_id`, so the
+   media row's page and the media writers' activity attribution are blocked on
+   the same missing column. That is the next console-only row that can actually
+   move, and it starts with a migration, not a page.
+2. **`dashboards` still waits on the 10 → 7 catalogue change.** Porting ten
+   dashboards in order to port seven would be the wrong order.
+3. **`uptime` is still platform-wide.** `nvoos_health_samples` has no estate
+   either; the probe is the shared cache store. An estate-scoped uptime would be
+   a different measurement, not a scoping change.
+4. **No tab parity, by decision.** Six of the WordPress tabs are not on this
+   page. Three are other rows here, one is a link-out, one has no producer, and
+   the analytics tab is `/ops/token-analytics`. A reader wanting the WordPress
+   tab strip will not find it, and that is deliberate.
+
+### 106.6 Gates
+
+| Run | Result |
+|---|---|
+| `AdminCommandCentreTest` | **7 tests / 17 assertions** — the estate's figures render; a foreign estate's agents, events and tokens never appear; an unsampled uptime is a dash with a reason; two samples render `50.0%`; a silent estate says so; the report ignores ambient context; a subscriber is refused |
+| `TelemetryTest` | **12 tests / 27 assertions** — two new estate tests, plus the three `recent()` call sites updated to the required argument |
+| `CommandCenterTest` + `SurfaceOwnershipTest` + `AdminNavigationTest` | **21 tests / 553 assertions** — the API contract, the contract row and the sidebar all still hold |
+| Focused run (5 files) | **40 tests / 598 assertions, 0 failures** |
+| Full app suite | **1575 tests / 19,080 assertions, 0 failures** (CI `App suite (SQLite)`) |
+| phpcs (`phpcs-laravel.xml.dist`, 8 files) | **0 errors** — one pre-existing 133-char warning in `AdminNavigationGroup`, untouched |
+| `PHPCompatibilityWP` (CI, changed files) | **0 errors** — after a file-scoped suppression of one sniff that mis-parses enum bodies (§106.10) |
+| `bin/audit-surface-ownership.php` | 47 surfaces, **38** Filament-built (15 `/ops`, 25 `/admin`), **6** console-only, 0 planned-only, 1 inert |
+| Live page, `/admin/default/command-centre` | **200**, 168 KB, all six tiles and both honesty strings present |
+
+### 106.7 One fixture trap, worth recording
+
+`Assistant`'s `tenant_id` is deliberately **not** in `$fillable` — the estate is
+never supplied by a request body. So a test fixture that passes
+`'tenant_id' => 'estate-b'` to `create()` does not fail: the value is silently
+dropped, the column default applies, and the row rejoins `default`. The first
+run of `test_another_estates_figures_never_appear` failed with the *opposite*
+symptom — the foreign agent appearing on the page — which reads like a scope
+leak and is actually a fixture that never left home. Set it on the instance.
+
+This is the same class as pitfall 11 in the working notes (`Factory::create()`
+re-entering `state()`), and the same lesson: a fixture that is wrong in the
+permissive direction makes a green test meaningless.
+
+### 106.8 Four documents were the wrong shape too
+
+The ownership document's status prose had drifted from its own contract:
+
+- §218 said 45 surfaces / 33 built / 7 console-only / 3 planned-only;
+- §226 item 7 called `wordpress-bridge` and `connected-apps` undecided when
+  their rows record `none` and `external-product`;
+- §228 still described three planned-only rows;
+- §5 said the row count was 42.
+
+All four now match the measured board. That is worth recording because it is
+exactly the failure the contract exists to prevent: the JSON was right and the
+prose around it was two slices stale. A reader trusting the narrative would have
+started `wordpress-bridge` — a surface whose row has said "no admin equivalent
+by design" for weeks.
+
+And §82.4's missing full-suite row needed no repair: it is present, and
+`git log -S"18192"` traces it to #7942. The note that it had missed its PR was
+itself the stale artefact.
+
+### 106.9 The "full suite" was not the full suite
+
+The first full-suite runs in the dev container reported **1269 tests**, against
+§82.4's 1386. That is not a regression and not noise: the container's `tests/`
+directory had been synced in an earlier pass that copied `app config database
+resources routes bootstrap contracts blueprints fixtures public` and **omitted
+`tests`**. So the runtime held 136 test files while the skeleton held 165, and
+29 files — including `AdminMetricsTest`, `AdminDatasetsTest`,
+`AdminTokenUsageTest`, `AdminToolkitsTest` and `BudgetEnforcementTest` — were
+simply not there to fail.
+
+Two lessons, both already half-known elsewhere in this plan:
+
+- **A runtime copy that omits a directory looks healthy.** The suite is green;
+  it is just smaller. Nothing in the output says "165 files expected".
+- **A count that differs from the last recorded one is evidence, not noise.**
+  The right move is to reconcile the tree *before* reporting the number. A
+  §82.4-shaped row written from this container would have been confidently
+  wrong by 117 tests.
+
+The local run, once the tree was complete, reported **1560 tests over 165
+files**; CI reports **1575** on the same commit. The 15-test gap reconciles
+exactly: the two `ProjectManagement*ParityTest` classes contribute 15 tests
+through a data provider, and the local run had pointed `NVOOS_PM_FIXTURE` at a
+path the runtime copy does not have — so both classes reported "No tests found"
+and those 15 were silently absent. The same lesson twice in one section: an
+empty data provider does not fail, it disappears.
+
+### 106.10 A check that only fails when you touch the file
+
+`PHP Compatibility Check` went red on this PR for code this slice did not write.
+`AdminNavigationGroup` is an enum whose three methods (`getLabel`, `getIcon`,
+`items`) use `$this`, and `PHPCompatibilityWP` 2.1.8 does not parse PHP 8.1
+enum bodies: it treats each method as a plain function and rejects `$this` with
+`PHPCompatibility.Variables.ForbiddenThisUseContexts.OutsideObjectContext`.
+
+That is one probe away from being provable, and the probe says no code change
+fixes it:
+
+| Subject | The line | Verdict |
+|---|---|---|
+| A class | `match ($this->v)` | passes |
+| An enum | `return 'literal';` | passes |
+| An enum | `return $this->value;` | **fails** |
+| An enum | `switch ($this)` | **fails** |
+| An enum | `match ($this)` | **fails** |
+
+So rewriting `match` into `switch` — the obvious repair — does not help, and no
+form satisfies the sniff while the enum implements `HasLabel` and `HasIcon`,
+which are instance methods by definition.
+
+The job only inspects **changed** files. That is why a file which has shipped for
+many slices fails now: it was touched. The failure is latent for every enum in
+the repository, and the next PR to edit one will meet it again.
+
+The response is one file-scoped `phpcs:disable` for that sniff, with the probe
+recorded in the comment, rather than a refactor of the navigation model or a
+loosened CI step. The rest of the file is still judged by WPCS and by the Laravel
+standard. **A follow-up should upgrade `phpcompatibility/phpcompatibility-wp`**
+when a release parses enums; until then, suppressing the one wrong sniff is
+cheaper than abandoning enums, and the alternative — a plain class with
+constants — would cost the `cases()`-driven contract that `AdminNavigationTest`
+and `SurfaceOwnershipTest` are built on.
