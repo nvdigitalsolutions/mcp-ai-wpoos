@@ -51,6 +51,9 @@ export const FORGE_LIB_FILES = [
 	// The form payload contract (parse + message + idempotency digest) both
 	// delivery modes share — `forms.fallback` needs both at once.
 	'forms.ts',
+	// The measured HOVER deltas mapped onto the rebuilt components — the renderer
+	// reads it, so it ships with every project.
+	'hover-vars.ts',
 	// Proposal 114: the semantic classifier + the shared contrast math the
 	// generated project's build-time audit endpoint consumes.
 	'semantic.ts',

@@ -21,6 +21,7 @@ import { bandSpacing, bandSource, pageBackground, sections as sectionThemes, typ
 import { behaviors, type ScrollBehaviorEntry } from '../../lib/behaviors.generated.ts';
 import { animationCss } from '../../lib/animations.generated.ts';
 import { classifyBody } from '../../lib/classify.ts';
+import { hoverComponentVars } from '../../forge/hover-vars.ts';
 import { wrapperAnchor } from '../../lib/anchor.ts';
 import { parallaxBandCss } from '../../lib/motion.ts';
 import Cta from './Cta.astro';
@@ -1168,6 +1169,27 @@ const bandInteractionCss = sections
 	.join( '' );
 
 /**
+ * The band's MEASURED hover deltas, scoped as variables (`hoverComponentVars`).
+ *
+ * `bandInteractionCss` above emits the recorded states against the SOURCE's
+ * selectors, which a design-rebuilt band does not carry — so those rules match
+ * nothing and the hover state is lost. The measured VALUES still ride onto the
+ * rebuilt components through these variables, which `global.css` reads on
+ * `.ds-button` and `.ds-card`.
+ */
+const bandHoverCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id ) {
+			return '';
+		}
+		const vars = hoverComponentVars( theme?.interactions );
+		return vars.length > 0 ? `[data-section-id="${ id }"]{${ vars.join( ';' ) }}` : '';
+	} )
+	.join( '' );
+
+/**
  * The band's PIECE-LEVEL parallax (Proposal 121 + the element pass).
  *
  * A band is parallax only when the source has real moving pieces. Each piece
@@ -1185,7 +1207,7 @@ const bandParallaxCss = sections
 {sections.length > 0 && (
 	<div class="design-sections">
 		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
