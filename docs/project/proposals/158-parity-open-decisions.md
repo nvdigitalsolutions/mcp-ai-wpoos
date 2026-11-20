@@ -290,6 +290,28 @@ What would change that is a decision, not a dependency: whether a machine
 principal is assistant-scoped or estate-scoped. It is now its own document rather
 than something the SSO work was going to settle.
 
+### 7.2 The decision, 2026-11-20 — [159](159-machine-principal-decision.md)
+
+Answered. One credential kind with an **explicit scope** (`assistant:{id}`,
+`estate:…`) encoded in Sanctum's existing `abilities`, enforced by a `scope:`
+middleware at the route, with **assistant scope built first** because it is the
+smallest useful thing and the runtime already models it (`AuthContext` carries
+`scopedAssistantId`, and the craft adapter mints exactly that shape for guest
+tokens).
+
+Three consequences for this decision:
+
+- The three `rest_enable_assistant_*` keys become **meaningful** — they gate
+  external callers only, which is what WordPress's `list` callback already does.
+- `guest_token_lifetime` stays inert. It needs a guest surface, not a principal;
+  the two questions only looked alike.
+- A machine token is capped by its scope and **not** by its owner's role — the
+  inverse of a personal token, and the rule that removes this decision's obstacle.
+
+159 §2.3 also overturns a claim this record inherited: `/api/v1/tools` is inside
+`auth:sanctum,auth0` and `ResolveApiTenant`, so it *does* accept Auth0 tokens;
+§102.4's "its own `auth:sanctum` chain" was wrong.
+
 ---
 
 ## 8. What this changes in the record
