@@ -12331,3 +12331,105 @@ Depends on §68 and on §90.2 (both shipped). Pairs with the `advanced`-keys sli
 both. It is not a correctness fix: the field is editable and round-trips today.
 It is a typo-prevention and ergonomics fix, and a typo'd model is a provider error
 at chat time — which is what the catalogue exists to prevent.
+
+## 121. Machine-principal default-deny, and the three settings that finally read (159 slice 2)
+
+[159](159-machine-principal-decision.md) §10 decided that a scoped credential is
+**default-denied** on a route that declares no scope. This slice installs that rule
+and gives the three `rest_enable_assistant_*` keys their first reader. Nothing here
+constrains a caller that exists today: no minting path writes a scope yet, so the
+blast radius is still zero credentials (§121.5 proves that rather than asserting it).
+
+### 120.1 What shipped
+
+| Piece | Detail |
+|---|---|
+| `EnsurePrincipalScope` | now **reads the route's declarations** from `gatherMiddleware()` and denies when there are none, instead of only enforcing the attach it is given |
+| `bootstrap/app.php` | one `appendToGroup('api', …)` plus `appendToPriorityList(Authenticate::class, …)` |
+| `PrincipalScope::ANY` | `scope:any`, for routes that only describe the caller; `[]` still fails it |
+| `EnsureAssistantRestEnabled` | the `assistant.rest:list|create|delete` gate, honouring the catalogue defaults (list on, create/delete off) |
+| `routes/api.php` | `/session/me` declares `scope:any`; the three assistant routes declare both a scope and their setting |
+| `UnimplementedSettings` | the three keys retired — the list is down to `guest_token_lifetime` |
+
+### 120.2 Why the naive wiring would have been a no-op
+
+§119.4 recorded that the ordering question "belongs with the route annotation". It
+did not, and the reason is mechanical: `PrincipalScope::forRequest()` reads a `null`
+user as **unrestricted**, and group middleware runs *before* route-level
+`auth:sanctum`. An argless attach on the `api` group would therefore have read no
+principal, allowed everything, and enforced nothing — while appearing installed.
+`SortedMiddleware` only reorders names present in the priority list, so the order has
+to be stated.
+
+The second mechanic shaped the design: middleware is **additive**, so "default-deny
+at the group, override at the route" cannot be two attaches — both would run and the
+outer one would deny everything. Instead the group instance reads the route's own
+declarations. `gatherMiddleware()` merges route and controller middleware and dedupes
+by the full string, so `scope` and `scope:assistant` coexist.
+
+The ordering test is written to fail if this regresses: an **authenticated** scoped
+token on an unannotated `api` route must be refused. A guard running before auth
+would let it through with 200, which is the silent failure §10 warns about. An
+unauthenticated request still gets 401, so a missing credential is never disguised
+as a 403.
+
+### 120.3 The scope each assistant route declares — and one boundary worth naming
+
+The settings say *whether* an estate allows remote assistant management; they say
+nothing about *what* a credential may touch. So each route now carries both:
+
+| Route | Declaration |
+|---|---|
+| `GET /api/v1/assistants` | `scope:estate:assistants.list` + `assistant.rest:list` |
+| `POST /api/v1/assistants` | `scope:estate:assistants.create` + `assistant.rest:create` |
+| `DELETE /api/v1/assistants/{assistant}` | `scope:estate:assistants.delete` + `assistant.rest:delete` |
+
+`estate:assistants.list` is matched **exactly**, so a token holding `assistant:42`
+does **not** reach the catalogue. That follows 159 §6 rule 7 — an assistant scope
+implies its estate, not a permission inside it — and it is the narrower of the two
+defensible readings. If slice 3 finds that assistant-bound tokens must list the
+catalogue, that is one declaration to widen, not a redesign.
+
+### 120.4 A trap found by a failing test: which surface can write a tenant key
+
+The first version of the gate test wrote `rest_enable_assistant_list` through
+`SettingsService::SURFACE_OPS` and then read the catalogue default back. The cause is
+that the ops projection is not "everything": `SettingsSchema::forSurface('ops')`
+returns **operator-scope fields only**, so a tenant-scope key is not writable there
+at all and the write is silently skipped.
+
+`SURFACE_ADMIN` is the layer for tenant keys, and it only accepted these three *after*
+they left `UnimplementedSettings` — the retirement and the write are the same change
+seen from two sides. The helper now asserts that every written key appears in
+`write()`'s returned applied list **and** reads back at the value written, so a
+silent skip can never look like a passing gate again.
+
+### 120.5 Gates
+
+| Run | Result |
+|---|---|
+| `PrincipalScopeTest` + `AssistantRestGateTest` + `UnimplementedSettingsTest` | **38 tests / 110 assertions, 0 failures** — includes the ordering test, the 401-not-403 test, `scope:any` (admits a scoped token, refuses `[]`), the three settings, first-party bypass, and a wiring test that the real routes carry both declarations |
+| `AuthorizationTest` + `ApiTenantResolutionTest` + `Auth0BearerTest` + `SurfaceOwnershipTest` + `SettingsCatalogueTest` + `SettingsOwnershipTest` | **72 tests / 9852 assertions, 0 failures** — attaching a middleware to the whole `api` group disturbed no existing auth path |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 new errors** across the six touched files. The 24 reported are pre-existing on lines this slice did not touch (`$path.'/{id}'` concatenation, `self::HINT.' '.$reason`) |
+| Live probe (`localhost:8001`, scoped tokens minted for `spike@example.com`) | `GET /session/me` **200**; `GET /assistants` **200** with the setting on; **403 `assistant_rest_disabled`** with it off; `GET /tools` **403 `principal_scope_required`** (unannotated); `GET /assistants` with `assistant:1` **403**, `required: ["estate:assistants.list"]` |
+
+The probe needs `X-Tenant-Id`: that account belongs to two estates, so the tenant
+middleware answers `409 tenant_required` first. That is the stack working, not a
+regression — the scope guard runs after it and after auth.
+
+### 120.6 What this leaves open
+
+- **Slice 3 (minting)** decides which scopes a token is *created* with. This slice
+  only makes the vocabulary enforceable; nothing mints `estate:assistants.*` yet, so
+  the catalogue remains closed to machines until a token carries it.
+- **`/api/v1/tools` is still unannotated**, and therefore default-denied to scoped
+  credentials. That is correct until slice 4 decides which tools are safe for a
+  machine — 159 §5 rule 4 says the execution route takes `assistant:{id}`.
+- **The three settings gate scoped tokens only.** A `['*']` personal token is the
+  owner's authority replayed (159 §5 rule 3) and is not gated. If the product wants
+  every bearer token gated, that is one predicate in `EnsureAssistantRestEnabled`,
+  and it changes behaviour for tokens that exist today — which is why it is not done
+  silently here.
+- **`guest_token_lifetime` stays inert**; it needs a guest surface, not a principal.
+- **Whether an assistant-bound token may list the catalogue** (§121.3) is the one
+  declaration slice 3 can revisit without re-litigating the mechanism.

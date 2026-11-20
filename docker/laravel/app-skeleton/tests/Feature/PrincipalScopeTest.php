@@ -47,6 +47,15 @@ final class PrincipalScopeTest extends TestCase
 
         Route::middleware(array('auth:sanctum', 'scope:'))
             ->get('/api/v1/_probe/blank', static fn () => response()->json(array('ok' => true)));
+
+        // The default-deny cases have to travel through the `api` group, because
+        // that is where the guard is attached — a route-level probe would only
+        // exercise the declarative path a second time.
+        Route::middleware(array('api', 'auth:sanctum'))
+            ->get('/api/v1/_probe/unannotated', static fn () => response()->json(array('ok' => true)));
+
+        Route::middleware(array('api', 'auth:sanctum', 'scope:any'))
+            ->get('/api/v1/_probe/any', static fn () => response()->json(array('ok' => true)));
     }
 
     // ── The vocabulary ───────────────────────────────────────────────────────
@@ -176,6 +185,83 @@ final class PrincipalScopeTest extends TestCase
     public function test_an_unauthenticated_request_never_reaches_the_scope_check(): void
     {
         $this->getJson('/api/v1/_probe/assistant')->assertUnauthorized();
+    }
+
+    // ── Default-deny (159 §10) ──────────────────────────────────────────────
+
+    public function test_a_scoped_token_is_refused_an_unannotated_route(): void
+    {
+        $token = $this->bearer(array('assistant:42'));
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/_probe/unannotated')
+            ->assertForbidden()
+            ->assertJsonPath('error.code', 'principal_scope_required')
+            ->assertJsonPath('error.required', array())
+            ->assertJsonPath('error.granted.0', 'assistant:42');
+    }
+
+    public function test_the_scope_check_runs_after_authentication(): void
+    {
+        // THE ordering proof. `PrincipalScope::forRequest()` reads a null user as
+        // unrestricted, so a guard that ran before `auth:sanctum` would see no
+        // principal, allow the request, and it would come back 200. The api-group
+        // attach carries no arguments of its own, so a 403 here can only come
+        // from the guard having observed the authenticated token.
+        $token = $this->bearer(array('assistant:42'));
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/_probe/unannotated')
+            ->assertForbidden();
+    }
+
+    public function test_a_missing_credential_is_a_401_not_a_403(): void
+    {
+        $this->getJson('/api/v1/_probe/unannotated')->assertUnauthorized();
+    }
+
+    public function test_a_legacy_star_token_passes_an_unannotated_route(): void
+    {
+        $token = $this->bearer(array('*'));
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/_probe/unannotated')
+            ->assertOk();
+    }
+
+    public function test_a_session_passes_an_unannotated_route(): void
+    {
+        Sanctum::actingAs(User::factory()->admin()->create());
+
+        $this->getJson('/api/v1/_probe/unannotated')->assertOk();
+    }
+
+    public function test_any_is_a_vocabulary_entry_not_a_wildcard(): void
+    {
+        $this->assertTrue(PrincipalScope::fromAbilities(array('estate:tools.read'))->allows('any'));
+        $this->assertTrue(PrincipalScope::fromAbilities(array('assistant:42'))->allows('any'));
+
+        // `any` admits a credential that carries a scope; `[]` carries none.
+        $this->assertFalse(PrincipalScope::fromAbilities(array())->allows('any'));
+    }
+
+    public function test_any_admits_a_scoped_credential_on_a_declared_route(): void
+    {
+        $token = $this->bearer(array('assistant:42'));
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/_probe/any')
+            ->assertOk();
+    }
+
+    public function test_any_still_refuses_a_credential_given_nothing(): void
+    {
+        $token = $this->bearer(array());
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/_probe/any')
+            ->assertForbidden()
+            ->assertJsonPath('error.code', 'principal_scope_required');
     }
 
     /**

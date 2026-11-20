@@ -12,7 +12,7 @@ namespace App\Support\Settings;
  * slice I2 shipped. I3 made the Auth0 trio real (§102), I4 made magic-link real
  * (§103), and §104 moved the ten keys that configure absent software to
  * `InapplicableSettings`, where they are hidden rather than disabled. What
- * remains here is unbuilt but real: four keys.)
+ * remains here is unbuilt but real: one key.)
  *
  * That is the failure `SettingsSchema` calls a UI fiction — "conflating what a
  * surface shows with what it does". This class is the fix at the boundary: the
@@ -51,31 +51,20 @@ final class UnimplementedSettings
     /**
      * Every key that renders but does nothing, and why.
      *
-     * Three different situations share one state, which is why the reason is
-     * per-key rather than a single blanket sentence:
+     * One situation remains, and the reason is per-key rather than a blanket
+     * sentence because the retired ones were not all the same shape:
      *
-     *  - **unbuilt behaviour** — Auth0 verification (I3) and magic-link (I4)
-     *    are ordered slices, not omissions;
-     *  - **absent software** — the Simple JWT Login and WordPress.com/Gravatar
-     *    bridges configure WordPress plugins and identities this runtime does
-     *    not have;
-     *  - **re-homed intent** — the six REST/tool policies are API policy rather
-     *    than identity, and one of them (destructive-op confirmation) is already
-     *    satisfied by the approvals queue under a different name.
+     *  - **absent capability** — guest access has no counterpart in this runtime,
+     *    so `guest_token_lifetime` has no behaviour to bound.
+     *
+     * Earlier slices retired the rest: Auth0 verification (I3), magic-link (I4),
+     * the ten absent-software keys (149 §104), and — in Proposal 159 slice 2 —
+     * the three assistant REST gates, which now have a reader in
+     * `EnsureAssistantRestEnabled`.
      *
      * @var array<string, string>
      */
     public const REASONS = array(
-        // The assistant REST gates. Deliberately still here rather than hidden:
-        // they DO have a counterpart (`/api/v1/assistants`), but honouring them
-        // means telling a first-party console call from a third-party token call
-        // on the same routes. The WordPress plugin gets that for free because
-        // its console does not use its REST API; this one does. That is a design
-        // decision, not an absence — see Proposal 149 \u00a7104.
-        'rest_enable_assistant_list'           => 'Needs a first-party vs token-call split on /api/v1/assistants.',
-        'rest_enable_assistant_create'         => 'Needs a first-party vs token-call split on /api/v1/assistants.',
-        'rest_enable_assistant_delete'         => 'Needs a first-party vs token-call split on /api/v1/assistants.',
-
         // Guest access has no counterpart here yet — the console is an
         // authenticated surface, so there is no anonymous chat to bound.
         'guest_token_lifetime'                 => 'No guest-token path exists in this runtime.',

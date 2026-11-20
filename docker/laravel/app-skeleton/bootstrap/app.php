@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Middleware\EnsureAssistantRestEnabled;
 use App\Http\Middleware\EnsurePrincipalScope;
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
 use App\Support\Auth\Auth0TokenException;
 use Cron\CronExpression;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -152,11 +154,29 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'spike.local' => EnsureSpikeEnvironment::class,
             'pro.entitlement' => EnsureProEntitlement::class,
-            // Proposal 159 slice 1 — registered but attached to no route yet, so
-            // that slice 2 changes only the route file. An unrestricted principal
-            // (`['*']`, a session or an Auth0 user) passes any requirement.
+            // Proposal 159 §10 — the scope vocabulary. Attached once, to the
+            // `api` group below, rather than per route: see the class docblock
+            // for why a group instance reads the route's declarations instead of
+            // a second attach overriding the first.
             'scope' => EnsurePrincipalScope::class,
+            // 159 slice 2 — the three `rest_enable_assistant_*` keys, honoured
+            // for scoped machine principals only.
+            'assistant.rest' => EnsureAssistantRestEnabled::class,
         ]);
+
+        // 159 §10 — default-deny for scoped credentials, attached once for the
+        // whole API surface so that an unannotated route is a visible refusal
+        // rather than a silent permission.
+        $middleware->appendToGroup('api', EnsurePrincipalScope::class);
+
+        // The ordering is part of the decision, not an implementation detail:
+        // `PrincipalScope::forRequest()` reads `null` as unrestricted, so running
+        // before `auth:sanctum` would read no principal, allow everything and
+        // enforce nothing while looking installed. A test proves this order.
+        $middleware->appendToPriorityList(
+            Authenticate::class,
+            EnsurePrincipalScope::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // This runtime is API-only: there is no `login` route to redirect to.

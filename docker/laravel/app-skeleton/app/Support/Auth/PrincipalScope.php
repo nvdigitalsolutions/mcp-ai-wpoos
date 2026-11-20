@@ -37,7 +37,8 @@ use Laravel\Sanctum\TransientToken;
  *    `assistant:0` do not, because a class requirement that admits a scope with
  *    no usable id hands the handler a null it will not expect;
  *  - `assistant:42` — only that assistant;
- *  - `estate` — any non-empty estate scope.
+ *  - `estate` — any non-empty estate scope;
+ *  - `any` — any scope at all, for a route that only describes the caller.
  *
  * Exact match, then prefix match; never a substring. `assistant:4` must not be
  * satisfied by `assistant:42`, which is the same shape of mistake the JIT
@@ -52,6 +53,15 @@ final class PrincipalScope
     public const ASSISTANT = 'assistant';
 
     public const ESTATE = 'estate';
+
+    /**
+     * A requirement any scoped credential satisfies — 159 §10.4.
+     *
+     * It exists for self-describing routes (`/session/me`) where no narrower
+     * scope would make sense, and it is a declaration rather than a bypass: a
+     * credential given `[]` still fails it, because `[]` means "nothing".
+     */
+    public const ANY = 'any';
 
     /**
      * @param list<string> $scopes
@@ -174,6 +184,12 @@ final class PrincipalScope
 
         if ('' === $requirement) {
             return false;
+        }
+
+        // `any` admits a credential that actually carries a scope, and still
+        // refuses one deliberately given nothing.
+        if (self::ANY === $requirement) {
+            return array() !== $this->scopes;
         }
 
         if (in_array($requirement, $this->scopes, true)) {
