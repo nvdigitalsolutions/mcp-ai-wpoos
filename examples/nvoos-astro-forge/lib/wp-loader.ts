@@ -283,7 +283,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 						author: raw.author,
 						featuredImage: featured,
 						seoTitle: raw.seoTitle,
-						seoDescription: raw.seoDescription,
+						seoDescription: raw.seoDescription ?? plainText( raw.excerpt ),
 						seo: raw.seo,
 						price: raw.price,
 						regularPrice: raw.regularPrice,
@@ -495,7 +495,7 @@ export function extractRaw(entry: Record<string, unknown>): RawEntry {
 	const hasSeo = Object.keys( seo ).length > 0;
 
 	return {
-		title: title || String(entry.id ?? ''),
+		title: plainText( title ) || String( entry.id ?? '' ),
 		slug: String(entry.slug ?? ''),
 		date,
 		modified,
@@ -675,6 +675,70 @@ function extractText(value: unknown): string | undefined {
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+/** The named references WordPress emits in rendered titles/excerpts. */
+const NAMED_ENTITIES: Record<string, string> = {
+	amp: '&',
+	lt: '<',
+	gt: '>',
+	quot: '"',
+	apos: "'",
+	nbsp: ' ',
+	hellip: '…',
+	mdash: '—',
+	ndash: '–',
+	lsquo: '‘',
+	rsquo: '’',
+	ldquo: '“',
+	rdquo: '”',
+	laquo: '«',
+	raquo: '»',
+	copy: '©',
+	reg: '®',
+	trade: '™',
+	times: '×',
+	middot: '·',
+	bull: '•',
+	eacute: 'é',
+	egrave: 'è',
+	agrave: 'à',
+	ccedil: 'ç',
+	uuml: 'ü',
+	ouml: 'ö',
+	auml: 'ä',
+	ntilde: 'ñ',
+	Eacute: 'É',
+};
+
+function fromCodePoint(code: number): string {
+	try {
+		return String.fromCodePoint(code);
+	} catch {
+		return '';
+	}
+}
+
+/**
+ * Render a WordPress *rendered* field as PLAIN TEXT.
+ *
+ * `title.rendered` / `excerpt.rendered` arrive entity-encoded (`We Didn&#8217;t`)
+ * because they are HTML fragments. Every consumer of `title` and
+ * `seoDescription` is a TEXT sink — `<title>`, `<h1>`, meta/OG/Twitter
+ * descriptions, JSON-LD — so the entity must be decoded here or it renders
+ * literally (`We Didn&#8217;t`) and a meta description keeps its `<p>` wrapper.
+ * `excerpt` itself keeps its HTML: cards and feeds render it as markup.
+ */
+export function plainText(value: string | undefined): string | undefined {
+	if (!value) {
+		return undefined;
+	}
+	const decoded = value
+		.replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => fromCodePoint(parseInt(hex, 16)))
+		.replace(/&#(\d+);/g, (_, dec: string) => fromCodePoint(Number(dec)))
+		.replace(/&([a-z][a-z0-9]*);/gi, (match, name: string) => NAMED_ENTITIES[name] ?? match);
+	const text = decoded.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+	return text.length > 0 ? text : undefined;
+}
+
 /** Commerce fields are additive — read them when present, skip otherwise. */
 function extractCommerce(entry: Record<string, unknown>, keys: string[]): string | undefined {
 	for (const key of keys) {
@@ -767,7 +831,7 @@ async function loadPayloadEntries(
 				author: raw.author,
 				featuredImage: raw.featuredImage,
 				seoTitle: raw.seoTitle,
-				seoDescription: raw.seoDescription,
+				seoDescription: raw.seoDescription ?? plainText( raw.excerpt ),
 				price: raw.price,
 				regularPrice: raw.regularPrice,
 				salePrice: raw.salePrice,
