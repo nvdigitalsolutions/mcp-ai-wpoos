@@ -18,6 +18,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 
 import { inkForSurface } from './design.ts';
+import { gateContextOptions } from './gate.ts';
 
 import type {
 	BandBoxDeclaration,
@@ -163,7 +164,7 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		const geometry: ForgeGeometry = {};
 		for ( const viewport of options.viewports ?? DEFAULT_GEOMETRY_VIEWPORTS ) {
@@ -2370,7 +2371,7 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		const measureTypeAt = async (
 			device: DeviceKey
@@ -2708,7 +2709,7 @@ export async function measureChromeGeometry( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );
@@ -2954,7 +2955,7 @@ export async function measureFooterBrand( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );
@@ -3225,7 +3226,7 @@ export async function measureFooterSocials( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );
@@ -3325,12 +3326,12 @@ export async function measureMobileNav( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( {
+		const context = await browser.newContext( gateContextOptions( {
 			viewport: { width: 390, height: 844 },
 			deviceScaleFactor: 1,
 			isMobile: true,
 			hasTouch: true,
-		} );
+		} ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );
@@ -3537,7 +3538,7 @@ export async function measureNavToggle( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.setViewportSize( { width: 1440, height: 900 } );
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
@@ -3606,7 +3607,7 @@ export async function measureTopbar( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.setViewportSize( { width: 1440, height: 900 } );
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
@@ -3790,7 +3791,7 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.setViewportSize( { width: 1440, height: 900 } );
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );

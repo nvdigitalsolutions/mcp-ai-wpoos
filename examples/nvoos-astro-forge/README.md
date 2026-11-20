@@ -211,6 +211,7 @@ Two different surfaces, easy to confuse:
 | Phase | Who reads it | Variables |
 |---|---|---|
 | Build (`npm run build`, CI) | the content loader fetches the CMS | `WP_SITE_URL`, `ASTRO_SITE`, `WP_FETCH_PROXY`, `WP_APPLICATION_USER` / `WP_APPLICATION_PASSWORD`, `WP_WC_CONSUMER_KEY` / `WP_WC_CONSUMER_SECRET`, `WP_USER_AGENT` |
+| **Analysis (CLI)** | `forge analyze` / `forge gate` fetch the **rendered HTML** | `WP_GATE_MODE`, `WP_GATE_USERNAME` / `WP_GATE_PASSWORD`, `WP_GATE_COOKIE`, `WP_GATE_STORAGE_STATE`, `WP_GATE_QUERY`, `WP_GATE_HEADERS_JSON`, `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`, `WP_GATE_HTTP_AUTH` |
 | Runtime (managed SSR) | the BFF proxies `/api`, `/media`, `/api/forms/submit` | `NVOOS_TARGET_SITE`, `NVOOS_REVALIDATE_TOKEN`, `MAIL_*`, `BREVO_API_KEY` |
 
 `scaffold` writes `.env.example` with every **non-secret** value already filled
@@ -238,6 +239,38 @@ BREVO_API_KEY=…                               # secret
 before WordPress sees it. Use `WP_FETCH_PROXY`, or allowlist the builder IP.
 Secrets never go in the profile or the manifest; they live in the host
 environment (Velocity's env panel, or the CI secret store).
+
+### A gated source — maintenance / coming-soon / staging auth (152)
+
+WordPress has **two credential planes**, and an Application Password only
+covers one of them. `WP_APPLICATION_*` authenticates `wp/v2`; it cannot log
+into `wp-login.php` (WordPress says so explicitly), so it cannot satisfy a
+plugin gate that checks `is_user_logged_in()`. A pre-launch site gates the
+**rendered HTML** (`503 + Retry-After`, or a `200` holding page) while
+`/wp-json/` stays open — which is why content forges and design does not.
+
+```sh
+# diagnose first — exit 0 open, 3 gated, 4 edge-auth, 5 rate-limited
+node scripts/forge.mjs gate sites/<name>.json
+
+# a user the gate's role allowlist accepts (the common case)
+WP_GATE_USERNAME=forge-reader WP_GATE_PASSWORD='…' \
+  node scripts/forge.mjs analyze https://cms.example.com --design --write sites/<name>.json
+```
+
+Mechanisms, in precedence order: `WP_GATE_COOKIE` (a captured session — the
+only option on a 2FA site) → `WP_GATE_STORAGE_STATE` (Playwright) →
+`WP_GATE_USERNAME` / `WP_GATE_PASSWORD` (one login per process) →
+`WP_GATE_QUERY` / `WP_GATE_HEADERS_JSON` (a plugin bypass token). Edge gates
+are additive: `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET` (Cloudflare
+Access service token) or `WP_GATE_HTTP_AUTH` (staging Basic auth).
+
+`analyze` **refuses** to forge a gated source (`--allow-blocked` overrides,
+and the design block will be empty). `forge gate --login --vault` stores the
+credential in the encrypted vault instead of the environment. Credentials are
+never sent to any host but the CMS, never written to the profile or the
+manifest, and every gated request is `Cache-Control: no-store` (an edge cache
+must not serve the authenticated page to the public).
 
 ### Forms — JetFormBuilder + Elementor submissions (114 §3.9)
 

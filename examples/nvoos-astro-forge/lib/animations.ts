@@ -31,6 +31,8 @@
 
 import { generate, parse, walk } from 'css-tree';
 
+import { gateContextOptions } from './gate.ts';
+
 import type {
 	ForgeAnimationFact,
 	ForgeAnimationInventory,
@@ -587,7 +589,7 @@ export async function measureAnimations( options: MeasureAnimationsOptions ): Pr
 	try {
 		const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 		try {
-			const context = await browser.newContext( { deviceScaleFactor: 1, reducedMotion: 'no-preference' } );
+			const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1, reducedMotion: 'no-preference' } ) );
 			const page = await context.newPage();
 			await page.setViewportSize( { width: 1440, height: 900 } );
 			await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );

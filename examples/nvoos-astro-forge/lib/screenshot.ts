@@ -28,6 +28,7 @@ import type { Browser, Page } from 'playwright';
 
 import { builtStaticRoot, serveDir } from './geometry.ts';
 import type { GeometryViewport } from './geometry.ts';
+import { gateContextOptions } from './gate.ts';
 
 export type CaptureViewport = GeometryViewport;
 
@@ -106,14 +107,14 @@ export async function capturePage( options: CaptureOptions ): Promise< CaptureRe
 		args: [ '--force-device-scale-factor=1', '--font-render-hinting=none' ],
 	} );
 	try {
-		const context = await browser.newContext( {
+		const context = await browser.newContext( gateContextOptions( {
 			viewport: { width: options.viewport.width, height: options.viewport.height },
 			deviceScaleFactor: 1,
 			colorScheme: options.mode === 'dark' ? 'dark' : 'light',
 			reducedMotion: 'reduce',
 			locale: 'en-US',
 			timezoneId: 'UTC',
-		} );
+		} ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );

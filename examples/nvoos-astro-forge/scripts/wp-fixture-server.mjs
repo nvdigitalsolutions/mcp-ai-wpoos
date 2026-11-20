@@ -436,6 +436,94 @@ function json(res, body, headers = {}) {
 	res.end(JSON.stringify(body));
 }
 
+// ---------------------------------------------------------------------------
+// Proposal 152 — the page-gate fixture modes.
+//
+//   WP_FIXTURE_GATE=503       HTML answers 503 + Retry-After unless authorized
+//   WP_FIXTURE_GATE=holding   HTML answers 200 + a coming-soon page unless authorized
+//   WP_FIXTURE_GATE=edge      HTML answers 401 + WWW-Authenticate: Basic
+//
+// `/wp-json/` stays open in 503 and holding — that pair IS the failure mode the
+// gate exists for (content forges, design does not). Authorization is either
+// the login session (wp-login.php below), the bypass query (`forge_bypass=1`),
+// or Basic credentials for `edge`.
+// ---------------------------------------------------------------------------
+const GATE_COOKIE = 'wordpress_logged_in_fixture=1';
+
+function fixtureCredentials() {
+	return {
+		user: process.env.WP_FIXTURE_GATE_USER ?? 'forge',
+		password: process.env.WP_FIXTURE_GATE_PASSWORD ?? 'secret',
+	};
+}
+
+function fixtureAuthorized(req, url) {
+	if (String(req.headers.cookie ?? '').includes(GATE_COOKIE)) {
+		return true;
+	}
+	if (url.searchParams.get('forge_bypass') === '1') {
+		return true;
+	}
+	const authorization = String(req.headers.authorization ?? '');
+	if (authorization.startsWith('Basic ')) {
+		const decoded = Buffer.from(authorization.slice(6), 'base64').toString('utf8');
+		const { user, password } = fixtureCredentials();
+		return decoded === `${user}:${password}`;
+	}
+	return false;
+}
+
+/** True when the request was answered by the gate (the caller returns). */
+function handleFixtureGate(req, res, url, path, mode) {
+	if (path === '/health' || path === '/echo-headers' || path.startsWith('/wp-json') || path.startsWith('/wp-content') || path.startsWith('/wp-includes')) {
+		return false;
+	}
+	if (path === '/wp-login.php') {
+		if (req.method === 'POST') {
+			let body = '';
+			req.on('data', (chunk) => {
+				body += chunk;
+			});
+			req.on('end', () => {
+				const params = new URLSearchParams(body);
+				const { user, password } = fixtureCredentials();
+				const ok = params.get('log') === user && params.get('pwd') === password;
+				res.writeHead(302, {
+					location: ok ? `${ORIGIN}/` : `${ORIGIN}/wp-login.php?login=failed`,
+					...(ok ? { 'set-cookie': `${GATE_COOKIE}; Path=/; HttpOnly` } : {}),
+				});
+				res.end();
+			});
+			return true;
+		}
+		res.writeHead(200, {
+			'content-type': 'text/html; charset=utf-8',
+			'set-cookie': 'wordpress_test_cookie=WP+Cookie+check; Path=/',
+		});
+		res.end('<!doctype html><html><body><form method="post"></form></body></html>');
+		return true;
+	}
+	if (fixtureAuthorized(req, url)) {
+		return false;
+	}
+	if (mode === 'edge') {
+		res.writeHead(401, { 'www-authenticate': 'Basic realm="fixture"', 'content-type': 'text/plain' });
+		res.end('auth required');
+		return true;
+	}
+	if (mode === 'holding') {
+		res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+		res.end(
+			'<!doctype html><html><head><title>Coming soon</title></head><body>' +
+				'<div class="coming-soon"><h1>Coming soon</h1><p>Launching shortly.</p></div></body></html>'
+		);
+		return true;
+	}
+	res.writeHead(503, { 'content-type': 'text/html; charset=utf-8', 'retry-after': '600' });
+	res.end('<!doctype html><html><body>Briefly unavailable for scheduled maintenance.</body></html>');
+	return true;
+}
+
 export function createWpFixtureServer(port = PORT) {
 	const data = createWpFixtureData();
 
@@ -456,9 +544,23 @@ export function createWpFixtureServer(port = PORT) {
 		const slug = url.searchParams.get('slug');
 		const bySlug = (all) => (slug ? all.filter((entry) => entry.slug === slug) : all);
 
+		const gateMode = process.env.WP_FIXTURE_GATE ?? '';
+		if (gateMode && gateMode !== 'off' && handleFixtureGate(req, res, url, path, gateMode)) {
+			return;
+		}
 		if (path === '/health') {
 			res.writeHead(200, { 'content-type': 'text/plain' });
 			res.end('ok');
+			return;
+		}
+		// The gate tests' witness: echoes the request headers the client sent,
+		// so a cookie that leaked off-origin is observable.
+		if (path === '/echo-headers') {
+			json(res, {
+				cookie: String(req.headers.cookie ?? ''),
+				cacheControl: String(req.headers['cache-control'] ?? ''),
+				pragma: String(req.headers.pragma ?? ''),
+			});
 			return;
 		}
 		// The homepage — the design-import fetch target (114 P1): a minimal
@@ -491,7 +593,11 @@ export function createWpFixtureServer(port = PORT) {
 			return;
 		}
 		if (path === '/wp-json' || path === '/wp-json/') {
-			json(res, data.root);
+			// `url` is the origin that ANSWERED, not the module default: an
+			// ephemeral-port bind (the gate + CLI suites) would otherwise hand the
+			// draft profile a dead URL.
+			const host = String(req.headers.host ?? `127.0.0.1:${port}`);
+			json(res, { ...data.root, url: `http://${host}` });
 			return;
 		}
 		if (path === '/wp-json/wp/v2/types') {

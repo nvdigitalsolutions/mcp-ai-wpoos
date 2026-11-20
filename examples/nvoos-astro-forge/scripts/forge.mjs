@@ -36,7 +36,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
+import { confirm, isCancel, password as passwordPrompt, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
 import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredChromeSize, applyMeasuredHeader, applyMeasuredNavStyle, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
@@ -48,6 +48,7 @@ import { isMaterializedContent, resolveContentDir, resolveMediaDir } from '../li
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
+import { openGate } from '../lib/gate.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureMobileNav, loadChromium, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
@@ -266,6 +267,28 @@ async function applyWritePins( design, writePath ) {
 	}
 }
 
+/** Print the gate probe — evidence + remediation, never a secret (152). */
+function printGateProbe( gate, indent = '' ) {
+	const { probe } = gate;
+	const { mechanism } = gate.describe();
+	if ( probe.state === 'open' && mechanism.length === 0 ) {
+		return;
+	}
+	console.log(
+		`${ indent }gate: ${ probe.state }${ probe.fingerprint ? ` (${ probe.fingerprint })` : '' }` +
+			` \u2014 HTTP ${ probe.status }` +
+			`${ probe.retryAfter !== undefined ? `, Retry-After ${ probe.retryAfter }s` : '' }` +
+			`${ probe.restHealthy ? ', /wp-json/ 200' : '' }`
+	);
+	for ( const line of probe.evidence.slice( 0, 4 ) ) {
+		console.log( `${ indent }  \u00b7 ${ line }` );
+	}
+	if ( probe.remediation.length > 0 ) {
+		console.log( `${ indent }  remediation:` );
+		probe.remediation.forEach( ( line, index ) => console.log( `${ indent }    ${ index + 1 }. ${ line }` ) );
+	}
+}
+
 async function runAnalyze( url, options ) {
 	if ( ! url || ! /^https?:\/\//.test( url ) ) {
 		fail( 'analyze needs an https?:// URL.' );
@@ -286,6 +309,31 @@ async function runAnalyze( url, options ) {
 		const report = await analyzeSite( new WpClient( { baseUrl: url.replace( /\/+$/, '' ) } ) );
 		console.log( renderReport( report ) );
 		profile = profileFromDiscovery( report );
+	}
+
+	// Proposal 152 — the page gate. A pre-launch site gates its RENDERED HTML
+	// (503 + Retry-After, or a 200 holding page) while /wp-json/ stays open, so
+	// every pass below would silently measure the coming-soon page. Open ONE
+	// session here; when it cannot be opened, STOP — a warning plus a scaffold
+	// ships the holding page, the one artifact this pipeline must never produce.
+	const gate = await openGate( profile, {
+		allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
+	} );
+	printGateProbe( gate, '  ' );
+	if ( gate.blocked ) {
+		if ( ! options.allowBlocked ) {
+			console.error(
+				`The source is ${ gate.probe.state } and could not be opened \u2014 refusing to forge the holding page.\n` +
+					'  Re-run with --allow-blocked to continue anyway (the design block will be empty),\n' +
+					'  or follow the remediation above.'
+			);
+			// Graceful exit: process.exit() races undici's teardown on Windows
+			// (UV_HANDLE_CLOSING / 0xC0000409) after the probe's requests.
+			process.exitCode = 2;
+			gate.close();
+			return;
+		}
+		console.warn( '  \u26a0 --allow-blocked: continuing with a gated source \u2014 the design/geometry blocks may be empty.' );
 	}
 
 	// --design (114 P1): run the design-language extraction and attach the v2
@@ -1065,6 +1113,71 @@ async function runAnalyze( url, options ) {
 	}
 	// Graceful exit — process.exit() races undici's teardown on Windows and
 	// dies with the libuv UV_HANDLE_CLOSING assertion (0xC0000409).
+	gate.close();
+}
+
+/** `forge gate <profile>` — diagnose the page gate (Proposal 152). */
+async function runGate( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const allowLoopback = process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1';
+
+	// Interactive entry: values live in THIS process's env and, with --vault,
+	// in the encrypted vault. They are never written to the profile.
+	if ( options.login ) {
+		if ( ! isInteractive() ) {
+			fail( '--login needs an interactive terminal — set WP_GATE_USERNAME/WP_GATE_PASSWORD instead.' );
+		}
+		const username = await text( { message: 'WordPress username', placeholder: 'forge-reader' } );
+		if ( isCancel( username ) ) {
+			fail( 'Cancelled.' );
+		}
+		const secret = await passwordPrompt( { message: 'WordPress password' } );
+		if ( isCancel( secret ) ) {
+			fail( 'Cancelled.' );
+		}
+		process.env.WP_GATE_USERNAME = String( username );
+		process.env.WP_GATE_PASSWORD = String( secret );
+		if ( options.vault ) {
+			const vault = new Vault();
+			const host = new URL( profile.url ).hostname.replace( /[^a-z0-9.-]/gi, '-' );
+			await vault.set( `gate.${ host }.username`, String( username ) );
+			await vault.set( `gate.${ host }.password`, String( secret ) );
+			console.log( `\u2713 Stored the gate credential in the vault (gate.${ host }.password = ${ maskSecret( String( secret ) ) }).` );
+		}
+	}
+
+	const gate = await openGate( profile, { allowLoopback } );
+	const description = gate.describe();
+	if ( options.json ) {
+		console.log( JSON.stringify( { ...gate.probe, ...description }, null, '\t' ) );
+	} else {
+		console.log( `site:      ${ profile.url }` );
+		console.log( `gate:      ${ gate.probe.state }${ gate.probe.fingerprint ? ` (${ gate.probe.fingerprint })` : '' }` );
+		console.log( `http:      ${ gate.probe.status }${ gate.probe.retryAfter !== undefined ? ` (Retry-After ${ gate.probe.retryAfter }s)` : '' }` );
+		console.log( `rest:      ${ gate.probe.restHealthy ? '200 ( /wp-json/ is open )' : 'not 200' }` );
+		console.log( `mechanism: ${ description.mechanism.join( ', ' ) }` );
+		for ( const line of gate.probe.evidence ) {
+			console.log( `  \u00b7 ${ line }` );
+		}
+		if ( gate.probe.remediation.length > 0 ) {
+			console.log( 'remediation:' );
+			gate.probe.remediation.forEach( ( line, index ) => console.log( `  ${ index + 1 }. ${ line }` ) );
+		}
+	}
+	const exitCode =
+		gate.probe.state === 'open'
+			? 0
+			: gate.probe.state === 'gated'
+			? 3
+			: gate.probe.state === 'edge-auth'
+			? 4
+			: gate.probe.state === 'rate-limited'
+			? 5
+			: 6;
+	gate.close();
+	// Set the code, do not call process.exit(): an explicit exit after the
+	// probe's requests trips the Windows libuv assertion (0xC0000409).
+	process.exitCode = exitCode;
 }
 
 async function runSiteAdd( name, profilePath, options ) {
@@ -4144,8 +4257,20 @@ program
 	.option( '--tracking', 'detect analytics, ad pixels, a CMP and verification tokens; draft the tracking block with every tracker DISABLED (Proposal 130)' )
 	.option( '--tracking-pages <n>', 'how many representative pages to scan for trackers (default 3)', '3' )
 	.option( '--probe', 'with --tracking: also load the page in Playwright and record its network requests, globals and cookie NAMES' )
+	.option( '--allow-blocked', 'forge a source whose page gate could not be opened (a gated source yields an empty design block)' )
 	.action( async ( url, options ) => {
 		await runAnalyze( url, options );
+	} );
+
+program
+	.command( 'gate' )
+	.description( 'diagnose a source\'s maintenance / coming-soon / staging gate (Proposal 152)' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.option( '--login', 'prompt for WP_GATE_USERNAME/WP_GATE_PASSWORD, then probe' )
+	.option( '--vault', 'with --login: store the credential in the encrypted vault' )
+	.option( '--json', 'machine-readable probe output' )
+	.action( async ( profileRef, options ) => {
+		await runGate( profileRef, options );
 	} );
 
 program
