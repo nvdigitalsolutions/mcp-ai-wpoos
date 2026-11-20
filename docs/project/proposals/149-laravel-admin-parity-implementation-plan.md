@@ -10327,3 +10327,83 @@ the test rather than by loosening the rule.
    provisioning rules.
 4. **Fourteen keys remain inert** — both identity bridges, Simple JWT Login, guest
    tokens, and the six API/tool policies.
+
+---
+
+## 104. Not every WordPress setting belongs on this surface (2026-11-20)
+
+**State:** shipped. The D5 follow-up from [Proposal 156](156-identity-decision.md),
+and it changes a rule rather than adding a feature.
+
+### 104.1 The problem with "disabled"
+
+§101 closed the hole where nineteen Authentication keys rendered, were writable,
+and were read by nothing. It treated all of them the same way: rendered,
+disabled, and explained. That was right for a capability this runtime has not
+built. It was wrong for the ten that configure software the runtime does not
+have.
+
+A disabled "Simple JWT Login" toggle still says *this exists, and someone could
+build it*. The tokens it validates come from a WordPress plugin that is not
+installed here and never will be. A disabled "WordPress.com/Gravatar" bridge says
+the same thing about identities this runtime has no concept of. That is the
+fiction §101 was written to remove, just quieter — the control no longer lies
+about working, but it still lies about being possible.
+
+### 104.2 The split
+
+| Where | What | Treatment |
+|---|---|---|
+| **Real** (5) | Auth0 trio (§102), magic-link pair (§103) | Rendered, editable |
+| **Inert** (4) | `rest_enable_assistant_list/create/delete`, `guest_token_lifetime` | Rendered, disabled, explained |
+| **Inapplicable** (10) | Auth0 bridge trio, WP.com/Gravatar pair, Simple JWT Login, `sse_enable_post_method`, `oauth_disable_open_registration`, `credential_lifetime_days`, `require_confirm_destructive_ops` | **Not rendered** |
+
+Each inapplicable entry names what is absent, in `InapplicableSettings::REASONS`,
+so the reason survives in code even though nothing shows it.
+
+**Why the four stay inert rather than hidden.** The three assistant REST gates
+*do* have a counterpart — this runtime serves `/api/v1/assistants` — but honouring
+them means telling a first-party console call from a third-party token call on the
+same routes. The WordPress plugin gets that for free because its console does not
+use its REST API; this one does. That is a design decision, so the fields stay
+visible and marked rather than being quietly deleted. `guest_token_lifetime` has
+no counterpart yet, but guest access is a capability this runtime could plausibly
+have, so it is unbuilt rather than inapplicable.
+
+### 104.3 The rule this amends
+
+§17 said `/admin` is the superset: every catalogue key renders there, so an
+administrator is never left wondering whether a setting exists. That rule now
+carries an exception, and the test states it precisely rather than being relaxed:
+
+```php
+array_values(array_diff(SettingsSchema::keys(), InapplicableSettings::keys()))
+    === array_column(SettingsSchema::forSurface('admin'), 'key')
+```
+
+`SettingsProjectionTest::test_the_admin_projection_keeps_the_whole_catalogue`
+caught the change unprompted, which is the point of writing invariants as
+equalities.
+
+### 104.4 Gates
+
+| Run | Result |
+|---|---|
+| `InapplicableSettingsTest` | **6 tests / 51 assertions** — every key in the catalogue with a reason; the two lists are disjoint; none renders on `/admin`; none is writable on any surface; the page does not print their labels; a crafted write stores nothing; no runtime source references any of them |
+| `--filter "Inapplicable\|Unimplemented\|AdminSettings\|SettingsCatalogue\|SettingsProjection\|SettingsOwnership\|Auth0Bearer\|MagicLogin"` | **97 tests / 10,704 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`, 6 paths) | **0 errors, 0 warnings** |
+| `bin/audit-surface-ownership.php` | unchanged: **47 surfaces · 37 built · 0 planned-only · 1 inert** |
+
+The scan is the same one §101 introduced, applied to the second list, and it
+caught this slice's own docblock — `InapplicableSettings` explains in prose why
+the three assistant gates are *not* inapplicable, and naming them tripped the
+guard. The prose was reworded rather than the guard excluded; a comment that
+names a key is still a reference someone will trust.
+
+### 104.5 What is left of identity
+
+Eight keys short of where §100 started: **five real, four inert, ten hidden out of
+nineteen.** What remains unbuilt is one design decision (first-party vs token
+calls on `/api/v1/assistants`) and one unbuilt capability (guest access). I5 — OIDC
+SSO — is untouched by this slice and remains the only piece that needs
+provisioning rules.
