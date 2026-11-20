@@ -118,7 +118,7 @@ enum AdminNavigationGroup: string implements HasIcon, HasLabel
     {
         return match ($this) {
             self::Workspace => array(
-                'Command centre', 'Assistants', 'Teams', 'Blueprints', 'Portability',
+                'Command centre', 'Assistants', 'Teams', 'Access requests', 'Blueprints', 'Portability',
             ),
             self::Knowledge => array(
                 'Tools', 'Toolkits', 'Knowledge (OKF)', 'Paper Store', 'Media', 'Memory',

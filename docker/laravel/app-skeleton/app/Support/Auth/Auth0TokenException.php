@@ -129,6 +129,33 @@ final class Auth0TokenException extends RuntimeException
      * and it is never matched by email — an email address is mutable and
      * matching on it is an account takeover.
      */
+    /**
+     * The subject authenticated but was not provisioned, although the estate runs
+     * JIT. Distinct from `subjectUnmapped` on purpose: that one means nothing was
+     * attempted, this one means something was and a gate stopped it.
+     *
+     * 403 rather than 401 — the token is valid, the identity is simply not a
+     * member yet.
+     */
+    public static function provisioningPending(string $reason): self
+    {
+        $detail = match ($reason) {
+            JitProvisioner::REASON_UNVERIFIED => 'the identity provider did not assert a verified address',
+            JitProvisioner::REASON_DOMAIN => 'the address domain is not on this estate\'s verified allowlist',
+            JitProvisioner::REASON_ACCOUNT_EXISTS => 'an account already holds that address and is not linked to this subject',
+            default => 'provisioning is not available for this subject',
+        };
+
+        return new self(
+            'auth0_provisioning_pending',
+            sprintf(
+                'This identity was not provisioned: %s. An estate administrator can approve the request.',
+                $detail
+            ),
+            403,
+        );
+    }
+
     public static function subjectUnmapped(string $subject): self
     {
         return new self(

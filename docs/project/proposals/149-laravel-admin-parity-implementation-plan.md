@@ -10935,3 +10935,128 @@ of a clean bill of health for a library that has nothing in it.
 3. **The sweep's refusal is platform-wide** (§109.3). Making it per-estate needs
    an estate on `nvoos_jobs`, which is a decision about the job store, not about
    media.
+
+## 110. Just-in-time provisioning — the gate, the list, and the dead end made visible (2026-11-20)
+
+§108 recorded decisions 158 D2–D4. This is the slice that implements them: the
+allowlist, the provisioning gate on the `auth0` guard, and the surface where a
+refusal becomes something a person can act on. **I5b is no longer blocked.**
+
+### 110.1 Four gates, and the order is the security property
+
+Each gate is passed before the next is consulted, so no outcome is reachable by
+satisfying them out of order, and an unverified address cannot be used to probe
+whether a domain is allowlisted.
+
+1. **JIT is on for this estate** — `enable_jit_provisioning`, a new tenant-scope
+   key in the Authentication tab, **default off** (158 D2).
+2. **The IdP asserts a verified address** (110.2).
+3. **The address's domain is on the estate's verified allowlist** (110.3).
+4. **No account already holds that address.** `users.email` is unique, so the
+   choice is between a duplicate (impossible) and attaching an IdP subject to an
+   account created by another route — the takeover primitive 156 D4 forbids. The
+   answer is neither: record it, and let a person link it with
+   `nvoos:auth0-link` or approve it deliberately.
+
+### 110.2 The claim-spelling matrix
+
+Published guidance on `email_verified` handling is about a specific trap: IdPs
+spell the claim differently ([eneo][e1], [sure][e2]), and the failure is silent
+in both directions. `=== true` rejects a correct IdP that sends `"true"`; a
+plain truthiness cast accepts the string `"false"`, because PHP reads any
+non-empty string as true — which is the one case that must block.
+
+So the positive list is explicit — `true`, `1`, `"1"`, `"true"` (case and
+whitespace tolerant) — and **everything else blocks**, including the absence of
+the claim. `JitProvisioner::assertsVerified()` is a pure function precisely so
+the matrix is testable without a token.
+
+[e1]: https://github.com/eneo-ai/eneo/pull/1111
+[e2]: https://github.com/newmancu/sure/issues/368
+
+### 110.3 The domain rules
+
+`nvoos_estate_domains` is a table rather than a setting, for the reason 158 D3
+records: `nvoos_tenant_settings` is `(tenant_id, key) → TEXT`, so a list there is
+JSON with unenforceable uniqueness or a new type threaded through the catalogue.
+`UNIQUE (tenant_id, domain)` plus `verified_at` and `created_by` are all things a
+scalar cannot express.
+
+Four rules, each closing a named bypass:
+
+- **Normalise before storing and before comparing** — lowercase, then IDN to
+  A-label where `intl` is present. One domain therefore has one spelling. Unlike
+a browser, this layer does not *display* anything, so the homograph risk here is
+  the reverse one: a Unicode label stored verbatim compares equal only to the
+  same bytes, so it cannot widen access — it can only fail to match.
+- **Exact match on the domain after the last `@`** — never a suffix. `notacme.com`
+  must not satisfy `acme.com`; that lookalike auto-join is the failure mode the
+  JIT-audit literature names first.
+- **No subdomain inheritance** — a claim on `acme.com` does not cover
+  `eng.acme.com`. Inheriting hands routing authority to anyone who can create a
+  subdomain. 158 D3 asks for this as a per-estate flag defaulting off; **the flag
+  is not built**, so the default behaviour is the only behaviour.
+- **`verified_at` gates.** A newly added domain is unverified and provisions
+  nobody. Proposing a domain and authorising it are two separate acts, which is
+  what stops the proposer from provisioning themselves.
+
+### 110.4 The dead end, made visible
+
+Deny-by-default has one failure mode: the subject authenticates, gets a 403, and
+reads it as *broken*. Support pressure then produces "just turn it on for
+everyone", which is the outcome D2 exists to prevent. So every refusal is
+recorded — `nvoos_jit_provisioning_requests`, one row per `(tenant, subject)`
+regardless of how many times the person tries — and `/admin/{estate}/access-requests`
+lists them with the gate that stopped it.
+
+Approving creates the account and a **`viewer`** membership (158 D4). The
+membership role is not selectable on the page: a different role is a separate
+action taken elsewhere by someone accountable for it.
+
+### 110.5 What it never does
+
+The JIT-audit literature describes three ways this feature goes wrong; each is a
+test:
+
+- **No role from claims.** Nothing in the token decides a role. `viewer`, always.
+- **No re-elevation on later logins.** Provisioning runs only when no
+  `auth0_subject` link exists. A second login resolves through the link and
+  touches no membership, so a mutable claim cannot upgrade an existing member.
+- **No attaching to an existing account.** Gate 4, above, and
+  `test_an_existing_account_is_never_attached_to_a_subject` measures that the
+  membership rows are *unchanged* rather than assuming they are.
+
+Every write on the page calls `AdminAuditLogger::recordResource()`: Livewire
+traffic is excluded from the request middleware (§25), so a membership granted
+from the panel would otherwise leave no trace. Verified live — adding and removing
+a domain wrote two `estate-domains` audit rows.
+
+### 110.6 Gates
+
+| Run | Result |
+|---|---|
+| `JitProvisioningTest` | **15 tests / 64 assertions** — the claim matrix; normalisation; lookalike and subdomain refusal; unverified domain refuses; duplicate add refused in any case; JIT off records and creates nobody; unverified address refused; off-list domain refused; allowlisted verified address provisions a `viewer`; existing account never attached (membership rows compared); repeat attempts collapse to one row; approve creates and closes; the page requires the panel; it lists only this estate's requests; approving from the page writes an audit row |
+| `Auth0BearerTest` + `MagicLoginTest` + 6 settings tests + `SurfaceOwnershipTest` + `AdminNavigationTest` + `AdminDataTableTest` + `AdminPanelTest` | **151 tests / 11,403 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`, 9 files) | **0 errors** |
+| `bin/audit-surface-ownership.php` | **48** surfaces, **40** Filament-built, 5 console-only, 0 planned-only, 1 inert |
+| Live check | `/admin/default/access-requests` 200; `ACME.com.` normalised to `acme.com` and stored **unverified**; Remove cleared it; two `estate-domains` audit rows written by the panel actions |
+
+One wiring defect caught by the regression run and worth recording: `Auth0Guard`
+is constructed **by hand** in `AppServiceProvider::boot()` rather than resolved,
+so a new constructor parameter is a runtime "too few arguments" on every Auth0
+request — 15 failures across `Auth0BearerTest` — not a container-resolution
+surprise. Adding a dependency to a guard means editing the `Auth::extend` closure.
+
+### 110.7 What this does not do
+
+1. **No domain-ownership proof.** A verified domain is trusted because a person
+   in the estate verified it, not because a DNS TXT record proved it. That is a
+   reasonable line for an estate's own allowlist and would not be for a
+   platform-wide one; if one-click onboarding ever arrives, it needs the proof.
+2. **No subdomain-inheritance flag** (110.3).
+3. **The pending list is not a notification.** Nothing emails an administrator;
+   they see it when they look. A scheduled digest is a separate slice.
+4. **Magic link is unaffected** — it is its own decision (156 D7) and its own
+   service, and it resolves an estate from existing membership rather than
+   provisioning one.
+5. **SAML is still not built.** 156 D3: OIDC first, SAML a separate increment.

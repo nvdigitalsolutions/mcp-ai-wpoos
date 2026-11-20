@@ -215,7 +215,7 @@ The earlier "unproven" note was an environment fact, not a doubt about the asser
 
 ## 8. Gaps this exposes
 
-Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-20 after the media port (plan §109, `bin/audit-surface-ownership.php`): **47 surfaces · 39 built on a panel · 5 console-only · 0 planned-only · 1 inert**.
+Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-20 after the JIT-provisioning slice (plan §110, `bin/audit-surface-ownership.php`): **48 surfaces · 40 built on a panel · 5 console-only · 0 planned-only · 1 inert**.
 
 1. ✅ **`SettingsSchema` scope + console projection** — shipped, plan §15; asserted by `SettingsProjectionTest`.
 2. ✅ **`/admin` settings page** — shipped as `/admin/{estate}/settings` plus `/ops/settings`, plan §16–§17. One writer, a storage-key map, and the estate/platform split.

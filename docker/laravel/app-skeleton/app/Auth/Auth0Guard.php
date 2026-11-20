@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\Auth\Auth0Config;
 use App\Support\Auth\Auth0TokenException;
 use App\Support\Auth\Auth0TokenVerifier;
+use App\Support\Auth\JitProvisioner;
 use App\Support\Settings\SettingsService;
 use App\Support\TenantContext;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -49,6 +50,7 @@ final class Auth0Guard implements Guard
         private readonly Request $request,
         private readonly Auth0TokenVerifier $verifier,
         private readonly SettingsService $settings,
+        private readonly JitProvisioner $provisioner,
     ) {
     }
 
@@ -99,11 +101,28 @@ final class Auth0Guard implements Guard
 
         $user = User::query()->where('auth0_subject', $claims->subject)->first();
 
-        if (! $user instanceof User) {
-            throw Auth0TokenException::subjectUnmapped($claims->subject);
+        if ($user instanceof User) {
+            return $this->user = $user;
         }
 
-        return $this->user = $user;
+        // No link. I5b (149 §110) attempts provisioning, which is off by
+        // default — with JIT disabled the answer is still `subject_unmapped`,
+        // because nothing was attempted and the pre-I5b message is the honest
+        // one. Only a gate that actually ran earns the "pending" reason.
+        $result = $this->provisioner->provision(
+            $tenantId,
+            $claims->subject,
+            (string) ($claims->email ?? ''),
+            $claims->payload['email_verified'] ?? null,
+        );
+
+        if (! $result['user'] instanceof User) {
+            throw JitProvisioner::REASON_DISABLED === $result['reason']
+                ? Auth0TokenException::subjectUnmapped($claims->subject)
+                : Auth0TokenException::provisioningPending((string) $result['reason']);
+        }
+
+        return $this->user = $result['user'];
     }
 
     public function check(): bool
