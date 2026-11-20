@@ -11937,8 +11937,14 @@ D6's obstacle was "a first-party versus token-call split", and it is unchanged:
 
 - **No principal concept exists.** `first_party`, `machine_principal` and
   `service_account` appear nowhere under `app/`.
-- **`/api/v1/tools` is still outside the tenant group** and takes no Auth0 token,
-  exactly as §102.4 item 3 recorded.
+- **`/api/v1/tools` is inside the auth group after all.** §102.4 item 3 recorded it as
+  "outside the tenant group (its own `auth:sanctum` chain)", and this section
+  repeated that; both are wrong. `routes/api.php` puts it inside
+  `auth:sanctum,auth0` + `ResolveApiTenant` (the `throttle:console` group), so it
+  accepts Auth0 tokens and resolves an estate — and `ToolsController::__invoke()`
+  performs no authorization of its own, so any authenticated principal can read the
+  catalogue. What it lacks is not a guard but a **scope**; §102.4 is left as the
+  dated record and [159](159-machine-principal-decision.md) §2.3 overturns it.
 - **`/api/v1/assistants` is still one chain.** The list is readable and
   everything below it is administrative (`routes/api.php`), with no distinction
   between a browser session and a bearer token presenting the same user.
