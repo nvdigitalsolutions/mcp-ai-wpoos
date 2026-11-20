@@ -11991,3 +11991,106 @@ until a guest surface exists, and its obstacle string already says so.
 | No code changed | `app/`, `routes/` and `tests/` are untouched; this is a record correction |
 | `SurfaceOwnershipTest` | contract still decodes, every declared file exists, vocabularies hold |
 | `UnimplementedSettingsTest` | the four keys still render disabled, each naming its obstacle, and each still refused by `writableFor('admin')` |
+
+## 118. The PHPCompatibility 10 spike — the linter is ready and the style gate is not (2026-11-20)
+
+158 §11 said *"a PHPCompatibility release that parses enums retires §9 item 4 and
+the suppression immediately"*. That sentence is incomplete in a way that would cost
+the next person an afternoon, so the spike was run rather than the sentence trusted.
+
+### 118.1 What was measured
+
+A scratch install (outside the repo, since deleted): PHP_CodeSniffer **4.0.2** +
+`phpcompatibility/php-compatibility` **10.0.0-alpha3** +
+`phpcompatibility/phpcompatibility-wp` **3.0.0-alpha3**.
+
+| Question | Answer |
+|---|---|
+| Does it load? | **Yes** — the three packages coexist and `phpcs -i` registers `PHPCompatibilityWP` |
+| Does it parse enums? | **Yes** — on both `NavigationGroup` files with the `phpcs:disable` block **stripped**, 10.x reports **0** findings while the current toolchain reports the **3** known false positives (run as a control on the identical files) |
+| Can the repo adopt it? | **No** |
+
+### 118.2 The block is the style gate, not the compatibility standard
+
+```
+phpcompatibility/php-compatibility  10.0.0-alpha3  requires  squizlabs/php_codesniffer ^4.0.2
+phpcompatibility/phpcompatibility-wp 3.0.0-alpha3  (alpha line; 2.1.8 needs php-compatibility ^9.0)
+wp-coding-standards/wpcs            3.4.1          requires  squizlabs/php_codesniffer ^3.13.5
+```
+
+There is **no WPCS 4.x** — 3.4.1 is the newest release and PHPCS-4 support exists only
+on an unreleased `dev-phpcs-4` branch. Adopting PHPCompatibility 10.x therefore means
+dropping `WPCS`, which is this repo's primary style gate over ~2,100 files, in exchange
+for deleting one documented suppression. The answer is no, and it is a dependency
+graph rather than a preference.
+
+The exit condition is now written down correctly in 158 §9 item 4 and §11: **WPCS
+gaining PHPCS 4 support** re-opens this. Nothing about it is a PHPCompatibility
+release.
+
+### 118.3 The spike's real finding: the gate is blind to PHP 8.2+ syntax
+
+10.x reported 16 files in `lib/core`, all the same:
+
+> `Readonly classes are not supported in PHP 8.1 or earlier.`
+
+`readonly` **classes** are PHP 8.2; `readonly` **properties** are 8.1. The current
+standard (PHPCompatibility 9.3.5, released 2019) predates 8.2 entirely, so this
+repository has **no coverage at all** for "8.2+ syntax in code that must run on 8.1" —
+and it had 16 instances of exactly that.
+
+They are not a dead corner: each entity is referenced 3–16 times from non-test code,
+and `includes/bootstrap/oos-bridge.php` registers a `Nvoos\Core\` PSR-4 autoloader
+inside the WordPress plugin, behind a guard that read **`PHP_VERSION_ID < 80100`**.
+So on an 8.1 host the autoloader was registered and the first domain DTO it resolved
+would have been a **parse error**.
+
+(A first grep found 19 files; three were HTML `<input … readonly class="…">`
+attributes, not PHP. The real number is 16, all in `lib/core`.)
+
+### 118.4 The decision: make the floor true rather than move the code
+
+Two ways to resolve a `^8.1` declaration over 8.2-only syntax: rewrite the 16 DTOs as
+`final class` plus per-property `readonly` (8.1-safe, keeps immutability), or declare
+the 8.2 floor the code actually has. **The second was chosen**, because:
+
+- the rewrite is 16 hand edits in the engine's core entities, and `lib/core`'s suite
+  cannot be run in this container (§118.5), so the change would be unverified locally;
+- `lib/core` already requires `^8.2` transitively in every consumer — both
+  `lib/laravel-adapter` and `docker/laravel/app-skeleton` declare `^8.2` — so no
+  consumer is affected by the declaration moving;
+- it makes the bridge's failure mode explicit instead of latent.
+
+So `lib/core/composer.json` declares **`^8.2`**, and the bridge guard is
+**`PHP_VERSION_ID < 80200`** with the reason written at the guard. The plugin still
+declares `Requires PHP: 8.1`: on 8.1 the engine is simply unavailable, which is the
+same clean bail-out the bridge already performs when `lib/` is absent — instead of a
+fatal mid-request.
+
+**The product consequence, stated rather than buried:** an 8.1 host loses the opt-in
+OOS engine. That is a narrowing of support, and it is honest — the code never ran on
+8.1 — but if 8.1 + engine is a combination anyone actually depends on, the other
+branch of this decision is the 16-file rewrite, not a guard change.
+
+### 118.5 What this does not do
+
+1. **It does not restore PHP 8.2+ coverage to the compatibility gate.** The gate is
+   still PHPCompatibility 9.3.5 and still cannot see `readonly class`, enums with
+   backed types used 8.2-only, or any other post-2019 syntax. This finding was caught
+   by a one-off spike, not by CI. Until WPCS ships PHPCS 4, that blind spot is a
+   **known** blind spot rather than a closed one.
+2. **`lib/core`'s suite was not run** — the container's PHPUnit is broken (§118.6), so
+   the `composer.json` change and the guard are verified by inspection and by the
+   plugin's own suites. CI's `lib/core suite` job is the authority.
+3. **The three `readonly class` matches outside `lib/core` were false positives** and
+   are not changed.
+
+### 118.6 A container note worth recording
+
+The Laravel suite could not be completed in `oos-laravel-app` during this slice: one
+run reached 51% and another ~6% before being stopped, at roughly 7 tests/minute, where
+a healthy run is an order of magnitude faster. Two `phpunit` processes were left behind
+by killed `docker exec` calls and had to be found through `/proc/<pid>/cmdline` (the
+container has no `ps` or `pkill`). CI's `App suite (SQLite)` and `lib/core suite` jobs
+are the reliable gates for this runtime; do not treat a slow local run as a product
+signal.
