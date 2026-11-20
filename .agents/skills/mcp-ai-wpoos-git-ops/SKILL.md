@@ -506,7 +506,23 @@ comm -13 /tmp/staged.txt /tmp/expected.txt   # missing      — must be empty
   upstream, so it can never pass — report it and leave it. Removing a clean,
   pushed worktree loses nothing (the branch survives on `origin`); removing a
   dirty one destroys work that exists nowhere else. Use `--force` only to get
-  past ignored `vendor/` or `.env`, never to override a dirty status.
+  past genuinely ignored files such as `.env`, never to override a dirty status
+  — and **not** for `vendor/`, which is tracked here (see the next bullet).
+- **`vendor/` is partly TRACKED here — never prune it, and never `rm -rf` a
+  junction** (2026-11-20). `git ls-files vendor | wc -l` = **810**, so the
+  familiar "`--force` gets past ignored `vendor/`" does not apply: pruning it
+  becomes 810 deletions in `git status`, and committing that removes the vendored
+  tree from every checkout. The trap arrived from the other direction — a fresh
+  worktree could not run PHPUnit because its `vendor/` was an 8-file partial, and
+  pointing it at another checkout looked harmless:
+  `cmd //c "mklink /J vendor F:\GITHUB\<checkout>\vendor"`. Creating the junction
+  is harmless; **undoing it with POSIX `rm` is not** — `rm -rf vendor` follows a
+  Windows junction and empties the *target*, i.e. the other checkout's vendor.
+  Remove the link with `cmd //c "rmdir vendor"` (link only), then
+  `git checkout -- vendor` if the tracked subset shows up as deletions, and
+  confirm the target still has its files. Do not leave the junction behind
+  either: it makes the worktree silently depend on a checkout another agent may
+  move or delete.
 - **Never delete a worktree outside the repo root** (e.g.
   `F:/GITHUB/worktrees/…`) or one on a branch you did not create — those belong
   to other agents' sessions. Enumerate with
