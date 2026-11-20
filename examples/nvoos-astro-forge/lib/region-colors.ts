@@ -40,6 +40,7 @@
 // ---------------------------------------------------------------------------
 
 import { hexToRgb, rgbToHex } from './color.ts';
+import { gateContextOptions } from './gate.ts';
 import type { ForgeColorModes, ForgeSection, InkShare, RegionColors } from './types.ts';
 
 export type { InkShare } from './types.ts';
@@ -784,14 +785,14 @@ export interface MeasureColorOptions {
 	try {
 		const measured: ForgeColorModes = {};
 		for ( const mode of modes ) {
-			const context = await browser.newContext( {
+			const context = await browser.newContext( gateContextOptions( {
 				viewport,
 				deviceScaleFactor: 1,
 				colorScheme: mode === 'dark' ? 'dark' : 'light',
 				reducedMotion: 'reduce',
 				locale: 'en-US',
 				timezoneId: 'UTC',
-			} );
+			} ) );
 			try {
 				const page = await context.newPage();
 				await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );

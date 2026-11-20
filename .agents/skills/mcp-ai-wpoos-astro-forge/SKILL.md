@@ -87,6 +87,35 @@ node scripts/forge.mjs site.json --target ./out           # scaffold the project
 Pick a preset with `--preset blog|storefront|minimal` (or let the wizard
 suggest one from the analysis — Woo/products detected → `storefront`).
 
+## Gated sources — maintenance / coming-soon / staging auth (152, shipped 2026-11-20)
+
+The forge fetches two planes: `wp/v2` (Application Password) and the RENDERED
+HTML (a `wp-login.php` **session**). An Application Password cannot log into
+`wp-login.php`, so a pre-launch site that answers `503 + Retry-After` (or a
+`200` holding page) on HTML while `/wp-json/` stays open used to skip the design
+pass with a warning and scaffold the coming-soon page. Now:
+
+- **`lib/gate.ts`** — `openGate(profile)` probes, logs in once (or takes a
+  cookie/storageState/bypass token), and installs a **host-scoped** global
+  fetch wrapper plus the Playwright cookies (`gateContextOptions()`).
+  `gate.blocked` is the verdict; `gate.close()` uninstalls.
+- **Credentials as variables** (env → vault → prompt, never the profile or the
+  generated repo): `WP_GATE_USERNAME` / `WP_GATE_PASSWORD`, `WP_GATE_COOKIE`,
+  `WP_GATE_STORAGE_STATE`, `WP_GATE_QUERY`, `WP_GATE_HEADERS_JSON`,
+  `CF_ACCESS_CLIENT_ID` / `_SECRET`, `WP_GATE_HTTP_AUTH`.
+- **`forge gate <profile>`** diagnoses (exit `3` gated, `4` edge-auth, `5`
+  rate-limited); `--login [--vault]` stores the credential encrypted. `analyze`
+  **refuses** a blocked source (`--allow-blocked` overrides); the wizard never
+  allows it; MCP gains the read-only `gate_probe` and `design_apply` fails
+  closed with the remediation ladder.
+- **Never** spoof a crawler UA, solve a JS challenge, forge a cookie, or
+  disable a production gate to make a build pass.
+
+Full contract, the probe classification table, the fixture's `WP_FIXTURE_GATE`
+modes and the implementation gotchas (async spawn vs an in-process fixture;
+`process.exit()` → `0xC0000409`; `<const T>` for `gateContextOptions`):
+[`reference/gated-sources.md`](reference/gated-sources.md).
+
 ## The exit gate (CI-enforced)
 
 `tests/forge-e2e.test.ts` boots the fixture server on an ephemeral port,

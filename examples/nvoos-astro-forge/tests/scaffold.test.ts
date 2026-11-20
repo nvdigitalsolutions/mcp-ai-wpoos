@@ -119,6 +119,10 @@ describe('scaffold — built-in template fixture', () => {
 		const envExample = await readFile(path.join(target, '.env.example'), 'utf8');
 		expect(envExample).toContain('WP_SITE_URL=https://shop.example.com');
 		expect(envExample).toContain('WP_APPLICATION_PASSWORD=');
+		// Proposal 152 — the page-gate names are listed, blank by default.
+		expect(envExample).toContain('WP_GATE_USERNAME=');
+		expect(envExample).toContain('WP_GATE_PASSWORD=');
+		expect(envExample).not.toMatch(/WP_GATE_PASSWORD=\S+/);
 	});
 });
 

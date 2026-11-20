@@ -42,6 +42,7 @@
 
 import type { Page } from 'playwright';
 import type { ForgeInteractionChildFact, ForgeInteractionFact } from './types.ts';
+import { gateContextOptions } from './gate.ts';
 import { loadChromium } from './geometry.ts';
 
 /** The band heights and type are measured at this viewport; states match it. */
@@ -882,10 +883,10 @@ export async function measureInteractions(
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( {
+		const context = await browser.newContext( gateContextOptions( {
 			deviceScaleFactor: 1,
 			reducedMotion: 'no-preference',
-		} );
+		} ) );
 		const page = await context.newPage();
 		await page.setViewportSize( { ...INTERACTION_VIEWPORT } );
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );

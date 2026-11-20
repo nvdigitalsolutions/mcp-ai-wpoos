@@ -423,6 +423,55 @@ export interface ForgeRedirect {
 	status?: 301 | 302 | 303 | 307 | 308 | 404 | 410;
 }
 
+/**
+ * The page-gate block (Proposal 152).
+ *
+ * A pre-launch WordPress site gates its RENDERED HTML (503 + Retry-After, or
+ * a 200 coming-soon page) while `/wp-json/` stays open. The REST credential
+ * (`WP_APPLICATION_*`, an Application Password) cannot satisfy that gate —
+ * WordPress states plainly that an Application Password cannot log into
+ * `wp-login.php` — so the forge needs a second, page-scoped credential.
+ *
+ * Everything here is a REFERENCE or a non-secret switch. Values live in the
+ * environment (`WP_GATE_*`, `CF_ACCESS_CLIENT_*`, `WP_GATE_HTTP_AUTH`) or the
+ * vault, never in the profile, the generated repo, or an artifact.
+ *
+ * Absent = the default env names are used; a public site needs no block at
+ * all and the forge never sends credentials.
+ */
+export interface ForgeGate {
+	/**
+	 * How to get in. `auto` (default) uses whatever credentials are present;
+	 * `login` only the wp-login session; `session` only a supplied cookie /
+	 * storageState; `bypass` only the query/header token; `off` probes nothing
+	 * and sends nothing.
+	 */
+	mode?: 'auto' | 'login' | 'bypass' | 'session' | 'off';
+	/** Login form path relative to `url` (default `/wp-login.php`). */
+	loginUrl?: string;
+	/** Env var holding the automation username (default `WP_GATE_USERNAME`). */
+	userEnv?: string;
+	/** Env var holding the automation password (default `WP_GATE_PASSWORD`). */
+	passwordEnv?: string;
+	/** Where a pre-captured session comes from (2FA / CI — no login attempt). */
+	session?: {
+		/** Raw `name=value; name=value` cookie string (default `WP_GATE_COOKIE`). */
+		cookieEnv?: string;
+		/** Playwright storageState JSON path (default `WP_GATE_STORAGE_STATE`). */
+		storageStateEnv?: string;
+	};
+	/** A plugin's bypass token — non-secret by nature (a slug or query key). */
+	bypass?: { query?: Record< string, string >; headers?: Record< string, string > };
+	/** Edge gates: Cloudflare Access reads `CF_ACCESS_CLIENT_ID/_SECRET`. */
+	edge?: { cloudflareAccess?: boolean; httpBasic?: boolean };
+	/**
+	 * Probe pins. `rejectMarkers` are additional holding-page strings (the
+	 * built-in list stays active); `minVisibleChars` lowers/raises the
+	 * fingerprint-free detection threshold (default 200).
+	 */
+	verify?: { rejectMarkers?: string[]; acceptMarkers?: string[]; minVisibleChars?: number };
+}
+
 export interface SiteProfile {
 	/**
 	 * Redirects the operator declares by hand — cutover leftovers the URL
@@ -457,6 +506,12 @@ export interface SiteProfile {
 	url: string;
 	/** Display name (discovery fills it when absent). */
 	name?: string;
+	/**
+	 * The page-gate block (Proposal 152) — the login session every
+	 * rendered-HTML pass needs when the source is in maintenance / coming-soon
+	 * mode. Absent = default env names, and nothing is sent to a public site.
+	 */
+	gate?: ForgeGate;
 	/**
 	 * The media block (Proposal 139) — extra authorized image hosts and the
 	 * build-time localization pass. Absent = CMS host only, localization on.

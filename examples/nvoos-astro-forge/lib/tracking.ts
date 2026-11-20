@@ -13,6 +13,8 @@
 
 import { Parser } from 'htmlparser2';
 
+import { gateContextOptions } from './gate.ts';
+
 import type {
 	ForgeConsent,
 	ForgeTracker,
@@ -569,7 +571,7 @@ export async function probeTracking(
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { headless: true } );
 	try {
-		const context = await browser.newContext( { userAgent: PROBE_UA } );
+		const context = await browser.newContext( gateContextOptions( { userAgent: PROBE_UA } ) );
 		const page = await context.newPage();
 		const requests = new Set< string >();
 		page.on( 'request', ( request ) => {
