@@ -428,13 +428,21 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   `Source path "/workspace/oos/lib/core" is not found`. The committed lock must
   read `../../../lib/core` and `../../../lib/laravel-adapter`; verify with
   `grep -c /workspace/oos docker/laravel/app-skeleton/composer.lock` → `0`.
-- **Filament's published assets are not gitignored upstream.** `filament:assets`
-  — run by the skeleton's post-install script and by `entrypoint.sh` — writes
-  ~4.5 MB to `public/{css,fonts,js}/filament`, which surfaces as three untracked
-  directories, one `git add -A` away from committing binaries. Only
-  `public/.htaccess`, `public/index.php` and `public/robots.txt` are tracked
-  under `public/`; keep `/public/css/filament`, `/public/fonts/filament` and
-  `/public/js/filament` in the skeleton `.gitignore`.
+- **Filament's published assets are build output, and their absence renders the
+  panel unstyled.** `filament:assets` writes ~4.5 MB to
+  `public/{css,fonts,js}/filament`, so the skeleton `.gitignore`s them and a
+  runtime copy has none. `entrypoint.sh` publishes them **only when
+  `public/css/filament/filament/app.css` is absent**, and swallows the outcome
+  (`>/dev/null 2>&1 || true`) — so a failed publish is invisible, and the next
+  boot does not retry, because a *page* still answers 200.
+  **Symptom:** every panel page renders with no styling; the browser's network
+  log shows `/css/filament/filament/app.css`, `/js/filament/**` and
+  `/fonts/filament/**` all **404**.
+  **Diagnose:** `curl -o /dev/null -w '%{http_code}' http://localhost:8001/css/filament/filament/app.css`.
+  **Fix:** `docker exec -w /app oos-laravel-app php artisan filament:assets`.
+  It is **panel-wide, not per-page** — confirm on a second panel route before
+  suspecting the page you just wrote. The three directories must never be
+  committed: they are one `git add -A` away from 4.5 MB of binaries.
 - **`tenant_id` is not fillable on `Assistant`.** `$fillable` deliberately omits
   it ("the tenant is never supplied by a request body"), so
   `Assistant::query()->create(['tenant_id' => 'estate-b', …])` **silently drops
@@ -675,6 +683,14 @@ tenant id is a **selector only**:
   CSS has no arbitrary utilities and a missing class silently collapses layout.
 - Page URLs are tenant-prefixed on `/admin` (`/admin/{slug}/…`); `/ops` has no
   tenant segment.
+- **A 200 is not a rendered page, and a snapshot is not a screenshot.** The route
+  can answer 200 with every node in the right place while the panel's CSS and JS
+  are 404 (§6): an accessibility snapshot is *structure*, so it looks perfect.
+  Before reporting a panel page as working, assert the asset —
+  `curl -o /dev/null -w '%{http_code}' http://localhost:8001/css/filament/filament/app.css`
+  must be 200 — or take a screenshot and look at it. Reporting a page green off a
+  status code and a snapshot is how an unstyled panel reaches the person who has
+  to use it.
 
 ## 14. Surface-ownership audits that found real bugs (149 §22–§24)
 
