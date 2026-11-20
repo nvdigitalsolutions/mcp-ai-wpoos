@@ -119,7 +119,7 @@ Authoritative data: `docker/laravel/app-skeleton/contracts/surface-ownership.jso
 - `state ∈ {full, subset, read-only, inert, link-out, absent, planned}` — closed vocabulary. `absent` is a decision; `planned` is a queued decision; `inert` is a **rendered surface whose values nothing reads** — a form that is not yet a behaviour. `inert` exists so that porting a settings section without its behaviour cannot be reported as parity: it is not `subset` (the field set is complete) and it is not `planned` (the form is live and writable). Added by [Proposal 156](156-identity-decision.md) §3.1.
 - `writer ∈ {ops, admin, console, shared, none}` — `none` is only legal for genuinely read-only surfaces (`tools`, `audit-log`, `connected-apps`).
 - `files` — the Filament class(es) that implement the row. Filament's derived `Manage*` resource pages are not rows; only the `*Resource` class and top-level `Pages/*` are.
-- Row count is 42; the 45 console keys are partitioned across 29 of them, with the remaining 13 rows being `/ops`-only or `/admin`-only surfaces that have no console equivalent.
+- Row count is 47; the 45 console keys are partitioned across 29 of them, with the remaining 18 rows being `/ops`-only or `/admin`-only surfaces that have no console equivalent.
 
 ---
 
@@ -215,7 +215,7 @@ The earlier "unproven" note was an environment fact, not a doubt about the asser
 
 ## 8. Gaps this exposes
 
-Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-18 after the Wave 3 toolkit renderer (`bin/audit-surface-ownership.php`): **45 surfaces · 33 built on a panel · 7 console-only · 3 planned-only**.
+Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-20 after the command-centre port (plan §106, `bin/audit-surface-ownership.php`): **47 surfaces · 38 built on a panel · 6 console-only · 0 planned-only · 1 inert**.
 
 1. ✅ **`SettingsSchema` scope + console projection** — shipped, plan §15; asserted by `SettingsProjectionTest`.
 2. ✅ **`/admin` settings page** — shipped as `/admin/{estate}/settings` plus `/ops/settings`, plan §16–§17. One writer, a storage-key map, and the estate/platform split.
@@ -223,9 +223,9 @@ Ordered by leverage, each small enough to be one slice. Status re-measured 2026-
 4. ✅ **Tool catalogue projection** for the console — shipped, plan §22. The console's honest projection is the assistant's enabled tools plus presets, not the registry.
 5. ✅ **PAT manager** split from assistant credentials — shipped, plan §19 (contract) and §26 (the user-scoped half). **Remaining:** the operator cross-estate view; `tokens.personal` is still `ops: planned`.
 6. ✅ **`/ops` tail** — `site-health` (§31), `assets` (§33), `reports` (§34) and `conversation-import` (§37) all shipped. `identity-provider` and `datasets` remain `planned` for the reasons recorded in plan §35–§36; `onboarding` is `absent` by decision.
-7. ✅ **`/admin` consumer-port run** — blueprints, portability, MCP apps, security, remote sites, agent-skills, OKF and paper-store shipped in plan §48–§54; the toolkit renderer followed in §56. **Remaining console-only:** `dashboards` (Wave 5, pending the 10 → 7 catalogue change), `command-centre`, `media`. `chat-channels` left this list when the manifest shipped and the row moved `planned → subset` (PR #7906 + the burn-down PR); `chat` and `automation-canvas` are deliberate `link-out`; `wordpress-bridge` and `connected-apps` carry no panel decision yet.
+7. ✅ **`/admin` consumer-port run** — blueprints, portability, MCP apps, security, remote sites, agent-skills, OKF and paper-store shipped in plan §48–§54; the toolkit renderer followed in §56. **Remaining console-only:** `dashboards` (Wave 5, pending the 10 → 7 catalogue change) and `media` (pending an estate on the media tables — plan §106.5). `command-centre` left this list in plan §106; `chat-channels` left it when the manifest shipped (PR #7906 + the burn-down PR); `chat` and `automation-canvas` are deliberate `link-out`. `wordpress-bridge` and `connected-apps` are **decided, not outstanding**: their contract rows record `none` (WordPress-only, Appendix B: N) and `external-product … never ported` respectively.
 
-All three planned-only rows are now `/ops`: `measurement` (needs the P3 data model), `identity-provider` (owner decision) and `datasets` (readiness classification).
+There are no planned-only rows left. `measurement` shipped as `/ops/metrics` (§96 decided it, §99 built it), `datasets` as the derived browser (§95), and `identity-provider` is the contract's one `inert` row (§100) — rendered, and unread.
 
 Passing a row from `planned` to `full` is now the unit of progress, and every transition is a one-line diff plus its test.
 

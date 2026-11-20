@@ -397,11 +397,12 @@
       "title": "Command centre",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["commandCenter"] },
-      "writer": "shared",
+      "writer": "none",
       "plan_gate": null,
-      "projection": null
+      "projection": "Read: one estate's overview - six KPIs, the agent status map and the last 8 feed entries, assembled by App\\Support\\CommandCentre\\CommandCentreReport and shared with GET /api/v1/pro/command-center/overview. No write path on either surface: approvals and their decisions are the `approvals` row. Five of the WordPress surface's seven tabs are separate rows here (approvals, automation-runs, token-analytics, site-health, diagnostics) and are deliberately not duplicated; `strategy` has no producer in this runtime.",
+      "files": ["app/Filament/Admin/Pages/CommandCentre.php"]
     },
     {
       "id": "media",
