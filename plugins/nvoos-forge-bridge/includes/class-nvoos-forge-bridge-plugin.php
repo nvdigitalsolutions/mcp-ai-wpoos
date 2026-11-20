@@ -64,6 +64,8 @@ final class Plugin {
 		$forms->register_routes();
 		$redirects = new Rest\Redirects();
 		$redirects->register_routes();
+		$gate = new Rest\Gate();
+		$gate->register_routes();
 	}
 
 	/**

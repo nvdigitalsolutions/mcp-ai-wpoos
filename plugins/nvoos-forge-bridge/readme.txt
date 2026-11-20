@@ -4,7 +4,7 @@ Tags: headless, rebuild, webhook, forms, redirects
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.3.1
+Stable tag: 0.3.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -18,6 +18,7 @@ NV oOS Forge Bridge is the WordPress half of a CMS-to-CI rebuild loop, and it wo
 * **Inbound rebuild trigger** — `POST /wp-json/nvoos-forge/v1/rebuild` accepts only requests carrying a valid signature, so external systems can request a rebuild with proof of the shared secret.
 * **Preview tokens** — `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors and above) mints a single-use, 15-minute bearer token; `POST …/preview-tokens/verify` with the token consumes it. Tokens are stored hashed, never in plaintext.
 * **Health** — `GET /wp-json/nvoos-forge/v1/health` returns a redacted status (versions, booleans, the webhook host) — never tokens, secrets, or full URLs.
+* **Gate state** — `GET /wp-json/nvoos-forge/v1/gate` reports whether the FRONT END is gated (maintenance / coming soon) and by what: WordPress core's `.maintenance`, Elementor's Maintenance Mode, or WP Maintenance Mode. Read-only and public (the same disclosure class as `/health`), booleans + a mode keyword + a plugin slug only. Any other gate plugin declares itself through the `nvoos_forge_bridge_gate_state` filter. The Astro Forge uses it to tell "the site is gated" from "the gate answered a cached anonymous page".
 * **Form submissions from a generated static site** — `POST /wp-json/nvoos-forge/v1/forms/submit` accepts the forged site's rebuilt forms and dispatches them to the NATIVE handler (JetFormBuilder's form processor or Elementor Pro's form ajax handler), so validation, storage, mail, and post-submit actions run exactly as on WordPress — the plugin never reimplements form handling. Submissions are gated by a CORS origin allowlist (your static origin, one per line), per-IP rate limits, a mandatory honeypot + timestamp spam floor (optional Cloudflare Turnstile with the `action` and `hostname` pinned to your allowlisted origin), and server-side sanitization of every field. Unknown form → 404; no form handler → 501; caught bots get a silent success. The no-JavaScript fallback is an ordinary form POST that redirects back to the static page with `?form=ok|error`.
 * **Stored redirects for a generated static site** — `GET /wp-json/nvoos-forge/v1/redirects` normalizes the redirect rules already stored by **Redirection** (`redirection_items`) and **Rank Math** (`rank_math_redirections`) into `{ source, target, type }`, so a forged static site keeps legacy URLs alive on cutover day. Read-only and opt-in. Only enabled, exact URL matches are exported (max 500, `truncated` reported); regex, query-scoped, and non-URL match types cannot be expressed portably in a static `_redirects` file and are returned as skipped counts instead of being silently widened. An optional shared token gates the endpoint when you do not want your URL structure publicly readable.
 
@@ -82,6 +83,9 @@ The uncompiled source of this plugin lives in the public repository at https://g
 2. Settings page after configuring the GitHub dispatches URL, token, and HMAC secret — credentials are write-only, shown masked.
 
 == Changelog ==
+
+= 0.3.2 =
+* New: `GET /wp-json/nvoos-forge/v1/gate` — the front-end gate state (maintenance / coming soon) for the Astro Forge's page-session probe (Proposal 152). Detects WordPress core `.maintenance`, Elementor Maintenance Mode, and WP Maintenance Mode; `nvoos_forge_bridge_gate_state` lets any other gate plugin declare itself. Read-only: booleans, a mode keyword and a plugin slug.
 
 = 0.3.1 =
 * Security: the public form endpoint only dispatches to PUBLISHED, non-password-protected forms. A draft, pending, private, trashed, or password-protected JetFormBuilder / Elementor form is treated as unknown (404) instead of being submitted to.
