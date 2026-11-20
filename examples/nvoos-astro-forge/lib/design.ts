@@ -2908,6 +2908,39 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 				chrome.footerLogo = { src: footerImg.attribs?.src, alt: footerImg.attribs?.alt };
 			}
 		}
+		// A builder that keeps the footer mark INSIDE the <footer> and outside a
+		// footer-widget ASIDE never populated the pool above, so the rebuild had
+		// no footer logo at all (virtuallysrilanka's Kadence `.footer-widget1`).
+		// Scan the footer element itself: a logo/brand marker on the class, alt or
+		// FILENAME is the brand here, not a content image — the site-wide
+		// `isLogoImg` filename ban exists to keep the variant pool honest, and it
+		// is too strict for a region that is small and semantically the footer.
+		if ( ! chrome.footerLogo && ! widgetAside ) {
+			const inMediaWidget = ( node: HNodeLike ): boolean => {
+				let current = node.parent;
+				while ( current && current !== footerNode ) {
+					if ( /widget_media|media_image|site-info/i.test( current.attribs?.class ?? '' ) ) {
+						return true;
+					}
+					current = current.parent;
+				}
+				return false;
+			};
+			const footerImgs = collectNodes( footerNode, ( n ) => n.type === 'tag' && n.name === 'img' && Boolean( n.attribs?.src ) );
+			const brandImgs = footerImgs.filter( ( img ) => {
+				if ( isLogoImg( img ) ) {
+					return true;
+				}
+				return /logo|brand|wordmark/i.test( `${ img.attribs?.alt ?? '' } ${ img.attribs?.src ?? '' }` );
+			} );
+			// A partner/logo WALL is not the brand: a media widget wins, and a lone
+			// hinted image is unambiguous on its own.
+			const brandImg = brandImgs.find( inMediaWidget ) ?? ( brandImgs.length === 1 ? brandImgs[ 0 ] : undefined );
+			if ( brandImg ) {
+				footerLogoNode = brandImg;
+				chrome.footerLogo = { src: brandImg.attribs?.src, alt: brandImg.attribs?.alt };
+			}
+		}
 		const blocks: Array<{ title?: string; items: string[] }> = [];
 		// The nodes behind the FIRST block — the brand column when the source
 		// renders its logo above the intro copy. Kept for the logo association below.
@@ -2960,6 +2993,46 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		}
 		if ( blocks.length > 0 ) {
 			chrome.footerBlocks = blocks;
+		}
+
+		// The LINKS the footer LINES carry. A builder publishes the © statement
+		// as ONE line with only the credit anchored (virtuallysrilanka:
+		// `… IS POWERED BY <a class="gray-text" href="http://www.nvdigitalsolutions.com/">NV
+		// DIGITAL SOLUTIONS.</a>`). Flattening the line to its text printed the
+		// credit as dead copy and the rebuild could not tell it had been a link.
+		// Recorded as a lookup so a footer line stays a plain string.
+		const footerLines = blocks.flatMap( ( block ) => block.items );
+		if ( footerLines.length > 0 ) {
+			const footerLinks: Array<{ text: string; href: string }> = [];
+			for ( const scope of scopes ) {
+				const anchors = collectNodes( scope, ( n ) => {
+					if ( n.type !== 'tag' || n.name !== 'a' ) {
+						return false;
+					}
+					const href = ( n.attribs?.href ?? '' ).trim();
+					// A fragment is an in-page jump, not a link the line carries.
+					return href.length > 0 && ! href.startsWith( '#' );
+				} );
+				for ( const anchor of anchors ) {
+					const href = ( anchor.attribs?.href ?? '' ).trim();
+					const text = nodeText( anchor );
+					if ( ! text || text.length > 120 ) {
+						continue;
+					}
+					// Only an anchor INSIDE a captured line — a footer nav or utility
+					// link is its own element, not a suffix of a sentence.
+					if ( ! footerLines.some( ( line ) => line.includes( text ) ) ) {
+						continue;
+					}
+					if ( footerLinks.some( ( link ) => link.text === text && link.href === href ) ) {
+						continue;
+					}
+					footerLinks.push( { text, href } );
+				}
+			}
+			if ( footerLinks.length > 0 ) {
+				chrome.footerLinks = footerLinks;
+			}
 		}
 
 		// Where the logo SITS. A builder renders it as the first widget of the

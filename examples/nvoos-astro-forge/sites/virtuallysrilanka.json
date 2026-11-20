@@ -416,6 +416,16 @@
 					]
 				}
 			],
+			"footerLinks": [
+				{
+					"text": "NV DIGITAL SOLUTIONS.",
+					"href": "http://www.nvdigitalsolutions.com/"
+				}
+			],
+			"footerLogo": {
+				"src": "https://virtuallysrilanka.com/wp-content/uploads/2019/01/VJ-Sri-Lanka-Logo-V5-outline.svg",
+				"alt": ""
+			},
 			"favicon": "https://virtuallysrilanka.com/wp-content/uploads/2019/01/cropped-fav-icon-vj-sri-linka-3-32x32.png",
 			"iconCss": "https://virtuallysrilanka.com/wp-content/plugins/elementor/assets/lib/eicons/css/elementor-icons.min.css?ver=5.54.0",
 			"socialIconCss": "https://virtuallysrilanka.com/wp-content/plugins/elementor/assets/lib/font-awesome/css/fontawesome.min.css?ver=5.15.3",
@@ -448,6 +458,19 @@
 					"logoHeight": "63px"
 				},
 				"divider": false,
+				"social": {
+					"size": "51px",
+					"radius": "3px",
+					"bg": "rgb(237, 242, 247)",
+					"ink": "rgb(45, 55, 72)"
+				},
+				"text": {
+					"size": "14px",
+					"weight": "600",
+					"ink": "rgb(45, 55, 72)",
+					"linkInk": "rgb(49, 130, 206)",
+					"align": "center"
+				},
 				"tablet": {
 					"logo": "start",
 					"socials": "start",

@@ -1334,3 +1334,59 @@ describe( 'analyzeSections — per-column PANEL surfaces (ForgeSectionColumn)', 
 		expect( found?.panel ).toBeUndefined();
 	} );
 } );
+
+describe( 'analyzeChrome — footer LINES that carry LINKS (virtuallysrilanka)', () => {
+	// A Kadence footer publishes the © statement as ONE paragraph with only the
+	// credit anchored. Flattening the line to its text printed the credit as
+	// dead copy — the rebuild could not tell the line had ever been a link.
+	const HTML =
+		'<footer id="colophon" class="site-footer">' +
+		'<div class="site-middle-footer-wrap"><div class="site-footer-row site-footer-row-columns-3">' +
+		'<div class="site-footer-middle-section-1"><div class="footer-widget-area footer-social">' +
+		'<a href="" aria-label="Facebook" class="social-button"><svg></svg></a>' +
+		'<a href="" aria-label="Twitter" class="social-button"><svg></svg></a>' +
+		'</div></div>' +
+		'<div class="site-footer-middle-section-3">' +
+		'<section id="media_image-3" class="widget widget_media_image">' +
+		'<img src="https://src.test/wp-content/uploads/2019/01/VJ-Sri-Lanka-Logo-V5-outline.svg" class="image wp-image-5511 attachment-full size-full" alt="" />' +
+		'</section></div></div></div>' +
+		'<div class="site-bottom-footer-wrap"><div class="footer-html-inner"><p>' +
+		'&copy; 2026 VIRTUALLY SRI LANKA IS POWERED BY ' +
+		'<a class="gray-text" href="http://www.nvdigitalsolutions.com/" target="_blank" rel="noopener">NV DIGITAL SOLUTIONS.</a>' +
+		'</p></div></div>' +
+		'</footer>';
+
+	const chrome = analyzeChrome( { url: 'https://virtuallysrilanka.com', html: HTML, css: [] } );
+
+	it( 'keeps the line a string and records its anchor separately', () => {
+		expect( chrome?.footerBlocks ).toEqual( [
+			{ items: [ '© 2026 VIRTUALLY SRI LANKA IS POWERED BY NV DIGITAL SOLUTIONS.' ] },
+		] );
+		expect( chrome?.footerLinks ).toEqual( [
+			{ text: 'NV DIGITAL SOLUTIONS.', href: 'http://www.nvdigitalsolutions.com/' },
+		] );
+	} );
+
+	it( 'takes the footer mark from a media widget INSIDE the <footer>', () => {
+		// The mark carries no logo class (`image wp-image-5511 …`) and this footer
+		// has no footer-widget <aside>, so the aside-scoped pool never saw it.
+		expect( chrome?.footerLogo?.src ).toContain( 'VJ-Sri-Lanka-Logo-V5-outline.svg' );
+	} );
+
+	it( 'does not treat an href-less social badge as a footer LINE link', () => {
+		expect( chrome?.footerLinks?.every( ( link ) => link.href.length > 0 ) ).toBe( true );
+	} );
+
+	it( 'ignores a fragment anchor and a link outside every captured line', () => {
+		const html =
+			'<footer class="site-footer">' +
+			'<p>© 2026 Site</p>' +
+			'<a href="#top">Back to top</a>' +
+			'<a href="/privacy/">Privacy</a>' +
+			'</footer>';
+		const found = analyzeChrome( { url: 'https://example.test', html, css: [] } );
+		// `Back to top` is a fragment; `Privacy` is its own element, never a
+		// suffix of the © line.
+		expect( found?.footerLinks ).toBeUndefined();
+	} );
+} );

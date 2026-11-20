@@ -1960,9 +1960,50 @@ export interface ForgeFooterBrandAlign {
 }
 
 /**
+ * The social BADGE box, measured.
+ *
+ * Kadence's filled style draws a 51px rounded SQUARE (r3) on its light-gray
+ * palette slot with palette-4 ink; the template's default is a 2.25rem circle,
+ * which reads as a different component at every width (virtuallysrilanka,
+ * 2026-11-20). Absent → the template's own circle.
+ */
+export interface ForgeFooterSocialBox {
+	/** The badge's rendered edge (`51px`) — a square box, not the glyph size. */
+	size?: string;
+	/** The badge corner radius (`3px` — a square with softened corners). */
+	radius?: string;
+	/** The badge's painted background. */
+	bg?: string;
+	/** The ink the glyph draws in. */
+	ink?: string;
+}
+
+/**
+ * The footer's TEXT line (the © row), measured.
+ *
+ * A builder centres its `footer-html` block at its own small type scale
+ * (virtuallysrilanka: 14px/600, palette-4 ink, centred). The rebuild renders
+ * footer blocks as left-aligned body copy, so without these facts the © line
+ * lands at 17px/400 flush left. Absent → the template's own footer type.
+ */
+export interface ForgeFooterText {
+	size?: string;
+	weight?: string;
+	/** The line's ink (the source's palette text colour). */
+	ink?: string;
+	/** The ink a LINK inside the line carries. A builder paints it with its
+	 * palette highlight (#3182CE on virtuallysrilanka) while the site accent
+	 * is red — reusing the accent painted the credit a colour the source does
+	 * not use there. */
+	linkInk?: string;
+	align?: ForgeFooterAlign;
+}
+
+/**
  * The footer brand row per viewport. Sparse: a viewport with nothing to say is
  * absent. `divider` is a whole-element fact (the hairline above the copyright
- * bar) and therefore lives outside the per-viewport map.
+ * bar) and therefore lives outside the per-viewport map; `social` and `text`
+ * describe the row's own components and are whole-element facts too.
  */
 export interface ForgeFooterBrand {
 	wide?: ForgeFooterBrandAlign;
@@ -1971,6 +2012,10 @@ export interface ForgeFooterBrand {
 	mobile?: ForgeFooterBrandAlign;
 	/** The sub-footer row paints a bottom hairline above the copyright bar. */
 	divider?: boolean;
+	/** The social badge's box, measured at desktop. */
+	social?: ForgeFooterSocialBox;
+	/** The footer text line's typography and alignment, measured at desktop. */
+	text?: ForgeFooterText;
 }
 
 /**
@@ -2095,14 +2140,26 @@ export interface ForgeChrome {
 	call?: { label: string; href: string; bg?: string; ink?: string; style?: ForgeChromeStyle };
 	/** The footer columns (heading + item lines each). */
 	footerBlocks?: Array<{ title?: string; items: string[] }>;
+	/**
+	 * The links the footer's LINES carry, as `{ text, href }`.
+	 *
+	 * A builder publishes the © statement as one paragraph with the credit linked
+	 * (`… IS POWERED BY <a>NV DIGITAL SOLUTIONS.</a>`), so the link is a SUFFIX
+	 * inside a line, not a line of its own. Flattening the line to its text
+	 * printed the credit as dead copy and the rebuild could not tell it had been
+	 * a link (virtuallysrilanka). Kept as a lookup so a line stays a string.
+	 */
+	footerLinks?: Array<{ text: string; href: string }>;
 	/** The footer column heading typography (jayainc: 500/29px/capitalize). */
 	footerHeadingStyle?: ForgeChromeStyle;
 	/** The copyright line. */
 	copyright?: string;
 	/** The footer social links (the source's network badges). `icon` is the
 	 * source's own icon class (e.g. `fab fa-facebook-f`) when one exists — the
-	 * rebuild maps the network to its own inline glyph. */
-	social?: Array<{ label?: string; href: string; icon?: string }>;
+	 * rebuild maps the network to its own inline glyph. `href` is ABSENT for a
+	 * badge the source drives from JS (virtuallysrilanka's three) — the rebuild
+	 * still renders the badge, it just cannot be a link. */
+	social?: Array<{ label?: string; href?: string; icon?: string }>;
 	/** The site favicon (the first <link rel="icon"> href, absolute). */
 	favicon?: string;
 	/** The source icon-font stylesheet (the icons CSS link, e.g. the theme's

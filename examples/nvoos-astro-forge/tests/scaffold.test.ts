@@ -484,6 +484,73 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 		expect( module ).toContain( "footerInk: 'rgba(255, 255, 255, 0.7)'" );
 	} );
 
+	it( 'bakes a footer LINE\u2019s anchor as a separate footerLinks fact', () => {
+		// The © statement stays ONE string; the credit it carries is recorded by
+		// text so the layout can re-anchor the suffix of the line.
+		const withLinks: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: {
+					...profile.design!.chrome!,
+					footerBlocks: [ { items: [ '© 2026 SITE IS POWERED BY NV DIGITAL SOLUTIONS.' ] } ],
+					footerLinks: [ { text: 'NV DIGITAL SOLUTIONS.', href: 'http://www.nvdigitalsolutions.com/' } ],
+				},
+			},
+		};
+		const module = renderChromeGenerated( withLinks );
+		expect( module ).toContain( "items: ['© 2026 SITE IS POWERED BY NV DIGITAL SOLUTIONS.']" );
+		expect( module ).toContain(
+			"footerLinks: [ { text: 'NV DIGITAL SOLUTIONS.', href: 'http://www.nvdigitalsolutions.com/' } ]"
+		);
+		expect( module ).toContain( 'footerLinks?: Array<{ text: string; href: string }>' );
+	} );
+
+	it( 'bakes an href-less social badge without an href key', () => {
+		// The source drives these from JS (`<a href="">`), so the fact has no
+		// href at all and the rebuild renders the badge as a non-link.
+		const withBadges: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: { ...profile.design!.chrome!, social: [ { label: 'Facebook' } ] },
+			},
+		};
+		expect( renderChromeGenerated( withBadges ) ).toContain( "social: [ { label: 'Facebook' } ]" );
+	} );
+
+	it( 'bakes the measured social BADGE box and © line type', () => {
+		// A builder's filled social style is a rounded SQUARE, and its footer-html
+		// block is centred at a smaller type scale than the template's body copy.
+		const withRow: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: {
+					...profile.design!.chrome!,
+					footerBrand: {
+						...profile.design!.chrome!.footerBrand,
+						social: { size: '51px', radius: '3px', bg: 'rgb(237, 242, 247)', ink: 'rgb(45, 55, 72)' },
+						text: {
+							size: '14px',
+							weight: '600',
+							ink: 'rgb(45, 55, 72)',
+							linkInk: 'rgb(49, 130, 206)',
+							align: 'center',
+						},
+					},
+				},
+			},
+		};
+		const module = renderChromeGenerated( withRow );
+		expect( module ).toContain(
+			"social: { size: '51px', radius: '3px', bg: 'rgb(237, 242, 247)', ink: 'rgb(45, 55, 72)' }"
+		);
+		expect( module ).toContain(
+			"text: { size: '14px', weight: '600', ink: 'rgb(45, 55, 72)', linkInk: 'rgb(49, 130, 206)', align: 'center' }"
+		);
+	} );
+
 	it( 'bakes the footer logo’s block association (the brand column)', () => {
 		// The logo lives INSIDE the first footer block when the source renders it
 		// as that column’s first widget (jayainc’s subfooter).
