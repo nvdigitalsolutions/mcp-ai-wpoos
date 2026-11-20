@@ -691,6 +691,32 @@ tenant id is a **selector only**:
   must be 200 — or take a screenshot and look at it. Reporting a page green off a
   status code and a snapshot is how an unstyled panel reaches the person who has
   to use it.
+- **A navigation-group icon requires a collapsible sidebar.** Filament throws
+  `Navigation group [X] has an icon but one or more of its items also have
+  icons` from `sidebar/group.blade.php` unless the group renders as a dropdown,
+  which only happens when the panel calls `->sidebarCollapsibleOnDesktop()`.
+  Declaring an icon on *every* case of a navigation-group enum (the `/admin`
+  shape) and wiring that enum into the other panel therefore makes **every page
+  in that panel a 500** — and the navigation tests keep passing, because they
+  read `Panel::getNavigation()`, which builds data and renders nothing. Guard it
+  with a real render (`$this->get('/ops')->assertOk()`), not a data assertion.
+- **`searchable()`/`sortable()` treat a dotted name from another table as a JSON
+  path.** `getJsonSafeColumnName()` keeps a name that starts with the model's own
+  table (`personal_access_tokens.created_at` survives) and rewrites anything else
+  by joining segments with `->`, so `searchable(['users.name'])` emits
+  `json_extract("users", '$."name"')` and the table dies with
+  `SQLSTATE[HY000]: malformed JSON`. Joined columns need the `query:` closure
+  form, which bypasses name resolution entirely. Escaping has to be ported too:
+  the helpers are `@internal`, and `like ? escape '!'` is the portable spelling
+  (SQLite has no default `like` escape character, so MySQL's backslash form
+  breaks the suite).
+- **`->toggleable(isToggledHiddenByDefault: true)` is not `hidden()`.** A
+  hidden-by-default column still contributes its search constraint, so it stays
+  findable and sortable while not occupying width — which is how a seven-column
+  audit table is made to fit without losing a filter.
+- **`AdminAuditLogger` redacts any payload key containing `token`** (deliberately
+  over-redacting). A `tokens => 2` count is stored as `[redacted]`; name the key
+  `count` and the figure survives.
 
 ## 14. Surface-ownership audits that found real bugs (149 §22–§24)
 
@@ -1061,3 +1087,24 @@ actually present under `app/Filament/`. Two consequences:
 - Adding a page without a row fails it too, which is the intended direction.
 
 Name supporting files in the row's `notes` (as prose) instead.
+
+## 17. When a feature looks unbuilt: read the code, not the filenames
+
+- **A negative result from a filename search is a statement about filenames.**
+  2026-11-20: I reported the JIT-provisioning slice (I5b) unstarted because
+  `ls database/migrations | grep estate_domains` found nothing. The migration is
+  `2026_11_20_170000_create_jit_provisioning_tables.php` and creates
+  `nvoos_estate_domains` **and** `nvoos_jit_provisioning_requests`; three files
+  reference the table by name, so `grep -rl nvoos_estate_domains` would have found
+  it immediately. Grep contents, then read the migration.
+- **Check the plan for a section that already claims the work before rebuilding
+  it.** §110 was titled *"Just-in-time provisioning — the gate, the list, and the
+  dead end made visible"* and listed its four gates; the claim was one `grep` of
+  the plan away. A plan section is cheap evidence and a rebuild is not.
+- **When it does turn out to be built, audit rather than move on.** §116 came out
+  of auditing §110 against published JIT guidance and found exactly one
+  decided-but-unbuilt item (158 D3 rule 3, the subdomain-inheritance flag,
+  recorded in §110.3 as *"the flag is not built"*) plus two stale references — a
+  `{@see self::verify()}` naming a method that does not exist, and prose still
+  saying the flag was unbuilt. A decision written down and silently not
+  implemented is the defect a reader of the decision will not find.
