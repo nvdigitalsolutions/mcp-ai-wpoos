@@ -71,8 +71,12 @@ final class SettingsService
      *
      * `values()` projects a whole surface, which is right for a form and wrong
      * for a caller that needs two or three keys on a hot path — `values('admin')`
-     * reads all 585 fields. Returns null for a key the catalogue does not have,
-     * so a caller cannot silently read a renamed setting as empty.
+     * reads every field on the surface. Returns null for a key the catalogue does
+     * not have, so a caller cannot silently read a renamed setting as empty.
+     *
+     * (The count used to be written out here. It was wrong by one after §110
+     * added a field without updating it, which is what a number in a docblock
+     * does — so it is a description now.)
      */
     public function value(string $key): mixed
     {
