@@ -1511,6 +1511,32 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	object-fit: contain;
 }
 
+/* A mark strip the source PAGED — a logo slider, not a static row. The track
+ * keeps the source's own slides-per-view and gutter and snaps; only the dots
+ * need JS, and `BuilderCarousel` builds them from this same geometry. A band
+ * the source did not page keeps the static grid above. */
+.ds-logos--carousel {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: var(--ds-carousel-gap, 1.5rem);
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	scrollbar-width: none;
+}
+
+.ds-logos--carousel > * {
+	flex: 0 0
+		calc(
+			( 100% - ( var( --ds-carousel-per, 6 ) - 1 ) * var( --ds-carousel-gap, 1.5rem ) ) /
+				var( --ds-carousel-per, 6 )
+		);
+	scroll-snap-align: start;
+}
+
+.ds-logos--carousel::-webkit-scrollbar {
+	display: none;
+}
+
 /* Tablets reflow to three brand columns, phones to two; the logo box
  * shortens so the marks do not dominate the phone row. */
 @media (max-width: 1025px) {

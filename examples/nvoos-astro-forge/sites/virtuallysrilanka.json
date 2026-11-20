@@ -3021,7 +3021,36 @@
 				"text": "CHOOSE THE ACCESS POINT THAT WORKS BEST FOR YOU. OR THE CHEAPEST ONE. OR ASK US TO SUPPORT YOUR FAVORITE BRAND.",
 				"level": 2
 			},
-			"titleText": "SUPPORTED HARDWARE"
+			"titleText": "SUPPORTED HARDWARE",
+			"carousel": {
+				"desktop": [
+					{
+						"selector": "elementor-main-swiper",
+						"count": 17,
+						"perView": 6,
+						"gap": 50,
+						"dots": 7
+					}
+				],
+				"tablet": [
+					{
+						"selector": "elementor-main-swiper",
+						"count": 13,
+						"perView": 3,
+						"gap": 10,
+						"dots": 7
+					}
+				],
+				"mobile": [
+					{
+						"selector": "elementor-main-swiper",
+						"count": 9,
+						"perView": 1,
+						"gap": 10,
+						"dots": 7
+					}
+				]
+			}
 		},
 		"ccdbf50": {
 			"containerWidth": 1140,

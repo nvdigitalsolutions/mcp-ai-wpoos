@@ -1555,7 +1555,11 @@ export function collectBandCarouselFacts( input: {
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
 } ): Record< string, ForgeBandCarouselFact[] > {
-	const ROOT = '.owl-carousel';
+	// The slider ROOTS we can read. Owl and Elementor's Swiper publish the same
+	// geometry under different class names; a logo wall is as often one as the
+	// other (virtuallysrilanka's hardware band is a 7-slide Swiper that the
+	// rebuild rendered as a static strip, because `.swiper` was not read at all).
+	const ROOT = '.owl-carousel, .swiper';
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -1618,7 +1622,8 @@ export function collectBandCarouselFacts( input: {
 			// The VIEWPORT is the carousel root (Owl's `.owl-stage-outer` only ever
 			// clips it); the SLIDES live one level down when Owl has wrapped them.
 			const track = root;
-			const slideParent = root.querySelector( '.owl-stage' ) ?? root;
+			const slideParent =
+				root.querySelector( '.owl-stage' ) ?? root.querySelector( '.swiper-wrapper' ) ?? root;
 			const slides = [ ...slideParent.children ].filter( ( child ) => {
 				const rect = child.getBoundingClientRect();
 				return rect.width >= 20 && getComputedStyle( child ).display !== 'none';
@@ -1635,10 +1640,13 @@ export function collectBandCarouselFacts( input: {
 				perView: Math.max( 1, Math.round( trackWidth / first.width ) ),
 				gap: Math.max( 0, Math.round( second.left - first.right ) ),
 			};
-			// Owl renders its pagination as a SIBLING of the track (`.owl-dots`),
-			// so it is searched from the parent. A single dot is a "no pagination"
-			// control in Owl (one page) — recorded as-is and read that way.
-			const dotCount = root.parentElement?.querySelectorAll( '.owl-dot' ).length ?? 0;
+			// Owl and Elementor BOTH render pagination as a SIBLING of the track
+			// (`.owl-dots` / `.swiper-pagination`), so it is searched from the parent.
+			// A single dot is a "no pagination" control (one page) — recorded as-is
+			// and read that way.
+			const dotCount =
+				( root.parentElement?.querySelectorAll( '.owl-dot' ).length ?? 0 ) +
+				( root.parentElement?.querySelectorAll( '.swiper-pagination-bullet' ).length ?? 0 );
 			if ( dotCount > 0 ) {
 				fact.dots = dotCount;
 			}

@@ -1677,6 +1677,14 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	if ( panel ) {
 		entry.push( `panel: { bg: ${ tsString( panel.bg ) }, ink: ${ tsString( panel.ink ) } }` );
 	}
+	// The band's measured CAROUSEL geometry — the slider's own slides-per-view and
+	// gutter. Without it a logo wall that the source ROTATES renders as a static
+	// row (virtuallysrilanka's hardware band is a 7-slide Swiper, and the rebuild
+	// drew all seven in one row). `bandFacts` is declared above this point.
+	const carouselFact = bandFacts?.carousel?.desktop?.[ 0 ];
+	if ( carouselFact && ( carouselFact.perView ?? 0 ) > 1 ) {
+		entry.push( `carousel: ${ JSON.stringify( carouselFact ) }` );
+	}
 	// The measured EYEBROW and TITLE text. The classifier reads tag level alone,
 	// so a kicker longer than its six-word heuristic is promoted to title and the
 	// real title demoted to body copy (virtuallysrilanka's hardware band). The
@@ -2264,6 +2272,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * `background-image` slides, which the classifier (reading `<img>` only)',
 		'\t * cannot see. Rendered as a `.ds-logos` row inside the band. */',
 		'\tlogos?: Array<{ src: string; alt?: string }>;',
+		'\t/** The band\u2019s measured PAGED carousel (`bandFacts[].carousel`) \u2014',
+		'\t * slides-per-view and the gutter the source renders. A logo wall is as',
+		'\t * often a slider as a static row, and the difference is only measurable',
+		'\t * in the browser: the markup names the vendor, not the geometry. */',
+		'\tcarousel?: { selector?: string; count?: number; perView?: number; gap?: number; dots?: number };',
 		'\t/** The band\u2019s PANEL surface \u2014 the source sets its content on ONE',
 		'\t * coloured slab (see `ForgeSection.panel`). `ink` is the legible foreground',
 		'\t * on that slab. */',
