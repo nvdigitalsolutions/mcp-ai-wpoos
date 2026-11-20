@@ -241,7 +241,18 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 
 		$this->assertArrayNotHasKey( 'members', $data['dashboards'] );
 		$this->assertArrayHasKey( 'members', $data['disabled'] );
-		$this->assertSame( 'enable_medical_vitals', $data['disabled']['members']['toolkit_flag'] );
+
+		// The merged surface is gated by BOTH member flags (158 D1), so the
+		// single-flag guidance names the first that would enable it
+		// (`effective_flag_key()` is `effective_flag_keys()[0]`) while
+		// `toolkit_flags` carries every candidate — naming one of two would be
+		// incomplete advice for a client that can render a list.
+		$this->assertSame( 'enable_health_wellness_management', $data['disabled']['members']['toolkit_flag'] );
+		$this->assertSame(
+			array( 'enable_health_wellness_management', 'enable_medical_vitals' ),
+			$data['disabled']['members']['toolkit_flags'],
+			'`enable_medical_vitals` is saved as 0 here, so it stays in the candidate list.'
+		);
 	}
 
 	/**
