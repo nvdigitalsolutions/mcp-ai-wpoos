@@ -210,6 +210,26 @@ final class DashboardCatalogue
     }
 
     /**
+     * The dashboards this runtime can actually feed, in catalogue order.
+     *
+     * The panel iterates this rather than `all()`: a dashboard whose store does
+     * not exist here is not "disabled", it is absent. Disabling asserts
+     * "available in principle, not right now" — and there is nothing an estate
+     * administrator could switch on to make `connectors` exist on this runtime.
+     * That is the same line §104 drew for inapplicable settings and S-3 drew for
+     * unlicensed toolkits.
+     *
+     * @return list<string>
+     */
+    public static function servable(): array
+    {
+        return array_values(array_filter(
+            array_keys(self::DASHBOARDS),
+            static fn (string $id): bool => self::isAvailable($id)
+        ));
+    }
+
+    /**
      * The retired ids and what replaced them.
      *
      * @return array<string, string>
