@@ -12433,3 +12433,56 @@ regression — the scope guard runs after it and after auth.
 - **`guest_token_lifetime` stays inert**; it needs a guest surface, not a principal.
 - **Whether an assistant-bound token may list the catalogue** (§121.3) is the one
   declaration slice 3 can revisit without re-litigating the mechanism.
+
+## 122. Minting a machine credential (159 slice 3, console half)
+
+[159](159-machine-principal-decision.md) §8 slice 3 said minting should start as a
+console command and earn a panel form afterwards. This is the console half:
+`nvoos:machine-token`. The panel form is **not** built, and nothing in the runtime
+mints a token implicitly.
+
+### 122.1 What the command enforces
+
+| Rule | How |
+|---|---|
+| Never unscoped | `--scope` is required; `*` and `any` are rejected outright |
+| Vocabulary, not free text | `assistant:{positive int}` or `estate:{name}`, matched with the same grammar `PrincipalScope` enforces |
+| Assistant implies its estate (159 §6 rule 7) | `assistant:{id}` must resolve *in the issuing estate*, looked up under that estate's context |
+| The owner can actually use it | the owner must hold `manage_options`, because the administrative routes still run `can:manage_options` — minting a token that cannot pass them is a trap dressed as success |
+| Audited (159 §6 rule 3) | an `nvoos_admin_audit` row with `resource = machine_token`, the scopes, the owner, the expiry, and `minted_by: console` |
+| Expiry by default | 90 days; `--days=0` removes it and prints that it did |
+
+The email convenience is resolved **once, at mint time**. Runtime identity never
+consults email (159 §6 rule 6); the token stores its owner id and every later
+question goes through that link or through the scope.
+
+### 122.2 Two limits worth stating plainly
+
+- **A console invocation has no authenticated principal**, so the audit row's
+  `user_id` is null. The payload says `minted_by: console` instead of inventing an
+  actor: the operator is whoever ran the command on the host, which this process
+  cannot see.
+- **159 §6 rule 5 (a machine principal cannot mint another)** is not enforced here
+  because there is no principal to check. It becomes load-bearing the moment minting
+  gains an API or panel surface, and that surface must check it.
+
+### 122.3 Gates
+
+| Run | Result |
+|---|---|
+| `MintMachineTokenTest` | **10 tests / 34 assertions** — a minted token spends successfully on the route its scope names and is refused an unannotated one; the stored row carries the scope and a 90-day expiry; the audit row names the grant; `--days=0` stores null; `*`, an unknown scope, an empty list, a foreign-estate assistant, a non-admin owner and a non-member are all refused with no token written |
+| `PrincipalScopeTest` + `AssistantRestGateTest` alongside it | **42 tests / 130 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 errors** on both new files. Three concatenations in the command and four in the test needed ` . ` spacing — the same PSR-12 rule the older files in this tree still violate |
+| Live probe (`localhost:8001`) | minted for `spike@example.com` with a 30-day expiry → `/api/v1/assistants` **200**, `/api/v1/tools` **403** (unannotated), token deleted → **401**, audit row present with `minted_by: console` |
+
+### 122.4 What is left of slice 3 and slice 4
+
+- **The panel form**, if it earns one. The command is deliberately enough for a
+  first integration; a form adds a person-shaped surface to an operator act, and
+  159's own framing is that minting is an operator act.
+- **Rotation.** The industry baseline this follows (narrowest scope, 60–90 day
+  lifetime, an inventory label, immediate revocation) assumes rotation is possible.
+  Today it is mint-new-then-delete-old by hand; a `rotate` action that does both and
+  keeps the audit trail is the obvious next step, not a redesign.
+- **Slice 4** — tool execution for `assistant:{id}` — is untouched. `/api/v1/tools`
+  remains unannotated and therefore default-denied to machines.
