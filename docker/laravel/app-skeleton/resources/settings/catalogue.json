@@ -3891,6 +3891,20 @@
             "default": false
         },
         {
+            "key": "enable_access_digest",
+            "storage": "enable_access_digest",
+            "scope": "tenant",
+            "console": "hidden",
+            "type": "checkbox",
+            "section_id": "authentication__auth0",
+            "section": "Auth0 Configuration",
+            "tab": "authentication",
+            "label": "Email a daily access-request digest",
+            "sensitive": false,
+            "description": "On by default. Once a day, this estate's administrators receive one email naming the people who tried to sign in and were not let in, with a link to the Access requests page. Nothing is sent when no request is waiting. Turn it off if you would rather check the page yourself.",
+            "default": true
+        },
+        {
             "key": "enable_auth0_github_bridge",
             "storage": "enable_auth0_github_bridge",
             "scope": "tenant",

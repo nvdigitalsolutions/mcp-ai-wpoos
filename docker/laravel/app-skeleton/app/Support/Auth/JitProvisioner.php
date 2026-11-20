@@ -161,6 +161,25 @@ final class JitProvisioner
     }
 
     /**
+     * The reason in words.
+     *
+     * Static and here rather than on the panel page because the page is no
+     * longer the only reader: the access digest (§111) names the same gate in
+     * an email, and a second copy of these strings would drift from the first
+     * the moment a gate is added.
+     */
+    public static function reasonLabel(string $reason): string
+    {
+        return match ($reason) {
+            self::REASON_DISABLED => 'Provisioning is off for this estate',
+            self::REASON_UNVERIFIED => 'The provider did not verify the address',
+            self::REASON_DOMAIN => 'The address domain is not on the verified list',
+            self::REASON_ACCOUNT_EXISTS => 'An account already holds that address',
+            default => $reason,
+        };
+    }
+
+    /**
      * The pending rows for an estate, newest first.
      *
      * @return list<array{id: int, subject: string, email: string, reason: string, attempted_at: string}>
@@ -188,6 +207,25 @@ final class JitProvisioner
             ),
             $rows->all(),
         );
+    }
+
+    /**
+     * How many requests are waiting on a person, independent of the list limit.
+     *
+     * Separate from `count(pendingRows())` on purpose: the digest names ten and
+     * counts all of them, and a page that paginates would otherwise report the
+     * page size as the total.
+     */
+    public function pendingCount(string $tenantId): int
+    {
+        if (! Schema::hasTable('nvoos_jit_provisioning_requests')) {
+            return 0;
+        }
+
+        return (int) DB::table('nvoos_jit_provisioning_requests')
+            ->where('tenant_id', $tenantId)
+            ->where('status', 'pending')
+            ->count();
     }
 
     /**

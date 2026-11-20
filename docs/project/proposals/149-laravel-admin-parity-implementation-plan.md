@@ -11060,3 +11060,176 @@ surprise. Adding a dependency to a guard means editing the `Auth::extend` closur
    service, and it resolves an estate from existing membership rather than
    provisioning one.
 5. **SAML is still not built.** 156 D3: OIDC first, SAML a separate increment.
+
+## 111. The access-request digest — the list nobody looks at (2026-11-20)
+
+§110.7 item 3 named the gap: "the pending list is not a notification". This
+closes it. A page is a pull surface, and the people who need it have no reason to
+visit it — the person who was refused reads the 403 as *broken*, support hears
+about it within the hour, and the outcome is "just turn it on for everyone",
+which is exactly what deny-by-default exists to prevent. The refusal was made
+visible; it was not made *noticed*.
+
+### 111.1 Three rules, and each is a property of the code
+
+Published guidance on notification digests converges on three rules. None of
+them is a style preference here; each is something the command does or refuses
+to do.
+
+- **Digests are for useful-but-not-urgent.** A join attempt is exactly that: the
+  person is already locked out, nothing degrades while the mail sits, and no
+  service-level objective is at risk. Real-time channels are for what cannot
+  wait. Spending one on this is how the channel that *can* wait gets muted.
+- **A fixed hour builds the habit that gets the mail read.** Config default
+  `0 8 * * *`, not "every hour". Cadence is the failure mode: the same content
+  delivered too often is filtered, and the filter takes the useful copy with it.
+  It is a cron expression so the hour moves per deployment without a code change
+  (`oos.access_digest.schedule`).
+- **Nothing to report ⇒ send nothing.** An estate with zero pending requests is
+  skipped *silently* — no "0 pending" mail. An empty digest teaches the recipient
+  that this channel can be ignored, and it is the copy that gets filtered first.
+
+This is the second of the three-channel model for operational mail: a durable
+log (the audit trail, §110.5), a collaborative triage surface (this digest plus
+the page), and a paging channel (not built, and this is not it).
+
+### 111.2 One mail per estate, to the people who can act
+
+The recipients are resolved per estate, never pooled:
+
+1. `owner` and `admin` memberships — the decision-makers. `owner` is what the
+   membership backfill maps WordPress's `administrator` to.
+2. If an estate has **neither**, fall back to `manager`/`member`. This is a real
+   configuration, not a hypothetical: `editor` maps to `manager`, so an estate
+   whose only members are editors exists — and it is precisely the one where
+   "nobody was told" would otherwise be silent.
+3. `viewer` is never mailed. `AdminAccessPolicy::accessTenantPanel()` refuses a
+   viewer the panel outright, so mailing one would describe a decision they
+   cannot take part in.
+
+A combined mail to an operator was rejected for the reason §110.4 gives: the
+content is one estate's refused addresses, and pooling them discloses one
+customer's join attempts to decide something another customer decides. The
+`--tenant` flag narrows a run for debugging; nothing broadens it.
+
+### 111.3 What the mail is, and what it deliberately is not
+
+Plain text, like the magic link (§103): no button, nothing that needs a
+stylesheet to be legible in a terminal or a screen reader. It carries the count
+in the subject ("3 access requests are waiting for Acme"), the addresses, the
+gate **in words**, the attempt time, and a deep link to
+`/admin/{estate}/access-requests`.
+
+- **Not an alert.** The subject says *waiting*, not *action required*. Urgent
+  framing for a low-urgency event is how a channel gets muted.
+- **Not a decision surface.** There is no approve link. One-click approval in an
+  email would move an estate-boundary decision out of the audited page
+  (§110.5) and into whoever holds the mailbox.
+- **Not a log.** The preview is bounded by `oos.access_digest.preview_limit`
+  (default 10) and summarises the remainder ("…and 4 more"). Ten rows is a
+  digest; seventy is a log, and nobody reads a log in an inbox.
+
+The link is built from `config('app.url')` and never from a request — this runs
+on a schedule, where there is no request to trust, and a link pointed at an
+attacker-chosen host is a phishing mail sent from our own domain.
+
+### 111.4 The gate has an off switch, and it defaults on
+
+`enable_access_digest` is a **tenant**-scope checkbox in the Authentication tab,
+sitting directly under `enable_jit_provisioning`, default **on**. The asymmetry
+with JIT's default-off is deliberate and worth stating: JIT **grants access**,
+so it must be opt-in; the digest **grants nothing** and discloses nothing the
+estate's own non-viewer members cannot already read on the page. Defaulting it
+off would have rebuilt the exact gap this slice closes.
+
+A second, deployment-wide switch exists for a runtime with no mail transport
+(`oos.access_digest.enabled`, env `NVOOS_ACCESS_DIGEST`), which removes the
+schedule entry entirely rather than firing a command that cannot deliver.
+
+`schedule` is validated with `CronExpression::isValidExpression()` before
+registration, the same shape as the media sweep and the OTLP push: an invalid
+expression schedules nothing rather than throwing on every boot.
+
+### 111.5 One shared vocabulary, so the page and the mail cannot drift
+
+`JitProvisioner::reasonLabel()` moved from the panel page to the provisioner.
+The page is no longer the only reader — the digest names the same four gates —
+and a second copy of those strings would drift the moment a gate was added.
+`AccessRequests::reasonLabel()` now delegates, which is a two-line change that
+removes the class of bug rather than the instance.
+
+`JitProvisioner::pendingCount()` was added for the same reason the preview is
+bounded: the digest names ten and counts all of them, and `count(pendingRows())`
+would report the preview limit as the total.
+
+### 111.6 Failure is per estate, not per run
+
+The command's loop is a failure boundary:
+
+- **Uninstalled tables** — `Schema::hasTable()` on both
+  `nvoos_jit_provisioning_requests` and `tenant_user`. This runs on a schedule,
+  so a deployment that has not run §110's migration must find it inert, not
+  failing every morning.
+- **A request whose estate no longer exists** — the requests table has no
+  foreign key on `tenant_id`, so a request can outlive its estate. There is
+  nobody to address and no page to link: skip, and still exit clean.
+- **One estate's broken transport** — the loop continues to the next estate and
+  the exit code still reports `FAILURE`, so a cron wrapper's alerting still
+  fires without the whole fleet losing its reminder.
+
+### 111.7 Gates
+
+| Run | Result |
+|---|---|
+| `AccessDigestTest` | **17 tests / 66 assertions** — silence on empty and on a fresh install; the per-estate off switch; an orphaned request skipped; recipients are owner+admin and never a viewer; an estate of managers still told; nobody-to-tell does not fail; each estate told only its own requests; `--tenant` narrows; the body names count/address/reason/link; subject pluralises; the preview is bounded while the count is not; an unasserted address is named; a plain-text body is not HTML-escaped (`Smith & Sons <Ltd>` survives verbatim); `--dry-run` sends nothing; the setting is tenant-scope, default on, and off the console surface; the default schedule is a fixed hour |
+| Regression: `JitProvisioningTest`, `MagicLoginTest`, `AdminSettingsTest`, `SettingsCatalogueTest`, `SettingsOwnershipTest`, `SettingsProjectionTest`, `InapplicableSettingsTest`, `UnimplementedSettingsTest`, `SurfaceOwnershipTest`, `AdminDataTableTest`, `AdminNavigationTest`, `AdminPanelTest`, `AdminPanelAccessTest`, `AdminPanelBladeTest`, `ScheduleAsyncTest`, `TelemetryTest`, `WorkflowTriggerTest`, `TriggersTenancyTest` | **205 tests / 11,581 assertions, 0 failures** |
+| Full suite (`vendor/bin/phpunit`, all 1615 tests) | **1615 tests / 19,274 assertions, 0 failures** (2 pre-existing PHPUnit deprecations, none in the new file). Included because §111 edits `bootstrap/app.php` and `config/oos.php`, which every test boots through |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 errors** on the three new files; the only warnings on touched files are the pre-existing long lines in `JitProvisioner` (1) and `AccessRequests` (3), unchanged from `HEAD` |
+| `bin/audit-surface-ownership.php` | **48** surfaces, **40** Filament-built, 5 console-only, 0 planned-only, 1 inert — **unchanged**, because a push channel is not a surface |
+| Live check | `nvoos:access-digest --dry-run` → "No access request is waiting"; with one seeded pending row, the mail rendered end-to-end with the correct subject, address, gate in words and `http://localhost:8001/admin/default/access-requests`; the row was then deleted |
+
+Four things the run caught, each worth recording:
+
+1. **`Mail::fake()` records a mailable without applying recipients**, so
+   `getTo()` is undefined on the recorded instance — `hasTo()` is the assertion
+   that works. A test written against `getTo()` fails with
+   `BadMethodCallException`, not a wrong assertion.
+2. **The seeded default estate is named "Default estate"**, not "Estate default",
+   which is what a `firstOrCreate(..., ['name' => 'Estate '.$id])` helper returns
+   for every *other* id. The subject-line assertion passed for `acme` and failed
+   for `default`.
+3. **A contract row's `files` is a strict set equality** against everything under
+   `app/Filament/`, asserted by `SurfaceOwnershipTest`. Listing the command, the
+   mailable and the view there failed the suite; they belong in the row's `notes`
+   as prose, because `files` answers "which surface class is this", not "what
+   does this feature touch".
+4. **A `{{ }}` interpolation HTML-escapes, and this body is `text/plain`.**
+   "Smith & Sons <Ltd>" arrived as "Smith &amp; Sons &lt;Ltd&gt;". Escaping is a
+   corruption in a text body rather than a protection — there is no HTML context
+   to inject into — so the template interpolates unescaped and a test asserts an
+   estate name survives verbatim.
+
+### 111.8 What this does not do
+
+1. **No per-recipient cadence.** One setting, one schedule. A person who wants
+   weekly rather than daily has no control, and adding one is a second table
+   rather than a second key.
+2. **No "already told you" suppression.** An unanswered request is re-sent every
+   day until it is resolved. That is the intended behaviour for a reminder and
+   the reason the cadence rule (111.1) matters — but it does mean an estate that
+   ignores the list gets a daily mail about it, which is the pressure the design
+   wants.
+3. **No digest for domains.** An unverified domain provisions nobody, but it is a
+   lower-urgency state than a person locked out, and it is one click to check.
+4. **No queueing.** `Mail::send()` runs inline, like §103: on a scheduler tick
+   there is no request to fail, and the per-estate boundary (§111.6) already
+   isolates a slow transport.
+5. **Nothing is recorded when a digest is sent.** The mail is not audited, on the
+   argument that a recurring system message about a *read* is noise in a trail
+   whose value is writes. If "was the administrator told" ever becomes a question
+   a person must answer, that is a `nvoos_activity_events` row and a decision
+   about retention.
+6. **The schedule needs a scheduler.** Like every entry in `bootstrap/app.php`'s
+   `withSchedule`, this only fires where `php artisan schedule:work` or
+   `schedule:run` from cron actually runs. `nvoos:access-digest --dry-run` is the
+   way to see what a tick would have done.

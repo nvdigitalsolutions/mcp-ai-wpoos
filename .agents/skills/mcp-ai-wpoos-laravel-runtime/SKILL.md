@@ -1028,3 +1028,36 @@ table is the working copy.
 - **There is no `NVOOS_ROUTING_EXPORT_HEADERS` env var.** Headers are the
   `oos.routing.export.headers` config map; a malformed JSON env value would fail
   at request time rather than at boot.
+
+### Scheduled mail: three traps, and one fixture name
+
+- **`Mail::fake()` records the mailable WITHOUT applying recipients.** `getTo()`
+  is undefined on the recorded instance (`BadMethodCallException`), and
+  `assertSent(fn ($m) => $m->to[0]['address'] === ...)` fails for the same reason.
+  `$mailable->hasTo('a@b.test')` is the assertion that works; the recipient is
+  only attached when the real transport sends.
+- **`Mail::fake()` also does not render.** A broken Blade template passes every
+  structural assertion. Call `$mailable->render()` inside the `assertSent`
+  closure and assert on the body, or the test proves nothing about the mail a
+  person receives.
+- **A scheduled command must be inert before its migration ran.** Guard with
+  `Schema::hasTable()` on *every* table it touches and return `SUCCESS`, not
+  `FAILURE` — a schedule entry failing every morning at 08:00 is an alert nobody
+  can action.
+- **The seeded default estate is named "Default estate".** A test helper that
+  does `Tenant::query()->firstOrCreate(['id' => $id], ['name' => 'Estate '.$id])`
+  gets that name for `default` and its own fallback for every other id, so a
+  subject-line assertion written against the fallback fails only on `default`.
+
+### A contract row's `files` may only name Filament page classes
+
+`SurfaceOwnershipTest::test_every_filament_surface_file_is_declared_and_exists`
+asserts **set equality** between the union of every row's `files` and the files
+actually present under `app/Filament/`. Two consequences:
+
+- Adding a `resources/views/...blade.php`, an `app/Mail` or an
+  `app/Console/Commands` class to a row's `files` fails the suite — that list is
+  "the Filament surfaces", not "everything this row touches".
+- Adding a page without a row fails it too, which is the intended direction.
+
+Name supporting files in the row's `notes` (as prose) instead.

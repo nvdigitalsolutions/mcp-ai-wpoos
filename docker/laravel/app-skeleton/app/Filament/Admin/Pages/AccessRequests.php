@@ -177,17 +177,12 @@ class AccessRequests extends Page
     }
 
     /**
-     * The reason in words, for the table.
+     * The reason in words, for the table. Delegates to the provisioner so the
+     * page and the digest (§111) cannot disagree about what a gate means.
      */
     public function reasonLabel(string $reason): string
     {
-        return match ($reason) {
-            JitProvisioner::REASON_DISABLED => 'Provisioning is off for this estate',
-            JitProvisioner::REASON_UNVERIFIED => 'The provider did not verify the address',
-            JitProvisioner::REASON_DOMAIN => 'The address domain is not on the verified list',
-            JitProvisioner::REASON_ACCOUNT_EXISTS => 'An account already holds that address',
-            default => $reason,
-        };
+        return JitProvisioner::reasonLabel($reason);
     }
 
     private function setVerified(int $id, bool $verified): void

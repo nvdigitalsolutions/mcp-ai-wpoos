@@ -129,6 +129,41 @@ return array(
 
     /*
     |--------------------------------------------------------------------------
+    | Access-request digest (Proposal 149 §111)
+    |--------------------------------------------------------------------------
+    |
+    | A summary mail naming the people who tried to join an estate and were
+    | refused (§110). The pending list already exists; a list nobody looks at is
+    | the same as no list, and the support pressure that follows is what makes an
+    | operator turn JIT on for everyone.
+    |
+    | Daily at a FIXED hour, not "every hour": a predictable delivery time is
+    | what makes a digest worth opening, and a cadence faster than daily turns a
+    | low-urgency reminder into noise that gets filtered (or the channel muted).
+    |
+    | `enabled = false` removes the schedule entry for the whole deployment — for
+    | a runtime with no mail transport at all. Per-estate consent is the
+    | `enable_access_digest` setting, which defaults ON: unlike JIT provisioning
+    | this grants nothing and discloses nothing the estate's panel does not
+    | already show its non-viewer members.
+    |
+    | `schedule` is a cron expression. Invalid or empty schedules nothing, which
+    | is why this is not a bare `daily()` — an operator in a different timezone
+    | should not need a code change to move an 08:00 mail.
+    |
+    */
+    'access_digest' => array(
+        'enabled' => filter_var(env('NVOOS_ACCESS_DIGEST', true), FILTER_VALIDATE_BOOLEAN),
+        'schedule' => (string) env('NVOOS_ACCESS_DIGEST_SCHEDULE', '0 8 * * *'),
+
+        // How many addresses the mail names before it summarises the rest. A
+        // digest that pastes 200 rows is a log, and nobody reads a log in an
+        // inbox. The page always shows the full list.
+        'preview_limit' => (int) env('NVOOS_ACCESS_DIGEST_PREVIEW_LIMIT', 10),
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
     | Schedules (090-b)
     |--------------------------------------------------------------------------
     |

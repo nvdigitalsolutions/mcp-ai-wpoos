@@ -87,6 +87,24 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->withoutOverlapping();
         }
 
+        // 149 §111 — the access-request digest. §110 made the refusal visible on
+        // a page; a page is pull, and the administrator who needs it has no reason
+        // to visit it. Daily at a fixed hour, and silent when nothing is pending —
+        // an empty digest is what teaches a recipient to filter the channel.
+        // Disabled outright when `oos.access_digest.enabled` is false (a runtime
+        // with no mail transport), and per-estate via `enable_access_digest`.
+        $digestSchedule = (string) config('oos.access_digest.schedule', '');
+
+        if (
+            (bool) config('oos.access_digest.enabled', true)
+            && '' !== $digestSchedule
+            && CronExpression::isValidExpression($digestSchedule)
+        ) {
+            $schedule->command('nvoos:access-digest')
+                ->cron($digestSchedule)
+                ->withoutOverlapping();
+        }
+
         // 149 §76 — token usage retention. One row per AI call, and the rows are
         // the cost history, so the window is a year by default and the delete
         // is chunked. Ten minutes after routing retention keeps the two from
