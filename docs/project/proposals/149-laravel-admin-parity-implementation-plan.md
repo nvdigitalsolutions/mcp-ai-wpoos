@@ -1348,6 +1348,11 @@ new one.
   edit (the writer only touches `meta` when `advanced` is present) and stay
   editable in the console and the REST surface. Rendering `list`/`map` shapes in
   a Filament form is its own slice; a test pins the preservation.
+- **`provider` and `model` ported as text, not selects.** WordPress renders both
+  as selects; this resource renders both as `TextInput`s. That gap was not
+  recordable on 2026-11-16 because no catalogue existed to populate a select
+  from. §68 built one on 2026-11-18 and scoped it to settings, so the gap is a
+  §68 consequence rather than a §12 omission. Recorded in **§120**.
 - **The table asserts invisibility, not hidden actions.** For a record the
   table cannot resolve, Filament raises `ActionNotResolvableException` instead of
   reporting the action hidden — a weaker and more fragile claim than “this estate
@@ -12172,3 +12177,157 @@ installed. Slice 2 therefore carries an ordering test, not only a scope test.
 | `PrincipalScopeTest` | **11 tests / 35 assertions** — `*`/`null`/`TransientToken` unrestricted; `[]` restricted to nothing; an assistant scope binds one id and exact-matches; a class requirement rejects `assistant:abc`/`0`/empty; estate scopes are a class; a real bearer token passes a matching route and is refused a different class with `principal_scope_required` naming required and granted; a blank requirement denies; an unauthenticated request never reaches the check |
 | `AuthorizationTest` + `ApiTenantResolutionTest` + `Auth0BearerTest` + `SurfaceOwnershipTest` | **38 tests / 616 assertions, 0 failures** — the alias registration does not disturb boot or any existing auth path |
 | phpcs (`phpcs-laravel.xml.dist`, CI severity) | **0 errors** on the two new classes, `bootstrap/app.php` and the test |
+
+---
+
+## 120. Assistant form: provider and model selects (§12 follow-up)
+
+**State:** recorded 2026-11-21. **Not built** — no code changed in this section.
+
+### 120.1 The gap, stated as a diff
+
+§12 ported the assistant editor with the field *shapes* the console uses. Two of
+those shapes are narrower than WordPress:
+
+| Field | WordPress assistant CPT edit page | `/admin/{estate}/assistants` |
+|---|---|---|
+| `provider` | `<select>`, one option per allowed provider | `TextInput` |
+| `model` | `<select>` filled for the selected provider, storing an off-list value as `(custom)` | `TextInput` |
+
+- WordPress provider select: `includes/assistants/metaboxes/class-wp-mcp-ai-metabox-defaults.php:153`
+  (`class="wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-model"`),
+  which `assets/js/admin-model-selector.js` uses to repopulate the model field on
+  every provider change.
+- WordPress model select: same file, `:169`, filled from
+  `WP_MCP_AI_Model_Service::get_models_for_provider()`, with the off-list branch
+  at `:178`.
+- Runtime: `app/Filament/Admin/Resources/Assistants/AssistantResource.php:93-96`
+  — a `TextInput` for each.
+
+**A decoy, recorded so it is not re-discovered as "parity already exists":**
+`includes/assistants/class-wp-mcp-ai-assistant-cpt.php:4363` renders Model as a
+plain `<input type="text">`. That renderer is not the live metabox — the
+`metaboxes/` class above is. Reading the older file first is how this gap gets
+argued away.
+
+### 120.2 Why it is recorded here and not in §12
+
+At §12 (2026-11-16) there was no catalogue to populate a select from, so the only
+recorded form gap was the fourteen `advanced` keys (§12.3) — a `meta`-shape
+problem, not a field-vocabulary one. §68 built the catalogue on 2026-11-18 and
+scoped itself explicitly to *"the model dropdowns in `/admin/<estate>/settings`"*;
+its "still open" list (§68.10) is about catalogue coverage, not form coverage. So
+this is a §68 consequence that fell between two slices: the options now exist, and
+one surface still does not read them.
+
+### 120.3 Standards applied
+
+| Source | Rule | Consequence here |
+|---|---|---|
+| NN/g, [Does Your Form Really Need a Dropdown List?](https://www.nngroup.com/articles/dropdown-list/) | a plain dropdown stops being usable past roughly 15–20 options; a filterable combobox is the pattern beyond that | the catalogue is 251 rows → the model select must be `searchable()`; the provider list (a dozen-odd) does not need it |
+| Filament v4/v5 dependent selects ([reference](https://richdynamix.com/articles/filament-v4-dependent-reactive-select-fields-live)) | parent `->live()`; child `->options(fn (Get $get) => …)`; parent `->afterStateUpdated(fn (Set $set) => $set('model', null))`; `Get`/`Set` live under `Filament\Schemas\Components\Utilities` | the exact shape; `afterStateUpdated` fires on a user change, not on mount, so hydration is untouched |
+| Filament edit-form hydration | a saved child value resolves only if it is present in the option set | this is the exception the runtime already has a rule for |
+| `BuildsSettingsForm::selectField()` (`app/Filament/Concerns/BuildsSettingsForm.php:192-227`) | a stored value absent from `options` is carried as `<value> (current value)`, so the form shows what is stored and stays saveable | reuse verbatim — a bare `Select` would make an existing record unsaveable |
+| `AssistantWriter` (`app/Services/AssistantWriter.php:39-42`) | *"Validation is deliberately not here: field rules belong to the transport"* | the form schema is the only allowlist; a select stricter than the writer turns a legacy value into data loss on the next unrelated edit |
+| §90.2 of this plan | a `deprecated`/`retired` pair is refused **422** at the chat boundary, while an id the catalogue has never seen **passes** — *"a deployment name or a fine-tune must keep working"* | the select may offer only servable models **and** must keep an unknown stored value; the form and the chat guard have to agree in both directions |
+
+Two catalogue facts the option sets must respect, both already true in
+`ModelConfigCatalogue`:
+
+- **`optionsForProvider()` returns servable statuses only** (`:218-235`), so a
+  `deprecated` or `retired` model — exactly the pairs §90.2 refuses to serve — is
+  never offered. For older records that is *always* an off-list value, which makes
+  the `(current value)` branch the normal path rather than an edge case.
+- **Identity is `(provider, model_id)`** (§68.3). Filtering by provider is what
+  keeps an Azure deployment id from being offered under OpenAI; where two
+  providers publish the same id, `options()` already disambiguates the label
+  (`:203-205`).
+
+Because `nvoos_model_configs` carries no `tenant_id` (§90.1 — *"This is reference
+ data, not estate data"*), the option set is identical in every estate. Nothing
+here needs estate scoping, and a later reader should not add it.
+
+The same preservation rule applies to `provider`: `providerOptions()` (`:110`)
+lists only providers that have catalogue rows, so a stored provider with none must
+also be carried as `(current value)` or the record cannot be saved.
+
+### 120.4 Shape, when it is built
+
+```php
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+
+Select::make('provider')
+    ->options(function (Get $get): array {
+        $options = ModelConfigCatalogue::providerOptions();
+        $current = (string) $get('provider');
+
+        if ('' !== $current && ! array_key_exists($current, $options)) {
+            $options[ $current ] = $current.' (current value)';
+        }
+
+        return $options;
+    })
+    ->live()
+    ->afterStateUpdated(fn (Set $set) => $set('model', null)),
+
+Select::make('model')
+    ->options(function (Get $get): array {
+        $provider = (string) $get('provider');
+
+        if ('' === $provider) {
+            return array();
+        }
+
+        $options = ModelConfigCatalogue::optionsForProvider($provider);
+        $current = (string) $get('model');
+
+        if ('' !== $current && ! array_key_exists($current, $options)) {
+            $options[ $current ] = $current.' (current value)';
+        }
+
+        return $options;
+    })
+    ->searchable()
+    ->disabled(fn (Get $get): bool => '' === (string) $get('provider'))
+    ->placeholder(fn (Get $get): string => '' === (string) $get('provider')
+        ? 'Pick a provider first'
+        : 'Select a model'),
+```
+
+Deliberate omissions, so a later reader does not "complete" it wrongly:
+
+- **No `Rule::in` on the REST path.** `AssistantController` validates `model` as
+  a string today, and §90.2 deliberately lets an unknown id through at the chat
+  boundary. Tightening either would reject deployment names, fine-tunes and every
+  legacy row — the same data-loss bug in a second transport.
+- **No auto-selected default model.** Changing provider clears the model and
+  leaves it empty; choosing one on the user's behalf is a guess the catalogue
+  cannot justify, and §68.4 keeps sync additive so the catalogue can lag a
+  provider by a release.
+- **No `relationship()` / `getSearchResultsUsing()`.** The option set is a seeded
+  table read once per request, not a paginated relation; `searchable()` over 251
+  rows is the right weight (the NN/g threshold above), and a search endpoint
+  would be a second read path to keep consistent with §68 and §90.
+
+### 120.5 Tests it must bring
+
+Mirroring `AdminAssistantsTest` (16 tests / 70 assertions):
+
+| Case | Assertion |
+|---|---|
+| provider change | `model` is nulled; the option set is the new provider's |
+| provider scoping | a Gemini-only id is absent from the OpenAI option set |
+| legacy value on edit | a `deprecated` model stored on the record appears as `(current value)` and survives saving an unrelated field |
+| unknown provider | a stored provider with no catalogue rows is preserved and the form still saves |
+| REST unchanged | the wire shape of an assistant is identical before and after (the §12.3 preservation test, extended) |
+| create | a catalogue model saves, and a custom model also saves (the `(custom)` contract WordPress has, and the §90.2 rule) |
+
+### 120.6 Ordering
+
+Depends on §68 and on §90.2 (both shipped). Pairs with the `advanced`-keys slice
+(§12.3) — both are form vocabulary on the same resource, so one test pass covers
+both. It is not a correctness fix: the field is editable and round-trips today.
+It is a typo-prevention and ergonomics fix, and a typo'd model is a provider error
+at chat time — which is what the catalogue exists to prevent.
