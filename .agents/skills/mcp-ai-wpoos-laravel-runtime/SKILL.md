@@ -1108,3 +1108,26 @@ Name supporting files in the row's `notes` (as prose) instead.
   `{@see self::verify()}` naming a method that does not exist, and prose still
   saying the flag was unbuilt. A decision written down and silently not
   implemented is the defect a reader of the decision will not find.
+
+## 18. Line endings: CRLF looks like a style regression (2026-11-21)
+
+On this Windows setup, files written by tooling (shell heredocs, Python) can land as
+CRLF even though the repo is LF-only. `.gitattributes` (`* text=auto eol=lf`,
+`*.php text eol=lf`) normalises the committed blob, so **CI is unaffected** — but
+`phpcs` lints the *working tree*, so `Generic.Files.LineEndings.InvalidEOLChar` fires
+on every file you touched and reads as style debt you introduced.
+
+- Python's text-mode write translates `\n` to `os.linesep` (CRLF on Windows). Pass
+  `newline=''` whenever the file must stay LF:
+
+  ```python
+  s = io.open(p, encoding='utf-8', newline='').read().replace('\r\n', '\n')
+  io.open(p, 'w', encoding='utf-8', newline='').write(s)
+  ```
+- **Attribute phpcs errors to lines, not totals.** A run reported 24 errors across
+  six touched files; every one sat on a line the change had not touched
+  (`__DIR__.'/…'`, `$path.'/{id}'`, `self::HINT.' '.$reason`). Read the reported line
+  numbers against your own diff before saying either "pre-existing" or "clean" — the
+  count alone supports neither.
+- Verify with `php -l` and a re-run of phpcs after normalising; a heredoc-written
+  file also needs the EOL pass, not just Python edits.
