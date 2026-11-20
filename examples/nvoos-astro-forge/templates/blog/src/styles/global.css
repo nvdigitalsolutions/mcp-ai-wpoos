@@ -746,6 +746,19 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 
 .site-footer-block p {
 	margin: 0 0 var(--forge-space-sm);
+	/* The MEASURED © row (`chrome.footerBrand.text`): a builder centres its
+	 * footer-html block at its own small type scale, so a footer line is not
+	 * left-aligned body copy. */
+	font-size: var(--forge-footer-text-size, inherit);
+	font-weight: var(--forge-footer-text-weight, inherit);
+	color: var(--forge-footer-text-ink, inherit);
+	text-align: var(--forge-footer-text-align, inherit);
+}
+
+/* The ink a LINK inside a footer line wears — the source's palette highlight,
+ * which is generally not the site accent the template would paint it. */
+.site-footer-block p a {
+	color: var(--forge-footer-text-link, currentColor);
 }
 
 .site-copyright,
@@ -3537,16 +3550,21 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2.25rem;
-	height: 2.25rem;
-	border-radius: 999px;
-	background: rgba(0, 0, 0, 0.06);
-	color: inherit;
+	/* The MEASURED badge box (`chrome.footerBrand.social`): a builder's filled
+	 * style is a 51px rounded SQUARE, and a 2.25rem circle is a different
+	 * component at every width. Without the fact the template's own chip. */
+	width: var(--forge-footer-social-size, 2.25rem);
+	height: var(--forge-footer-social-size, 2.25rem);
+	border-radius: var(--forge-footer-social-radius, 999px);
+	background: var(--forge-footer-social-bg, rgba(0, 0, 0, 0.06));
+	color: var(--forge-footer-social-ink, inherit);
 }
 
 .site-social a:hover,
 .site-social a:focus-visible {
-	background: rgba(0, 0, 0, 0.12);
+	/* Tint OVER the measured fill without touching the glyph — an inset spread
+	 * works for both the source's opaque chip and the template's 6% one. */
+	box-shadow: inset 0 0 0 100px rgba(0, 0, 0, 0.08);
 }
 
 /* A network the rebuild has no inline glyph for is drawn by the SOURCE's own
@@ -3554,6 +3572,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 .site-social i {
 	font-size: 1rem;
 	line-height: 1;
+}
+
+/* The glyph is HALF the badge box (Kadence: a 26px mark inside a 51px chip), so
+ * the template's own 2.25rem chip keeps its 18px mark. */
+.site-social a svg {
+	inline-size: calc(var(--forge-footer-social-size, 2.25rem) / 2);
+	block-size: calc(var(--forge-footer-social-size, 2.25rem) / 2);
 }
 
 .ds-lede {

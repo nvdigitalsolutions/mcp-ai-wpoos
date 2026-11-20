@@ -54,6 +54,9 @@ export const FORGE_LIB_FILES = [
 	// The measured HOVER deltas mapped onto the rebuilt components — the renderer
 	// reads it, so it ships with every project.
 	'hover-vars.ts',
+	// A footer LINE split at the anchors it carries (`chrome.footerLinks`) — the
+	// renderer rebuilds the credit anchor from it.
+	'footer-line.ts',
 	// Proposal 114: the semantic classifier + the shared contrast math the
 	// generated project's build-time audit endpoint consumes.
 	'semantic.ts',
@@ -2534,11 +2537,16 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t * hero); `headerBg` is then absent on purpose. */',
 		'\theaderTransparent?: boolean;',
 		'	call?: { label: string; href: string; bg?: string; ink?: string; style?: ForgeChromeStyle };',
-		'	footerBlocks?: Array<{ title?: string; items: string[] }>;',
-		'	footerHeadingStyle?: ForgeChromeStyle;',
-		'	copyright?: string;',
-		'	/** The footer social links (label/href plus the source icon class). */',
-		'	social?: Array<{ label?: string; href: string; icon?: string }>;',
+		'\tfooterBlocks?: Array<{ title?: string; items: string[] }>;',
+		'\t/** The links a footer LINE carries, as `{ text, href }`. A builder',
+		'\t * publishes the \u00a9 statement as one line with only the credit linked, so',
+		'\t * the anchor is a SUFFIX inside a line, not a line of its own. */',
+		'\tfooterLinks?: Array<{ text: string; href: string }>;',
+		'\tfooterHeadingStyle?: ForgeChromeStyle;',
+		'\tcopyright?: string;',
+		'\t/** The footer social links (label/href plus the source icon class).',
+		'\t * `href` is absent for a badge the source drives from JS. */',
+		'\tsocial?: Array<{ label?: string; href?: string; icon?: string }>;',
 		'	/** The site favicon (the first <link rel="icon"> href, absolute). */',
 		'	favicon?: string;',
 		'\t/** The source icon-font stylesheet (the icons CSS link, e.g. the theme\'s',
@@ -2593,6 +2601,12 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		"\t\tmobile?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end'; logoHeight?: string };",
 		'\t\t/** The sub-footer row paints a hairline above the copyright bar. */',
 		'\t\tdivider?: boolean;',
+		'\t\t/** The social BADGE box (a builder\u2019s filled style is a rounded',
+		'\t\t * SQUARE, not the template\u2019s 2.25rem circle). */',
+		'\t\tsocial?: { size?: string; radius?: string; bg?: string; ink?: string };',
+		'\t\t/** The footer\u2019s © row type + alignment (the template renders footer',
+		'\t\t * blocks as left-aligned body copy). */',
+		'\t\ttext?: { size?: string; weight?: string; ink?: string; linkInk?: string; align?: \'start\' | \'center\' | \'end\' };',
 		'\t};',
 		'\t/** True when the SOURCE exposes a theme / colour-mode control; absent',
 		'\t * means the site has none, so the toggle is not rendered. */',
@@ -2768,6 +2782,24 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		if ( typeof chrome.footerBrand.divider === 'boolean' ) {
 			parts.push( `divider: ${ chrome.footerBrand.divider }` );
 		}
+		if ( chrome.footerBrand.social ) {
+			const social = chrome.footerBrand.social;
+			const fields = ( [ 'size', 'radius', 'bg', 'ink' ] as const )
+				.filter( ( key ) => social[ key ] )
+				.map( ( key ) => `${ key }: ${ tsString( social[ key ] as string ) }` );
+			if ( fields.length > 0 ) {
+				parts.push( `social: { ${ fields.join( ', ' ) } }` );
+			}
+		}
+		if ( chrome.footerBrand.text ) {
+			const text = chrome.footerBrand.text;
+			const fields = ( [ 'size', 'weight', 'ink', 'linkInk', 'align' ] as const )
+				.filter( ( key ) => text[ key ] )
+				.map( ( key ) => `${ key }: ${ tsString( text[ key ] as string ) }` );
+			if ( fields.length > 0 ) {
+				parts.push( `text: { ${ fields.join( ', ' ) } }` );
+			}
+		}
 		if ( parts.length > 0 ) {
 			entry.push( `footerBrand: { ${ parts.join( ', ' ) } }` );
 		}
@@ -2829,12 +2861,22 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 				.join( ', ' ) }]`
 		);
 	}
+	if ( chrome.footerLinks && chrome.footerLinks.length > 0 ) {
+		entry.push(
+			`footerLinks: [ ${ chrome.footerLinks
+				.map( ( link ) => `{ text: ${ tsString( link.text ) }, href: ${ tsString( link.href ) } }` )
+				.join( ', ' ) } ]`
+		);
+	}
 	if ( chrome.copyright ) {
 		entry.push( `copyright: ${ tsString( chrome.copyright ) }` );
 	}
 	if ( chrome.social && chrome.social.length > 0 ) {
 		const links = chrome.social.map( ( link ) => {
-			const parts = [ `href: ${ tsString( link.href ) }` ];
+			const parts: string[] = [];
+			if ( link.href ) {
+				parts.push( `href: ${ tsString( link.href ) }` );
+			}
 			if ( link.label ) {
 				parts.push( `label: ${ tsString( link.label ) }` );
 			}

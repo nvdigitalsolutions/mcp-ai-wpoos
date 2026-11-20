@@ -2791,7 +2791,20 @@ export async function measureFooterBrand( options: {
 					}
 					return 'center';
 				};
-				const entry: { logo?: string; socials?: string; logoHeight?: string; divider?: boolean } = {};
+				const entry: {
+					logo?: string;
+					socials?: string;
+					logoHeight?: string;
+					divider?: boolean;
+					social?: { size?: string; radius?: string; bg?: string; ink?: string };
+					text?: {
+						size?: string;
+						weight?: string;
+						ink?: string;
+						linkInk?: string;
+						align?: 'start' | 'center' | 'end';
+					};
+				} = {};
 				const logoAlign = alignOf( logo ? box( logo ) : null );
 				if ( logoAlign ) {
 					entry.logo = logoAlign;
@@ -2807,6 +2820,78 @@ export async function measureFooterBrand( options: {
 				const socialsAlign = alignOf( socialsRect );
 				if ( socialsAlign ) {
 					entry.socials = socialsAlign;
+				}
+				// The social BADGE box. A builder's filled style is a rounded SQUARE
+				// (Kadence: 51px, r3, palette-7 bg) — the template's default 2.25rem
+				// circle is a different component, not a tuning difference.
+				const badge = groupLinks[ 0 ] ?? iconLinks[ 0 ];
+				if ( badge ) {
+					const badgeStyle = getComputedStyle( badge );
+					const badgeRect = box( badge );
+					const side = Math.round( Math.min( badgeRect.width, badgeRect.height ) );
+					const social: { size?: string; radius?: string; bg?: string; ink?: string } = {};
+					if ( side > 0 ) {
+						social.size = `${ side }px`;
+					}
+					// `0px` is the answer for a bare icon strip — record it as-is so the
+					// rebuild does not paint a chip the source does not have.
+					if ( badgeStyle.borderTopLeftRadius ) {
+						social.radius = badgeStyle.borderTopLeftRadius;
+					}
+					const badgeBg = badgeStyle.backgroundColor;
+					if ( badgeBg && badgeBg !== 'rgba(0, 0, 0, 0)' && badgeBg !== 'transparent' ) {
+						social.bg = badgeBg;
+					}
+					if ( badgeStyle.color ) {
+						social.ink = badgeStyle.color;
+					}
+					if ( Object.keys( social ).length > 0 ) {
+						entry.social = social;
+					}
+				}
+				// The footer's TEXT line (the © row). A builder centres its `footer-html`
+				// block at its own small type scale; the rebuild renders footer blocks as
+				// left-aligned body copy, so the © line lands a size and a weight off.
+				const textNode =
+					footer.querySelector(
+						'.footer-html-inner p, .footer-html p, .site-info p, .site-copyright, [class*="copyright" i], small'
+					);
+				if ( textNode ) {
+					const textStyle = getComputedStyle( textNode );
+					const text: {
+						size?: string;
+						weight?: string;
+						ink?: string;
+						linkInk?: string;
+						align?: 'start' | 'center' | 'end';
+					} = {};
+					if ( textStyle.fontSize ) {
+						text.size = textStyle.fontSize;
+					}
+					if ( textStyle.fontWeight ) {
+						text.weight = textStyle.fontWeight;
+					}
+					if ( textStyle.color ) {
+						text.ink = textStyle.color;
+					}
+					// The ink a LINK inside the line wears — a builder's palette highlight,
+					// not necessarily the site accent.
+					const textLink = textNode.querySelector( 'a' );
+					if ( textLink ) {
+						const linkInk = getComputedStyle( textLink ).color;
+						if ( linkInk ) {
+							text.linkInk = linkInk;
+						}
+					}
+					const align = textStyle.textAlign;
+					if ( align === 'center' || align === 'right' || align === 'end' ) {
+						text.align = align === 'right' || align === 'end' ? 'end' : 'center';
+					} else if ( align === 'left' || align === 'start' ) {
+						text.align = 'start';
+					}
+					if ( Object.keys( text ).length > 0 ) {
+						entry.text = text;
+					}
 				}
 				// The hairline above the copyright bar. A builder puts it on the row's
 				// bottom edge (virtuallyjamaica's `.row.footer-border.border-bottom`); a
@@ -2851,6 +2936,16 @@ export async function measureFooterBrand( options: {
 			}
 			if ( device === 'desktop' && typeof measured.divider === 'boolean' ) {
 				out.divider = measured.divider;
+			}
+			// The badge box and the © line's type are whole-element facts (they do
+			// not migrate with the viewport the way the row's alignment does).
+			if ( device === 'desktop' ) {
+				if ( measured.social ) {
+					out.social = measured.social;
+				}
+				if ( measured.text ) {
+					out.text = measured.text;
+				}
 			}
 		}
 		return out;
