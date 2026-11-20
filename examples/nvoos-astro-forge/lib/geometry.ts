@@ -582,6 +582,25 @@ export interface MeasuredBox {
 	 * than the template default.
 	 */
 	border?: string;
+	/**
+	 * The type this class DECLARES on its own element — a value that differs from
+	 * what it inherits, which is the only thing a class fact can honestly claim.
+	 *
+	 * A band can hold two `h1`s that are styled apart by a class: Flatsome puts the
+	 * accent line in `.alt-font` (Dancing Script, no caps, 1.3 leading) beside the
+	 * real heading (Karma, uppercase, 1.2). The band's tag fact can only describe
+	 * ONE of them, so the accent shipped in capitals with the heading's leading
+	 * (monicarajiv's salon band, 2026-11-21). A class fact outranks the tag fact,
+	 * so the outlier re-states itself.
+	 *
+	 * Recorded only when the computed value DIFFERS from the parent's: an
+	 * inherited value says nothing about the class, and re-stating it would fight
+	 * whatever legitimately sets it.
+	 */
+	fontSize?: string;
+	lineHeight?: string;
+	textTransform?: string;
+	letterSpacing?: string;
 }
 
 /**
@@ -675,6 +694,50 @@ export function collectBandBoxFacts( input: {
 		}
 		return `${ px( width ) } ${ line } ${ ink }`;
 	};
+	/**
+	 * The type this node DECLARES versus what it inherits, or `undefined` for each
+	 * property it merely inherits.
+	 *
+	 * TEXT-LEVEL elements only. A wrapper (`div.text-box`, `.banner-layer`, `.x50`)
+	 * also inherits a size that differs from its parent's, but re-stating it there
+	 * buys nothing and hands the rule a chance to outrank something real. What a
+	 * class fact is for is the OUTLIER: a heading or paragraph whose class styles
+	 * it apart from the band's tag fact (`.alt-font` in the salon band).
+	 *
+	 * A computed `line-height` is px, so a node that keeps the parent's RATIO but
+	 * changes its font-size reports both as different — correct: a class fact must
+	 * carry the resolved leading it actually paints.
+	 */
+	const TEXT_LEVEL = /^(h[1-6]|p|a|span|strong|em|b|i|small|li|blockquote|figcaption|button|label)$/i;
+	const ownTypeOf = ( node: Element ): { size?: string; leading?: string; transform?: string; tracking?: string } => {
+		const parent = node.parentElement;
+		if ( ! parent || ! TEXT_LEVEL.test( node.tagName ) ) {
+			return {};
+		}
+		const style = getComputedStyle( node );
+		const inherited = getComputedStyle( parent );
+		// Did this element declare ANY type of its own? If not, the class says
+		// nothing and its type is whatever it inherits — a fact that would fight
+		// the band's tag rule for no reason.
+		const declares =
+			style.fontSize !== inherited.fontSize ||
+			style.lineHeight !== inherited.lineHeight ||
+			style.textTransform !== inherited.textTransform ||
+			style.letterSpacing !== inherited.letterSpacing;
+		if ( ! declares ) {
+			return {};
+		}
+		// Complete, not partial: a class that changes its size also states the
+		// transform and tracking it ends up with. `.alt-font` differs from its
+		// parent only in SIZE, yet it must say `text-transform:none` or the band's
+		// `h1{text-transform:uppercase}` still paints the accent in capitals.
+		return {
+			size: style.fontSize,
+			leading: style.lineHeight,
+			transform: style.textTransform,
+			tracking: style.letterSpacing,
+		};
+	};
 	// The Bootstrap grid is a COUPLED set: `.container-fluid` carries 15px of
 	// side padding that `.row`'s -15px margin cancels. Restating one half without
 	// the other shrinks the band (virtuallyjamaica's #wifi rendered 1376px wide
@@ -745,6 +808,7 @@ export function collectBandBoxFacts( input: {
 				mars: Set< string >;
 				colors: Set< string >;
 				borders: Set< string >;
+				types: Map< string, Set< string > >;
 				onModule: boolean;
 				onScaffold: boolean;
 			}
@@ -780,6 +844,7 @@ export function collectBandBoxFacts( input: {
 			const pad = boxesOf( node );
 			const mar = marginsOf( node );
 			const border = borderOf( node );
+			const ownType = ownTypeOf( node );
 			// The class's OWN ink: a colour that differs from the one the node
 			// inherits. An inherited colour says nothing about the class (the parent
 			// already painted it), so it is recorded as the empty string and a class
@@ -830,6 +895,7 @@ export function collectBandBoxFacts( input: {
 						mars: new Set(),
 						colors: new Set(),
 						borders: new Set(),
+						types: new Map(),
 						onModule: false,
 						onScaffold: false,
 					} );
@@ -839,6 +905,7 @@ export function collectBandBoxFacts( input: {
 					mars: Set< string >;
 					colors: Set< string >;
 					borders: Set< string >;
+					types: Map< string, Set< string > >;
 					onModule: boolean;
 					onScaffold: boolean;
 				};
@@ -846,6 +913,15 @@ export function collectBandBoxFacts( input: {
 				entry.mars.add( mar );
 				entry.colors.add( ownColor );
 				entry.borders.add( border );
+				for ( const [ property, value ] of Object.entries( ownType ) ) {
+					if ( typeof value !== 'string' || value === '' ) {
+						continue;
+					}
+					if ( ! entry.types.has( property ) ) {
+						entry.types.set( property, new Set() );
+					}
+					( entry.types.get( property ) as Set< string > ).add( value );
+				}
 				if ( scaffolding ) {
 					entry.onScaffold = true;
 				} else {
@@ -897,6 +973,24 @@ export function collectBandBoxFacts( input: {
 			const border = [ ...entry.borders ][ 0 ];
 			if ( entry.borders.size === 1 && border ) {
 				box.border = border;
+			}
+			// A type the class declares on every instance that carries it. One
+			// dissenting instance means the token is not the cause, so the fact is
+			// dropped — the same rule every other box property follows.
+			for ( const [ property, values ] of entry.types ) {
+				if ( values.size !== 1 ) {
+					continue;
+				}
+				const value = [ ...values ][ 0 ];
+				if ( property === 'size' ) {
+					box.fontSize = value;
+				} else if ( property === 'leading' ) {
+					box.lineHeight = value;
+				} else if ( property === 'transform' ) {
+					box.textTransform = value;
+				} else if ( property === 'tracking' ) {
+					box.letterSpacing = value;
+				}
 			}
 			if ( Object.keys( box ).length > 0 ) {
 				facts[ name ] = box;
@@ -1588,6 +1682,13 @@ export function boxDeclarations( box: MeasuredBox ): string {
 		// a declaration string is diffed per device by `mergeBoxFacts`, so the
 		// order only has to be stable.
 		box.color && `color:${ box.color }`,
+		// The type the class DECLARES (see `MeasuredBox.fontSize`). Emitted after
+		// the box so a reader sees the box first, and before `height` because a
+		// pinned height is the most specific statement in the list.
+		box.fontSize && `font-size:${ box.fontSize }`,
+		box.lineHeight && `line-height:${ box.lineHeight }`,
+		box.textTransform && `text-transform:${ box.textTransform }`,
+		box.letterSpacing && `letter-spacing:${ box.letterSpacing }`,
 		box.height && `height:${ box.height }`,
 	]
 		.filter( Boolean )

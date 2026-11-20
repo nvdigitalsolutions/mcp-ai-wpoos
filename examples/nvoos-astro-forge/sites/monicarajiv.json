@@ -75,6 +75,12 @@
 			]
 		}
 	],
+	"content": {
+		"source": "materialized"
+	},
+	"media": {
+		"snapshot": true
+	},
 	"seo": {
 		"description": "Manu & Reshma Hundlani / Rajkumar & Sapna Daryanani request the pleasure of your company at the wedding ceremony of their children."
 	},
@@ -127,7 +133,8 @@
 				46.4,
 				56
 			],
-			"bodyWeight": "400"
+			"bodyWeight": "400",
+			"ui": "Montserrat"
 		},
 		"spacing": {
 			"scalePx": [
@@ -371,9 +378,9 @@
 			],
 			"navStyle": {
 				"weight": "400",
-				"size": "16px",
+				"size": "14.208px",
 				"transform": "uppercase",
-				"letterSpacing": ".02em"
+				"letterSpacing": "0.28416px"
 			},
 			"navInk": "#ffffff",
 			"headerInk": "rgb(255, 255, 255)",
@@ -2498,9 +2505,9 @@
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"alt-font": {
-					"base": "padding:0px 0px 0px 0px;margin:6.4px 0px 6.4px 0px;color:rgb(255, 255, 255)",
-					"tablet": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255)",
-					"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255)"
+					"base": "padding:0px 0px 0px 0px;margin:6.4px 0px 6.4px 0px;color:rgb(255, 255, 255);font-size:32px;line-height:32px;text-transform:none;letter-spacing:normal",
+					"tablet": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255);font-size:30.024px;line-height:30.024px;text-transform:none;letter-spacing:normal",
+					"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255);font-size:22px;line-height:22px;text-transform:none;letter-spacing:normal"
 				},
 				"is-divider": {
 					"base": "padding:0px 0px 0px 0px;margin:16px 346.8px 16px 346.8px",
@@ -2518,27 +2525,27 @@
 					"mobile": "padding:0px 0px 0px 0px;margin:11px 164.41px 11px 164.39px"
 				},
 				"h-large": {
-					"base": "padding:0px 0px 0px 0px;margin:11.2px 0px 11.2px 0px;color:rgb(255, 255, 255)",
-					"tablet": "padding:0px 0px 0px 0px;margin:10.51px 0px 10.51px 0px;color:rgb(255, 255, 255)",
-					"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255)"
+					"base": "padding:0px 0px 0px 0px;margin:11.2px 0px 11.2px 0px;color:rgb(255, 255, 255);font-size:56px;line-height:56px;text-transform:uppercase;letter-spacing:2.8px",
+					"tablet": "padding:0px 0px 0px 0px;margin:10.51px 0px 10.51px 0px;color:rgb(255, 255, 255);font-size:52.542px;line-height:52.542px;text-transform:uppercase;letter-spacing:2.6271px",
+					"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255);font-size:38.5px;line-height:38.5px;text-transform:uppercase;letter-spacing:1.925px"
 				},
 				"uppercase": {
-					"base": "padding:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+					"base": "padding:0px 0px 0px 0px;color:rgb(255, 255, 255);text-transform:uppercase"
 				},
 				"button": {
-					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)",
-					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241)",
-					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
+					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 				},
 				"white": {
-					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)",
-					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241)",
-					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
+					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 				},
 				"is-outline": {
-					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)",
-					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241)",
-					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
+					"base": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+					"tablet": "padding:0px 17.47px 0px 17.47px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+					"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 				}
 			},
 			"elements": [
@@ -2748,16 +2755,16 @@
 					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 24px 0px"
 				},
 				"section-title": {
-					"base": "padding:0px 0px 0px 0px;margin:0px 0px 11.1px 0px;color:rgb(255, 255, 255)",
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 11.1px 0px;color:rgb(255, 255, 255);font-size:22.2px;line-height:35.52px;text-transform:none;letter-spacing:normal",
 					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 8px 0px;color:rgb(255, 255, 255)"
 				},
 				"section-title-bold": {
-					"base": "padding:0px 0px 0px 0px;margin:0px 0px 11.1px 0px;color:rgb(255, 255, 255)",
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 11.1px 0px;color:rgb(255, 255, 255);font-size:22.2px;line-height:35.52px;text-transform:none;letter-spacing:normal",
 					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 8px 0px;color:rgb(255, 255, 255)"
 				},
 				"section-title-main": {
-					"base": "padding:8.66px 23.09px 8.66px 23.09px;margin:0px 0px 0px 0px;border:2px solid rgba(0, 0, 0, 0.1)",
-					"mobile": "padding:6.24px 16.64px 6.24px 16.64px;margin:0px 0px 0px 0px;border:2px solid rgba(0, 0, 0, 0.1)"
+					"base": "padding:8.66px 23.09px 8.66px 23.09px;margin:0px 0px 0px 0px;border:2px solid rgba(0, 0, 0, 0.1);font-size:28.86px;line-height:46.176px;text-transform:uppercase;letter-spacing:normal",
+					"mobile": "padding:6.24px 16.64px 6.24px 16.64px;margin:0px 0px 0px 0px;border:2px solid rgba(0, 0, 0, 0.1);font-size:20.8px;line-height:33.28px;text-transform:uppercase;letter-spacing:normal"
 				},
 				"icon-box": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -3110,14 +3117,14 @@
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"uppercase": {
-					"base": "padding:0px 0px 0px 0px;margin:9.28px 0px 9.28px 0px;color:rgb(255, 255, 255)",
-					"tablet": "padding:0px 0px 0px 0px;margin:8.71px 0px 8.71px 0px;color:rgb(255, 255, 255)",
-					"mobile": "padding:0px 0px 0px 0px;margin:6.38px 0px 6.38px 0px;color:rgb(255, 255, 255)"
+					"base": "padding:0px 0px 0px 0px;margin:9.28px 0px 9.28px 0px;color:rgb(255, 255, 255);font-size:46.4px;line-height:46.4px;text-transform:uppercase;letter-spacing:2.32px",
+					"tablet": "padding:0px 0px 0px 0px;margin:8.71px 0px 8.71px 0px;color:rgb(255, 255, 255);font-size:43.5348px;line-height:43.5348px;text-transform:uppercase;letter-spacing:2.17674px",
+					"mobile": "padding:0px 0px 0px 0px;margin:6.38px 0px 6.38px 0px;color:rgb(255, 255, 255);font-size:31.9px;line-height:31.9px;text-transform:uppercase;letter-spacing:1.595px"
 				},
 				"alt-font": {
-					"base": "padding:0px 0px 0px 0px;margin:6.4px 0px 6.4px 0px;color:rgb(255, 255, 255)",
-					"tablet": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255)",
-					"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255)"
+					"base": "padding:0px 0px 0px 0px;margin:6.4px 0px 6.4px 0px;color:rgb(255, 255, 255);font-size:32px;line-height:32px;text-transform:none;letter-spacing:normal",
+					"tablet": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255);font-size:30.024px;line-height:30.024px;text-transform:none;letter-spacing:normal",
+					"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255);font-size:22px;line-height:22px;text-transform:none;letter-spacing:normal"
 				},
 				"gap-element": {
 					"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -3131,24 +3138,24 @@
 					"mobile": "padding:0px 0px 0px 0px;margin:9.9px 0px 6.6px 0px"
 				},
 				"button": {
-					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241)",
-					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241)",
-					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
+					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241);font-size:24px;line-height:52.56px;text-transform:uppercase;letter-spacing:0.72px",
+					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241);font-size:22.518px;line-height:49.3144px;text-transform:uppercase;letter-spacing:0.67554px",
+					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241);font-size:19.8px;line-height:43.362px;text-transform:uppercase;letter-spacing:0.594px"
 				},
 				"white": {
-					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241)",
-					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241)",
-					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
+					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241);font-size:24px;line-height:52.56px;text-transform:uppercase;letter-spacing:0.72px",
+					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241);font-size:22.518px;line-height:49.3144px;text-transform:uppercase;letter-spacing:0.67554px",
+					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241);font-size:19.8px;line-height:43.362px;text-transform:uppercase;letter-spacing:0.594px"
 				},
 				"is-outline": {
-					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241)",
-					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241)",
-					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
+					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241);font-size:24px;line-height:52.56px;text-transform:uppercase;letter-spacing:0.72px",
+					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241);font-size:22.518px;line-height:49.3144px;text-transform:uppercase;letter-spacing:0.67554px",
+					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241);font-size:19.8px;line-height:43.362px;text-transform:uppercase;letter-spacing:0.594px"
 				},
 				"is-xlarge": {
-					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241)",
-					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241)",
-					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
+					"base": "padding:0px 28.8px 0px 28.8px;margin:12px 0px 12px 0px;border:2px solid rgb(241, 241, 241);font-size:24px;line-height:52.56px;text-transform:uppercase;letter-spacing:0.72px",
+					"tablet": "padding:0px 27.02px 0px 27.02px;margin:11.26px 0px 11.26px 0px;border:2px solid rgb(241, 241, 241);font-size:22.518px;line-height:49.3144px;text-transform:uppercase;letter-spacing:0.67554px",
+					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241);font-size:19.8px;line-height:43.362px;text-transform:uppercase;letter-spacing:0.594px"
 				}
 			},
 			"elements": [
@@ -3603,8 +3610,8 @@
 	"pageBands": {
 		"airport-transfer": {
 			"url": "https://monicarajiv.com/airport-transfer/",
-			"measuredAt": "2026-11-19T23:00:23.007Z",
-			"sourceHash": "906587166b844c4a",
+			"measuredAt": "2026-11-19T23:27:18.756Z",
+			"sourceHash": "0d95b012201b0272",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -4145,11 +4152,11 @@
 								{
 									"selector": ":nth-child(1)",
 									"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
-									"base": "transform:translate(0%, -107.2%) scale(1, 1)",
-									"hover": "opacity:0.176364;transform:translate(0%, -86.3%) scale(1, 1)",
-									"focus": "opacity:0.197344;transform:translate(0%, -83.9%) scale(1, 1)",
-									"focusVisible": "opacity:0.197344;transform:translate(0%, -83.9%) scale(1, 1)",
-									"active": "opacity:0.21929;transform:translate(0%, -81.5%) scale(1, 1)"
+									"base": "transform:translate(0%, -106.6%) scale(1, 1)",
+									"hover": "opacity:0.242046;transform:translate(0%, -79%) scale(1, 1)",
+									"focus": "opacity:0.242046;transform:translate(0%, -79%) scale(1, 1)",
+									"focusVisible": "opacity:0.265715;transform:translate(0%, -76.4%) scale(1, 1)",
+									"active": "opacity:0.265715;transform:translate(0%, -76.4%) scale(1, 1)"
 								}
 							]
 						}
@@ -4253,16 +4260,16 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"white": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"is-outline": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						}
 					},
 					"classes": [
@@ -4425,8 +4432,8 @@
 							"base": "margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 14.21px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 9.6px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 14.21px 0px;color:rgb(255, 255, 255);font-size:28.416px;line-height:34.0992px;text-transform:uppercase;letter-spacing:1.4208px",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 9.6px 0px;color:rgb(255, 255, 255);font-size:19.2px;line-height:23.04px;text-transform:uppercase;letter-spacing:0.96px"
 						},
 						"medium-8": {
 							"base": "padding:0px 15px 30px 15px;margin:0px 0px 0px 0px"
@@ -4441,16 +4448,16 @@
 							"base": "padding:7px 0px 7px 25px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"white": {
-							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"is-outline": {
-							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						}
 					},
 					"elements": [
@@ -4829,8 +4836,8 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px",
-							"tablet": "padding:0px 0px 0px 0px;margin:10.51px 0px 10.51px 0px"
+							"base": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;font-size:38.5px;line-height:38.5px;text-transform:uppercase;letter-spacing:1.925px",
+							"tablet": "padding:0px 0px 0px 0px;margin:10.51px 0px 10.51px 0px;font-size:52.542px;line-height:52.542px;text-transform:uppercase;letter-spacing:2.6271px"
 						}
 					},
 					"elements": [
@@ -5115,9 +5122,9 @@
 							"base": "padding:0px 0px 0px 5px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:6.4px 0px 6.4px 0px;color:rgb(255, 255, 255)",
-							"tablet": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:6.4px 0px 6.4px 0px;color:rgb(255, 255, 255);font-size:32px;line-height:32px;text-transform:uppercase;letter-spacing:1.6px",
+							"tablet": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255);font-size:30.024px;line-height:30.024px;text-transform:uppercase;letter-spacing:1.5012px",
+							"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255);font-size:22px;line-height:22px;text-transform:uppercase;letter-spacing:1.1px"
 						}
 					},
 					"elements": [
@@ -5440,8 +5447,8 @@
 		},
 		"sri-lanka": {
 			"url": "https://monicarajiv.com/sri-lanka/",
-			"measuredAt": "2026-11-19T23:00:35.242Z",
-			"sourceHash": "0199e44c8c351c4c",
+			"measuredAt": "2026-11-19T23:27:29.606Z",
+			"sourceHash": "bec132c7096cc409",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -5930,9 +5937,9 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255)",
-							"tablet": "padding:0px 0px 0px 0px;margin:5px 0px 5px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255);font-size:30px;line-height:30px;text-transform:uppercase;letter-spacing:1.5px",
+							"tablet": "padding:0px 0px 0px 0px;margin:5px 0px 5px 0px;color:rgb(255, 255, 255);font-size:25.02px;line-height:25.02px;text-transform:uppercase;letter-spacing:1.251px",
+							"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255);font-size:22px;line-height:22px;text-transform:uppercase;letter-spacing:1.1px"
 						},
 						"gap-element": {
 							"base": "margin:0px 0px 0px 0px"
@@ -5941,19 +5948,19 @@
 							"base": "margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241);font-size:14.55px;line-height:31.8645px;text-transform:uppercase;letter-spacing:0.4365px",
+							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241);font-size:12.1347px;line-height:26.575px;text-transform:uppercase;letter-spacing:0.364041px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						},
 						"white": {
-							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241);font-size:14.55px;line-height:31.8645px;text-transform:uppercase;letter-spacing:0.4365px",
+							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241);font-size:12.1347px;line-height:26.575px;text-transform:uppercase;letter-spacing:0.364041px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						},
 						"is-outline": {
-							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 17.46px 0px 17.46px;border:2px solid rgb(241, 241, 241);font-size:14.55px;line-height:31.8645px;text-transform:uppercase;letter-spacing:0.4365px",
+							"tablet": "padding:0px 14.56px 0px 14.56px;border:2px solid rgb(241, 241, 241);font-size:12.1347px;line-height:26.575px;text-transform:uppercase;letter-spacing:0.364041px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						},
 						"large-12": {
 							"base": "padding:0px 15px 30px 15px;margin:0px 0px 0px 0px"
@@ -6464,8 +6471,8 @@
 		},
 		"accommodations": {
 			"url": "https://monicarajiv.com/accommodations/",
-			"measuredAt": "2026-11-19T23:00:59.275Z",
-			"sourceHash": "9c2bc94aca25eea6",
+			"measuredAt": "2026-11-19T23:27:52.683Z",
+			"sourceHash": "691adcb7b786cc30",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -7278,11 +7285,11 @@
 								{
 									"selector": ":nth-child(1)",
 									"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
-									"base": "transform:translate(0%, -96.2%) scale(1, 1)",
-									"hover": "opacity:0.367906;transform:translate(0%, -59.8%) scale(1, 1)",
-									"focus": "opacity:0.39534;transform:translate(0%, -57.5%) scale(1, 1)",
-									"focusVisible": "opacity:0.39534;transform:translate(0%, -57.5%) scale(1, 1)",
-									"active": "opacity:0.42347;transform:translate(0%, -55.3%) scale(1, 1)"
+									"base": "transform:translate(0%, -93.8%) scale(1, 1)",
+									"hover": "opacity:0.705124;transform:translate(0%, -37.7%) scale(1, 1)",
+									"focus": "opacity:0.739411;transform:translate(0%, -36.1%) scale(1, 1)",
+									"focusVisible": "opacity:0.774742;transform:translate(0%, -34.5%) scale(1, 1)",
+									"active": "opacity:0.774742;transform:translate(0%, -34.5%) scale(1, 1)"
 								}
 							]
 						}
@@ -7387,20 +7394,20 @@
 							"base": "margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255);font-size:30.192px;line-height:36.2304px;text-transform:uppercase;letter-spacing:1.5096px",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255);font-size:22.4px;line-height:26.88px;text-transform:uppercase;letter-spacing:1.12px"
 						},
 						"alt-font": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255);font-size:30.192px;line-height:39.2496px;text-transform:none;letter-spacing:normal",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255);font-size:22.4px;line-height:29.12px;text-transform:none;letter-spacing:normal"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255);font-size:17.2272px;line-height:41.3453px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255);font-size:15.52px;line-height:37.248px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"primary": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255);font-size:17.2272px;line-height:41.3453px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255);font-size:15.52px;line-height:37.248px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"img": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -7654,20 +7661,20 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 14.21px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 9.6px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 14.21px 0px;color:rgb(255, 255, 255);font-size:28.416px;line-height:34.0992px;text-transform:uppercase;letter-spacing:1.4208px",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 9.6px 0px;color:rgb(255, 255, 255);font-size:19.2px;line-height:23.04px;text-transform:uppercase;letter-spacing:0.96px"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"white": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"is-outline": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:2px solid rgb(241, 241, 241);font-size:17.2272px;line-height:37.7276px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px"
 						}
 					},
 					"classes": [
@@ -7893,29 +7900,29 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:6.3px 0px 6.3px 0px;color:rgb(255, 255, 255)",
-							"tablet": "padding:0px 0px 0px 0px;margin:4.67px 0px 4.67px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:6.3px 0px 6.3px 0px;color:rgb(255, 255, 255);font-size:31.5px;line-height:31.5px;text-transform:uppercase;letter-spacing:1.575px",
+							"tablet": "padding:0px 0px 0px 0px;margin:4.67px 0px 4.67px 0px;color:rgb(255, 255, 255);font-size:23.352px;line-height:23.352px;text-transform:uppercase;letter-spacing:1.1676px",
+							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255);font-size:38.5px;line-height:38.5px;text-transform:uppercase;letter-spacing:1.925px"
 						},
 						"button": {
-							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241);font-size:13.5px;line-height:29.565px;text-transform:uppercase;letter-spacing:0.405px",
+							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241);font-size:10.008px;line-height:21.9175px;text-transform:uppercase;letter-spacing:0.30024px",
+							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241);font-size:19.8px;line-height:43.362px;text-transform:uppercase;letter-spacing:0.594px"
 						},
 						"white": {
-							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241);font-size:13.5px;line-height:29.565px;text-transform:uppercase;letter-spacing:0.405px",
+							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241);font-size:10.008px;line-height:21.9175px;text-transform:uppercase;letter-spacing:0.30024px",
+							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241);font-size:19.8px;line-height:43.362px;text-transform:uppercase;letter-spacing:0.594px"
 						},
 						"is-outline": {
-							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241);font-size:13.5px;line-height:29.565px;text-transform:uppercase;letter-spacing:0.405px",
+							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241);font-size:10.008px;line-height:21.9175px;text-transform:uppercase;letter-spacing:0.30024px",
+							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241);font-size:19.8px;line-height:43.362px;text-transform:uppercase;letter-spacing:0.594px"
 						},
 						"is-xlarge": {
-							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 16.2px 0px 16.2px;margin:6.75px 0px 6.75px 0px;border:2px solid rgb(241, 241, 241);font-size:13.5px;line-height:29.565px;text-transform:uppercase;letter-spacing:0.405px",
+							"tablet": "padding:0px 12.01px 0px 12.01px;margin:5px 0px 5px 0px;border:2px solid rgb(241, 241, 241);font-size:10.008px;line-height:21.9175px;text-transform:uppercase;letter-spacing:0.30024px",
+							"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px;border:2px solid rgb(241, 241, 241);font-size:19.8px;line-height:43.362px;text-transform:uppercase;letter-spacing:0.594px"
 						},
 						"scroll-to": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -8180,8 +8187,8 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:2.72px 0px 2.72px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:1.9px 0px 1.9px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:2.72px 0px 2.72px 0px;color:rgb(255, 255, 255);font-size:27.1728px;line-height:35.3246px;text-transform:uppercase;letter-spacing:1.35864px",
+							"mobile": "padding:0px 0px 0px 0px;margin:1.9px 0px 1.9px 0px;color:rgb(255, 255, 255);font-size:19.04px;line-height:24.752px;text-transform:uppercase;letter-spacing:0.952px"
 						}
 					},
 					"media": {
@@ -8454,9 +8461,9 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:11.2px 0px 11.2px 0px;color:rgb(255, 255, 255)",
-							"tablet": "padding:0px 0px 0px 0px;margin:10.51px 0px 10.51px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:11.2px 0px 11.2px 0px;color:rgb(255, 255, 255);font-size:56px;line-height:56px;text-transform:uppercase;letter-spacing:2.8px",
+							"tablet": "padding:0px 0px 0px 0px;margin:10.51px 0px 10.51px 0px;color:rgb(255, 255, 255);font-size:52.542px;line-height:52.542px;text-transform:uppercase;letter-spacing:2.6271px",
+							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255);font-size:38.5px;line-height:38.5px;text-transform:uppercase;letter-spacing:1.925px"
 						},
 						"gap-element": {
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -8465,19 +8472,19 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						},
 						"white": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						},
 						"is-outline": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						}
 					},
 					"elements": [
@@ -8716,9 +8723,9 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:6.3px 0px 6.3px 0px;color:rgb(255, 255, 255)",
-							"tablet": "padding:0px 0px 0px 0px;margin:4.67px 0px 4.67px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:6.3px 0px 6.3px 0px;color:rgb(255, 255, 255);font-size:31.5px;line-height:31.5px;text-transform:uppercase;letter-spacing:1.575px",
+							"tablet": "padding:0px 0px 0px 0px;margin:4.67px 0px 4.67px 0px;color:rgb(255, 255, 255);font-size:23.352px;line-height:23.352px;text-transform:uppercase;letter-spacing:1.1676px",
+							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255);font-size:38.5px;line-height:38.5px;text-transform:uppercase;letter-spacing:1.925px"
 						},
 						"small-11": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -8983,9 +8990,9 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:11.2px 0px 11.2px 0px;color:rgb(255, 255, 255)",
-							"tablet": "padding:0px 0px 0px 0px;margin:10.51px 0px 10.51px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:11.2px 0px 11.2px 0px;color:rgb(255, 255, 255);font-size:56px;line-height:56px;text-transform:uppercase;letter-spacing:2.8px",
+							"tablet": "padding:0px 0px 0px 0px;margin:10.51px 0px 10.51px 0px;color:rgb(255, 255, 255);font-size:52.542px;line-height:52.542px;text-transform:uppercase;letter-spacing:2.6271px",
+							"mobile": "padding:0px 0px 0px 0px;margin:7.7px 0px 7.7px 0px;color:rgb(255, 255, 255);font-size:38.5px;line-height:38.5px;text-transform:uppercase;letter-spacing:1.925px"
 						},
 						"gap-element": {
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -8994,19 +9001,19 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						},
 						"white": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						},
 						"is-outline": {
-							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241)",
-							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241)",
-							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241)"
+							"base": "padding:0px 18.62px 0px 18.62px;margin:7.76px 0px 7.76px 0px;border:2px solid rgb(241, 241, 241);font-size:15.52px;line-height:33.9888px;text-transform:uppercase;letter-spacing:0.4656px",
+							"tablet": "padding:0px 17.47px 0px 17.47px;margin:7.28px 0px 7.28px 0px;border:2px solid rgb(241, 241, 241);font-size:14.5616px;line-height:31.89px;text-transform:uppercase;letter-spacing:0.436849px",
+							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px;border:2px solid rgb(241, 241, 241);font-size:10.67px;line-height:23.3673px;text-transform:uppercase;letter-spacing:0.3201px"
 						}
 					},
 					"elements": [
@@ -9193,12 +9200,12 @@
 							"base": "margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255);font-size:30.192px;line-height:36.2304px;text-transform:uppercase;letter-spacing:1.5096px",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255);font-size:22.4px;line-height:26.88px;text-transform:uppercase;letter-spacing:1.12px"
 						},
 						"alt-font": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255);font-size:30.192px;line-height:39.2496px;text-transform:none;letter-spacing:normal",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 11.2px 0px;color:rgb(255, 255, 255);font-size:22.4px;line-height:29.12px;text-transform:none;letter-spacing:normal"
 						},
 						"gap-element": {
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -9207,12 +9214,12 @@
 							"base": "padding:30px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"button": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255);font-size:17.2272px;line-height:41.3453px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255);font-size:15.52px;line-height:37.248px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"primary": {
-							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255)"
+							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255);font-size:17.2272px;line-height:41.3453px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px;border:1px solid rgba(0, 0, 0, 0.05);color:rgb(255, 255, 255);font-size:15.52px;line-height:37.248px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"medium-11": {
 							"base": "padding:0px 15px 30px 15px;margin:0px 0px 0px 0px"
@@ -9571,9 +9578,9 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"uppercase": {
-							"base": "padding:0px 0px 0px 0px;margin:6.4px 0px 6.4px 0px;color:rgb(255, 255, 255)",
-							"tablet": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255)",
-							"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:6.4px 0px 6.4px 0px;color:rgb(255, 255, 255);font-size:32px;line-height:32px;text-transform:uppercase;letter-spacing:1.6px",
+							"tablet": "padding:0px 0px 0px 0px;margin:6px 0px 6px 0px;color:rgb(255, 255, 255);font-size:30.024px;line-height:30.024px;text-transform:uppercase;letter-spacing:1.5012px",
+							"mobile": "padding:0px 0px 0px 0px;margin:4.4px 0px 4.4px 0px;color:rgb(255, 255, 255);font-size:22px;line-height:22px;text-transform:uppercase;letter-spacing:1.1px"
 						}
 					},
 					"elements": [
@@ -10013,8 +10020,8 @@
 		},
 		"doomsday": {
 			"url": "https://monicarajiv.com/doomsday/",
-			"measuredAt": "2026-11-19T23:01:10.738Z",
-			"sourceHash": "6b469833fa3b77eb",
+			"measuredAt": "2026-11-19T23:28:05.905Z",
+			"sourceHash": "87d34e6366d13f22",
 			"builder": "flatsome",
 			"sections": [
 				{
@@ -10558,13 +10565,16 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
 						"flickity-button": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255);font-size:17.2272px;line-height:41.3453px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255);font-size:15.52px;line-height:37.248px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"flickity-prev-next-button": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255);font-size:17.2272px;line-height:41.3453px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255);font-size:15.52px;line-height:37.248px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"previous": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255);font-size:17.2272px;line-height:41.3453px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255);font-size:15.52px;line-height:37.248px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"flickity-button-icon": {
 							"base": "padding:7.19px 7.19px 7.19px 7.19px;margin:0px 0px 0px 0px;border:2px solid rgb(255, 255, 255)",
@@ -10574,7 +10584,8 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;border:2px solid rgb(255, 255, 255)"
 						},
 						"next": {
-							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255);font-size:17.2272px;line-height:41.3453px;text-transform:uppercase;letter-spacing:0.516816px",
+							"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255);font-size:15.52px;line-height:37.248px;text-transform:uppercase;letter-spacing:0.4656px"
 						},
 						"flickity-page-dots": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"

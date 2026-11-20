@@ -4512,15 +4512,11 @@ program
 	.command( 'materialize' )
 	.description( "recover a built artifact's baked content into local content files (a site that outlived its CMS)" )
 	.argument( '<profileRef>', 'site.json path or registered site name' )
-	.requiredOption( '--from <dir>', 'the built project that carries dist/server' )
+	.option( '--from <dir>', 'the built project that carries dist/server' )
+	.option( '--from-wp', 'capture the LIVE WordPress instead (a static build carries no content store)' )
 	.option( '--out <dir>', 'where to write (default: <profile>.content beside the profile)' )
 	.action( async ( profileRef, options ) => {
-		const { findContentStore, materializeContent } = await import( '../lib/materialize.ts' );
-		const storeFile = await findContentStore( options.from );
-		if ( ! storeFile ) {
-			console.error( `No baked content store under ${ options.from }/dist/server/chunks/ — is that a built forge project?` );
-			process.exit( 1 );
-		}
+		const { findContentStore, materializeContent, materializeFromWordPress } = await import( '../lib/materialize.ts' );
 		const profilePath = profilePathOf( profileRef );
 		const derivedOut = profilePath ? profilePath.replace( /\.json$/, '.content' ) : undefined;
 		const outDir = options.out ?? derivedOut;
@@ -4528,7 +4524,42 @@ program
 			console.error( 'Could not derive the output directory from the profile — pass --out.' );
 			process.exit( 1 );
 		}
-		const documents = await materializeContent( { storeFile, outDir } );
+		if ( options.fromWp && options.from ) {
+			console.error( 'Pass either --from <built project> or --from-wp, not both.' );
+			process.exit( 1 );
+		}
+		if ( ! options.fromWp && ! options.from ) {
+			console.error( 'Pass --from <built project> (recover a built artifact) or --from-wp (capture the live CMS).' );
+			process.exit( 1 );
+		}
+
+		let documents;
+		if ( options.fromWp ) {
+			const profile = await loadProfile( profileRef );
+			const auth =
+				process.env.WP_APPLICATION_USER && process.env.WP_APPLICATION_PASSWORD
+					? {
+							type: 'basic',
+							username: process.env.WP_APPLICATION_USER,
+							password: process.env.WP_APPLICATION_PASSWORD,
+						  }
+					: undefined;
+			console.log( `Capturing ${ profile.url } (live CMS) → ${ outDir }` );
+			documents = await materializeFromWordPress( {
+				profile,
+				auth,
+				outDir,
+				log: ( line ) => console.log( `  ${ line }` ),
+			} );
+		} else {
+			const storeFile = await findContentStore( options.from );
+			if ( ! storeFile ) {
+				console.error( `No baked content store under ${ options.from }/dist/server/chunks/ — is that a built forge project? A static build carries none: use --from-wp instead.` );
+				process.exit( 1 );
+			}
+			documents = await materializeContent( { storeFile, outDir } );
+		}
+
 		console.log( `\u2713 Materialized ${ documents.length } document(s) into ${ outDir }` );
 		for ( const doc of documents ) {
 			console.log( `  - ${ doc.collection }/${ doc.slug } — ${ doc.htmlBytes } B body` );

@@ -2511,8 +2511,15 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * leading, .03em tracking, .97em type, no underline. None of that is a
  * MEASURED box, so the class facts carry only padding/margin/ink and the
  * rebuild rendered a 16px underlined inline link where the source has a 43px
- * button (accommodations' "Check Rates"). */
-.ds-section-wrap .post-body a.button {
+ * button (accommodations' "Check Rates").
+ *
+ * The element itself is inside `:where()` so this stays a DEFAULT: the class
+ * facts now also carry the type a class DECLARES (see `MeasuredBox.fontSize`),
+ * and `.ds-section-wrap .post-body a.button` (0,3,1) outranked the band's
+ * `[data-section-id] .button` (0,2,0) — so the home hero's CTAs kept the 2.4
+ * guess against a measured 2.19 while every other band was correct
+ * (monicarajiv, 2026-11-21). */
+.ds-section-wrap .post-body :where(a.button) {
 	display: inline-block;
 	font-size: .97em;
 	line-height: 2.4;
