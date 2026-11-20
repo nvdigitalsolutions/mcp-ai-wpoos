@@ -398,7 +398,10 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
 - **PHPUnit data providers run eagerly, even under `--filter`.** The two
   `ProjectManagement*ParityTest` cases fail with "Empty data set" on any
   filtered run unless both `NVOOS_PM_*` fixture env vars are passed — they are
-  not a regression you introduced.
+  not a regression you introduced. Point them at the **repo** capture
+  (`/workspace/oos/tests/fixtures/pm/tools.json` and `…/writes.json`), not at
+  `/app/fixtures/pm/`, which does not exist: the skeleton's `fixtures/` holds
+  `mcp-ai-pro-v1` and nothing else. A wrong path is the same failure as no path.
 - **A missing `assistant` breaks agent nodes, not the run.**
   `AgentNodeRunner` resolves `agentId` as a record id or falls back to the
   default assistant; with neither it throws a typed message the executor
@@ -432,6 +435,30 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   `public/.htaccess`, `public/index.php` and `public/robots.txt` are tracked
   under `public/`; keep `/public/css/filament`, `/public/fonts/filament` and
   `/public/js/filament` in the skeleton `.gitignore`.
+- **`tenant_id` is not fillable on `Assistant`.** `$fillable` deliberately omits
+  it ("the tenant is never supplied by a request body"), so
+  `Assistant::query()->create(['tenant_id' => 'estate-b', …])` **silently drops
+  the value** and the row takes the column default. The failure mode is the
+  opposite of what you expect: a fixture that should be foreign appears on the
+  current estate's page, which reads like a scope leak. Set it on the instance
+  (`$a = new Assistant([...]); $a->tenant_id = …; $a->save();`) — and check
+  `$fillable` before trusting any scoped fixture.
+- **PHPCompatibility cannot parse enum bodies.** `PHPCompatibilityWP` 2.1.8
+  treats every method inside an `enum` as a plain function and rejects `$this`
+  (`PHPCompatibility.Variables.ForbiddenThisUseContexts.OutsideObjectContext`).
+  It is not about `match`: `switch ($this)` and a bare `$this->value` fail too,
+  and the identical code passes in a `class`. Because `PHP Compatibility Check`
+  only inspects **changed** files, an enum fails the first time any PR touches
+  it. `app/Filament/Admin/Navigation/AdminNavigationGroup.php` carries a
+  file-scoped `phpcs:disable` for that one sniff with the probe recorded; copy
+  that pattern rather than refactoring the enum, and delete both when the
+  standard learns enums.
+- **The runtime containers have no `ps`, `kill`, `pkill` or `pgrep`.** A
+  detached `docker exec -d … phpunit` cannot be stopped from inside. Get the pid
+  with `docker top oos-laravel-app -o pid,args` from the host; if you cannot kill
+  it, `docker restart oos-laravel-app` (a `posix_kill` from inside does not
+  reach it). **Never run two full suites at once** — they share `storage/` and
+  produce failures that look like regressions.
 
 ## 7. Plan map
 
@@ -739,6 +766,15 @@ JSON, and assert `json.loads(...)` succeeds before committing. Do not trust a
   anything.
 - `AuthProvider::issueCredential()` refuses to run unauthenticated — tests must
   `actingAs()` a user before minting, and that user becomes `tokenable_id`.
+- **A full-suite count smaller than the last recorded one means missing FILES,
+  not passing tests.** A sync that copies
+  `app config database resources routes bootstrap contracts blueprints fixtures public`
+  and omits `tests` leaves the runtime holding 136 of the skeleton's 165 test
+  files: the suite runs, is green, and reports 1269 where CI reports 1575. Two
+  empty data providers accounted for 15 of the difference without failing
+  anything (149 §106.9). Reconcile with
+  `diff -rq docker/laravel/app-skeleton/tests <runtime>/tests` before quoting a
+  number, and read `Only in <skeleton>` as evidence, not noise.
 
 ## 15. Wave 2 tail: slices 25–38 (149 §25–§38)
 
@@ -747,9 +783,9 @@ CRUD. Read this before adding a panel page: much of what looks missing was
 deliberately not built, and the reason is recorded.
 
 **Scoreboard:** `php bin/audit-surface-ownership.php` (`--json` for tooling) —
-44 surfaces · 22 panel-built · 29 console-served · 18 console-only · 2
-planned-only, measured 2026-11-17. Re-run it before quoting a number; it reads the
-same contract the CI gate reads.
+47 surfaces · 38 panel-built · 29 console-served · 6 console-only · 0
+planned-only · 1 inert, measured 2026-11-20 after 149 §106. Re-run it before
+quoting a number; it reads the same contract the CI gate reads.
 
 ### Panel traffic is not audited by the request middleware
 
