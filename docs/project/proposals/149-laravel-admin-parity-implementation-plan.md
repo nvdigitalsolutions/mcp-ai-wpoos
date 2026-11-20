@@ -10616,7 +10616,7 @@ The contract row moved `planned → read-only`, gained its `files` entry and a
 | `TelemetryTest` | **12 tests / 27 assertions** — two new estate tests, plus the three `recent()` call sites updated to the required argument |
 | `CommandCenterTest` + `SurfaceOwnershipTest` + `AdminNavigationTest` | **21 tests / 553 assertions** — the API contract, the contract row and the sidebar all still hold |
 | Focused run (5 files) | **40 tests / 598 assertions, 0 failures** |
-| Full app suite | **1560 tests / 18,825 assertions.** The run reported 6 failures, none from this slice and none reproducible: 2 “empty data provider” errors because `NVOOS_PM_FIXTURE` pointed at a path the runtime copy does not have, and 4 `MagicLoginTest` failures because the runtime's `MagicLoginController` was older than #7999. After syncing `app/` and correcting the fixture path, those three files pass — **31 tests / 328 assertions** — so all 1560 are green. §106.9 |
+| Full app suite | **1575 tests / 19,080 assertions, 0 failures** (CI `App suite (SQLite)`) |
 | phpcs (`phpcs-laravel.xml.dist`, 8 files) | **0 errors** — one pre-existing 133-char warning in `AdminNavigationGroup`, untouched |
 | `bin/audit-surface-ownership.php` | 47 surfaces, **38** Filament-built (15 `/ops`, 25 `/admin`), **6** console-only, 0 planned-only, 1 inert |
 | Live page, `/admin/default/command-centre` | **200**, 168 KB, all six tiles and both honesty strings present |
@@ -10675,5 +10675,10 @@ Two lessons, both already half-known elsewhere in this plan:
   §82.4-shaped row written from this container would have been confidently
   wrong by 117 tests.
 
-The run reported below is over the skeleton's own tree: **1560 tests, 165
-files**.
+The local run, once the tree was complete, reported **1560 tests over 165
+files**; CI reports **1575** on the same commit. The 15-test gap reconciles
+exactly: the two `ProjectManagement*ParityTest` classes contribute 15 tests
+through a data provider, and the local run had pointed `NVOOS_PM_FIXTURE` at a
+path the runtime copy does not have — so both classes reported "No tests found"
+and those 15 were silently absent. The same lesson twice in one section: an
+empty data provider does not fail, it disappears.
