@@ -418,6 +418,13 @@
 						"href": "mailto:info@monicarajiv.com"
 					}
 				],
+				"navStyle": {
+					"size": "14.208px",
+					"weight": "400",
+					"transform": "uppercase",
+					"letterSpacing": "0.28416px"
+				},
+				"navFamily": "Montserrat",
 				"desktop": {
 					"measure": 1080,
 					"padX": 15,

@@ -430,3 +430,53 @@ sri-lanka         960 / 2106
 accommodations    900 / 1329 / 286 / 861 / 805 / 590 / 770 / 740 / 2298 / 420
 doomsday          900 / 684
 ```
+
+## 11. Type is per CLASS when a band holds two of one tag (2026-11-21)
+
+A band-scoped tag rule (`[data-section-id] h1{…}`) can only describe ONE `h1`.
+Flatsome's salon bands hold two, styled apart by a class:
+
+```
+h1.uppercase   Karma           30.192px / 36.2304px  uppercase  ls 1.5096px
+h1.alt-font    Dancing Script  30.192px / 39.2496px  none       ls normal
+```
+
+`collectBandTypeFacts` takes the first instance, so the accent shipped in
+CAPITALS with the heading's leading — on both salon bands, on every rebuild.
+
+**The rule now:** a class that DECLARES a type states it, and outranks the tag
+fact. `MeasuredBox` carries `fontSize` / `lineHeight` / `textTransform` /
+`letterSpacing`, recorded for **text-level elements only** (h1–h6, p, a, span,
+strong, em, b, i, small, li, blockquote, figcaption, button, label) whose
+computed type differs from the parent's. Two details are load-bearing:
+
+- **Complete, not partial.** `.alt-font` differs from its parent only in SIZE,
+  yet it must say `text-transform:none` — a size-only fact leaves the tag rule's
+  `uppercase` painting. So the first differing property opts the element into
+  all four.
+- **Text-level only.** A wrapper (`div.text-box`, `.banner-layer`, `.x50`) also
+  inherits a different size; recording it there bought nothing and grew the
+  profile 22% on the first attempt (6% with the gate).
+
+Emitted through the existing `box` map, so the class form
+(`[data-section-id] .alt-font`, 0,2,0) already outranks `h1` (0,1,1) — no new
+plumbing, no `!important`.
+
+**Still un-reproduced:** a class on a NON-text element that sets its
+descendants' size — `.box-text.is-large` is `1.15em`, the fact lands on the
+`div`, and the band's `p` rule beats inheritance. Needs a descendant-scoped
+form (`.is-large p`, measured per tag) if it ever matters; the price list reads
+fine at body size.
+
+## 12. Template defaults must lose to measured facts (2026-11-21)
+
+`.ds-section-wrap .post-body a.button` is (0,3,1). A band's measured button
+fact emits `[data-section-id] .button` — (0,2,0) — so on a band whose buttons
+sit OUTSIDE a `.col` (the home hero), the template's `line-height: 2.4` guess
+beat the measured 2.19 and the CTAs were 2px tall. The long form
+(`… .section-content .col .button`, 0,5,0) only saves bands that carry a `.col`.
+
+The fix is at the DEFAULT, not the emit: `:where(a.button)` leaves the scoping
+(`.ds-section-wrap .post-body` still gates it to a band) but drops the element
+from specificity. Same rule for any shim component default that a measured fact
+can describe — a default that outranks a fact turns the fact into decoration.

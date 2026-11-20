@@ -1874,6 +1874,24 @@ export interface ForgeChromeGeometry {
 	mobile?: ForgeChromeBox;
 	/** The header’s trailing icon links, measured once at the desktop viewport. */
 	actions?: ForgeChromeAction[];
+	/**
+	 * The nav LINK's computed type at the desktop viewport.
+	 *
+	 * The static CSS resolver reads a relative `font-size` against the 16px root
+	 * and reported `16px` where the browser paints `14.208px` (`.888em`), so a
+	 * whole site's menu rebuilt one step too large — and `letter-spacing: .02em`
+	 * landed as `em` instead of the resolved `0.28416px` (monicarajiv, 2026-11-21).
+	 * A browser is already open for the box facts, so the type is measured with
+	 * them and `applyMeasuredNavStyle` overlays it at scaffold time.
+	 */
+	navStyle?: ForgeChromeStyle;
+	/**
+	 * The family the nav link paints, when it is not the body or display face
+	 * (monicarajiv's menu is Montserrat). `analyze` promotes it to
+	 * `design.typography.ui`, which `designToTokens` turns into `--forge-font-ui`
+	 * and the webfont builder then loads.
+	 */
+	navFamily?: string;
 }
 
 /** Where a footer group sits horizontally inside the footer's brand row. */

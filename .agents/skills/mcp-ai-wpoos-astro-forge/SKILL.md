@@ -18,7 +18,7 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 
 ## Architecture decisions (do NOT re-litigate)
 
-- **Content-layer loaders, not materialized content files** — `content_materialize` stays opt-in (096 §2.3).
+- **Content-layer loaders, not materialized content files** — `content_materialize` stays opt-in (096 §2.3). When it IS opted in, snapshot **while the CMS is live**: `forge materialize <profile> --from-wp` drives the production loader, because `--from <build>` needs a `dist/server` store a `static` runtime never has. Details: `reference/cms-removal-materialized-content.md`.
 - **REST-first**: `wp/v2` + `wc/v3`, **never WPGraphQL**. `_fields` pruning + `_embed` are the anti-N+1 discipline.
 - **Sanitization is mandatory, versioned, allowlisted, never a passthrough** — all WordPress HTML passes `lib/sanitize.ts` before `set:html` (096 §2.4).
 - **No plaintext credentials** — auth comes from `.env` (`WP_APPLICATION_USER`/`WP_APPLICATION_PASSWORD`), never from the profile or the generated repo. SSRF-safe by construction: the CLI consumes operator-written site profiles only (the open-world fetch surface is the `/mcp` `design_analyze` guard, Proposal 098).
