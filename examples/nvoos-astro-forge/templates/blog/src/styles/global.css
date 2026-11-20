@@ -1281,11 +1281,18 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	 * states` gate reports. `brightness()` adapts to whatever `--forge-cta` is
 	 * (a flat colour, a gradient, a dark band) instead of hard-coding a shade.
 	 * The `prefers-reduced-motion` block below drops the transition. */
-	transition: filter 150ms ease, transform 150ms ease;
+	transition: var(--ds-btn-transition, filter 150ms ease, transform 150ms ease);
 }
 
 .ds-button:hover {
-	filter: brightness(0.94);
+	/* The band's MEASURED repaint wins; `brightness()` is the fallback for a band
+	 * that recorded no states (see `hoverComponentVars`). virtuallysrilanka's
+	 * source button goes #dd3333 → #000 with a lift shadow, and the rebuilt
+	 * control never did. */
+	background-color: var(--ds-btn-bg-hover, var(--forge-cta, var(--forge-accent)));
+	color: var(--ds-btn-ink-hover, var(--forge-cta-ink, var(--forge-accent-ink)));
+	box-shadow: var(--ds-btn-shadow-hover, none);
+	filter: var(--ds-btn-filter-hover, brightness(0.94));
 }
 
 .ds-button:active {
@@ -1369,6 +1376,28 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * the source's media panel and keeps the row's height by stretch. */
 .ds-card--surface-media {
 	padding: 0;
+}
+
+/* The band's MEASURED tile hover (`hoverComponentVars`).
+ *
+ * A builder paints the hover state on a wrapper inside the tile, keyed to the
+ * source's own classes — which the rebuild does not carry, so the state was
+ * lost (virtuallysrilanka's four wifi tiles take a black slab on hover and the
+ * rebuild never responded). Absent → the rest surface, i.e. no visible change. */
+@media (hover: hover) {
+	.ds-card {
+		transition: var( --ds-card-transition, background-color 0.3s ease );
+	}
+
+	/* Scoped to the wrap so it outranks the THEMED surface rules — and to the
+	 * GRID, because a panel band's `.ds-section-wrap--panel .ds-grid .ds-card`
+	 * carries the same specificity and comes later in the sheet, which silently
+	 * defeated the plain form. The fallback chain mirrors those rules, so a band
+	 * with no measured hover keeps its rest surface. */
+	.ds-section-wrap .ds-card:hover,
+	.ds-section-wrap .ds-grid .ds-card:hover {
+		background-color: var( --ds-card-bg-hover, var( --ds-card-bg, var( --forge-surface-alt ) ) );
+	}
 }
 
 .ds-card h3,
