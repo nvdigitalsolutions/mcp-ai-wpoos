@@ -136,6 +136,11 @@ class FileUploadService implements FileUploadServiceInterface {
 				'path'       => $path,
 				'disk'       => $this->disk,
 				'filename'   => $filename,
+				// The estate that owns this upload. Supplied by the caller rather
+				// than read here: this adapter is constructed outside any tenant
+				// middleware, the same reason TokenUsage takes it from metadata
+				// (Proposal 149 §109, §152 §9.3).
+				'tenant_id'  => $this->tenantFrom( $context ),
 				'mime_type'  => $mime,
 				'size_bytes' => (int) $check['file_info']['size'],
 				'owner_id'   => isset( $context['user_id'] ) ? (int) $context['user_id'] : null,
@@ -150,6 +155,23 @@ class FileUploadService implements FileUploadServiceInterface {
 			'url'           => $this->publicUrl( $path ),
 			'path'          => $path,
 		);
+	}
+
+	/**
+	 * The estate an upload belongs to.
+	 *
+	 * The caller supplies it in `$context['tenant_id']`; a missing value is the
+	 * default estate, which is the only defensible attribution for a row that
+	 * records none (Proposal 152 §3 D3). Falls back rather than throwing: an
+	 * upload that has already written bytes to the disk must not be failed by
+	 * an attribution problem.
+	 *
+	 * @param array<string, mixed> $context
+	 */
+	private function tenantFrom( array $context ): string {
+		$tenant = trim( (string) ( $context['tenant_id'] ?? '' ) );
+
+		return '' !== $tenant ? substr( $tenant, 0, 64 ) : 'default';
 	}
 
 	/**

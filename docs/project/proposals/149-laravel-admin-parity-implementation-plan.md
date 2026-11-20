@@ -10727,11 +10727,15 @@ A handover, so the next slice does not have to re-derive the board. Measured
 built on a panel** (15 `/ops`, 25 `/admin`) **· 29 console-served · 6
 console-only · 0 planned-only · 1 inert**.
 
-### 107.1 The one row that can move: `media`
+### 107.1 The one row that could move: `media` — shipped in §109
 
-`media` is the only console-only row whose work is not waiting on a product
-decision. It starts with a **migration, not a page**, and the order is not
-negotiable:
+**Status: done.** [§109](#109-the-media-library-acquires-an-estate-2026-11-20)
+shipped the column, the writer, the reader scoping and the page. The ordering
+below is kept because it was right, and because §109.1 records what it
+understated: the column was the smallest part.
+
+`media` was the only console-only row whose work was not waiting on a product
+decision. It started with a **migration, not a page**:
 
 1. **`nvoos_files.tenant_id`** — `string(64)`, default `'default'`, indexed,
    guarded per column. Copy `2026_11_20_120000_add_tenant_to_activity_events`
@@ -10752,7 +10756,7 @@ A page over un-owned rows is the §41 mistake with a different noun: the reason
 that slice touched the schema was that a read surface made an existing gap into
 a leak.
 
-### 107.2 The one row that was blocked on a decision: `dashboards`
+### 107.2 The only remaining row, blocked on a decision: `dashboards`
 
 The 10 → 7 catalogue change is still the gate
 (`149-dashboards-redundancy-review.md`), but it is no longer an open question:
@@ -10842,3 +10846,92 @@ becomes a normal slice — one migration, one auth-path lookup, one default role
 one visible pending state — rather than a question. The inert identity keys keep
 their state and their exit condition: a key leaves the list the moment it gains a
 reader.
+
+## 109. The media library acquires an estate (2026-11-20)
+
+§107.1 said `media` "starts with a migration, not a page". That was right about
+the order and understated the size. The column was the smallest part:
+`nvoos_files` had no tenant **and** `MediaController` had no scope — `index`,
+`show` and `update` all read the whole table by id. Adding the column alone would
+have closed nothing and opened the panel onto rows it could not correctly filter.
+
+### 109.1 Four layers, because any three leave a hole
+
+1. **The column** — `2026_11_20_160000_add_tenant_to_nvoos_files`, the §18 shape.
+   Pre-migration rows read as `default` and **cannot recover their estate**.
+2. **The writer** — `FileUploadService::upload()` writes `$context['tenant_id']`,
+   supplied by `MediaController::store`. The adapter never reads app context: it
+   is constructed outside tenant middleware, which is the same reason
+   `TokenUsage` takes its tenant from metadata.
+3. **The readers** — `MediaController`'s three methods go through one `find()`
+   helper scoped to the estate. A foreign id answers **404, not 403**: telling a
+   caller that a file exists but is not theirs discloses the other estate's
+   library size. That is §41's rule for approvals, applied to a second table.
+4. **The jobs** — `MediaSweeper::sweep()` selects only the current estate's
+   files; `OptimizeMediaFile` pins the file's estate around its activity writes
+   and restores it in a `finally`.
+
+The restore is not decoration. `QUEUE_CONNECTION=sync` runs a dispatched job
+inside the caller's request, so a pin that leaked would move the rest of that
+request into another estate's scope — a cross-tenant read from a job that was
+only supposed to write a log line. `test_the_optimiser_records_the_files_estate_and_restores_the_context`
+pins both halves: the event lands on the file's estate, and the ambient context
+is unchanged afterwards.
+
+### 109.2 One projection, two readers
+
+`MediaLibrary` now serves the summary to both `GET /api/v1/pro/media-cc/health`
+and the panel. `MediaCcController` lost its private copy of the counts and its
+`GENERIC_PREFIXES` list — the §105 lesson, applied before it could bite.
+
+Derivative savings are scoped by **joining to the file** rather than by adding a
+column: `nvoos_media_derivatives.file_id` already names an estate's file, and a
+`tenant_id` copy on the derivative would be a second truth to keep in step
+(§152 §9.3).
+
+### 109.3 What is deliberately not scoped
+
+- **`MediaSweeper::inFlight()` is platform-wide.** `nvoos_jobs` carries no estate
+  and the queue is one worker pool, so the honest question is "is a sweep running
+  anywhere". The cost is a spurious refusal when two estates sweep at once; the
+  alternative — a per-estate count that cannot be computed — would refuse nothing
+  and stack two passes over one library.
+- **Queue counts are not on the page at all**, for the same reason. `/ops/queue`
+  is the operator's surface for them.
+- **Compression savings are scoped and available**, but stay on the console
+  beside the worker health. Two surfaces showing the same byte count is how they
+  drift.
+
+### 109.4 The page
+
+`/admin/{estate}/media`, read-only, in the Knowledge group between Paper Store and
+Memory. Upload and alt editing stay on the console: a panel write would need its
+own `recordResource()` call first (Livewire traffic is excluded from the request
+middleware, §25), and the alt figure is most useful *before* anyone starts
+editing.
+
+One honesty device, in the same family as `/ops/metrics`: WordPress reports **100%
+alt coverage** for an empty library. That is a true number saying something
+false, so the page renders a dash and the callout "No images to measure" instead
+of a clean bill of health for a library that has nothing in it.
+
+### 109.5 Gates
+
+| Run | Result |
+|---|---|
+| `AdminMediaLibraryTest` | **8 tests / 21 assertions** — the panel lists only the estate's files; alt coverage is per estate; an empty library is labelled rather than scored; pagination is scoped; a foreign id 404s on read *and* write and the row is untouched; the sweep queues only this estate's files; the optimiser attributes its event and restores the context |
+| `MediaCcTest` + `Phase3dTest` + `SurfaceOwnershipTest` + `AdminNavigationTest` + `AdminDataTableTest` | **52 tests / 723 assertions, 0 failures** — the console API, the media REST surface, the contract row, the sidebar and the one-data-table contract all still hold. `AdminDataTableTest` is the reason the page uses `x-admin.data-table` rather than a hand-rolled `<thead>`: it is a migration guard over every admin view (§55.5) |
+| phpcs (`phpcs-laravel.xml.dist`, 10 files) | **0 errors** |
+| `bin/audit-surface-ownership.php` | 47 surfaces, **39** Filament-built, **5** console-only, 0 planned-only, 1 inert |
+| Live check, `/admin/default/media` | 200 — empty state renders the dash and the callout; with three seeded files it reports 3 files / 2 images / 50% alt / 50% next-gen, `missing` badges on the two without alt |
+
+### 109.6 What this does not fix
+
+1. **`dashboards`** is now the only console-only row with work behind it, and it
+   is still Wave 5 and still cross-runtime (158 D1).
+2. **`nvoos_media_derivatives` has no estate** and does not need one while the
+   join is correct — but a future query that reads it without the join would be
+   unscoped, and the join is the only thing preventing that.
+3. **The sweep's refusal is platform-wide** (§109.3). Making it per-estate needs
+   an estate on `nvoos_jobs`, which is a decision about the job store, not about
+   media.

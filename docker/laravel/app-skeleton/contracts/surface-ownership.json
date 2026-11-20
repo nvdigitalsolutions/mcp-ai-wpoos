@@ -409,12 +409,13 @@
       "title": "Media",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": { "state": "full", "keys": ["upload", "mediaCc"] },
       "writer": "shared",
       "plan_gate": "feature:media",
-      "projection": null,
-      "notes": "mediaCc is connected-service: the key reports false when no Media Worker is configured."
+      "projection": "Read: one estate's library - totals, alt and next-gen coverage, and a paginated file list - from App\\Support\\Media\\MediaLibrary, the same projection GET /api/v1/pro/media-cc/health serves. Scoped by nvoos_files.tenant_id, on the page and on the API. Writes (upload, alt text) stay on the console; the panel has no action, so it carries no Livewire-audit obligation. Queue counts and derivative savings are deliberately not shown: nvoos_jobs carries no estate, and savings already appear beside the worker health the console renders.",
+      "files": ["app/Filament/Admin/Pages/MediaLibraryPage.php"],
+      "notes": "mediaCc is connected-service: the key reports false when no Media Worker is configured. Proposal 149 §109: nvoos_files gained a tenant_id in the §18 shape, so the page, the API and the compression sweep are scoped, and a foreign file id answers 404 rather than 403. Rows written before that migration read as `default` and cannot recover their estate. MediaSweeper::inFlight() stays platform-wide because nvoos_jobs carries no estate - the queue is one worker pool, the same reading §106 records for the command centre's active_tasks."
     },
     {
       "id": "chat-channels",

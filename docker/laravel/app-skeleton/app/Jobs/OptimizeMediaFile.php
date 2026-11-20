@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Support\ActivityRecorder;
 use App\Support\Media\MediaWorkerClient;
+use App\Support\TenantContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -90,10 +91,11 @@ class OptimizeMediaFile implements ShouldQueue
 
         if ((int) $disk->size($path) > self::MAX_SOURCE_BYTES) {
             $jobs->markCancelled($jobId);
-            $activity->record(
+            $this->recordFor(
+                $row,
+                $activity,
                 'media.skipped',
                 sprintf('%s is larger than 50 MB and was skipped.', (string) ($row->filename ?? '')),
-                null,
                 ['file_id' => $this->fileId],
             );
 
@@ -125,7 +127,9 @@ class OptimizeMediaFile implements ShouldQueue
 
         $jobs->markCompleted($jobId, ['savings_bytes' => $result['savings_bytes']]);
 
-        $activity->record(
+        $this->recordFor(
+            $row,
+            $activity,
             'media.optimized',
             sprintf(
                 '%s optimised to %s (%d bytes saved).',
@@ -133,9 +137,51 @@ class OptimizeMediaFile implements ShouldQueue
                 $this->format,
                 $result['savings_bytes'],
             ),
-            null,
             ['file_id' => $this->fileId, 'format' => $this->format],
         );
+    }
+
+    /**
+     * Record one event against the estate that owns the file.
+     *
+     * The job runs outside a request, so `TenantContext` is whatever the worker
+     * last left it as — usually nothing, which is why these events used to land
+     * on `default` (§106.2). The file row names its estate, so pin it for the
+     * write and put the previous value back.
+     *
+     * **The restore is not optional.** `QUEUE_CONNECTION=sync` runs a dispatched
+     * job inside the caller's request, so a pin that leaked would move the rest
+     * of that request into another estate's scope — a cross-tenant read, from a
+     * job that was only supposed to write a log line.
+     *
+     * @param object               $row      The `nvoos_files` row.
+     * @param array<string, mixed> $context  Structured detail for the event.
+     */
+    private function recordFor(
+        object $row,
+        ActivityRecorder $activity,
+        string $type,
+        string $message,
+        array $context,
+    ): void {
+        $estate = trim((string) ($row->tenant_id ?? ''));
+
+        if ('' === $estate) {
+            // A row written before the column existed: attribute it the same way
+            // the column default does rather than inventing an estate.
+            $estate = 'default';
+        }
+
+        $wasPinned = TenantContext::isPinned();
+        $previous = TenantContext::current();
+
+        TenantContext::set($estate);
+
+        try {
+            $activity->record($type, $message, null, $context);
+        } finally {
+            TenantContext::set($wasPinned ? $previous : null);
+        }
     }
 
     /**
