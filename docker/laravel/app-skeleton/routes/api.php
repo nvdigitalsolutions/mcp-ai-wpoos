@@ -10,6 +10,7 @@ use App\Http\Controllers\CommandCenterController;
 use App\Http\Controllers\ChatStreamController;
 use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
+use App\Http\Controllers\MagicLoginController;
 use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\OkfController;
@@ -78,6 +79,17 @@ Route::prefix('api/v1')->group(function (): void {
         ->middleware('throttle:6,1');
     Route::post('/session/logout', [SessionController::class, 'logout'])
         ->middleware('auth');
+
+    // Passwordless sign-in (149 §103). Unauthenticated by necessity — the caller
+    // has no session yet, which is the point — and invisible when no estate has
+    // opted in: both routes answer 404 in that case. The limiters are named
+    // rather than per-minute counts because the request endpoint has to be
+    // limited on TWO dimensions (identifier and IP) and a per-identifier limit
+    // cannot be expressed as route middleware.
+    Route::post('/magic-login/request', [MagicLoginController::class, 'request'])
+        ->middleware('throttle:magic-login-request');
+    Route::post('/magic-login/confirm', [MagicLoginController::class, 'confirm'])
+        ->middleware('throttle:magic-login-confirm');
 
     // Identity endpoint. Deliberately OUTSIDE tenant resolution: it is how a
     // client learns who it is and which estates it may select, so requiring a

@@ -89,9 +89,7 @@ final class UnimplementedSettings
         'oauth_disable_open_registration'      => 'API policy rather than identity; re-homed by Proposal 156 D5.',
         'require_confirm_destructive_ops'      => 'The intent is met by the approvals queue, not by this setting (D5).',
 
-        // Magic-link sign-in — Proposal 156 I4.
-        'enable_magic_login'                   => 'Magic-link sign-in is unbuilt; slice I4 decides it.',
-        'magic_login_app_origin'               => 'Magic-link sign-in is unbuilt; slice I4 decides it.',
+        // Magic-link sign-in — Proposal 156 I4, shipped in plan §103.
     );
 
     /**

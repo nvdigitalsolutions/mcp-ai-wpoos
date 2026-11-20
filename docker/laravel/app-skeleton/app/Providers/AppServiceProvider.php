@@ -327,6 +327,22 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('tools', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('console', fn (Request $request) => Limit::perMinute($consoleLimit)->by($request->user()?->id ?: $request->ip()));
 
+        // Magic-link sign-in (149 §103). Two dimensions on the request endpoint —
+        // per identifier and per address — because either alone is bypassable:
+        // an IP limit lets one attacker spray one inbox from many hosts, and an
+        // identifier limit lets one host spray many inboxes. The values mirror
+        // the WordPress controller (3 per identifier per 15 min, 10 per IP per
+        // hour, 10 confirms per IP per 15 min).
+        RateLimiter::for('magic-login-request', fn (Request $request) => array(
+            Limit::perMinutes(15, 3)->by('id:'.strtolower(trim((string) $request->input('email')))),
+            Limit::perHour(10)->by('ip:'.$request->ip()),
+        ));
+
+        // Confirm is limited on the address only: the token is already a secret
+        // the caller either has or does not, and keying on it would let an
+        // attacker fill the cache with junk keys.
+        RateLimiter::for('magic-login-confirm', fn (Request $request) => Limit::perMinutes(15, 10)->by('ip:'.$request->ip()));
+
         $router = $this->app->make(ProviderRouter::class);
 
         // Model-level retry before a provider hop (Proposal 149 §69). The

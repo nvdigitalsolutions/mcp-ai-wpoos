@@ -154,7 +154,7 @@ class UnimplementedSettingsTest extends TestCase
             ->assertSee(UnimplementedSettings::HINT)
             // The reason is per-key, and it names the slice or the decision
             // rather than the owner.
-            ->assertSee('slice I4 decides it')
+            ->assertSee('API policy rather than identity; re-homed by Proposal 156 D5')
             ->assertSee('is not ported (Proposal 156 D5)');
 
         // The operator-scope hint must not be the explanation for an inert field:

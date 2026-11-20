@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Auth\MagicLinkService;
 use App\Support\ConnectedApps\ConnectedAppRegistry;
 use App\Support\EndpointCapabilities;
 use Illuminate\Http\JsonResponse;
@@ -46,6 +47,12 @@ class FeaturesController
                 'backend' => 'laravel',
                 'contract' => 'mcp-ai/v1',
                 'contract_version' => 1,
+                // 149 §103 — whether the console should offer passwordless
+                // sign-in. Read from the CURRENT estate's settings, because this
+                // endpoint is public and carries no estate selector; truthful
+                // for the single-estate deployment and deliberately not a
+                // global "any estate" scan on a route the SPA polls.
+                'magic_login' => app(MagicLinkService::class)->enabledHere(),
                 'entitlement' => array(
                     'plan' => $entitlement->plan(),
                     'source' => $entitlement->source(),
