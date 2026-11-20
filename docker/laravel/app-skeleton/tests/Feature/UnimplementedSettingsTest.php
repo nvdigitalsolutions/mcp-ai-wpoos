@@ -131,19 +131,13 @@ class UnimplementedSettingsTest extends TestCase
         // test in AdminSettingsTest. The disabled state is presentation; the
         // writer is the control.
         Livewire::test(AdminSettings::class)
-            ->set('data.rest_enable_assistant_list', true)
             ->set('data.guest_token_lifetime', 999)
             ->call('save');
 
         $this->assertDatabaseMissing('nvoos_tenant_settings', array(
             'tenant_id' => Tenant::DEFAULT_ID,
-            'key' => 'rest_enable_assistant_list',
-        ));
-        $this->assertDatabaseMissing('nvoos_tenant_settings', array(
-            'tenant_id' => Tenant::DEFAULT_ID,
             'key' => 'guest_token_lifetime',
         ));
-        $this->assertDatabaseMissing('nvoos_settings', array('key' => 'rest_enable_assistant_list'));
     }
 
     public function test_the_inert_fields_explain_themselves(): void
@@ -154,7 +148,6 @@ class UnimplementedSettingsTest extends TestCase
             ->assertSee(UnimplementedSettings::HINT)
             // The reason is per-key, and it names the obstacle rather than the
             // owner.
-            ->assertSee('Needs a first-party vs token-call split on /api/v1/assistants.')
             ->assertSee('No guest-token path exists in this runtime.');
 
         // The operator-scope hint must not be the explanation for an inert field:

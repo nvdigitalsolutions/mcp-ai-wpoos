@@ -94,7 +94,10 @@ Route::prefix('api/v1')->group(function (): void {
     // Identity endpoint. Deliberately OUTSIDE tenant resolution: it is how a
     // client learns who it is and which estates it may select, so requiring a
     // selection first would leave a multi-estate client with no way to ask.
-    Route::middleware('auth:sanctum')->get('/session/me', [SessionController::class, 'me']);
+    // A machine principal reading its own identity has no narrower scope to
+    // name, so this is the one route declaring `any` (159 §10.4).
+    Route::middleware(['auth:sanctum', 'scope:any'])
+        ->get('/session/me', [SessionController::class, 'me']);
 
     // Personal access tokens are user-scoped, not estate-scoped: a token belongs
     // to a person across every estate they can reach, so demanding an estate
@@ -154,7 +157,11 @@ Route::prefix('api/v1')->group(function (): void {
 
             // The list stays readable: the console shows every role the
             // assistant catalogue. Everything below it is administrative.
-            Route::get('/assistants', [AssistantController::class, 'index']);
+            // A machine principal reaches the catalogue only with the estate
+            // permission that names it — the setting gates the fleet, the scope
+            // names the slice (159 §5 rule 4, §10.3).
+            Route::get('/assistants', [AssistantController::class, 'index'])
+                ->middleware(['assistant.rest:list', 'scope:estate:assistants.list']);
 
             // 090-g Phase 3 — org teams and user membership.
             //
@@ -282,10 +289,12 @@ Route::prefix('api/v1')->group(function (): void {
             // sourced KPIs, a derived agent-status map and the activity feed.
             Route::get('/pro/command-center/overview', [CommandCenterController::class, 'overview']);
 
-            Route::post('/assistants', [AssistantController::class, 'store']);
+            Route::post('/assistants', [AssistantController::class, 'store'])
+                ->middleware(['assistant.rest:create', 'scope:estate:assistants.create']);
             Route::get('/assistants/{assistant}', [AssistantController::class, 'show']);
             Route::match(['put', 'patch'], '/assistants/{assistant}', [AssistantController::class, 'update']);
-            Route::delete('/assistants/{assistant}', [AssistantController::class, 'destroy']);
+            Route::delete('/assistants/{assistant}', [AssistantController::class, 'destroy'])
+                ->middleware(['assistant.rest:delete', 'scope:estate:assistants.delete']);
 
             // 090-b task 2.7 — the Test Assistant surface (WordPress's
             // Admin → AI Assistants → Test Assistant). Empty body resolves the
