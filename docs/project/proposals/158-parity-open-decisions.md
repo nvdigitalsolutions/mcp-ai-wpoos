@@ -271,6 +271,25 @@ an anonymous chat this runtime does not have.
 The existing rule still applies and is the exit condition: **a key leaves the
 inert list the moment it gains a reader.**
 
+### 7.1 Status, 2026-11-20 — I5 shipped, and this decision survives it
+
+The premise above was "wait for I5". I5 has now shipped: OIDC just-in-time
+provisioning, deny-by-default, gated on `email_verified` **and** a verified
+per-estate domain allowlist, granting `viewer` in the issuing estate and nothing
+else, with a pending-request surface and a daily digest (plan §110–§111, extended
+by §116).
+
+**It provisioned people. It did not produce a machine-principal model.** So the
+four keys stay inert for the same obstacle, and no longer because a slice is
+pending. Nothing in the runtime distinguishes a browser principal from a token
+principal — `first_party`, `machine_principal` and `service_account` appear
+nowhere under `app/` — the `/api/v1/tools` group still takes no Auth0 tokens, and
+there is no guest-token path for `guest_token_lifetime` to bound.
+
+What would change that is a decision, not a dependency: whether a machine
+principal is assistant-scoped or estate-scoped. It is now its own document rather
+than something the SSO work was going to settle.
+
 ---
 
 ## 8. What this changes in the record
