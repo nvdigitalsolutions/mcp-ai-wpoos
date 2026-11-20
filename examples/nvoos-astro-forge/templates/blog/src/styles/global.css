@@ -1347,6 +1347,30 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	gap: var(--forge-space-sm);
 }
 
+/* A lane that carries the SOURCE's own surface is a panel, not a card: the
+ * template's hairline and radius belong to a card the source does not have
+ * (virtuallysrilanka's services band is three flush slabs — red / photo /
+ * black). The surface itself arrives inline, measured per column. */
+.ds-card--surface {
+	border: 0;
+	border-radius: 0;
+	/* A painted lane takes the SOURCE's slab, so its copy needs the ink that slab
+	 * requires. The card default (`--forge-muted`) is a mid grey and is barely
+	 * readable on virtuallysrilanka's red and black service panels; the value is
+	 * derived from each surface's own contrast (`inkForSurface`). */
+	color: var(--ds-card-surface-ink, inherit);
+}
+
+.ds-card--surface :is(h2, h3, h4, h5, p) {
+	color: inherit;
+}
+
+/* A lane whose surface is a background PHOTO carries no copy of its own: it is
+ * the source's media panel and keeps the row's height by stretch. */
+.ds-card--surface-media {
+	padding: 0;
+}
+
 .ds-card h3,
 .ds-card h4,
 .ds-card h5 {

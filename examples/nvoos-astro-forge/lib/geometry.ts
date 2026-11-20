@@ -1436,12 +1436,8 @@ function collectBandColumnFacts( input: {
 				tokenOf( band!, child ) ??
 				`col:nth-child(${ laneIndex }):nth-last-child(${ lanes.length - laneIndex + 1 })`;
 			const style = getComputedStyle( child );
-			const image = style.backgroundImage !== 'none';
 			// A SOLID fill only: a photo overlay is translucent by design, and a scrim
-			// is never the slab the copy sits on. Read the column AND the wrapper one
-			// level in — a builder scopes the slab rule to that wrapper (Elementor
-			// paints `.elementor-element-populated`), so the column alone reads
-			// transparent and the slab went unrecorded.
+			// is never the slab the copy sits on.
 			const solidFill = ( node: Element | null ): string | undefined => {
 				if ( ! node ) {
 					return undefined;
@@ -1455,14 +1451,55 @@ function collectBandColumnFacts( input: {
 				const alpha = parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1;
 				return alpha >= 0.95 ? value : undefined;
 			};
-			const columnFill =
-				solidFill( child ) ?? solidFill( child.firstElementChild );
+			// The lane's PAINTED layer. A builder scopes the slab rule to a wrapper
+			// (Elementor paints `.elementor-element-populated`), and that wrapper is
+			// not always the column's FIRST element child — a `<style>` or a link
+			// wrapper can sit ahead of it, which is how virtuallysrilanka's black
+			// third column and its photo column both went unrecorded. Find the first
+			// FULL-SIZE painted box instead: a button or a badge inside the lane is
+			// small, and must never be mistaken for the lane's own surface.
+			const paintedOf = ( column: Element ): {
+				fill?: string;
+				image?: string;
+				attachment?: string;
+				size?: string;
+			} => {
+				const box = column.getBoundingClientRect();
+				const minW = box.width * 0.8;
+				const minH = box.height * 0.5;
+				for ( const node of [ column, ...Array.from( column.querySelectorAll( '*' ) ) ] ) {
+					if ( /^(style|script|link|template|noscript)$/i.test( node.tagName ) ) {
+						continue;
+					}
+					const rect = node.getBoundingClientRect();
+					if ( rect.width < minW || rect.height < minH ) {
+						continue;
+					}
+					const computed = getComputedStyle( node );
+					const fill = solidFill( node );
+					const image = computed.backgroundImage !== 'none' ? computed.backgroundImage : undefined;
+					if ( fill || image ) {
+						return {
+							fill,
+							image,
+							attachment: computed.backgroundAttachment,
+							size: computed.backgroundSize,
+						};
+					}
+				}
+				return {};
+			};
+			const painted = paintedOf( child );
 			const fact: ForgeBandColumnFact = {
 				selector,
 				height: Math.round( rects[ index ].height ),
+				// The rendered WIDTH — the lane's share of the row. The source's three
+				// services lanes are 432 / 432 / 571, not equal thirds, and a grid built
+				// on the CSS `col-33` declaration renders them equal.
+				width: Math.round( rects[ index ].width ),
 			};
-			if ( columnFill ) {
-				fact.bg = columnFill;
+			if ( painted.fill ) {
+				fact.bg = painted.fill;
 			}
 			// The column’s INNER padding: per column, so it cannot live in the
 			// class-keyed box map.
@@ -1473,11 +1510,11 @@ function collectBandColumnFacts( input: {
 					fact.pad = innerPad.trim();
 				}
 			}
-			if ( image ) {
+			if ( painted.image ) {
 				fact.image = true;
-				fact.attachment = style.backgroundAttachment.includes( 'fixed' ) ? 'fixed' : 'scroll';
-				if ( style.backgroundSize && style.backgroundSize !== 'auto' ) {
-					fact.size = style.backgroundSize;
+				fact.attachment = ( painted.attachment ?? '' ).includes( 'fixed' ) ? 'fixed' : 'scroll';
+				if ( painted.size && painted.size !== 'auto' ) {
+					fact.size = painted.size;
 				}
 			}
 			facts.push( fact );

@@ -979,6 +979,14 @@ export interface ForgeBandColumnFact {
 	selector: string;
 	/** The rendered border-box height (px). */
 	height?: number;
+	/**
+	 * The rendered border-box WIDTH (px) — the lane's share of its row.
+	 *
+	 * A builder's `col-33` class states equal thirds, but the rendered lanes
+	 * need not be: virtuallysrilanka's services row measures 432 / 432 / 571,
+	 * and a grid built on the declaration renders the photo lane 139px narrow.
+	 */
+	width?: number;
 	/** The rendered background attachment — `fixed` is a parallax/fixed photo. */
 	attachment?: 'fixed' | 'scroll';
 	/** The rendered `background-size` (`cover`, `contain`, `auto`). */
@@ -993,6 +1001,15 @@ export interface ForgeBandColumnFact {
 	pad?: string;
 	/** The column paints a background image. */
 	image?: boolean;
+	/**
+	 * The legible INK for this lane's surface.
+	 *
+	 * A painted lane takes the source's slab, so its copy needs the ink that slab
+	 * requires: the card default (`--forge-muted`) is unreadable on
+	 * virtuallysrilanka's red and black service panels. Derived from the surface's
+	 * contrast, not guessed per band.
+	 */
+	ink?: string;
 	/**
 	 * The column paints a SOLID colour (its computed `background-color`),
 	 * recorded so the band can report the slab its content sits on. A
@@ -1762,6 +1779,8 @@ export interface ForgeSectionColumn {
 	bgColor?: string;
 	/** The column's own background PHOTO (the panel-like column with no copy). */
 	bgImage?: string;
+	/** The ink this lane's `bgColor` needs to stay readable (`inkForSurface`). */
+	ink?: string;
 }
 
 /**
