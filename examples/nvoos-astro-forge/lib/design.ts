@@ -2467,6 +2467,36 @@ export function applyMeasuredNavStyle(
 }
 
 /**
+ * Replace the chrome size guess with the copyright's computed truth.
+ *
+ * `analyze` resolves `chrome.chromeSize` from the stylesheet (`chromeSizeFrom`),
+ * which reads DECLARATIONS: monicarajiv declares `body { font-size: 1.125rem }`,
+ * which is not a resolvable px/em/percent value, so the chain fell through to the
+ * element resolution and the rebuilt footer bar painted 18px where the source's
+ * `.copyright-footer` paints 15.984px (measured 2026-11-21).
+ *
+ * `measureChromeGeometry` reads the copyright node's computed style, which needs
+ * no resolution. Measured wins when present; an absent fact keeps the guess so
+ * profiles measured before `chromeSize` existed still render.
+ *
+ * Pure, so the overlay is testable without a browser.
+ */
+export function applyMeasuredChromeSize(
+	chrome: ForgeChrome | undefined,
+	geometry: ForgeChromeGeometry | undefined
+): boolean {
+	const measured = geometry?.chromeSize;
+	if ( ! chrome || typeof measured !== 'string' || ! /^\d+(\.\d+)?px$/.test( measured ) ) {
+		return false;
+	}
+	if ( chrome.chromeSize === measured ) {
+		return false;
+	}
+	chrome.chromeSize = measured;
+	return true;
+}
+
+/**
  * The tokens that name a theme / colour-mode CONTROL (not a layout class).
  * Deliberately narrow: `.theme-header` or a `color-mode-banner` must not be
  * mistaken for a toggle.

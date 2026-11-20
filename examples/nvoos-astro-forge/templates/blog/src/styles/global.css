@@ -2794,6 +2794,46 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	letter-spacing: var(--ds-title-ls, normal);
 }
 
+/* A MEASURED device size is not an anchor for the clamp above — it is the value
+ * the source paints at that device, so it replaces the whole `clamp()`.
+ *
+ * The two clamps shrink a headline to a hard-coded floor (1.5rem / 1.75rem),
+ * which is a guess about the source's phone scale: monicarajiv's band title is
+ * 22.2px on desktop and 16px under 768px, so the hero clamp's 28px floor held
+ * the headline at the 22.2px cap — a phone headline 39% larger than the source's
+ * (measured 2026-11-21). Where the source does not change size at a device the
+ * var is absent and the clamp stands.
+ *
+ * These sit AFTER every clamp definition on purpose: the selectors are as
+ * specific as the rules they override, so source order decides. */
+@media (width<=1024px) {
+	.ds-hero-split .ds-title {
+		font-size: var(--ds-title-size-md, clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem))));
+	}
+
+	.ds-section-wrap--hero .ds-title {
+		font-size: var(--ds-title-size-md, clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h1, 2.25rem))));
+	}
+
+	.ds-body .ds-title {
+		font-size: var(--ds-title-size-md, clamp(1.5rem, 2.5vw + 0.5rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem))));
+	}
+}
+
+@media (width<=767px) {
+	.ds-hero-split .ds-title {
+		font-size: var(--ds-title-size-sm, clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem))));
+	}
+
+	.ds-section-wrap--hero .ds-title {
+		font-size: var(--ds-title-size-sm, clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h1, 2.25rem))));
+	}
+
+	.ds-body .ds-title {
+		font-size: var(--ds-title-size-sm, clamp(1.5rem, 2.5vw + 0.5rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem))));
+	}
+}
+
 /* The centered heading band (125 §7) — title + divider ride the grid's
  * justify-items; the text centers like the source's aux-widget-inner. */
 .ds-body--center {
