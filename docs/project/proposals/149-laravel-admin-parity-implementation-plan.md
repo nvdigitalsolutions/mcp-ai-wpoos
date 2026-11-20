@@ -10618,6 +10618,7 @@ The contract row moved `planned → read-only`, gained its `files` entry and a
 | Focused run (5 files) | **40 tests / 598 assertions, 0 failures** |
 | Full app suite | **1575 tests / 19,080 assertions, 0 failures** (CI `App suite (SQLite)`) |
 | phpcs (`phpcs-laravel.xml.dist`, 8 files) | **0 errors** — one pre-existing 133-char warning in `AdminNavigationGroup`, untouched |
+| `PHPCompatibilityWP` (CI, changed files) | **0 errors** — after a file-scoped suppression of one sniff that mis-parses enum bodies (§106.10) |
 | `bin/audit-surface-ownership.php` | 47 surfaces, **38** Filament-built (15 `/ops`, 25 `/admin`), **6** console-only, 0 planned-only, 1 inert |
 | Live page, `/admin/default/command-centre` | **200**, 168 KB, all six tiles and both honesty strings present |
 
@@ -10682,3 +10683,39 @@ through a data provider, and the local run had pointed `NVOOS_PM_FIXTURE` at a
 path the runtime copy does not have — so both classes reported "No tests found"
 and those 15 were silently absent. The same lesson twice in one section: an
 empty data provider does not fail, it disappears.
+
+### 106.10 A check that only fails when you touch the file
+
+`PHP Compatibility Check` went red on this PR for code this slice did not write.
+`AdminNavigationGroup` is an enum whose three methods (`getLabel`, `getIcon`,
+`items`) use `$this`, and `PHPCompatibilityWP` 2.1.8 does not parse PHP 8.1
+enum bodies: it treats each method as a plain function and rejects `$this` with
+`PHPCompatibility.Variables.ForbiddenThisUseContexts.OutsideObjectContext`.
+
+That is one probe away from being provable, and the probe says no code change
+fixes it:
+
+| Subject | The line | Verdict |
+|---|---|---|
+| A class | `match ($this->v)` | passes |
+| An enum | `return 'literal';` | passes |
+| An enum | `return $this->value;` | **fails** |
+| An enum | `switch ($this)` | **fails** |
+| An enum | `match ($this)` | **fails** |
+
+So rewriting `match` into `switch` — the obvious repair — does not help, and no
+form satisfies the sniff while the enum implements `HasLabel` and `HasIcon`,
+which are instance methods by definition.
+
+The job only inspects **changed** files. That is why a file which has shipped for
+many slices fails now: it was touched. The failure is latent for every enum in
+the repository, and the next PR to edit one will meet it again.
+
+The response is one file-scoped `phpcs:disable` for that sniff, with the probe
+recorded in the comment, rather than a refactor of the navigation model or a
+loosened CI step. The rest of the file is still judged by WPCS and by the Laravel
+standard. **A follow-up should upgrade `phpcompatibility/phpcompatibility-wp`**
+when a release parses enums; until then, suppressing the one wrong sniff is
+cheaper than abandoning enums, and the alternative — a plain class with
+constants — would cost the `cases()`-driven contract that `AdminNavigationTest`
+and `SurfaceOwnershipTest` are built on.
