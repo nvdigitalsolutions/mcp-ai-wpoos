@@ -1848,6 +1848,66 @@ describe( 'scaffold — form delivery mode (direct vs bridge)', () => {
 		).rejects.toThrow( /forms\.mail/ );
 	} );
 
+	it( 'refuses a Turnstile site key that is a placeholder or a bad paste', async () => {
+		for ( const siteKey of [ 'REPLACE_ME', '0x4AAAAAAGCKYhse', 'paste-here' ] ) {
+			const root = await tempDir();
+			const target = path.join( root, `turnstile-bad-${ siteKey.length }` );
+			await expect(
+				scaffold( {
+					profile: {
+						...PROFILE,
+						deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+						forms: {
+							delivery: 'direct',
+							mail: { provider: 'brevo', from: 'a@b.c', to: 'd@e.f' },
+							turnstile: { siteKey },
+						},
+					},
+					targetDir: target,
+					template: 'blog',
+				} )
+			).rejects.toThrow( /not a Turnstile site key/ );
+		}
+	} );
+
+	it( 'accepts a real and a documented test Turnstile site key', async () => {
+		for ( const siteKey of [ '0x4AAAAAAGCKYhseWgY5Z15-', '1x00000000000000000000AA' ] ) {
+			const root = await tempDir();
+			const target = path.join( root, `turnstile-ok-${ siteKey.slice( 0, 2 ) }` );
+			await scaffold( {
+				profile: {
+					...PROFILE,
+					deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+					forms: {
+						delivery: 'direct',
+						mail: { provider: 'brevo', from: 'a@b.c', to: 'd@e.f' },
+						turnstile: { siteKey, action: 'contact', onProviderError: 'allow' },
+					},
+				},
+				targetDir: target,
+				template: 'blog',
+			} );
+
+			const endpoint = await readFile( path.join( target, 'src', 'pages', 'api', 'forms', 'submit.ts' ), 'utf8' );
+			expect( endpoint ).toContain( `const TURNSTILE_SITE_KEY: string = '${ siteKey }';` );
+
+			// A key without a named secret is a form that verifies NOTHING (the
+			// endpoint warns once and accepts), so the env example must say it.
+			const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+			expect( env ).toContain( 'TURNSTILE_SECRET=' );
+			expect( env ).not.toMatch( /TURNSTILE_SECRET=\S+/ );
+		}
+	} );
+
+	it( 'omits the Turnstile secret from the env example without a site key', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'turnstile-nokey' );
+		await scaffold( { profile: directProfile(), targetDir: target, template: 'blog' } );
+
+		const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+		expect( env ).not.toContain( 'TURNSTILE_SECRET' );
+	} );
+
 	it( 'refuses a direct fallback outside the managed runtime', async () => {
 		const root = await tempDir();
 		const target = path.join( root, 'fallback-static' );

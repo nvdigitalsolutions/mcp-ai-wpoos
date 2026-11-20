@@ -4419,9 +4419,23 @@ async function scaffoldProject(
 			'forms.delivery: "direct" requires deploy.runtime: "managed" — a static site has nowhere to keep the provider key. Use delivery: "bridge" (WordPress owns the mailer) or set the managed runtime.'
 		);
 	}
-	if (directDelivery && !profile.forms?.mail) {
+	if ( directDelivery && !profile.forms?.mail ) {
 		throw new Error(
 			'forms.delivery: "direct" requires forms.mail { provider, from, to } so the endpoint knows who sends and who receives.'
+		);
+	}
+	// The Turnstile site key is PUBLIC (it is rendered into the page), so it
+	// belongs in the profile — but a placeholder or a half-pasted key must not
+	// reach a build. A wrong key is not a build failure: it is a form whose
+	// widget never renders and whose submits all answer 400, discovered by the
+	// first visitor (2026-11-20: a Sri Lanka profile was about to reuse the
+	// Jamaica key, and Cloudflare scopes a widget to its hostnames). Refuse it
+	// here, where the message can say which key and why.
+	const turnstileKey = ( profile.forms?.turnstile?.siteKey ?? '' ).trim();
+	if ( turnstileKey !== '' && ! /^(?:0x|1x)[A-Za-z0-9_-]{20,}$/.test( turnstileKey ) ) {
+		const shown = turnstileKey.length > 24 ? `${ turnstileKey.slice( 0, 21 ) }…` : turnstileKey;
+		throw new Error(
+			`forms.turnstile.siteKey "${ shown }" is not a Turnstile site key — Cloudflare keys start "0x" (test keys "1x") and are 24 characters. Copy it from Cloudflare → Turnstile → the widget whose hostnames include this site.`
 		);
 	}
 	// `forms.fallback` is the bridge-mode companion: the provider key still has
@@ -4677,6 +4691,18 @@ async function scaffoldProject(
 					'',
 				  ]
 				: [] ),
+		// Turnstile — the widget is chrome, `siteverify` is the boundary, and a
+		// MISSING secret makes the endpoint accept every submission UNVERIFIED
+		// (it warns once and continues). An operator who never sees the name
+		// cannot set it, so the secret is emitted beside the key that needs it.
+		...( profile.forms?.turnstile?.siteKey
+			? [
+				'# Cloudflare Turnstile — the SECRET paired with forms.turnstile.siteKey.',
+				'# Unset accepts every form submission unverified (the endpoint warns once).',
+				'TURNSTILE_SECRET=',
+				'',
+			  ]
+			: [] ),
 			'# Stored redirects (Proposal 132) — the build reads the redirect rules',
 			'# your WordPress redirect plugin already stores (Redirection / Rank Math)',
 			'# from the Forge Bridge, so legacy URLs keep resolving after cutover.',
