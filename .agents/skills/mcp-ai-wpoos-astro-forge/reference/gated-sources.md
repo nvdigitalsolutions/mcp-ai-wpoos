@@ -126,6 +126,9 @@ in every mode. Authorization: the `wordpress_logged_in_fixture=1` cookie, the
   resolves files or registry names, then `openGate` runs `assertSafeHttpUrl`.
 - **Loopback needs the documented exemption** in tests: the CLI reads
   `NVOOS_FORGE_ALLOW_LOOPBACK=1`; the module reads `options.allowLoopback`.
+  Because `analyze` now probes the rendered page on every run, a loopback dev
+  site needs that env for `--write`-only runs too — the e2e's `site_analyze`
+  case and `tests/gate-cli.test.ts` both set it on the child process.
 
 ## 8. Remediation ladder (what we tell the operator)
 
