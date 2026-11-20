@@ -5,9 +5,11 @@ namespace App\Filament\Operator\Pages;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Health\SiteHealth;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /**
  * Runtime health — Proposal 149 §31, `/ops/site-health`.
@@ -38,7 +40,8 @@ class SiteHealthPage extends Page
 
     // After the audit log: diagnostics last, once the operational surfaces are
     // known.
-    protected static ?int $navigationSort = 13;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Health;
+    protected static ?int $navigationSort = 12;
 
     protected string $view = 'filament.operator.site-health';
 

@@ -6,6 +6,7 @@ use App\Filament\Operator\Resources\Models\Pages\ManageModels;
 use App\Models\ModelConfig;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Models\ModelConfigCatalogue;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Closure;
 use Filament\Actions\Action;
@@ -22,6 +23,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -62,8 +64,9 @@ class ModelConfigResource extends Resource
     protected static ?string $pluralModelLabel = 'models';
 
     protected static ?string $navigationLabel = 'Models';
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Platform;
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 26;
 
     public static function form(Schema $schema): Schema
     {

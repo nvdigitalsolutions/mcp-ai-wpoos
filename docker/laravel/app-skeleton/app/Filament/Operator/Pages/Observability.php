@@ -6,9 +6,11 @@ use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Diagnostics\RoutingExportStore;
 use App\Support\Observability\TraceRuns;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /**
  * Observability — Proposal 149 §84, `/ops/observability`.
@@ -40,7 +42,8 @@ class Observability extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSignal;
 
     // After token analytics (14).
-    protected static ?int $navigationSort = 15;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Insight;
+    protected static ?int $navigationSort = 17;
 
     protected string $view = 'filament.operator.observability';
 

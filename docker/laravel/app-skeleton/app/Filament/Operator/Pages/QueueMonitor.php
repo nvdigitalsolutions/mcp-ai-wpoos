@@ -6,11 +6,13 @@ use App\Models\FailedJob;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -51,6 +53,7 @@ class QueueMonitor extends Page implements HasTable
     protected static ?string $title = 'Failed jobs';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Operations;
 
     protected static ?int $navigationSort = 10;
 

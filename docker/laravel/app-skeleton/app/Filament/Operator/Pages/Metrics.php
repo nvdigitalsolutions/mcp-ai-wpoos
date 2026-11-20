@@ -8,9 +8,11 @@ use App\Support\Metrics\MetricCatalogue;
 use App\Support\Metrics\MetricsReport;
 use App\Support\Metrics\TraceMetrics;
 use App\Support\Reports\TokenUsageReport;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /**
  * The metric catalogue — Proposal 155 §4 D6 and D7, `/ops/metrics` (§99).
@@ -43,7 +45,8 @@ class Metrics extends Page
 
     // After budgets (17) and datasets (18): the reference surfaces that describe
     // what the runtime measures and may spend.
-    protected static ?int $navigationSort = 19;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Insight;
+    protected static ?int $navigationSort = 16;
 
     protected string $view = 'filament.operator.metrics';
 

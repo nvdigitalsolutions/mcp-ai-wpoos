@@ -7,11 +7,13 @@ use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Schedules\ScheduleRunner;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -60,8 +62,9 @@ class Scheduler extends Page implements HasTable
     protected static ?string $title = 'Scheduler';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClock;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Operations;
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 11;
 
     protected string $view = 'filament.operator.scheduler';
 

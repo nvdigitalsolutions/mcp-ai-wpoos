@@ -12,6 +12,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -68,6 +69,29 @@ class OperatorPanelProvider extends PanelProvider
             // and drift-gated by AdminThemeDriftTest. Never hard-code a colour
             // here: the gate can only see what the generator writes.
             ->colors(AdminTheme::FILAMENT_COLORS)
+            // Collapsible rail, mirroring the customer panel (Proposal 149 §115).
+            //
+            // This is not cosmetic. `sidebar/group.blade.php` throws
+            // "Navigation group […] has an icon but one or more of its items also
+            // have icons" unless the group renders as an icon that opens a
+            // dropdown — and that only happens when the sidebar is collapsible.
+            // `OperatorNavigationGroup` declares an icon on every case, so without
+            // this line the whole panel is a 500, not a styling defect.
+            //
+            // Consequence, same as on `/admin`: with an icon on the group and a
+            // collapsible sidebar, Filament drops each item's own icon from the
+            // expanded list (`$hasDropdown` ⇒ `$itemIcon = null`) and keeps it in
+            // the rail dropdown. The expanded sidebar is group icon + label, then
+            // text links.
+            ->sidebarCollapsibleOnDesktop()
+            // The same keyboard/screen-reader correction the customer panel makes:
+            // Filament's group headers are mouse-only `<div>`s. The partial is
+            // panel-agnostic — it works from `document.currentScript.closest('nav')`
+            // — so one view serves both panels.
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_END,
+                static fn () => view('filament.admin.sidebar-disclosure'),
+            )
             ->discoverResources(in: app_path('Filament/Operator/Resources'), for: 'App\Filament\Operator\Resources')
             ->discoverPages(in: app_path('Filament/Operator/Pages'), for: 'App\Filament\Operator\Pages')
             ->pages([

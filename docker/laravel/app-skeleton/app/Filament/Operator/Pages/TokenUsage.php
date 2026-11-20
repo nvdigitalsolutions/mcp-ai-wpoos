@@ -5,9 +5,11 @@ namespace App\Filament\Operator\Pages;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Reports\TokenUsageReport;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Livewire\Attributes\Url;
 
 /**
@@ -41,7 +43,8 @@ class TokenUsage extends Page
 
     // With the operational read surfaces: queue (10), diagnostics (12), then
     // this, before the audit/asset pages.
-    protected static ?int $navigationSort = 13;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Spend;
+    protected static ?int $navigationSort = 20;
 
     protected string $view = 'filament.operator.token-usage';
 

@@ -6,10 +6,12 @@ use App\Filament\Concerns\BuildsSettingsForm;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Settings\SettingsService;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /**
  * Platform settings — Proposal 149 §17, the `/ops` half of the settings surface.
@@ -38,6 +40,7 @@ class Settings extends Page implements HasForms
     protected static ?string $title = 'Platform settings';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Settings;
 
     protected static ?int $navigationSort = 90;
 

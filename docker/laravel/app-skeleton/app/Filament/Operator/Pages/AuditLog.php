@@ -5,9 +5,11 @@ namespace App\Filament\Operator\Pages;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AuditTrail;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /**
  * The admin audit trail — Proposal 149 §25, `/ops/audit-log`.
@@ -39,7 +41,8 @@ class AuditLog extends Page
 
     // After the operational surfaces (queue, scheduler, credentials), before
     // platform settings.
-    protected static ?int $navigationSort = 12;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Access;
+    protected static ?int $navigationSort = 24;
 
     protected string $view = 'filament.operator.audit-log';
 

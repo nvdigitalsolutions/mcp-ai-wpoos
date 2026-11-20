@@ -215,13 +215,13 @@ The earlier "unproven" note was an environment fact, not a doubt about the asser
 
 ## 8. Gaps this exposes
 
-Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-20 after the `/admin` dashboards port (plan §113, `bin/audit-surface-ownership.php`): **48 surfaces · 41 built on a panel · 4 console-only · 0 planned-only · 1 inert**.
+Ordered by leverage, each small enough to be one slice. Status re-measured 2026-11-20 after the operator token inventory (plan §114, `bin/audit-surface-ownership.php`): **48 surfaces · 41 built on a panel · `/ops` 16 and `/admin` 28 panel rows · 4 console-only · 0 planned-only · 1 inert**.
 
 1. ✅ **`SettingsSchema` scope + console projection** — shipped, plan §15; asserted by `SettingsProjectionTest`.
 2. ✅ **`/admin` settings page** — shipped as `/admin/{estate}/settings` plus `/ops/settings`, plan §16–§17. One writer, a storage-key map, and the estate/platform split.
 3. ✅ **Workflow runs list** in the admin — shipped, plan §18, including the `tenant_id` the run table was missing.
 4. ✅ **Tool catalogue projection** for the console — shipped, plan §22. The console's honest projection is the assistant's enabled tools plus presets, not the registry.
-5. ✅ **PAT manager** split from assistant credentials — shipped, plan §19 (contract) and §26 (the user-scoped half). **Remaining:** the operator cross-estate view; `tokens.personal` is still `ops: planned`.
+5. ✅ **PAT manager** split from assistant credentials — shipped, plan §19 (contract) and §26 (the user-scoped half). **Remaining:** none — the operator cross-estate inventory shipped as plan §114 (`ops: planned` → `full`, read-only, cross-estate revoke still undecided).
 6. ✅ **`/ops` tail** — `site-health` (§31), `assets` (§33), `reports` (§34) and `conversation-import` (§37) all shipped. `identity-provider` and `datasets` remain `planned` for the reasons recorded in plan §35–§36; `onboarding` is `absent` by decision.
 7. ✅ **`/admin` consumer-port run** — blueprints, portability, MCP apps, security, remote sites, agent-skills, OKF and paper-store shipped in plan §48–§54; the toolkit renderer followed in §56. **`dashboards` left this list in plan §113**: the 10 → 7 catalogue merge shipped on both runtimes in §112, and `/admin/{estate}/dashboards` now renders the dashboards this runtime can actually feed. `media` left it in §109; `command-centre` in §106; `chat-channels` when the manifest shipped.
 

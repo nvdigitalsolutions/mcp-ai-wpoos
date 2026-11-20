@@ -5,9 +5,11 @@ namespace App\Filament\Operator\Pages;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Assets\AssetRegister;
+use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 /**
@@ -39,7 +41,8 @@ class AssetInventory extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     // With the other operator diagnostics, before site health.
-    protected static ?int $navigationSort = 12;
+    protected static string|UnitEnum|null $navigationGroup = OperatorNavigationGroup::Health;
+    protected static ?int $navigationSort = 14;
 
     protected string $view = 'filament.operator.asset-inventory';
 
