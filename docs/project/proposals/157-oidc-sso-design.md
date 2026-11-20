@@ -135,7 +135,7 @@ an operator's time, which is why it is logged rather than shown).
 | **I5a-1** | `Auth0OidcClient`: discovery (cached), `authorizeUrl()`, `exchangeCode()`. Config keys. No routes. | not started |
 | **I5a-2** | `Auth0SsoController`: `/start` + `/callback`, session state, PKCE, nonce, deny-by-default mapping, uniform failures. **This is the slice that carries the risk.** | not started |
 | **I5a-3** | Console: a "Sign in with SSO" button, `/features` gains `sso`, the `/auth0/start` link. | not started |
-| **I5b** | JIT provisioning — **needs a product decision** (§8). | blocked on decision |
+| **I5b** | JIT provisioning — **decided 2026-11-20** by [158](158-parity-open-decisions.md) D2–D4: off by default, a companion `nvoos_estate_domains` table, `viewer` in the issuing estate. | **unblocked** |
 | **I5c** | SAML — a separate increment, only if a customer requires it (D3). | not requested |
 
 ## 7. Test plan for I5a-2
@@ -162,17 +162,29 @@ fake only the network (`Http::fake` for discovery, token endpoint and JWKS).
 12. A linked subject who is a member of no estate: authentication succeeds and
     `ResolveApiTenant` refuses afterwards, which is where that rule lives.
 
-## 8. What still needs a decision before I5b
+## 8. What was decided before I5b
 
-1. **JIT on or off by default.** D4 says off. Confirm that is the product intent,
-   because it means a new staff member cannot self-serve.
-2. **The allowlist's home.** `email_verified` plus a domain list is per estate
-   data, which means a new setting — and therefore a generator change, or a
-   companion table, or an env var per estate. This is the concrete reason I5b is
-   not a code-only slice.
-3. **What a provisioned subject gets.** Membership in the estate that issued the
-   login, with which role? `viewer` is the only safe default, and it makes the
-   first login a dead end unless someone promotes them — which may be the point.
+All three questions below were answered on 2026-11-20 by
+[158 — the parity open decisions](158-parity-open-decisions.md). The answers are
+recorded here as the outcome rather than restated; 158 carries the reasoning,
+the published practice it rests on, and the conditions attached to each.
+
+1. **JIT on or off by default — off, per-estate opt-in** (158 D2, extending 156
+   D4). With one added requirement: the unprovisioned-but-authenticated state
+   must be named and listable, because an unexplained dead end reads as broken
+   and is what gets a deny-by-default decision reversed.
+2. **The allowlist's home — a companion table**, `nvoos_estate_domains` (158 D3).
+   Not a setting: `nvoos_tenant_settings` is `(tenant_id, key) → TEXT`, a scalar
+   store with no list type, so a list there means unenforceable uniqueness or a
+   new type threaded through the catalogue. Not an env var: process-global, not
+   per-estate, and not editable by the estate it belongs to. Verified domains
+   only, exact match, no subdomain inheritance by default.
+3. **What a provisioned subject gets — `viewer`, in the issuing estate, and
+   nothing else** (158 D4). No cross-estate membership, and no role derived from
+   IdP claims: mapping groups to roles hands role assignment to whoever
+   administers the mappings, which is usually a different team from the one
+   accountable for the estate. The first-login dead end is the design; it is
+   resolved by the pending-promotion surface, not by a higher default.
 
 ## 9. What would change this design
 

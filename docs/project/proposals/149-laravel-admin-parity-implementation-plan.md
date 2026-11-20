@@ -10752,12 +10752,17 @@ A page over un-owned rows is the §41 mistake with a different noun: the reason
 that slice touched the schema was that a read surface made an existing gap into
 a leak.
 
-### 107.2 The one row blocked on a decision: `dashboards`
+### 107.2 The one row that was blocked on a decision: `dashboards`
 
 The 10 → 7 catalogue change is still the gate
-(`149-dashboards-redundancy-review.md`). Porting ten dashboards in order to port
-seven is the wrong order, and the merge proposal in that review is a product
-decision. **Ask before starting**; do not pick seven unilaterally.
+(`149-dashboards-redundancy-review.md`), but it is no longer an open question:
+[158](158-parity-open-decisions.md) D1 accepts the review's §4 as written — two
+merges, five unchanged surfaces — with three conditions (alias the retired ids,
+ship WordPress first in the same change, keep the number at seven).
+
+**It is still a Wave 5, cross-runtime task and still not in the Laravel lane.**
+The row stays `planned`; what is decided is the shape of the future row, not the
+row.
 
 ### 107.3 Four rows that are not work
 
@@ -10790,3 +10795,50 @@ reconcile the tree first:
 `diff -rq docker/laravel/app-skeleton/tests <runtime>/tests`. `Only in
 <skeleton>` is evidence that the suite is smaller than it claims — and never run
 two full suites at once in that container, which has no `ps` or `kill`.
+
+## 108. The open decisions closed (2026-11-20)
+
+[158 — the parity open decisions](158-parity-open-decisions.md) answers the six
+questions §107 and the ownership document's §9 had parked. §107's ordering does
+not change — `media` is still first, because it needed no decision — but nothing
+below is waiting on anyone any more.
+
+| Decision | Answer | Effect on the board |
+|---|---|---|
+| D1 — `dashboards` | accept 10 → 7, plus aliases and a WordPress-first change | row stays `planned`; the *shape* is known, the merge is Wave 5 |
+| D2 — JIT default | **off**, per estate, with a named pending state | I5b is buildable |
+| D3 — allowlist | `nvoos_estate_domains` companion table | one migration |
+| D4 — provisioned role | `viewer`, issuing estate only, no claims mapping | one default |
+| D5 — S-1/S-2/S-4 | S-1 closed by §104; no console cross-estate view; never impersonation | the operator model is fixed |
+| D6 — inert identity keys | stay inert until I5 | no change |
+
+Three things are worth reading there rather than here, because they are arguments
+and not outcomes:
+
+- **why 10 → 3 was rejected.** Not preference — the review's inventory: `cre`,
+  `law`, `registration` and `eca` share a render contract and nothing else, so
+  merging them deletes four domains and keeps one navigation menu with a chart
+  in it.
+- **why a scalar settings store cannot hold a domain list.**
+  `nvoos_tenant_settings` is `(tenant_id, key) → TEXT`; a list there is either
+  JSON with unenforceable uniqueness or a new type threaded through the catalogue,
+  the writer and the renderer — a larger change than a table, buying less.
+- **why "no role from IdP claims" is a security position.** Mapping groups to
+  roles hands role assignment to whoever administers the mappings, which is
+  usually a different team from the one accountable for the estate.
+
+### 108.1 One correction that came out of writing it
+
+The dashboards review's §6 said "the 10 → 8 recommendation" while its own §4 said
+10 → 7. Two merges (3 → 1 and 2 → 1) give seven, so §6 was wrong. It is corrected
+in place, because a number that exists in two places is how the wrong one gets
+implemented — the same failure §106.8 records for stale prose beside a correct
+contract.
+
+### 108.2 What this does not change
+
+No slice starts because of this document. `media` remains first (§107.1) and I5b
+becomes a normal slice — one migration, one auth-path lookup, one default role,
+one visible pending state — rather than a question. The inert identity keys keep
+their state and their exit condition: a key leaves the list the moment it gains a
+reader.

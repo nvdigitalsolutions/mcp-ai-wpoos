@@ -102,6 +102,14 @@ The merge is therefore a **Wave 5 task with a matching WordPress change**, not a
 
 ## 6. What this changes now
 
-- The contract's `dashboards` row records the finding and the 10 → 8 recommendation, so the next person does not re-derive it.
-- No `DashboardsTest` change, no catalogue change.
+- The contract's `dashboards` row records the finding and the **10 → 7**
+  recommendation, so the next person does not re-derive it.
+- **Decided 2026-11-20** — [158](158-parity-open-decisions.md) D1 accepts this
+  review's §4 as written (two merges, five unchanged surfaces) and adds three
+  conditions: alias the retired ids, ship WordPress first in the same change, and
+  keep the number at seven. The earlier "10 → 8" figure in this bullet was stale;
+  two merges (3 → 1 and 2 → 1) give seven, which is what §4 has always said.
+- No `DashboardsTest` change, no catalogue change **yet**. The test pins the
+  disabled entries and their toolkit flags; changing that set belongs to the merge
+  itself, not to this review.
 - S-3's other half — whether an unlicensed toolkit *disappears* or *renders an upsell* — remains open and is deferred to Wave 3 with the manifests: absence is an authorisation statement, an upsell is a product surface, and the two should not be decided per-dashboard.
