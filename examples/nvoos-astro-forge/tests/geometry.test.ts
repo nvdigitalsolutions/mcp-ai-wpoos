@@ -54,6 +54,64 @@ describe( 'diffGeometry', () => {
 		expect( deviations[ 0 ].delta ).toBe( 500 );
 	} );
 
+	it( 'fails when the band’s CONTENT column is the wrong width', () => {
+		// The wrapper spans the viewport on both sides, so a band that
+		// shrink-wrapped to its text passed every box metric while its copy
+		// rendered 989px inside the source's 1280px container.
+		const deviations = diffGeometry(
+			geometry( band( { content: { width: 1280, x: 80 } } ) ),
+			geometry( band( { content: { width: 989, x: 226 } } ) )
+		);
+		const width = deviations.find( ( deviation ) => deviation.metric === 'content width' );
+		expect( width ).toBeDefined();
+		expect( width?.severity ).toBe( 'fail' );
+		expect( width?.delta ).toBe( -291 );
+	} );
+
+	it( 'warns when the content column is the right width but sits off-centre', () => {
+		const deviations = diffGeometry(
+			geometry( band( { content: { width: 1280, x: 80 } } ) ),
+			geometry( band( { content: { width: 1280, x: 60 } } ) )
+		);
+		expect( deviations ).toHaveLength( 1 );
+		expect( deviations[ 0 ].metric ).toBe( 'content offset' );
+		expect( deviations[ 0 ].severity ).toBe( 'warn' );
+	} );
+
+	it( 'leaves a baseline recorded before the content box was measured alone', () => {
+		// An older profile has no `content` — the gate must not invent a failure.
+		expect( diffGeometry( geometry( band() ), geometry( band() ) ) ).toEqual( [] );
+	} );
+
+	it( 'fails an asymmetric row rebuilt as equal lanes', () => {
+		// 432 / 432 / 571 rendered 469 / 469 / 469: every lane kept its height, so
+		// the height-only column diff passed while the black slab shrank a third.
+		const deviations = diffGeometry(
+			geometry( band( { columns: [ 536, 536, 536 ], columnWidths: [ 432, 432, 571 ] } ) ),
+			geometry( band( { columns: [ 536, 536, 536 ], columnWidths: [ 469, 469, 469 ] } ) )
+		);
+		const lanes = deviations.filter( ( deviation ) => /lane \d width/.test( deviation.metric ) );
+		expect( lanes ).toHaveLength( 3 );
+		expect( lanes.every( ( deviation ) => deviation.severity === 'fail' ) ).toBe( true );
+	} );
+
+	it( 'ignores lane widths inside the tolerance, and when the row changed length', () => {
+		expect(
+			diffGeometry(
+				geometry( band( { columnWidths: [ 432, 432, 571 ] } ) ),
+				geometry( band( { columnWidths: [ 435, 429, 576 ] } ) )
+			)
+		).toEqual( [] );
+		// A two-lane source row against a three-card grid says nothing about lane
+		// widths — the column COUNT deviation already reports that.
+		expect(
+			diffGeometry(
+				geometry( band( { columnWidths: [ 432, 571 ] } ) ),
+				geometry( band( { columnWidths: [ 469, 469, 469 ] } ) )
+			)
+		).toEqual( [] );
+	} );
+
 	it( 'fails a band missing from the build', () => {
 		const deviations = diffGeometry( geometry( band() ), {} );
 
