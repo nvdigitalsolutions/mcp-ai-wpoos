@@ -230,6 +230,13 @@ jobs:
       - name: Get changed PHP files
         id: changed-files
         if: github.event_name == 'pull_request'
+        # Same wedge the `wpcs` job above documents: when this action stalls it
+        # sits in_progress until the 6-hour job ceiling, and every step after it
+        # is left pending. A pending check does not fail a PR, so the timeout is
+        # what turns an indefinite hang into a bounded skip; `continue-on-error`
+        # is what keeps the skip from failing the job.
+        timeout-minutes: 5
+        continue-on-error: true
         uses: tj-actions/changed-files@v45
         with:
           files: |
