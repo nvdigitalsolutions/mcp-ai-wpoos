@@ -12153,9 +12153,17 @@ therefore has to answer a question this slice leaves open: whether a scoped
 principal should be **default-denied** on unannotated routes. Default-deny is the
 safer rule and the expensive one — it needs every route a machine should reach to
 carry a declaration, and a route that forgets becomes unusable rather than
-over-permissive. That is the right trade for a credential that exists to be narrow,
-but it is a decision with its own blast radius and belongs with the route
-annotation, not before it.
+over-permissive. That is the right trade for a credential that exists to be narrow.
+The question was weighed on 2026-11-21 and answered: **default-deny**, recorded in
+[159](159-machine-principal-decision.md) §10. The leaning written here — that the
+question "belongs with the route annotation, not before it" — is superseded; the
+paragraph above stays as the dated record of why it looked like a later decision.
+
+§10 also records what this slice could not have known: the naive wiring is a **no-op**.
+`PrincipalScope::forRequest()` reads `null` as unrestricted, and group middleware runs
+before route-level `auth:sanctum`, so attaching the guard at the `api` group without a
+priority entry places it before authentication and enforces nothing while appearing
+installed. Slice 2 therefore carries an ordering test, not only a scope test.
 
 ### 119.5 Gates
 

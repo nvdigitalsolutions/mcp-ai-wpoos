@@ -137,6 +137,7 @@ Concretely:
 | [149](149-laravel-admin-parity-implementation-plan.md) §117.2 | `/api/v1/tools` claim corrected: it *is* tenant-resolved and *does* accept Auth0 tokens |
 | `contracts/surface-ownership.json`, `identity-provider` | the "takes no Auth0 tokens yet" tail replaced |
 | 149 §102.4 item 3 | left as the dated record; superseded here |
+| 149 §119.4 | its open question is answered by §10: default-**deny**; the "belongs with the route annotation, not before it" leaning is reversed |
 
 ## 8. Slices, in order
 
@@ -144,7 +145,10 @@ Concretely:
    `assistant:{id}` in `abilities`, add `scope:` to the route group, prove that an
    out-of-scope token gets 403 and an in-scope one passes. Nothing is enabled by this.
 2. **Wire the three settings** to external callers only, using WP's defaults
-   (`list` true, `create`/`delete` false), and make the keys non-inert.
+   (`list` true, `create`/`delete` false), and make the keys non-inert. This slice
+   also installs **default-deny** from §10: one `api`-group attach, priority after
+   `Authenticate`, declarations read from the route, `scope:any` for self routes, and
+   the ordering test that proves it is not a no-op.
 3. **Minting**, first as a console command (the `nvoos:auth0-link` precedent), then a
    panel form if it earns one.
 4. **Tool execution for assistant scope**, which is a new route and its own decision
@@ -164,3 +168,166 @@ Concretely:
   §5.
 - **If tool execution for machines turns out to be a product requirement now**,
   slice 4 moves ahead of 2 and 3, because it is the only part with an action in it.
+
+## 10. Decision: a scoped credential is default-denied on an unannotated route
+
+**Taken 2026-11-21.** A credential that carries a scope is admitted **only** by a
+route that declares which scope it needs. A route that declares nothing still admits
+sessions, Auth0 users and `['*']` tokens exactly as before, and refuses a scoped
+token with the 403 shape slice 1 already returns for a blank requirement
+(`principal_scope_required`, naming `required` and `granted`).
+
+This answers the question [149](149-laravel-admin-parity-implementation-plan.md)
+§119.4 deliberately left open, and reverses the leaning recorded there.
+
+### 10.1 Why the safer default is also the honest one
+
+| Rule | A forgotten annotation becomes | Who notices |
+|---|---|---|
+| Default-**allow** | a silent escalation: the credential reaches more than it was minted for | nobody, until an incident |
+| Default-**deny** | an outage on one route for scoped tokens | the integration, in seconds |
+
+Both rules fail somewhere; they differ in *direction*. The purpose of a scoped
+credential is to be narrow, so closure is the feature rather than the tax. The
+comparison is asymmetric in a second way too: default-allow's failure is invisible,
+while default-deny's failure is a 403 with the route named in it.
+
+The counter-argument is real and is kept: default-deny means **every route a machine
+should reach must carry a declaration**, and the rule protects nothing on a route the
+middleware was never attached to. §10.3 is therefore part of the decision rather than
+an implementation note — a default-deny attached in the wrong place is
+indistinguishable from default-allow.
+
+### 10.2 What it costs, measured
+
+Measured in this runtime on 2026-11-21 (`php artisan route:list --json`):
+
+| | Count |
+|---|---|
+| Registered routes | 240 |
+| Under `api/` | 166 |
+| API routes behind `auth:sanctum,auth0` — the machine-reachable set | **159** |
+| `scope:` declarations in `routes/` today | **0** |
+
+159 reads like a large annotation bill, but it is not one. Those routes come from
+**one** machine-reachable group (`routes/api.php` line 118) plus a handful of nested
+groups that already exist for other reasons (`throttle:chat`, `throttle:console`,
+`org`, `pro/*`). Annotation cost tracks *the number of distinct scopes*, not the
+number of routes: one declaration on a group covers every route inside it, and a
+nested group needs its own only where it wants something narrower than its parent.
+
+The realistic slice-2 shape is therefore one attach plus declarations on the subtrees
+a machine is actually for (the assistant routes), not 159 edits.
+
+### 10.3 The implementation shape — and the trap that would make it a no-op
+
+Two properties of Laravel's pipeline decide whether "default-deny" is real:
+
+1. **Middleware is additive.** Attaching `scope` with no arguments at an outer group
+   and `scope:assistant` at an inner one does not mean "override" — *both* run, and
+   the outer one denies everything. Default-deny cannot be expressed as a bare outer
+   attach with inner overrides.
+2. **`forRequest(null)` is unrestricted.** `PrincipalScope::forRequest()` returns
+   `unrestricted()` when there is no user, so a `scope` middleware running *before*
+   `auth:sanctum` reads no principal, allows everything, and silently enforces
+   nothing.
+
+Point 2 is the trap. Route-level middleware runs after group middleware, and
+`SortedMiddleware` only reorders middleware named in the priority list; anything
+unlisted keeps its gathered position. So the obvious
+`$middleware->appendToGroup('api', EnsurePrincipalScope::class)` would place the guard
+**before** the route's own `auth:sanctum` and do nothing at all — while looking
+installed. The ordering must be stated, not assumed.
+
+So the rule is carried by data rather than by a second guard:
+
+1. Attach `EnsurePrincipalScope` **once** on the `api` group
+   (`$middleware->appendToGroup('api', …)`) — the group a Sanctum token can
+   authenticate on at all, so coverage is total rather than "where we remembered".
+2. Name it in `$middleware->priority([...])` **after**
+   `Illuminate\Auth\Middleware\Authenticate`, so it observes the resolved user.
+3. The middleware reads the route's own declarations from
+   `$request->route()->gatherMiddleware()` (verified present; it merges route and
+   controller middleware and dedupes by the full string, so `scope` and
+   `scope:assistant` coexist) and enforces those.
+4. **No declaration ⇒ denied** for a scoped principal. That is the same code path
+   §119.3 already tests for a blank requirement; slice 2 wires it, it does not
+   invent it.
+5. One test must prove the ordering, because the failure mode is silence: a scoped
+   token reaches an annotated route (200), is refused an unannotated one (403), and
+   an unauthenticated request is still 401 — auth first, so a missing credential is
+   never disguised as a 403.
+
+One consequence of that shape is easy to get backwards. The group instance is itself
+one of the entries `gatherMiddleware()` returns, and it carries no arguments — so it
+must collect only the **non-blank** requirements and ignore its own entry. Reading
+that blank entry as "this route declared a scope, and it is empty" would deny the very
+routes that had just declared one: a guard failing closed, so it looks safe, while
+refusing exactly the traffic it was installed for.
+
+With that in place, a route-level `scope:` is purely declarative — the group instance
+reads it, and the duplicate route-level run reaches the same verdict. That is why the
+declarations can stay in the route file where reviewers see them, without a second
+enforcement point to keep in sync.
+
+### 10.4 The escape hatch is a declaration, not a bypass
+
+Default-deny needs somewhere to say "any scoped principal may pass" — `/session/me`
+is the obvious case, since a machine reading its own identity has no narrower scope
+that makes sense. That is `scope:any`: explicit, greppable, and reviewed in the route
+file beside every other declaration. It needs a one-line special case in
+`PrincipalScope::allows()`, because `any` is not otherwise a valid capability; that is
+the only place the vocabulary grows.
+
+The hatch is deliberately *not* a config allowlist of URIs. An allowlist lives outside
+the route it protects, so the two drift apart and the route reads as annotated when it
+is not.
+
+### 10.5 Blast radius today: zero credentials
+
+No minting path writes a scope. Both minters (`NvoosSpikeToken` and the admin personal
+token page via `PersonalTokens`) produce Sanctum's default `['*']`, and
+`PersonalTokens` documents that as the stored truth. So this decision, applied today,
+refuses **no request that currently succeeds**. It becomes load-bearing the moment
+slice 3 mints the first `assistant:{id}` token — which is exactly why it is decided
+before slice 2 rather than after.
+
+### 10.6 What stays out of band, honestly
+
+- **`web.php`, Filament and Livewire.** A Sanctum token does not authenticate there,
+  so there is nothing for the guard to refuse. Machine tokens are an API surface.
+- **`Route::fallback` and unmatched URIs** never reach a route object, so the
+  middleware does not run. A scoped token hitting an unknown path gets the usual 404.
+  This is not a hole — there is no handler — but it does mean "default-deny" is a
+  statement about *routes*, not about *paths*.
+- **Non-HTTP surfaces** (console commands, queues) have no route and are governed by
+  their own gates, not by this one.
+
+### 10.7 How to audit for an unannotated route
+
+Because a missing declaration is now an outage rather than a silent permission, the
+audit has to be cheap enough to run in review:
+
+```sh
+# routes a scoped principal would be denied on
+php artisan route:list --json \
+  | jq -r '.[] | select(.uri|startswith("api/")) | .uri' | sort
+grep -rn "scope:" routes/
+```
+
+Any URI in the first list whose group carries no declaration is denied by design. The
+invariant worth pinning in CI is weaker and safer than "every route annotated": **the
+set of unannotated routes must not grow** — a deliberate snapshot, refreshed in the
+same PR that adds a route.
+
+### 10.8 What would change this decision
+
+- **If a machine needs a broad surface on day one** (a sync integration touching most
+  of `api/v1`), the annotation bill is paid once at the group and stays cheap. If it
+  instead needs *many distinct* scopes, revisit §5's option C rather than widening
+  `assistant`.
+- **If the unannotated-set snapshot keeps needing refreshes** for routes no machine
+  will ever call, the rule is being paid for by the wrong population; reconsider a
+  narrow attach plus an enumerated denylist.
+- **If MCP's OAuth 2.1 profile lands** (§9), audience becomes the axis; this section's
+  mechanics survive but its vocabulary does not.
