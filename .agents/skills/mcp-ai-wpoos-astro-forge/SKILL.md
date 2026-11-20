@@ -108,12 +108,20 @@ pass with a warning and scaffold the coming-soon page. Now:
   **refuses** a blocked source (`--allow-blocked` overrides); the wizard never
   allows it; MCP gains the read-only `gate_probe` and `design_apply` fails
   closed with the remediation ladder.
+- **The bridge corroborates the probe (P4).** Every probe also asks
+  `GET /wp-json/nvoos-forge/v1/gate` on the **forge bridge** plugin (v0.3.2).
+  A `404` means the plugin is absent; a JSON verdict (`maintenance`, `mode`,
+  `plugin`, `checkedAt`) turns an `open` **anonymous** HTML read into `gated` —
+  the cached-anonymous-page case HTML alone cannot distinguish. The bridge
+  reports the site's **anonymous** mode, so it must never downgrade an
+  authenticated read (a real login unlocks what the anonymous visitor sees).
 - **Never** spoof a crawler UA, solve a JS challenge, forge a cookie, or
   disable a production gate to make a build pass.
 
-Full contract, the probe classification table, the fixture's `WP_FIXTURE_GATE`
-modes and the implementation gotchas (async spawn vs an in-process fixture;
-`process.exit()` → `0xC0000409`; `<const T>` for `gateContextOptions`):
+Full contract, the probe classification table, the bridge route, the fixture's
+`WP_FIXTURE_GATE` / `WP_FIXTURE_BRIDGE_GATE` modes and the implementation
+gotchas (async spawn vs an in-process fixture; `process.exit()` →
+`0xC0000409`; `<const T>` for `gateContextOptions`):
 [`reference/gated-sources.md`](reference/gated-sources.md).
 
 ## The exit gate (CI-enforced)

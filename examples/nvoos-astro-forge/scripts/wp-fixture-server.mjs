@@ -604,6 +604,24 @@ export function createWpFixtureServer(port = PORT) {
 			json(res, data.postTypes);
 			return;
 		}
+		// Proposal 152 P4 — the bridge's gate-state route. `WP_FIXTURE_BRIDGE_GATE`
+		// selects the verdict; `absent` simulates a site without the plugin.
+		if (path === '/wp-json/nvoos-forge/v1/gate') {
+			const mode = process.env.WP_FIXTURE_BRIDGE_GATE ?? 'off';
+			if (mode === 'absent') {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'rest_no_route', message: 'No route was found matching the URL and request method.' }));
+				return;
+			}
+			const gated = mode === 'maintenance' || mode === 'coming_soon';
+			json(res, {
+				maintenance: gated,
+				mode: gated ? mode : 'off',
+				plugin: mode === 'coming_soon' ? 'elementor' : mode === 'maintenance' ? 'wp-maintenance-mode' : null,
+				checkedAt: '2026-11-20T00:00:00+00:00',
+			});
+			return;
+		}
 		if (path === '/wp-json/wp/v2/posts') {
 			const { slice, headers } = paginate(bySlug(data.posts));
 			json(res, slice, headers);

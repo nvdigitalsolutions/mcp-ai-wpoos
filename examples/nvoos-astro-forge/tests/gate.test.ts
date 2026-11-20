@@ -29,6 +29,7 @@ const GATE_ENV = [
 	'WP_FIXTURE_GATE',
 	'WP_FIXTURE_GATE_USER',
 	'WP_FIXTURE_GATE_PASSWORD',
+	'WP_FIXTURE_BRIDGE_GATE',
 	'WP_GATE_MODE',
 	'WP_GATE_USERNAME',
 	'WP_GATE_PASSWORD',
@@ -282,6 +283,35 @@ describe( 'openGate', () => {
 			} finally {
 				gate.close();
 			}
+		} );
+	} );
+} );
+
+describe( 'bridge corroboration (Proposal 152 P4)', () => {
+	it( 'turns an open HTML read into gated when the bridge reports a gate', async () => {
+		await withEnv( { WP_FIXTURE_GATE: 'off', WP_FIXTURE_BRIDGE_GATE: 'coming_soon' }, async () => {
+			const probe = await probeGate( profileFor( primary.base ), { allowLoopback: true } );
+			expect( probe.state ).toBe( 'gated' );
+			expect( probe.fingerprint ).toBe( 'elementor-maintenance' );
+			expect( probe.bridge ).toEqual( { maintenance: true, mode: 'coming_soon', plugin: 'elementor' } );
+			expect( probe.evidence.join( ' ' ) ).toContain( 'bridge' );
+		} );
+	} );
+
+	it( 'leaves an open site open when the bridge route is absent', async () => {
+		await withEnv( { WP_FIXTURE_GATE: 'off', WP_FIXTURE_BRIDGE_GATE: 'absent' }, async () => {
+			const probe = await probeGate( profileFor( primary.base ), { allowLoopback: true } );
+			expect( probe.state ).toBe( 'open' );
+			expect( probe.bridge ).toBeUndefined();
+		} );
+	} );
+
+	it( 'records the disagreement when HTML is gated but the bridge says off', async () => {
+		await withEnv( { WP_FIXTURE_GATE: '503', WP_FIXTURE_BRIDGE_GATE: 'off' }, async () => {
+			const probe = await probeGate( profileFor( primary.base ), { allowLoopback: true } );
+			expect( probe.state ).toBe( 'gated' );
+			expect( probe.bridge ).toEqual( { maintenance: false, mode: 'off', plugin: null } );
+			expect( probe.evidence.join( ' ' ) ).toContain( 'NOT gated' );
 		} );
 	} );
 } );

@@ -276,6 +276,14 @@ The probe is an HTTP fetch, so a **loopback dev site** now needs the documented
 exemption for every `analyze` run, not only `--design`/`--geometry`:
 `NVOOS_FORGE_ALLOW_LOOPBACK=1 node scripts/forge.mjs analyze http://localhost:8080 …`.
 
+**With the forge bridge installed (≥ 0.3.2) the probe stops guessing.** Every
+probe also asks `GET /wp-json/nvoos-forge/v1/gate`, which reports the site's
+gate state (`maintenance`, `mode`, `plugin`) without any credential — that is
+the only signal that separates "gate off" from "the edge served a cached
+anonymous page". The bridge reports what an **anonymous** visitor sees, so a
+successful `WP_GATE_*` login always wins over a `maintenance: true` verdict.
+No bridge → `404` on that route → the probe falls back to its HTML table.
+
 ### Forms — JetFormBuilder + Elementor submissions (114 §3.9)
 
 Forms integrate the way WooCommerce did: **content at build time, behavior

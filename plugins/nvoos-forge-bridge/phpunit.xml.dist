@@ -12,6 +12,8 @@
 		<testsuite name="Forge Bridge">
 			<directory suffix=".php">tests</directory>
 			<exclude>tests/bootstrap.php</exclude>
+			<!-- Helper stubs are required from setUp(), never collected as tests. -->
+			<exclude>tests/stubs</exclude>
 		</testsuite>
 	</testsuites>
 

@@ -48,7 +48,16 @@ names apply.
 - **`probeGate(profile)`** — fetches `/` with `redirect: 'manual'`, then
   `/wp-json/` only when the first read is not obviously open. Returns
   `{ state, status, retryAfter, restHealthy, fingerprint, visibleChars,
-  evidence, remediation }`.
+  evidence, remediation, bridge }`.
+- **`augmentWithBridge(probe, base, fetchImpl, timeoutMs, authenticated)`** —
+  asks the forge bridge for its verdict on **every** probe (one cheap round
+  trip; `404` = plugin absent). When the HTML read looks `open` *and* the read
+  was **anonymous**, a bridge `maintenance: true` re-classifies it as `gated`
+  with the plugin slug as the fingerprint — that is the cached-anonymous-page
+  case, where the edge served a public copy and no HTML evidence survives.
+  A bridge that says `maintenance: false` over a gated HTML read records the
+  disagreement in `evidence` but keeps the detected state (HTML wins: the page
+  really is a holding page).
 - **`openGate(profile)`** — probe → (login | cookie | bypass) → re-probe.
   Installs a **host-scoped global fetch wrapper** and publishes the cookies for
   Playwright. `blocked = state !== 'open'`.
@@ -63,6 +72,31 @@ names apply.
   leak. Every `newContext` site in `geometry.ts`, `interactions.ts`,
   `animations.ts`, `region-colors.ts`, `screenshot.ts`, `tracking.ts` and
   `band-diff.ts` calls it — **add it to any new browser entry point**.
+
+### The bridge route (`plugins/nvoos-forge-bridge` ≥ 0.3.2, P4)
+
+`GET /wp-json/nvoos-forge/v1/gate` answers the site's **anonymous** gate state,
+so the forge stops guessing from HTML:
+
+| Field | Meaning |
+|---|---|
+| `maintenance` | bool — the site is gating anonymous visitors |
+| `mode` | `off` · `maintenance` · `coming_soon` |
+| `plugin` | the gate's slug (`elementor`, `wp-maintenance-mode`, …) or `null` |
+| `checkedAt` | ISO-8601 UTC |
+
+Sources, in order: `wp_is_maintenance_mode()`; Elementor
+(`elementor_maintenance_mode_mode` ∈ {`maintenance`, `coming_soon`} **and** a
+non-zero template id); WP Maintenance Mode
+(`wpmm_settings['general']['status']`). Anything else joins through the
+`nvoos_forge_bridge_gate_state` filter — a filter that returns garbage keeps
+the detected state, and `maintenance: false` forces `mode=off`. The payload is
+booleans, a mode keyword and a slug only: no titles, no copy, no template
+text, so a holding page's content never leaves the site.
+
+The route is public by design (the forge is anonymous when it asks) and carries
+**no** credential — it is a state signal, not an unlock. It is not on the
+public-write allowlist because it is `GET`/`READABLE`.
 
 ## 4. Classification (the probe's table)
 
@@ -93,18 +127,26 @@ positive that blocks a legitimate forge. A holding page almost always says
 | `forge wizard … --design` | same, always fail-closed (never `--allow-blocked`) |
 | MCP `design_apply` | typed error + `{ gate, probe }` payload when blocked |
 | MCP `gate_probe` | read-only; same open-world policy as `site_analyze`/`design_apply` |
+| `GET /wp-json/nvoos-forge/v1/gate` (bridge) | the site's anonymous gate state; `404` when the plugin is absent |
 
 ## 6. Tests and the fixture
 
 `scripts/wp-fixture-server.mjs` grows `WP_FIXTURE_GATE=503|holding|edge` (plus
-`/wp-login.php` and `/echo-headers`). `/wp-json/` and `/wp-content/` stay open
+`/wp-login.php` and `/echo-headers`) and `WP_FIXTURE_BRIDGE_GATE=off|coming_soon|maintenance|absent`
+for the bridge route. `/wp-json/` and `/wp-content/` stay open
 in every mode. Authorization: the `wordpress_logged_in_fixture=1` cookie, the
 `forge_bypass=1` query, or Basic `forge:secret`.
 
 - `tests/gate.test.ts` — probe table, login, cookie scoping, redirect safety,
-  no-store, Playwright options.
+  no-store, Playwright options, bridge corroboration (including "an
+  authenticated open read is NOT downgraded").
 - `tests/gate-cli.test.ts` — real CLI: exit codes, JSON output, fail-closed
   `analyze`.
+- `tests/gate-e2e.test.ts` — the whole feature: a child fixture in
+  `503` + `coming_soon` mode forges **end to end** with `WP_GATE_USERNAME` /
+  `WP_GATE_PASSWORD` (analyze → design block → scaffold → generated design),
+  and the same source without credentials exits non-zero with
+  `refusing to forge the holding page` plus the `bridge` evidence.
 
 ## 7. Gotchas (each cost a fix)
 
@@ -129,6 +171,18 @@ in every mode. Authorization: the `wordpress_logged_in_fixture=1` cookie, the
   Because `analyze` now probes the rendered page on every run, a loopback dev
   site needs that env for `--write`-only runs too — the e2e's `site_analyze`
   case and `tests/gate-cli.test.ts` both set it on the child process.
+- **The bridge reports the ANONYMOUS mode, so it may only override an
+  anonymous read.** The first cut let a bridge `maintenance: true` downgrade
+  *any* `open` HTML read — including one fetched with a valid session. On a
+  gated fixture the login works, the HTML is the real site, and the probe still
+  said `gated`: `analyze` refused a source it had just unlocked. The gated e2e
+  caught it. Gate the override on `( options.cookies?.length ?? 0 ) > 0`
+  (`authenticated`) and pass it into `augmentWithBridge()`.
+- **Do not skip the bridge query on `open` reads.** The cached-anonymous case
+  *is* an `open` HTML read — that is the only shape it produces.
+- **`wp_settings_errors`-style side effects do not exist here:** the bridge
+  route is a pure read. Do not make it set a transient, touch an option, or
+  log — every `forge gate` / `analyze` run hits it.
 
 ## 8. Remediation ladder (what we tell the operator)
 

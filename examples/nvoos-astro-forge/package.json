@@ -37,8 +37,8 @@
 		"woocommerce"
 	],
 	"scripts": {
-		"test": "vitest run --exclude tests/forge-e2e.test.ts",
-		"test:e2e": "vitest run tests/forge-e2e.test.ts",
+		"test": "vitest run --exclude tests/forge-e2e.test.ts --exclude tests/gate-e2e.test.ts",
+		"test:e2e": "vitest run tests/forge-e2e.test.ts tests/gate-e2e.test.ts",
 		"test:all": "vitest run",
 		"typecheck": "tsc --noEmit",
 		"mcp": "node scripts/forge-mcp.mjs",
