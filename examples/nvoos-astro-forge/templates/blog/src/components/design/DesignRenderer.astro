@@ -323,6 +323,19 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		if ( title.mobile?.lineHeight && title.mobile.lineHeight !== 'normal' ) {
 			parts.push( `--ds-title-lh-sm:${ title.mobile.lineHeight }` );
 		}
+		// The measured SIZE the source paints below the desktop range. The template
+		// shrinks a headline with a hard-coded `clamp()` floor (1.5rem / 1.75rem),
+		// which is a guess about the source: monicarajiv's band title is 22.2px on
+		// desktop and 16px on a phone, so the floor painted 22.2px — a phone headline
+		// 39% larger than the source's (2026-11-21). A measured size is not an anchor
+		// for that clamp, it IS the value at that device, so global.css overrides the
+		// clamp outright when these are present.
+		if ( title.tablet?.size ) {
+			parts.push( `--ds-title-size-md:${ title.tablet.size }` );
+		}
+		if ( title.mobile?.size ) {
+			parts.push( `--ds-title-size-sm:${ title.mobile.size }` );
+		}
 		if ( title.letterSpacing && title.letterSpacing !== 'normal' ) {
 			parts.push( `--ds-title-ls:${ title.letterSpacing }` );
 		}

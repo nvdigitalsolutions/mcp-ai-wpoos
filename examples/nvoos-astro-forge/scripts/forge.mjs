@@ -39,7 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
-import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, applyMeasuredNavStyle, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
+import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredChromeSize, applyMeasuredHeader, applyMeasuredNavStyle, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
 import { compareBuildIdentity, parseBuildMarker } from '../lib/build-identity.ts';
 import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuild } from '../lib/animations.ts';
@@ -684,6 +684,12 @@ async function runAnalyze( url, options ) {
 							const measured = geometry.navStyle;
 							console.log( `✓ Nav type: ${ measured.size } ${ measured.weight }${ measured.transform ? ` ${ measured.transform }` : "" }${ measured.letterSpacing ? `, ${ measured.letterSpacing } tracking` : "" }.` );
 						}
+						// The copyright bar's computed size — the stylesheet harvest reads a
+						// DECLARATION, so `1.125rem` shipped the footer 2px large
+						// (monicarajiv, 2026-11-21).
+						if ( applyMeasuredChromeSize( profile.design.chrome, geometry ) ) {
+							console.log( `✓ Chrome type: ${ geometry.chromeSize }.` );
+						}
 						// A distinct menu face is a DESIGN ROLE: it reaches the shim through
 						// `--forge-font-ui`, and the webfont builder then loads the family.
 						const navFamily = ( geometry.navFamily ?? "" ).trim();
@@ -1005,6 +1011,9 @@ async function runAnalyze( url, options ) {
 		// The measured menu type outranks the stylesheet harvest on every re-forge,
 		// not only on the analyze pass that recorded it.
 		applyMeasuredNavStyle( target?.design?.chrome, target?.design?.chrome?.geometry );
+		// The copyright bar's measured size outranks the stylesheet harvest for the
+		// same reason the menu's does.
+		applyMeasuredChromeSize( target?.design?.chrome, target?.design?.chrome?.geometry );
 		return target;
 	};
 	reconcileHeader( profile );
@@ -1153,6 +1162,10 @@ async function runDeploy( profileRef, options ) {
 	assertThemePolicy( options.themePolicy );
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
+
+	// The MEASURED chrome facts outrank the stylesheet harvest on a re-forge too —
+	// see runScaffold for why the design block alone is not enough.
+	applyMeasuredChromeSize( profile.design?.chrome, profile.design?.chrome?.geometry );
 
 	// 1. Scaffold (idempotent — an existing forge project is reused).
 	//    The preset (when passed) applies its collection profile + surfaces
@@ -1344,6 +1357,13 @@ async function runScaffold( profileRef, options ) {
 	assertThemePolicy( options.themePolicy );
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
+	// The MEASURED chrome facts outrank the stylesheet harvest on a re-scaffold
+	// too: a `--geometry` pass stores them on `chrome.geometry`, but the design
+	// block keeps the harvested guess (`chromeSizeFrom` reads `body {
+	// font-size: 1.125rem }` — a declaration, not a computed value), so a
+	// scaffold that only reads the design block shipped the wrong footer type
+	// (monicarajiv, 2026-11-21).
+	applyMeasuredChromeSize( profile.design?.chrome, profile.design?.chrome?.geometry );
 
 	if ( options.check ) {
 		const clean = await checkProfile( profile );

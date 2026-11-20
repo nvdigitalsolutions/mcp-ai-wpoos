@@ -2474,6 +2474,24 @@ export async function measureChromeGeometry( options: {
 							family: majority( ( style ) => ( style.fontFamily || '' ).split( ',' )[ 0 ].replace( /["']/g, '' ).trim() ),
 						};
 					} )(),
+					// The footer COPYRIGHT's computed size (see
+					// `ForgeChromeGeometry.chromeSize`). The builder's own class names are
+					// the only hint, so the ladder ends at the last short paragraph in the
+					// footer — no paragraph at all means no fact.
+					chromeSize: ( () => {
+						const COPYRIGHT =
+							'.copyright-footer, .site-copyright, .copyright, .site-credit, .absolute-footer p';
+						const candidates = [ ...document.querySelectorAll( COPYRIGHT ) ];
+						for ( const node of candidates ) {
+							const text = ( node.textContent ?? '' ).trim();
+							if ( text.length === 0 || text.length > 120 ) continue;
+							const rect = node.getBoundingClientRect();
+							if ( rect.width === 0 || rect.height === 0 ) continue;
+							return getComputedStyle( node ).fontSize;
+						}
+						return undefined;
+					} )(),
+
 					// The trailing ICON links: an anchor with no text whose glyph is a font
 					// icon (`<i class="icon-envelop">`). The vendor font never ships, so the
 					// rebuild re-draws it instead of emitting a missing-glyph box.
@@ -2523,6 +2541,9 @@ export async function measureChromeGeometry( options: {
 				out.actions = box.actions;
 			}
 			// The menu's type is one desktop fact too: it is chrome, not content.
+			if ( device === 'desktop' && typeof box.chromeSize === 'string' && /^\d+(\.\d+)?px$/.test( box.chromeSize ) ) {
+				out.chromeSize = box.chromeSize;
+			}
 			if ( device === 'desktop' && box.navStyle && typeof box.navStyle.size === 'string' ) {
 				out.navStyle = {
 					...( box.navStyle.size ? { size: box.navStyle.size } : {} ),

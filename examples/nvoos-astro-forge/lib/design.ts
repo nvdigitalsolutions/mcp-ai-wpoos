@@ -1006,6 +1006,15 @@ function chromeSizeFrom( cssText: string ): string | undefined {
 		if ( pct ) {
 			return `${ Math.round( ( Number( pct[ 1 ] ) / 100 ) * base ) }px`;
 		}
+		// `rem` resolves against the html root rule, exactly like the percent and
+		// `em` branches. Matched BEFORE them because `1.125rem` ends in "em": the
+		// `em` pattern is anchored, so it quietly declined the value and the chain
+		// fell through to the element resolution this function exists to avoid
+		// (monicarajiv declares `body { font-size: 1.125rem }` — 2026-11-21).
+		const rem = /^([\d.]+)rem$/i.exec( bodySize.trim() );
+		if ( rem ) {
+			return `${ Math.round( Number( rem[ 1 ] ) * base ) }px`;
+		}
 		const em = /^([\d.]+)em$/i.exec( bodySize.trim() );
 		if ( em ) {
 			return `${ Math.round( Number( em[ 1 ] ) * base ) }px`;
@@ -2463,6 +2472,36 @@ export function applyMeasuredNavStyle(
 		return false;
 	}
 	chrome.navStyle = { ...measured };
+	return true;
+}
+
+/**
+ * Replace the chrome size guess with the copyright's computed truth.
+ *
+ * `analyze` resolves `chrome.chromeSize` from the stylesheet (`chromeSizeFrom`),
+ * which reads DECLARATIONS: monicarajiv declares `body { font-size: 1.125rem }`,
+ * which is not a resolvable px/em/percent value, so the chain fell through to the
+ * element resolution and the rebuilt footer bar painted 18px where the source's
+ * `.copyright-footer` paints 15.984px (measured 2026-11-21).
+ *
+ * `measureChromeGeometry` reads the copyright node's computed style, which needs
+ * no resolution. Measured wins when present; an absent fact keeps the guess so
+ * profiles measured before `chromeSize` existed still render.
+ *
+ * Pure, so the overlay is testable without a browser.
+ */
+export function applyMeasuredChromeSize(
+	chrome: ForgeChrome | undefined,
+	geometry: ForgeChromeGeometry | undefined
+): boolean {
+	const measured = geometry?.chromeSize;
+	if ( ! chrome || typeof measured !== 'string' || ! /^\d+(\.\d+)?px$/.test( measured ) ) {
+		return false;
+	}
+	if ( chrome.chromeSize === measured ) {
+		return false;
+	}
+	chrome.chromeSize = measured;
 	return true;
 }
 

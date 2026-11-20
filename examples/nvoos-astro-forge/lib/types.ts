@@ -1892,6 +1892,15 @@ export interface ForgeChromeGeometry {
 	 * and the webfont builder then loads.
 	 */
 	navFamily?: string;
+	/**
+	 * The footer COPYRIGHT's computed size, as px.
+	 *
+	 * `chromeSizeFrom` reads `body { font-size }` out of the stylesheet, which
+	 * is a declaration and not a computed value: monicarajiv's `1.125rem` rule
+	 * resolved to 18px where the copyright paints 15.984px, so the rebuilt
+	 * footer bar ran 2px large (2026-11-21).
+	 */
+	chromeSize?: string;
 }
 
 /** Where a footer group sits horizontally inside the footer's brand row. */

@@ -12,7 +12,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { applyMeasuredHeader, applyMeasuredNavStyle } from '../lib/design.ts';
+import { applyMeasuredChromeSize, applyMeasuredHeader, applyMeasuredNavStyle } from '../lib/design.ts';
 import type { ForgeChrome, ForgeStickyHeader } from '../lib/types.ts';
 
 const chrome = (): ForgeChrome => ( { headerBg: '#dd3333', headerInk: '#ffffff', navInk: '#ffffff' } );
@@ -140,5 +140,39 @@ describe( 'applyMeasuredNavStyle', () => {
 		expect( applyMeasuredNavStyle( target, { desktop: { measure: 1080 } } ) ).toBe( false );
 		expect( target.navStyle?.size ).toBe( '16px' );
 		expect( applyMeasuredNavStyle( undefined, { navStyle: { size: '14px' } } ) ).toBe( false );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// The copyright bar's size. `chromeSizeFrom` reads a DECLARATION, not a computed
+// value: monicarajiv declares `body { font-size: 1.125rem }`, which the stylesheet
+// chain could not resolve, and the rebuilt footer painted 18px where the source's
+// `.copyright-footer` paints 15.984px (measured 2026-11-21).
+// ---------------------------------------------------------------------------
+describe( 'applyMeasuredChromeSize', () => {
+	const guessed = (): ForgeChrome => ( { chromeSize: '18px', navInk: '#ffffff' } );
+
+	it( 'replaces the guessed size with the copyright computed one', () => {
+		const target = guessed();
+		const applied = applyMeasuredChromeSize( target, { chromeSize: '15.984px' } );
+
+		expect( applied ).toBe( true );
+		expect( target.chromeSize ).toBe( '15.984px' );
+		// Unrelated chrome facts survive the overlay.
+		expect( target.navInk ).toBe( '#ffffff' );
+	} );
+
+	it( 'reports no change when the measurement already matches the guess', () => {
+		const target: ForgeChrome = { chromeSize: '16px' };
+		expect( applyMeasuredChromeSize( target, { chromeSize: '16px' } ) ).toBe( false );
+		expect( target.chromeSize ).toBe( '16px' );
+	} );
+
+	it( 'keeps the guess when the fact is absent or not a px length', () => {
+		const target = guessed();
+		expect( applyMeasuredChromeSize( target, { desktop: { measure: 1080 } } ) ).toBe( false );
+		expect( applyMeasuredChromeSize( target, { chromeSize: 'normal' } ) ).toBe( false );
+		expect( target.chromeSize ).toBe( '18px' );
+		expect( applyMeasuredChromeSize( undefined, { chromeSize: '15.984px' } ) ).toBe( false );
 	} );
 } );
