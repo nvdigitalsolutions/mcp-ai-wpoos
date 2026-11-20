@@ -130,7 +130,15 @@ jobs:
             SITES="${{ github.event.inputs.site }}"
           fi
           if [ -z "$SITES" ]; then
-            SITES=$(node -e "const fs=require('fs');if(fs.existsSync('sites')){process.stdout.write(fs.readdirSync('sites').filter(f=>f.endsWith('.json')).map(f=>f.slice(0,-5)).join(' '))}")
+            # Every sites/*.json that IS a profile. `sites/` also holds artefacts
+            # consumed by explicit path (a `forge compare` element spec), and those
+            # must not be scaffolded as sites: `monicarajiv.compare` was enumerated,
+            # failed assertProfile on `{ url, collections }` and — under `set -e` —
+            # killed the run before the three real sites after it were built
+            # (2026-11-21). A file that merely lacks the profile shape is skipped
+            # with a warning; a file that is MALFORMED JSON still fails the run,
+            # because that is a broken commitment rather than a non-site.
+            SITES=$(node -e "const fs=require('fs');if(!fs.existsSync('sites'))process.exit(0);const ok=[],skip=[];for(const f of fs.readdirSync('sites')){if(!f.endsWith('.json'))continue;const n=f.slice(0,-5);let p;try{p=JSON.parse(fs.readFileSync('sites/'+f,'utf8'))}catch(e){console.error('::error title=Malformed profile::sites/'+f+' is not valid JSON - '+e.message);process.exit(1)}if(p&&typeof p.url==='string'&&p.url&&Array.isArray(p.collections)){ok.push(n)}else{skip.push(n)}}if(skip.length)console.error('::warning title=Not a site profile::skipped sites/*.json with no { url, collections }: '+skip.join(', '));process.stdout.write(ok.join(' '))")
           fi
           echo "Sites: ${SITES:-<none>}"
           LOCKED_SITES=""
