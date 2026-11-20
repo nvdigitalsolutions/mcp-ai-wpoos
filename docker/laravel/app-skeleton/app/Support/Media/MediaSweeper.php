@@ -4,6 +4,7 @@ namespace App\Support\Media;
 
 use App\Jobs\OptimizeMediaFile;
 use App\Support\ActivityRecorder;
+use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Nvoos\Laravel\Adapter\JobStatusStore;
@@ -53,6 +54,11 @@ final class MediaSweeper
         }
 
         $query = DB::table('nvoos_files')
+            // The sweep is an estate's own action: an administrator compressing
+            // "my library" must not queue another estate's files (§109). Before
+            // the column existed this selected the whole table, which was only
+            // harmless because a deployment served one estate.
+            ->where('tenant_id', TenantContext::current())
             ->whereIn('mime_type', self::IMAGE_MIMES)
             ->orderBy('id')
             ->limit(self::SWEEP_BATCH);
@@ -90,6 +96,12 @@ final class MediaSweeper
 
     /**
      * Whether an optimisation is already queued or running.
+     *
+     * Deliberately **platform-wide**: `nvoos_jobs` carries no estate and the
+     * queue is one worker pool, so the honest question is "is a sweep running
+     * anywhere". The cost of that reading is a spurious refusal when two estates
+     * sweep at once; the alternative — a per-estate count that cannot be
+     * computed — would refuse nothing and stack two passes over one library.
      */
     public function inFlight(): bool
     {
