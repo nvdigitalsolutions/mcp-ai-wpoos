@@ -1025,12 +1025,12 @@ green in the 9-suite cluster; phpcs 0 errors on both standards; UTF-8 clean.
 - CG Pro byte-identity mirroring: `mcp-ai-wpoos-ecosystem-port` skill
 - v1.1.70 hardening precedent: PR #6295, `addons/pro/includes/npm-integration-filters.php`
 - Array-content normalization precedent: test-suite skill pattern 56
-- Production evidence: nirmanawellness `get_system_logs` failures
+- Production evidence: a client site's `get_system_logs` failures
   (2026-10-04) — `sse_tool_fatal_error` entries from these exact bugs
 
 ## Related non-toolkit hardening (stream hygiene)
 
-Toolkit fatals are one half of the nirmanawellness story — the other was the
+Toolkit fatals are one half of that client's story — the other was the
 chat SSE stream being reset by Cloudflare/nginx during long tool runs
 (`net::ERR_HTTP2_PROTOCOL_ERROR`). That fix (inter-step SSE keepalive comment
 frames) and its test contract are documented as **test-suite skill pattern

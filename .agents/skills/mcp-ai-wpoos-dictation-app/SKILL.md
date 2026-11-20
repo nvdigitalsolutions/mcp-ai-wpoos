@@ -50,7 +50,7 @@ examples/nvoos-dictate/
 - Prerequisites: Rust + MSVC (VS 2022), Node 20+, WebView2 runtime
   (Win11 ships it), tauri-cli via npm (`npm run tauri`) — no cargo install needed.
 - **MSYS shells**: every cargo command needs
-  `export PATH="/c/Users/rasta/.cargo/bin:$PATH"` first; tauri-cli also needs
+  `export PATH="~/.cargo/bin:$PATH"` first; tauri-cli also needs
   cargo on PATH (`npm run tauri` fails with "cargo metadata: program not found"
   otherwise).
 - Dev: `npm run tauri dev` (vite :1420). Debug exe:

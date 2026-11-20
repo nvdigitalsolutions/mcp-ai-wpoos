@@ -433,7 +433,7 @@ missing), changelog bullet, signoff section + `WPORG-REVIEW-FINDINGS.md` /
 `build/nvoos-forge-bridge-v0.2.0.zip` (14 files).
 
 **Second review came back (2026-11-10, review
-`R nvoos-forge-bridge/vsamtani/5Nov26/T2 10Nov26/4.4RC1`):** three findings,
+`R nvoos-forge-bridge/<wp-org-user>/5Nov26/T2 10Nov26/4.4RC1`):** three findings,
 all in the forms bridge, all shipped green by the same gates:
 
 1. **`__return_true` on `/forms/submit` + non-public forms.** The route is
@@ -567,7 +567,7 @@ next reviewer email lands — the same categories recur across plugins.
 
 | Review finding | Root cause | Fix pattern (docs-hub) |
 |---|---|---|
-| "Add yourself to Contributors" — the listed name must be a **wp.org username**, not the GitHub org | `Contributors: nvdigitalsolutions` but the account is `vsamtani` | `Contributors: vsamtani` — only real wp.org usernames; drop org names with no account |
+| "Add yourself to Contributors" — the listed name must be a **wp.org username**, not the GitHub org | `Contributors: nvdigitalsolutions` but the account is a personal username | `Contributors: <wp-org-user>` — only real wp.org usernames; drop org names with no account |
 | Minified `assets/dist/docs-hub.js` has no bundled source and no repo link (Guideline 4) | `src/` is excluded from the ZIP; no readme disclosure | Add `== Source Code ==` readme section (public repo URL + `npm install && npm run build` steps + where dev files live), AND make the bundle self-describing: esbuild `banner: { js: …, css: … }` with `/*!`-style source/build/license header. Do **both** JS and CSS banners — the CSS bundle is generated too |
 | `permission_callback` — `/search` is public but leaks `source: "context"` excerpts to non-admins | Named public permission callback is fine; the *data* was the leak — `get_manifest()` and `get_page()` filtered context but `search()` did not | In every public endpoint, filter `source === 'context'` for `! current_user_can('manage_options')`. Verify **all** context surfaces: manifest, pages, search, **and the sitemap** (docs-hub's sitemap provider was exposing context slugs — caught by the sweep, not the review) |
 | `load_plugin_textdomain()` unnecessary (WP ≥ 4.6) | Redundant since plugin requires 6.0; wp.org loads translations automatically | Remove the call; keep the `Text Domain`/`Domain Path` header. (Keep only if the plugin supports WP < 4.6.) |
@@ -983,7 +983,7 @@ Capture pitfalls (all hit in practice):
 
 - `Contributors:` is a case-sensitive, comma-separated list of **wp.org
   usernames** — not GitHub orgs (the review flagged `nvdigitalsolutions`
-  because the account is `vsamtani`). Only list accounts that exist; drop
+  because the account is a personal username). Only list accounts that exist; drop
   org names with no wp.org account.
 - `== External Services ==` section: every third-party host contacted,
   server-side-only wording, data-sent statement, Terms + Privacy URLs. The
