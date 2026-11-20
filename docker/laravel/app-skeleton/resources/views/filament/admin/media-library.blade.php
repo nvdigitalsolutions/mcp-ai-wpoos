@@ -5,6 +5,11 @@
     already exists and already audits. Plain HTML with inline styles, as on the
     other ported pages — the panel's compiled CSS has no arbitrary utilities.
 
+    The table goes through `x-admin.data-table` (§55.5) rather than a hand-rolled
+    `<thead>`: the shared component owns the caption, the scoped column headers
+    and the sticky header, and keeps the empty state inside the body so the
+    column headings survive a filter that matches nothing.
+
     One honesty device: WordPress reports 100% alt coverage when there are no
     images to measure. That is a true number saying something false, so it is
     labelled rather than printed as a success.
@@ -67,63 +72,57 @@
         </span>
     </div>
 
-    @if ([] === $library['rows'])
-        <p style="font-size: 0.9rem; opacity: 0.8;">
-            Nothing in this estate's library matches that filter.
-        </p>
-    @else
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-            <thead>
-                <tr style="text-align: left; border-bottom: 1px solid rgba(127, 127, 127, 0.35);">
-                    <th style="padding: 0.5rem 0.5rem 0.5rem 0;">File</th>
-                    <th style="padding: 0.5rem;">Type</th>
-                    <th style="padding: 0.5rem;">Size</th>
-                    <th style="padding: 0.5rem;">Alt text</th>
-                    <th style="padding: 0.5rem;">Added</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($library['rows'] as $row)
-                    <tr style="border-bottom: 1px solid rgba(127, 127, 127, 0.15);">
-                        <td style="padding: 0.5rem 0.5rem 0.5rem 0; overflow-wrap: anywhere;">{{ $row['filename'] }}</td>
-                        <td style="padding: 0.5rem; opacity: 0.85;">{{ '' !== $row['mime_type'] ? $row['mime_type'] : '—' }}</td>
-                        <td style="padding: 0.5rem; font-variant-numeric: tabular-nums; white-space: nowrap;">{{ $this->humanBytes($row['size_bytes']) }}</td>
-                        <td style="padding: 0.5rem;">
-                            @if ('' === $row['alt_text'])
-                                <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.7rem; color: #92400e; background: rgba(245, 158, 11, 0.15);">missing</span>
-                            @else
-                                <span style="opacity: 0.9;">{{ $row['alt_text'] }}</span>
-                            @endif
-                        </td>
-                        <td style="padding: 0.5rem; font-size: 0.8rem; opacity: 0.7; white-space: nowrap;">
-                            {{ '' !== $row['created_at'] ? substr($row['created_at'], 0, 10) : '—' }}
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <x-admin.data-table
+        caption="Files in this estate's media library"
+        :columns="[
+            ['label' => 'File'],
+            ['label' => 'Type'],
+            ['label' => 'Size'],
+            ['label' => 'Alt text'],
+            ['label' => 'Added'],
+        ]"
+        :rows="count($library['rows'])"
+        :empty="'No file in this library matches that filter.'"
+    >
+        @foreach ($library['rows'] as $row)
+            <tr>
+                <td style="overflow-wrap: anywhere;">{{ $row['filename'] }}</td>
+                <td style="opacity: 0.85;">{{ '' !== $row['mime_type'] ? $row['mime_type'] : '—' }}</td>
+                <td style="font-variant-numeric: tabular-nums; white-space: nowrap;">{{ $this->humanBytes($row['size_bytes']) }}</td>
+                <td>
+                    @if ('' === $row['alt_text'])
+                        <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.7rem; color: #92400e; background: rgba(245, 158, 11, 0.15);">missing</span>
+                    @else
+                        <span style="opacity: 0.9;">{{ $row['alt_text'] }}</span>
+                    @endif
+                </td>
+                <td style="font-size: 0.8rem; opacity: 0.7; white-space: nowrap;">
+                    {{ '' !== $row['created_at'] ? substr($row['created_at'], 0, 10) : '—' }}
+                </td>
+            </tr>
+        @endforeach
+    </x-admin.data-table>
 
-        @if ($library['pages'] > 1)
-            <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; font-size: 0.85rem;">
-                <button
-                    type="button"
-                    wire:click="goToPage({{ $library['page'] - 1 }})"
-                    @disabled($library['page'] <= 1)
-                    style="padding: 0.3rem 0.7rem; border: 1px solid rgba(127, 127, 127, 0.4); border-radius: 0.375rem;"
-                >Previous</button>
+    @if ($library['pages'] > 1)
+        <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; font-size: 0.85rem;">
+            <button
+                type="button"
+                wire:click="goToPage({{ $library['page'] - 1 }})"
+                @disabled($library['page'] <= 1)
+                style="padding: 0.3rem 0.7rem; border: 1px solid rgba(127, 127, 127, 0.4); border-radius: 0.375rem;"
+            >Previous</button>
 
-                <span style="opacity: 0.8;">
-                    Page {{ $library['page'] }} of {{ $library['pages'] }}
-                </span>
+            <span style="opacity: 0.8;">
+                Page {{ $library['page'] }} of {{ $library['pages'] }}
+            </span>
 
-                <button
-                    type="button"
-                    wire:click="goToPage({{ $library['page'] + 1 }})"
-                    @disabled($library['page'] >= $library['pages'])
-                    style="padding: 0.3rem 0.7rem; border: 1px solid rgba(127, 127, 127, 0.4); border-radius: 0.375rem;"
-                >Next</button>
-            </div>
-        @endif
+            <button
+                type="button"
+                wire:click="goToPage({{ $library['page'] + 1 }})"
+                @disabled($library['page'] >= $library['pages'])
+                style="padding: 0.3rem 0.7rem; border: 1px solid rgba(127, 127, 127, 0.4); border-radius: 0.375rem;"
+            >Next</button>
+        </div>
     @endif
 
     <p style="font-size: 0.8rem; opacity: 0.75; margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid rgba(127, 127, 127, 0.25);">

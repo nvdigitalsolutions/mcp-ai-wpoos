@@ -10920,7 +10920,7 @@ of a clean bill of health for a library that has nothing in it.
 | Run | Result |
 |---|---|
 | `AdminMediaLibraryTest` | **8 tests / 21 assertions** — the panel lists only the estate's files; alt coverage is per estate; an empty library is labelled rather than scored; pagination is scoped; a foreign id 404s on read *and* write and the row is untouched; the sweep queues only this estate's files; the optimiser attributes its event and restores the context |
-| `MediaCcTest` + `Phase3dTest` + `SurfaceOwnershipTest` + `AdminNavigationTest` | **41 tests / 668 assertions, 0 failures** — the console API, the media REST surface, the contract row and the sidebar all still hold |
+| `MediaCcTest` + `Phase3dTest` + `SurfaceOwnershipTest` + `AdminNavigationTest` + `AdminDataTableTest` | **52 tests / 723 assertions, 0 failures** — the console API, the media REST surface, the contract row, the sidebar and the one-data-table contract all still hold. `AdminDataTableTest` is the reason the page uses `x-admin.data-table` rather than a hand-rolled `<thead>`: it is a migration guard over every admin view (§55.5) |
 | phpcs (`phpcs-laravel.xml.dist`, 10 files) | **0 errors** |
 | `bin/audit-surface-ownership.php` | 47 surfaces, **39** Filament-built, **5** console-only, 0 planned-only, 1 inert |
 | Live check, `/admin/default/media` | 200 — empty state renders the dash and the callout; with three seeded files it reports 3 files / 2 images / 50% alt / 50% next-gen, `missing` badges on the two without alt |
