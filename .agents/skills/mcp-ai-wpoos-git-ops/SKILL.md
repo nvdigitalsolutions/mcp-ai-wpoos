@@ -615,6 +615,26 @@ can appear in the repo root. Two failure modes follow:
   every `ln -s` of a directory: if it stays inside your own tree you got a copy,
   so `rm -rf` is both safe and necessary — the original was never linked.
 
+- **Full-file rewrites of large docs corrupt SILENTLY under this shell
+  (2026-11-21).** A heredoc-fed `python` script that read a 677 KB proposal,
+  ran `str.replace`, and wrote it back (`open(p,'w')`) **interleaved** the
+  replacement with the existing text and silently dropped a table row and a
+  paragraph — twice, on two files, with every `assert` passing and no error
+  raised. `append_file`/`edit_file` failed outright on the same paths ("parent
+  directory does not exist"). Discipline: edit large files with **byte-stream
+  splices only** —
+  `head -n $((S-1)) f > /tmp/a; tail -n +$((E+1)) f > /tmp/b; cat /tmp/a /tmp/ins.md /tmp/b > /tmp/out && mv /tmp/out f`
+  — then verify with `wc -l` and `grep -c` for each inserted phrase (a count
+  of exactly 1 catches both truncation and double-insert), and recover with
+  `git checkout -- <file>`. Plain appends (`cat >> f`) proved reliable;
+  truncate-writes did not.
+- **Line-addressed splices land one line off when the anchor is ambiguous.**
+  Print the target range (`awk 'NR>=S && NR<=E'`) immediately before *and*
+  after the splice: an off-by-one rewrites a neighbouring line with
+  plausible-looking text and reports success. Confirm the trailing character
+  too — replacing a line that ended in `,` left a run-on sentence until a
+  re-read caught it.
+
 ## Pathspec commits, shared-index races, workflow YAML (learned 2026-11-02, Cognition rebrand session)
 
 - **`git commit -- <paths>` traps:** options (`-m`) must come BEFORE the
