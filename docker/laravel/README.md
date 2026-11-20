@@ -137,8 +137,10 @@ would land inside the source tree.
    remotes), branch, deployment path **`repo/`** — relative to `public_html`,
    trailing slash required.
 4. **First run:** `bash ~/applications/<app>/repo/bin/cloudways-deploy.sh`.
-   It creates `.env` from `.env.example`, generates `APP_KEY`, and exits `2`
-   with a checklist. Fill `.env` in, run it again.
+   It creates `.env` from `.env.example` and exits `2` with a checklist —
+   before installing anything or touching the docroot. Fill `.env` in and run
+   it again: that run installs dependencies, generates `APP_KEY`, migrates,
+   warms the caches, and only then swaps the docroot.
 5. **SSH user:** the application's own SSH user, not `master` — the files must
    stay owned by the PHP-FPM user.
 6. **CLI PHP:** if the server's default `php` is not the app's version, pass

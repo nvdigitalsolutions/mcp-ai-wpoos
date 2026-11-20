@@ -4,9 +4,10 @@
 #
 # Cloudways' "Deployment via Git" clones into a path *relative to the
 # docroot*, so this checkout normally lives at `public_html/repo/`. Laravel
-# needs the docroot to be its `public/` directory, so this script publishes the
-# front controller and static assets into the docroot, installs the monorepo's
-# path-repository dependencies, migrates, and warms the production caches.
+# needs the docroot to be its `public/` directory, so this script installs the
+# monorepo's path-repository dependencies, migrates, warms the production
+# caches, and only then publishes the front controller and static assets into
+# the docroot.
 #
 # Usage:
 #   bin/cloudways-deploy.sh [options]
@@ -131,7 +132,12 @@ fi
 
 cd "$APP_ROOT"
 
-# ── Publish the front controller and static assets ───────────────────────────
+# ── Docroot publication (defined here, called LAST) ──────────────────────────
+# Install, migrate and warm the caches BEFORE swapping the served tree, so the
+# docroot keeps answering from the previous release while the build runs. This
+# is the 12-factor build → release → run split, and the same "activate last"
+# order Envoyer/Forge use with their `current` symlink.
+publish_to_docroot() {
 say "Publishing public/ into $PUBLIC_ROOT"
 run rsync -a --delete \
 	--exclude 'index.php' \
@@ -206,6 +212,7 @@ PHP
 HTACCESS
 	info "wrote index.php and .htaccess"
 fi
+}
 
 # ── .env ─────────────────────────────────────────────────────────────────────
 ENV_FILE="$APP_ROOT/.env"
@@ -214,7 +221,6 @@ env_get() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | t
 if [[ ! -f "$ENV_FILE" ]]; then
 	say "Creating .env from .env.example"
 	run cp "$APP_ROOT/.env.example" "$ENV_FILE"
-	run "$PHP_BIN" artisan key:generate --force
 	cat <<'NEXT'
 
     Fill in at minimum (see docker/laravel/README.md for the full block):
@@ -231,8 +237,6 @@ if [[ ! -f "$ENV_FILE" ]]; then
 NEXT
 	exit 2
 fi
-
-[[ -n "$(env_get APP_KEY)" ]] || die "APP_KEY is empty in $ENV_FILE — run: $PHP_BIN artisan key:generate --force"
 
 APP_ENV_VALUE="$(env_get APP_ENV)"
 if [[ "$APP_ENV_VALUE" == "production" ]]; then
@@ -261,6 +265,24 @@ if ((DO_INSTALL)); then
 	fi
 fi
 
+# ── Application key ──────────────────────────────────────────────────────────
+# Laravel's docs put key:generate in the installation step; it must run AFTER
+# dependencies exist (artisan boots the framework) and BEFORE anything that
+# encrypts or decrypts, migrations included. Generating it here, instead of in
+# the .env branch, is what keeps a bare host from failing on a missing
+# vendor/autoload.php.
+if [[ -z "$(env_get APP_KEY)" ]]; then
+	say "Generating APP_KEY"
+	if ((DRY_RUN)); then
+		info "[dry-run] $PHP_BIN artisan key:generate --force"
+	elif [[ ! -f "$APP_ROOT/vendor/autoload.php" ]]; then
+		die "APP_KEY is empty and vendor/ is missing. Re-run without --no-install so dependencies are installed first."
+	else
+		"$PHP_BIN" artisan key:generate --force
+		[[ -n "$(env_get APP_KEY)" ]] || die "APP_KEY is empty in $ENV_FILE after key:generate — set it by hand."
+	fi
+fi
+
 # ── Schema ───────────────────────────────────────────────────────────────────
 if ((DO_MIGRATE)); then
 	say "Running migrations"
@@ -275,6 +297,9 @@ say "Publishing Filament assets and warming caches"
 run "$PHP_BIN" artisan filament:assets
 run "$PHP_BIN" artisan filament:optimize
 run "$PHP_BIN" artisan optimize
+
+# ── Release: swap the served tree ────────────────────────────────────────────
+publish_to_docroot
 
 # ── Long-running processes ───────────────────────────────────────────────────
 say "Signalling workers and the scheduler"
