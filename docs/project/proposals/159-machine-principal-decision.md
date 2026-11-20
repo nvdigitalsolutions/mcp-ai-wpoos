@@ -150,7 +150,9 @@ Concretely:
    `Authenticate`, declarations read from the route, `scope:any` for self routes, and
    the ordering test that proves it is not a no-op.
 3. **Minting**, first as a console command (the `nvoos:auth0-link` precedent), then a
-   panel form if it earns one.
+   panel form if it earns one. *Console half shipped as `nvoos:machine-token` —
+   [149](149-laravel-admin-parity-implementation-plan.md) §122. The panel form is
+   not built, and nothing mints a token implicitly.*
 4. **Tool execution for assistant scope**, which is a new route and its own decision
    about which tools are safe for a machine.
 
