@@ -12,6 +12,7 @@
 import type { SemanticSection } from '../../forge/semantic.ts';
 import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
+import ItemTitle from './ItemTitle.astro';
 import SmartImage from '../SmartImage.astro';
 import IconMarker from './IconMarker.astro';
 import SectionTitle from './SectionTitle.astro';
@@ -76,7 +77,7 @@ const dividerStyle = theme?.titleDivider
 							<li class="ds-icon-row">
 								<IconMarker item={item} />
 								<div class="ds-icon-row-text">
-									{item.title && <h4>{item.title}</h4>}
+									<ItemTitle item={item} fallback="h4" />
 									{item.body && <p>{item.body}</p>}
 								</div>
 							</li>
@@ -89,7 +90,7 @@ const dividerStyle = theme?.titleDivider
 								<li class="ds-card">
 									<IconMarker item={item} />
 									{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
-									{item.title && <h4>{item.title}</h4>}
+									<ItemTitle item={item} fallback="h4" />
 									{item.body && <p>{item.body}</p>}
 								</li>
 							))}
@@ -115,7 +116,7 @@ const dividerStyle = theme?.titleDivider
 						<li class="ds-icon-row">
 							<IconMarker item={item} />
 							<div class="ds-icon-row-text">
-								{item.title && <h4>{item.title}</h4>}
+								<ItemTitle item={item} fallback="h4" />
 								{item.body && <p>{item.body}</p>}
 							</div>
 						</li>
@@ -128,7 +129,7 @@ const dividerStyle = theme?.titleDivider
 							<li class="ds-card">
 								<IconMarker item={item} />
 								{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
-								{item.title && <h4>{item.title}</h4>}
+								<ItemTitle item={item} fallback="h4" />
 								{item.body && <p>{item.body}</p>}
 							</li>
 						))}

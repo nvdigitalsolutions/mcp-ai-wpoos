@@ -8,6 +8,7 @@
 import type { SemanticSection } from '../../forge/semantic.ts';
 import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
+import { itemTitleTag } from '../../lib/title-tag.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
 
@@ -22,9 +23,19 @@ const { title, body, items } = section.slots;
 // A grid never declares more tracks than it has items: the source's authored
 // column count (3 in a services band, 4 in a logo wall) can exceed what the
 // classifier rebuilt after merging or skipping an empty column.
-const desktop = columns ? Math.min( columns.desktop ?? 4, Math.max( items?.length ?? 1, 1 ) ) : undefined;
-const gridStyle = columns && desktop
-	? `--ds-cols-desktop: ${ desktop }; --ds-cols-tablet: ${ Math.min( columns.tablet ?? 2, desktop ) }; --ds-cols-mobile: ${ Math.min( columns.mobile ?? 1, desktop ) };`
+// A source column that carries a SURFACE owns a lane even when it holds no copy.
+// A photo column published as a CSS `background-image` produces no item, and
+// clamping the track count to the item count collapsed a three-column band to
+// two AND dropped every surface with it (virtuallysrilanka's services band is
+// red / photo / black; the rebuild was two plain cards). The profile's
+// `columns` is keyed by index, and each item carries its `columnIndex`.
+const sourceColumns = theme?.columns ?? [];
+const lanes = sourceColumns.some( ( column ) => column.bgColor || column.bgImage )
+	? sourceColumns.length
+	: undefined;
+const desktop = lanes ?? ( columns ? Math.min( columns.desktop ?? 4, Math.max( items?.length ?? 1, 1 ) ) : undefined );
+const gridStyle = desktop
+	? `--ds-cols-desktop: ${ desktop }; --ds-cols-tablet: ${ Math.min( columns?.tablet ?? 2, desktop ) }; --ds-cols-mobile: ${ Math.min( columns?.mobile ?? 1, desktop ) };`
 	: undefined;
 
 const titleVars = [
@@ -62,18 +73,49 @@ const dividerStyle = theme?.titleDivider
 	)}
 	{items && items.length > 0 && (
 		<div class="ds-grid" style={gridStyle}>
-			{items.map((item) => (
-				<div class="ds-card">
-					{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
-					{item.title && <h3>{item.title}</h3>}
-					{item.body && <p>{item.body}</p>}
-					{item.links?.[0] && (
-						<a class="ds-button" href={item.links[0].href ?? '#'}>
-							{item.links[0].text ?? 'Learn more'}
-						</a>
-					)}
-				</div>
-			))}
+			{lanes
+				? Array.from( { length: lanes }, ( _, index ) => {
+						const item = items.find( ( entry ) => entry.columnIndex === index );
+						const surface = sourceColumns[ index ];
+						const surfaceStyle = [
+							surface?.bgColor && `background-color:${ surface.bgColor }`,
+							surface?.bgImage &&
+								`background-image:url('${ surface.bgImage }');background-size:cover;background-position:center`,
+							// The lane's copy takes the ink its own slab needs — the card default
+							// is a muted grey, unreadable on the source's red and black panels.
+							surface?.ink && `--ds-card-surface-ink:${ surface.ink }`,
+						]
+							.filter( Boolean )
+							.join( ';' );
+						const Heading = itemTitleTag( item?.titleLevel, 'h3' );
+						return (
+							<div class:list={[ 'ds-card', ( surface?.bgColor || surface?.bgImage ) && 'ds-card--surface', surface?.bgImage && 'ds-card--surface-media' ]} style={surfaceStyle || undefined}>
+								{item?.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
+								{item?.title && <Heading>{item.title}</Heading>}
+								{item?.body && <p>{item.body}</p>}
+								{item?.links?.[0] && (
+									<a class="ds-button" href={item.links[0].href ?? '#'}>
+										{item.links[0].text ?? 'Learn more'}
+									</a>
+								)}
+							</div>
+						);
+				  } )
+				: items.map((item) => {
+						const Heading = itemTitleTag( item.titleLevel, 'h3' );
+						return (
+							<div class="ds-card">
+								{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
+								{item.title && <Heading>{item.title}</Heading>}
+								{item.body && <p>{item.body}</p>}
+								{item.links?.[0] && (
+									<a class="ds-button" href={item.links[0].href ?? '#'}>
+										{item.links[0].text ?? 'Learn more'}
+									</a>
+								)}
+							</div>
+						);
+				  })}
 		</div>
 	)}
 	<SectionLinks section={section} />

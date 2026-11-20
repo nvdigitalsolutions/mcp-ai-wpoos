@@ -106,6 +106,24 @@ export interface LinkRef {
 
 export interface SectionItem {
 	title?: string;
+	/**
+	 * The heading LEVEL the item's title came from (2–6). A multi-column band
+	 * spreads real `h2` headings across its lanes, and the band's measured type
+	 * rule is scoped to that level — an item rendered at a different level never
+	 * matches it (virtuallysrilanka's services columns stayed at the template's
+	 * default size). Absent → the component's own default.
+	 */
+	titleLevel?: number;
+	/**
+	 * The SOURCE COLUMN this item came from, when the band is a column grid.
+	 *
+	 * A lane can hold a surface and no content (a photo column painted as a CSS
+	 * background), and `columnItems` skips those so no empty card is emitted —
+	 * but then the remaining items no longer line up with `design.sections[].columns`
+	 * and a three-column band rebuilt as two lanes with none of its surfaces.
+	 * The index is what lets the grid place and paint the lanes faithfully.
+	 */
+	columnIndex?: number;
 	body?: string;
 	media?: MediaRef;
 	links?: LinkRef[];
@@ -610,7 +628,7 @@ function glyphClassesOf( node: HNode ): string | undefined {
 	return undefined;
 }
 
-function extractStructuredItem( node: HNode ): { title?: string; body?: string; media?: MediaRef; icon: boolean; iconClass?: string; layout?: 'row' | 'stack' } | undefined {
+function extractStructuredItem( node: HNode ): { title?: string; titleLevel?: number; body?: string; media?: MediaRef; icon: boolean; iconClass?: string; layout?: 'row' | 'stack' } | undefined {
 	const headings = allDescendants( node, ( n ) => n.type === 'tag' && /^h[3-6]$/.test( n.name ?? '' ) );
 	if ( headings.length === 0 ) {
 		return undefined;
@@ -653,7 +671,7 @@ function extractStructuredItem( node: HNode ): { title?: string; body?: string; 
 		.map( ( p ) => trimmed( textOf( p ) ) )
 		.filter( ( value ) => value && value !== title );
 	const body = paragraphs.length > 0 ? paragraphs.join( ' ' ) : undefined;
-	return { title, body, media, icon, iconClass, layout };
+	return { title, titleLevel: Number( ( headings[ 0 ].name ?? 'h3' ).slice( 1 ) ) || undefined, body, media, icon, iconClass, layout };
 }
 
 /** The attribution line of a quote widget (aux-author / cite / byline). */
@@ -759,11 +777,17 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 		return undefined;
 	}
 	const items: SectionItem[] = [];
-	for ( const column of columns ) {
+	for ( const [ columnIndex, column ] of columns.entries() ) {
 		const collected = collectSlots( column );
-		const item: SectionItem = {};
+		// The LANE index rides every item, including the ones after a skipped lane:
+		// `design.sections[].columns` is keyed by this index and carries that
+		// lane's surface (virtuallysrilanka's services band is red / photo / black).
+		const item: SectionItem = { columnIndex };
 		if ( collected.title ) {
 			item.title = collected.title;
+		}
+		if ( collected.titleLevel ) {
+			item.titleLevel = collected.titleLevel;
 		}
 		if ( ( collected.body ?? [] ).length > 0 ) {
 			item.body = ( collected.body ?? [] ).join( ' ' );
@@ -776,9 +800,10 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 		}
 		if ( ! item.title && ! item.body && ! item.media ) {
 			// A column with no copy and no media (a photo painted as a CSS
-			// background, a spacer) has no rebuildable content — the flat model
-			// has no per-column surface to paint it with. Skip it rather than
-			// emitting an empty card.
+			// background, a spacer) has no rebuildable content, so no item is
+			// emitted — but its LANE still exists in the profile's `columns`, and
+			// the grid places the remaining items by `columnIndex` and paints that
+			// lane's surface. Skipping the item must not renumber the lanes.
 			continue;
 		}
 		items.push( item );
@@ -816,6 +841,9 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 				: undefined;
 		if ( structured ) {
 			const item: SectionItem = { title: structured.title };
+			if ( structured.titleLevel ) {
+				item.titleLevel = structured.titleLevel;
+			}
 			if ( structured.body ) {
 				item.body = structured.body;
 			}

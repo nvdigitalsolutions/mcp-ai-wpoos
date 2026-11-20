@@ -25,3 +25,25 @@ export const titleTag = ( type?: { titleLevel?: string } ): TitleTag => {
 	const level = type?.titleLevel;
 	return level === 'h3' || level === 'h4' || level === 'h5' || level === 'h6' ? level : 'h2';
 };
+
+/**
+ * The tag an ITEM title uses, from the level its SOURCE heading carried.
+ *
+ * An item is not the band's title: a services column is a real `h2` in the
+ * source and a wifi icon-box caption is an `h3`, and the band's measured type
+ * rule is scoped to that level (`[data-section-id=…] h2{…}`) — so rendering
+ * every item at one template level left those headings at the default size
+ * (virtuallysrilanka's services columns).
+ *
+ * An `h1` maps down to `h2` for the same reason as `titleTag`. An absent level
+ * keeps the component's own default.
+ */
+export const itemTitleTag = ( level: number | undefined, fallback: TitleTag ): TitleTag => {
+	if ( ! level || ! Number.isFinite( level ) ) {
+		return fallback;
+	}
+	if ( level <= 2 ) {
+		return 'h2';
+	}
+	return ( level >= 6 ? 'h6' : `h${ level }` ) as TitleTag;
+};

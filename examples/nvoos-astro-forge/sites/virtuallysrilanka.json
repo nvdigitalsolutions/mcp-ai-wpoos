@@ -1317,31 +1317,43 @@
 				"desktop": [
 					{
 						"selector": "elementor-element-2d81ba5",
-						"height": 278
+						"height": 278,
+						"width": 640,
+						"pad": "0px 30px 0px 0px"
 					},
 					{
 						"selector": "elementor-element-4fd16dd",
-						"height": 634
+						"height": 634,
+						"width": 640,
+						"pad": "50px"
 					}
 				],
 				"tablet": [
 					{
 						"selector": "elementor-element-2d81ba5",
-						"height": 336
+						"height": 336,
+						"width": 834,
+						"pad": "200px 100px 0px"
 					},
 					{
 						"selector": "elementor-element-4fd16dd",
-						"height": 412
+						"height": 412,
+						"width": 834,
+						"pad": "0px 0px 100px"
 					}
 				],
 				"mobile": [
 					{
 						"selector": "elementor-element-2d81ba5",
-						"height": 325
+						"height": 325,
+						"width": 390,
+						"pad": "160px 30px 0px"
 					},
 					{
 						"selector": "elementor-element-4fd16dd",
-						"height": 361
+						"height": 361,
+						"width": 390,
+						"pad": "0px 0px 100px"
 					}
 				]
 			},
@@ -1549,31 +1561,43 @@
 				"desktop": [
 					{
 						"selector": "elementor-element-9d48e3a",
-						"height": 433
+						"height": 433,
+						"width": 640,
+						"pad": "10px"
 					},
 					{
 						"selector": "elementor-element-3985a67",
-						"height": 522
+						"height": 522,
+						"width": 640,
+						"pad": "50px"
 					}
 				],
 				"tablet": [
 					{
 						"selector": "elementor-element-9d48e3a",
-						"height": 454
+						"height": 454,
+						"width": 834,
+						"pad": "10px"
 					},
 					{
 						"selector": "elementor-element-3985a67",
-						"height": 467
+						"height": 467,
+						"width": 834,
+						"pad": "50px"
 					}
 				],
 				"mobile": [
 					{
 						"selector": "elementor-element-9d48e3a",
-						"height": 217
+						"height": 217,
+						"width": 390,
+						"pad": "10px"
 					},
 					{
 						"selector": "elementor-element-3985a67",
-						"height": 729
+						"height": 729,
+						"width": 390,
+						"pad": "80px 20px"
 					}
 				]
 			},
@@ -2532,43 +2556,64 @@
 				"desktop": [
 					{
 						"selector": "elementor-element-e0c7fc7",
-						"height": 536
+						"height": 536,
+						"width": 432,
+						"bg": "rgb(221, 51, 51)"
 					},
 					{
 						"selector": "elementor-element-954853d",
-						"height": 536
+						"height": 536,
+						"width": 432,
+						"image": true,
+						"attachment": "scroll"
 					},
 					{
 						"selector": "elementor-element-ac7a06e",
-						"height": 536
+						"height": 536,
+						"width": 571,
+						"bg": "rgb(0, 0, 0)"
 					}
 				],
 				"tablet": [
 					{
 						"selector": "elementor-element-e0c7fc7",
-						"height": 356
+						"height": 356,
+						"width": 834,
+						"bg": "rgb(221, 51, 51)"
 					},
 					{
 						"selector": "elementor-element-954853d",
-						"height": 456
+						"height": 456,
+						"width": 167,
+						"image": true,
+						"attachment": "scroll"
 					},
 					{
 						"selector": "elementor-element-ac7a06e",
-						"height": 456
+						"height": 456,
+						"width": 667,
+						"bg": "rgb(0, 0, 0)"
 					}
 				],
 				"mobile": [
 					{
 						"selector": "elementor-element-e0c7fc7",
-						"height": 572
+						"height": 572,
+						"width": 390,
+						"bg": "rgb(221, 51, 51)"
 					},
 					{
 						"selector": "elementor-element-954853d",
-						"height": 419
+						"height": 419,
+						"width": 390,
+						"image": true,
+						"attachment": "scroll"
 					},
 					{
 						"selector": "elementor-element-ac7a06e",
-						"height": 684
+						"height": 684,
+						"width": 390,
+						"bg": "rgb(0, 0, 0)"
 					}
 				]
 			},

@@ -25,14 +25,14 @@ import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts, columnInn
 import { animationRebuildCss, countAnimations, planAnimationRebuild, type ParallaxCarrier } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit, readableInk } from './contrast.ts';
-import { contrast, DEFAULT_FONT_STACK, designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
+import { contrast, DEFAULT_FONT_STACK, designToTokens, inkForSurface, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor, isCookielessVendor } from './tracking.ts';
-import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ForgeSectionColumn, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -1339,6 +1339,66 @@ function contentlessBand( facts: ForgeBandFacts | undefined ): boolean {
  * at all returns `undefined`.
  */
 /**
+ * The band's lanes as the BROWSER measured them, merged with the declared
+ * column facts.
+ *
+ * `design.sections[].columns` states the builder's INTENT — `col-33` on every
+ * lane, plus whatever surfaces a static parse could attribute. The geometry pass
+ * renders the band and records the real width and the PAINTED layer, so it wins
+ * where the two disagree. The declared `bgImage` URL is kept, because the
+ * measured fact records only that an image is painted, not which.
+ *
+ * Returns undefined unless at least two lanes were measured, so a band with no
+ * column grid keeps the declared path.
+ */
+function measuredLaneColumns(
+	bandFacts: ForgeBandFacts | undefined,
+	declared: ForgeSectionColumn[] | undefined
+): ForgeSectionColumn[] | undefined {
+	const lanes = bandFacts?.columns?.desktop;
+	if ( ! lanes || lanes.length < 2 ) {
+		return undefined;
+	}
+	// Only override the declared columns when the measurement carries something
+	// the declaration cannot: a rendered width or a painted surface. Otherwise a
+	// grid measured for its heights alone would replace a good declaration with
+	// empty objects.
+	if ( ! lanes.some( ( lane ) => lane.width || lane.bg || lane.image ) ) {
+		return undefined;
+	}
+	const total = lanes.reduce( ( sum, lane ) => sum + ( lane.width ?? 0 ), 0 );
+	const declaredImages = ( declared ?? [] )
+		.map( ( column ) => column.bgImage )
+		.filter( ( url ): url is string => Boolean( url ) );
+	const used = new Set< string >();
+	return lanes.map( ( lane, index ) => {
+		const column: ForgeSectionColumn = {};
+		if ( lane.width && total > 0 ) {
+			// A one-decimal share keeps the lanes summing to 100.
+			column.width = Math.round( ( lane.width / total ) * 1000 ) / 10;
+		}
+		if ( lane.bg ) {
+			column.bgColor = lane.bg;
+			// A painted lane's copy needs the ink that slab requires — the card's
+			// default (`--forge-muted`) is unreadable on a black or red panel.
+			column.ink = inkForSurface( lane.bg );
+		}
+		if ( lane.image ) {
+			const atIndex = declared?.[ index ]?.bgImage;
+			const url =
+				atIndex && ! used.has( atIndex )
+					? atIndex
+					: declaredImages.find( ( candidate ) => ! used.has( candidate ) );
+			if ( url ) {
+				used.add( url );
+				column.bgImage = url;
+			}
+		}
+		return column;
+	} );
+}
+
+/**
  * Reconcile an EXPLICIT `section.padding` fact with the per-viewport
  * measurement.
  *
@@ -1939,7 +1999,32 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 				.join( ', ' ) }]`
 		);
 	}
-	if ( section.columns && section.columns.length > 0 ) {
+	// The MEASURED lanes win over the profile's declared columns. The declaration
+	// states the builder's INTENT (`col-33` on all three), while the measurement
+	// holds what the browser actually renders: the real widths (virtuallysrilanka's
+	// services row is 432 / 432 / 571, not equal thirds) and the surfaces only a
+	// browser can see — a builder scopes the slab to a nested wrapper, which is
+	// how the black third column and its photo column went unrecorded.
+	const measuredColumns = measuredLaneColumns( bandFacts, section.columns );
+	if ( measuredColumns ) {
+		const lanes = measuredColumns.map( ( column ) => {
+			const parts: string[] = [];
+			if ( column.width !== undefined ) {
+				parts.push( `width: ${ column.width }` );
+			}
+			if ( column.bgColor ) {
+				parts.push( `bgColor: ${ tsString( column.bgColor ) }` );
+			}
+			if ( column.bgImage ) {
+				parts.push( `bgImage: ${ tsString( column.bgImage ) }` );
+			}
+			if ( column.ink ) {
+				parts.push( `ink: ${ tsString( column.ink ) }` );
+			}
+			return `{ ${ parts.join( ', ' ) } }`;
+		} );
+		entry.push( `columns: [${ lanes.join( ', ' ) }]` );
+	} else if ( section.columns && section.columns.length > 0 ) {
 		const columns = section.columns.map( ( column ) => {
 			const parts: string[] = [];
 			if ( column.width !== undefined ) {
@@ -2285,6 +2370,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t\t * ships and the sanitiser drops the inline style. */',
 		'\t\tbgColor?: string;',
 		'\t\tbgImage?: string;',
+		'\t\t/** The ink that lane\u2019s own surface needs (`inkForSurface`). */',
+		'\t\tink?: string;',
 		'\t}>;',
 		'\t/** The content rhythm (125 §1) — \'split\' = a copy column beside a',
 		'\t * media collage column (the source\'s two-column hero bands). */',
