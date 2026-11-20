@@ -105,6 +105,17 @@ function log( message ) {
 	console.log( `[forge-media] ${ message }` );
 }
 
+/**
+ * A failure the build must NOT survive.
+ *
+ * This pass is an enhancement, and `main().catch()` below is deliberately
+ * forgiving: a font that cannot be mirrored costs a fallback face, not the
+ * build. But an artifact whose media still points at the origin is not a
+ * degraded enhancement — it is a broken promise (the retired-cms gate exists
+ * to refuse it). An incomplete snapshot is that kind of failure.
+ */
+class FatalMediaError extends Error {}
+
 /** A non-2xx answer — retried only when it looks transient. */
 class HttpStatusError extends Error {
 	constructor( status ) {
@@ -154,22 +165,60 @@ function resolveCmsOrigin( manifest ) {
  *
  * FAIL-SOFT: an absent/unreadable snapshot is reported and ignored; a site
  * that never made one keeps building exactly as before.
+ *
+ * An entry whose FILE is missing is not fail-soft, though. A manifest is a
+ * promise that the asset is committed, and when it is authoritative the build
+ * has no other source — the reference silently stayed an origin URL and the
+ * retired-cms gate failed eight of them on a site whose CMS is gone
+ * (monicarajiv, 2026-11-20: the manifest listed 68 assets, 41 had no file in
+ * git). An authoritative snapshot with holes now STOPS the build and names
+ * them; a non-authoritative one drops the broken entries and falls back to the
+ * network, which is what a fallback is for.
  */
 async function readMediaSnapshot( mediaPolicy ) {
 	const requested = env( 'NVOOS_FORGE_MEDIA_SNAPSHOT' );
 	const dir = requested ? path.resolve( ROOT, requested ) : path.join( ROOT, 'media-snapshot' );
 	const manifestPath = path.join( dir, 'manifest.json' );
+	const authoritative = mediaPolicy?.snapshot === true;
 	if ( ! existsSync( manifestPath ) ) {
-		return { dir: undefined, entries: new Map(), authoritative: mediaPolicy?.snapshot === true };
+		return { dir: undefined, entries: new Map(), authoritative };
 	}
+	let entries;
 	try {
 		const manifest = JSON.parse( await readFile( manifestPath, 'utf8' ) );
-		const entries = new Map( Object.entries( manifest.entries ?? {} ) );
-		return { dir, entries, authoritative: mediaPolicy?.snapshot === true };
+		entries = new Map( Object.entries( manifest.entries ?? {} ) );
 	} catch ( error ) {
 		log( `media snapshot ignored (${ error instanceof Error ? error.message : error }).` );
-		return { dir: undefined, entries: new Map(), authoritative: mediaPolicy?.snapshot === true };
+		return { dir: undefined, entries: new Map(), authoritative };
 	}
+	const broken = [ ...entries.entries() ].filter( ( [ , entry ] ) => {
+		const file = entry && typeof entry.file === 'string' ? entry.file : '';
+		return ! file || ! existsSync( path.join( dir, file ) );
+	} );
+	if ( broken.length === 0 ) {
+		return { dir, entries, authoritative };
+	}
+	const sample = broken
+		.slice( 0, 5 )
+		.map( ( [ url ] ) => `  - ${ url }` )
+		.join( '\n' );
+	if ( authoritative ) {
+		throw new FatalMediaError(
+			[
+				`media snapshot is incomplete: ${ broken.length } of ${ entries.size } manifest entries have no file in ${ path.relative( ROOT, dir ) }.`,
+				sample,
+				...( broken.length > 5 ? [ `  …and ${ broken.length - 5 } more` ] : [] ),
+				'  Re-freeze it: `forge media-snapshot <profile> --from <built project>`.',
+			].join( '\n' )
+		);
+	}
+	log(
+		`WARNING: media snapshot has ${ broken.length } entr${ broken.length === 1 ? 'y' : 'ies' } with no file — falling back to the network for those.`
+	);
+	for ( const [ url ] of broken ) {
+		entries.delete( url );
+	}
+	return { dir, entries, authoritative };
 }
 
 /** A Content-Type for a snapshot file when its manifest omits one. */
@@ -755,6 +804,46 @@ async function main() {
 		}
 	} );
 
+	// 2b. A reference the CMS no longer serves must NOT ship as a hotlink: the
+	// artifact would depend on a dead origin, and the retired-cms gate refuses it
+	// (monicarajiv's WP install has lost ten of its own uploads to 404). Replace a
+	// DEFINITIVELY absent image with a local blank mark of the right kind — a
+	// transparent SVG scaled into the box the markup already declares — so the
+	// layout keeps its shape and nothing leaves the site. A TRANSIENT failure
+	// (timeout, 5xx, reset) keeps the origin URL and only warns: a build-to-build
+	// blip must not blank a photograph that the next build will fetch.
+	const replaced = [];
+	const transient = [];
+	const PLACEHOLDER = 'media/unavailable.svg';
+	const PLACEHOLDER_SVG =
+		'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><rect width="1" height="1" fill="none"/></svg>';
+	const goneReason = /^HTTP 4\d\d$/;
+	for ( const failure of failed ) {
+		const originals = byDownloadUrl.get( failure.url ) ?? [];
+		if ( ! goneReason.test( failure.reason ) || originals.length === 0 ) {
+			transient.push( failure );
+			continue;
+		}
+		const extension = ( path.extname( new URL( failure.url ).pathname ).replace( /^\./, '' ) || '' ).toLowerCase();
+		const isImage = isReencodableImage( extension ) || extension === 'svg';
+		if ( ! isImage ) {
+			// A stylesheet or a document has no neutral stand-in: keep the URL and
+			// let the gate report it rather than serve an empty file.
+			transient.push( failure );
+			continue;
+		}
+		await writeFile( path.join( out, PLACEHOLDER ), PLACEHOLDER_SVG, 'utf8' );
+		for ( const original of originals ) {
+			map.set( original, `/${ PLACEHOLDER }` );
+			replaced.push( { url: original, reason: failure.reason } );
+		}
+	}
+	if ( replaced.length > 0 ) {
+		log( `replaced ${ replaced.length } gone asset(s) with ${ PLACEHOLDER } (the CMS no longer serves them).` );
+		// They are no longer FAILURES — the reference now points at a local file.
+		failed.splice( 0, failed.length, ...transient );
+	}
+
 	// 3. Emit the localized stylesheets now that their assets have local paths.
 	//
 	// A reference we could not mirror must not stay remote inside a mirrored
@@ -848,6 +937,7 @@ async function main() {
 		unoptimized,
 		proxied,
 		skipped: [ ...skipped, ...leftRemote ],
+		replaced,
 		failed,
 		droppedFontFamilies: droppedFamilies,
 		bytes: totalBytes,
@@ -926,6 +1016,13 @@ async function writeReport( payload ) {
 }
 
 await main().catch( ( error ) => {
-	// Never fail the build: the localized output is an enhancement.
+	if ( error instanceof FatalMediaError ) {
+		// A missing asset the build cannot stand in for. Shipping the page with
+		// the origin URL is worse than stopping here: that URL outlives the CMS.
+		log( `FAILED: ${ error.message }` );
+		process.exitCode = 1;
+		return;
+	}
+	// Never fail the build for the rest: the localized output is an enhancement.
 	log( `pass aborted: ${ error instanceof Error ? error.message : error }` );
 } );
