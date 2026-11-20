@@ -173,6 +173,19 @@ before touching the CLI, the scaffold or the sanitizer. The highest-traffic ones
   would pin responsive copy).
 - **The class-coverage audit must include the page's inline `<style>`** and treat
   `[class~=…]`/`[class*=…]` as coverage, or correctly-styled bands read as missing.
+- **Check the element EXISTS in the build before fixing its CSS.** A
+  component-class fix is a silent no-op on a raw-HTML site: `grep -c
+  'class="ds-title' dist/*.html` before touching the `.ds-title` rules. Per-
+  element type on those bands is a CLASS BOX FACT (`bandFacts[id].box`), not
+  `design.elementCss`, and `bandBoxCss`'s `.post-body .section-content .col .x`
+  selector is a five-class specificity floor no reordering can beat.
+- **`profile.url` is not always the rebuild.** A "detached" site can still have
+  its URL pointing at live WordPress while a preview host serves the Astro
+  build — check for `wp-content` / `<meta name="forge-build">` before deciding
+  that a re-measure is circular.
+- **`sites/` is enumerated as site profiles**, so an artefact parked there is
+  scaffolded as a site and fails `assertProfile`. `forge compare` specs live in
+  `compare/<site>.json`.
 
 ## Template contract (FORGE markers)
 
@@ -1054,6 +1067,24 @@ are browser facts on `analyze --geometry`, stored as `profile.bandFacts` and
   `containerWidth`. Scaffold emits `[data-section-id] h3{…}` + `--ds-title-*`,
   and derives the band `measure` from the container (fluid bands stop rendering
   at the site measure).
+- **A measured device size REPLACES the headline `clamp()`, it is not an anchor
+  for it** (2026-11-21). The template shrinks a headline to a hard-coded floor
+  (`1.5rem`/`1.75rem`), which is a guess about the source — so a band title that
+  is 22.2px on desktop and 16px on a phone rendered at the desktop size on
+  phones (39% large). `title.tablet.size` / `title.mobile.size` now emit
+  `--ds-title-size-md` / `--ds-title-size-sm`, and `global.css` swaps the whole
+  clamp for them under `1024px` / `767px`. The vars are absent where the source
+  does not change size at that device, so the clamp still governs.
+  **Known gap:** on a raw-HTML band the class box fact still wins (see the
+  Gotchas bullet on the specificity floor), so a desktop class type reaches the
+  phone; the device title vars fix the COMPONENT path only.
+- **A `rem` body size must resolve against the html root rule.** `chromeSizeFrom`
+  reads `body { font-size }` and its `em` pattern is anchored, so `1.125rem`
+  declined every branch and fell through to the polluted element resolution.
+  The chrome size is now also a MEASURED fact (`geometry.chromeSize`, from the
+  copyright node's computed style, overlaid by `applyMeasuredChromeSize`) — a
+  declaration is not a computed value: `1.125rem` resolves to 18px where the
+  source paints 15.984px.
 - `stickyHeader` = rest vs pinned background/ink/height. `Base.astro` adds
   `site-header--pinned`; global.css rebuilds it as a `scroll(root)` timeline
   (rest state is the BASE — a header's finished state is the scrolled one, and a

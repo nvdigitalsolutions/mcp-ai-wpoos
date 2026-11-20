@@ -37,6 +37,8 @@ already extracted its design language — the tokens feed the template's
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
 | `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens, typed copy tables, theme module, `lib/seo.ts`, Tailwind token bridge, the inert `_ssr` product route (Q4) and `_og` card endpoint (Q5) |
 | `lib/contrast.ts` | WCAG 2.2 contrast math — the token gate warns on AA failures at scaffold time |
+| `sites/` | Committed site PROFILES (`<site>.json`) — the only thing the fleet workflow scaffolds. A file here must carry `{ url, collections: [...] }` or it is skipped as a non-site |
+| `compare/` | `forge compare` element specs (`<site>.json`) — passed by explicit `--elements`, never scaffolded |
 | `tests/` | Unit tests (`npm test`) + the exit-gate e2e (`npm run test:e2e`) |
 
 ## Dev loop
@@ -188,6 +190,18 @@ node scripts/forge.mjs unlock site.json --target ./customer-frontend --yes   # r
 #    Re-apply just that span instead of re-scaffolding (which reinstalls deps).
 node scripts/forge.mjs tokens site.json --target ./customer-frontend --check   # drift report, exit 1
 node scripts/forge.mjs tokens site.json --target ./customer-frontend           # rewrite in place
+
+# 10. Compare individual ELEMENTS when a gate is too coarse to name the culprit.
+#    The spec names a selector and the properties to read on BOTH pages (a CSS
+#    name, or rect.width|height|left|centre); a property that differs by more
+#    than --tolerance fails the command unless --soft. Specs live in
+#    compare/<site>.json — NOT in sites/: the fleet workflow enumerates
+#    sites/*.json as site profiles and scaffolds each one, so a spec left there
+#    was built as a site and failed assertProfile (2026-11-21).
+node scripts/forge.mjs compare site.json --target ./customer-frontend \
+  --elements compare/monicarajiv.json
+node scripts/forge.mjs compare site.json --target ./customer-frontend \
+  --elements compare/monicarajiv.json --path /accommodations/ --width 390 --soft
 ```
 
 ### Environment per site (build time vs runtime)
