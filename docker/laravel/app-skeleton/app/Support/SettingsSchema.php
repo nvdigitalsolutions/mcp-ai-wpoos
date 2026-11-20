@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Support\Settings\InapplicableSettings;
 use App\Support\Settings\SettingsCatalogue;
 use App\Support\Settings\UnimplementedSettings;
 
@@ -255,6 +256,11 @@ final class SettingsSchema
      * `sensitiveKeys()` complete, which is what the security snapshot path
      * needs.
      *
+     * `admin` also drops the `inapplicable` keys (Proposal 149 §104) — settings
+     * that configure WordPress software this runtime does not have. They are not
+     * rendered at all, because a disabled control still asserts that the
+     * capability could be built here.
+     *
      * @return list<array<string, mixed>>
      */
     public static function forSurface(string $surface = 'admin'): array
@@ -273,7 +279,10 @@ final class SettingsSchema
             ));
         }
 
-        return self::fields();
+        return array_values(array_filter(
+            self::fields(),
+            static fn (array $field): bool => ! InapplicableSettings::isInapplicable((string) $field['key']),
+        ));
     }
 
     /**
@@ -333,7 +342,8 @@ final class SettingsSchema
         return array_values(array_filter(
             self::fields(),
             static fn (array $field): bool => 'operator' !== ($field['scope'] ?? 'tenant')
-                && ! UnimplementedSettings::isInert((string) $field['key']),
+                && ! UnimplementedSettings::isInert((string) $field['key'])
+                && ! InapplicableSettings::isInapplicable((string) $field['key']),
         ));
     }
 

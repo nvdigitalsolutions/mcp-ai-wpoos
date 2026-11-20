@@ -8,9 +8,11 @@ namespace App\Support\Settings;
  * All the keys below reach `/admin/settings` in the Authentication tab and are
  * tenant scope, so `forSurface('admin')` shows them. None is read by any code in
  * `app/`, `config/`, `routes/`, `database/` or `resources/views/`: a saved value
- * lands in a settings row that nothing consults. (The list was nineteen keys
- * when slice I2 shipped; I3 made the Auth0 trio real and removed them — see plan
- * §102. Whatever remains here is still unread.)
+ * lands in a settings row that nothing consults. (The list was nineteen keys when
+ * slice I2 shipped. I3 made the Auth0 trio real (§102), I4 made magic-link real
+ * (§103), and §104 moved the ten keys that configure absent software to
+ * `InapplicableSettings`, where they are hidden rather than disabled. What
+ * remains here is unbuilt but real: four keys.)
  *
  * That is the failure `SettingsSchema` calls a UI fiction — "conflating what a
  * surface shows with what it does". This class is the fix at the boundary: the
@@ -64,32 +66,19 @@ final class UnimplementedSettings
      * @var array<string, string>
      */
     public const REASONS = array(
-        // Auth0 issuer trust — Proposal 156 I3, shipped in plan §102.
-        // Auth0 → user bridge — out of scope (D5).
-        'enable_auth0_github_bridge'           => 'The Auth0 identity bridge is not ported (Proposal 156 D5).',
-        'auth0_management_client_id'           => 'The Auth0 identity bridge is not ported (Proposal 156 D5).',
-        'auth0_management_client_secret'       => 'The Auth0 identity bridge is not ported (Proposal 156 D5).',
+        // The assistant REST gates. Deliberately still here rather than hidden:
+        // they DO have a counterpart (`/api/v1/assistants`), but honouring them
+        // means telling a first-party console call from a third-party token call
+        // on the same routes. The WordPress plugin gets that for free because
+        // its console does not use its REST API; this one does. That is a design
+        // decision, not an absence — see Proposal 149 \u00a7104.
+        'rest_enable_assistant_list'           => 'Needs a first-party vs token-call split on /api/v1/assistants.',
+        'rest_enable_assistant_create'         => 'Needs a first-party vs token-call split on /api/v1/assistants.',
+        'rest_enable_assistant_delete'         => 'Needs a first-party vs token-call split on /api/v1/assistants.',
 
-        // WordPress.com/Gravatar — absent software (D5).
-        'enable_wordpress_gravatar_bridge'     => 'WordPress.com identities do not exist here (D5).',
-        'wordpress_gravatar_userinfo_endpoint' => 'WordPress.com identities do not exist here (D5).',
-
-        // Simple JWT Login — a WordPress plugin (D5).
-        'enable_simple_jwt_login'              => 'A WordPress plugin issues these; this runtime has none (D5).',
-
-        // Token lifetimes.
+        // Guest access has no counterpart here yet — the console is an
+        // authenticated surface, so there is no anonymous chat to bound.
         'guest_token_lifetime'                 => 'No guest-token path exists in this runtime.',
-        'credential_lifetime_days'             => 'Token expiry exists, but it is not driven by this setting.',
-
-        // REST and tool policy — re-homed (D5).
-        'rest_enable_assistant_list'           => 'API policy rather than identity; re-homed by Proposal 156 D5.',
-        'rest_enable_assistant_create'         => 'API policy rather than identity; re-homed by Proposal 156 D5.',
-        'rest_enable_assistant_delete'         => 'API policy rather than identity; re-homed by Proposal 156 D5.',
-        'sse_enable_post_method'               => 'API policy rather than identity; re-homed by Proposal 156 D5.',
-        'oauth_disable_open_registration'      => 'API policy rather than identity; re-homed by Proposal 156 D5.',
-        'require_confirm_destructive_ops'      => 'The intent is met by the approvals queue, not by this setting (D5).',
-
-        // Magic-link sign-in — Proposal 156 I4, shipped in plan §103.
     );
 
     /**

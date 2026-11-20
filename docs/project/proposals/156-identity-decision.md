@@ -196,6 +196,13 @@ read-only tool surfaces. They belong to a security-policy decision, not this one
 That leaves three things that are genuinely identity: issuer trust (Auth0),
 magic-link login, and provisioning.
 
+> **Shipped 2026-11-20 — see plan §104.** The re-homing landed as a split rather
+> than a reassignment: ten keys that configure absent software are now hidden
+> from the form entirely (`InapplicableSettings`), and the three assistant REST
+> gates stay visible-but-inert because honouring them needs a first-party vs
+> token-call split this runtime does not yet have. §17's "admin is the superset"
+> rule gained an exception, stated as an equality in `SettingsProjectionTest`.
+
 ### D6 — The one-click wizard is not ported as-is
 
 Its only real function is deriving `auth0_domain` and `auth0_audience` from an

@@ -64,6 +64,8 @@ Three consequences that the matrix enforces:
 
 **D-6 therefore reads:** the admin is the superset of capability, the console is plan-scoped, and both are presentations over one writer per operation. "Two versions" means two renderings, not two rulebooks.
 
+**One exception, added by plan §104.** "Superset of capability" means every key the runtime could ever configure — not every key in the generated catalogue. Ten Authentication keys configure WordPress software that does not exist here (an Auth0 user bridge, WP.com identities, a third-party JWT plugin, an SSE endpoint, RFC 7591 registration), and they are dropped from `forSurface('admin')` entirely. A disabled control would still assert the capability is reachable; for absent software it is not. `SettingsProjectionTest` states the exception as an equality so the rule stays checkable.
+
 ### 3.1 Which estate a request acts in
 
 Authority has a second question the matrix alone does not answer: **not "may this person reach this surface", but "which estate's rows does this request touch".**

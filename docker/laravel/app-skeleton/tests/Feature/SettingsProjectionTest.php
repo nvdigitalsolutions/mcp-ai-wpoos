@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\Settings\InapplicableSettings;
 use App\Support\SettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -99,7 +100,15 @@ class SettingsProjectionTest extends TestCase
 
     public function test_the_admin_projection_keeps_the_whole_catalogue(): void
     {
-        $this->assertSame(SettingsSchema::keys(), array_column(SettingsSchema::forSurface('admin'), 'key'));
+        // §17's superset rule, with §104's one exception made explicit: the admin
+        // sees every key the runtime could ever configure, minus the keys that
+        // configure software it does not have. Those are not a reduced view of a
+        // capability — there is no capability to see.
+        $this->assertSame(
+            array_values(array_diff(SettingsSchema::keys(), InapplicableSettings::keys())),
+            array_column(SettingsSchema::forSurface('admin'), 'key'),
+            'The admin is the superset: every catalogue key except the inapplicable ones.'
+        );
         $this->assertSame(SettingsSchema::tabsForSurface('admin'), SettingsSchema::tabs());
 
         $this->assertContains(
