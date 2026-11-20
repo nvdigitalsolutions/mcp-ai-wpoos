@@ -1164,6 +1164,25 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	color: var(--ds-title-color, inherit);
 }
 
+/* The measured EYEBROW — the small label the source stacks ABOVE its title.
+ *
+ * A builder publishes the kicker as a real heading, often the SAME tag as the
+ * title at a fraction of the size (virtuallysrilanka: 14px above 30px, both
+ * `h2`). The classifier reads tag level only, so it demoted the label into body
+ * copy and the rebuild printed it UNDER the title at body size. The browser
+ * measurement records the pair; the component carries the label's own measured
+ * size/weight/ink inline, and this rule supplies only the block rhythm and a
+ * fallback scale. */
+.ds-eyebrow {
+	font-family: var(--ds-eyebrow-font, var(--forge-font-display));
+	font-size: var(--ds-eyebrow-size, 0.875rem);
+	font-weight: var(--ds-eyebrow-weight, 600);
+	line-height: 1.4;
+	margin: 0 0 0.4em;
+	text-align: var(--ds-eyebrow-align, var(--ds-title-align, inherit));
+	color: var(--ds-eyebrow-color, var(--forge-muted));
+}
+
 /* A form band's intro: the source's lead paragraph sits at half the container
  * and centers with its title. Alignment itself comes from the band's measured
  * body fact (`[data-section-id] p{text-align:…}`), so a left-aligned source

@@ -70,7 +70,7 @@ interface Props {
 }
 
 const { html = '', wireframeSections, bandGeometry = false, bandThemes } = Astro.props;
-const sections: SemanticSection[] = wireframeSections
+const rawSections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
 	: classifyBody( html );
 const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, number > | undefined => {
@@ -125,6 +125,22 @@ const themeFor = ( section: SemanticSection, index: number ): SectionTheme | und
 		overlay: positional.overlay,
 	};
 };
+// The measured EYEBROW must not also render as body copy. The classifier reads
+// tag level alone, so a band with a label heading above its title demotes the
+// label into `slots.body` (and the rebuild printed it UNDER the title at body
+// size). The browser measurement knows which line is the label; drop that exact
+// line here, once, so every component benefits without its own filter.
+const sections: SemanticSection[] = rawSections.map( ( section, index ) => {
+	const eyebrow = themeFor( section, index )?.eyebrow?.text?.trim();
+	const body = section.slots.body;
+	if ( ! eyebrow || ! body || body.length === 0 ) {
+		return section;
+	}
+	const filtered = body.filter( ( line ) => line.trim() !== eyebrow );
+	return filtered.length === body.length
+		? section
+		: { ...section, slots: { ...section.slots, body: filtered } };
+} );
 /** ALL source behaviors for a section. A band can be BOTH parallax and reveal
  * (jayainc's about band is); the old single `find` returned whichever entry came
  * first, so a reveal-first band silently lost its parallax class and range. */

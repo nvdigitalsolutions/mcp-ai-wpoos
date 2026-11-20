@@ -358,6 +358,10 @@ function collectBandTypeFacts( input: {
 				containerFlush: boolean;
 				headings: Record< string, BandTypeProperties >;
 				body?: BandTypeProperties;
+				/** The largest heading's text — the band's real title. */
+				titleText?: string;
+				/** The small label the source stacks ABOVE that title. */
+				eyebrow?: BandTypeProperties & { text: string; level?: number };
 			}
 	> {
 const pick = ( selector: string ): Element | null => {
@@ -521,6 +525,62 @@ const pick = ( selector: string ): Element | null => {
 				body = fact( sampled );
 			}
 		}
+		// The band's TITLE is the LARGEST heading it renders, and its EYEBROW is a
+		// clearly smaller heading stacked ABOVE that title in the SAME lane.
+		//
+		// The classifier can only read tag level, so its kicker heuristic gives up on
+		// a kicker longer than six words and promotes the sentence to title.
+		// virtuallysrilanka's hardware band is exactly that: a 14px all-caps
+		// sentence above a 42px `SUPPORTED HARDWARE`, rebuilt with the sentence set
+		// at 42px and the real title demoted to body copy. Rendered size is the only
+		// signal that separates the two, and only the browser has it.
+		const headingNodes = Array.from(
+			element.querySelectorAll( 'h1,h2,h3,h4,h5,h6' )
+		).filter(
+			( node ) =>
+				! node.closest( 'form' ) && ( node.textContent ?? '' ).trim().length > 0
+		);
+		let titleNode: Element | undefined;
+		let titlePx = 0;
+		for ( const node of headingNodes ) {
+			const px = parseFloat( getComputedStyle( node ).fontSize ) || 0;
+			if ( px > titlePx ) {
+				titlePx = px;
+				titleNode = node;
+			}
+		}
+		let eyebrow: ( BandTypeProperties & { text: string; level?: number } ) | undefined;
+		if ( titleNode ) {
+			// The LANE is the nearest builder column. Two headings in DIFFERENT
+			// columns are column headings (virtuallysrilanka's services band), never an
+			// eyebrow/title stack — and painting one over the other would be a lie.
+			const laneOf = ( node: Element ): Element | null =>
+				node.closest( '.elementor-column, .e-con' );
+			const titleLane = laneOf( titleNode );
+			const titleTop = titleNode.getBoundingClientRect().top;
+			let bestTop = -Infinity;
+			for ( const node of headingNodes ) {
+				if ( node === titleNode || laneOf( node ) !== titleLane ) {
+					continue;
+				}
+				const px = parseFloat( getComputedStyle( node ).fontSize ) || 0;
+				// "Clearly smaller": a sibling heading at the title's own size is a
+				// second title (a two-line hero), not a label.
+				if ( px <= 0 || px >= titlePx * 0.8 ) {
+					continue;
+				}
+				const top = node.getBoundingClientRect().top;
+				if ( top >= titleTop || top <= bestTop ) {
+					continue;
+				}
+				bestTop = top;
+				eyebrow = {
+					...fact( node ),
+					text: ( node.textContent ?? '' ).trim().replace( /\s+/g, ' ' ),
+					level: Number( ( node.tagName || 'H6' ).slice( 1 ) ),
+				};
+			}
+		}
 		facts[ id ] = {
 			containerWidth,
 			containerPadX,
@@ -528,6 +588,10 @@ const pick = ( selector: string ): Element | null => {
 			containerFlush,
 			headings,
 			...( body ? { body } : {} ),
+			...( titleNode
+				? { titleText: ( titleNode.textContent ?? '' ).trim().replace( /\s+/g, ' ' ) }
+				: {} ),
+			...( eyebrow ? { eyebrow } : {} ),
 		};
 	}
 	return facts;
@@ -2047,6 +2111,8 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				containerFlush: boolean;
 				headings: Record< string, BandTypeProperties >;
 				body?: BandTypeProperties;
+				titleText?: string;
+				eyebrow?: BandTypeProperties & { text: string; level?: number };
 			}
 		> > => {
 			const { width, height } = BAND_FACT_VIEWPORTS[ device ];
@@ -2197,6 +2263,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				containerWidth: desktopFacts.containerWidth,
 				headings: { ...desktopFacts.headings },
 				...( desktopFacts.body ? { body: { ...desktopFacts.body } } : {} ),
+				// The measured eyebrow/title pair is TEXT, so it is taken once from the
+				// desktop pass — the label's own scale is the desktop one, and the
+				// title's per-device scaling already rides `headings`.
+				...( desktopFacts.titleText ? { titleText: desktopFacts.titleText } : {} ),
+				...( desktopFacts.eyebrow ? { eyebrow: { ...desktopFacts.eyebrow } } : {} ),
 			};
 			const container = {
 				desktop: containerAt( desktopFacts ),

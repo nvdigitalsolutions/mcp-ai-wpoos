@@ -1375,7 +1375,23 @@
 				"elementor-widget-wrap",
 				"size-full",
 				"wp-image-5374"
-			]
+			],
+			"eyebrow": {
+				"size": "20px",
+				"weight": "700",
+				"lineHeight": "20px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "start",
+				"family": "Montserrat",
+				"color": "rgb(255, 255, 255)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "10px",
+				"text": "SEE WHAT WE CAN DO FOR YOU",
+				"level": 3
+			},
+			"titleText": "WE SPECIALIZE IN CUSTOM SOLUTIONS FOR YOUR BUSINESS"
 		},
 		"9c37fd4": {
 			"containerWidth": 1280,
@@ -1629,7 +1645,23 @@
 						}
 					]
 				}
-			]
+			],
+			"eyebrow": {
+				"size": "14px",
+				"weight": "600",
+				"lineHeight": "14px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "start",
+				"family": "Montserrat",
+				"color": "rgb(122, 122, 122)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "7px",
+				"text": "SOCIAL WIFI MARKETING SOLUTION",
+				"level": 2
+			},
+			"titleText": "The best way to promote your business!"
 		},
 		"8d6ec26": {
 			"containerWidth": 1440,
@@ -1968,7 +2000,23 @@
 						}
 					]
 				}
-			]
+			],
+			"eyebrow": {
+				"size": "16px",
+				"weight": "600",
+				"lineHeight": "16px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "center",
+				"family": "Montserrat",
+				"color": "rgb(237, 242, 247)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "8px",
+				"text": "WIFI SOCIAL MARKETING",
+				"level": 2
+			},
+			"titleText": "How it Works"
 		},
 		"bfaba9f": {
 			"containerWidth": 1140,
@@ -2291,7 +2339,23 @@
 					"base": "cursor:pointer;color:rgb(45, 55, 72);text-decoration-line:none;font-weight:700;display:block",
 					"transition": "all"
 				}
-			]
+			],
+			"eyebrow": {
+				"size": "16px",
+				"weight": "600",
+				"lineHeight": "16px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "center",
+				"family": "Montserrat",
+				"color": "rgb(122, 122, 122)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "8px",
+				"text": "POWERFUL AND UNLIMITED DESIGN",
+				"level": 2
+			},
+			"titleText": "FEATURE HIGHLIGHTS"
 		},
 		"116ce85": {
 			"containerWidth": 1440,
@@ -2581,7 +2645,8 @@
 						}
 					]
 				}
-			]
+			],
+			"titleText": "Our products are custom designed for the environment they will be deployed into."
 		},
 		"a5d0ddc": {
 			"containerWidth": 1280,
@@ -2895,7 +2960,23 @@
 					"base": "cursor:pointer;color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-radius:50%;text-decoration-line:none;display:inline-block;font-size:17px",
 					"transition": "all"
 				}
-			]
+			],
+			"eyebrow": {
+				"size": "14px",
+				"weight": "600",
+				"lineHeight": "14px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "center",
+				"family": "Montserrat",
+				"color": "rgb(0, 0, 0)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "7px",
+				"text": "CHOOSE THE ACCESS POINT THAT WORKS BEST FOR YOU. OR THE CHEAPEST ONE. OR ASK US TO SUPPORT YOUR FAVORITE BRAND.",
+				"level": 2
+			},
+			"titleText": "SUPPORTED HARDWARE"
 		},
 		"ccdbf50": {
 			"containerWidth": 1140,
@@ -3201,7 +3282,8 @@
 					"transition": "all",
 					"focusVisible": "box-shadow:rgba(0, 0, 0, 0.1) 0px 0px 0px 1px inset"
 				}
-			]
+			],
+			"titleText": "CONTACT US"
 		}
 	},
 	"stickyHeader": {
