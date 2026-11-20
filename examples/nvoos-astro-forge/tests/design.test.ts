@@ -964,6 +964,17 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 		expect( styled?.chromeSize ).toBe( '16px' );
 	} );
 
+	it( 'resolves a rem body size against the html root rule', () => {
+		// `1.125rem` ends in "em", and the anchored `em` pattern declines it — so
+		// before the `rem` branch this declaration resolved against NOTHING and the
+		// chain fell through to the element resolution the function avoids
+		// (monicarajiv, 2026-11-21).
+		const html = '<header id="site-header"><nav><a href="#about" class="aux-item-content">About</a></nav></header>';
+		const css = [ 'html { font-size: 16px; }', 'body { font-size: 1.125rem; }' ].join( '\n' );
+		const styled = analyzeChrome( { url: 'https://x.example.com', html, css: [ css ] } );
+		expect( styled?.chromeSize ).toBe( '18px' );
+	} );
+
 	it( 'scopes footer blocks between consecutive headings with an intro block', () => {
 		expect( chrome?.footerBlocks ).toEqual( [
 			{ items: [ 'Jaya Inc supplies plumbing, electrical and hardware lines island-wide.' ] },
