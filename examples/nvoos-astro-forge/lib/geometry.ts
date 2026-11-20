@@ -2430,6 +2430,50 @@ export async function measureChromeGeometry( options: {
 					padX: Math.round( ( padded ?? capped )?.padLeft ?? brandRect.x - headerRect.x ),
 					logoHeight: markRect.height > 0 ? `${ Math.round( markRect.height ) }px` : undefined,
 					logoAlign: markRect.width > 0 ? stationOf( markRect ) : undefined,
+					// The nav LINK's type, computed. The static CSS resolver reads a
+					// relative `font-size` against the 16px root and reported 16px
+					// where the browser paints 14.208px (`.888em`), so a whole site's
+					// menu rebuilt one step too large (monicarajiv, 2026-11-21). A
+					// browser is already open for the box facts — ask it.
+					navStyle: ( () => {
+						// A builder's menu is a <nav>, a <ul class="nav"> or a `.mobile-nav`:
+						// Flatsome ships `ul.nav.nav-left` and a plain `nav a` probe found
+						// nothing, which is how the type fact stayed silently unmeasured.
+						const NAV_LINKS = 'nav a, ul.nav a, .nav a, [class*="-nav"] a';
+						// VISIBLE links only, and a MAJORITY per property. The same builder
+						// ships a mobile menu that is `display:none` at this viewport and
+						// computes `text-transform:none` on its <a>, so "first match"
+						// recorded the hidden copy's transform.
+						const links = [ ...header.querySelectorAll( NAV_LINKS ) ].filter( ( anchor ) => {
+							const text = ( anchor.textContent ?? '' ).trim();
+							if ( text.length === 0 || /^(?:tel|mailto|javascript):/i.test( anchor.getAttribute( 'href' ) ?? '' ) ) {
+								return false;
+							}
+							const rect = anchor.getBoundingClientRect();
+							return rect.width > 0 && rect.height > 0;
+						} );
+						if ( links.length === 0 ) {
+							return undefined;
+						}
+						const majority = ( pick: ( style: CSSStyleDeclaration ) => string ): string => {
+							const votes = new Map< string, number >();
+							for ( const link of links ) {
+								const value = pick( getComputedStyle( link ) );
+								votes.set( value, ( votes.get( value ) ?? 0 ) + 1 );
+							}
+							return [ ...votes.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ][ 0 ];
+						};
+						const tracking = majority( ( style ) => style.letterSpacing );
+						return {
+							size: majority( ( style ) => style.fontSize ),
+							weight: majority( ( style ) => style.fontWeight ),
+							transform: majority( ( style ) => style.textTransform ),
+							// `normal`/`0px` is NO tracking, and dropping it lets the shim
+							// default stand rather than pinning an explicit nothing.
+							letterSpacing: /^(?:normal|0px|0)$/i.test( tracking ) ? undefined : tracking,
+							family: majority( ( style ) => ( style.fontFamily || '' ).split( ',' )[ 0 ].replace( /["']/g, '' ).trim() ),
+						};
+					} )(),
 					// The trailing ICON links: an anchor with no text whose glyph is a font
 					// icon (`<i class="icon-envelop">`). The vendor font never ships, so the
 					// rebuild re-draws it instead of emitting a missing-glyph box.
@@ -2477,6 +2521,18 @@ export async function measureChromeGeometry( options: {
 			// The trailing controls are one desktop fact, like the mark.
 			if ( device === 'desktop' && Array.isArray( box.actions ) && box.actions.length > 0 ) {
 				out.actions = box.actions;
+			}
+			// The menu's type is one desktop fact too: it is chrome, not content.
+			if ( device === 'desktop' && box.navStyle && typeof box.navStyle.size === 'string' ) {
+				out.navStyle = {
+					...( box.navStyle.size ? { size: box.navStyle.size } : {} ),
+					...( box.navStyle.weight ? { weight: box.navStyle.weight } : {} ),
+					...( box.navStyle.transform ? { transform: box.navStyle.transform } : {} ),
+					...( box.navStyle.letterSpacing ? { letterSpacing: box.navStyle.letterSpacing } : {} ),
+				};
+				if ( box.navStyle.family ) {
+					out.navFamily = box.navStyle.family;
+				}
 			}
 			if ( Object.keys( entry ).length > 0 ) {
 				out[ device ] = entry;

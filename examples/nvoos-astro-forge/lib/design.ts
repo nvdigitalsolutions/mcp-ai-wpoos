@@ -28,7 +28,7 @@ import { extractBandsFromHtml } from './bands.ts';
 import { extractElementCss } from './element-css.ts';
 import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
-import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeMark, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import type { ForgeChrome, ForgeChromeGeometry, ForgeChromeStyle, ForgeDesign, ForgeMark, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
 
@@ -2435,6 +2435,35 @@ export function applyMeasuredHeader(
 	if ( sticky.restInk ) {
 		chrome.headerInk = sticky.restInk;
 	}
+}
+
+/**
+ * Replace the nav's static type guess with the browser's computed truth.
+ *
+ * `chrome.navStyle` is resolved from the stylesheet by `lib/design.ts`, which
+ * reads a relative `font-size` against the 16px root and leaves `em` tracking
+ * unresolved — so a menu defined as `.888em` was recorded as `16px` and its
+ * `.02em` tracking as `em`, and every forged page rendered the menu one step
+ * too large (monicarajiv, 2026-11-21). `measureChromeGeometry` reads the LINK's
+ * computed style instead, which needs no resolution at all.
+ *
+ * Measured REPLACES the guess wholesale: a half-merged object would pin the
+ * wrong size beside the right tracking. `navInk` and the family role are
+ * separate facts and are left alone (`navFamily` is promoted to
+ * `design.typography.ui` by `analyze`).
+ *
+ * Pure, so the overlay is testable without a browser.
+ */
+export function applyMeasuredNavStyle(
+	chrome: ForgeChrome | undefined,
+	geometry: ForgeChromeGeometry | undefined
+): boolean {
+	const measured = geometry?.navStyle;
+	if ( ! chrome || ! measured || Object.keys( measured ).length === 0 ) {
+		return false;
+	}
+	chrome.navStyle = { ...measured };
+	return true;
 }
 
 /**

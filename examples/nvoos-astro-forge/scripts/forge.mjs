@@ -39,7 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
-import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
+import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, applyMeasuredNavStyle, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
 import { compareBuildIdentity, parseBuildMarker } from '../lib/build-identity.ts';
 import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuild } from '../lib/animations.ts';
@@ -677,6 +677,25 @@ async function runAnalyze( url, options ) {
 						profile.design = profile.design ?? {};
 						profile.design.chrome = profile.design.chrome ?? {};
 						profile.design.chrome.geometry = geometry;
+						// The nav LINK’s type, computed. The stylesheet harvest reads a
+						// relative size against the 16px root, so a menu defined in `em`
+						// shipped one step too large (monicarajiv, 2026-11-21).
+						if ( applyMeasuredNavStyle( profile.design.chrome, geometry ) ) {
+							const measured = geometry.navStyle;
+							console.log( `✓ Nav type: ${ measured.size } ${ measured.weight }${ measured.transform ? ` ${ measured.transform }` : "" }${ measured.letterSpacing ? `, ${ measured.letterSpacing } tracking` : "" }.` );
+						}
+						// A distinct menu face is a DESIGN ROLE: it reaches the shim through
+						// `--forge-font-ui`, and the webfont builder then loads the family.
+						const navFamily = ( geometry.navFamily ?? "" ).trim();
+						if ( navFamily ) {
+							const roles = [ profile.design.typography?.body, profile.design.typography?.display ]
+								.map( ( name ) => String( name ?? "" ).trim().toLowerCase() )
+								.filter( Boolean );
+							if ( ! roles.includes( navFamily.toLowerCase() ) ) {
+								profile.design.typography = { ...( profile.design.typography ?? {} ), ui: navFamily };
+								console.log( `✓ Menu face: ${ navFamily } (design.typography.ui).` );
+							}
+						}
 						const describe = ( box ) =>
 							`${ box.measure ? `${ box.measure }px box` : 'full-bleed' }${ box.padX !== undefined ? `, ${ box.padX }px inset` : '' }`;
 						// `wide` carries the cap when it only binds above 1440 (jayainc's 1670).
@@ -983,6 +1002,9 @@ async function runAnalyze( url, options ) {
 	// background that a transparent variation overrides — only the browser knows).
 	const reconcileHeader = ( target ) => {
 		applyMeasuredHeader( target?.design?.chrome, target?.stickyHeader ?? profile.stickyHeader );
+		// The measured menu type outranks the stylesheet harvest on every re-forge,
+		// not only on the analyze pass that recorded it.
+		applyMeasuredNavStyle( target?.design?.chrome, target?.design?.chrome?.geometry );
 		return target;
 	};
 	reconcileHeader( profile );
@@ -1992,6 +2014,7 @@ const GATE_ORDER = [
 	'chrome facts',
 	'font coverage',
 	'media budget',
+	'retired cms',
 	'property coverage',
 	'inert declarations',
 	'font render',
@@ -2603,6 +2626,27 @@ function collectFactDeclarations( profile ) {
 	return out;
 }
 
+/** Every built HTML file under `<target>/dist`, recursively (absolute paths). */
+function builtHtmlFiles( target ) {
+	const found = [];
+	const walk = ( dir ) => {
+		if ( ! existsSync( dir ) ) {
+			return;
+		}
+		for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
+			const path = `${ dir }/${ entry.name }`;
+			if ( entry.isDirectory() ) {
+				walk( path );
+				continue;
+			}
+			if ( /\.html$/i.test( entry.name ) ) {
+				found.push( path );
+			}
+		}
+	};
+	walk( join( target, "dist" ) );
+	return found;
+}
 /** Concatenate every built stylesheet and document under `dist`. */
 function readBuiltStyles( target ) {
 	const parts = [];
@@ -2714,6 +2758,41 @@ function readBuiltStyles( target ) {
 		}
 	}
 
+
+	// A materialized profile is a PROMISE that the CMS is gone, so nothing the
+	// build ships may still address it. The search is for ASSET paths, not the
+	// host: every page legitimately points its canonical/og:url at the public
+	// origin, which is usually the same hostname the CMS answered on. JSON-LD
+	// `Organization.logo` went out pointing at the retired `wp-content` URL on
+	// every page, and no gate looked (monicarajiv, 2026-11-21).
+	if ( isMaterializedContent( profile ) ) {
+		const RETIRED = /(?:https?:)?\/\/[^"'\s)]+\/wp-(?:content|includes)\//gi;
+		const hits = [];
+		const collectFrom = ( name, text ) => {
+			for ( const match of String( text ?? "" ).matchAll( RETIRED ) ) {
+				hits.push( `${ name }: ${ match[ 0 ] }` );
+			}
+		};
+		if ( typeof css === "string" ) {
+			collectFrom( "css", css );
+		}
+		for ( const file of builtHtmlFiles( options.target ) ) {
+			collectFrom( file, readFileSync( file, "utf8" ) );
+		}
+		if ( hits.length === 0 ) {
+			console.log( "\u2713 Retired cms: no asset path addresses the CMS this profile declared gone." );
+			record( "retired cms", "pass", "no wp-content/wp-includes reference" );
+		} else {
+			for ( const hit of hits.slice( 0, 8 ) ) {
+				console.warn( `\u2717 Retired cms: ${ hit }` );
+			}
+			if ( hits.length > 8 ) {
+				console.warn( `  \u2026 ${ hits.length - 8 } more.` );
+			}
+			process.exitCode = 1;
+			record( "retired cms", "fail", `${ hits.length } reference(s) to a retired CMS` );
+		}
+	}
 	// Content parity (the words gate): the design-language score and the fact
 	// audit both pass while copy goes missing. Coverage of the SOURCE is the
 	// gate (w-shingles, Manning/Schütze §19.6); added copy only informs.

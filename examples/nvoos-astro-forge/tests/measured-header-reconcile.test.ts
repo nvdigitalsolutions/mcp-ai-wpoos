@@ -12,7 +12,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { applyMeasuredHeader } from '../lib/design.ts';
+import { applyMeasuredHeader, applyMeasuredNavStyle } from '../lib/design.ts';
 import type { ForgeChrome, ForgeStickyHeader } from '../lib/types.ts';
 
 const chrome = (): ForgeChrome => ( { headerBg: '#dd3333', headerInk: '#ffffff', navInk: '#ffffff' } );
@@ -92,5 +92,53 @@ describe( 'applyMeasuredHeader', () => {
 
 	it( 'does nothing without a chrome block', () => {
 		expect( () => applyMeasuredHeader( undefined, { sticky: true, restBg: '#000000' } ) ).not.toThrow();
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// The measured nav type beats the stylesheet harvest.
+//
+// `analyzeChrome` resolves the source's CSS statically: a relative `font-size`
+// is read against the 16px root and `em` tracking is left unresolved, so
+// monicarajiv's `.888em / .02em` menu was recorded as `16px / .02em` and every
+// forged page rendered it one step too large. `measureChromeGeometry` reads the
+// LINK's computed style instead (14.208px / 0.28416px).
+// ---------------------------------------------------------------------------
+describe( 'applyMeasuredNavStyle', () => {
+	const harvested = (): ForgeChrome => ( {
+		navStyle: { size: '16px', weight: '400', transform: 'uppercase', letterSpacing: '.02em' },
+		navInk: 'rgba(74, 74, 74, 0.85)',
+	} );
+
+	it( 'replaces the guessed type wholesale with the computed one', () => {
+		const target = harvested();
+		const applied = applyMeasuredNavStyle( target, {
+			desktop: { measure: 1080, padX: 15 },
+			navStyle: { size: '14.208px', weight: '400', transform: 'uppercase', letterSpacing: '0.28416px' },
+		} );
+
+		expect( applied ).toBe( true );
+		expect( target.navStyle ).toEqual( {
+			size: '14.208px',
+			weight: '400',
+			transform: 'uppercase',
+			letterSpacing: '0.28416px',
+		} );
+		// The ink is a separate fact and must survive the overlay.
+		expect( target.navInk ).toBe( 'rgba(74, 74, 74, 0.85)' );
+	} );
+
+	it( 'drops tracking the browser reports as none', () => {
+		const target = harvested();
+		applyMeasuredNavStyle( target, { navStyle: { size: '15px', weight: '600' } } );
+		expect( target.navStyle ).toEqual( { size: '15px', weight: '600' } );
+		expect( target.navStyle?.letterSpacing ).toBeUndefined();
+	} );
+
+	it( 'leaves the harvest alone when nothing was measured', () => {
+		const target = harvested();
+		expect( applyMeasuredNavStyle( target, { desktop: { measure: 1080 } } ) ).toBe( false );
+		expect( target.navStyle?.size ).toBe( '16px' );
+		expect( applyMeasuredNavStyle( undefined, { navStyle: { size: '14px' } } ) ).toBe( false );
 	} );
 } );
