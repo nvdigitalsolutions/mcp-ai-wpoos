@@ -96,7 +96,7 @@ final class JitProvisioner
             return $this->pending($tenantId, $subject, $email, self::REASON_UNVERIFIED);
         }
 
-        if ('' === $email || ! $this->domains->allows($tenantId, $email)) {
+        if ('' === $email || ! $this->domains->allows($tenantId, $email, $this->subdomainsEnabled($tenantId))) {
             return $this->pending($tenantId, $subject, $email, self::REASON_DOMAIN);
         }
 
@@ -131,6 +131,21 @@ final class JitProvisioner
         return TenantContext::runAs(
             $tenantId,
             fn (): bool => (bool) $this->settings->value('enable_jit_provisioning'),
+        );
+    }
+
+    /**
+     * Whether a verified domain also admits its subdomains for this estate.
+     *
+     * Read the same way {@see self::enabled()} is, and for the same reason: this
+     * runs before any middleware has pinned an estate. Off unless an estate has
+     * deliberately turned it on — 158 D3 rule 3.
+     */
+    private function subdomainsEnabled(string $tenantId): bool
+    {
+        return TenantContext::runAs(
+            $tenantId,
+            fn (): bool => (bool) $this->settings->value('enable_jit_subdomain_inheritance'),
         );
     }
 

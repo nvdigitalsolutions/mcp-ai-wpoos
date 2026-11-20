@@ -11805,3 +11805,107 @@ or a page renders under a label the enum does not know. `Dashboard` is deliberat
 ungrouped: it is Filament's own page, registered by the panel provider, and grouping
 it would mean shipping a subclass that `SurfaceOwnershipTest` would demand a contract
 row for.
+
+## 116. Subdomain inheritance — the flag 158 D3 decided and §110 did not build (2026-11-20)
+
+This slice begins with a correction. I told the user I5b was "the only unstarted step
+in 158 §9"; it is not. **I5b shipped as §110**: the migration, `EstateDomains`, the
+four-gate `JitProvisioner`, the `viewer` default and the pending-request surface are
+all in the tree and all tested. The claim came from grepping migration *filenames*
+for `estate_domains`, which missed `create_jit_provisioning_tables.php` — a reminder
+that a negative result from a filename search is not evidence about code.
+
+So the work became the thing actually worth doing: a standards audit of §110, which
+found one decided-but-unbuilt item and two documentation defects. This section
+closes those three and nothing else.
+
+### 116.1 The audit, against published guidance
+
+The gate was sound. Every property the literature asks for was already there:
+
+| Property | Guidance | §110 |
+|---|---|---|
+| Lowest possible default role | "safer to have a dev ask for more access than to accidentally give a contractor admin rights" (Security Boulevard) | `viewer`, and nothing else — `JitProvisioner::ROLE` |
+| Fail closed when entitlement cannot be established | "empty/unset `allowed_domains` ⇒ deny every domain" (TucanoTime #281), ActiKnow | `allows()` answers false with no rows; every gate returns `pending` rather than a grant |
+| `email_verified` spelled several ways | eneo #1111, sure #368 | `assertsVerified()` is an explicit positive list; `"false"` blocks, because PHP reads it as truthy |
+| Exact-match allowlist on a verified domain | WorkOS JIT guide | `domainOf()` takes the last `@`; `verified_at` gates |
+| Verified domain *and* verified claim | WorkOS treats a verified domain as implying a verified address | **stricter here**: both are required, which is the safer direction |
+| Never attach an existing account to a new subject | OWASP account-linking; WorkOS | `REASON_ACCOUNT_EXISTS`, recorded for a person to resolve, never automatic |
+
+What was missing was **158 D3 rule 3**: *"Make it an explicit per-estate flag,
+default off"* — recorded as decided, and recorded in §110.3 as *"the flag is not
+built"*. A decision that is written down and not implemented is the one thing a
+reader of D3 would reasonably expect to find and would not.
+
+### 116.2 Inheritance is a set of exact comparisons, never a suffix match
+
+The obvious implementation is `where('domain', 'like', '%.acme.com')`. It is wrong
+twice over:
+
+1. **`notacme.com` satisfies `%.acme.com`.** The suffix pattern re-admits exactly the
+   lookalike auto-join the allowlist exists to refuse — the failure mode the JIT
+   audit literature names first.
+2. **`LIKE` needs `ESCAPE`, and the dialects disagree.** SQLite has no default
+   escape character; MySQL's backslash convention does not survive the suite. §114.4
+   paid for this lesson once already.
+
+So `EstateDomains::parents()` walks the address's labels and every candidate is
+compared with `=` inside one `whereIn`. `eng.acme.com` yields `acme.com`;
+`a.b.acme.com` yields `b.acme.com` and then `acme.com`.
+
+The walk **stops at two labels**, which is the part worth keeping: `normalise()`
+requires at least two labels to store a domain at all, so a bare TLD can never be a
+candidate. A test inserts `com` as a *verified* row and proves it still admits
+nobody — the guard does not depend on the table being sane.
+
+### 116.3 `verified_at` gates every candidate, so inheritance cannot launder a proposal
+
+`allows()` keeps its `whereNotNull('verified_at')` and applies it to the whole
+candidate set. An unverified `acme.com` therefore inherits nothing to
+`eng.acme.com`, which matters because otherwise the flag would be a back door round
+the propose-then-verify split that stops a proposer provisioning themselves.
+
+### 116.4 The flag is read through the same pin as `enabled()`
+
+`JitProvisioner::subdomainsEnabled()` mirrors `enabled()` exactly — `TenantContext::runAs`
+around the settings read — because this runs on the **auth path**, before any
+middleware has pinned an estate. Reading it ambiently would work in a request and
+fail under Octane, where the previous request's estate is still set.
+
+`EstateDomains` still takes no settings dependency: the flag is passed in, so the
+class stays a pure allowlist reader that tests can call without booting settings.
+
+### 116.5 Two documentation defects, both in the file that explains the rule
+
+1. `EstateDomains::add()` pointed at `{@see self::verify()}` — **there is no such
+   method**; the second act is `setVerified()`. A stale `@see` in the one place that
+   explains why proposing and authorising are separate is worse than no reference.
+2. The class docblock said *"the flag is **not built yet**, so the default behaviour
+   is the only behaviour"*. True when written, false after this slice. Both now say
+   what the code does.
+
+### 116.6 Gates
+
+| Run | Result |
+|---|---|
+| `JitProvisioningTest` | **19 tests / 78 assertions** (was 15 / 64) — the four new cases: inheritance is off until an estate turns it on *and* an explicit `false` matches no argument; an unverified parent does not inherit; the walk reaches a stored parent through unstored intermediates and stops before a TLD; a subdomain is provisioned as a `viewer` when the estate allows it |
+| `SettingsCatalogueTest` + `SettingsOwnershipTest` + `SettingsProjectionTest` + `InapplicableSettingsTest` + `UnimplementedSettingsTest` + `AdminSettingsTest` + `SurfaceOwnershipTest` | **69 tests / 11,108 assertions, 0 failures** — the new catalogue key is tenant-scoped, defaults off, and declares its tab, section and description |
+| phpcs (`phpcs-laravel.xml.dist`, CI severity) | **0 errors** across `app/Support/Auth` and the test |
+| Live check, `/admin/default/settings?tab=authentication` | both toggles render adjacent under Auth0 Configuration, each `aria-checked="false"`, and the new one carries its "Off by default" description |
+| `resources/settings/catalogue.json` | 14-line insertion; the file's `indent=4` round-trip was **proved before writing** and the trailing newline preserved |
+
+### 116.7 What this does not do
+
+1. **Still no domain-ownership proof.** §110.7 item 1 stands unchanged: a verified
+   domain is trusted because a person in the estate verified it, not because a DNS
+   TXT record did. Turning the flag on does not make that better or worse.
+2. **No public-suffix awareness.** `co.uk` has two labels, so an estate that
+   verifies `co.uk` would inherit every `*.co.uk`. That is the same foot-gun as
+   verifying `gmail.com` — a domain an estate verifies admits that domain's users,
+   which is the entire feature — but the honest fix is a public-suffix list, and
+   that is a dependency decision rather than a slice. Recorded so it is a known
+   boundary rather than a surprise.
+3. **Inheritance is downward only.** A claim on `eng.acme.com` does not cover
+   `acme.com`, and nothing here makes it.
+4. **The role is unchanged.** A subdomain-provisioned subject is still `viewer` in
+   the issuing estate and nothing else.

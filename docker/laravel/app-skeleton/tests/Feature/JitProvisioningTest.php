@@ -143,6 +143,75 @@ final class JitProvisioningTest extends TestCase
 
     // ── The provision itself ─────────────────────────────────────────────────
 
+    public function test_subdomain_inheritance_is_off_until_an_estate_turns_it_on(): void
+    {
+        $domains = app(EstateDomains::class);
+        $domains->add(Tenant::DEFAULT_ID, 'acme.com');
+        $domains->setVerified(Tenant::DEFAULT_ID, (int) DB::table('nvoos_estate_domains')->value('id'), true);
+
+        // 158 D3 rule 3 — the flag is the only thing that changes the answer, and
+        // an explicit `false` is the same answer as no argument at all.
+        $this->assertFalse($domains->allows(Tenant::DEFAULT_ID, 'person@eng.acme.com'));
+        $this->assertFalse($domains->allows(Tenant::DEFAULT_ID, 'person@eng.acme.com', false));
+        $this->assertTrue($domains->allows(Tenant::DEFAULT_ID, 'person@eng.acme.com', true));
+
+        // And it does not widen anything else while it is on.
+        $this->assertFalse($domains->allows(Tenant::DEFAULT_ID, 'person@acme.com.evil.test', true));
+        $this->assertFalse($domains->allows(Tenant::DEFAULT_ID, 'person@notacme.com', true));
+    }
+
+    public function test_an_unverified_parent_domain_does_not_inherit(): void
+    {
+        $domains = app(EstateDomains::class);
+
+        // Proposed, never confirmed: `verified_at` still gates every candidate,
+        // so inheriting cannot be used to activate a proposal by the back door.
+        $domains->add(Tenant::DEFAULT_ID, 'acme.com');
+
+        $this->assertFalse($domains->allows(Tenant::DEFAULT_ID, 'person@acme.com', true));
+        $this->assertFalse($domains->allows(Tenant::DEFAULT_ID, 'person@eng.acme.com', true));
+    }
+
+    public function test_inheritance_walks_to_a_stored_parent_and_never_to_a_tld(): void
+    {
+        $domains = app(EstateDomains::class);
+        $domains->add(Tenant::DEFAULT_ID, 'acme.com');
+        $domains->setVerified(Tenant::DEFAULT_ID, (int) DB::table('nvoos_estate_domains')->value('id'), true);
+
+        // Multi-label walk: `a.b.acme.com` reaches `acme.com` through `b.acme.com`,
+        // neither of which is stored.
+        $this->assertTrue($domains->allows(Tenant::DEFAULT_ID, 'person@a.b.acme.com', true));
+
+        // The walk stops at two labels, so a bare TLD can never be a candidate —
+        // even if one somehow reached the table.
+        DB::table('nvoos_estate_domains')->insert(array(
+            'tenant_id' => Tenant::DEFAULT_ID,
+            'domain' => 'com',
+            'verified_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ));
+
+        $this->assertFalse($domains->allows(Tenant::DEFAULT_ID, 'person@unrelated.test', true));
+    }
+
+    public function test_a_subdomain_is_provisioned_when_the_estate_allows_inheritance(): void
+    {
+        $this->allowDomain('acme.com');
+        $this->enableJit();
+        $this->allowSubdomains();
+
+        $result = $this->provision('auth0|sub', 'person@eng.acme.com', true);
+
+        $this->assertInstanceOf(User::class, $result['user']);
+        $this->assertNull($result['reason']);
+
+        $membership = DB::table('tenant_user')->where('user_id', $result['user']->id)->first();
+        $this->assertNotNull($membership);
+        $this->assertSame(JitProvisioner::ROLE, $membership->role);
+        $this->assertSame(Tenant::DEFAULT_ID, $membership->tenant_id);
+    }
+
     public function test_an_allowlisted_verified_address_is_provisioned_as_a_viewer(): void
     {
         $this->allowDomain('acme.com');
@@ -295,6 +364,18 @@ final class JitProvisioningTest extends TestCase
 
         app(SettingsService::class)->write(
             array('enable_jit_provisioning' => $on),
+            SettingsService::SURFACE_ADMIN
+        );
+
+        TenantContext::forget();
+    }
+
+    private function allowSubdomains(bool $on = true): void
+    {
+        TenantContext::set(Tenant::DEFAULT_ID);
+
+        app(SettingsService::class)->write(
+            array('enable_jit_subdomain_inheritance' => $on),
             SettingsService::SURFACE_ADMIN
         );
 

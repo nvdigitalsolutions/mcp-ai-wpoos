@@ -3891,6 +3891,20 @@
             "default": false
         },
         {
+            "key": "enable_jit_subdomain_inheritance",
+            "storage": "enable_jit_subdomain_inheritance",
+            "scope": "tenant",
+            "console": "hidden",
+            "type": "checkbox",
+            "section_id": "authentication__auth0",
+            "section": "Auth0 Configuration",
+            "tab": "authentication",
+            "label": "Let a verified domain cover its subdomains",
+            "sensitive": false,
+            "description": "Off by default, and the recommendation is to leave it off. When on, a verified acme.com also admits eng.acme.com, on the reasoning that one organisation controls both. It also means anyone who can create a subdomain can route its users into this estate, which is why exact match is the default. Only a verified parent domain inherits; a proposed one still gates nothing.",
+            "default": false
+        },
+        {
             "key": "enable_access_digest",
             "storage": "enable_access_digest",
             "scope": "tenant",
