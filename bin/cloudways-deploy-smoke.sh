@@ -45,17 +45,43 @@ cleanup() {
 trap cleanup EXIT
 
 # ── Stubs ────────────────────────────────────────────────────────────────────
+# The stubs model the two facts the ordering bug depends on:
+#   - `php artisan` cannot run before `composer install` (no vendor/autoload.php)
+#   - `composer install` is what creates it
+# Every invocation is logged so the test can assert the order, not just the exit.
+# A sentinel models `vendor/autoload.php` existing: the checkout may already have
+# a vendor/ directory (dev machines, CI after `composer install`), so probing the
+# real path would make the bare-host case untestable.
 mkdir -p "$TMP/stub" "$TMP/public_html"
+: >"$TMP/stub.log"
+export CW_STUB_LOG="$TMP/stub.log"
+export CW_STUB_VENDOR="$TMP/vendor-ready"
 
 cat >"$TMP/stub/php" <<'STUB'
 #!/bin/sh
+printf 'php %s\n' "$*" >> "$CW_STUB_LOG"
 case "${1:-}" in
 	-v) echo "PHP 8.3.14 (cli) (stub)" ;;
 	-r) printf '80314' ;;
-	*) exit 0 ;;
+	artisan)
+		if [ ! -f "$CW_STUB_VENDOR" ]; then
+			echo "PHP Fatal error: Failed opening required 'vendor/autoload.php'" >&2
+			exit 1
+		fi
+		;;
 esac
+exit 0
 STUB
-printf '#!/bin/sh\nexit 0\n' >"$TMP/stub/composer"
+
+cat >"$TMP/stub/composer" <<'STUB'
+#!/bin/sh
+printf 'composer %s\n' "$*" >> "$CW_STUB_LOG"
+case " $* " in
+	*" install "*) : >"$CW_STUB_VENDOR" ;;
+esac
+exit 0
+STUB
+
 printf '#!/bin/sh\nexit 0\n' >"$TMP/stub/rsync"
 chmod +x "$TMP/stub/php" "$TMP/stub/composer" "$TMP/stub/rsync"
 export PATH="$TMP/stub:$PATH"
@@ -64,7 +90,7 @@ deploy() {
 	env NVOOS_PHP_BIN="$TMP/stub/php" \
 		NVOOS_COMPOSER_BIN="$TMP/stub/composer" \
 		NVOOS_PUBLIC_ROOT="${1:-$TMP/public_html}" \
-		bash "$DEPLOY" --no-install --no-migrate "${@:2}"
+		bash "$DEPLOY"
 }
 
 # ── 1. The script parses ─────────────────────────────────────────────────────
@@ -82,30 +108,43 @@ else
 	ok "no container-absolute paths"
 fi
 
-# ── 3. First run without .env: artifacts written, exit 2 ─────────────────────
+# ── 3. First run without .env: config gate only ──────────────────────────────
+# Configuration is a precondition for building, and nothing may touch the
+# docroot before the operator has filled .env in.
 if [[ -f "$ENV_FILE" ]]; then
 	ENV_BACKUP="$TMP/env.backup"
 	mv "$ENV_FILE" "$ENV_BACKUP"
 fi
 
 say "First run (no .env)"
+: >"$TMP/stub.log"
 set +e
 deploy >"$TMP/first.log" 2>&1
 FIRST_EXIT=$?
 set -e
 if [[ "$FIRST_EXIT" -eq 2 ]]; then ok "exits 2 with a .env checklist"; else bad "expected exit 2, got $FIRST_EXIT"; fi
-if [[ -f "$TMP/public_html/index.php" ]]; then ok "writes the front controller"; else bad "front controller missing"; fi
-if [[ -f "$TMP/public_html/.htaccess" ]]; then ok "writes .htaccess"; else bad ".htaccess missing"; fi
-
-# The first run created .env from .env.example and the stubbed PHP wrote no
-# key, so the second pass must refuse rather than deploy without one.
 if grep -q 'Fill in at minimum' "$TMP/first.log"; then
 	ok "prints the .env checklist"
 else
 	bad "expected a .env checklist on the first run"
 fi
+if [[ -f "$TMP/public_html/index.php" || -f "$TMP/public_html/.htaccess" ]]; then
+	bad "published to the docroot before .env was configured"
+else
+	ok "leaves the docroot untouched before configuration"
+fi
+if grep -q '^composer install' "$TMP/stub.log"; then
+	bad "ran composer install before .env was configured"
+else
+	ok "does not build before .env is configured"
+fi
 
+# ── 4. Ordering: dependencies before any artisan call ────────────────────────
+# The bug this test exists for: the first-run branch called
+# `artisan key:generate` before `composer install`, so on a bare host artisan
+# died on the missing vendor/autoload.php (exit 1, no checklist printed).
 say "Second run (empty APP_KEY)"
+: >"$TMP/stub.log"
 set +e
 deploy >"$TMP/gate.log" 2>&1
 GATE_EXIT=$?
@@ -115,6 +154,34 @@ if [[ "$GATE_EXIT" -eq 1 ]] && grep -q 'APP_KEY is empty' "$TMP/gate.log"; then
 else
 	bad "expected an APP_KEY refusal (exit 1), got $GATE_EXIT"
 fi
+
+install_line=$(grep -n '^composer install' "$TMP/stub.log" | head -1 | cut -d: -f1 || true)
+artisan_line=$(grep -n '^php artisan' "$TMP/stub.log" | head -1 | cut -d: -f1 || true)
+key_line=$(grep -n '^php artisan key:generate' "$TMP/stub.log" | head -1 | cut -d: -f1 || true)
+
+if [[ -n "$install_line" && -n "$artisan_line" && "$install_line" -lt "$artisan_line" ]]; then
+	ok "composer install runs before any php artisan"
+else
+	bad "artisan ran before composer install (install=${install_line:-none}, artisan=${artisan_line:-none})"
+fi
+if [[ -n "$install_line" && -n "$key_line" && "$install_line" -lt "$key_line" ]]; then
+	ok "key:generate runs after install"
+else
+	bad "key:generate ran before install (install=${install_line:-none}, key=${key_line:-none})"
+fi
+
+# ── 5. With a key: the deploy completes and publishes ────────────────────────
+say "Third run (configured .env)"
+printf 'APP_KEY=base64:c21va2UtdGVzdA==\n' >>"$ENV_FILE"
+: >"$TMP/stub.log"
+if deploy >"$TMP/deploy.log" 2>&1; then
+	ok "exits 0"
+else
+	bad "expected exit 0"
+	sed -n '1,20p' "$TMP/deploy.log"
+fi
+if [[ -f "$TMP/public_html/index.php" ]]; then ok "writes the front controller"; else bad "front controller missing"; fi
+if [[ -f "$TMP/public_html/.htaccess" ]]; then ok "writes .htaccess"; else bad ".htaccess missing"; fi
 
 say "Generated front controller"
 if [[ -n "$REAL_PHP" ]]; then
@@ -150,16 +217,6 @@ if grep -Fq 'RewriteRule ^ index.php [L]' "$TMP/public_html/.htaccess"; then
 	ok "routes to the front controller"
 else
 	bad "front-controller rewrite missing"
-fi
-
-# ── 4. With a key: the deploy completes ──────────────────────────────────────
-say "Third run (configured .env)"
-printf 'APP_KEY=base64:c21va2UtdGVzdA==\n' >>"$ENV_FILE"
-if deploy >"$TMP/deploy.log" 2>&1; then
-	ok "exits 0"
-else
-	bad "expected exit 0"
-	sed -n '1,20p' "$TMP/deploy.log"
 fi
 
 say "Idempotent"
