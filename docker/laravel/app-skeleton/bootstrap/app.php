@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePrincipalScope;
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
 use App\Support\Auth\Auth0TokenException;
@@ -151,6 +152,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'spike.local' => EnsureSpikeEnvironment::class,
             'pro.entitlement' => EnsureProEntitlement::class,
+            // Proposal 159 slice 1 — registered but attached to no route yet, so
+            // that slice 2 changes only the route file. An unrestricted principal
+            // (`['*']`, a session or an Auth0 user) passes any requirement.
+            'scope' => EnsurePrincipalScope::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

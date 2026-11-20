@@ -12100,3 +12100,67 @@ by killed `docker exec` calls and had to be found through `/proc/<pid>/cmdline` 
 container has no `ps` or `pkill`). CI's `App suite (SQLite)` and `lib/core suite` jobs
 are the reliable gates for this runtime; do not treat a slow local run as a product
 signal.
+
+## 119. Machine-principal scopes — the vocabulary, wired to nothing (159 slice 1)
+
+[159](159-machine-principal-decision.md) decided that a machine principal is a
+personal access token with an explicit scope in `abilities`. This is its first
+slice, and it deliberately changes **no behaviour**: the middleware exists, is
+aliased, and is attached to no route. The point of shipping it alone is that the
+compatibility rule can be pinned before a single route depends on it.
+
+### 119.1 The rule that protects production
+
+Every personal token minted before today carries `abilities: ['*']`, and a session
+or Auth0 request carries **no Sanctum token at all**. Both are *user* credentials
+whose authority is the owner's role. So `PrincipalScope` reads `['*']`, `null` and
+`TransientToken` as **unrestricted**, and an unrestricted principal satisfies any
+requirement.
+
+If that rule were wrong, slice 2 would lock out every existing caller the moment a
+route gained a scope. So it is a test, not a comment:
+`test_a_legacy_star_token_passes_every_scoped_route` and
+`test_a_session_principal_passes_every_scoped_route` both run real requests.
+
+The inverse matters too: an **empty** ability list is *not* unrestricted. `[]` on a
+real token means "this credential was given nothing", and `empty()` would erase the
+distinction between that and a missing list.
+
+### 119.2 A class requirement needs a usable scope — found by a failing test
+
+The first draft matched a class requirement by prefix, so `assistant:abc`,
+`assistant:0` and `assistant:` all satisfied `scope:assistant`. A test asserted the
+opposite and failed, which is the useful outcome: a route that passes that check and
+then calls `assistantId()` reads **null**, which it will not expect.
+
+So `scopeSatisfiesClass()` enforces the id grammar for `assistant` (a positive
+integer) and only requires a non-empty value for `estate`, because
+`estate:assistants.list` is a name rather than a number. An *exact* requirement is
+still a string comparison — `assistant:abc` matches `assistant:abc` — because an
+exact requirement is the caller naming what it stored.
+
+### 119.3 Fail closed on a blank declaration
+
+`scope:` with no argument is an authoring mistake, and the only safe reading is
+deny. A middleware that allowed it would turn a missed parameter into an open
+route. `test_a_blank_requirement_denies_a_scoped_token` covers it.
+
+### 119.4 What this slice deliberately does not do
+
+**A scoped token is still admitted by routes that declare no scope.** The middleware
+only constrains the routes it is attached to, and none are attached yet. Slice 2
+therefore has to answer a question this slice leaves open: whether a scoped
+principal should be **default-denied** on unannotated routes. Default-deny is the
+safer rule and the expensive one — it needs every route a machine should reach to
+carry a declaration, and a route that forgets becomes unusable rather than
+over-permissive. That is the right trade for a credential that exists to be narrow,
+but it is a decision with its own blast radius and belongs with the route
+annotation, not before it.
+
+### 119.5 Gates
+
+| Run | Result |
+|---|---|
+| `PrincipalScopeTest` | **11 tests / 35 assertions** — `*`/`null`/`TransientToken` unrestricted; `[]` restricted to nothing; an assistant scope binds one id and exact-matches; a class requirement rejects `assistant:abc`/`0`/empty; estate scopes are a class; a real bearer token passes a matching route and is refused a different class with `principal_scope_required` naming required and granted; a blank requirement denies; an unauthenticated request never reaches the check |
+| `AuthorizationTest` + `ApiTenantResolutionTest` + `Auth0BearerTest` + `SurfaceOwnershipTest` | **38 tests / 616 assertions, 0 failures** — the alias registration does not disturb boot or any existing auth path |
+| phpcs (`phpcs-laravel.xml.dist`, CI severity) | **0 errors** on the two new classes, `bootstrap/app.php` and the test |
