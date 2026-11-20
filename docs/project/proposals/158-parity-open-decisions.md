@@ -316,7 +316,12 @@ than something the SSO work was going to settle.
    change. Separate lane; do not interleave with (2).
 4. **`phpcompatibility/phpcompatibility-wp`**, opportunistically — it blocks no
    feature, but every enum in the repository fails `PHP Compatibility Check` the
-   moment it is edited (plan §106.10).
+   moment it is edited (plan §106.10). **Blocked as of 2026-11-20, and not by a
+   release**: `phpcompatibility/php-compatibility` 10.0.0-alpha3 requires
+   `squizlabs/php_codesniffer ^4.0.2`, and `wp-coding-standards/wpcs` 3.4.1 — the
+   current release — requires `^3.13.5`. There is no WPCS 4.x; PHPCS-4 support
+   lives on an unreleased branch. Adopting 10.x would mean dropping WPCS. Plan
+   §118 records the spike and re-opens this when WPCS ships PHPCS 4.
 
 ---
 
@@ -345,8 +350,12 @@ than something the SSO work was going to settle.
 - **Usage evidence that a merged dashboard is a daily surface for two different
   audiences** would reopen the split in D1. The review's inventory is a
   static analysis; real per-surface usage would beat it.
-- **A PHPCompatibility release that parses enums** retires §9 item 4 and the
-  suppression in `AdminNavigationGroup` immediately.
+- **WPCS gaining PHPCS 4 support** is what unblocks §9 item 4, not a
+  PHPCompatibility release. PC 10.0.0-alpha3 already parses enums correctly (plan
+  §118 verified it: the three false positives on `AdminNavigationGroup` disappear
+  with the suppression removed), but it requires PHPCS ^4.0.2 and WPCS 3.4.1
+  requires ^3.13.5. When `wp-coding-standards/wpcs` ships a PHPCS-4 release, the
+  suppression in both `NavigationGroup` enums can be deleted.
 
 ---
 
