@@ -126,7 +126,7 @@ enum AdminNavigationGroup: string implements HasIcon, HasLabel
             ),
             self::Automation => array('Automations', 'Workflow runs', 'Approvals'),
             self::Connections => array('MCP apps', 'Remote sites', 'Credentials', 'Personal tokens'),
-            self::Activity => array('Transcripts', 'Security', 'Spend'),
+            self::Activity => array('Dashboards', 'Transcripts', 'Security', 'Spend'),
             self::Settings => array('Settings'),
         };
     }

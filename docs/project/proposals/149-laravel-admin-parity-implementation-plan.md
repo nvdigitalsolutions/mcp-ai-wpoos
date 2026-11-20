@@ -11425,3 +11425,167 @@ Two things the work caught, both worth recording:
    `ezuite` gets `connectors` back and must key on it; there is no redirect on the
    WordPress admin side because the console's dashboard picker is component
    state, not a URL.
+
+## 113. Dashboards on `/admin` — and why six of them are absent (2026-11-20)
+
+The `dashboards` row was the last surface on the board with a decided target and
+no code. §112 gave it a seven-surface catalogue; this gives it a page. **The board
+moves for the first time in three slices: 41 Filament-built, 4 console-only, and
+all four of those are decided exclusions rather than outstanding work.**
+
+### 113.1 The decision the page is actually made of
+
+The port could have been "render the console's catalogue in Filament". Researching
+whether that was right produced the one decision the whole slice turns on.
+
+The console renders a dashboard it cannot serve as a **greyed card naming the
+toolkit toggle** that would enable it. Published guidance on inactive controls is
+consistent about when that is correct: a disabled control is a promise that the
+enabled state exists and is reachable — users read a greyed control as "something
+is available in principle but not right now" ([Nielsen][d1],
+[UX Tigers][d2]). Where the reader can *never* reach the state, the same guidance
+says hide it ([The Usability People][d3], [Smashing][d4]).
+
+Applied here, the two cases are genuinely different:
+
+| Case | Reader can fix it? | Treatment |
+|---|---|---|
+| `eca`, `enable_eca_management` off | **Yes** — a real tenant setting two clicks away | **Shown**, disabled, naming the toggle |
+| `connectors`, `members`, `cre`, `law`, `registration`, `observability` | **No** — no store, no toggle, nothing to install | **Absent** — not rendered at all |
+
+So the page iterates `DashboardCatalogue::servable()` and not `all()`, and the
+catalogue now answers that question explicitly. Asking the data endpoint for an
+absent dashboard is still an ordinary 404, because hiding is presentation and the
+refusal is the boundary (S-3).
+
+This is also the same line §104 drew for inapplicable settings — "a greyed
+control still asserts the capability could be built here" — which is why the
+established answer was already in the repo and only needed applying to a second
+surface.
+
+**The API deliberately keeps the console's shape.** `schema()` still returns all
+seven with a `disabled` map, because `DashboardsClient` is shared and on WordPress
+those six *are* one switch away. The asymmetry is the point: the same data,
+rendered for two different audiences, and only the panel knows what it can serve.
+
+[d1]: https://jakobnielsenphd.substack.com/p/inactive-buttons
+[d2]: https://www.uxtigers.com/post/inactive-buttons
+[d3]: https://www.theusabilitypeople.com/thought_leadership/disable-hide-or-grey-out
+[d4]: https://www.smashingmagazine.com/2024/05/hidden-vs-disabled-ux/
+
+### 113.2 One gatherer, two surfaces
+
+`DashboardsController::gatherEca()` was 90 lines of ECA aggregation living inside
+a REST controller. The page needs the same numbers, and a second copy would drift
+on the first change — the bug this repo has now removed four times
+(`CommandCentreReport`, `RoutingExportStore::backoffState()`,
+`JitProvisioner::reasonLabel()`, and the §111 digest's reason labels).
+
+So it moved to `App\Support\Dashboards\DashboardGatherer`, and the controller
+became a thin caller. `gather()` returns **null** for a dashboard this runtime
+cannot feed, which is a different answer from an empty array: null means "no store
+here", `[]` means "a store that holds nothing". The controller turns the first
+into a 501; the page leaves the dashboard out entirely.
+
+The controller lost its `ContentStoreInterface` constructor argument in the move —
+it is container-resolved, so nothing broke, and the regression run confirms it.
+
+### 113.3 Bars, not a donut — and why that is not laziness
+
+The ECA catalogue declares two charts: `by_day` (`bar`) and `by_type` (`donut`).
+Both render as ranked horizontal bars on the panel.
+
+Two reasons, in order:
+
+1. **The panel has no chart library.** A donut built from `conic-gradient` would
+   be a shape nobody can read precisely, and there is no shared recipe renderer on
+   this side (the console's `chartRecipes` is SPA code).
+2. **Bars are the better encoding for the question anyway.** Hill's 2025
+   comparison of pie, donut and bar charts found all three equally accurate for
+   part-to-whole but bar charts **faster, and more precise for ranking**
+   ([Information Visualization][d5]). "Which activity types do we run?" is a
+   ranking question, not a part-to-whole one.
+
+Every bar carries its label and its value **as text**, so nothing is encoded by
+colour alone (WCAG 1.4.1) — and the bar track itself is `aria-hidden`, because the
+adjacent number is the accessible value.
+
+The catalogue's `type` field stays a hint rather than a contract. Recording that
+here matters: the next person to see `donut` in the catalogue and bars on the page
+should find the reason rather than assume a bug.
+
+[d5]: https://journals.sagepub.com/doi/10.1177/14738716241259432
+
+### 113.4 Three honesty devices in the empty state
+
+- **A metric that was not computed renders an em dash, never `0`.** The console's
+  `formatMetric()` coerces `undefined` to `0`; the panel does not, for the reason
+  §106 already recorded for the command centre. Number formats otherwise mirror
+  the console exactly (thousands separators, `$` with no decimals, percent to two
+  places) so one figure does not read differently on the two surfaces.
+- **The list always renders, even when empty.** The shared table component puts
+  the empty state in the body precisely so the column headings survive a filter
+  that matches nothing (§55.5). Hiding the whole section on empty would undo the
+  component's reason for existing — verified live: filtering to a day with no
+  activities keeps the seven headers and says "No activity matches the current
+  filters."
+- **A seeded axis stays seeded.** `by_day` always carries seven days, so a quiet
+  week is seven zero bars rather than an empty box; `by_type` has no natural axis
+  and says "Nothing to plot for the current filters."
+
+### 113.5 Filters without an Apply button
+
+The console posts filters behind an Apply button because it is a REST client. The
+panel binds them with `wire:model.live`, so they apply as they change — one fewer
+click and no half-applied state.
+
+`wire:model.live` on a property that does not exist is a Livewire error at render
+time, so the page declares its two bindable keys and `bound()` is checked before a
+control renders. A filter the page has no control for gets a sentence instead of a
+control that throws. Adding a dashboard with a new filter is therefore two edits —
+a property and its entry in `filters()` — and forgetting the first is visible
+rather than fatal.
+
+### 113.6 Gates
+
+| Run | Result |
+|---|---|
+| `AdminDashboardsTest` | **14 tests / 69 assertions** — access follows the panel (viewer refused); only `eca` is offered and the other six are absent from the markup; a toolkit-off `eca` names its toggle; the toolkit-on `eca` renders metrics, both charts and the list; the page's figures are the gatherer's figures; the day and type filters narrow it; an empty store keeps the axis, says where a chart is empty and keeps the table header; `format()` renders a dash for a missing value; `bars()` ranks, scales and carries text values; a zero distribution still draws bars; the endpoint 404s a non-servable dashboard and 404s its retired alias; the bound-key guard names only declared keys |
+| Regression: `DashboardsTest` (API after the gatherer move), `AdminNavigationTest`, `SurfaceOwnershipTest`, `AdminDataTableTest`, `AdminPanelTest`, `AdminPanelAccessTest`, `AdminPanelBladeTest`, `AccessDigestTest`, `SettingsOwnershipTest` | **106 tests / 873 assertions, 0 failures** |
+| Full suite (`vendor/bin/phpunit`) | **1632 tests / 19,370 assertions, 0 failures** (2 pre-existing PHPUnit deprecations). The gatherer extraction moves code the dashboard API depends on, and the page adds a navigation item, so the whole suite is the relevant gate |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 errors**; the one warning is the pre-existing long `cre` description in the catalogue |
+| `bin/audit-surface-ownership.php` | **48** surfaces · **41** Filament-built (was 40) · **4** console-only (was 5) · 0 planned-only · 1 inert |
+| Live | `/admin/default/dashboards` renders the off state naming `enable_eca_management`; with the toolkit on and one seeded activity it renders 1 / 2 / 0 / 12.50%, both bar charts and the activity table; changing Day to Monday re-renders live to zeros, an empty type chart and an empty-bodied table with its headers intact; the sidebar shows Dashboards first under Activity |
+
+Two things worth recording:
+
+1. **`AdminNavigationGroup::items()` is a hardcoded ordered list, and
+   `AdminNavigationTest` compares the live sidebar against it.** Adding a page
+   without adding its label there is a test failure, not a silent omission — which
+   is the right direction, and it caught this slice within one run.
+2. **Seeding in `setUp()` made the empty state untestable.** The first draft of the
+   test seeded the classroom fixture for every case, so the "an empty store" test
+   had to dismantle the data it had just created — and `ContentStoreInterface::delete()`
+   takes an actor id, which turns a fixture cleanup into an access-control
+   question. Moving the seed into the tests that need it made the empty case a
+   genuine empty store.
+
+### 113.7 What this does not do
+
+1. **It does not add a second dashboard.** `servable()` is `['eca']` and stays so
+   until another store is ported. The page is a host, not a claim.
+2. **No member picker.** `members` declares a `member` filter and is not servable
+   here; no servable dashboard declares one, so the branch renders a sentence and
+   `bound()` returns false for `member_id`.
+3. **No `order` hint on chart specs.** `by_day` is an ordinal axis and sorting it by
+   value puts Wednesday first, which is the ranking answer; filtering to nothing
+   returns it to week order (PHP 8 sorts are stable). A chronological-axis option
+   would be a catalogue-level `order` field on both runtimes — noted, not built,
+   because the current behaviour is defensible and the field is a cross-runtime
+   contract change for a cosmetic preference.
+4. **No CSV export, no scheduled snapshot, no comparison period.** Those are
+   `reports` (§34) and `measurement` (§96) on `/ops`, which already exist, and a
+   second copy on a customer page would be the drift this slice just removed
+   elsewhere.
+5. **The `donut` in the catalogue still says `donut`.** §113.3 is the reason; if a
+   chart library ever lands, the field is already there to act on.
