@@ -50,20 +50,34 @@ class DashboardsController
                 'description' => $config['description'],
                 'icon' => $config['icon'],
                 'toolkit_flag' => DashboardCatalogue::flag($id),
+                // Every flag that would enable it. A merged dashboard has
+                // several, and naming one of three is incomplete advice.
+                'toolkit_flags' => DashboardCatalogue::flags($id),
             ];
         }
 
         return response()->json([
             'dashboards' => $dashboards,
             'disabled' => $disabled,
+            // 158 D1 — the retired ids and what replaced them, so a client can
+            // migrate its own saved state. Additive; a client that ignores it
+            // keeps working. Must match the WordPress envelope.
+            'aliases' => DashboardCatalogue::aliases(),
         ]);
     }
 
     /**
      * Filtered metric payload for one dashboard.
+     *
+     * A retired id resolves first, and the response reports the **resolved**
+     * id — a client that asked for `ezuite` is told it received `connectors`,
+     * which is what it needs to update its own state. Resolving is not a grant:
+     * the replacement's own availability check still applies.
      */
     public function data(Request $request, string $id): JsonResponse
     {
+        $id = DashboardCatalogue::resolveAlias($id);
+
         if (! array_key_exists($id, DashboardCatalogue::all())) {
             return response()->json(['message' => 'Unknown dashboard.'], 400);
         }
