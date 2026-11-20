@@ -89,6 +89,98 @@ function stampStyleFingerprint() {
 
 stampStyleFingerprint();
 
+// --- structured data ------------------------------------------------------
+// The localizer rewrites ASSET attributes and deliberately leaves every other
+// absolute URL alone — `og:image` must stay absolute after a domain move. JSON-LD
+// is the exception: a `logo`/`image` URL that still names a RETIRED CMS is a dead
+// link a search engine will index, and virtuallyjamaica's three documents each
+// shipped one (the localizer had already fetched and hashed the file, so the
+// built page carried both the local copy and the dead URL).
+//
+// The rewrite runs from the localizer's OWN report, so the mapping cannot drift
+// from the file it actually wrote, and it is confined to
+// `<script type="application/ld+json">` bodies so nothing else is touched.
+function collectDocuments() {
+	const documents = [];
+	const walk = (dir) => {
+		if (!existsSync(dir)) {
+			return;
+		}
+		for (const entry of readdirSync(dir, { withFileTypes: true })) {
+			const path = resolve(dir, entry.name);
+			if (entry.isDirectory()) {
+				walk(path);
+			} else if (entry.name === 'index.html') {
+				documents.push(path);
+			}
+		}
+	};
+	walk(distDir);
+	return documents;
+}
+
+function localizeStructuredData() {
+	const reportPath = resolve(process.cwd(), '.forge-cache', 'media-localize.json');
+	if (!existsSync(reportPath)) {
+		return;
+	}
+	let report;
+	try {
+		report = JSON.parse(readFileSync(reportPath, 'utf8'));
+	} catch {
+		return;
+	}
+	const localized = Array.isArray(report?.localized) ? report.localized : [];
+	const map = localized
+		.filter((entry) => entry?.url && entry?.file)
+		.map((entry) => [entry.url, entry.file]);
+	if (map.length === 0) {
+		return;
+	}
+	// Structured data wants an ABSOLUTE url; the report's `file` is root-relative.
+	const origin = (() => {
+		try {
+			return new URL(JSON.parse(readFileSync(resolve(process.cwd(), 'nvoos.json'), 'utf8')).url).origin;
+		} catch {
+			return '';
+		}
+	})();
+
+	let pages = 0;
+	let rewrites = 0;
+	for (const document of collectDocuments()) {
+		let html = readFileSync(document, 'utf8');
+		let changed = false;
+		html = html.replace(
+			/(<script[^>]*type=["']application\/ld\+json["'][^>]*>)([\s\S]*?)(<\/script>)/gi,
+			(match, open, body, close) => {
+				let next = body;
+				for (const [url, file] of map) {
+					if (!next.includes(url)) {
+						continue;
+					}
+					const target = origin ? `${origin}${file}` : file;
+					rewrites += next.split(url).length - 1;
+					next = next.split(url).join(target);
+				}
+				if (next !== body) {
+					changed = true;
+				}
+				return open + next + close;
+			}
+		);
+		if (changed) {
+			writeFileSync(document, html, 'utf8');
+			pages += 1;
+		}
+	}
+	if (rewrites > 0) {
+		console.log(`[forge-postbuild] localized ${rewrites} structured-data URL(s) on ${pages} document(s).`);
+	}
+}
+
+localizeStructuredData();
+
 if (!targetPath) {
 	console.log('[forge-postbuild] no redirects.json — skipping _redirects.');
 	process.exit(0);
