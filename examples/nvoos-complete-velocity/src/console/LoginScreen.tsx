@@ -29,11 +29,26 @@ interface LoginScreenProps {
   notice?: string;
   /** Error line (e.g. an invalid magic-link token) — announced as an alert. */
   error?: string;
+  /**
+   * Whether the backend offers passwordless sign-in.
+   *
+   * `false` hides the mode entirely: a disabled login method should not
+   * advertise itself (the backend answers 404 for the same reason). Anything
+   * else — including `undefined` while `/features` is still in flight, or on a
+   * backend whose feature map has no such key — keeps it visible, because the
+   * endpoint is authoritative anyway and the worst case is one uniform error.
+   */
+  magicLinkAvailable?: boolean;
 }
 
 type SignInMode = 'password' | 'magic';
 
-export function LoginScreen({ onSuccess, notice, error }: LoginScreenProps): JSX.Element {
+export function LoginScreen({
+  onSuccess,
+  notice,
+  error,
+  magicLinkAvailable = true,
+}: LoginScreenProps): JSX.Element {
   const [mode, setMode] = useState<SignInMode>('password');
 
   // Password flow.
@@ -65,6 +80,16 @@ export function LoginScreen({ onSuccess, notice, error }: LoginScreenProps): JSX
     }
   }, [mode, sent]);
 
+  // If the backend turns out not to offer passwordless sign-in, a tab left on
+  // the magic panel would be a form that can never succeed. Fall back rather
+  // than leave the user there.
+  useEffect(() => {
+    if (!magicLinkAvailable && mode === 'magic') {
+      setMode('password');
+      setSent(false);
+    }
+  }, [magicLinkAvailable, mode]);
+
   function switchMode(next: SignInMode): void {
     setMode(next);
     setFormError('');
@@ -73,6 +98,10 @@ export function LoginScreen({ onSuccess, notice, error }: LoginScreenProps): JSX
 
   /** Arrow-key navigation across the two sign-in-mode tabs. */
   function handleTabsKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (!magicLinkAvailable) {
+      return;
+    }
+
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
       return;
     }
@@ -178,6 +207,7 @@ export function LoginScreen({ onSuccess, notice, error }: LoginScreenProps): JSX
             aria-controls="nvoos-login-panel-magic"
             className="nvoos-login__mode-tab"
             onClick={() => switchMode('magic')}
+            hidden={!magicLinkAvailable}
           >
             Magic link
           </button>

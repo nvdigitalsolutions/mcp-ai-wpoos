@@ -37,7 +37,7 @@ import {
   fetchSiteName,
   UnauthorizedError,
 } from './runtime-config';
-import { buildTimeBackend } from './backend-profile';
+import { backendPaths, buildTimeBackend } from './backend-profile';
 import { brandText } from './brand';
 import { installFetchWrapper } from './fetch-wrapper';
 import { confirmMagicLink, logoutFromWordPress } from './login';
@@ -76,6 +76,37 @@ function extractMagicLoginToken(): string {
 
 function Console(): JSX.Element {
   const [boot, setBoot] = useState<BootState>({ phase: 'loading' });
+
+  /**
+   * Whether the backend offers passwordless sign-in, from the public feature
+   * map. `null` until the fetch settles, and the sign-in screen treats anything
+   * but an explicit `false` as available — the endpoint is authoritative, and a
+   * failed probe should not remove a working login method.
+   */
+  const [magicLinkAvailable, setMagicLinkAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch(
+          backendPaths('', buildTimeBackend()).features,
+          { credentials: 'include', headers: { Accept: 'application/json' } },
+        );
+        if (!response.ok) return;
+        const data = (await response.json()) as { data?: { magic_login?: unknown } } | null;
+        if (cancelled) return;
+        setMagicLinkAvailable(data?.data?.magic_login === false ? false : true);
+      } catch {
+        // Leave it null: show the method rather than hide a working one.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /**
    * Session bootstrap — runs on mount and again after a successful sign-in.
@@ -240,6 +271,7 @@ function Console(): JSX.Element {
       <LoginScreen
         notice={boot.notice}
         error={boot.error}
+        magicLinkAvailable={magicLinkAvailable !== false}
         onSuccess={() => void bootstrap()}
       />
     );

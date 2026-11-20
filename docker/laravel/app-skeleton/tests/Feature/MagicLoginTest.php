@@ -64,6 +64,7 @@ class MagicLoginTest extends TestCase
 
         $this->postJson('/api/v1/magic-login/request', array('email' => 'ghost@example.test'))
             ->assertOk()
+            ->assertJsonPath('ok', true)
             ->assertJsonPath('success', true);
 
         Mail::assertNothingSent();
@@ -75,9 +76,12 @@ class MagicLoginTest extends TestCase
         $this->enable();
         $user = $this->user('owner@example.test');
 
-        $this->postJson('/api/v1/magic-login/request', array('email' => 'owner@example.test'))
+        // `identifier` is the WordPress controller's key and what the shared
+        // console sends; `email` is the alias. This covers the one the client
+        // actually uses.
+        $this->postJson('/api/v1/magic-login/request', array('identifier' => 'owner@example.test'))
             ->assertOk()
-            ->assertJsonPath('success', true);
+            ->assertJsonPath('ok', true);
 
         $token = $this->sentToken($user);
 
@@ -157,6 +161,7 @@ class MagicLoginTest extends TestCase
 
         $this->confirm($token)
             ->assertOk()
+            ->assertJsonPath('ok', true)
             ->assertJsonPath('id', $user->id)
             ->assertJsonPath('login', 'owner@example.test');
 
@@ -209,6 +214,18 @@ class MagicLoginTest extends TestCase
 
         $this->assertSame($expired->status(), $unknown->status());
         $this->assertSame($expired->json(), $unknown->json());
+    }
+
+    public function test_a_failed_confirm_carries_a_top_level_message(): void
+    {
+        $this->enable();
+
+        // The shared console reads `message`, not `error.message`.
+        $this->confirm('does-not-exist')
+            ->assertStatus(401)
+            ->assertJsonPath('ok', false)
+            ->assertJsonPath('message', 'This sign-in link is invalid or has expired.')
+            ->assertJsonPath('error.code', 'magic_link_invalid');
     }
 
     public function test_the_request_endpoint_is_rate_limited_per_identifier(): void
