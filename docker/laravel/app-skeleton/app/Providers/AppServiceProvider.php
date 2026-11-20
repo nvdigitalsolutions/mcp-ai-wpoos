@@ -19,6 +19,7 @@ use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\Auth\Auth0TokenVerifier;
+use App\Support\Auth\JitProvisioner;
 use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
 use App\Support\Diagnostics\RoutingMetricStore;
@@ -230,6 +231,7 @@ class AppServiceProvider extends ServiceProvider
                 $app['request'],
                 $app->make(Auth0TokenVerifier::class),
                 $app->make(SettingsService::class),
+                $app->make(JitProvisioner::class),
             )
         );
 

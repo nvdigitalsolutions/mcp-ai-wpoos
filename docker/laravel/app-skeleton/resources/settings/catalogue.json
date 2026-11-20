@@ -3877,6 +3877,20 @@
             "default": ""
         },
         {
+            "key": "enable_jit_provisioning",
+            "storage": "enable_jit_provisioning",
+            "scope": "tenant",
+            "console": "hidden",
+            "type": "checkbox",
+            "section_id": "authentication__auth0",
+            "section": "Auth0 Configuration",
+            "tab": "authentication",
+            "label": "Provision new accounts on first login",
+            "sensitive": false,
+            "description": "Off by default. When on, a login whose identity provider asserts a verified address on a domain in this estate's verified allowlist creates an account here with viewer access. Anything else is recorded as a pending request that an administrator can approve. Without this, an unlinked subject is refused.",
+            "default": false
+        },
+        {
             "key": "enable_auth0_github_bridge",
             "storage": "enable_auth0_github_bridge",
             "scope": "tenant",
