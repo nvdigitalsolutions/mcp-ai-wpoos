@@ -10719,3 +10719,74 @@ when a release parses enums; until then, suppressing the one wrong sniff is
 cheaper than abandoning enums, and the alternative — a plain class with
 constants — would cost the `cases()`-driven contract that `AdminNavigationTest`
 and `SurfaceOwnershipTest` are built on.
+
+## 107. Where the next session starts (2026-11-20)
+
+A handover, so the next slice does not have to re-derive the board. Measured
+2026-11-20 after #8005 (`bin/audit-surface-ownership.php`): **47 surfaces · 38
+built on a panel** (15 `/ops`, 25 `/admin`) **· 29 console-served · 6
+console-only · 0 planned-only · 1 inert**.
+
+### 107.1 The one row that can move: `media`
+
+`media` is the only console-only row whose work is not waiting on a product
+decision. It starts with a **migration, not a page**, and the order is not
+negotiable:
+
+1. **`nvoos_files.tenant_id`** — `string(64)`, default `'default'`, indexed,
+   guarded per column. Copy `2026_11_20_120000_add_tenant_to_activity_events`
+   (§106.2), which is the same shape. Nothing below is possible before this:
+   the optimiser and the sweeper both write `nvoos_files`, and today those rows
+   have no estate to claim.
+2. **Pin the writers.** `OptimizeMediaFile` and `MediaSweeper` call
+   `ActivityRecorder::record()` with no pinned `TenantContext`, so their events
+   land on `default` (§106.2 records this as a stated limitation). Once the file
+   row carries an estate, the job can pin it per file before recording and the
+   limitation disappears.
+3. **Then the page.** `media` is gated `feature:media`, and its `mediaCc` key is
+   `connected-service` — false when no Media Worker is configured. So the page
+   has two honest states to design before it has a table, and §104's rule
+   decides which of them *hide* rather than *disable*.
+
+A page over un-owned rows is the §41 mistake with a different noun: the reason
+that slice touched the schema was that a read surface made an existing gap into
+a leak.
+
+### 107.2 The one row blocked on a decision: `dashboards`
+
+The 10 → 7 catalogue change is still the gate
+(`149-dashboards-redundancy-review.md`). Porting ten dashboards in order to port
+seven is the wrong order, and the merge proposal in that review is a product
+decision. **Ask before starting**; do not pick seven unilaterally.
+
+### 107.3 Four rows that are not work
+
+`chat` and `automation-canvas` are deliberate `link-out`. `wordpress-bridge` is
+`none` — WordPress-only, Appendix B: N. `connected-apps` is `external-product …
+never ported`. §106 corrected prose that described the last two as undecided;
+**do not reopen any of the four** without a recorded reason, and do not read the
+console-only count as a to-do list of six.
+
+### 107.4 Follow-ups this slice created
+
+1. **Upgrade `phpcompatibility/phpcompatibility-wp`.** §106.10 records that 2.1.8
+   cannot parse PHP 8.1 enum bodies. Until a release can, **every enum in the
+   repository fails `PHP Compatibility Check` the moment it is edited**, because
+   the job only inspects changed files. Delete the file-scoped suppression in
+   `AdminNavigationGroup` when the upgrade lands.
+2. **No backfill for `nvoos_activity_events`.** Rows written before
+   `2026_11_20_120000` read as `default` and cannot recover their true estate.
+   Recorded, not fixable.
+3. **Estate-scoped uptime is undefined, not unbuilt.** `nvoos_health_samples`
+   has no estate, and the probe is the shared cache store; an estate's "uptime"
+   would measure something different, so scope it only after deciding what that
+   is.
+
+### 107.5 Before quoting a suite number
+
+§106.9 records a runtime copy that omitted `tests/` and reported 1269 where CI
+reports 1575, green throughout. If a count disagrees with the last recorded one,
+reconcile the tree first:
+`diff -rq docker/laravel/app-skeleton/tests <runtime>/tests`. `Only in
+<skeleton>` is evidence that the suite is smaller than it claims — and never run
+two full suites at once in that container, which has no `ps` or `kill`.
