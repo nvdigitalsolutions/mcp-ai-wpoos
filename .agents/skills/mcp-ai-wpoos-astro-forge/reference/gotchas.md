@@ -311,3 +311,57 @@ printed — indistinguishable from real drift, and it cost a debugging cycle.
   `testimonial`, `stats`, `comparison`, `steps`, `team` and `model-3d` are
   SHARED; `accordion` and `content` are forge-only; `image`, `faq`, `tabs`,
   `product-grid`, `promotion` are velocity-only.
+
+### 2026-11-21 — the type-model review pass
+
+- **`profile.url` is NOT always the rebuild.** A site can be "detached" from WP
+  (materialized content, frozen media, a separate preview host) while
+  `profile.url` still points at the LIVE WordPress. Check before deciding a
+  re-measure is circular: `curl -s <url> | grep -c wp-content` plus the absence
+  of `<meta name="forge-build">` means that origin is still the SOURCE. On
+  monicarajiv the whole chrome re-measure was safe precisely because
+  `monicarajiv.com` is still Flatsome and only the preview host serves Astro.
+- **Check the element EXISTS in the build before fixing its CSS.** A
+  component-class fix is a silent no-op on a raw-HTML site: monicarajiv's bands
+  are all `.section-title` (Flatsome markup on the raw path), so a considered
+  `--ds-title-size-*` change to the `.ds-title` clamp touched **zero** nodes.
+  `grep -c 'class="ds-title' dist/*.html` is a 30-second check that reorders the
+  whole investigation.
+- **Per-element type is a CLASS BOX FACT, not `design.elementCss`.**
+  `elementCss` is a flat `{selector, declarations}` list of `#id` rules (306 on
+  monicarajiv) and is empty of `.section-title`; the emitted
+  `[data-section-id] .section-title{font-size:…}` rules come from
+  `bandFacts[id].box` → `theme.box` → `emit()` in `bandBoxCss`. Grep the built
+  HTML for the selector, then look in the box facts.
+- **`bandBoxCss` sets a deliberate SPECIFICITY FLOOR** that no reordering can
+  beat: its second selector is `.post-body .section-content .col .x` — five
+  classes. A band type rule (`[data-section-id="X"] h3`, one attribute + one
+  element) loses whatever the source order, and so does emitting it later. Any
+  rule meant to override a class fact has to clear that floor or be applied to
+  the fact itself.
+- **A class fact records only DECLARED type, so a desktop value leaks to
+  mobile.** `ownTypeOf` returns type only when the element's computed values
+  differ from its PARENT's. A `.section-title` h3 is 22.2px against a 17.76px
+  parent on desktop (declared → recorded) but 16px against a 16px parent at
+  390px (inherited → NOT recorded), so `mergeBoxFacts` emits no mobile override
+  and the phone headline renders 22.2px instead of 16px. This is the
+  deliberately-unbuilt descendant-type work: the fix is to record computed type
+  for text-level nodes and let the device diff decide, which grows CSS on every
+  site — measure the fact budget first.
+- **The sampled viewport and the emitted media range must be explicitly
+  related.** `DEFAULT_GEOMETRY_VIEWPORTS` samples 1440/834/390 while the
+  renderer emits `max-width:1024px` and `max-width:767px`. 834 is neither edge
+  of the tablet range, so the frozen value is ~6% off at 1024 (32px → 30.024px)
+  and NOTHING in the existing gates noticed. Sample the range EDGES (or emit a
+  `clamp()`), never one interior point.
+- **Chained directory junctions break Vite.** Pointing a build target's
+  `node_modules` at a path that is ITSELF a junction resolves to the outer real
+  path, so `@astrojs/mdx` is reported missing from a package that is installed.
+  Point the junction at the real directory, or `npm install` in the target.
+- **`sites/` is enumerated as site profiles by the fleet workflow.**
+  `forge-sites.yml` globs `sites/*.json`, so a non-profile artefact parked there
+  (an element spec) is scaffolded as a site, fails `assertProfile` on
+  `{ url, collections }`, and — under `set -e` — kills the run before the sites
+  after it build. Specs live in `compare/<site>.json`. The workflow now skips a
+  file that merely lacks the profile shape (with a warning) but still fails on
+  malformed JSON.
