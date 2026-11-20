@@ -1252,15 +1252,26 @@ const bandParallaxCss = sections
 					 * Analyzer-measured, so it renders even though the classifier found
 					 * no media; the band's own copy still renders above it, so nothing
 					 * the source said is dropped. */}
-					{theme?.logos && theme.logos.length > 0 && (
-						<section class="ds-section ds-body">
-							<div class="ds-logos" aria-label="Featured brands">
-								{theme.logos.map((mark) => (
-									<img src={mark.src} alt={mark.alt ?? ''} width="240" height="120" loading="lazy" />
-								))}
-							</div>
-						</section>
-					)}
+					{theme?.logos && theme.logos.length > 0 && (() => {
+						// A logo wall the source PAGED renders as a carousel: more marks than
+						// fit at once, on a snapping track carrying the measured
+						// slides-per-view and gutter. A static row stays a static row.
+						const perView = theme.carousel?.perView ?? 0;
+						const paged = perView > 1 && theme.logos.length > perView;
+						return (
+							<section class="ds-section ds-body">
+								<div
+									class:list={[ 'ds-logos', paged && 'ds-logos--carousel' ]}
+									aria-label="Featured brands"
+									style={paged ? `--ds-carousel-per:${ perView };--ds-carousel-gap:${ theme.carousel?.gap ?? 0 }px` : undefined}
+								>
+									{theme.logos.map((mark) => (
+										<img src={mark.src} alt={mark.alt ?? ''} width="240" height="120" loading="lazy" />
+									))}
+								</div>
+							</section>
+						);
+					})()}
 				</div>
 			);
 		})}
