@@ -272,6 +272,10 @@ never sent to any host but the CMS, never written to the profile or the
 manifest, and every gated request is `Cache-Control: no-store` (an edge cache
 must not serve the authenticated page to the public).
 
+The probe is an HTTP fetch, so a **loopback dev site** now needs the documented
+exemption for every `analyze` run, not only `--design`/`--geometry`:
+`NVOOS_FORGE_ALLOW_LOOPBACK=1 node scripts/forge.mjs analyze http://localhost:8080 …`.
+
 ### Forms — JetFormBuilder + Elementor submissions (114 §3.9)
 
 Forms integrate the way WooCommerce did: **content at build time, behavior

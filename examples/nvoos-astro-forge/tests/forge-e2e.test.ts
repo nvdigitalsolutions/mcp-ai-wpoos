@@ -987,7 +987,9 @@ describe('forge e2e — emitted site', () => {
 		const result = spawnSync(
 			process.execPath,
 			[path.join(FORGE_ROOT, 'scripts', 'forge.mjs'), 'analyze', origin, '--write', discoveredPath],
-			{ cwd: FORGE_ROOT, encoding: 'utf8', timeout: 60_000 }
+			// The fixture is loopback: `analyze` now probes the rendered page, which
+			// needs the CLI's documented dev exemption (Proposal 152).
+			{ cwd: FORGE_ROOT, encoding: 'utf8', timeout: 60_000, env: { ...process.env, NVOOS_FORGE_ALLOW_LOOPBACK: '1' } }
 		);
 		const stdout = result.stdout ?? '';
 		const stderr = result.stderr ?? '';
