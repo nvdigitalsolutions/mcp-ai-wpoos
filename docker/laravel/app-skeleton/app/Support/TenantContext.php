@@ -79,4 +79,29 @@ final class TenantContext
     {
         return null !== self::$tenantId;
     }
+
+    /**
+     * Run a callback with the context pinned to one estate, then restore it.
+     *
+     * For code that must read one estate's values before the request has a
+     * principal — bearer authentication (§102) has to read an estate's Auth0
+     * configuration before it knows which user is calling. Restoring the
+     * previous value (rather than forgetting it) keeps this safe to call inside
+     * an already-pinned request.
+     *
+     * @template T
+     * @param callable(): T $callback
+     * @return T
+     */
+    public static function runAs(string $tenantId, callable $callback): mixed
+    {
+        $previous = self::$tenantId;
+        self::$tenantId = $tenantId;
+
+        try {
+            return $callback();
+        } finally {
+            self::$tenantId = $previous;
+        }
+    }
 }

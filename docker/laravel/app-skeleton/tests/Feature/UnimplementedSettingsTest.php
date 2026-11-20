@@ -131,19 +131,19 @@ class UnimplementedSettingsTest extends TestCase
         // test in AdminSettingsTest. The disabled state is presentation; the
         // writer is the control.
         Livewire::test(AdminSettings::class)
-            ->set('data.auth0_domain', 'crafted.auth0.example')
-            ->set('data.enable_magic_login', true)
+            ->set('data.auth0_management_client_id', 'crafted-client-id')
+            ->set('data.enable_simple_jwt_login', true)
             ->call('save');
 
         $this->assertDatabaseMissing('nvoos_tenant_settings', array(
             'tenant_id' => Tenant::DEFAULT_ID,
-            'key' => 'auth0_domain',
+            'key' => 'auth0_management_client_id',
         ));
         $this->assertDatabaseMissing('nvoos_tenant_settings', array(
             'tenant_id' => Tenant::DEFAULT_ID,
-            'key' => 'enable_magic_login',
+            'key' => 'enable_simple_jwt_login',
         ));
-        $this->assertDatabaseMissing('nvoos_settings', array('key' => 'auth0_domain'));
+        $this->assertDatabaseMissing('nvoos_settings', array('key' => 'auth0_management_client_id'));
     }
 
     public function test_the_inert_fields_explain_themselves(): void
@@ -152,9 +152,10 @@ class UnimplementedSettingsTest extends TestCase
             ->get('/admin/default/settings')
             ->assertOk()
             ->assertSee(UnimplementedSettings::HINT)
-            // The reason is per-key, and it names the slice rather than the owner.
-            ->assertSee('slice I3 adds it')
-            ->assertSee('slice I4 decides it');
+            // The reason is per-key, and it names the slice or the decision
+            // rather than the owner.
+            ->assertSee('slice I4 decides it')
+            ->assertSee('is not ported (Proposal 156 D5)');
 
         // The operator-scope hint must not be the explanation for an inert field:
         // two different situations, two different answers to "who do I ask?".

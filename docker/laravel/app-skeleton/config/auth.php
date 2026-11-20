@@ -42,6 +42,16 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Auth0 bearer tokens — Proposal 149 §102. No provider entry: the guard
+        // resolves the user itself, by `users.auth0_subject`, because the lookup
+        // key is not one the Eloquent provider can be told about. Mounted as a
+        // second guard (`auth:sanctum,auth0`) so Sanctum answers first. See
+        // App\Auth\Auth0Guard for which estate's configuration it verifies
+        // against and why that is safe.
+        'auth0' => [
+            'driver' => 'auth0',
+        ],
     ],
 
     /*

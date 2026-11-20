@@ -24,6 +24,10 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     /**
      * The attributes that are mass assignable.
      *
+     * `auth0_subject` is deliberately absent: it is an authentication link, and
+     * mass-assignable authentication links are how an account gets taken over by
+     * a payload. `nvoos:auth0-link` sets it with `forceFill()`.
+     *
      * @var list<string>
      */
     protected $fillable = [

@@ -67,6 +67,21 @@ final class SettingsService
     }
 
     /**
+     * Read one field by key, through its own layer.
+     *
+     * `values()` projects a whole surface, which is right for a form and wrong
+     * for a caller that needs two or three keys on a hot path — `values('admin')`
+     * reads all 585 fields. Returns null for a key the catalogue does not have,
+     * so a caller cannot silently read a renamed setting as empty.
+     */
+    public function value(string $key): mixed
+    {
+        $field = SettingsSchema::field($key);
+
+        return null === $field ? null : $this->read($field);
+    }
+
+    /**
      * Apply a payload, returning the surface keys that were actually written.
      *
      * Keys outside the surface's write projection are IGNORED, not rejected —

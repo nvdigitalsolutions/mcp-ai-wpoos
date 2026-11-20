@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Auth\Auth0Guard;
 use App\Models\Assistant;
 use App\Models\ModelConfig;
 use App\Models\Team;
@@ -17,6 +18,7 @@ use App\Policies\TenantPolicy;
 use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
+use App\Support\Auth\Auth0TokenVerifier;
 use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
 use App\Support\Diagnostics\RoutingMetricStore;
@@ -37,6 +39,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -214,6 +217,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ── The Auth0 bearer guard (149 §102) ────────────────────────
+        //
+        // A driver rather than a middleware so `auth:sanctum,auth0` works the
+        // way Laravel's guard list is meant to: Sanctum answers every request it
+        // can, and this one is consulted only when Sanctum cannot. Mounting it
+        // as middleware would have had to reproduce that ordering by hand and
+        // would have run on requests that already had a principal.
+        Auth::extend(
+            'auth0',
+            static fn ($app): Auth0Guard => new Auth0Guard(
+                $app['request'],
+                $app->make(Auth0TokenVerifier::class),
+                $app->make(SettingsService::class),
+            )
+        );
+
         // ── Authorization (090-g Phase 5) ────────────────────────────
         //
         // Site roles are WordPress's: subscriber → administrator. `before`
