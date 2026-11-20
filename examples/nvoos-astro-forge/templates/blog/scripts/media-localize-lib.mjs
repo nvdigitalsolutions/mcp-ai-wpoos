@@ -778,6 +778,31 @@ export function rewriteHtml( html, map, options = {} ) {
 			return rewriteTagAttributes( tag, [ 'content' ], new Map( [ [ content, `${ siteOrigin }${ local }` ] ] ) );
 		} );
 	}
+
+	// JSON-LD carries assets too — `Organization.logo` on every page, which a
+	// cut-over site would otherwise leave pointing at the CMS it is retiring:
+	// the URL 404s and the structured data advertises a dead image
+	// (monicarajiv, 2026-11-21). Schema.org needs an ABSOLUTE url, so these are
+	// re-pointed at the public origin rather than made root-relative — the one
+	// asset class that cannot use the local path form.
+	if ( siteOrigin ) {
+		out = out.replace(
+			/(<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>)([\s\S]*?)(<\/script>)/gi,
+			( match, open, body, close ) => {
+				let next = body;
+				for ( const [ original, local ] of map ) {
+					next = next.split( original ).join( `${ siteOrigin }${ local }` );
+					// A serializer may escape the slashes; both forms must move.
+					const escaped = original.replace( /\//g, '\\/' );
+					if ( escaped !== original ) {
+						next = next.split( escaped ).join( `${ siteOrigin }${ local }`.replace( /\//g, '\\/' ) );
+					}
+				}
+				return next === body ? match : `${ open }${ next }${ close }`;
+			}
+		);
+	}
+
 	return out;
 }
 

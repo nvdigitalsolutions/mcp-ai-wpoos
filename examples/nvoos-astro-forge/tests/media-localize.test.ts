@@ -682,3 +682,38 @@ describe( 'Proposal 140 — unmirrored webfont faces', () => {
 		expect( out ).toContain( 'example.com/x.woff2' );
 	} );
 } );
+
+describe( 'rewriteHtml — JSON-LD assets', () => {
+	const map = new Map( [
+		[ 'https://old.example.com/wp-content/uploads/logo.svg', '/media/abc-logo.svg' ],
+	] );
+	const doc = ( payload: unknown ) =>
+		`<script type="application/ld+json">${ JSON.stringify( payload ) }</script>`;
+
+	it( 're-points a schema image at the public origin, not the retired CMS', () => {
+		// A cut-over site retires the CMS, so an absolute logo URL that is left
+		// alone 404s and the structured data advertises a dead image.
+		const html = doc( { '@type': 'Organization', logo: { url: 'https://old.example.com/wp-content/uploads/logo.svg' } } );
+		const out = rewriteHtml( html, map, { siteOrigin: 'https://new.example.com' } );
+		expect( out ).toContain( 'https://new.example.com/media/abc-logo.svg' );
+		expect( out ).not.toContain( 'old.example.com' );
+	} );
+
+	it( 'moves the escaped-slash form a serializer emits', () => {
+		const html = doc( { logo: 'https:\/\/old.example.com\/wp-content\/uploads\/logo.svg' } );
+		const out = rewriteHtml( html, map, { siteOrigin: 'https://new.example.com' } );
+		expect( out ).not.toContain( 'old.example.com' );
+	} );
+
+	it( 'leaves the payload alone without a known origin', () => {
+		// Schema.org needs an ABSOLUTE url; a root-relative rewrite would make
+		// the document invalid, so without an origin nothing moves.
+		const html = doc( { logo: 'https://old.example.com/wp-content/uploads/logo.svg' } );
+		expect( rewriteHtml( html, map ) ).toBe( html );
+	} );
+
+	it( 'does not touch a JSON-LD payload that references no localized asset', () => {
+		const html = doc( { '@type': 'WebSite', name: 'Monica & Rajiv' } );
+		expect( rewriteHtml( html, map, { siteOrigin: 'https://new.example.com' } ) ).toBe( html );
+	} );
+} );

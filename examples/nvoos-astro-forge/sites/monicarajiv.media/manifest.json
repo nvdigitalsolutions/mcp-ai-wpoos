@@ -1,0 +1,346 @@
+{
+	"version": 1,
+	"generatedAt": "2026-11-19T23:17:43.064Z",
+	"entries": {
+		"https://monicarajiv.com/wp-content/uploads/2019/12/chevron-wht.svg": {
+			"file": "media/79d1a53d8ceb-chevron-wht.svg",
+			"contentType": "image/svg+xml",
+			"bytes": 1201
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/mr-logo-wht.svg": {
+			"file": "media/2f7b0dba1d15-mr-logo-wht.svg",
+			"contentType": "image/svg+xml",
+			"bytes": 5061
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/cropped-monica-rajiv-favicon-32x32.jpg": {
+			"file": "media/f8084414f2c6-cropped-monica-rajiv-favicon-32x32.webp",
+			"contentType": "image/jpeg",
+			"bytes": 570
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/6d2bc4f4c6cf11e8a3710207f3775c6e-600x400.jpg": {
+			"file": "media/75c4c91461f8-6d2bc4f4c6cf11e8a3710207f3775c6e-600x400.webp",
+			"contentType": "image/jpeg",
+			"bytes": 42062
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/6d2bc4f4c6cf11e8a3710207f3775c6e-768x512.jpg": {
+			"file": "media/236b1d66ca1f-6d2bc4f4c6cf11e8a3710207f3775c6e-768x512.webp",
+			"contentType": "image/jpeg",
+			"bytes": 61324
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/batman-and-catwoman-wedding-they-do-1119197-1280x0-1.jpeg": {
+			"file": "media/c301039476a3-batman-and-catwoman-wedding-they-do-1119197-1280.webp",
+			"contentType": "image/jpeg",
+			"bytes": 63380
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/6d2bc4f4c6cf11e8a3710207f3775c6e-1200x800.jpg": {
+			"file": "media/d195d900cedb-6d2bc4f4c6cf11e8a3710207f3775c6e-1200x800.webp",
+			"contentType": "image/jpeg",
+			"bytes": 125290
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/premium-room.jpg": {
+			"file": "media/30ec7aa5cf25-premium-room.webp",
+			"contentType": "image/jpeg",
+			"bytes": 9288
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/6d2bc4f4c6cf11e8a3710207f3775c6e-1536x1024.jpg": {
+			"file": "media/d9523d1e91e5-6d2bc4f4c6cf11e8a3710207f3775c6e-1536x1024.webp",
+			"contentType": "image/jpeg",
+			"bytes": 185072
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Courtyard-Room.jpg": {
+			"file": "media/a788adc06e68-courtyard-room.webp",
+			"contentType": "image/jpeg",
+			"bytes": 24314
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Executive-Room.jpg": {
+			"file": "media/161fb4a0472e-executive-room.webp",
+			"contentType": "image/jpeg",
+			"bytes": 15902
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Apartment-Suite.jpg": {
+			"file": "media/4aa25715801d-apartment-suite.webp",
+			"contentType": "image/jpeg",
+			"bytes": 19844
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/hush-1551377903095-1400x788.jpg": {
+			"file": "media/8dccd0b0c59a-hush-1551377903095-1400x788.webp",
+			"contentType": "image/jpeg",
+			"bytes": 175084
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Executive-Suite.jpg": {
+			"file": "media/04fa22074c60-executive-suite.webp",
+			"contentType": "image/jpeg",
+			"bytes": 19186
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Courtyard-Suite.jpg": {
+			"file": "media/732acf85f76b-courtyard-suite.webp",
+			"contentType": "image/jpeg",
+			"bytes": 21362
+		},
+		"https://monicarajiv.com/wp-content/uploads/2020/01/allie-smith-kupPJQQdpMs-unsplash-280x280.jpg": {
+			"file": "media/325094207d6e-allie-smith-kuppjqqdpms-unsplash-280x280.webp",
+			"contentType": "image/jpeg",
+			"bytes": 8896
+		},
+		"https://monicarajiv.com/wp-content/uploads/2020/01/element5-digital-yutgPvmHxYQ-unsplash-280x280.jpg": {
+			"file": "media/7e410a986708-element5-digital-yutgpvmhxyq-unsplash-280x280.webp",
+			"contentType": "image/jpeg",
+			"bytes": 2986
+		},
+		"https://monicarajiv.com/wp-content/uploads/2020/01/george-bohunicky-qJKT2rMU0VU-unsplash-280x280.jpg": {
+			"file": "media/9f2bd60f2e73-george-bohunicky-qjkt2rmu0vu-unsplash-280x280.webp",
+			"contentType": "image/jpeg",
+			"bytes": 13234
+		},
+		"https://monicarajiv.com/wp-content/uploads/2020/01/shari-sirotnak-oM5YoMhTf8E-unsplash-280x280.jpg": {
+			"file": "media/9888263bb763-shari-sirotnak-om5yomhtf8e-unsplash-280x280.webp",
+			"contentType": "image/jpeg",
+			"bytes": 8404
+		},
+		"https://monicarajiv.com/wp-content/uploads/2020/01/allie-smith-89k7poPsypk-unsplash-280x280.jpg": {
+			"file": "media/79b1e0f8d0eb-allie-smith-89k7popsypk-unsplash-280x280.webp",
+			"contentType": "image/jpeg",
+			"bytes": 9862
+		},
+		"https://monicarajiv.com/wp-content/uploads/2020/01/henk-mohabier-2wkEs9b1P4M-unsplash-280x280.jpg": {
+			"file": "media/2651d6547d63-henk-mohabier-2wkes9b1p4m-unsplash-280x280.webp",
+			"contentType": "image/jpeg",
+			"bytes": 18376
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/6d2bc4f4c6cf11e8a3710207f3775c6e-2048x1365.jpg": {
+			"file": "media/6eacb6facb06-6d2bc4f4c6cf11e8a3710207f3775c6e-2048x1365.webp",
+			"contentType": "image/jpeg",
+			"bytes": 293346
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/batman-batwoman-1400x700.jpg": {
+			"file": "media/7d7317a9b18f-batman-batwoman-1400x700.webp",
+			"contentType": "image/jpeg",
+			"bytes": 96970
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Ramani-Fernando-Salons-640x400.jpg": {
+			"file": "media/73fb8618853c-ramani-fernando-salons-640x400.webp",
+			"contentType": "image/jpeg",
+			"bytes": 34278
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Ramani-Fernando-Salons-768x480.jpg": {
+			"file": "media/481ad94161d0-ramani-fernando-salons-768x480.webp",
+			"contentType": "image/jpeg",
+			"bytes": 42488
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Uber_logo_2018.svg": {
+			"file": "media/55426d6c9f74-uber-logo-2018.svg",
+			"contentType": "image/svg+xml",
+			"bytes": 3582
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Ramani-Fernando-Salons.jpg": {
+			"file": "media/2892eb1de731-ramani-fernando-salons.webp",
+			"contentType": "image/jpeg",
+			"bytes": 92848
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/6d2bc4f4c6cf11e8a3710207f3775c6e-scaled.jpg": {
+			"file": "media/4bca5c8df5fe-6d2bc4f4c6cf11e8a3710207f3775c6e-scaled.webp",
+			"contentType": "image/jpeg",
+			"bytes": 415980
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/batman-batwoman.-2jpg-1400x788.jpg": {
+			"file": "media/c0d42b386edc-batman-batwoman-2jpg-1400x788.webp",
+			"contentType": "image/jpeg",
+			"bytes": 95962
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Gambit-and-Rogue.jpg": {
+			"file": "media/e782b754e86c-gambit-and-rogue.webp",
+			"contentType": "image/jpeg",
+			"bytes": 86504
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/TcnZhK-e1577250269187-535x800.jpg": {
+			"file": "media/e0ac53bd3197-tcnzhk-e1577250269187-535x800.webp",
+			"contentType": "image/jpeg",
+			"bytes": 78876
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/spidey_wedding-600x354-1-2.jpg": {
+			"file": "media/87fd2784833e-spidey-wedding-600x354-1-2.webp",
+			"contentType": "image/jpeg",
+			"bytes": 58402
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Gambit-Rogue-You-May-Kiss-The-Bride-rogue-and-gambit-41483211-1552-1200-1035x800.jpg": {
+			"file": "media/6ade9cfde1c8-gambit-rogue-you-may-kiss-the-bride-rogue-and-ga.webp",
+			"contentType": "image/jpeg",
+			"bytes": 141670
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/131-1315005_download-in-original-resolution-gambit-and-rogue-marvel.png": {
+			"file": "media/e5567592952c-131-1315005-download-in-original-resolution-gamb.webp",
+			"contentType": "image/png",
+			"bytes": 267146
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/dzhin-grey-jean-grey-x-men-1327-1254x800.jpg": {
+			"file": "media/f5a4b54d2ae5-dzhin-grey-jean-grey-x-men-1327-1254x800.webp",
+			"contentType": "image/jpeg",
+			"bytes": 107254
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/259420.jpg": {
+			"file": "media/31679c693657-259420.webp",
+			"contentType": "image/jpeg",
+			"bytes": 88742
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/51f8d83df40f59b7c3fc7dcfb2522838.jpg": {
+			"file": "media/e022828ee1b0-51f8d83df40f59b7c3fc7dcfb2522838.webp",
+			"contentType": "image/jpeg",
+			"bytes": 58142
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/GalleryComics_1920x1080_20151111_DCP_LC_1_56214ff53214d4.89401903-1400x788.jpg": {
+			"file": "media/747d302a5741-gallerycomics-1920x1080-20151111-dcp-lc-1-56214f.webp",
+			"contentType": "image/jpeg",
+			"bytes": 233722
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Jean-grey-marvel-comics-wolverine-811836-2560X1600-1920x1080.jpg": {
+			"file": "media/4128f89b97e8-jean-grey-marvel-comics-wolverine-811836-2560x16.webp",
+			"contentType": "image/jpeg",
+			"bytes": 271226
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Superman-Lois-Lane-Wedding-Kiss-Comic.jpg": {
+			"file": "media/b726dad9794b-superman-lois-lane-wedding-kiss-comic.webp",
+			"contentType": "image/jpeg",
+			"bytes": 106744
+		},
+		"https://monicarajiv.com/wp-content/uploads/2019/12/Marquee_ClarkLois_5ab9785ed2bca4.97669005-1400x788.jpg": {
+			"file": "media/a60858685e15-marquee-clarklois-5ab9785ed2bca4-97669005-1400x7.webp",
+			"contentType": "image/jpeg",
+			"bytes": 163954
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLjDY_Z2sK32QA.woff2": {
+			"file": "media/c37fc0084e3d-va9f4kzazmzrgljdy-z2sk32qa.woff2",
+			"contentType": "font/woff2",
+			"bytes": 12568
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLjDY_Z4sK0.woff2": {
+			"file": "media/cf5a09b4f98d-va9f4kzazmzrgljdy-z4sk0.woff2",
+			"contentType": "font/woff2",
+			"bytes": 17412
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9I4kzAzMZRGLBmQeNHkQ.woff2": {
+			"file": "media/951e9a95f604-va9i4kzazmzrglbmqenhkq.woff2",
+			"contentType": "font/woff2",
+			"bytes": 12644
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLibYvZ2sK32QA.woff2": {
+			"file": "media/7621316b0681-va9f4kzazmzrglibyvz2sk32qa.woff2",
+			"contentType": "font/woff2",
+			"bytes": 12652
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLjDY_Z5sK32QA.woff2": {
+			"file": "media/dbbc43d2f1a0-va9f4kzazmzrgljdy-z5sk32qa.woff2",
+			"contentType": "font/woff2",
+			"bytes": 71464
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLibYvZ4sK0.woff2": {
+			"file": "media/cc64406488e1-va9f4kzazmzrglibyvz4sk0.woff2",
+			"contentType": "font/woff2",
+			"bytes": 17644
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9I4kzAzMZRGLBpQeNHkQ.woff2": {
+			"file": "media/bff713598a76-va9i4kzazmzrglbpqenhkq.woff2",
+			"contentType": "font/woff2",
+			"bytes": 84688
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLi3ZfZ2sK32QA.woff2": {
+			"file": "media/fe7655ba8bbf-va9f4kzazmzrgli3zfz2sk32qa.woff2",
+			"contentType": "font/woff2",
+			"bytes": 12680
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9I4kzAzMZRGLBoQeM.woff2": {
+			"file": "media/b641a0ad9ccd-va9i4kzazmzrglboqem.woff2",
+			"contentType": "font/woff2",
+			"bytes": 17492
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLi3ZfZ5sK32QA.woff2": {
+			"file": "media/e71d3668d98f-va9f4kzazmzrgli3zfz5sk32qa.woff2",
+			"contentType": "font/woff2",
+			"bytes": 86248
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLibYvZ5sK32QA.woff2": {
+			"file": "media/49866a26afe4-va9f4kzazmzrglibyvz5sk32qa.woff2",
+			"contentType": "font/woff2",
+			"bytes": 86680
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLi3ZfZ4sK0.woff2": {
+			"file": "media/6312bfa56049-va9f4kzazmzrgli3zfz4sk0.woff2",
+			"contentType": "font/woff2",
+			"bytes": 17864
+		},
+		"https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh7USSwaPGR_p.woff2": {
+			"file": "media/8a05afe62bf0-s6u9w4bmutphh7usswapgr-p.woff2",
+			"contentType": "font/woff2",
+			"bytes": 5820
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLjTZPZ2sK32QA.woff2": {
+			"file": "media/813138d48206-va9f4kzazmzrgljtzpz2sk32qa.woff2",
+			"contentType": "font/woff2",
+			"bytes": 12580
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLjTZPZ5sK32QA.woff2": {
+			"file": "media/d82ff653b0fd-va9f4kzazmzrgljtzpz5sk32qa.woff2",
+			"contentType": "font/woff2",
+			"bytes": 80564
+		},
+		"https://fonts.gstatic.com/s/karma/v18/va9F4kzAzMZRGLjTZPZ4sK0.woff2": {
+			"file": "media/f80a55c0db13-va9f4kzazmzrgljtzpz4sk0.woff2",
+			"contentType": "font/woff2",
+			"bytes": 17196
+		},
+		"https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh7USSwiPGQ.woff2": {
+			"file": "media/d4450f27216b-s6u9w4bmutphh7usswipgq.woff2",
+			"contentType": "font/woff2",
+			"bytes": 23236
+		},
+		"https://fonts.gstatic.com/s/lato/v25/S6uyw4BMUTPHjxAwXjeu.woff2": {
+			"file": "media/ab8d749e7c13-s6uyw4bmutphjxawxjeu.woff2",
+			"contentType": "font/woff2",
+			"bytes": 5612
+		},
+		"https://fonts.gstatic.com/s/lato/v25/S6uyw4BMUTPHjx4wXg.woff2": {
+			"file": "media/702e3b8ce946-s6uyw4bmutphjx4wxg.woff2",
+			"contentType": "font/woff2",
+			"bytes": 23580
+		},
+		"https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh6UVSwaPGR_p.woff2": {
+			"file": "media/91ee0a234ed6-s6u9w4bmutphh6uvswapgr-p.woff2",
+			"contentType": "font/woff2",
+			"bytes": 5552
+		},
+		"https://fonts.gstatic.com/s/dancingscript/v29/If2cXTr6YS-zF4S-kcSWSVi_sxjsohD9F50Ruu7BMSo3Rep8ltA.woff2": {
+			"file": "media/c8f02d2034ca-if2cxtr6ys-zf4s-kcswsvi-sxjsohd9f50ruu7bmso3rep8.woff2",
+			"contentType": "font/woff2",
+			"bytes": 4940
+		},
+		"https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh6UVSwiPGQ.woff2": {
+			"file": "media/b0cd9a1eee41-s6u9w4bmutphh6uvswipgq.woff2",
+			"contentType": "font/woff2",
+			"bytes": 23040
+		},
+		"https://fonts.gstatic.com/s/dancingscript/v29/If2cXTr6YS-zF4S-kcSWSVi_sxjsohD9F50Ruu7BMSo3Sup8.woff2": {
+			"file": "media/3faa01eec0d5-if2cxtr6ys-zf4s-kcswsvi-sxjsohd9f50ruu7bmso3sup8.woff2",
+			"contentType": "font/woff2",
+			"bytes": 23816
+		},
+		"https://fonts.gstatic.com/s/dancingscript/v29/If2cXTr6YS-zF4S-kcSWSVi_sxjsohD9F50Ruu7BMSo3ROp8ltA.woff2": {
+			"file": "media/d10ce87f5ac5-if2cxtr6ys-zf4s-kcswsvi-sxjsohd9f50ruu7bmso3rop8.woff2",
+			"contentType": "font/woff2",
+			"bytes": 13564
+		},
+		"https://fonts.googleapis.com/css2?family=Karma:wght@300;400;500;600;700&display=swap": {
+			"file": "media/31402e0be7b4-css2.css",
+			"contentType": "text/css",
+			"bytes": 5693
+		},
+		"https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700&display=swap": {
+			"file": "media/c9225f74f5be-css2.css",
+			"contentType": "text/css",
+			"bytes": 2368
+		},
+		"https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400&display=swap": {
+			"file": "media/d6f2d9cf0f66-css2.css",
+			"contentType": "text/css",
+			"bytes": 1266
+		}
+	}
+}

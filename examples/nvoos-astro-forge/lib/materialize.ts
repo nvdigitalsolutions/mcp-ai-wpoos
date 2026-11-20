@@ -17,6 +17,8 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import type { SiteProfile } from './types.ts';
+
 /** Frontmatter fields the hybrid loader's schema understands (106 P2). */
 const FRONTMATTER_FIELDS = [
 	'id',
@@ -114,6 +116,47 @@ function yamlValue( value: unknown ): string {
 }
 
 /**
+ * Write captured entries as `<outDir>/<collection>/<slug>.mdx` (frontmatter) plus
+ * `<slug>.html` (the sanitized body).
+ *
+ * Both capture paths share this writer so a snapshot taken from a build and one
+ * taken from a live CMS are byte-identical in shape.
+ */
+async function writeDocuments(
+	outDir: string,
+	documents: ReadonlyArray< {
+		collection: string;
+		slug: string;
+		data: Record< string, unknown >;
+		html: string;
+	} >
+): Promise< MaterializedDocument[] > {
+	const results: MaterializedDocument[] = [];
+	for ( const doc of documents ) {
+		const dir = join( outDir, doc.collection );
+		await mkdir( dir, { recursive: true } );
+
+		const lines = [ '---' ];
+		for ( const field of FRONTMATTER_FIELDS ) {
+			const value = doc.data[ field ];
+			if ( value === undefined || value === null || value === '' ) {
+				continue;
+			}
+			lines.push( `${ field }: ${ yamlValue( value ) }` );
+		}
+		lines.push( '---', '' );
+		const mdx = lines.join( '\n' );
+		await writeFile( join( dir, `${ doc.slug }.mdx` ), mdx, 'utf8' );
+
+		if ( doc.html !== '' ) {
+			await writeFile( join( dir, `${ doc.slug }.html` ), doc.html, 'utf8' );
+		}
+		results.push( { collection: doc.collection, slug: doc.slug, mdxBytes: mdx.length, htmlBytes: doc.html.length } );
+	}
+	return results;
+}
+
+/**
  * Write every collection in the store to `<outDir>/<collection>/`.
  *
  * The bodies are already sanitized (the loader sanitizes before storing), so
@@ -128,7 +171,7 @@ export async function materializeContent( options: {
 		? mod.default
 		: JSON.parse( await readFile( options.storeFile, 'utf8' ) );
 	const root = decodeContentStore( store as unknown[] );
-	const results: MaterializedDocument[] = [];
+	const documents: Array< { collection: string; slug: string; data: Record< string, unknown >; html: string } > = [];
 
 	for ( const [ collection, entries ] of Object.entries( root ) ) {
 		if ( collection === 'meta::meta' || ! entries || typeof entries !== 'object' ) {
@@ -145,29 +188,101 @@ export async function materializeContent( options: {
 			if ( slug === '' ) {
 				continue;
 			}
-
-			const dir = join( options.outDir, collection );
-			await mkdir( dir, { recursive: true } );
-
-			const lines = [ '---' ];
-			for ( const field of FRONTMATTER_FIELDS ) {
-				const value = data[ field ];
-				if ( value === undefined || value === null || value === '' ) {
-					continue;
-				}
-				lines.push( `${ field }: ${ yamlValue( value ) }` );
-			}
-			lines.push( '---', '' );
-			const mdx = lines.join( '\n' );
-			await writeFile( join( dir, `${ slug }.mdx` ), mdx, 'utf8' );
-
-			const html = typeof record.rendered?.html === 'string' ? record.rendered.html : '';
-			if ( html !== '' ) {
-				await writeFile( join( dir, `${ slug }.html` ), html, 'utf8' );
-			}
-			results.push( { collection, slug, mdxBytes: mdx.length, htmlBytes: html.length } );
+			documents.push( {
+				collection,
+				slug,
+				data,
+				html: typeof record.rendered?.html === 'string' ? record.rendered.html : '',
+			} );
 		}
 	}
 
-	return results;
+	return writeDocuments( options.outDir, documents );
+}
+
+/** The shape one store entry has after the loader has built it. */
+interface CapturedEntry {
+	id: string;
+	data: Record< string, unknown >;
+	rendered?: { html?: string };
+}
+
+/**
+ * Capture a LIVE WordPress into the same snapshot shape.
+ *
+ * `materializeContent` recovers content from a BUILT artifact, which needs the
+ * `dist/server` data store — a `static` build has none, so a site that wants to
+ * cut over while its CMS is still up had no way to freeze anything.
+ *
+ * This drives the PRODUCTION loader (`wp-loader.ts`) against a capture-only
+ * loader context, so the snapshot carries exactly what a build would have
+ * baked: pagination, `_fields` pruning, the versioned sanitizer allowlist, the
+ * `wp/v2` SEO sidecar, featured-media resolution and the per-collection
+ * exclusion list. Reusing the loader is the point — a second field-mapping
+ * would drift from it, which is the defect class this repo keeps paying for.
+ */
+export async function materializeFromWordPress( options: {
+	profile: SiteProfile;
+	outDir: string;
+	/** Basic auth for a private source — the build reads it from the environment. */
+	auth?: { type: 'basic'; username: string; password: string };
+	log?: ( line: string ) => void;
+} ): Promise< MaterializedDocument[] > {
+	const { createWpLoader } = await import( './wp-loader.ts' );
+	const documents: Array< {
+		collection: string;
+		slug: string;
+		data: Record< string, unknown >;
+		html: string;
+	} > = [];
+
+	for ( const collection of options.profile.collections ) {
+		const store = new Map< string, CapturedEntry >();
+		const loader = createWpLoader( {
+			site: options.profile,
+			collection,
+			...( options.auth ? { auth: options.auth } : {} ),
+		} );
+
+		// Astro's `LoaderContext` is far wider than the loader reads. Supplying
+		// the slice it actually touches keeps this honest: `astro/loaders` is a
+		// type-only import here, so nothing else can reach the store.
+		await loader.load( {
+			store: {
+				clear: () => store.clear(),
+				set: ( entry: { id: string } & CapturedEntry ) => {
+					store.set( String( entry.id ), entry );
+				},
+				entries: () => [ ...store.entries() ],
+				keys: () => [ ...store.keys() ],
+				values: () => [ ...store.values() ],
+				get: ( key: string ) => store.get( String( key ) ),
+				has: ( key: string ) => store.has( String( key ) ),
+				delete: ( key: string ) => store.delete( String( key ) ),
+			},
+			logger: {
+				warn: ( line: string ) => options.log?.( `\u26a0 ${ line }` ),
+				info: ( line: string ) => options.log?.( line ),
+				error: ( line: string ) => options.log?.( `\u2717 ${ line }` ),
+			},
+			// The digest only decides whether a store entry is re-written; a
+			// capture writes every entry once, so any stable value will do.
+			generateDigest: () => 'capture',
+		} as never );
+
+		for ( const entry of store.values() ) {
+			const slug = String( entry.data.slug ?? entry.id ).trim();
+			if ( slug === '' ) {
+				continue;
+			}
+			documents.push( {
+				collection: collection.slug,
+				slug,
+				data: entry.data,
+				html: typeof entry.rendered?.html === 'string' ? entry.rendered.html : '',
+			} );
+		}
+	}
+
+	return writeDocuments( options.outDir, documents );
 }
