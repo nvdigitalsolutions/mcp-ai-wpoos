@@ -22,11 +22,12 @@ use Illuminate\Support\Facades\Schema;
  *    suffix — `notacme.com` must not satisfy `acme.com`, which is the classic
  *    lookalike-address auto-join the JIT audit literature names as the primary
  *    failure mode.
- * 3. **No subdomain inheritance.** A claim on `acme.com` does not cover
- *    `eng.acme.com`. Inheriting hands routing authority to anyone in the
- *    organisation who can create a subdomain. 158 D3 asks for this as an
- *    explicit per-estate flag defaulting to off; the flag is **not built yet**,
- *    so the default behaviour is the only behaviour — exact match.
+ * 3. **No subdomain inheritance by default.** A claim on `acme.com` does not
+ *    cover `eng.acme.com`. Inheriting hands routing authority to anyone in the
+ *    organisation who can create a subdomain, so 158 D3 makes it an explicit
+ *    per-estate flag — `enable_jit_subdomain_inheritance`, default off. When an
+ *    estate turns it on, a **verified** parent domain admits its subdomains;
+ *    see {@see self::parents()}.
  * 4. **`verified_at` gates.** An unverified row is a proposal, not a permission.
  *    It is stored (so an operator can see what was asked for) and ignored by
  *    {@see self::allows()}.
@@ -38,8 +39,18 @@ final class EstateDomains
 
     /**
      * Whether an address's domain is on this estate's *verified* allowlist.
+     *
+     * `$includeSubdomains` is the estate's `enable_jit_subdomain_inheritance`
+     * flag, passed in rather than read here: this class has no settings reader
+     * on purpose, because it is constructed in tests and on the auth path alike.
+     *
+     * Inheritance is expressed as a set of **exact** comparisons over the
+     * address's parent domains, never as a suffix match and never as `LIKE`. A
+     * pattern match is the lookalike bypass this class exists to refuse —
+     * `notacme.com` satisfies `%.acme.com` — and `LIKE` also needs a
+     * dialect-specific `ESCAPE`, which SQLite and MySQL disagree about.
      */
-    public function allows(string $tenantId, string $email): bool
+    public function allows(string $tenantId, string $email, bool $includeSubdomains = false): bool
     {
         if (! Schema::hasTable('nvoos_estate_domains')) {
             return false;
@@ -51,18 +62,47 @@ final class EstateDomains
             return false;
         }
 
+        $candidates = array($domain);
+
+        if ($includeSubdomains) {
+            $candidates = array_merge($candidates, self::parents($domain));
+        }
+
         return DB::table('nvoos_estate_domains')
             ->where('tenant_id', $tenantId)
-            ->where('domain', $domain)
+            ->whereIn('domain', $candidates)
             ->whereNotNull('verified_at')
             ->exists();
+    }
+
+    /**
+     * Every parent of a domain, nearest first, stopping at two labels.
+     *
+     * `eng.acme.com` yields `acme.com`; `a.b.acme.com` yields `b.acme.com` and
+     * `acme.com`. The walk stops at two labels because a domain needs at least
+     * two to be stored at all ({@see self::normalise()}), so a bare TLD can
+     * never be a candidate — inheriting `com` would admit everyone.
+     *
+     * @return list<string>
+     */
+    private static function parents(string $domain): array
+    {
+        $labels = explode('.', $domain);
+        $parents = array();
+
+        while (count($labels) > 2) {
+            array_shift($labels);
+            $parents[] = implode('.', $labels);
+        }
+
+        return $parents;
     }
 
     /**
      * Add a domain for an estate.
      *
      * A row added by an operator starts **unverified**: the operator is asserting
-     * the domain, and {@see self::verify()} is the separate act that makes it
+     * the domain, and {@see self::setVerified()} is the separate act that makes it
      * binding. That split is what lets a multi-person estate review a proposal
      * without the proposer being able to provision themselves.
      *
