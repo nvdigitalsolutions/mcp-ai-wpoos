@@ -112,7 +112,11 @@ function worst( statuses: BandCheckStatus[] ): BandCheckStatus {
 
 /** The built page's band wrappers, in document order, with their own markup. */
 export function builtBandBlocks( html: string ): BuiltBand[] {
-	const starts = [ ...html.matchAll( /<div\b[^>]*\sdata-section-id="([^"]*)"[^>]*>/gi ) ];
+	// Any element type: the design renderer emits `<div class="ds-section-wrap">`,
+	// but a RAW band keeps the source's own tag (an Elementor band is a
+	// `<section>`). Matching only `div` reported every raw band as "missing from
+	// the build" while its geometry and colour both passed.
+	const starts = [ ...html.matchAll( /<(?:div|section|article|main)\b[^>]*\sdata-section-id="([^"]*)"[^>]*>/gi ) ];
 	return starts.map( ( match, index ) => {
 		const tag = match[ 0 ];
 		const next = starts[ index + 1 ];

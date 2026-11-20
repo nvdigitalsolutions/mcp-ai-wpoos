@@ -123,6 +123,36 @@ describe('createWpLoader load()', () => {
 		expect(entry.digest).toBe('digest:2026-10-02T12:00:00');
 	});
 
+	it('decodes entity-encoded titles and derives a plain-text seoDescription', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader({ site: PROFILE, collection: COLLECTION });
+		const fetchImpl = cannedFetch([
+			{
+				id: 7,
+				title: { rendered: 'We Didn&#8217;t Know Why' },
+				slug: 'we-didnt-know-why',
+				content: { rendered: '<p>x</p>' },
+				excerpt: { rendered: '<p>written &amp; directed by Evan</p>\n' },
+			},
+		]);
+
+		const originalFetch = globalThis.fetch;
+		(globalThis as { fetch: typeof fetch }).fetch = fetchImpl as typeof fetch;
+		try {
+			await loader.load(fakeContext(store));
+		} finally {
+			(globalThis as { fetch: typeof fetch }).fetch = originalFetch;
+		}
+
+		// The title is a TEXT sink (document title, h1, JSON-LD): the entity must
+		// be decoded or the page renders `We Didn&#8217;t` literally.
+		expect(store.entries[0].data.title).toBe('We Didn’t Know Why');
+		// The excerpt stays HTML for cards/feeds…
+		expect(store.entries[0].data.excerpt).toBe('<p>written &amp; directed by Evan</p>\n');
+		// …while the description (a meta/JSON-LD sink) is plain text.
+		expect(store.entries[0].data.seoDescription).toBe('written & directed by Evan');
+	});
+
 	it('sanitizes script vectors inside rendered HTML', async () => {
 		const store = { entries: [] as StoredEntry[], cleared: false };
 		const loader = createWpLoader({ site: PROFILE, collection: COLLECTION });

@@ -4228,7 +4228,12 @@ export function builtBandsOf( html: string ): BuiltBand[] {
 	// tag, then read its attributes independently. The FIRST tag per id wins:
 	// the outermost wrapper carries the background, and nested elements repeat
 	// the id.
-	for ( const match of html.matchAll( /<div\b[^>]*>/gi ) ) {
+	//
+	// The tag NAME is not part of the contract either: the renderer emits a
+	// `<div>` wrapper, but a RAW band keeps the source's own element (an
+	// Elementor band is a `<section>`). Matching only `div` reported every raw
+	// band as dropped while its box geometry and colour both passed.
+	for ( const match of html.matchAll( /<(?:div|section|article|main)\b[^>]*>/gi ) ) {
 		const attributes = match[ 0 ];
 		const id = /\bdata-section-id="([^"]*)"/i.exec( attributes )?.[ 1 ];
 		if ( ! id || seen.has( id ) ) {

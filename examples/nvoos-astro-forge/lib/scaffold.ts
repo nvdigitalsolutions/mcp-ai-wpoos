@@ -1630,6 +1630,9 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	if ( section.id ) {
 		entry.push( `id: ${ tsString( section.id ) }` );
 	}
+	if ( section.kind ) {
+		entry.push( `kind: ${ tsString( section.kind ) }` );
+	}
 	entry.push( `theme: ${ tsString( theme ) }` );
 	if ( section.anchor ) {
 		entry.push( `anchor: ${ tsString( section.anchor ) }` );
@@ -2262,6 +2265,9 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'',
 		'export interface SectionTheme {',
 		'\tid?: string;',
+		'\t/** The band\'s classified kind (Proposal 136 §4.2). Advisory: emitted as',
+		'\t * `data-section`, which is what the per-band fact gate compares. */',
+		'\tkind?: string;',
 		'\ttheme: SectionThemeName;',
 		'\t/** The source section anchor (the chrome nav links to it). */',
 		'\tanchor?: string;',

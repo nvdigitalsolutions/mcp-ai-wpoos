@@ -1281,6 +1281,69 @@ emits it in sitemap/llms. The source needs `show_in_rest`. Notes:
 
 Moved to [`reference/media-localization.md`](reference/media-localization.md) — content unchanged
 (split out 2026-11-17 to keep this file under Zed's load limit).
+
+## Tiny brochure sites — the raw-band hand layer (2026-11-20)
+
+A four-page film-production site (one 350px wordmark stage, one 650px stage, a
+white film page with a full-measure still and two credit columns) exposed a
+third path beside "design renderer" and "hand-built holding page": **the
+forge pipeline + a hand-owned page layer**, locked and regenerable-in-part.
+The design renderer classified its hero as a CTA and demoted the `h1` to `h2`;
+that is the classifier being honest about a layout that carries no sections.
+
+- **Keep the pipeline, own the composition.** Content (`wp/v2` loader),
+sanitizer, SEO head/graph, sitemap, media localization and the chrome facts
+stay generated; the page composition becomes a site stylesheet + a small
+`src/lib/<site>.ts` page table (layout kind, and the exact `<head>`
+title/description the source's SEO plugin keeps out of REST). Then `forge lock`.
+- **Render the sanitized body RAW** inside a measured stage. The sanitizer
+keeps `elementor-element-<id>` classes, so the band id is recovered from the
+class and re-attached with its surface facts by the page route — never
+re-derived by hand.
+- **The band gates addressed a `<div>` wrapper; a raw band is a `<section>`.**
+`builtBandBlocks` (band-audit) and `builtBandsOf` (design/band flow) matched
+`<div` only, so every raw band reported "missing from the build" while its
+geometry and colour both passed. Both accept any element carrying
+`data-section-id`.
+- **A band must STATE its facts.** `data-section-id`, the advisory
+`data-section` kind, and `background`/`padding`/`--ds-measure` inline are what
+band flow, the per-band audit and the fact audit read; a stylesheet-only
+surface reads as "background none". `SectionTheme` carries `kind` so the
+scaffold can emit it, and the page route merges the facts into the source's tag
+(sanitisation dropped them).
+- **A single inline `padding` lies when the source re-pads at a breakpoint**
+(the stage is flush on desktop, 25px under 768px). Leave that page's profile
+section `padding` unset and keep the per-device value in CSS.
+- **Nav links need separating whitespace.** `<a>A</a><a>B</a>` extracts as
+`AB`: text parity then reports `projectscontact` and loses every 3-gram across
+the nav (68.8% coverage on a page whose copy was byte-identical). `Base.astro`
+renders the links with a literal space between them (a whitespace-only flex
+item is suppressed by the spec, so the layout is unchanged).
+- **`title.rendered` and `excerpt.rendered` are HTML.** They arrive
+entity-encoded and the template uses both as TEXT sinks — `<title>` rendered
+`We Didn&#8217;t` and `<meta name="description">` shipped a literal `<p>`.
+`plainText()` in `wp-loader.ts` decodes the title and derives a plain-text
+`seoDescription` when the source has no SEO plugin fields in REST.
+- **A body copy difference of one NBSP changes the wrap.** The source's footer
+is `Productions.&nbsp; All rights reserved`; with two plain spaces the line
+fits at 390px and the footer is 121px instead of 148px. Copy source strings
+verbatim — normalised text hides this.
+- **The source's computed header colour can be a lie.** This theme's
+`<header>` computes `#ffffff` and a child layer paints the black band over it,
+so `analyze --colors` records white for a header that renders black. Verify
+with a screenshot/pixel sample and pin the PAINTED value. Reproducing the
+white-then-cover stack to satisfy the raw computed value was tried and
+reverted: the covering pseudo-element is what the gate reads, so it reports
+black anyway, and it did not change the nav's antialiasing.
+- **Pixel parity that is not zero is still a pass** when it is explained: the
+WebP re-encode of a hero still measured mean 2.8/255 channel delta (p99 = 9,
+max 25) and the source's grayscale nav AA costs 0.07% of the desktop page.
+Record the source screenshots (`--pixel-record-source`) and set a site
+threshold with the reason, rather than dropping the gate.
+- **A very small site can pass 18/19 gates.** The remaining advisory is class
+coverage — a raw band keeps the vendor's class names without restating its
+stylesheet, which is the point of the path.
+
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to

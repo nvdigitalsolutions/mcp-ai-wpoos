@@ -593,7 +593,11 @@ const headerActions = (chrome?.headerActions ?? [])
 				<nav id="site-nav" aria-label={copy.nav.primaryLabel}>
 				{chrome?.nav && chrome.nav.length > 0 ? (
 					chrome.nav.map((item) => (
-						<a href={item.href}>{item.label}</a>
+						<>
+							<a href={item.href}>
+								{item.label}
+							</a>{' '}
+						</>
 					))
 				) : navAnchors.length > 0 ? (
 					/*
