@@ -1593,9 +1593,6 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	}
 	// The band's PANEL surface (`ForgeSection.panel`) — a literal colour + its
 	// legible ink, so the item group renders on the source's slab.
-	if ( section.panel ) {
-		entry.push( `panel: { bg: ${ tsString( section.panel.bg ) }, ink: ${ tsString( section.panel.ink ) } }` );
-	}
 	// The band's padding: an explicit profile fact wins — but only for the
 	// viewport it describes; see `resolveBandPadding`.
 	const padding = resolveBandPadding( section.padding, measuredBandPadding( section, profile.geometry ) );
@@ -1609,17 +1606,23 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// at the site measure: virtuallyjamaica's services band is fluid (1440px)
 	// and came out at 1136px.
 	const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
-	// The geometry pass records the slab as a BAND fact — the only path a
-	// sub-page takes — while `design.ts` records it on the SECTION for the
-	// homepage. Guarded so the homepage never emits it twice.
-	if ( ! section.panel && bandFacts?.panel ) {
-		entry.push( `panel: { bg: ${ tsString( bandFacts.panel.bg ) }, ink: ${ tsString( bandFacts.panel.ink ) } }` );
-	}
-	// `design.ts` records the slab on the SECTION (homepage); the geometry pass
-	// records it as a BAND fact, which is the only path a sub-page takes.
+	// The band's SLAB. `design.ts` records it on the SECTION for the homepage;
+	// the geometry pass records it as a BAND fact, which is the only path a
+	// sub-page takes. ONE emission: this block used to be three, and a band that
+	// carried both shapes emitted `panel:` twice in the same object literal.
 	const panel = section.panel ?? bandFacts?.panel;
 	if ( panel ) {
 		entry.push( `panel: { bg: ${ tsString( panel.bg ) }, ink: ${ tsString( panel.ink ) } }` );
+	}
+	// The measured EYEBROW and TITLE text. The classifier reads tag level alone,
+	// so a kicker longer than its six-word heuristic is promoted to title and the
+	// real title demoted to body copy (virtuallysrilanka's hardware band). The
+	// browser measurement is the only pass that can see the sizes.
+	if ( bandFacts?.eyebrow ) {
+		entry.push( `eyebrow: ${ JSON.stringify( bandFacts.eyebrow ) }` );
+	}
+	if ( bandFacts?.titleText ) {
+		entry.push( `titleText: ${ tsString( bandFacts.titleText ) }` );
 	}
 	// The container measure + side gutter, MEASURED per device (114 §3.6). An
 	// explicit profile fact wins; otherwise the source's own container decides.
@@ -2177,6 +2180,10 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * coloured slab (see `ForgeSection.panel`). `ink` is the legible foreground',
 		'\t * on that slab. */',
 		'\tpanel?: { bg: string; ink: string };',
+		'\t/** The measured EYEBROW — the small label the source stacks above the\n\t * title. Rendered above the heading at its own measured size: a builder\n\t * publishes the kicker as a real heading (often the SAME tag at a fraction\n\t * of the size), which no tag-level heuristic can separate from the title. */',
+		'\teyebrow?: { text: string; level?: number; size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; maxWidth?: string; marginTop?: string; marginBottom?: string };',
+		'\t/** The measured TITLE text — the LARGEST heading the band renders. */',
+		'\ttitleText?: string;',
 		'\t/** The source band padding (the declared padding fact). */',
 		'\tpadding?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\t/** The boxed container width (the source constrains its content —',

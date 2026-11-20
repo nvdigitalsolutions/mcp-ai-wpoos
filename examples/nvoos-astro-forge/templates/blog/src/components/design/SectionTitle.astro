@@ -4,6 +4,14 @@
 // The level rides the measured band facts (`theme.type.titleLevel`); the
 // template's historical `<h2>` is only the fallback. See lib/title-tag.ts for
 // why an `h1` maps down to `h2` (the page article owns the single h1).
+//
+// The EYEBROW is the small label the source stacks ABOVE that title. A builder
+// publishes it as a real heading — often the SAME tag at a fraction of the size
+// (virtuallysrilanka's about band pairs a 14px `h2` with a 30px `h2`) — so tag
+// level cannot separate them and only the browser measurement can. When that
+// measurement found a pair, it also recorded which heading is the TITLE, and
+// that text wins: the classifier's tag-level pick is exactly what mislabels a
+// long all-caps kicker as the title.
 import { titleTag } from '../../lib/title-tag.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 
@@ -20,10 +28,32 @@ interface Props {
 
 const { title, theme, class: className, style, id } = Astro.props;
 const Tag = titleTag( theme?.type );
+const eyebrow = theme?.eyebrow;
+// Gated on the eyebrow: the measured title is only a better answer where the
+// pair was detected. A band whose largest heading is an item heading (a services
+// column) must keep the classifier's title.
+const text = eyebrow && theme?.titleText ? theme.titleText : title;
+const eyebrowStyle = eyebrow
+	? [
+			eyebrow.size && `font-size:${ eyebrow.size }`,
+			eyebrow.weight && `font-weight:${ eyebrow.weight }`,
+			eyebrow.lineHeight && eyebrow.lineHeight !== 'normal' && `line-height:${ eyebrow.lineHeight }`,
+			eyebrow.letterSpacing && eyebrow.letterSpacing !== 'normal' && `letter-spacing:${ eyebrow.letterSpacing }`,
+			eyebrow.transform && eyebrow.transform !== 'none' && `text-transform:${ eyebrow.transform }`,
+			eyebrow.color && `color:${ eyebrow.color }`,
+			eyebrow.align && eyebrow.align !== 'start' && `text-align:${ eyebrow.align }`,
+			eyebrow.maxWidth && eyebrow.maxWidth !== 'none' && `max-width:${ eyebrow.maxWidth }`,
+		]
+			.filter( Boolean )
+			.join( ';' )
+	: undefined;
 ---
 
-{title && (
+{eyebrow && (
+	<p class="ds-eyebrow" style={eyebrowStyle || undefined}>{eyebrow.text}</p>
+)}
+{text && (
 	<Tag class:list={['ds-title', className]} id={id} style={style || undefined}>
-		{title}
+		{text}
 	</Tag>
 )}

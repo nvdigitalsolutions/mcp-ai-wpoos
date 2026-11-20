@@ -64,8 +64,15 @@ const FACT_MARKERS: FactMarker[] = [
 		// only be a `[data-section-id=…]{padding:…}` rule in a <style> block
 		// ahead of it. Each form is checked against its own marker, so a stray
 		// inline `padding:` cannot mask a map that emitted no scoped rule.
+		//
+		// A DECLARED string may still ship as a scoped map: the measurement
+		// narrows a desktop-only shorthand to the viewports that actually differ
+		// (`resolveBandPadding`), and an inline value would outrank its own media
+		// queries. Either rendering satisfies the fact.
 		present: ( { html, sectionId, value, scopedPadding } ) =>
-			typeof value === 'string' ? html.includes( 'padding:' ) : scopedPadding.has( sectionId ),
+			typeof value === 'string'
+				? html.includes( 'padding:' ) || scopedPadding.has( sectionId )
+				: scopedPadding.has( sectionId ),
 	},
 	{ key: 'measure', label: 'measure', marker: '--ds-measure',
 		// A measured container is now a per-device map (1440 / 834 / 390), which

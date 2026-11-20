@@ -1168,6 +1168,20 @@ export type ForgeBandInteractions = ForgeInteractionFact[];
 
 export interface ForgeBandFacts {
 	/**
+	 * The band's EYEBROW: the small label the source sets ABOVE its title.
+	 *
+	 * Builder sources routinely publish a kicker as a real heading — often the
+	 * SAME tag as the title at a fraction of the size (virtuallysrilanka's about
+	 * band pairs a 14px `h2` with a 30px `h2`). Tag level cannot separate them,
+	 * so the classifier demotes the label into body copy and the rebuild renders
+	 * it UNDER the title at body size. The browser pass records the pair: the
+	 * largest heading is the title, and a clearly smaller heading above it in the
+	 * same lane is the eyebrow.
+	 */
+	eyebrow?: BandTypeProperties & { text: string; level?: number };
+	/** The measured TITLE text — the LARGEST heading in the band. */
+	titleText?: string;
+	/**
 	 * The single SLAB the band’s content sits on: a literal colour and its
 	 * legible ink.
 	 *
