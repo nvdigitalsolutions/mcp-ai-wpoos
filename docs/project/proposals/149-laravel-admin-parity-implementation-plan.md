@@ -11233,3 +11233,195 @@ Four things the run caught, each worth recording:
    `withSchedule`, this only fires where `php artisan schedule:work` or
    `schedule:run` from cron actually runs. `nvoos:access-digest --dry-run` is the
    way to see what a tick would have done.
+
+## 112. The dashboards merge — ten surfaces become seven, on both runtimes (2026-11-20)
+
+[158](158-parity-open-decisions.md) D1 accepted the
+[redundancy review](149-dashboards-redundancy-review.md) §4 in full and attached
+three conditions. This is the slice that implements it. The `dashboards` contract
+row **stays `planned`**: what shipped is the catalogue on both runtimes, not a
+Laravel page. D1's own §2.3 says as much — "what is decided is the shape of the
+future row, not the row."
+
+### 112.1 The two merges, and why they are merges rather than deletions
+
+| New surface | Replaces | What was actually duplicated |
+|---|---|---|
+| `connectors` | `ezuite`, `shopify`, `flowhub` | `ezuite` and `flowhub` published a byte-identical render spec — same five metrics, same two-column list — and differed only in data source and one label. `shopify` shared the framing and added a GraphQL cost budget. |
+| `members` | `health`, `vitals` | Identical filter set (`member_id`, `days_back` 7/30/90), identical structure (`metrics: []`, one `history` list), differing only in columns **and in which toolkit toggle revealed them**. |
+
+`cre`, `law`, `registration`, `eca` and `observability` are untouched. The
+review's §3.4 reasoning still holds and is worth repeating because it is the
+temptation: they share a *render contract*, not a domain. Collapsing them would
+remove four domains and produce a navigation menu with a chart in it.
+
+### 112.2 Sections, not a second gate
+
+A merged dashboard declares `sections` instead of `metrics`/`lists`, and each
+section carries the flag that already gated its old dashboard:
+
+```php
+'members' => array(
+    'filters'  => array( /* member_id, days_back — the shared pair */ ),
+    'sections' => array(
+        'health' => array( 'flag' => 'enable_health_wellness_management', 'default_days' => 30, ... ),
+        'vitals' => array( 'flag' => 'enable_medical_vitals',
+                           'fallback_flag' => 'enable_health_wellness_management',
+                           'default_days' => 90, ... ),
+    ),
+),
+```
+
+`get_schema()` expands the **visible** sections into the flat render contract the
+console already reads, and drops `sections` from the payload: how a dashboard is
+gated is our business, and publishing the gate invites a client to re-implement
+it. This is what D1's "section visibility driven by the two toolkit flags" means
+concretely — the gate is preserved exactly, and the second surface is what
+disappears.
+
+Three consequences worth stating:
+
+1. **Keys are namespaced by section** (`ezuite_in_stock`, `vitals_history`). Not
+   cosmetic: `ezuite` and `flowhub` both publish `in_stock`, and a flat payload
+   cannot hold two entries with one key. The `gather()` side prefixes the
+   provider's whole payload by the same section key, so schema and data cannot
+   disagree.
+2. **`group` carries the section's label** on each expanded metric and list. It
+   is additive — a renderer that ignores it still gets distinct, labelled entries
+   ("EZuite — In Stock"), so the merge does not require a client change to stay
+   legible.
+3. **Each section keeps its pre-merge `default_days`.** `health` defaulted to 30
+   and `vitals` to 90; a merged page with one Date Range control would otherwise
+   silently change the window half its readers were used to.
+
+### 112.3 The Medical Vitals BC fallback, preserved rather than simplified
+
+`effective_flag_key('vitals')` had a back-compat rule: the dedicated toggle wins
+when it was ever saved, otherwise the dashboard follows Health & Wellness,
+mirroring `includes/tools/healthcare/init.php`. Merging could very reasonably
+have dropped it — and that would have been a silent behaviour change for every
+site that never saved `enable_medical_vitals`.
+
+So the rule survives in two places, in the same direction:
+
+- `section_enabled('members', 'vitals')` — a saved `0` hides the section; an
+  absent key defers to Health & Wellness.
+- `effective_flag_key_for()` — the same substitution, applied to the *candidate*
+  list, so the disabled-state hint names the key that actually decides it.
+
+`array_key_exists`, never `empty`: a saved `0` is a decision, and reading it as
+"never configured" would resurrect a section an administrator had switched off.
+
+### 112.4 Aliases: the condition most likely to be dropped
+
+D1 condition 1. Five ids are retired; each resolves to its replacement through
+`aliases()`, which is consulted by `get_data()` **and published in the schema
+envelope** so a client can migrate its own saved state. A deletion alone turns a
+saved id into a 404 with no explanation, which is the part of a merge a user
+actually notices.
+
+Two rules make the alias honest rather than convenient:
+
+- **The response reports the resolved id.** A client that asked for `ezuite` is
+  told it received `connectors` — the one piece of information it needs to
+  update its own state. Echoing the requested id would leave the client pointing
+  at a surface that no longer exists.
+- **Resolving is not a grant.** The replacement's own availability check still
+  applies, so `ezuite` with every connector flag off is a 404, exactly as it was.
+  An alias is a rename, not an authorisation.
+
+The retired ids appear in neither `dashboards` nor `disabled`: listing one in the
+guidance map would resurrect the surface it was merged away from.
+
+### 112.5 One broken connector is data, not a fatal
+
+`connectors` is the first surface whose sections are *independent systems*, and
+the old `gather()` returned provider errors straight through. That was fine when
+one dashboard meant one provider. Here it would let a missing EZuite CCT manager
+class take the FlowHub and Shopify panels down with it — on a page called
+connector *health*.
+
+So `gather_connectors()` treats **status 501 as a health signal**: the section is
+omitted, its failure is recorded as `<section>_error`, and the other sections
+load. Any other status propagates, because a 500 is a real failure and belongs
+upstream. `members` deliberately does **not** do this: a missing member is a 400
+asking "which member?", which is a request error, not a degraded section — and
+the pre-merge contract promised that 400.
+
+### 112.6 What the console needed: nothing
+
+The picker iterates `dashboards` from the schema, the tabs are keyed by id, and
+the metric grid reads `data[metric.key]`. All three are catalogue-driven, so the
+merge is transparent: the console shows two fewer tabs and renders the namespaced
+keys without a code change. The payload additions (`aliases`, `toolkit_flags`,
+`group`) are additive.
+
+The SPA's types gained the optional fields (`group`, `toolkit_flags`, `aliases`)
+so the next reader does not have to infer them from the endpoint. That is a
+type-only change: `pro-spa.js` is unchanged, because no runtime code changed.
+
+**One known imprecision, deliberately left.** `disabledDashboardHint()` renders
+`toolkit_flag`, so a disabled `connectors` says "enable the
+`enable_ezuite_toolkit` toolkit" — one of three ways to switch it on. The payload
+now carries `toolkit_flags` to fix exactly this, but rendering it would print
+three raw flag keys joined by "or", which is worse copy than one. The real fix is
+a flag → human toolkit-name map, which is a product-copy decision and not this
+slice. Recorded here so it is a known gap rather than a discovery.
+
+### 112.7 WordPress first, in the same change
+
+D1 condition 2, and the reason this is not a Laravel-lane task: the catalogue is
+read by both runtimes and the labels must match, so merging one side would break
+parity on the first request. The two files now agree on three things —
+seven ids, the alias map, and the flag lists — and `DashboardCatalogue::ALIASES`
+carries a comment saying so, because a catalogue split across two runtimes cannot
+disagree about what an id means.
+
+D1 condition 3 (the 10 → 7 figure) needed no work beyond the review's own
+correction: two merges, 3 → 1 and 2 → 1, give seven. The stale "10 → 8" bullet
+was fixed in that review when D1 landed.
+
+### 112.8 Gates
+
+| Run | Result |
+|---|---|
+| Stubbed harness, pure half (catalogue, aliases, gating, section expansion, BC fallback) | **41 checks, all pass** — 7 surfaces; retired ids absent; five aliases; alias idempotence and pass-through; a merged surface hidden until any section is on; one connector flag revealing only its own section; 15 unique namespaced metric keys when all three are on; both member lists under the BC fallback; a saved `0` hiding the vitals section; `effective_flag_key` answering for a retired id; `expand_sections` a no-op without sections |
+| Stubbed harness, request paths (`get_schema`, `get_data`) | **27 checks, all pass** — the envelope's seven/one served split, six disabled rows, three-flag metadata, `sections` never leaking, namespaced payload, two connectors not colliding on `in_stock`, a 501 connector degrading with `<section>_error` while the others answer, a 500 propagating, the 400 surviving the member merge, and `resolving is not a grant` |
+| `DashboardsTest` (Laravel) | **15 tests / 77 assertions** |
+| Laravel regression (`SurfaceOwnershipTest`, `AdminNavigationTest`, `AdminPanelTest`, `AdminDataTableTest`, `AccessDigestTest`, `tests/Unit`) | **76 tests / 768 assertions, 0 failures** |
+| Full suite (`vendor/bin/phpunit`) | **1618 tests / 19,299 assertions, 0 failures** (2 pre-existing PHPUnit deprecations). The base of this slice edits both runtimes' catalogues, which every dashboard and surface test boots through |
+| phpcs (`phpcs.xml.dist`) — controller | **0 errors, 0 warnings** |
+| phpcs — `tests/rest-api/test-rest-dashboards.php` | **0 errors**, 8 alignment warnings that are **pre-existing at `HEAD`** (verified against `git show HEAD:`) |
+| PHPCompatibilityWP 8.1–8.4 | **0 issues** on both changed WordPress files |
+| `bin/audit-surface-ownership.php` | **48** surfaces, 40 built, 5 console-only, 0 planned-only, 1 inert — unchanged, because the row stays `planned` |
+| WordPress PHPUnit suite | **Not run locally** — this worktree has no WP test library and no MySQL client, and the `oos-wp` container has neither. CI's `test` job is the gate; the stubbed harnesses above cover the logic the suite would otherwise carry. |
+
+Two things the work caught, both worth recording:
+
+1. **`\t\t// Proposal 091 Track E` occurs twice** — once in the catalogue, once in
+   `gather()`. A slice replacement anchored on it matched the catalogue
+   occurrence and duplicated 24 KB of the file. The repair was a second splice
+   between the same markers plus structural assertions (one `'observability' =>`,
+   one `expand_sections` definition, retired ids at zero). A file with two
+   identical comments is a file where anchor-based editing needs a uniqueness
+   assertion before the write, not after.
+2. **A plugin file's `ABSPATH` guard silently kills a CLI harness.** The first
+   harness printed nothing and exited 0, because the controller's
+   `if ( ! defined( 'ABSPATH' ) ) { exit; }` ran before a single `echo`. A harness
+   that produces no output is not a passing harness.
+
+### 112.9 What this does not do
+
+1. **No Laravel page.** `dashboards` stays `planned`; this runtime still serves
+   only `eca`. D1 changed the catalogue's shape, not the port's scope.
+2. **No `dashboards` surface on `/admin`.** The console-only list is unchanged at
+   five, and `dashboards` is still the one row on it with a decided target rather
+   than a deliberate exclusion.
+3. **No flag → label map**, so the disabled hint names a raw key (§112.6).
+4. **No per-section charts.** Neither merged dashboard declares one; the
+   expander handles them (`<section>_<key>`) so a future section can, but nothing
+   exercises it yet.
+5. **No saved-state migration beyond the alias.** A client that stored
+   `ezuite` gets `connectors` back and must key on it; there is no redirect on the
+   WordPress admin side because the console's dashboard picker is component
+   state, not a URL.

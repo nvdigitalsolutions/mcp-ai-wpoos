@@ -1,7 +1,7 @@
 # Proposal 149 — Dashboards redundancy review
 
 **Decision:** S-3 (user, 2026-11-17) — *"ship all of them, but review for redundancy before consolidating to three."*
-**Status:** review complete, 2026-11-17. **No code changed.** The recommendation is a decision to schedule, not a change that was made.
+**Status:** review complete, 2026-11-17; **implemented 2026-11-20** as plan §112. The recommendation became [158](158-parity-open-decisions.md) D1 and shipped as a cross-runtime catalogue change — no code changed at review time, which is what the review was for.
 **Evidence base:** `addons/pro/includes/rest/class-wp-mcp-ai-pro-dashboards-rest-controller.php` (the WordPress catalogue, which is the source of truth) and `docker/laravel/app-skeleton/app/Support/DashboardCatalogue.php` (the ported catalogue). Both were read; neither was executed.
 
 ---
@@ -112,4 +112,10 @@ The merge is therefore a **Wave 5 task with a matching WordPress change**, not a
 - No `DashboardsTest` change, no catalogue change **yet**. The test pins the
   disabled entries and their toolkit flags; changing that set belongs to the merge
   itself, not to this review.
+- **Implemented 2026-11-20** — plan §112. Both catalogues declare seven surfaces;
+  the retired ids resolve through an alias map published in the schema envelope;
+  the toolkit gates survive as per-section visibility, including the Medical
+  Vitals back-compat fallback. `DashboardsTest` moved from nine disabled entries
+  to six, and `tests/rest-api/test-rest-dashboards.php` now pins the merged shape
+  instead of the ten.
 - S-3's other half — whether an unlicensed toolkit *disappears* or *renders an upsell* — remains open and is deferred to Wave 3 with the manifests: absence is an authorisation statement, an upsell is a product surface, and the two should not be decided per-dashboard.

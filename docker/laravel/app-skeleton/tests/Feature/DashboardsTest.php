@@ -13,14 +13,15 @@ use Tests\TestCase;
 /**
  * 090-b — the Pro dashboards surface.
  *
- * WordPress builds ten dashboards and dispatches each to that dashboard's
- * wp-admin page gatherer. This runtime owns one of those stores, so the
- * catalogue serves `eca` and reports the other nine as `disabled` with the
- * toolkit flag that would enable them — the same shape WordPress uses for a
- * switched-off toolkit.
+ * WordPress builds seven dashboards (158 D1 merged the original ten) and
+ * dispatches each to that dashboard's wp-admin page gatherer. This runtime owns
+ * one of those stores, so the catalogue serves `eca` and reports the other six as
+ * `disabled` with the toolkit flags that would enable them — the same shape
+ * WordPress uses for a switched-off toolkit.
  *
  * The response shapes are asserted unwrapped, because `DashboardsClient` reads
- * `dashboards` / `disabled` / `data` off the top level on both runtimes.
+ * `dashboards` / `disabled` / `aliases` / `data` off the top level on both
+ * runtimes.
  */
 class DashboardsTest extends TestCase
 {
@@ -96,15 +97,68 @@ class DashboardsTest extends TestCase
 
         $disabled = $response->json('disabled');
 
-        // Nine of the ten WordPress dashboards, each with the flag that would
-        // switch it on — that metadata is what the console's empty state reads.
-        $this->assertCount(9, $disabled);
+        // Six of the seven WordPress dashboards — 158 D1 merged ten into seven
+        // (connectors, members), so the guidance map shrank by three.
+        $this->assertCount(6, $disabled);
         $this->assertArrayNotHasKey('eca', $disabled);
         $this->assertSame('🏦', $disabled['cre']['icon']);
         $this->assertSame('enable_cre_debt_toolkit', $disabled['cre']['toolkit_flag']);
 
-        // `observability` is ungated on WordPress, so it carries no flag.
+        // `observability` is ungated on WordPress, so it carries no flag — and
+        // `toolkit_flags` says the same thing, not `['']`.
         $this->assertSame('', $disabled['observability']['toolkit_flag']);
+        $this->assertSame([], $disabled['observability']['toolkit_flags']);
+
+        // A merged surface names every flag that would enable it, because
+        // naming one of three is incomplete advice.
+        $this->assertSame('enable_ezuite_toolkit', $disabled['connectors']['toolkit_flag']);
+        $this->assertSame(
+            ['enable_ezuite_toolkit', 'enable_shopify_sync_toolkit', 'enable_flowhub_toolkit'],
+            $disabled['connectors']['toolkit_flags']
+        );
+        $this->assertSame(
+            ['enable_health_wellness_management', 'enable_medical_vitals'],
+            $disabled['members']['toolkit_flags']
+        );
+
+        // The retired ids are neither served nor offered as guidance: they are
+        // aliases, and listing one would resurrect the surface.
+        foreach (['health', 'vitals', 'ezuite', 'shopify', 'flowhub'] as $retired) {
+            $this->assertArrayNotHasKey($retired, $disabled);
+            $this->assertArrayNotHasKey($retired, $response->json('dashboards'));
+        }
+    }
+
+    public function test_the_catalogue_is_seven_surfaces_and_publishes_the_aliases(): void
+    {
+        $response = $this->getJson('/api/v1/pro/dashboards/schema')->assertOk();
+
+        $aliases = $response->json('aliases');
+
+        $this->assertSame('members', $aliases['health']);
+        $this->assertSame('members', $aliases['vitals']);
+        $this->assertSame('connectors', $aliases['ezuite']);
+        $this->assertSame('connectors', $aliases['shopify']);
+        $this->assertSame('connectors', $aliases['flowhub']);
+
+        // Seven live ids: one served, six disabled.
+        $this->assertCount(7, $response->json('dashboards') + $response->json('disabled'));
+    }
+
+    public function test_a_retired_id_resolves_to_its_replacement_and_says_so(): void
+    {
+        // `members` is not served here, so the alias resolves and then the
+        // replacement's own check refuses it. Resolving is not a grant.
+        $this->getJson('/api/v1/pro/dashboards/ezuite/data')
+            ->assertStatus(404)
+            ->assertJsonPath('message', 'This dashboard requires a toolkit that is not enabled on this site.');
+    }
+
+    public function test_an_unknown_id_is_still_a_readable_400(): void
+    {
+        $this->getJson('/api/v1/pro/dashboards/mystery/data')
+            ->assertStatus(400)
+            ->assertJsonPath('message', 'Unknown dashboard.');
     }
 
     public function test_data_returns_the_metric_chart_and_list_keys_the_config_declares(): void

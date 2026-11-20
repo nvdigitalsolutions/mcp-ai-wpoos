@@ -453,9 +453,18 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'health'        => array(
-				'label'       => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
-				'description' => __( 'Daily health metrics history per member (steps, water, sleep, calories, mood).', 'mcp-ai-wpoos-pro' ),
+			// 158 D1 — Member metrics. `health` and `vitals` were one dashboard in
+			// two pieces: identical filters, identical structure, differing only in
+			// columns and in which toolkit toggle reveals them. The sections below
+			// keep those toggles EXACTLY (a section is visible when its own flag is
+			// on) while retiring the second surface.
+			//
+			// A merged dashboard declares `sections` rather than `metrics`/`lists`;
+			// get_schema() expands the enabled ones, namespacing each key by its
+			// section so two connectors can both have an `in_stock`.
+			'members'       => array(
+				'label'       => __( 'Member metrics', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Health and vital-sign history per member. Each section follows its own toolkit toggle.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🫀',
 				'filters'     => array(
 					array(
@@ -475,229 +484,233 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 						),
 					),
 				),
-				'metrics'     => array(),
-				'lists'       => array(
-					array(
-						'key'     => 'history',
-						'title'   => __( 'Metrics history', 'mcp-ai-wpoos-pro' ),
-						'columns' => array(
+				'sections'    => array(
+					'health' => array(
+						'label'        => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
+						'flag'         => 'enable_health_wellness_management',
+						// The provider's own default when the filter is absent. Each section
+						// keeps its pre-merge default, so the merged page cannot silently
+						// change the window a user sees.
+						'default_days' => 30,
+						'metrics'      => array(),
+						'lists'        => array(
 							array(
-								'key'   => 'date',
-								'label' => __( 'Date', 'mcp-ai-wpoos-pro' ),
+								'key'     => 'history',
+								'title'   => __( 'Metrics history', 'mcp-ai-wpoos-pro' ),
+								'columns' => array(
+									array(
+										'key'   => 'date',
+										'label' => __( 'Date', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'steps',
+										'label' => __( 'Steps', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'water',
+										'label' => __( 'Water', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'sleep',
+										'label' => __( 'Sleep', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'calories',
+										'label' => __( 'Calories', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'mood',
+										'label' => __( 'Mood', 'mcp-ai-wpoos-pro' ),
+									),
+								),
 							),
+						),
+					),
+					'vitals' => array(
+						'label'         => __( 'Medical Vitals', 'mcp-ai-wpoos-pro' ),
+						'flag'          => 'enable_medical_vitals',
+						// BC, unchanged by the merge: the dedicated toggle wins when it was
+						// saved, otherwise this section follows Health & Wellness, mirroring
+						// includes/tools/healthcare/init.php.
+						'fallback_flag' => 'enable_health_wellness_management',
+						'default_days'  => 90,
+						'metrics'       => array(),
+						'lists'         => array(
 							array(
-								'key'   => 'steps',
-								'label' => __( 'Steps', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'water',
-								'label' => __( 'Water', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'sleep',
-								'label' => __( 'Sleep', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'calories',
-								'label' => __( 'Calories', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'mood',
-								'label' => __( 'Mood', 'mcp-ai-wpoos-pro' ),
+								'key'     => 'history',
+								'title'   => __( 'Vital signs history', 'mcp-ai-wpoos-pro' ),
+								'columns' => array(
+									array(
+										'key'   => 'timestamp',
+										'label' => __( 'Recorded', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'heart_rate',
+										'label' => __( 'Heart Rate', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'temperature',
+										'label' => __( 'Temperature', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'blood_pressure_systolic',
+										'label' => __( 'BP Systolic', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'blood_pressure_diastolic',
+										'label' => __( 'BP Diastolic', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'weight',
+										'label' => __( 'Weight', 'mcp-ai-wpoos-pro' ),
+									),
+								),
 							),
 						),
 					),
 				),
 			),
-			'vitals'        => array(
-				'label'       => __( 'Medical Vitals', 'mcp-ai-wpoos-pro' ),
-				'description' => __( 'Vital signs history per member (heart rate, temperature, blood pressure, weight).', 'mcp-ai-wpoos-pro' ),
-				'icon'        => '🩺',
-				'filters'     => array(
-					array(
-						'key'       => 'member_id',
-						'label'     => __( 'Member', 'mcp-ai-wpoos-pro' ),
-						'type'      => 'member',
-						'post_type' => 'mcp_ai_member',
-					),
-					array(
-						'key'     => 'days_back',
-						'label'   => __( 'Date Range', 'mcp-ai-wpoos-pro' ),
-						'type'    => 'select',
-						'options' => array(
-							'7'  => __( 'Last 7 days', 'mcp-ai-wpoos-pro' ),
-							'30' => __( 'Last 30 days', 'mcp-ai-wpoos-pro' ),
-							'90' => __( 'Last 90 days', 'mcp-ai-wpoos-pro' ),
-						),
-					),
-				),
-				'metrics'     => array(),
-				'lists'       => array(
-					array(
-						'key'     => 'history',
-						'title'   => __( 'Vital signs history', 'mcp-ai-wpoos-pro' ),
-						'columns' => array(
-							array(
-								'key'   => 'timestamp',
-								'label' => __( 'Recorded', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'heart_rate',
-								'label' => __( 'Heart Rate', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'temperature',
-								'label' => __( 'Temperature', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'blood_pressure_systolic',
-								'label' => __( 'BP Systolic', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'blood_pressure_diastolic',
-								'label' => __( 'BP Diastolic', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'key'   => 'weight',
-								'label' => __( 'Weight', 'mcp-ai-wpoos-pro' ),
-							),
-						),
-					),
-				),
-			),
-			// Proposal 089 Phase 4f — the commerce toolkit dashboards
-			// (formerly wp-admin dashboard widgets; same promoted seams).
-			'ezuite'        => array(
-				'label'       => __( 'EZuite Inventory', 'mcp-ai-wpoos-pro' ),
-				'description' => __( 'EZuite ERP inventory health: stock buckets, cached rows, total value and top warehouses.', 'mcp-ai-wpoos-pro' ),
+
+			// 158 D1 — Connector health. `ezuite` and `flowhub` published a
+			// byte-identical render spec and differed only in data source; `shopify`
+			// shared the framing and added its GraphQL cost budget. One surface with
+			// one section per connector, keys namespaced by connector, so enabling
+			// two of them cannot collide on `in_stock`.
+			'connectors'    => array(
+				'label'       => __( 'Connector health', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Inventory stock buckets, sync freshness and GraphQL budget, one section per connector.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🏭',
 				'filters'     => array(),
-				'metrics'     => array(
-					array(
-						'key'    => 'in_stock',
-						'label'  => __( 'In Stock', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'low_stock',
-						'label'  => __( 'Low Stock', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'out_of_stock',
-						'label'  => __( 'Out of Stock', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'total_items',
-						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'total_value',
-						'label'  => __( 'Total Value', 'mcp-ai-wpoos-pro' ),
-						'format' => 'money',
-					),
-				),
-				'lists'       => array(
-					array(
-						'key'     => 'warehouses',
-						'title'   => __( 'Top Warehouses', 'mcp-ai-wpoos-pro' ),
-						'columns' => array(
+				'sections'    => array(
+					'ezuite'  => array(
+						'label'   => __( 'EZuite', 'mcp-ai-wpoos-pro' ),
+						'flag'    => 'enable_ezuite_toolkit',
+						'metrics' => array(
 							array(
-								'key'   => 'name',
-								'label' => __( 'Warehouse', 'mcp-ai-wpoos-pro' ),
+								'key'    => 'in_stock',
+								'label'  => __( 'In Stock', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
 							),
 							array(
-								'key'   => 'count',
-								'label' => __( 'Items', 'mcp-ai-wpoos-pro' ),
+								'key'    => 'low_stock',
+								'label'  => __( 'Low Stock', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'out_of_stock',
+								'label'  => __( 'Out of Stock', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'total_items',
+								'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'total_value',
+								'label'  => __( 'Total Value', 'mcp-ai-wpoos-pro' ),
+								'format' => 'money',
+							),
+						),
+						'lists'   => array(
+							array(
+								'key'     => 'warehouses',
+								'title'   => __( 'Top Warehouses', 'mcp-ai-wpoos-pro' ),
+								'columns' => array(
+									array(
+										'key'   => 'name',
+										'label' => __( 'Warehouse', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'count',
+										'label' => __( 'Items', 'mcp-ai-wpoos-pro' ),
+									),
+								),
 							),
 						),
 					),
-				),
-			),
-			'shopify'       => array(
-				'label'       => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
-				'description' => __( 'Shopify GraphQL cost budget, cached items and sync health per connection.', 'mcp-ai-wpoos-pro' ),
-				'icon'        => '🛍️',
-				'filters'     => array(),
-				'metrics'     => array(
-					array(
-						'key'    => 'cost_remaining_pct',
-						'label'  => __( 'Cost Budget', 'mcp-ai-wpoos-pro' ),
-						'format' => 'percent',
-					),
-					array(
-						'key'    => 'cost_used',
-						'label'  => __( 'Points Used', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'cost_limit',
-						'label'  => __( 'Point Limit', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'cached_items',
-						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'connections',
-						'label'  => __( 'Connections', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-				),
-			),
-			'flowhub'       => array(
-				'label'       => __( 'FlowHub Inventory', 'mcp-ai-wpoos-pro' ),
-				'description' => __( 'FlowHub POS inventory health: stock buckets, cached rows, total value and top locations. Read-mostly — compliance reporting stays in FlowHub.', 'mcp-ai-wpoos-pro' ),
-				'icon'        => '🌿',
-				'filters'     => array(),
-				'metrics'     => array(
-					array(
-						'key'    => 'in_stock',
-						'label'  => __( 'In Stock', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'low_stock',
-						'label'  => __( 'Low Stock', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'out_of_stock',
-						'label'  => __( 'Out of Stock', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'total_items',
-						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
-						'format' => 'number',
-					),
-					array(
-						'key'    => 'total_value',
-						'label'  => __( 'Total Value', 'mcp-ai-wpoos-pro' ),
-						'format' => 'money',
-					),
-				),
-				'lists'       => array(
-					array(
-						'key'     => 'locations',
-						'title'   => __( 'Top Locations', 'mcp-ai-wpoos-pro' ),
-						'columns' => array(
+					'flowhub' => array(
+						'label'   => __( 'FlowHub', 'mcp-ai-wpoos-pro' ),
+						'flag'    => 'enable_flowhub_toolkit',
+						'metrics' => array(
 							array(
-								'key'   => 'name',
-								'label' => __( 'Location', 'mcp-ai-wpoos-pro' ),
+								'key'    => 'in_stock',
+								'label'  => __( 'In Stock', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
 							),
 							array(
-								'key'   => 'count',
-								'label' => __( 'Items', 'mcp-ai-wpoos-pro' ),
+								'key'    => 'low_stock',
+								'label'  => __( 'Low Stock', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'out_of_stock',
+								'label'  => __( 'Out of Stock', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'total_items',
+								'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'total_value',
+								'label'  => __( 'Total Value', 'mcp-ai-wpoos-pro' ),
+								'format' => 'money',
+							),
+						),
+						'lists'   => array(
+							array(
+								'key'     => 'locations',
+								'title'   => __( 'Top Locations', 'mcp-ai-wpoos-pro' ),
+								'columns' => array(
+									array(
+										'key'   => 'name',
+										'label' => __( 'Location', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'count',
+										'label' => __( 'Items', 'mcp-ai-wpoos-pro' ),
+									),
+								),
 							),
 						),
 					),
+					'shopify' => array(
+						'label'   => __( 'Shopify', 'mcp-ai-wpoos-pro' ),
+						'flag'    => 'enable_shopify_sync_toolkit',
+						'metrics' => array(
+							array(
+								'key'    => 'cost_remaining_pct',
+								'label'  => __( 'Cost Budget', 'mcp-ai-wpoos-pro' ),
+								'format' => 'percent',
+							),
+							array(
+								'key'    => 'cost_used',
+								'label'  => __( 'Points Used', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'cost_limit',
+								'label'  => __( 'Point Limit', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'cached_items',
+								'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+							array(
+								'key'    => 'connections',
+								'label'  => __( 'Connections', 'mcp-ai-wpoos-pro' ),
+								'format' => 'number',
+							),
+						),
+						'lists'   => array(),
+					),
 				),
 			),
+
 			// Proposal 091 Track E — AI observability (annotations + recent
 			// GenAI spans). Ungated: core observability, not a toolkit.
 			'observability' => array(
@@ -755,24 +768,104 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	}
 
 	/**
+	 * Dashboard ids retired by the 10 → 7 merge (158 D1), mapped to the
+	 * surface that replaced them.
+	 *
+	 * Published in the schema envelope so a client can migrate its own saved
+	 * state, and consulted by get_data() so an old link resolves instead of
+	 * 404ing. A deletion alone is the one part of a merge a user notices.
+	 *
+	 * @since 2.4.6
+	 * @return array<string, string> Retired id => surviving id.
+	 */
+	public static function aliases() {
+		return array(
+			'health'  => 'members',
+			'vitals'  => 'members',
+			'ezuite'  => 'connectors',
+			'shopify' => 'connectors',
+			'flowhub' => 'connectors',
+		);
+	}
+
+	/**
+	 * Resolve a retired dashboard id to the surface that replaced it.
+	 *
+	 * Idempotent for a live id, and for an id that never existed — the caller
+	 * still performs its own unknown-id check, and doing it here would turn a
+	 * 400 into a 404 for input that is simply wrong.
+	 *
+	 * @since 2.4.6
+	 * @param string $id Dashboard key, current or retired.
+	 * @return string
+	 */
+	public static function resolve_alias( $id ) {
+		$aliases = self::aliases();
+		return isset( $aliases[ $id ] ) ? $aliases[ $id ] : $id;
+	}
+
+	/**
+	 * The settings flags that gate each dashboard, as a list.
+	 *
+	 * A merged dashboard is gated by ANY of its sections, so the value is a
+	 * list rather than the single key this map used to hold. Dashboards not
+	 * in the map stay ungated (observability).
+	 *
+	 * @since 2.4.6
+	 * @return array<string, string[]>
+	 */
+	public static function dashboard_flags() {
+		return array(
+			'cre'          => array( 'enable_cre_debt_toolkit' ),
+			'law'          => array( 'enable_law_firm_toolkit' ),
+			'registration' => array( 'enable_regulatory_registration_toolkit' ),
+			'eca'          => array( 'enable_eca_management' ),
+			'members'      => array( 'enable_health_wellness_management', 'enable_medical_vitals' ),
+			'connectors'   => array( 'enable_ezuite_toolkit', 'enable_shopify_sync_toolkit', 'enable_flowhub_toolkit' ),
+		);
+	}
+
+	/**
 	 * Settings flag that gates each dashboard (the toolkit enable toggles
-	 * from Settings → NV oOS). Dashboards not in this map stay ungated.
+	 * from Settings → NV oOS), first-of-list.
+	 *
+	 * Kept for BC: the disabled-guidance payload has always carried one flag
+	 * per dashboard. A merged dashboard answers with the first flag that would
+	 * enable it, and {@see self::effective_flag_keys()} answers with all of
+	 * them for a caller that can render more than one.
 	 *
 	 * @since 2.4.0
 	 * @return array<string, string> Dashboard id => settings flag key.
 	 */
 	public static function dashboard_flag_keys() {
-		return array(
-			'cre'          => 'enable_cre_debt_toolkit',
-			'law'          => 'enable_law_firm_toolkit',
-			'registration' => 'enable_regulatory_registration_toolkit',
-			'eca'          => 'enable_eca_management',
-			'health'       => 'enable_health_wellness_management',
-			'vitals'       => 'enable_medical_vitals',
-			// Proposal 089 Phase 4f — commerce toolkit dashboards.
-			'ezuite'       => 'enable_ezuite_toolkit',
-			'shopify'      => 'enable_shopify_sync_toolkit',
-			'flowhub'      => 'enable_flowhub_toolkit',
+		$keys = array();
+		foreach ( self::dashboard_flags() as $id => $flags ) {
+			$keys[ $id ] = (string) reset( $flags );
+		}
+		return $keys;
+	}
+
+	/**
+	 * Every settings flag that would enable a dashboard.
+	 *
+	 * Alias-resolved, so `vitals` answers with `members`' candidates. Medical
+	 * Vitals' BC rule is applied: when the dedicated toggle was never saved,
+	 * that section follows Health & Wellness, so the candidate list names the
+	 * key that actually decides it rather than one that does not exist.
+	 *
+	 * Unknown ids return an empty array — the callers treat them as ungated.
+	 *
+	 * @since 2.4.6
+	 * @param string $id Dashboard key, current or retired.
+	 * @return string[]
+	 */
+	public static function effective_flag_keys( $id ) {
+		$id     = self::resolve_alias( $id );
+		$flags  = self::dashboard_flags();
+		$result = isset( $flags[ $id ] ) ? $flags[ $id ] : array();
+
+		return array_values(
+			array_unique( array_map( array( __CLASS__, 'effective_flag_key_for' ), $result ) )
 		);
 	}
 
@@ -784,56 +877,118 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	 * for BC, mirroring includes/tools/healthcare/init.php.
 	 *
 	 * @since 2.4.2
-	 * @param string $id Dashboard key.
+	 * @param string $id Dashboard key, current or retired.
 	 * @return string Settings flag key, or '' when ungated.
 	 */
 	public static function effective_flag_key( $id ) {
-		$flag_keys = self::dashboard_flag_keys();
-		if ( ! isset( $flag_keys[ $id ] ) ) {
-			return '';
+		$flags = self::effective_flag_keys( $id );
+		return isset( $flags[0] ) ? $flags[0] : '';
+	}
+
+	/**
+	 * Apply the Medical Vitals BC fallback to one candidate flag key.
+	 *
+	 * The dedicated toggle wins when it was ever saved; otherwise the section
+	 * follows Health & Wellness. `array_key_exists`, not `empty`: a saved `0`
+	 * is a decision and must not read as "never configured".
+	 *
+	 * @since 2.4.6
+	 * @param string $flag_key Candidate flag key.
+	 * @return string
+	 */
+	private static function effective_flag_key_for( $flag_key ) {
+		if ( 'enable_medical_vitals' !== $flag_key ) {
+			return $flag_key;
 		}
 
-		$flag_key = $flag_keys[ $id ];
+		$settings = self::settings();
 
-		// Medical Vitals mirrors includes/tools/healthcare/init.php: the
-		// dedicated toggle wins when present, otherwise the dashboard
-		// follows the Health & Wellness toggle for BC.
-		if ( 'vitals' === $id ) {
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
-			if ( ! is_array( $settings ) ) {
-				$settings = array();
-			}
-			if ( ! array_key_exists( 'enable_medical_vitals', $settings ) ) {
-				$flag_key = 'enable_health_wellness_management';
-			}
+		return array_key_exists( 'enable_medical_vitals', $settings )
+			? 'enable_medical_vitals'
+			: 'enable_health_wellness_management';
+	}
+
+	/**
+	 * Whether one section of a dashboard is visible.
+	 *
+	 * A section is visible when its own flag is on. Medical Vitals applies the
+	 * BC fallback, so enabling Health & Wellness alone still reveals the vital
+	 * signs section — the behaviour the two separate dashboards had.
+	 *
+	 * An unknown section, or a dashboard with no sections, falls back to the
+	 * whole-dashboard gate rather than answering `false`: a typo in a section
+	 * key should not silently hide data.
+	 *
+	 * @since 2.4.6
+	 * @param string $dashboard_id Dashboard key, current or retired.
+	 * @param string $section      Section key inside that dashboard.
+	 * @return bool
+	 */
+	public static function section_enabled( $dashboard_id, $section ) {
+		$catalogue = ( new self() )->dashboard_catalogue();
+		$id        = self::resolve_alias( $dashboard_id );
+
+		if ( ! isset( $catalogue[ $id ]['sections'][ $section ]['flag'] ) ) {
+			return self::is_dashboard_available( $id );
 		}
 
-		return $flag_key;
+		$settings = self::settings();
+		$flag_key = (string) $catalogue[ $id ]['sections'][ $section ]['flag'];
+
+		// The Medical Vitals BC fallback, in the same direction as
+		// effective_flag_key_for(): a saved toggle wins, an absent one defers.
+		if ( 'enable_medical_vitals' === $flag_key && ! array_key_exists( 'enable_medical_vitals', $settings ) ) {
+			$flag_key = 'enable_health_wellness_management';
+		}
+
+		return ! empty( $settings[ $flag_key ] );
+	}
+
+	/**
+	 * The site's NV oOS settings, always as an array.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function settings() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return is_array( $settings ) ? $settings : array();
 	}
 
 	/**
 	 * Whether a dashboard's toolkit is enabled for this site.
 	 *
 	 * Unknown ids are treated as available — the callers perform their own
-	 * existence checks. Medical Vitals falls back to the Health & Wellness
-	 * toggle for BC, mirroring includes/tools/healthcare/init.php.
+	 * existence checks. A merged dashboard is available when ANY of its
+	 * sections is, which is what keeps enabling one connector from hiding the
+	 * other two.
 	 *
 	 * @since 2.4.0
-	 * @param string $id Dashboard key.
+	 * @param string $id Dashboard key, current or retired.
 	 * @return bool
 	 */
 	public static function is_dashboard_available( $id ) {
-		$flag_key = self::effective_flag_key( $id );
-		if ( '' === $flag_key ) {
-			return true;
+		$id        = self::resolve_alias( $id );
+		$catalogue = ( new self() )->dashboard_catalogue();
+		$settings  = self::settings();
+
+		if ( isset( $catalogue[ $id ]['sections'] ) ) {
+			foreach ( array_keys( $catalogue[ $id ]['sections'] ) as $section ) {
+				if ( self::section_enabled( $id, $section ) ) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( ! is_array( $settings ) ) {
-			$settings = array();
+		foreach ( self::effective_flag_keys( $id ) as $flag_key ) {
+			if ( ! empty( $settings[ $flag_key ] ) ) {
+				return true;
+			}
 		}
 
-		return ! empty( $settings[ $flag_key ] );
+		// No candidates at all means ungated.
+		return empty( self::effective_flag_keys( $id ) );
 	}
 
 	/**
@@ -844,6 +999,15 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	 * the settings flag that gates it) for dashboards whose toolkit is off,
 	 * so the console can explain an empty catalogue instead of rendering a
 	 * blank page when every toolkit is disabled (the default state).
+	 *
+	 * A merged dashboard declares `sections` instead of `metrics`/`lists`;
+	 * {@see self::expand_sections()} turns the visible ones into the flat
+	 * render contract the client already understands. The `sections` key is
+	 * dropped from the payload — how a dashboard is gated is our business, and
+	 * leaking it invites a client to re-implement the gate.
+	 *
+	 * `aliases` publishes the retired ids (158 D1) so a client can migrate its
+	 * own saved state instead of discovering the merge as a 404.
 	 *
 	 * @since 2.4.0
 	 * @param WP_REST_Request $request Request object.
@@ -870,15 +1034,22 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 				continue;
 			}
 			$disabled[ $id ] = array(
-				'label'        => $config['label'],
-				'description'  => $config['description'],
-				'icon'         => $config['icon'],
-				'toolkit_flag' => self::effective_flag_key( $id ),
+				'label'         => $config['label'],
+				'description'   => $config['description'],
+				'icon'          => $config['icon'],
+				// The first flag, for the single-flag guidance the console
+				// has always rendered.
+				'toolkit_flag'  => self::effective_flag_key( $id ),
+				// Every flag that would enable it — a merged dashboard has
+				// several, and naming one of three is incomplete advice.
+				'toolkit_flags' => self::effective_flag_keys( $id ),
 			);
 		}
 
 		foreach ( $dashboards as $id => $config ) {
-			foreach ( $config['filters'] as $index => $filter ) {
+			$dashboards[ $id ] = self::expand_sections( $id, $config );
+
+			foreach ( $dashboards[ $id ]['filters'] as $index => $filter ) {
 				if ( 'taxonomy' === $filter['type'] && taxonomy_exists( $filter['taxonomy'] ) ) {
 					$terms   = get_terms(
 						array(
@@ -919,20 +1090,109 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			array(
 				'dashboards' => $dashboards,
 				'disabled'   => $disabled,
+				// 158 D1 — the retired ids and what replaced them. Additive;
+				// a client that ignores it keeps working.
+				'aliases'    => self::aliases(),
 			)
 		);
+	}
+
+	/**
+	 * Turn a merged dashboard's visible sections into the flat render contract.
+	 *
+	 * A merged dashboard declares `sections`, each with its own flag, and the
+	 * sections that are not visible are simply absent from the payload — which
+	 * is exactly the "section visibility driven by the toolkit flags" 158 D1
+	 * asks for, expressed in the contract the client already renders.
+	 *
+	 * Keys are namespaced by section (`ezuite_in_stock`, `vitals_history`) for
+	 * two reasons: two connectors both publish `in_stock`, and a flat list of
+	 * metrics cannot carry two entries with one key. `group` carries the
+	 * section's label so a renderer can head each block; a renderer that
+	 * ignores it still gets distinct, labelled metrics.
+	 *
+	 * A dashboard with no sections is returned unchanged.
+	 *
+	 * @since 2.4.6
+	 * @param string               $id     Dashboard key.
+	 * @param array<string, mixed> $config Catalogue entry.
+	 * @return array<string, mixed>
+	 */
+	private static function expand_sections( $id, array $config ) {
+		if ( empty( $config['sections'] ) || ! is_array( $config['sections'] ) ) {
+			return $config;
+		}
+
+		$metrics = array();
+		$lists   = array();
+		$charts  = array();
+
+		foreach ( $config['sections'] as $section => $spec ) {
+			if ( ! self::section_enabled( $id, $section ) ) {
+				continue;
+			}
+
+			$group = isset( $spec['label'] ) ? (string) $spec['label'] : $section;
+
+			foreach ( (array) ( $spec['metrics'] ?? array() ) as $metric ) {
+				$metric['key']   = $section . '_' . $metric['key'];
+				$metric['label'] = sprintf(
+					/* translators: 1: connector or section name, 2: metric label. */
+					__( '%1$s — %2$s', 'mcp-ai-wpoos-pro' ),
+					$group,
+					$metric['label']
+				);
+				$metric['group'] = $group;
+
+				$metrics[] = $metric;
+			}
+
+			foreach ( (array) ( $spec['lists'] ?? array() ) as $list ) {
+				$list['key']   = $section . '_' . $list['key'];
+				$list['title'] = sprintf(
+					/* translators: 1: connector or section name, 2: list title. */
+					__( '%1$s — %2$s', 'mcp-ai-wpoos-pro' ),
+					$group,
+					$list['title']
+				);
+				$list['group'] = $group;
+
+				$lists[] = $list;
+			}
+
+			foreach ( (array) ( $spec['charts'] ?? array() ) as $chart ) {
+				$chart['key']   = $section . '_' . $chart['key'];
+				$chart['group'] = $group;
+
+				$charts[] = $chart;
+			}
+		}
+
+		unset( $config['sections'] );
+
+		$config['metrics'] = $metrics;
+		$config['lists']   = $lists;
+		$config['charts']  = $charts;
+
+		return $config;
 	}
 
 	/**
 	 * GET /dashboards/{id}/data — filtered metric payload from the
 	 * dashboard's own gatherer.
 	 *
+	 * A retired id resolves through {@see self::aliases()} before anything else,
+	 * and the response reports the **resolved** id: a client that asked for
+	 * `ezuite` is told it received `connectors`, which is the one piece of
+	 * information it needs to update its own state. An alias whose surface is
+	 * also unavailable still answers 404 — resolving is not a grant.
+	 *
 	 * @since 2.4.0
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_data( WP_REST_Request $request ) {
-		$dashboard_id = $request->get_param( 'id' );
+		$dashboard_id = self::resolve_alias( (string) $request->get_param( 'id' ) );
 		$catalogue    = $this->dashboard_catalogue();
 
 		if ( ! isset( $catalogue[ $dashboard_id ] ) ) {
@@ -1071,75 +1331,12 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			);
 		}
 
-		if ( 'health' === $dashboard_id ) {
-			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-wellness-dashboard-page.php';
-			if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_Dashboard_Page' ) && file_exists( $page_file ) ) {
-				require_once $page_file;
-			}
-			if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_Dashboard_Page' ) ) {
-				return new WP_Error(
-					'dashboards_provider_unavailable',
-					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
-					array( 'status' => 501 )
-				);
-			}
-
-			$member_id = isset( $filters['member_id'] ) ? absint( $filters['member_id'] ) : 0;
-			$days_back = isset( $filters['days_back'] ) ? absint( $filters['days_back'] ) : 30;
-
-			return WP_MCP_AI_Health_Wellness_Dashboard_Page::get_history( $member_id, $days_back );
+		if ( 'members' === $dashboard_id ) {
+			return $this->gather_members( $filters );
 		}
 
-		if ( 'vitals' === $dashboard_id ) {
-			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-medical-vitals-dashboard-page.php';
-			if ( ! class_exists( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page' ) && file_exists( $page_file ) ) {
-				require_once $page_file;
-			}
-			if ( ! class_exists( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page' ) ) {
-				return new WP_Error(
-					'dashboards_provider_unavailable',
-					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
-					array( 'status' => 501 )
-				);
-			}
-
-			$member_id = isset( $filters['member_id'] ) ? absint( $filters['member_id'] ) : 0;
-			$days_back = isset( $filters['days_back'] ) ? absint( $filters['days_back'] ) : 90;
-
-			return WP_MCP_AI_Medical_Vitals_Dashboard_Page::get_history( $member_id, $days_back );
-		}
-
-		// Proposal 089 Phase 4f — the commerce dashboard widgets (promoted
-		// public seams on the widget classes; the wp-admin widgets render
-		// the same payloads).
-		$commerce_providers = array(
-			'ezuite'  => array(
-				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-ezuite-dashboard-widget.php',
-				'class' => 'WP_MCP_AI_EZuite_Dashboard_Widget',
-			),
-			'shopify' => array(
-				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-shopify-sync-dashboard-widget.php',
-				'class' => 'WP_MCP_AI_Shopify_Sync_Dashboard_Widget',
-			),
-			'flowhub' => array(
-				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-dashboard-widget.php',
-				'class' => 'WP_MCP_AI_FlowHub_Dashboard_Widget',
-			),
-		);
-		if ( isset( $commerce_providers[ $dashboard_id ] ) ) {
-			$provider = $commerce_providers[ $dashboard_id ];
-			if ( ! class_exists( $provider['class'] ) && file_exists( $provider['file'] ) ) {
-				require_once $provider['file'];
-			}
-			if ( ! class_exists( $provider['class'] ) ) {
-				return new WP_Error(
-					'dashboards_provider_unavailable',
-					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
-					array( 'status' => 501 )
-				);
-			}
-
-			return call_user_func( array( $provider['class'], 'get_dashboard_data' ) );
+		if ( 'connectors' === $dashboard_id ) {
+			return $this->gather_connectors();
 		}
 
 		// Proposal 091 Track E — AI observability dashboard (ungated).
@@ -1164,5 +1361,165 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			__( 'Unknown dashboard.', 'mcp-ai-wpoos-pro' ),
 			array( 'status' => 400 )
 		);
+	}
+
+	/**
+	 * Member metrics — the health and vital-signs sections, each gated by its
+	 * own toolkit toggle (158 D1).
+	 *
+	 * Both providers return a single `history` list and refuse with a 400 when
+	 * no member was chosen, so the merged payload namespaces the lists and lets
+	 * that 400 through unchanged: an empty member filter is still a request for
+	 * one member, not a request for all of them.
+	 *
+	 * `days_back` is one control for both sections. When the caller sends none,
+	 * each section keeps its pre-merge default (30 for health, 90 for vitals) so
+	 * the merge cannot silently change the window a reader was used to.
+	 *
+	 * @since 2.4.6
+	 * @param array<string, string> $filters Whitelisted filter values.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	private function gather_members( array $filters ) {
+		$member_id = isset( $filters['member_id'] ) ? absint( $filters['member_id'] ) : 0;
+		$requested = isset( $filters['days_back'] ) ? absint( $filters['days_back'] ) : 0;
+
+		$providers = array(
+			'health' => array(
+				'file'         => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-wellness-dashboard-page.php',
+				'class'        => 'WP_MCP_AI_Health_Wellness_Dashboard_Page',
+				'default_days' => 30,
+			),
+			'vitals' => array(
+				'file'         => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-medical-vitals-dashboard-page.php',
+				'class'        => 'WP_MCP_AI_Medical_Vitals_Dashboard_Page',
+				'default_days' => 90,
+			),
+		);
+
+		$data = array();
+
+		foreach ( $providers as $section => $provider ) {
+			if ( ! self::section_enabled( 'members', $section ) ) {
+				continue;
+			}
+
+			$history = $this->call_provider_seam( $section, $provider, 'get_history', $member_id, $requested > 0 ? $requested : $provider['default_days'] );
+
+			if ( is_wp_error( $history ) ) {
+				return $history;
+			}
+
+			$data[ $section . '_history' ] = isset( $history['history'] ) && is_array( $history['history'] )
+				? array_values( $history['history'] )
+				: array();
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Connector health — the inventory and commerce connectors, one section per
+	 * connector, keys namespaced by connector (158 D1).
+	 *
+	 * `ezuite` and `flowhub` published a byte-identical payload and `shopify`
+	 * shared the framing, which is why they are one surface. They still publish
+	 * the same keys, which is why the keys are namespaced: two connectors both
+	 * have `in_stock`, and a flat payload cannot hold both.
+	 *
+	 * A connector whose provider is missing (its CCT manager class is not
+	 * loaded) is **degraded, not fatal**: this page is called connector
+	 * *health*, so one broken connector is a thing to show, not a reason to
+	 * hide the other two. The failure is recorded as `<section>_error` and the
+	 * other sections still load. Any other error propagates.
+	 *
+	 * @since 2.4.6
+	 * @return array<string, mixed>
+	 */
+	private function gather_connectors() {
+		$providers = array(
+			'ezuite'  => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-ezuite-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_EZuite_Dashboard_Widget',
+			),
+			'shopify' => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-shopify-sync-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_Shopify_Sync_Dashboard_Widget',
+			),
+			'flowhub' => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_FlowHub_Dashboard_Widget',
+			),
+		);
+
+		$data = array();
+
+		foreach ( $providers as $section => $provider ) {
+			if ( ! self::section_enabled( 'connectors', $section ) ) {
+				continue;
+			}
+
+			$payload = $this->call_provider_seam( $section, $provider, 'get_dashboard_data' );
+
+			if ( is_wp_error( $payload ) ) {
+				$status = $payload->get_error_data();
+				$status = is_array( $status ) && isset( $status['status'] ) ? (int) $status['status'] : 0;
+
+				// 501 is "this connector cannot answer here", which is a health
+				// signal. Anything else is a real failure and belongs upstream.
+				if ( 501 !== $status ) {
+					return $payload;
+				}
+
+				$data[ $section . '_error' ] = $payload->get_error_message();
+
+				continue;
+			}
+
+			if ( ! is_array( $payload ) ) {
+				continue;
+			}
+
+			foreach ( $payload as $key => $value ) {
+				$data[ $section . '_' . $key ] = $value;
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Load a provider class and call one of its public seams.
+	 *
+	 * The wp-admin page and widget classes are the authority for these numbers —
+	 * `gather()` has always called them rather than re-implementing a query — and
+	 * they are autoloaded lazily because a class that is never enabled should
+	 * never be loaded.
+	 *
+	 * @since 2.4.6
+	 * @param string               $section  Section key, for the error message.
+	 * @param array<string, mixed> $provider Provider descriptor (`file`, `class`).
+	 * @param string               $method   Static method to call.
+	 * @param mixed                ...$args  Arguments for the method.
+	 * @return mixed|WP_Error
+	 */
+	private function call_provider_seam( $section, array $provider, $method, ...$args ) {
+		if ( ! class_exists( $provider['class'] ) && file_exists( $provider['file'] ) ) {
+			require_once $provider['file'];
+		}
+
+		if ( ! class_exists( $provider['class'] ) ) {
+			return new WP_Error(
+				'dashboards_provider_unavailable',
+				sprintf(
+					/* translators: %s: dashboard section name. */
+					__( 'The %s provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					$section
+				),
+				array( 'status' => 501 )
+			);
+		}
+
+		return call_user_func_array( array( $provider['class'], $method ), $args );
 	}
 }
