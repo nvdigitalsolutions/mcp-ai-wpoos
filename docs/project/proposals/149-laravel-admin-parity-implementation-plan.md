@@ -10213,3 +10213,117 @@ only the JWKS fetch, so the signature path is exercised rather than mocked.
    belongs with I5 rather than being assumed here.
 4. **Sixteen keys remain inert**, including the whole GitHub-bridge trio and the
    six API/tool policies. §100's finding still stands for them.
+
+---
+
+## 103. Magic-link sign-in, and the endpoint that has to lie (2026-11-20)
+
+**State:** shipped. Slice **I4** of [Proposal 156](156-identity-decision.md).
+Two more of the inert keys have readers: fourteen remain.
+
+### 103.1 What it adds
+
+`enable_magic_login` and `magic_login_app_origin` now do something.
+
+| Piece | Path |
+|---|---|
+| Issue and consume | `app/Support/Auth/MagicLinkService.php` |
+| The routes | `POST /api/v1/magic-login/request`, `/confirm` |
+| The mail | `app/Mail/MagicLoginLink.php` + `resources/views/emails/magic-login.blade.php` |
+| Token rows | `nvoos_magic_login_tokens` |
+
+Confirm returns exactly what `POST /api/v1/session/login` returns, because the
+console's session handling is one code path and a passwordless login that lands
+in a different shape is a second one to keep in step.
+
+### 103.2 The endpoint that has to lie
+
+Both routes answer the same thing whether or not the account exists, whether or
+not the estate enabled it *for that user*, and whether or not the transport
+accepted the mail. That is not politeness — a distinguishable answer turns a
+login form into an account-enumeration oracle (OWASP A07).
+
+Three consequences that are easy to get wrong:
+
+1. **The uniform answer must not leak through timing either.** The mail is sent
+   synchronously *before* responding in both branches, so the two paths do the
+   same work. An unknown address still only costs a lookup, but the difference is
+   a query rather than a network round trip to a mail server.
+2. **A failed send revokes the token.** A live link nobody received is a
+   credential the operator cannot see being used. The response stays uniform and
+   the failure is logged with its reason.
+3. **Confirm returns one error for four causes** — unknown, expired, already
+   used, deleted user. The test compares the two response bodies byte for byte
+   rather than asserting a status, because a status alone would not catch a
+   message that distinguishes them.
+
+### 103.3 Where this deliberately differs from the WordPress controller
+
+The plugin is the reference and its hygiene list is followed item for item
+(token entropy, hashed storage, 15-minute expiry, one outstanding link, the app
+origin never taken from the request, the same three rate limits). Two things are
+not a copy:
+
+- **Storage is a table, not a transient.** Single use has to survive two
+  simultaneous confirms, so consumption is `UPDATE ... WHERE consumed_at IS NULL`
+  with an affected-row check. A transient's read-then-delete is a race, and on
+  this runtime it would also let a cache flush resurrect a used link.
+- **Enablement is per estate.** `enable_magic_login` is tenant scope, so a link is
+  issued only when one of the caller's estates has it on, and the mail origin
+  comes from that same estate — ordered by estate id so two opted-in estates do
+  not flip the origin between requests. A single-site plugin has one answer to
+  that question; this runtime does not.
+
+### 103.4 What the rate limits are for
+
+`POST /request` is limited on **two** dimensions: 3 per identifier per 15 minutes
+and 10 per address per hour. Either alone is bypassable — an address limit lets
+one attacker spray a single inbox from many hosts, and an identifier limit lets
+one host spray many inboxes. `POST /confirm` is limited per address only: the
+token is already a secret, and keying on it would let an attacker fill the cache
+with junk keys.
+
+Both are named limiters rather than `throttle:6,1`, because a per-identifier
+limit cannot be expressed as route middleware.
+
+### 103.5 Invisibility, and discoverability
+
+When no estate has opted in, both routes `abort(404)`. An off-by-default login
+path should be invisible, not apologetic — the plugin answers `rest_no_route` for
+the same reason.
+
+`GET /api/v1/features` gains `magic_login`, so the console knows whether to offer
+the option. That endpoint is public and carries no estate selector, so the flag
+reads the **current** estate — truthful for the single-estate deployment (§21)
+and recorded as a limitation rather than papered over. Wiring the console button
+is a client change, not part of this slice.
+
+### 103.6 Gates
+
+| Run | Result |
+|---|---|
+| `MagicLoginTest` | **15 tests / 83 assertions** — invisible when off; unknown account gets the same answer and no mail; a known account gets a hashed link; a second request revokes the first; the link points at configured origin even when the request tries to supply one; confirm starts the session and authenticates; single use; expiry; unknown and expired are byte-identical; per-identifier and per-address limits; a mail failure leaves no live token; the feature flag; the two keys left the inert list |
+| `--filter "MagicLogin\|UnimplementedSettings\|EndpointCapabilities\|Phase1Console\|ApiTenantResolution\|Settings\|SurfaceOwnership"` | **129 tests / 11,832 assertions, 0 failures** |
+| `ProjectManagementWriteParity` (with its fixture) | **8 tests / 194 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`, 10 paths) | **0 errors** (one pre-existing long line) |
+| `bin/audit-surface-ownership.php` | unchanged: **47 surfaces · 37 built · 0 planned-only · 1 inert** |
+
+### 103.7 One finding
+
+`ApiTenantResolutionTest` enumerates every `/api/v1` route and requires either
+`ResolveApiTenant` or an allowlist entry **with a reason**. The two new routes
+failed it, correctly — a login endpoint cannot resolve an estate because there is
+no principal yet — and were added to the allowlist with that reason recorded in
+the test rather than by loosening the rule.
+
+### 103.8 What this does not do
+
+1. **No pruning command.** Expired rows are swept per user when that user asks for
+   a new link, which keeps the table small without a schedule. A deployment with
+   many one-time users would want a `nvoos:prune-magic-login` job; it is not
+   built and should be if the table grows.
+2. **No console button.** The flag exists; the SPA must read it.
+3. **No SSO.** I5 is still the remaining slice, and still the only one that needs
+   provisioning rules.
+4. **Fourteen keys remain inert** — both identity bridges, Simple JWT Login, guest
+   tokens, and the six API/tool policies.

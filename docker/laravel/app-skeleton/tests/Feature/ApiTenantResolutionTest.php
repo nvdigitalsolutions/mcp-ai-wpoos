@@ -172,6 +172,13 @@ class ApiTenantResolutionTest extends TestCase
             // their own credentials (149 §26).
             'api/v1/personal-tokens',
             'api/v1/personal-tokens/{token}',
+            // Magic-link sign-in (149 §103) runs before any principal exists —
+            // that is the whole point of a login endpoint. It opts in per estate
+            // through `enable_magic_login` and answers uniformly, so there is no
+            // estate to resolve and nothing to scope; the session it starts is
+            // estate-resolved by the next request.
+            'api/v1/magic-login/request',
+            'api/v1/magic-login/confirm',
         ];
 
         $unprotected = [];
