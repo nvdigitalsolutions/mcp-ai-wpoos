@@ -243,7 +243,7 @@ const pageBodySize = ( () => {
 	return [ ...counts.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ]?.[ 0 ];
 } )();
 
-const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string ): string | undefined => {
+const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string, desktopCols?: number ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
 	}
@@ -295,6 +295,12 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	// A per-device map is emitted as scoped CSS; only a plain value goes inline.
 	if ( theme.minHeight && typeof theme.minHeight === 'string' ) {
 		parts.push( `min-height:${ theme.minHeight }` );
+		// The same floor on the SECTION, for the bands whose row IS the band
+		// (see `.ds-section-wrap:has(.ds-card--surface)` in global.css). A floor on
+		// the wrap cannot reach them: a column flex item does not grow into a
+		// `min-height`-only parent, so the measured height showed as dead space
+		// under the slabs.
+		parts.push( `--ds-min-h:${ theme.minHeight }` );
 	}
 	// The band's measured typography (see bandTypeCss below): the components that
 	// render a `ds-title` size from the source's own heading, not the token scale.
@@ -315,6 +321,13 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	// group paints it; the CSS reads the vars so no inline background is needed.
 	if ( theme.panel ) {
 		parts.push( `--ds-panel-bg:${ theme.panel.bg }`, `--ds-panel-ink:${ theme.panel.ink }` );
+		// A slab that fills only PART of the band carries its own box; the band's
+		// heading is centred ON it, not on the viewport. The alignment rides a
+		// modifier class (see the wrap's class list), not a var: CSS cannot branch
+		// on a custom property's presence.
+		if ( theme.panel.width ) {
+			parts.push( `--ds-panel-width:${ theme.panel.width }` );
+		}
 	}
 	// The band’s own DISPLAY face. A source can put a script accent beside a
 	// sans heading in the same band (monicarajiv: Karma h1 + Dancing Script
@@ -513,6 +526,26 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	}
 	if ( columns.some( ( column ) => column.reverseMobile ) ) {
 		parts.push( '--ds-icon-media-order:2' );
+	}
+	// The lane RATIOS, when the source's row is not an equal split. A services row
+	// of 432 / 432 / 571 is not `repeat(3, 1fr)` — that renders 469 / 469 / 469
+	// with a 16px seam, while the source's slabs butt together. The measured widths
+	// become the track sizes and the source's flush gutter becomes gap 0. Guarded
+	// on the grid actually rendering that many lanes: a two-lane fact must never
+	// hand a three-card grid two tracks (the third card would wrap onto its own
+	// row).
+	if ( columns.length >= 2 && ( desktopCols === undefined || desktopCols === columns.length ) ) {
+		const widths = columns.map( ( column ) => column.width ?? 0 );
+		const total = widths.reduce( ( sum, width ) => sum + width, 0 );
+		const spread = Math.max( ...widths ) - Math.min( ...widths );
+		if ( total > 0 && widths.every( ( width ) => width > 0 ) && spread > 0.5 ) {
+			parts.push(
+				`--ds-cols-template-desktop:${ widths
+					.map( ( width ) => `minmax(0,${ Math.round( width * 10 ) / 10 }fr)` )
+					.join( ' ' ) }`
+			);
+			parts.push( '--ds-card-gap:0px' );
+		}
 	}
 	return parts.length > 0 ? parts.join( ';' ) : undefined;
 };
@@ -1222,7 +1255,7 @@ const bandParallaxCss = sections
 			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
-				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (

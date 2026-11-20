@@ -741,6 +741,49 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 		);
 	} );
 
+	it( 'emits a panel’s OWN box when the slab fills only part of the band', () => {
+		// The source halves the band and centres the heading on that half
+		// (virtuallysrilanka's "How it Works": a #dd3333 right half, 720 of 1440).
+		// Without the box the rebuild painted a full-bleed slab and centred the
+		// eyebrow on the viewport — 360px left of every source heading.
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [ { id: '8d6ec26', panel: { bg: '#dd3333', ink: '#ffffff', width: '720px', align: 'end' } } ],
+			},
+		} );
+		expect( module ).toContain( "panel: { bg: '#dd3333', ink: '#ffffff', width: '720px', align: 'end' }" );
+	} );
+
+	it( 'prefers the MEASURED panel box over a declared colour alone', () => {
+		// The static parse can only see the fill; only the browser knows where it
+		// ends. A band that carries both must take the box.
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [ { id: '8d6ec26', panel: { bg: '#dd3333', ink: '#ffffff' } } ],
+			},
+			bandFacts: {
+				'8d6ec26': { panel: { bg: 'rgb(221, 51, 51)', ink: '#ffffff', width: '720px', align: 'end' } },
+			},
+		} );
+		expect( module ).toContain( "panel: { bg: 'rgb(221, 51, 51)', ink: '#ffffff', width: '720px', align: 'end' }" );
+	} );
+
+	it( 'leaves a full-bleed panel as a colour + ink, with no box', () => {
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [ { id: 'aaaaaaa', panel: { bg: '#081a43', ink: '#ffffff' } } ],
+			},
+		} );
+		expect( module ).toContain( "panel: { bg: '#081a43', ink: '#ffffff' }" );
+		expect( module ).not.toContain( "ink: '#ffffff', width" );
+	} );
+
 	it( 'emits the split-hero + collage facts into sections.generated', () => {
 		const module = renderSectionsGenerated( profile );
 		expect( module ).toContain( "layout: 'split'" );

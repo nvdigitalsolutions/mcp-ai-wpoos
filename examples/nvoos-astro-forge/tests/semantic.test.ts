@@ -406,6 +406,55 @@ describe( 'classifyHtml — accordion bands', () => {
 		const sections = classifyHtml( html );
 		expect( sections[ 0 ].kind ).not.toBe( 'accordion' );
 	} );
+
+	it( 'splits an opening <strong> out as the panel’s lead-in', () => {
+		// The source bolds the first clause and leaves the rest plain. Flattening
+		// the panel to textContent printed it as ordinary copy, so the paragraph
+		// lost the only thing separating its first clause (virtuallysrilanka's
+		// features band).
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Features</h2>' ) +
+				WIDGET(
+					'accordion',
+					`<div class="elementor-accordion">
+						<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">Custom Landing Page</a></div>
+						<div class="elementor-tab-content"><p><strong>Advertise Your Business</strong> with your own Wi-Fi Start Page.</p></div></div>
+						<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">Coupon System</a></div>
+						<div class="elementor-tab-content"><p>Easy-to-use, multi-role software.</p></div></div>
+					</div>`
+				)
+		);
+		const sections = classifyHtml( html );
+		const items = sections[ 0 ].slots.items ?? [];
+		expect( items[ 0 ] ).toMatchObject( {
+			title: 'Custom Landing Page',
+			lead: 'Advertise Your Business',
+			body: 'with your own Wi-Fi Start Page.',
+		} );
+		// No opening bold → no lead, and the body is untouched.
+		expect( items[ 1 ]?.lead ).toBeUndefined();
+		expect( items[ 1 ]?.body ).toBe( 'Easy-to-use, multi-role software.' );
+	} );
+
+	it( 'keeps an emphasised phrase mid-paragraph as body copy', () => {
+		// Only a PREFIX is a lead-in; splitting on a mid-sentence bold would print
+		// the clause twice.
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Features</h2>' ) +
+				WIDGET(
+					'accordion',
+					`<div class="elementor-accordion">
+						<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">One</a></div>
+						<div class="elementor-tab-content"><p>Display <strong>ads/promotion</strong> before login.</p></div></div>
+						<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">Two</a></div>
+						<div class="elementor-tab-content"><p>Second panel.</p></div></div>
+					</div>`
+				)
+		);
+		const items = classifyHtml( html )[ 0 ].slots.items ?? [];
+		expect( items[ 0 ]?.lead ).toBeUndefined();
+		expect( items[ 0 ]?.body ).toBe( 'Display ads/promotion before login.' );
+	} );
 } );
 
 describe( 'classifyHtml — multi-column bands', () => {
@@ -435,6 +484,28 @@ describe( 'classifyHtml — multi-column bands', () => {
 		);
 		const sections = classifyHtml( html );
 		expect( sections[ 0 ].kind ).toBe( 'text' );
+	} );
+
+	it( 'keeps a column’s separate paragraphs as paragraphs', () => {
+		// A services panel publishes four blocks 20px apart. Joined into one
+		// `body`, the card rendered a single wall of prose with none of the
+		// source's inter-paragraph rhythm (virtuallysrilanka's black column).
+		const html = ROW(
+			COLUMN(
+				WIDGET(
+					'text-editor',
+					'<p>Our mission it to create professional web design.</p><p>We endeavor to help web entrepreneurs.</p>'
+				)
+			) + COLUMN( WIDGET( 'text-editor', '<p>Single paragraph.</p>' ) )
+		);
+		const items = classifyHtml( html )[ 0 ].slots.items ?? [];
+		expect( items[ 0 ]?.paragraphs ).toEqual( [
+			'Our mission it to create professional web design.',
+			'We endeavor to help web entrepreneurs.',
+		] );
+		// One block is not a paragraph LIST — the card keeps the plain body path.
+		expect( items[ 1 ]?.paragraphs ).toBeUndefined();
+		expect( items[ 1 ]?.body ).toBe( 'Single paragraph.' );
 	} );
 } );
 

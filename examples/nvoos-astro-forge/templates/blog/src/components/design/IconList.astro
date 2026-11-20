@@ -16,6 +16,7 @@ import ItemTitle from './ItemTitle.astro';
 import SmartImage from '../SmartImage.astro';
 import IconMarker from './IconMarker.astro';
 import SectionTitle from './SectionTitle.astro';
+import { bandParagraphs } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -64,9 +65,9 @@ const dividerStyle = theme?.titleDivider
 			<div class="ds-icon-content">
 				{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 				{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-				{body && body.length > 0 && (
+				{bandParagraphs(body, theme).length > 0 && (
 					<div class="ds-lede">
-						{body.map((paragraph) => (
+						{bandParagraphs(body, theme).map((paragraph) => (
 							<p>{paragraph}</p>
 						))}
 					</div>
@@ -103,9 +104,9 @@ const dividerStyle = theme?.titleDivider
 		<>
 			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 			{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-			{body && body.length > 0 && (
+			{bandParagraphs(body, theme).length > 0 && (
 				<div class="ds-lede">
-					{body.map((paragraph) => (
+					{bandParagraphs(body, theme).map((paragraph) => (
 						<p>{paragraph}</p>
 					))}
 				</div>

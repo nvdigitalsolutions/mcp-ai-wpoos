@@ -13,6 +13,7 @@ import type { SemanticSection } from '../../forge/semantic.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
+import { bandParagraphs } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -97,9 +98,9 @@ const offsetVars = ( index: number ): string | undefined => {
 		<div class="ds-hero-copy">
 			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 			{theme.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-			{body && body.length > 0 && (
+			{bandParagraphs(body, theme).length > 0 && (
 				<div class="ds-hero-body" style={theme.bodyColumns ? `--ds-body-cols:${theme.bodyColumns}` : undefined}>
-					{body.map((paragraph) => (
+					{bandParagraphs(body, theme).map((paragraph) => (
 						<p class="ds-text">{paragraph}</p>
 					))}
 				</div>

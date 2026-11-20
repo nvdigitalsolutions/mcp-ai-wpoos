@@ -1527,6 +1527,108 @@ function collectBandColumnFacts( input: {
 }
 
 /**
+ * The band's PANEL as the browser PAINTS it — the slab's own box
+ * (`ForgeBandFacts.panel`).
+ *
+ * `collectBandColumnFacts` finds the slab through the LANE it fills, which
+ * needs two lanes to read as a row. A builder can paint the slab on a column
+ * whose sibling collapses to a 1px spacer: the lane pass then sees one lane,
+ * records no columns, and the rebuild received the slab's COLOUR from the
+ * static parse and no box at all — so it painted a full-bleed slab where the
+ * source fills half the band and centres the band's heading on it
+ * (virtuallysrilanka's "How it Works" red right half, 2026-11-20).
+ *
+ * The PAINT is the fact. A band whose content sits on ONE slab yields exactly
+ * one opaque, near-full-height filled box; two or more are per-column panels
+ * (the services band's red / photo / black trio), which the flat rebuilt markup
+ * still cannot address, so they record nothing. A slab that spans the band
+ * records nothing either — the rebuild already draws that.
+ */
+export function collectBandPanelFacts( input: {
+	ids: string[];
+	kind: 'built' | 'source';
+	selectors?: Record< string, string >;
+} ): Record< string, { bg: string; width: number; bandWidth: number; x: number } > {
+	const pick = ( selector: string ): Element | null => {
+		try {
+			return document.querySelector( selector );
+		} catch {
+			return null;
+		}
+	};
+	const out: Record< string, { bg: string; width: number; bandWidth: number; x: number } > = {};
+	for ( const id of input.ids ) {
+		const candidates =
+			input.kind === 'built'
+				? [ `[data-section-id="${ id }"]` ]
+				: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+						( value ): value is string => Boolean( value )
+				  );
+		const band = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) );
+		if ( ! band ) {
+			continue;
+		}
+		const bandRect = band.getBoundingClientRect();
+		if ( bandRect.width <= 0 || bandRect.height <= 0 ) {
+			continue;
+		}
+		const solid = ( node: Element ): string | undefined => {
+			const value = getComputedStyle( node ).backgroundColor;
+			const match = /^rgba?\(([^)]*)\)$/i.exec( value );
+			if ( ! match ) {
+				return undefined;
+			}
+			const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() );
+			const alpha = parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1;
+			return alpha >= 0.95 ? value : undefined;
+		};
+		const filled: Array< { el: Element; rect: DOMRect; bg: string } > = [];
+		for ( const node of [ band, ...Array.from( band.querySelectorAll( '*' ) ) ] ) {
+			if ( /^(style|script|link|template|noscript|img|svg|path|source)$/i.test( node.tagName ) ) {
+				continue;
+			}
+			const rect = node.getBoundingClientRect();
+			// A slab, not a chip: wide enough to hold the band's copy and tall
+			// enough to be its stage.
+			if ( rect.width < bandRect.width * 0.25 || rect.height < bandRect.height * 0.5 ) {
+				continue;
+			}
+			const bg = solid( node );
+			if ( bg ) {
+				filled.push( { el: node, rect, bg } );
+			}
+		}
+		// Nested boxes that share the same fill are ONE slab — keep the outermost.
+		const slabs = filled.filter(
+			( entry ) =>
+				! filled.some(
+					( other ) =>
+						other !== entry &&
+						other.bg === entry.bg &&
+						other.el.contains( entry.el ) &&
+						other.rect.width >= entry.rect.width &&
+						other.rect.height >= entry.rect.height
+				)
+		);
+		if ( slabs.length !== 1 ) {
+			continue;
+		}
+		const slab = slabs[ 0 ];
+		// A full-bleed slab is already what the rebuild paints.
+		if ( slab.rect.width >= bandRect.width - 8 ) {
+			continue;
+		}
+		out[ id ] = {
+			bg: slab.bg,
+			width: Math.round( slab.rect.width ),
+			bandWidth: Math.round( bandRect.width ),
+			x: Math.round( slab.rect.x - bandRect.x ),
+		};
+	}
+	return out;
+}
+
+/**
  * The band's PAGED carousels, per device (`ForgeBandFacts.carousel`).
  *
  * A slider keeps its geometry in the vendor's JS options — `items: 5`,
@@ -2211,6 +2313,13 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		// The band's painted SLAB and its own box (a panel that fills only part of
+		// the band) — see `collectBandPanelFacts`.
+		const desktopPanels = await page.evaluate( collectBandPanelFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		// The band's paged carousels (slides-per-view, gap, dots), per device — a
 		// vendor slider's `items` option exists nowhere else (see
 		// `collectBandCarouselFacts`).
@@ -2380,6 +2489,24 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				const photos = measuredColumns.filter( ( column ) => column.image );
 				if ( filled.length === 1 && photos.length === 0 && filled[ 0 ].bg ) {
 					band.panel = { bg: filled[ 0 ].bg, ink: inkForSurface( filled[ 0 ].bg ) };
+				}
+			}
+			// The slab's own BOX, when it fills only part of the band. The lane rule
+			// above needs two lanes to see a row at all, so a builder that halves the
+			// band and collapses the other half records no slab — the paint pass is
+			// the one that sees it (see `collectBandPanelFacts`).
+			{
+				const slab = desktopPanels[ id ];
+				if ( slab && slab.bandWidth > 0 && slab.width > 0 ) {
+					const shared = slab.bandWidth - slab.width;
+					const align =
+						slab.x <= 2 ? 'start' : Math.abs( slab.x - shared ) <= 2 ? 'end' : 'center';
+					band.panel = {
+						bg: slab.bg,
+						ink: inkForSurface( slab.bg ),
+						width: `${ slab.width }px`,
+						align,
+					};
 				}
 			}
 			if ( columns.desktop || columns.tablet || columns.mobile ) {
