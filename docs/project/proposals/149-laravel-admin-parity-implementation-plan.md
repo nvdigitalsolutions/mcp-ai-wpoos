@@ -10076,3 +10076,140 @@ Implementing a key is therefore a two-part act: add the reader, delete the entry
 4. **The console surface is unaffected** because all nineteen are `console: hidden`
    — the test now pins that, so a key that became console-visible would fail
    rather than ship a dead control on the product surface.
+
+---
+
+## 102. Auth0 tokens become real, and nothing else does (2026-11-20)
+
+**State:** shipped. Slice **I3** of [Proposal 156](156-identity-decision.md).
+Three of the nineteen inert keys now have a reader; the rest are unchanged.
+
+### 102.1 What this adds
+
+`auth0_domain`, `auth0_audience` and `auth0_required_scope` were configuration
+with no consumer (§100). They now verify Auth0 access tokens on the estate API:
+
+| Piece | Path |
+|---|---|
+| Verification — RS256, JWKS, `iss`/`aud`/`exp`/`scope` | `app/Support/Auth/Auth0TokenVerifier.php` |
+| Trust configuration, normalised per estate | `app/Support/Auth/Auth0Config.php` |
+| Claims after verification | `app/Support/Auth/Auth0Claims.php` |
+| Typed refusals with status | `app/Support/Auth/Auth0TokenException.php` |
+| The guard | `app/Auth/Auth0Guard.php` |
+| The operator link | `app/Console/Commands/LinkAuth0Subject.php` |
+
+Mounted as a **second guard** — `auth:sanctum,auth0` — so `Authenticate` asks
+Sanctum first and this guard is consulted only when Sanctum cannot resolve a
+token. The existing three authentication paths are untouched by construction
+rather than by care: a Sanctum bearer, an assistant credential and an SPA session
+all win before an Auth0 token is parsed. A guard rather than a middleware,
+because middleware would have had to reproduce that ordering by hand and would
+have run on requests that already had a principal.
+
+### 102.2 Which estate's configuration verifies the token
+
+This is the one design decision worth recording carefully. Before a principal
+exists, the estate cannot be inferred, and the token must be checked against
+*some* estate's audience. `X-Tenant-Id` supplies it.
+
+That is safe, and the reason is narrow: the header here is a **selector for
+which configuration to verify against**, not an authorisation. A wrong selection
+fails verification, because another estate's domain, issuer or audience does not
+match the token. The authority check still happens in `ResolveApiTenant`, which
+runs immediately after and enforces membership — unchanged, in the one place
+that owns it. A token minted for estate A cannot be replayed against estate B
+unless B is misconfigured with A's audience, and even then the membership rule
+still refuses.
+
+The guard reaches the estate's settings with `TenantContext::runAs()`, a new
+helper that pins the context for the read and restores the previous value. The
+settings store resolves the estate per read, and no tenant middleware has run
+yet.
+
+### 102.3 Why the subject has to be linked, and why not by email
+
+Verification answers "is this token genuine"; it does not answer "who is this".
+WordPress answers the second question with its GitHub bridge, which Proposal 156
+D5 put out of scope here. So the runtime has a `users.auth0_subject` column and
+one operator command:
+
+```
+php artisan nvoos:auth0-link alice@example.test 'auth0|64f...'
+php artisan nvoos:auth0-link alice@example.test --forget
+```
+
+Deny by default (D4): a subject with no link is rejected, and it is **never**
+matched by an email claim — an address is mutable and matching on it is an
+account takeover. The column is deliberately absent from `User::$fillable` for
+the same reason a payload must never choose it.
+
+Not a UI, and stated as such: a subject is estate configuration like a licence
+key, the command is auditable in shell history and CI logs, and `--forget` undoes
+a mis-link. A management surface belongs with I5 if provisioning gets one.
+
+### 102.4 What it refuses, and why each refusal is a known attack
+
+| Situation | Code | Status |
+|---|---|---|
+| `alg` is not RS256 | `auth0_token_invalid` | 401 |
+| No `kid`, unknown `kid`, bad signature | `auth0_token_invalid` | 401 |
+| Expired | `auth0_token_expired` | 401 |
+| Issued by a different tenant | `auth0_token_invalid` | 401 |
+| Genuine token for another API | `auth0_audience_mismatch` | 403 |
+| Missing a required scope | `auth0_scope_missing` (names them) | 403 |
+| No `sub` | `auth0_subject_missing` | 401 |
+| `sub` with no link | `auth0_subject_unmapped` | 401 |
+| JWKS unreachable | `auth0_jwks_unavailable` | 503 |
+| No `X-Tenant-Id` | `auth0_tenant_required` | 401 |
+| Estate has no Auth0 domain | `auth0_not_configured` | 401 |
+
+`alg` is read only to **reject**: honouring the header's choice is the `alg:
+none` and HS256-confusion forgery class, where the public key is used as an HMAC
+secret. A malformed, unsigned and wrongly-signed token share one code, because
+distinguishing them hands an attacker a signature oracle and the caller's next
+step is identical. An unreachable JWKS is a 503 — fail closed, never pass
+unverified.
+
+Rejections are **not reported** (`dontReport`): an expired token is normal client
+behaviour, and logging it at error level turns a retry into an alert. The JWKS
+outage is reported where it happens, inside the verifier, because that one is
+ours.
+
+### 102.5 Gates
+
+| Run | Result |
+|---|---|
+| `Auth0BearerTest` | **17 tests / 56 assertions** — a genuine RS256 token authenticates a linked user; the capability gate still applies and still refuses a subscriber; expired, wrong audience, missing scope, foreign signature, `alg: none`, HS256, unmapped subject, missing selector, unconfigured estate and unreachable JWKS are all refused with their own code; two requests fetch the JWKS once; a non-member of the selected estate is refused by `ResolveApiTenant` (404); a Sanctum token still authenticates |
+| `--filter "ApiTenantResolution\|SettingsCatalogue\|SettingsProjection\|SettingsOwnership"` | **52 tests / 10,442 assertions, 0 failures** |
+| `--filter "UnimplementedSettingsTest\|EndpointCapabilitiesTest\|Auth0BearerTest"` | **40 tests / 278 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`, 16 paths) | **0 errors**; the one new warning was fixed, the rest are pre-existing long lines |
+| `bin/audit-surface-ownership.php` | unchanged: **47 surfaces · 37 built · 0 planned-only · 1 inert** |
+
+The tests mint real RS256 tokens against a locally generated keypair and fake
+only the JWKS fetch, so the signature path is exercised rather than mocked.
+
+### 102.6 Two findings from this slice
+
+1. **The inert-list scan caught a comment.** The migration's docblock quoted
+   `auth0_management_client_id`, and `UnimplementedSettingsTest` flagged it. The
+   scan is literal on purpose a comment is still a reference someone will trust
+   so the comment was reworded rather than the scan loosened.
+2. **`Factory::create($attributes)` silently drops `withoutEstate()`.**
+   Passing any attribute array re-enters `state()`, which builds a new factory
+   instance and loses a fluent customisation that is a plain property. A fixture
+   that looked "unprovisioned" rejoined `default`, and the test asserting the
+   404 was green for the wrong reason. The fixture now links the subject *after*
+   creation, and the reason is recorded in the test.
+
+### 102.7 What this still does not do
+
+1. **No session, no SSO.** This authenticates an API call; it is not a login for
+   the panel. Console SSO stays I5, and magic-link stays I4.
+2. **No provisioning.** An unlinked subject is denied, not created. That is D4,
+   and the link is the operator's act.
+3. **The `/api/v1/tools` group is not covered.** It sits outside the tenant
+   group (its own `auth:sanctum` chain), and letting a machine token execute
+   tools needs a principal decision — assistant-scoped or estate-scoped — that
+   belongs with I5 rather than being assumed here.
+4. **Sixteen keys remain inert**, including the whole GitHub-bridge trio and the
+   six API/tool policies. §100's finding still stands for them.

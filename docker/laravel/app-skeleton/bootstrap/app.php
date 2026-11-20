@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
+use App\Support\Auth\Auth0TokenException;
 use Cron\CronExpression;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -141,5 +142,29 @@ return Application::configure(basePath: dirname(__DIR__))
         // defined) instead of the 401 the contract promises.
         $exceptions->shouldRenderJsonWhen(
             static fn (Request $request): bool => $request->is('api/*') || $request->expectsJson()
+        );
+
+        // 149 §102 — a rejected Auth0 token answers with its reason.
+        //
+        // "Unauthenticated." collapses four different situations into one string:
+        // expired means fetch a new token, audience means ask Auth0 for the right
+        // API, unmapped means the estate must link the subject, and unreachable
+        // JWKS is our own outage. The status differs too — a genuine token for
+        // the wrong audience is a refusal (403), not an authentication failure.
+        //
+        // Not reported: a rejected token is expected control flow, and logging
+        // every expired token at error level turns a normal client retry into
+        // an alert. The JWKS outage is the exception — that one is reported
+        // where it happens, inside the verifier.
+        $exceptions->dontReport(array(Auth0TokenException::class));
+
+        $exceptions->render(
+            static fn (Auth0TokenException $exception): mixed => response()->json(
+                array(
+                    'error' => $exception->errorCode,
+                    'message' => $exception->getMessage(),
+                ),
+                $exception->status
+            )
         );
     })->create();

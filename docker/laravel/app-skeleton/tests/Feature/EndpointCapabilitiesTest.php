@@ -164,7 +164,9 @@ class EndpointCapabilitiesTest extends TestCase
 
         $this->assertNotNull($route, 'The console chat transport POSTs to /api/v1/chat-client.');
         $this->assertContains('POST', $route->methods());
-        $this->assertContains('auth:sanctum', $route->gatherMiddleware());
+        // Sanctum first, then the Auth0 bearer guard (149 §102). Both are
+        // authentication; neither replaces the estate resolution that follows.
+        $this->assertContains('auth:sanctum,auth0', $route->gatherMiddleware());
 
         // Declared but unreachable would still read `true` from the map, so the
         // route is exercised too. No DB needed: auth rejects before validation.

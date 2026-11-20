@@ -5,10 +5,12 @@ namespace App\Support\Settings;
 /**
  * The settings this runtime renders but does not implement — Proposal 156 §6 (I2).
  *
- * All nineteen keys below reach `/admin/settings` in the Authentication tab and
- * are tenant scope, so `forSurface('admin')` shows them. None is read by any
- * code in `app/`, `config/`, `routes/`, `database/` or `resources/views/`: a
- * saved value lands in a settings row that nothing consults.
+ * All the keys below reach `/admin/settings` in the Authentication tab and are
+ * tenant scope, so `forSurface('admin')` shows them. None is read by any code in
+ * `app/`, `config/`, `routes/`, `database/` or `resources/views/`: a saved value
+ * lands in a settings row that nothing consults. (The list was nineteen keys
+ * when slice I2 shipped; I3 made the Auth0 trio real and removed them — see plan
+ * §102. Whatever remains here is still unread.)
  *
  * That is the failure `SettingsSchema` calls a UI fiction — "conflating what a
  * surface shows with what it does". This class is the fix at the boundary: the
@@ -62,11 +64,7 @@ final class UnimplementedSettings
      * @var array<string, string>
      */
     public const REASONS = array(
-        // Auth0 issuer trust — Proposal 156 I3.
-        'auth0_domain'                         => 'Auth0 token verification is unbuilt; slice I3 adds it.',
-        'auth0_audience'                       => 'Auth0 token verification is unbuilt; slice I3 adds it.',
-        'auth0_required_scope'                 => 'Auth0 token verification is unbuilt; slice I3 adds it.',
-
+        // Auth0 issuer trust — Proposal 156 I3, shipped in plan §102.
         // Auth0 → user bridge — out of scope (D5).
         'enable_auth0_github_bridge'           => 'The Auth0 identity bridge is not ported (Proposal 156 D5).',
         'auth0_management_client_id'           => 'The Auth0 identity bridge is not ported (Proposal 156 D5).',

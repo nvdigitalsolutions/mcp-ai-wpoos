@@ -103,7 +103,7 @@ Route::prefix('api/v1')->group(function (): void {
     });
 
     // Everything authenticated below acts inside one estate (149 §21).
-    Route::middleware(['auth:sanctum', ResolveApiTenant::class])->group(function (): void {
+    Route::middleware(['auth:sanctum,auth0', ResolveApiTenant::class])->group(function (): void {
 
         // Chat streams. Its own limiter, tighter than the console default,
         // because a stream holds the connection open.
