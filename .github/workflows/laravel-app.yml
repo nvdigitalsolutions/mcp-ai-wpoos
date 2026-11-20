@@ -13,12 +13,16 @@ on:
       - 'docker/laravel/**'
       - 'lib/core/**'
       - 'lib/laravel-adapter/**'
+      - 'bin/cloudways-deploy.sh'
+      - 'bin/cloudways-deploy-smoke.sh'
       - '.github/workflows/laravel-app.yml'
   pull_request:
     paths:
       - 'docker/laravel/**'
       - 'lib/core/**'
       - 'lib/laravel-adapter/**'
+      - 'bin/cloudways-deploy.sh'
+      - 'bin/cloudways-deploy-smoke.sh'
       - '.github/workflows/laravel-app.yml'
 
 permissions:
@@ -115,6 +119,16 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate --force
+
+      - name: Cloudways deploy script (hermetic smoke)
+        # Cloudways' Git deployment path is relative to the docroot, so the
+        # checkout lands at public_html/repo/ and the app's public/ directory is
+        # not the docroot. bin/cloudways-deploy.sh generates the front controller
+        # that bridges them. This harness stubs PHP/Composer/rsync and asserts the
+        # generated PHP parses, .htaccess keeps the /repo deny and front-controller
+        # rules, the .env gate still exits 2, and the docroot guards hold.
+        working-directory: ${{ github.workspace }}
+        run: bash bin/cloudways-deploy-smoke.sh
 
       - name: Admin theme is current
         # The Filament palette is generated from the ADS design tokens and
