@@ -715,6 +715,20 @@ can appear in the repo root. Two failure modes follow:
   `in_progress`/`pending`. Report `mergeable` (`MERGEABLE`) plus the JS suites
   (`test`, `test (18.x)`, `test (20.x)`) when the linting workflow is still
   running, but say that the lint gate has not reported.
+- **The wedge is bounded in `php-compatibility` too (2026-11-21).** #8041 added
+  `timeout-minutes: 5` + `continue-on-error: true` to the compatibility job's
+  `Get changed PHP files` step, matching what `wpcs` already carried. Proven on
+  #8041's own run, where the action wedged again: the step ended at **exactly
+  5m 00s** (`20:06:12Z → 20:11:12Z`), both compat steps reported
+  `completed/skipped`, and the job concluded **success**. On a branch that
+  contains #8041 a wedge costs five minutes and a skip, not six hours of
+  pending — so **do not cancel-and-retry**; the action wedges again.
+  `continue-on-error` rewrites the step's *outcome*, so its `conclusion` reads
+  `success` even when the timeout fired — prove it with the step's
+  `started_at`/`completed_at` delta, not the label.
+  `Forbidden pattern checks` is a different failure: it can stall in
+  `Checkout repository` (15+ min observed 2026-11-21), which no changed-files
+  timeout covers.
 - `gh api` / `gh pr comment` intermittently fail here with
   `net/http: TLS handshake timeout` (2026-11-16, several in a row). Retry —
   it is the network, not the token or a missing permission.
