@@ -242,7 +242,7 @@ this runtime, and the administrator is told so.
 | **I2** | A runtime `UnimplementedSettings` list, disabled-with-hint rendering, writes refused, and a source-scan test that fails when a marked key gains a reader | **shipped** — plan §101 |
 | **I3** | Auth0 bearer verification on the estate API — JWKS, `iss`/`aud`/scope, no session, no provisioning. Makes `auth0_domain`, `auth0_audience`, `auth0_required_scope` real | **shipped** — plan §102 |
 | **I4** | Magic-link sign-in, if D7 is accepted | **shipped** — plan §103 |
-| **I5** | OIDC SSO with deny-by-default JIT (D3, D4) — only when a customer requires console SSO | product call |
+| **I5** | OIDC SSO with deny-by-default JIT (D3, D4) — only when a customer requires console SSO | **designed** — [Proposal 157](157-oidc-sso-design.md); not built |
 
 I3 before I5 matters: accepting a bearer token on the API needs no browser
 session, no membership mapping and no provisioning rule. It is the narrow piece,
