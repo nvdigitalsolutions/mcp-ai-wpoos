@@ -10407,3 +10407,86 @@ nineteen.** What remains unbuilt is one design decision (first-party vs token
 calls on `/api/v1/assistants`) and one unbuilt capability (guest access). I5 — OIDC
 SSO — is untouched by this slice and remains the only piece that needs
 provisioning rules.
+
+---
+
+## 105. The console already had a magic-link button; it pointed at WordPress (2026-11-20)
+
+**State:** shipped. Follow-on to §103, and it corrects a contract mismatch that
+§103 introduced.
+
+### 105.1 What the audit found
+
+The Complete Console (`examples/nvoos-complete-velocity`) has had a passwordless
+sign-in mode for longer than this slice has existed: a `Magic link` tab in
+`src/console/LoginScreen.tsx`, a request function, and a `#/magic-login?token=`
+handler in `src/main.tsx` that confirms the token before bootstrapping the
+session. So "wire the button" was already done — for WordPress.
+
+It was WordPress-only in three ways:
+
+| Piece | Console expected (WordPress) | §103 shipped (this runtime) |
+|---|---|---|
+| Path | `/wp-json/mcp-ai/v1/magic-login/*` | `/api/v1/magic-login/*` |
+| Request field | `identifier` | `email` |
+| Response key | `ok` | `success` |
+
+Against a Laravel backend the tab would have POSTed to a WordPress path the proxy
+does not serve. And even on the right path `data.ok` would have been undefined, so
+a successful confirm would have read as a failure.
+
+This is the failure mode the password flow already avoids: `submitWpLogin`
+dispatches to `submitLaravelLogin` when the backend is not WordPress. The
+magic-link functions did not, because they were written when only WordPress
+existed.
+
+### 105.2 The fix, and which side bends
+
+Two candidates: branch the client by backend, or make the endpoints agree. The
+endpoints agree — the client is **one artifact serving two runtimes**, and a
+payload that changes shape per backend is a branch in every future caller.
+
+The WordPress shape wins, because it is the reference and the older contract:
+
+- the Laravel endpoint accepts **`identifier`** (and still `email`, as an alias);
+- it returns **`ok`** alongside `success`;
+- confirm returns `ok: true` plus the same payload `/session/login` returns;
+- both failure paths carry a **top-level `message`**, because the shared client
+  reads that, not `error.message`.
+
+The client change is then one function — `magicLoginPath(step)` derives the URL
+from `backendPaths('', buildTimeBackend()).apiBase`, which already resolves to
+`/wp-json/mcp-ai/v1` or `/api/v1`. No shape branching anywhere.
+
+### 105.3 Don't advertise a method that is off
+
+`/api/v1/features` gained `magic_login` in §103 and nothing read it. The login
+screen now hides the tab when the backend reports it off — the same reasoning as
+the endpoint's 404: a disabled login method should not advertise itself.
+
+The flag is **fail-open**: `null` (probe unsettled) and `undefined` (a backend
+whose feature map has no such key — i.e. WordPress) both keep the tab. A failed
+probe must not remove a working login method; the endpoint is authoritative and
+the worst case is one uniform error.
+
+### 105.4 Gates
+
+| Run | Result |
+|---|---|
+| `MagicLoginTest` (Laravel) | **16 tests / 92 assertions** — `identifier` accepted, `ok` on both success paths, top-level `message` on both failure paths, plus everything from §103 |
+| `magic-link-paths.test.ts` (console) | **5 tests** — WordPress path by default, `/api/v1` on a Laravel runtime, the same body for both, and the backend's message relayed rather than invented |
+| `login-screen.test.tsx` | **10 tests** — the tab hides on `magicLinkAvailable={false}` and stays while availability is unknown |
+| Full console suite | **240 tests / 18 files, 0 failures** |
+| `tsc --noEmit`, eslint (4 files) | clean |
+| phpcs (`phpcs-laravel.xml.dist`, 2 paths) | **0 errors** |
+
+### 105.5 What this says about the discipline
+
+§103 shipped an endpoint whose contract had never been exercised by its only
+client. Its tests passed because they asserted the shape the endpoint chose, not
+the shape the client sends — a general hazard in a repo with two runtimes and one
+front end.
+
+**When an endpoint replaces a WordPress one, the client is the contract.** Writing
+the request from the client's existing behaviour, rather than from a fresh reading
+of the spec, would have found this before review.

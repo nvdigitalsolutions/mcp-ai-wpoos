@@ -47,6 +47,11 @@ class MagicLoginController
      * the estate enabled the feature *for that user*, and whether or not the mail
      * transport accepted the message. Anything else is an account-enumeration
      * oracle (OWASP A07).
+     *
+     * The identifier is accepted as `identifier` (the WordPress plugin's own key,
+     * and what the shared console sends) or `email`. Two names for one field is a
+     * wart, and it is cheaper than a console that has to branch its payload by
+     * backend: the client is one artifact serving two runtimes.
      */
     public function request(Request $request): JsonResponse
     {
@@ -55,11 +60,14 @@ class MagicLoginController
         }
 
         $validated = $request->validate(array(
-            'email' => array('required', 'string', 'email', 'max:255'),
+            'identifier' => array('required_without:email', 'nullable', 'string', 'email', 'max:255'),
+            'email' => array('required_without:identifier', 'nullable', 'string', 'email', 'max:255'),
         ));
 
+        $identifier = (string) ($validated['identifier'] ?? $validated['email'] ?? '');
+
         $user = User::query()
-            ->where('email', Str::lower(trim((string) $validated['email'])))
+            ->where('email', Str::lower(trim($identifier)))
             ->first();
 
         if ($user instanceof User) {
@@ -67,6 +75,10 @@ class MagicLoginController
         }
 
         return response()->json(array(
+            // `ok` is WordPress's key and the shared console reads it; `success`
+            // is this runtime's convention. Sending both keeps one client working
+            // against both runtimes without a branch.
+            'ok' => true,
             'success' => true,
             'message' => 'If that account exists, a sign-in link is on its way.',
         ));
@@ -86,7 +98,9 @@ class MagicLoginController
             // from a first-party origin, where statefulApi() has opened a
             // session. Without one there is nothing to sign in *to*.
             return response()->json(array(
+                'ok' => false,
                 'success' => false,
+                'message' => 'Magic-link sign-in requires a first-party console origin.',
                 'error' => array(
                     'code' => 'session_required',
                     'message' => 'Magic-link sign-in requires a first-party console origin.',
@@ -107,16 +121,26 @@ class MagicLoginController
         Auth::login($user, true);
         $request->session()->regenerate();
 
-        return app(SessionController::class)->me($request);
+        // `ok` for the shared console, which reads it on both runtimes; the rest
+        // is the same payload `/session/login` returns.
+        $payload = (array) app(SessionController::class)->me($request)->getData(true);
+
+        return response()->json(array('ok' => true) + $payload);
     }
 
     /**
      * The one failure answer: unknown, expired, already used, or deleted user.
+     *
+     * `message` at the top level for the shared console (which reads it on both
+     * runtimes); `error.code` for this runtime's own clients, which expect the
+     * coded envelope everywhere else.
      */
     private function invalid(): JsonResponse
     {
         return response()->json(array(
+            'ok' => false,
             'success' => false,
+            'message' => 'This sign-in link is invalid or has expired.',
             'error' => array(
                 'code' => 'magic_link_invalid',
                 'message' => 'This sign-in link is invalid or has expired.',

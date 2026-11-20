@@ -18,7 +18,7 @@
  * re-runs the session bootstrap afterwards — the authoritative check.
  */
 
-import { buildTimeBackend, resolveBackend } from './backend-profile';
+import { backendPaths, buildTimeBackend, resolveBackend } from './backend-profile';
 
 export interface WpLoginInput {
   username: string;
@@ -271,17 +271,30 @@ export async function logoutFromWordPress(): Promise<{ ok: boolean; message: str
 // --------------------------------------------------------------------------
 // Magic-link (passwordless) sign-in
 //
-// Backed by the plugin's opt-in public routes /wp-json/mcp-ai/v1/magic-login/*
-// (wp_mcp_ai_magic_login_enabled). Same-origin through the proxy, so the
-// auth cookie the /confirm route mints lands on the app origin — the same
-// BFF session pattern the password flow uses. The backend applies the
-// industry-standard magic-link controls (hashed single-use tokens, 15-min
-// expiry, uniform anti-enumeration responses, rate limits); the client just
-// relays the uniform messages and never tries to distinguish outcomes.
+// Opt-in on both runtimes and served from each one's own API base:
+// `/wp-json/mcp-ai/v1/magic-login/*` on WordPress (wp_mcp_ai_magic_login_enabled)
+// and `/api/v1/magic-login/*` on Laravel. The paths come from `backendPaths()`
+// rather than a constant, because this console is one artifact serving two
+// runtimes — the same reason `submitWpLogin` dispatches to a Laravel branch.
+//
+// Both backends answer in the same shape (`ok` + `message`) and accept the same
+// request field (`identifier`), so nothing below the paths branches.
+//
+// Same-origin through the proxy, so the session the /confirm route mints lands
+// on the app origin — the same BFF session pattern the password flow uses. The
+// backend applies the industry-standard magic-link controls (hashed single-use
+// tokens, 15-min expiry, uniform anti-enumeration responses, rate limits); the
+// client just relays the uniform messages and never tries to distinguish
+// outcomes.
 // --------------------------------------------------------------------------
 
-const MAGIC_LOGIN_REQUEST_PATH = '/wp-json/mcp-ai/v1/magic-login/request';
-const MAGIC_LOGIN_CONFIRM_PATH = '/wp-json/mcp-ai/v1/magic-login/confirm';
+/**
+ * The magic-link endpoint for this backend. Relative, like the rest of the
+ * session calls: the console is same-origin and the proxy does the routing.
+ */
+function magicLoginPath(step: 'request' | 'confirm'): string {
+  return `${backendPaths('', buildTimeBackend()).apiBase}/magic-login/${step}`;
+}
 
 const MAGIC_LINK_UNAVAILABLE =
   'Sign-in is temporarily unavailable. Please try again.';
@@ -306,7 +319,7 @@ export async function requestMagicLink(
 ): Promise<MagicLinkResult> {
   let response: Response;
   try {
-    response = await fetch(MAGIC_LOGIN_REQUEST_PATH, {
+    response = await fetch(magicLoginPath('request'), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -342,7 +355,7 @@ export async function requestMagicLink(
 export async function confirmMagicLink(token: string): Promise<MagicLinkResult> {
   let response: Response;
   try {
-    response = await fetch(MAGIC_LOGIN_CONFIRM_PATH, {
+    response = await fetch(magicLoginPath('confirm'), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
