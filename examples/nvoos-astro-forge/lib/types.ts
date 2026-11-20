@@ -728,6 +728,31 @@ export interface BandGeometry {
 	 */
 	columns?: number[];
 	/**
+	 * The WIDTHS of those same columns, in DOM order (px).
+	 *
+	 * Height alone cannot see an asymmetric row rebuilt as equal thirds:
+	 * virtuallysrilanka's services row is 432 / 432 / 571 and rendered
+	 * 469 / 469 / 469 — every lane kept the band's height, so the column diff
+	 * passed. Optional so baselines recorded before it was measured stay valid.
+	 */
+	columnWidths?: number[];
+	/**
+	 * The band's CONTENT column — the box the copy actually sits in.
+	 *
+	 * `width` is the band WRAPPER, which is the viewport on both sides and
+	 * therefore blind to the mistake that matters: a boxed band whose section
+	 * shrink-wrapped to its text kept a 1440px wrapper while its content rendered
+	 * 989px against the source's 1280px (virtuallysrilanka's hardware row).
+	 *
+	 * The probe follows the SAME rule on both sides, so the two numbers are
+	 * comparable: the first descendant narrower than the band (the container —
+	 * `.elementor-container` on a builder, `.ds-section` on the rebuild), or, when
+	 * the band stacks several stages, the WIDEST of them. A band whose copy sits
+	 * on a partial slab reports the slab, because that is the box the rebuild
+	 * constrains.
+	 */
+	content?: { width: number; x: number };
+	/**
 	 * The REBUILT band's kind (`data-section` on the wrapper), recorded only when
 	 * measuring a build.
 	 *

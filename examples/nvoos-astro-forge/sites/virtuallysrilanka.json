@@ -940,7 +940,15 @@
 				"columns": [
 					278,
 					634
-				]
+				],
+				"columnWidths": [
+					640,
+					640
+				],
+				"content": {
+					"width": 1280,
+					"x": 80
+				}
 			},
 			"tablet": {
 				"height": 1112,
@@ -954,6 +962,10 @@
 				"columns": [
 					336,
 					412
+				],
+				"columnWidths": [
+					834,
+					834
 				]
 			},
 			"mobile": {
@@ -968,6 +980,10 @@
 				"columns": [
 					325,
 					361
+				],
+				"columnWidths": [
+					390,
+					390
 				]
 			}
 		},
@@ -984,7 +1000,15 @@
 				"columns": [
 					433,
 					522
-				]
+				],
+				"columnWidths": [
+					640,
+					640
+				],
+				"content": {
+					"width": 1280,
+					"x": 80
+				}
 			},
 			"tablet": {
 				"height": 921,
@@ -998,6 +1022,10 @@
 				"columns": [
 					454,
 					467
+				],
+				"columnWidths": [
+					834,
+					834
 				]
 			},
 			"mobile": {
@@ -1012,6 +1040,10 @@
 				"columns": [
 					217,
 					729
+				],
+				"columnWidths": [
+					390,
+					390
 				]
 			}
 		},
@@ -1024,7 +1056,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 720,
+					"x": 720
+				}
 			},
 			"tablet": {
 				"height": 893,
@@ -1034,7 +1070,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 667,
+					"x": 0
+				}
 			},
 			"mobile": {
 				"height": 1345,
@@ -1061,7 +1101,16 @@
 					24,
 					104,
 					829
-				]
+				],
+				"columnWidths": [
+					1120,
+					1120,
+					1120
+				],
+				"content": {
+					"width": 1140,
+					"x": 150
+				}
 			},
 			"tablet": {
 				"height": 1000,
@@ -1076,7 +1125,16 @@
 					24,
 					104,
 					652
-				]
+				],
+				"columnWidths": [
+					814,
+					814,
+					814
+				],
+				"content": {
+					"width": 814,
+					"x": 10
+				}
 			},
 			"mobile": {
 				"height": 1543,
@@ -1091,7 +1149,16 @@
 					24,
 					140,
 					1159
-				]
+				],
+				"columnWidths": [
+					370,
+					370,
+					370
+				],
+				"content": {
+					"width": 370,
+					"x": 10
+				}
 			}
 		},
 		"116ce85": {
@@ -1108,7 +1175,16 @@
 					536,
 					536,
 					536
-				]
+				],
+				"columnWidths": [
+					432,
+					432,
+					571
+				],
+				"content": {
+					"width": 571,
+					"x": 864
+				}
 			},
 			"tablet": {
 				"height": 812,
@@ -1123,7 +1199,16 @@
 					356,
 					456,
 					456
-				]
+				],
+				"columnWidths": [
+					834,
+					167,
+					667
+				],
+				"content": {
+					"width": 667,
+					"x": 167
+				}
 			},
 			"mobile": {
 				"height": 1675,
@@ -1138,6 +1223,11 @@
 					572,
 					419,
 					684
+				],
+				"columnWidths": [
+					390,
+					390,
+					390
 				]
 			}
 		},
@@ -1150,7 +1240,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 150,
-				"marginBottom": 150
+				"marginBottom": 150,
+				"content": {
+					"width": 1280,
+					"x": 80
+				}
 			},
 			"tablet": {
 				"height": 388,
@@ -1160,7 +1254,11 @@
 				"paddingLeft": 42,
 				"paddingRight": 42,
 				"marginTop": 150,
-				"marginBottom": 150
+				"marginBottom": 150,
+				"content": {
+					"width": 751,
+					"x": 42
+				}
 			},
 			"mobile": {
 				"height": 458,
@@ -1170,7 +1268,11 @@
 				"paddingLeft": 20,
 				"paddingRight": 20,
 				"marginTop": 150,
-				"marginBottom": 150
+				"marginBottom": 150,
+				"content": {
+					"width": 351,
+					"x": 20
+				}
 			}
 		},
 		"ccdbf50": {
@@ -1182,7 +1284,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 1140,
+					"x": 150
+				}
 			},
 			"tablet": {
 				"height": 1112,
@@ -1192,7 +1298,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 751,
+					"x": 42
+				}
 			},
 			"mobile": {
 				"height": 912,
@@ -1202,7 +1312,11 @@
 				"paddingLeft": 20,
 				"paddingRight": 20,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 350,
+					"x": 20
+				}
 			}
 		}
 	},

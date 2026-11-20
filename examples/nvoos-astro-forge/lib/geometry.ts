@@ -183,6 +183,8 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						marginTop: number;
 						marginBottom: number;
 						columns?: number[];
+						columnWidths?: number[];
+						content?: { width: number; x: number };
 						kind?: string;
 					}
 				> = {};
@@ -243,7 +245,62 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					// whose children sit side by side and tile the row. Recorded so a
 					// rebuilt grid that stretches equal-height columns is a reported
 					// deviation (virtuallyjamaica's 700px + 948px pair).
-					const columnsOf = ( band: Element ): number[] | undefined => {
+					/**
+					 * The band's painted SLAB, when it fills only part of the band.
+					 *
+					 * A builder paints the slab on a column's INNER wrapper and the sibling
+					 * column can collapse, so the lane pass never sees a row — the paint is the
+					 * only fact (`collectBandPanelFacts` records it for the scaffold). Here it
+					 * lets the content box describe the SAME box on both sides: the rebuild
+					 * constrains its section to the slab, the source keeps its container.
+					 * One slab only; two or more are per-column panels and say nothing about
+					 * the band's content box.
+					 */
+					const slabOf = ( band: Element, bandRect: DOMRect ): DOMRect | undefined => {
+						const solid = ( node: Element ): boolean => {
+							const value = getComputedStyle( node ).backgroundColor;
+							const match = /^rgba?\(([^)]*)\)$/i.exec( value );
+							if ( ! match ) {
+								return false;
+							}
+							const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() );
+							return ( parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1 ) >= 0.95;
+						};
+						const found: DOMRect[] = [];
+						for ( const node of [ band, ...Array.from( band.querySelectorAll( '*' ) ) ] ) {
+							if ( /^(style|script|link|template|noscript|img|svg|path|source)$/i.test( node.tagName ) ) {
+								continue;
+							}
+							const rect = node.getBoundingClientRect();
+							if ( rect.width < bandRect.width * 0.25 || rect.height < bandRect.height * 0.5 ) {
+								continue;
+							}
+							if ( solid( node ) ) {
+								found.push( rect );
+							}
+						}
+						// Nested boxes of the same fill are ONE slab; count distinct boxes.
+						const outer = found.filter(
+							( rect ) =>
+								! found.some(
+									( other ) =>
+										other !== rect &&
+										other.width >= rect.width &&
+										other.height >= rect.height &&
+										other.left <= rect.left &&
+										other.right >= rect.right &&
+										other.top <= rect.top &&
+										other.bottom >= rect.bottom
+								)
+						);
+						if ( outer.length !== 1 ) {
+							return undefined;
+						}
+						// A full-bleed slab IS the band; it says nothing about the container.
+						return outer[ 0 ].width < bandRect.width - 8 ? outer[ 0 ] : undefined;
+					};
+
+					const columnsOf = ( band: Element ): { heights: number[]; widths: number[] } | undefined => {
 						let row: Element = band;
 						for ( let guard = 0; guard < 6 && row.children.length === 1; guard++ ) {
 							row = row.children[ 0 ] as Element;
@@ -274,9 +331,74 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						if ( ! isGrid && ( ! sameTop || ! tiled ) ) {
 							return undefined;
 						}
-						return rects.map( ( box ) => Math.round( box.height ) );
+						return {
+							heights: rects.map( ( box ) => Math.round( box.height ) ),
+							widths: rects.map( ( box ) => Math.round( box.width ) ),
+						};
+					};
+					/**
+					 * The band's CONTENT column — the box the copy sits in (see
+					 * `BandGeometry.content`).
+					 *
+					 * The FIRST descendant that is narrower than the band: that is the
+					 * container, on both sides — `.elementor-top-section > .elementor-container`
+					 * on a builder, `.ds-section-wrap > .ds-section` on the rebuild. A band that
+					 * shrink-wrapped to its text is caught here even though its WRAPPER still
+					 * spans the viewport, and the probe stops before a band's own inner padding
+					 * can read as a narrowing.
+					 *
+					 * A band whose content sits on a PARTIAL slab reports the SLAB instead:
+					 * the slab, not the container, is what the rebuild constrains, so both
+					 * sides then describe the same box (virtuallysrilanka's "How it Works" is
+					 * a #dd3333 right half, 720 of 1440) — and a slab that regressed to
+					 * full-bleed reports the container and fails.
+					 */
+					const contentOf = ( band: Element ): { width: number; x: number } | undefined => {
+						const bandRect = band.getBoundingClientRect();
+						if ( bandRect.width <= 0 ) {
+							return undefined;
+						}
+						const slab = slabOf( band, bandRect );
+						if ( slab ) {
+							return { width: Math.round( slab.width ), x: Math.round( slab.x - bandRect.x ) };
+						}
+						let node: Element = band;
+						for ( let guard = 0; guard < 6; guard++ ) {
+							const next = [ ...node.children ].filter(
+								( child ) => ! /^(style|script|link|template|noscript)$/i.test( child.tagName ) &&
+									getComputedStyle( child ).display !== 'none'
+							);
+							if ( next.length === 0 ) {
+								return undefined;
+							}
+							// Several element children means the band stacks SEVERAL stages (a
+							// rebuilt hardware band is a heading section plus a logo row). The
+							// band's content is as wide as its WIDEST stage — the same container the
+							// source states once.
+							if ( next.length > 1 ) {
+								const widest = next.reduce( ( best, child ) =>
+									child.getBoundingClientRect().width > best.getBoundingClientRect().width ? child : best
+								);
+								const box = widest.getBoundingClientRect();
+								return box.width > 0 && box.width < bandRect.width - 2
+									? { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ) }
+									: undefined;
+							}
+							const box = next[ 0 ].getBoundingClientRect();
+							if ( box.height < 8 ) {
+								return undefined;
+							}
+							// The first narrowing IS the container. Anything deeper is the band's own
+							// padding, which the two sides express differently.
+							if ( box.width < bandRect.width - 2 ) {
+								return { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ) };
+							}
+							node = next[ 0 ];
+						}
+						return undefined;
 					};
 					const columns = columnsOf( element );
+					const content = contentOf( element );
 					// A COMPONENT band is forged from a component, so its DOM has no
 					// builder columns even when the source row did. Tag the kind so the
 					// column diff can tell that apart from a row that went missing.
@@ -290,7 +412,8 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						paddingRight: parseFloat( style.paddingRight ) || 0,
 						marginTop: parseFloat( style.marginTop ) || 0,
 						marginBottom: parseFloat( style.marginBottom ) || 0,
-						...( columns ? { columns } : {} ),
+						...( columns ? { columns: columns.heights, columnWidths: columns.widths } : {} ),
+						...( content ? { content } : {} ),
 						...( bandKind ? { kind: bandKind } : {} ),
 					};
 				}
@@ -308,6 +431,8 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					marginTop: Math.round( band.marginTop ),
 					marginBottom: Math.round( band.marginBottom ),
 					...( band.columns ? { columns: band.columns } : {} ),
+					...( band.columnWidths ? { columnWidths: band.columnWidths } : {} ),
+					...( band.content ? { content: band.content } : {} ),
 					...( band.kind ? { kind: band.kind } : {} ),
 				};
 			}
@@ -4244,7 +4369,90 @@ export function diffGeometry(
 					} );
 				}
 			}
+			// The band's CONTENT box. The wrapper spans the viewport on both sides, so
+		// it can never see the mistake that matters: a boxed band whose section
+		// shrink-wrapped to its text kept a full-width wrapper while its copy
+		// rendered 989px against the source's 1280px (virtuallysrilanka's hardware
+		// row). A content WIDTH drift is a whole-class failure, so it fails; a
+		// shifted box is a warning (a full-bleed source row has no inset to match).
+		//
+		// Compared at DESKTOP only: below it the template deliberately floors the
+		// side gutter on a phone (see the `max(forge-space, --ds-pad-x)` rule) and
+		// the source has no such floor, so a 20–32px difference there is the
+		// template's choice rather than a lost container.
+		if ( viewport === 'desktop' && expected.content && ! actual.content ) {
+			// The source's band sits in a container and the build's does not — a
+			// full-bleed slab where the source halves the band, or a container the
+			// rebuild dropped. Silence here would hide the whole class.
+			deviations.push( {
+				sectionId: id,
+				viewport,
+				metric: 'content width',
+				expected: expected.content.width,
+				actual: null,
+				delta: -expected.content.width,
+				severity: 'fail',
+			} );
 		}
+		if ( viewport === 'desktop' && expected.content && actual.content ) {
+			const widthDelta = actual.content.width - expected.content.width;
+			if ( Math.abs( widthDelta ) > Math.max( tolerance.width, 4 ) ) {
+				deviations.push( {
+					sectionId: id,
+					viewport,
+					metric: 'content width',
+					expected: expected.content.width,
+					actual: actual.content.width,
+					delta: widthDelta,
+					severity: 'fail',
+				} );
+			}
+			const xDelta = actual.content.x - expected.content.x;
+			if ( Math.abs( xDelta ) > Math.max( tolerance.width, 8 ) ) {
+				deviations.push( {
+					sectionId: id,
+					viewport,
+					metric: 'content offset',
+					expected: expected.content.x,
+					actual: actual.content.x,
+					delta: xDelta,
+					severity: 'warn',
+				} );
+			}
+		}
+		// The lane WIDTHS. A row of 432 / 432 / 571 rebuilt as equal thirds kept
+		// every lane's height and passed the column diff above, while the reader
+		// saw the black slab shrink by a third (virtuallysrilanka's services
+		// band). Compared only when BOTH sides measured a row of the same length,
+		// and never for a COMPONENT band — a component lays its own lanes out (the
+		// split-hero's 16px gap is a template choice, not the source's row).
+		const expectedWidths = expected.columnWidths;
+		const actualWidths = actual.columnWidths;
+		if (
+			! rebuiltComponent &&
+			expectedWidths &&
+			actualWidths &&
+			expectedWidths.length >= 2 &&
+			expectedWidths.length === actualWidths.length
+		) {
+			const limit = Math.max( tolerance.width, 6 );
+			expectedWidths.forEach( ( width, index ) => {
+				const delta = actualWidths[ index ] - width;
+				if ( Math.abs( delta ) <= limit ) {
+					return;
+				}
+				deviations.push( {
+					sectionId: id,
+					viewport,
+					metric: `lane ${ index + 1 } width`,
+					expected: width,
+					actual: actualWidths[ index ],
+					delta,
+					severity: Math.abs( delta ) > limit * 2 ? 'fail' : 'warn',
+				} );
+			} );
+		}
+	}
 	}
 	return deviations;
 }
