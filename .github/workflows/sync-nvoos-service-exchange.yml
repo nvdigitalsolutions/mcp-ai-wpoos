@@ -79,8 +79,6 @@ jobs:
           # The smoke script is dev-only (it writes data-smoke/ and expects
           # the repo layout); tests are not part of the runtime.
           rm -f /tmp/nvoos-service-exchange/scripts/smoke.mjs \
-            /tmp/nvoos-service-exchange/scripts/cloudways-api-probe.mjs \
-            /tmp/nvoos-service-exchange/scripts/cloudways-mcp-probe.mjs \
             /tmp/nvoos-service-exchange/scripts/validate-skill-frontmatter.mjs
           find /tmp/nvoos-service-exchange -name '*.test.js' -delete
           cd /tmp/nvoos-service-exchange

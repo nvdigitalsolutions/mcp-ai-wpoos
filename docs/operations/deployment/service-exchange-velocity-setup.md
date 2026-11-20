@@ -70,8 +70,9 @@ missing refuses to start.
 
 ## 3. Dry-run verification (before any customer)
 
-0. **API contract spike:** `CLOUDWAYS_EMAIL=… CLOUDWAYS_API_KEY=… CLOUDWAYS_DEFAULT_SERVER_ID=… npm run probe:cloudways`
-   (read-only; see `cloudways-api-verification-spike.md`).
+0. **API contract spike:** set `CLOUDWAYS_EMAIL`, `CLOUDWAYS_API_KEY` and
+   `CLOUDWAYS_DEFAULT_SERVER_ID`, then run the local read-only probe
+   (see `cloudways-api-verification-spike.md`).
 1. `GET /api/v1/health` → `{ ok: true, data: { mode: "live", version: "0.1.0" } }`.
 2. `GET /api/v1/blueprints` with the admin token → 5 seeds.
 3. `POST /api/v1/estates` with `{"blueprint_slug":"clinic-ops"}` →
