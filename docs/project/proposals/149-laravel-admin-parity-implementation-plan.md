@@ -10814,7 +10814,7 @@ below is waiting on anyone any more.
 | D3 — allowlist | `nvoos_estate_domains` companion table | one migration |
 | D4 — provisioned role | `viewer`, issuing estate only, no claims mapping | one default |
 | D5 — S-1/S-2/S-4 | S-1 closed by §104; no console cross-estate view; never impersonation | the operator model is fixed |
-| D6 — inert identity keys | stay inert until I5 | no change |
+| D6 — inert identity keys | stay inert until I5 | no change — I5 has since shipped without unblocking them (§117) |
 
 Three things are worth reading there rather than here, because they are arguments
 and not outcomes:
@@ -11909,3 +11909,85 @@ class stays a pure allowlist reader that tests can call without booting settings
    `acme.com`, and nothing here makes it.
 4. **The role is unchanged.** A subdomain-provisioned subject is still `viewer` in
    the issuing estate and nothing else.
+
+## 117. I5 shipped; the machine-principal decision did not (2026-11-20)
+
+§108's table recorded D6 as *"stay inert until I5 → no change"*, and 158 §7 said
+the scope question *"belongs with I5"*. **I5 has since shipped** (§110 the gate,
+§111 the digest, §116 the inheritance flag) and nobody revisited D6. Three
+documents still read as though the keys are waiting on a slice that has arrived —
+the same defect §116.5 fixed for `EstateDomains`, one document over.
+
+### 117.1 What I5 actually shipped
+
+| Built | What it governs |
+|---|---|
+| `nvoos_estate_domains` + `EstateDomains` | a verified per-estate email-domain allowlist |
+| `JitProvisioner` (four gates) | `enable_jit_provisioning` → `email_verified` → verified domain → no existing account |
+| `nvoos_jit_provisioning_requests` | one row per refused subject, approvable, with an audit row |
+| `viewer`, issuing estate only | the only role provisioning can confer |
+| `enable_jit_subdomain_inheritance` (§116) | 158 D3 rule 3, default off |
+
+Everything there is about **people authenticating**. None of it is about a caller
+that is not a person.
+
+### 117.2 The obstacle D6 named is still present
+
+D6's obstacle was "a first-party versus token-call split", and it is unchanged:
+
+- **No principal concept exists.** `first_party`, `machine_principal` and
+  `service_account` appear nowhere under `app/`.
+- **`/api/v1/tools` is still outside the tenant group** and takes no Auth0 token,
+  exactly as §102.4 item 3 recorded.
+- **`/api/v1/assistants` is still one chain.** The list is readable and
+  everything below it is administrative (`routes/api.php`), with no distinction
+  between a browser session and a bearer token presenting the same user.
+- **There is no guest-token path**, so `guest_token_lifetime` bounds nothing.
+- The four keys are still registered in `UnimplementedSettings` with their
+  obstacle strings, still rendered disabled, still refused by `writableFor('admin')`.
+
+### 117.3 The decision: leave them, with a correct premise
+
+The four keys stay inert. The exit condition is unchanged and is the only one that
+matters: **a key leaves the list the moment it gains a reader.** What is no longer
+true is that they are waiting on the SSO work — an estate can now provision a
+person end to end without any of these four keys meaning anything.
+
+Both facts now appear where they are read:
+
+- **158 §7.1** carries a dated status: I5 shipped, the decision survives it, the
+  obstacle is a decision rather than a dependency.
+- **`contracts/surface-ownership.json`**, row `identity-provider`: the
+  *"Remaining: I5 … belongs with I5"* tail is replaced in place. A contract row is
+  a live document, so it is corrected rather than annotated.
+- **§108's table row** now points here, because a summary table is what a reader
+  scans. §101's and §102.4's *"belongs with I5"* are left as the dated record of
+  what those slices did; this section supersedes them.
+
+### 117.4 What would actually unblock the keys
+
+Not a slice — a decision, and it has to answer four things:
+
+1. **Assistant-scoped or estate-scoped?** A token that may list one assistant's
+   data is a different object from one that may list the estate's. §102.4 declined
+   to assume either, correctly.
+2. **What may a token-call do that a browser may not**, and the reverse. The three
+   `rest_enable_assistant_*` keys are only meaningful once that answer exists —
+   otherwise enabling one is a switch over nothing.
+3. **Does `/api/v1/tools` accept one?** It is the highest-risk surface, because a
+   tool call is an action.
+4. **Who may mint a machine principal**, and how it is revoked. `viewer` is the
+   right answer for a provisioned person; it is not obviously the right answer for
+   a service.
+
+`guest_token_lifetime` is the odd one out: it needs a guest path (an anonymous
+chat this runtime does not have), not a principal decision. It should stay inert
+until a guest surface exists, and its obstacle string already says so.
+
+### 117.5 Gates
+
+| Run | Result |
+|---|---|
+| No code changed | `app/`, `routes/` and `tests/` are untouched; this is a record correction |
+| `SurfaceOwnershipTest` | contract still decodes, every declared file exists, vocabularies hold |
+| `UnimplementedSettingsTest` | the four keys still render disabled, each naming its obstacle, and each still refused by `writableFor('admin')` |
