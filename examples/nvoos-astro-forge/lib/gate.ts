@@ -61,6 +61,15 @@ export interface ForgeGateCookie {
 	expires?: number;
 }
 
+/** The bridge's own gate verdict (`GET /wp-json/nvoos-forge/v1/gate`). */
+export interface BridgeGateState {
+	maintenance: boolean;
+	/** `off` | `maintenance` | `coming_soon`. */
+	mode: string;
+	/** `core` | `elementor` | `wp-maintenance-mode` | another plugin slug | null. */
+	plugin: string | null;
+}
+
 /** The probe result — everything a caller needs to decide, with no secrets. */
 export interface GateProbe {
 	state: GateState;
@@ -72,6 +81,8 @@ export interface GateProbe {
 	restHealthy: boolean;
 	server?: string;
 	cfCache?: string;
+	/** The nvoos-forge-bridge's own verdict, when the plugin is installed. */
+	bridge?: BridgeGateState;
 	fingerprint?: GateFingerprint;
 	/** Visible text length of the rendered page (tags/comments stripped). */
 	visibleChars: number;
@@ -297,92 +308,186 @@ export async function probeGate(
 	const visibleChars = visibleTextLength( html );
 	const restHealthy = await checkRest( base, fetchImpl, timeoutMs );
 
-	const evidence: string[] = [];
-	const base_ = {
-		status,
-		retryAfter,
-		restHealthy,
-		server,
-		cfCache,
-		visibleChars,
-	};
+	const probe = ( (): GateProbe => {
+		const evidence: string[] = [];
+		const base_ = {
+			status,
+			retryAfter,
+			restHealthy,
+			server,
+			cfCache,
+			visibleChars,
+		};
 
-	// 1. An edge gate redirects to its identity provider.
-	if ( REDIRECT_STATUS.has( status ) ) {
-		evidence.push( `HTTP ${ status } → ${ location || '(no location)' }` );
-		if ( /cloudflareaccess\.com|\/cdn-cgi\/access/i.test( location ) ) {
+		// 1. An edge gate redirects to its identity provider.
+		if ( REDIRECT_STATUS.has( status ) ) {
+			evidence.push( `HTTP ${ status } → ${ location || '(no location)' }` );
+			if ( /cloudflareaccess\.com|\/cdn-cgi\/access/i.test( location ) ) {
+				return { ...base_, state: 'edge-auth', evidence, remediation: remediationFor( 'edge' ) };
+			}
+			return { ...base_, state: 'unknown', evidence, remediation: remediationFor( 'unknown' ) };
+		}
+
+		// 2. Server-level basic auth (staging hosts, `auth_basic`).
+		const authenticate = home.headers.get( 'www-authenticate' ) ?? '';
+		if ( ( status === 401 || status === 403 ) && /basic/i.test( authenticate ) ) {
+			evidence.push( `HTTP ${ status } with WWW-Authenticate: Basic` );
 			return { ...base_, state: 'edge-auth', evidence, remediation: remediationFor( 'edge' ) };
 		}
-		return { ...base_, state: 'unknown', evidence, remediation: remediationFor( 'unknown' ) };
-	}
 
-	// 2. Server-level basic auth (staging hosts, `auth_basic`).
-	const authenticate = home.headers.get( 'www-authenticate' ) ?? '';
-	if ( ( status === 401 || status === 403 ) && /basic/i.test( authenticate ) ) {
-		evidence.push( `HTTP ${ status } with WWW-Authenticate: Basic` );
-		return { ...base_, state: 'edge-auth', evidence, remediation: remediationFor( 'edge' ) };
-	}
+		// 3. A 503 with Retry-After: the site's own mode when REST is healthy,
+		//    otherwise a host/WAF block (nothing-to-forge.md §3).
+		if ( status === 503 || status === 429 ) {
+			evidence.push( `HTTP ${ status }${ retryAfter !== undefined ? ` (Retry-After ${ retryAfter }s)` : '' }` );
+			evidence.push( restHealthy ? '/wp-json/ answers 200 — the site is up; the HTML gate is the site\'s own mode' : '/wp-json/ is not answering 200 either' );
+			return {
+				...base_,
+				state: restHealthy ? 'gated' : 'rate-limited',
+				evidence,
+				remediation: restHealthy ? remediationFor( 'plugin' ) : remediationFor( 'rate-limited', retryAfter ),
+			};
+		}
 
-	// 3. A 503 with Retry-After: the site's own mode when REST is healthy,
-	//    otherwise a host/WAF block (nothing-to-forge.md §3).
-	if ( status === 503 || status === 429 ) {
-		evidence.push( `HTTP ${ status }${ retryAfter !== undefined ? ` (Retry-After ${ retryAfter }s)` : '' }` );
-		evidence.push( restHealthy ? '/wp-json/ answers 200 — the site is up; the HTML gate is the site\'s own mode' : '/wp-json/ is not answering 200 either' );
-		return {
-			...base_,
-			state: restHealthy ? 'gated' : 'rate-limited',
-			evidence,
-			remediation: restHealthy ? remediationFor( 'plugin' ) : remediationFor( 'rate-limited', retryAfter ),
-		};
-	}
+		// 4. Anything else that is not OK is inconclusive, not "open".
+		if ( status < 200 || status >= 300 ) {
+			evidence.push( `HTTP ${ status }` );
+			return { ...base_, state: 'unknown', evidence, remediation: remediationFor( 'unknown' ) };
+		}
 
-	// 4. Anything else that is not OK is inconclusive, not "open".
-	if ( status < 200 || status >= 300 ) {
-		evidence.push( `HTTP ${ status }` );
-		return { ...base_, state: 'unknown', evidence, remediation: remediationFor( 'unknown' ) };
-	}
+		// 5. A 200 that is actually a holding page (the silent case).
+		const marker = htmlMarker( html, profile.gate?.verify?.rejectMarkers );
+		if ( marker ) {
+			evidence.push( `holding-page marker "${ marker.marker }" in the rendered HTML` );
+			return {
+				...base_,
+				state: 'gated',
+				fingerprint: marker.fingerprint,
+				evidence,
+				remediation: remediationFor( marker.fingerprint ),
+			};
+		}
+		const minVisible = profile.gate?.verify?.minVisibleChars ?? DEFAULT_MIN_VISIBLE_CHARS;
+		const hasStructure = STRUCTURE_SIGNAL.test( html );
+		// `noindex` is the corroborating signal: a holding page forbids indexing,
+		// a real (if small) page does not. Without it, a short legitimate page
+		// would be misread as a gate — the false positive that blocks a real forge.
+		const noindex =
+			/<meta[^>]+name\s*=\s*["']robots["'][^>]+content\s*=\s*["'][^"']*noindex/i.test( html ) ||
+			/noindex/i.test( home.headers.get( 'x-robots-tag' ) ?? '' );
+		if ( visibleChars < minVisible && ! hasStructure && ( noindex || ! restHealthy ) ) {
+			evidence.push(
+				`${ visibleChars } visible characters, no builder/block markers (< ${ minVisible })` +
+					`${ noindex ? ', noindex' : '' }${ restHealthy ? '' : ', /wp-json/ not 200' }`
+			);
+			return {
+				...base_,
+				state: 'gated',
+				fingerprint: 'generic-holding-page',
+				evidence,
+				remediation: remediationFor( 'generic-holding-page' ),
+			};
+		}
 
-	// 5. A 200 that is actually a holding page (the silent case).
-	const marker = htmlMarker( html, profile.gate?.verify?.rejectMarkers );
-	if ( marker ) {
-		evidence.push( `holding-page marker "${ marker.marker }" in the rendered HTML` );
-		return {
-			...base_,
-			state: 'gated',
-			fingerprint: marker.fingerprint,
-			evidence,
-			remediation: remediationFor( marker.fingerprint ),
-		};
-	}
-	const minVisible = profile.gate?.verify?.minVisibleChars ?? DEFAULT_MIN_VISIBLE_CHARS;
-	const hasStructure = STRUCTURE_SIGNAL.test( html );
-	// `noindex` is the corroborating signal: a holding page forbids indexing,
-	// a real (if small) page does not. Without it, a short legitimate page
-	// would be misread as a gate — the false positive that blocks a real forge.
-	const noindex =
-		/<meta[^>]+name\s*=\s*["']robots["'][^>]+content\s*=\s*["'][^"']*noindex/i.test( html ) ||
-		/noindex/i.test( home.headers.get( 'x-robots-tag' ) ?? '' );
-	if ( visibleChars < minVisible && ! hasStructure && ( noindex || ! restHealthy ) ) {
+		if ( cfCache === 'HIT' ) {
+			evidence.push( 'cf-cache-status: HIT — the edge may be serving an ANONYMOUS copy to an authenticated request' );
+			return { ...base_, state: 'unknown', evidence, remediation: remediationFor( 'cache' ) };
+		}
+
 		evidence.push(
-			`${ visibleChars } visible characters, no builder/block markers (< ${ minVisible })` +
-				`${ noindex ? ', noindex' : '' }${ restHealthy ? '' : ', /wp-json/ not 200' }`
+			`${ visibleChars } visible characters${ hasStructure ? ', builder/block markers present' : '' }${ restHealthy ? ', /wp-json/ 200' : '' }`
 		);
+		return { ...base_, state: 'open', evidence, remediation: [] };
+	} )();
+	return augmentWithBridge( probe, base, fetchImpl, timeoutMs, ( options.cookies?.length ?? 0 ) > 0 );
+}
+
+/**
+ * Corroborate the HTML verdict with the bridge plugin, when it is installed.
+ *
+ * The route answers from the gate plugins' own options, so it closes the two
+ * blind spots HTML inference has: a fingerprint-free gate, and an edge cache
+ * serving an ANONYMOUS copy to an authenticated request. Queried on every
+ * probe: a site without the plugin answers 404 in one cheap round trip, and a
+ * skipped query is exactly the cached-anonymous case this exists to catch.
+ *
+ * The bridge reports the SITE's mode — what an anonymous visitor gets — not
+ * whether THIS request was allowed. So it only overrides an `open` read when
+ * the read was anonymous. An authenticated read that returned the real page is
+ * proof the gate let this session through; downgrading it would refuse to forge
+ * a site the operator has legitimate access to.
+ */
+async function augmentWithBridge(
+	probe: GateProbe,
+	base: string,
+	fetchImpl: typeof fetch,
+	timeoutMs: number,
+	authenticated: boolean
+): Promise< GateProbe > {
+	const bridge = await fetchBridgeState( base, fetchImpl, timeoutMs );
+	if ( ! bridge ) {
+		return probe;
+	}
+	if ( bridge.maintenance ) {
+		const evidence = [ `bridge: front end gated (${ bridge.plugin ?? 'unknown plugin' }, ${ bridge.mode })`, ...probe.evidence ];
+		if ( probe.state === 'open' && ! authenticated ) {
+			// The HTML said open; the site's own options say otherwise. The bridge
+			// is authoritative here — it reads what the gate plugin itself reads.
+			const fingerprint = fingerprintForPlugin( bridge.plugin );
+			return { ...probe, state: 'gated', fingerprint, bridge, evidence, remediation: remediationFor( fingerprint ) };
+		}
+		return { ...probe, bridge, evidence };
+	}
+	return {
+		...probe,
+		bridge,
+		evidence: [
+			...probe.evidence,
+			'bridge: front end reports NOT gated — a gated HTML response is the edge/cache, not the site',
+		],
+	};
+}
+
+async function fetchBridgeState(
+	base: string,
+	fetchImpl: typeof fetch,
+	timeoutMs: number
+): Promise< BridgeGateState | undefined > {
+	try {
+		const response = await fetchImpl( `${ base }/wp-json/nvoos-forge/v1/gate`, {
+			redirect: 'manual',
+			headers: { accept: 'application/json', 'user-agent': DEFAULT_USER_AGENT },
+			signal: AbortSignal.timeout( Math.min( timeoutMs, 10_000 ) ),
+		} );
+		if ( response.status !== 200 ) {
+			await response.body?.cancel();
+			return undefined;
+		}
+		const body = ( await response.json() ) as { maintenance?: unknown; mode?: unknown; plugin?: unknown };
+		if ( ! body || typeof body.maintenance !== 'boolean' ) {
+			return undefined;
+		}
 		return {
-			...base_,
-			state: 'gated',
-			fingerprint: 'generic-holding-page',
-			evidence,
-			remediation: remediationFor( 'generic-holding-page' ),
+			maintenance: body.maintenance,
+			mode: typeof body.mode === 'string' && body.mode ? body.mode : body.maintenance ? 'maintenance' : 'off',
+			plugin: typeof body.plugin === 'string' && body.plugin ? body.plugin : null,
 		};
+	} catch {
+		// Route absent (404), network error, timeout — the HTML verdict stands.
+		return undefined;
 	}
+}
 
-	if ( cfCache === 'HIT' ) {
-		evidence.push( 'cf-cache-status: HIT — the edge may be serving an ANONYMOUS copy to an authenticated request' );
-		return { ...base_, state: 'unknown', evidence, remediation: remediationFor( 'cache' ) };
+function fingerprintForPlugin( plugin: string | null ): GateFingerprint {
+	if ( plugin === 'core' ) {
+		return 'core-maintenance';
 	}
-
-	evidence.push( `${ visibleChars } visible characters, builder/block markers present${ restHealthy ? ', /wp-json/ 200' : '' }` );
-	return { ...base_, state: 'open', evidence, remediation: [] };
+	if ( plugin === 'elementor' ) {
+		return 'elementor-maintenance';
+	}
+	if ( plugin === 'wp-maintenance-mode' ) {
+		return 'wp-maintenance-mode';
+	}
+	return 'generic-holding-page';
 }
 
 // ---------------------------------------------------------------------------

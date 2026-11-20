@@ -1,7 +1,8 @@
 # Proposal 152 — gated sources: forging a WordPress site behind maintenance / coming-soon / staging auth
 
-> Status: **Proposed 2026-11-20; implemented the same day**. P0–P3 shipped;
-> P4 (bridge `gate` route) stays deferred as designed. See §0.
+> Status: **Proposed 2026-11-20; implemented the same day**. P0–P5 shipped
+> (P4 — the bridge `gate` route — followed in the same day's second pass).
+> See §0.
 > Extends 096 (the generator), 098 / 114 (design import), 115 (inventory),
 > 116 (bot protection + `WP_FETCH_PROXY`), 118 (vision capture), 130–132
 > (rendered-head / tracking / redirect capture), 137 (bands), 139 (media),
@@ -30,6 +31,7 @@
 > | P1 | wp-login session (test cookie → POST → `Set-Cookie` harvest), cookie/storageState/bypass precedence, host-scoped global fetch wrapper with manual redirects and `no-store`, `analyze` fail-closed |
 > | P2 | Playwright cookies via `gateContextOptions()` in every `newContext` site (`geometry`, `interactions`, `animations`, `region-colors`, `screenshot`, `tracking`, `band-diff`); `tests/gate.test.ts` |
 > | P3 | `SiteProfile.gate` (references only), `.env.example` block, README env row + section, `mcp/tools/gate.ts` (`gate_probe`), `design_apply` fail-closed, skill `reference/gated-sources.md` |
+> | P4 | Bridge `GET /wp-json/nvoos-forge/v1/gate` (`plugins/nvoos-forge-bridge` 0.3.2, `Rest\Gate::detect()`/`normalize()`): core `wp_is_maintenance_mode()`, Elementor (mode ∈ {maintenance, coming_soon} **and** a non-zero template id), WP Maintenance Mode, plus the `nvoos_forge_bridge_gate_state` filter. Forge side: `augmentWithBridge()` asks it on every probe. Fixture `WP_FIXTURE_BRIDGE_GATE=off\|coming_soon\|maintenance\|absent`; `tests/gate-e2e.test.ts` forges a gated source end to end |
 > | P5 | The remediation ladder prints from the probe (`forge gate`); a separate `--remediation` flag was not needed |
 >
 > Deliberate deviations from the plan below:
@@ -43,8 +45,23 @@
 >   The first cut flagged the hermetic fixture's own 18-character homepage —
 >   the false positive that blocks a legitimate forge. A real holding page all
 >   but always says `noindex`; the threshold and markers are profile-pinnable.
-> - **P4 (bridge `gate` route) not implemented** — the plan already marked it
->   optional/deferred, and it needs a bridge release.
+> - **P4 shipped as a read-only route, not an auth handshake.** The bridge is
+>   asked on **every** probe (a `404` just means the plugin is absent) and its
+>   verdict is used to turn an `open` **anonymous** HTML read into `gated` — the
+>   cached-anonymous-page case, where the edge served a public copy and no HTML
+>   evidence survives. It carries no credential: the payload is booleans, a mode
+>   keyword and a plugin slug, so a holding page's copy never leaves the site.
+> - **The bridge reports the site's ANONYMOUS mode, so it must never override an
+>   authenticated read.** The gated end-to-end test caught exactly that: with a
+>   valid `wp-login.php` session the HTML is the real site, yet the bridge's
+>   `maintenance: true` (what an anonymous visitor sees) re-classified the probe
+>   as `gated` and `analyze` refused a source it had just unlocked. The override
+>   is gated on "the read was anonymous"; `openGate` passes that flag into
+>   `augmentWithBridge()`. Rule of thumb: **the bridge is authoritative only for
+>   anonymous reads** — for an authenticated one, the HTML is.
+> - **A bridge that says `maintenance: false` does not clear a gated HTML read.**
+>   HTML wins (the page really is a holding page); the disagreement is recorded
+>   in the probe's `evidence` and surfaced by `forge gate`.
 >
 > ---
 
@@ -684,13 +701,36 @@ exists for debugging and is documented as unsafe.
   `.agents/skills/mcp-ai-wpoos-astro-forge/`, with `nothing-to-forge.md` §3
   rewritten to point at it.
 
-### P4 — optional bridge assist (deferred, recommended)
+### P4 — bridge assist (SHIPPED, `nvoos-forge-bridge` 0.3.2)
 
 A `nvoos-forge/v1/gate` route on `plugins/nvoos-forge-bridge` returning
-`{ maintenance: bool, mode: 'off'|'coming_soon'|'maintenance', plugin: '…' }`
-using the Application Password the forge already holds. For sites that can
-install the bridge this removes HTML guessing entirely — and it is the only
-signal that distinguishes "gate off" from "gate serving a cached page".
+`{ maintenance: bool, mode: 'off'|'coming_soon'|'maintenance', plugin: '…',
+checkedAt: '…' }`. For sites that can install the bridge this removes HTML
+guessing entirely — and it is the only signal that distinguishes "gate off"
+from "gate serving a cached page".
+
+Shipped shape, and the two corrections the plan got wrong:
+
+- **It is a public read, not an Application-Password read.** The forge asks it
+  before it has any session (that is the point — the probe runs first), so the
+  route is `GET` + `__return_true` and returns state only: booleans, a mode
+  keyword, a plugin slug. No titles, copy, or template ids — a holding page's
+  content never leaves the site. Being a read, it needs no entry on the
+  reviewed public-write allowlist.
+- **Detection lives in `Rest\Gate::detect()`/`normalize()`** so it is unit
+  testable without a REST dispatch: `wp_is_maintenance_mode()`; Elementor
+  (`elementor_maintenance_mode_mode` ∈ {`maintenance`, `coming_soon`} **and**
+  `elementor_maintenance_mode_template_id > 0` — the option alone is set even
+  when the mode is off); WP Maintenance Mode
+  (`wpmm_settings['general']['status']`). Everything else joins through the
+  `nvoos_forge_bridge_gate_state` filter, which cannot invent a gate: garbage
+  keeps the detected state and `maintenance: false` forces `mode=off`.
+- **The verdict is authoritative only for ANONYMOUS reads.** The bridge reports
+  what an anonymous visitor sees; a real `wp-login.php` session can unlock a
+  site the bridge still calls `maintenance` — so `augmentWithBridge()` takes an
+  `authenticated` flag and only overrides an `open` read when it is false.
+  Without that rule the gated e2e failed (`analyze` refused a source whose
+  login had just succeeded).
 
 ### P5 — WP-CLI remediation helper (docs only)
 
@@ -771,7 +811,10 @@ Open questions for the owner:
 1. Should `--allow-blocked` exist at all, or should a blocked source be a hard
    stop with no override? (Current recommendation: keep it, but make the
    manifest record it.)
-2. P4 (bridge `gate` route) — worth it now, or only for sites NV hosts?
+2. ~~P4 (bridge `gate` route) — worth it now, or only for sites NV hosts?~~
+   **Resolved:** it shipped as a public read (`0.3.2`) and the forge asks it on
+   every probe, so it costs one round trip when the plugin is absent. The
+   deploy plan still says "install the bridge"; the probe works without it.
 3. Do we want `forge gate --login` to write into the vault automatically, or
    always require `--vault`?
 
@@ -785,6 +828,7 @@ Open questions for the owner:
 | Core maintenance sends `Retry-After: 600` + 503; `wp-content/maintenance.php` drop-in replaces it | `developer.wordpress.org/reference/functions/wp_maintenance/` (source quoted) |
 | Application Passwords cannot log into `wp-login.php`; REST only; RFC 7617 Basic; revocable; WP-CLI management | `developer.wordpress.org/advanced-administration/security/application-passwords/` |
 | WP Maintenance Mode 2.6.26: super-admin/role bypass, slug+IP `exclude`, 503+`Retry-After`, `nocache_headers()`, `bypass_bots` | `plugins.svn.wordpress.org/wp-maintenance-mode/trunk/includes/classes/wp-maintenance-mode.php` |
+| Elementor gate state = `elementor_maintenance_mode_mode` ∈ {`maintenance`, `coming_soon`} **and** `elementor_maintenance_mode_template_id > 0` (the mode option survives the user turning the template off, so the id is the real gate) | `plugins.svn.wordpress.org/elementor/tags/3.12.2/includes/maintenance-mode.php` (read 2026-11-20) |
 | Cloudflare Access service tokens: header pair, Service Auth policy, strict mode (401/403, no cookie), rotation | `developers.cloudflare.com/cloudflare-one/identity/service-tokens/` |
 | Existing forge behaviour: design pass warns and continues on 503; `/wp-json/` 200 is the tell | `examples/nvoos-astro-forge/lib/design.ts`; skill `reference/nothing-to-forge.md` §3 |
 | REST auth is already env-driven and typed | `lib/wp-client.ts` (`WpAuth`, `WP_APPLICATION_USER/PASSWORD`); `README.md` "Environment per site" |
