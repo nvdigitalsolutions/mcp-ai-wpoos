@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Support\Tools\MachineToolSafety;
+use App\Support\Tools\MachineToolAllowlist;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 
@@ -65,7 +66,8 @@ final class MachineToolController
         string $tool,
         ToolRegistry $registry,
         ActivityRecorder $activity,
-        MachineToolSafety $safety
+        MachineToolSafety $safety,
+        MachineToolAllowlist $allowlist
     ): JsonResponse {
         $scope = PrincipalScope::forRequest($request->user());
         $assistantId = $scope->assistantId();
@@ -133,11 +135,7 @@ final class MachineToolController
             );
         }
 
-        $allowlisted = in_array(
-            $tool,
-            array_map('strval', (array) config('oos.machine_tools', array())),
-            true
-        );
+        $allowlisted = $allowlist->allows($tool);
 
         // The allowlist is the operator permitting; an annotation or flag can
         // only veto. Absence of a claim leaves the operator's decision standing.

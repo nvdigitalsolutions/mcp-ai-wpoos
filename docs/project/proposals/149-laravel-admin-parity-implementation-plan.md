@@ -12776,3 +12776,58 @@ Adding `getCapabilityFlags()` to 96 classes would have created a second source o
 truth for a question the manifest already answers, and the interface is implemented
 by no tool today. It is kept as a fallback so a tool that adopts it is honoured,
 but the manifest is the catalogue. Nothing from that attempt was committed.
+
+## 127. The machine allowlist becomes editable — and still cannot widen the gate (2026-11-21)
+
+§125.3 left one operator path outside the panel: a machine tool could only be
+allowlisted by editing `oos.machine_tools` and redeploying. §123.4 called
+capability flags the fix and §126 dropped them in favour of the manifest, so what
+remained was not a safety question but a wiring one — the gate read a config
+array with no writable surface.
+
+### 127.1 What shipped
+
+- An **operator-scope** settings field, `machine_tools`, on the `/ops` surface
+  (Advanced → *Machine access*). It is comma-separated text, `console: hidden`,
+  and `writableFor('admin')` excludes it by the existing scope rule — an estate
+  administrator cannot reach the gate at all.
+- `App\Support\Tools\MachineToolAllowlist`, the single reader. It **unions** the
+  deployment's `oos.machine_tools` config with the stored setting, then keeps only
+  names that are (a) registered and (b) servable in the readiness manifest.
+- `MachineToolController` calls `$allowlist->allows($tool)` in place of the inline
+  `in_array(config(...))`.
+
+### 127.2 The three rules the reader encodes
+
+1. **Union, not override.** The setting adds; it cannot remove a config entry. A
+   panel write must not quietly narrow a decision made with shell access, and
+   neither source can grant what the other denies.
+2. **A name that does not resolve is dropped.** Typos, retired tools and
+   non-servable packages are ignored, so the failure direction is closed: the
+   machine is refused, never permitted by a name that resolves to nothing.
+3. **The allowlist is permission, never safety.** The assistant must still assign
+   the tool, and the tool's own annotations still veto (`readOnlyHint: false` or
+   `destructiveHint: true` → approval). The tests pin that with the setting as the
+   only source: `base64` executes, `create_post` still returns 202.
+
+### 127.3 Gates
+
+| Run | Result |
+|---|---|
+| `MachineToolAllowlistTest` (new, 7 tests) | empty list permits nothing; the setting adds `base64`; `not_a_tool` is ignored; a config entry cannot be removed by the setting; only `/ops` may write the key; a setting-allowlisted `base64` executes (200, `aGk=`); a setting-allowlisted `create_post` still queues an approval (202) |
+| machine + settings suites | **63 passed / 10,507 assertions, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 errors, 0 warnings** on all four files |
+
+### 127.4 What is left
+
+- **The picker.** Comma-separated text is honest but not pleasant; the follow-up
+  is a `/ops` table over `ToolCatalogue::rows()` with a toggle per servable tool,
+  writing the same setting. The field stays as the storage.
+- **The audit row names the key, not the value.** `recordAudit()` stores
+  `{'keys': ['machine_tools']}` — deliberately, because settings hold credentials.
+  For a non-sensitive list that is thin: the row says the gate changed, not which
+  tools were added or removed. Widening the audit for allowlisted keys is a
+  decision, not a bug.
+- **Per-estate allowlisting** is not built and was not implied. The list is global
+  (the config it replaces was global); an estate that needs a different surface
+  requires the `estate:` scope decision 159 §9 already flags.
