@@ -128,3 +128,103 @@ rather than loudly.
   and minimum necessity.
 - `includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php` — the sanitizer
   contract, including the list of what it is meant to strip.
+
+## 10. Outcome of the open questions (2026-11-21)
+
+§8 left two questions open. Both are answered below from the code, with the
+research that shaped them. §8 stays as the record of what was asked; this section
+supersedes its "open" status.
+
+### 10.1 Is the approval threshold numeric? Yes — and it is already derived
+
+The question assumed a numeric threshold would need a port. It does not: the
+runtime already carries the number.
+
+| Piece | Where | What it does |
+|---|---|---|
+| Scale and matrix | `lib/core/src/Domain/Service/Safety/ActionSafetyProfile.php` | irreversibility 0–1 × necessity → allow / warn / approval / skip / block; `computeRiskScore()` returns 0–2 |
+| Flag mapping | `deriveIrreversibilityFromFlags()` | `irreversible` → 1.0; `financial-impact`, `external-communication`, `data-destruction`, `access-control-change` → 0.75; `write` + `state-changing` → 0.25 or 0.5; `read-only` → 0 |
+| Decision | `NecessityGate::decide( $flags, $slug, $args, ?float $irreversibility = null )` | uses an explicit score **if a caller supplies one**, otherwise derives it from the flags |
+| Enforcement | `NecessityGuard` (a registry guard) | blocks `block`, denies `approval_required` |
+| Wiring | `NvoosServiceProvider` | the guard is added only when `oos.necessity_gate.enabled` is set |
+
+So the numeric vocabulary is not missing — it is **derived from
+`getCapabilityFlags()`**, which tools already declare and `MachineToolSafety`
+already reads. Tools are not asked for a second score because `decide()` accepts an
+explicit override when one is genuinely needed, one tool at a time.
+
+**Recommendation: do not port `get_irreversibility_score()` or
+`get_minimum_necessity()`.** A per-tool score would be a second vocabulary for the
+same judgement, and the two can disagree — the failure §142.2 corrected for
+annotations. The extension point already exists as the optional `$irreversibility`
+argument.
+
+**Leave the gate off by default, as it is.** Enabling it changes every call at
+once and the false-positive rate is unmeasured. The measurement to watch when it
+is enabled: how often `approval_required` fires for a tool whose annotations call
+it safe. If that happens, the flag derivation and the annotations disagree, and
+the annotations are the reviewed source.
+
+Research note: numeric risk scores for agents are common and directionally
+useful, but threshold calibration is weak. AgentRiskBOM ([arXiv
+2606.21877](https://arxiv.org/html/2606.21877v1)) reports a Spearman rank
+correlation of 0.73 against an independent scorer with only 46% categorical label
+agreement — directional consistency, imperfect thresholds. That is an argument for
+keeping the *decision* categorical and the *score* derived, which is what the code
+already does.
+
+### 10.2 Should a sanitizer be required for binary payloads? Yes, in two steps
+
+Measured from `lib/core/src/Tool`: seven servable rows return an encoded binary
+payload in their result envelope.
+
+| Slug | Field |
+|---|---|
+| `create_image_variation` | `b64_json` |
+| `edit_openai_image` | `b64_json` |
+| `generate_openai_image` | `b64_json` (default response format) |
+| `generate_openai_speech` | `audio_base64` |
+| `generate_openai_speech_validated` | `audio_base64` |
+| `generate_cloudflareai_image` | `image_base64` |
+| `generate_music` | `audio_base64` |
+
+Two apparent matches are **exempt**, and both are `pure` rather than `ready`:
+`base64` (the encoded string *is* the product) and `generate_simple_jwt_token`
+(base64 is internal to the JWT; the result is a token string). A declaration should
+be required where the payload is incidental to the tool's purpose, not where it is
+the purpose.
+
+**Recommendation: warn first, gate after the seven declare.** A hard gate today
+would fail an otherwise-clean manifest for behaviour nobody has ported yet. Order:
+
+1. Phase 1 ships the opt-in reader (§6).
+2. The auditor emits a **warning** naming any servable row that returns a binary
+   field and declares no sanitizer.
+3. Once the seven declare, the warning becomes a **gate** — the Proposal 160 §7
+   pattern ("a `ready` row without evidence is a batch failure"), applied to the
+   context contract instead of the evidence one.
+
+Recommended independently of the declarations: **a size backstop in the reader.**
+A declaration says what to strip; a backstop catches the tool that forgot to
+declare, or the provider that returns an inline payload this runtime did not
+anticipate. The published guidance is consistent — treat every tool result as
+untrusted bulk input that must pass a size and shape gate before it enters the
+model context (see the truncation references above).
+
+### 10.3 The third question is unchanged
+
+Whether the core workflow engine chains tools by named contract still decides the
+data-contract seam. Nothing measured here changes that answer.
+
+## 11. References for the outcome
+
+- [Tool result truncation and summarization for production
+  agents](https://www.technologyonthe.net/2026/10/tool-result-truncation-and.html) —
+  "treat every tool response as untrusted bulk input that must pass a size and
+  shape gate before it enters the model context".
+- [Compress your agent's context without losing what
+  matters](https://dev.to/mukundakatta/compress-your-agents-context-without-losing-what-matters-303) —
+  intercept every tool result before it enters context; keep the full result for
+  display.
+- [AgentRiskBOM](https://arxiv.org/html/2606.21877v1) — numeric agent risk scores
+  rank directionally but calibrate poorly against categorical labels.
