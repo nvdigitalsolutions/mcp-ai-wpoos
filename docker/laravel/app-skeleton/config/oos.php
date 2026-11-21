@@ -198,4 +198,24 @@ return array(
         'stale_after' => (int) env('NVOOS_SCHEDULES_STALE_AFTER', 900),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Machine credential alerts (149 §130)
+    |--------------------------------------------------------------------------
+    |
+    | Where `nvoos:machine-token:expiring` sends its finding. The command
+    | already exits 1 when something needs rotating; this is the delivery
+    | channel, not the detection. Unset means no mail: the command still
+    | prints the table, still exits 1, and still records the event in the
+    | activity feed.
+    |
+    | The address is configuration rather than a stored setting on purpose:
+    | an alert channel a request can edit is a channel an attacker can
+    | silence. Changing it requires a deploy.
+    |
+    */
+    'machine_alerts' => array(
+        'email' => env('NVOOS_MACHINE_ALERT_EMAIL'),
+    ),
+
 );
