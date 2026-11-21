@@ -90,6 +90,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\BulkEnrollStudentsTool',
 			'readiness' => 'ready',
 			'probe' => 'validate_only',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/BulkEnrollStudentsToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'bulk_import' => array(
@@ -289,6 +290,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\CreateEcaTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CreateEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'create_image_variation' => array(
@@ -481,6 +483,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\EnrollStudentEcaTool',
 			'readiness' => 'ready',
 			'probe' => 'validate_only',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/EnrollStudentEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'erlang_c_concurrency_advisor' => array(
@@ -795,6 +798,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\GetCacheTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CacheQueueAndBatchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_cron_job' => array(
@@ -815,6 +819,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\GetEcaTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/GetEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_file_info' => array(
@@ -934,6 +939,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\GetStudentTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/GetStudentToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_task_dependencies' => array(
@@ -970,7 +976,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_info' => array(
@@ -978,7 +985,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_parquet' => array(
@@ -986,7 +994,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_rows' => array(
@@ -994,7 +1003,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_size' => array(
@@ -1002,7 +1012,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_statistics' => array(
@@ -1010,7 +1021,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_is_valid' => array(
@@ -1018,7 +1030,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_list_splits' => array(
@@ -1026,7 +1039,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_preview_rows' => array(
@@ -1034,7 +1048,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_search' => array(
@@ -1042,7 +1057,8 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'reason' => 'Thin wrapper over datasets-server.huggingface.co with no local state.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HuggingFaceDatasetToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_recommended_datasets' => array(
@@ -1086,6 +1102,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\ListEcasTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ListEcasToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_jobs' => array(
@@ -1138,6 +1155,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\ListStudentsTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ListStudentsToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_tasks' => array(
@@ -1174,6 +1192,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\ManageEcaWaitlistTool',
 			'readiness' => 'ready',
 			'probe' => 'validate_only',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ManageEcaWaitlistToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'manage_vector_store_files' => array(
@@ -1188,6 +1207,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\MarkEcaAttendanceTool',
 			'readiness' => 'ready',
 			'probe' => 'validate_only',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/MarkEcaAttendanceToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'math_eval' => array(
@@ -1537,6 +1557,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\UpdateEcaTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/UpdateEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'update_post' => array(
@@ -1655,6 +1676,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\WithdrawStudentEcaTool',
 			'readiness' => 'ready',
 			'probe' => 'validate_only',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/WithdrawStudentEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 	),

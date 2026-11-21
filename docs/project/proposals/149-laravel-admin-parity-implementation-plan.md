@@ -13736,3 +13736,51 @@ same file twice is not something the code guarantees.
 Proposal 160 is complete: **zero `unverified` rows**, every servable row annotated
 and evidenced. The 65 pre-existing `ready` rows without an `evidence` path
 (§142.5) are the one remaining gap, and it is a backfill rather than a triage.
+
+## 144. The evidence gap narrows: 22 rows had a test all along (2026-11-21)
+
+### 144.1 Measured split
+
+§142.5 recorded 65 `ready` rows without evidence. Measured against the app
+suite, **22 already have a dedicated test** that constructs the tool and calls it
+through `ToolRegistry`; **43 have none**. This section closes the 22. The 43 need
+tests written, so they are their own batches.
+
+The method matters: matching by **class short name** over the suite finds the
+dedicated tests; matching by **slug string** over-counts, because a slug also
+appears in allowlists, pickers and admin pages. The first pass read those as
+coverage and had to be discarded — an allowlist entry is not evidence that the
+tool runs.
+
+### 144.2 What changed
+
+- **12 classroom and cache rows** (`bulk_enroll_students`, `create_eca`,
+  `enroll_student_eca`, `get_cache`, `get_eca`, `get_student`, `list_ecas`,
+  `list_students`, `manage_eca_waitlist`, `mark_eca_attendance`, `update_eca`,
+  `withdraw_student_eca`) gained an `evidence` path.
+- **10 HuggingFace rows** carried their evidence inside `reason` ("Evidence:
+  HuggingFaceDatasetToolsTest pins …") because the field did not exist when §91
+  was written. The field exists now, so the prose moved into `evidence` and the
+  reason states only the behaviour.
+
+No readiness, parity or annotation changed — this PR is bibliographic.
+
+### 144.3 Counts and gates
+
+| Measure | Before | After |
+|---|---|---|
+| ready without evidence | 65 | **43** |
+| servable | 195 | 195 |
+| servable without annotations | 0 | 0 |
+| declared evidence paths that do not exist | — | 0 |
+
+| Gate | Result |
+|---|---|
+| `ToolReadinessClassificationTest` + `MachineToolAnnotationsTest` + `MachineToolPickerTest` | 16 tests, 39 assertions, pass |
+| auditor | `OK — no violations` |
+| phpcs | clean |
+
+The remaining 43 are the core content readers and writers, the project/task set,
+the settings and profession reads, the job and batch lists, and three singletons
+(`bulk_import`, `recall_memory`, `validate_tool_schema`). Their tests are the next
+batches; Proposal 160 §8's 15–25 rows per PR rule splits them two ways.
