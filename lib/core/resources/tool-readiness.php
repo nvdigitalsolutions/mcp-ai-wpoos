@@ -258,8 +258,11 @@ return array(
 		),
 		'create_image_variation' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateImageVariationTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'create_post' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreatePostTool',
@@ -298,8 +301,11 @@ return array(
 		),
 		'create_vector_store' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateVectorStoreTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'crop_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CropImageTool',
@@ -328,8 +334,12 @@ return array(
 		),
 		'delete_file' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeleteFileTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Exercised against a fake FileStoreInterface: the app FileStore reads the nvoos_files tables, which the test database does not carry (Proposal 160 section 6).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'openWorldHint' => false ),
 		),
 		'delete_post' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeletePostTool',
@@ -362,13 +372,20 @@ return array(
 		),
 		'edit_gemini_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\EditGeminiImageTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'edit_gemini_image_validated' => array(
 			'class' => 'Nvoos\\Core\\Tool\\EditGeminiImageValidatedTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Extends EditGeminiImageTool, so it shares the same request path and evidence.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'edit_omni_video' => array(
 			'class' => 'Nvoos\\Core\\Tool\\EditOmniVideoTool',
@@ -377,8 +394,11 @@ return array(
 		),
 		'edit_openai_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\EditOpenAIImageTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'enable_reasoning_mode' => array(
 			'class' => 'Nvoos\\Core\\Tool\\EnableReasoningModeTool',
@@ -461,8 +481,11 @@ return array(
 		),
 		'generate_cloudflareai_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateCloudflareAIImageTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'generate_email_template' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateEmailTemplateTool',
@@ -473,18 +496,25 @@ return array(
 		),
 		'generate_gemini_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateGeminiImageTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'generate_gemini_image_validated' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateGeminiImageValidatedTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Extends GenerateGeminiImageTool, so it shares the same request path and evidence.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'generate_higgsfield_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateHiggsfieldImageTool',
 			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'reason' => 'Submits an async job to api.higgsfield.ai and needs a request-then-poll fixture, which this batch did not write (Proposal 160 section 6).',
 		),
 		'generate_higgsfield_video' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateHiggsfieldVideoTool',
@@ -500,8 +530,11 @@ return array(
 		),
 		'generate_image_alt_text_validated' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateImageAltTextValidatedTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'pure',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'generate_image_caption_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateImageCaptionTool',
@@ -512,8 +545,11 @@ return array(
 		),
 		'generate_image_caption_validated' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateImageCaptionValidatedTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'pure',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'generate_mermaid' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateMermaidTool',
@@ -537,13 +573,20 @@ return array(
 		),
 		'generate_openai_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateOpenAIImageTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'generate_openai_image_validated' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateOpenAIImageValidatedTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Extends GenerateOpenAIImageTool, so it shares the same request path and evidence.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'generate_openai_speech' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateOpenAISpeechTool',
@@ -675,8 +718,11 @@ return array(
 		),
 		'get_openai_file_details' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetOpenAIFileDetailsTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'get_post' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetPostTool',
@@ -759,8 +805,11 @@ return array(
 		),
 		'get_vector_store' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetVectorStoreTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'hash_string' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HashStringTool',
@@ -896,8 +945,11 @@ return array(
 		),
 		'list_openai_files' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ListOpenAIFilesTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'list_professions' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ListProfessionsTool',
@@ -945,8 +997,11 @@ return array(
 		),
 		'list_vector_stores' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ListVectorStoresTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'load_skill' => array(
 			'class' => 'Nvoos\\Core\\Tool\\LoadSkillTool',
@@ -967,7 +1022,7 @@ return array(
 		'manage_vector_store_files' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ManageVectorStoreFilesTool',
 			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'reason' => 'Drives a file batch and polls it; a single-response HTTP fake cannot express the poll sequence, so it needs a queued-response fixture (Proposal 160 section 6).',
 		),
 		'mark_eca_attendance' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\MarkEcaAttendanceTool',
@@ -1275,8 +1330,12 @@ return array(
 		),
 		'upload_file' => array(
 			'class' => 'Nvoos\\Core\\Tool\\UploadFileTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Exercised against a fake FileStoreInterface: the app FileStore reads the nvoos_files tables, which the test database does not carry (Proposal 160 section 6).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'validate_json' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ValidateJsonTool',

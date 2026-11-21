@@ -13366,3 +13366,70 @@ Servable moves **96 → 98**; the auditor exits 0.
 Both are annotated `readOnlyHint: false, destructiveHint: false, openWorldHint:
 true` — a send writes nothing locally and is not repeat-safe, so it queues for
 approval under §126 rather than running unattended.
+
+## 139. Batch 1 closes: 20 rows triaged, 18 with evidence (2026-11-21)
+
+The twenty remaining image/file/vector-store rows split three ways once their
+constructors were read: two pure prompt builders, eighteen tools that reach a
+provider through `HttpClientInterface`, and none that needed a new contract.
+
+### 139.1 What made the provider fake possible
+
+The plan asked for "a provider fake" before a generator could be `ready`. The
+audit that followed found the requirement was already satisfiable: every one of
+these tools calls `HttpClientInterface`, and the Laravel adapter is built on the
+`Http` facade, so `Http::fake()` is the boundary fake — it pins the request
+(method, URL, auth header, query) and supplies the response, with no network and
+no credential. `getApiKey()` reads `services.{provider}.key` first, so the tests
+set that config key rather than a stub.
+
+The two prompt builders are `pure`: `GenerateImageAltText(!_validated)` and
+`GenerateImageCaption(!_validated)` compose a prompt string and touch nothing.
+The test asserts `Http::assertNothingSent()`, which is what separates `pure`
+from merely constructible.
+
+### 139.2 Annotations, per the MCP vocabulary
+
+The published guidance treats the four hints as a risk vocabulary rather than
+enforcement — clients use them to decide retries and parallel calls, so being
+inaccurate is worse than omitting them. Applied here:
+
+| Behaviour | Rows | Annotations |
+|---|---|---|
+| Reads a provider resource | `list_vector_stores`, `get_vector_store`, `list_openai_files`, `get_openai_file_details` | `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, `openWorldHint: true` |
+| Generates or edits an image | 10 generator/editor rows | `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true` — no `idempotentHint`, because a repeat call bills again |
+| Adds a resource | `create_vector_store`, `upload_file` | same as generators |
+| Deletes | `delete_file` | `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: false` — the store is local |
+| Prompt assembly | the two `pure` rows | `readOnlyHint: true`, `idempotentHint: true`, `openWorldHint: false` |
+
+`idempotentHint` is only declared where repeat-call behaviour was actually
+exercised, which is the standard's own condition for the hint being meaningful.
+
+### 139.3 Deferred, with the reason on the row
+
+Two rows stay `unverified` and now say why, so the next pass does not rediscover
+it:
+
+- `generate_higgsfield_image` — submits an async job and needs a
+  request-then-poll fixture.
+- `manage_vector_store_files` — drives a file batch and polls it; a
+  single-response fake cannot express the poll sequence.
+
+### 139.4 Counts and gates
+
+| Measure | Before | After |
+|---|---|---|
+| servable | 98 | **116** |
+| ready | 70 | 86 |
+| pure | 22 | 24 |
+| unverified | 97 | **79** |
+| unavailable | 9 | 9 (unchanged — deliberate) |
+
+| Gate | Result |
+|---|---|
+| `ImageAndFileToolsTest` | 15 tests, 73 assertions, pass |
+| annotations / picker / admin catalogue / classification | 38 tests, 144 assertions, pass |
+| auditor | `OK — no violations` |
+
+Two rows needed a `parity: port` claim the auditor caught immediately (the two
+`pure` validators shadow WordPress slugs); no row was classified from a heuristic.
