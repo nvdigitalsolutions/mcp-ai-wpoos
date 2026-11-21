@@ -31,6 +31,7 @@ use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EmailServiceInterface;
+use Nvoos\Core\Domain\Contract\ErlangCInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
@@ -141,6 +142,11 @@ class NvoosServiceProvider extends ServiceProvider {
 		// contract and ToolReadinessRegistrationTest enforces it. Hosts may bind
 		// their own implementation over it for a different transport.
 		$this->app->bind( EmailServiceInterface::class, EmailService::class );
+
+		// The Erlang C maths ships in nvoos/core, but nothing bound the contract,
+		// so erlang_c_queue_health could not be constructed. Binding the shipped
+		// service is the whole fix; it has no dependencies of its own.
+		$this->app->bind( ErlangCInterface::class, \Nvoos\Core\Domain\Service\Optimization\ErlangC::class );
 		$this->app->bind( FileStoreInterface::class, FileStore::class );
 		$this->app->bind( FileUploadServiceInterface::class, function ( $app ) {
 			return new FileUploadService(
