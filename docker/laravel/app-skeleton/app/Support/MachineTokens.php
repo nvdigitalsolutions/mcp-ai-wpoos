@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Support\PersonalTokens;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -34,10 +36,61 @@ final class MachineTokens
      */
     public static function all(): array
     {
+        return self::rows(static fn (string $name): bool => str_starts_with($name, self::NAME_PREFIX));
+    }
+
+    /**
+     * The credentials the expiry report covers: machine tokens plus the legacy
+     * names that predate the prefix, and **not** a person's own token.
+     *
+     * The rule matches `ListExpiringMachineTokens` §131 exactly; keeping it here
+     * means the command and the acknowledgement action cannot disagree about
+     * which set they are talking about.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function reportable(): array
+    {
+        return self::rows(static function (string $name, array $abilities): bool {
+            if (str_starts_with($name, self::NAME_PREFIX)) {
+                return true;
+            }
+
+            if (str_starts_with($name, PersonalTokens::NAME_PREFIX)) {
+                return false;
+            }
+
+            return array() !== $abilities && ! in_array('*', $abilities, true);
+        });
+    }
+
+    /**
+     * The reportable credentials inside the window, soonest first.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function expiring(int $days): array
+    {
+        $window = now()->addDays($days);
+
+        return array_values(array_filter(
+            self::reportable(),
+            static fn (array $row): bool => null !== $row['expires_at']
+                && Carbon::parse((string) $row['expires_at'])->lessThanOrEqualTo($window)
+        ));
+    }
+
+    /**
+     * Rows for the tokens this selector accepts.
+     *
+     * @param callable(string, array<int, string>): bool $include
+     * @return list<array<string, mixed>>
+     */
+    private static function rows(callable $include): array
+    {
         $rows = DB::table('personal_access_tokens as t')
             ->leftJoin('users', 'users.id', '=', 't.tokenable_id')
-            ->where('t.name', 'like', self::NAME_PREFIX.'%')
-            ->orderByDesc('t.created_at')
+            ->orderBy('t.expires_at')
             ->get(array(
                 't.id',
                 't.name',
@@ -45,6 +98,7 @@ final class MachineTokens
                 't.expires_at',
                 't.last_used_at',
                 't.created_at',
+                't.tokenable_id',
                 'users.name as holder',
                 'users.email as holder_email',
             ));
@@ -52,17 +106,25 @@ final class MachineTokens
         $tokens = array();
 
         foreach ($rows as $row) {
-            $abilities = json_decode((string) $row->abilities, true);
+            $decoded = json_decode((string) $row->abilities, true);
+            $abilities = is_array($decoded) ? array_values(array_map('strval', $decoded)) : array();
+            $name = (string) $row->name;
+
+            if (! $include($name, $abilities)) {
+                continue;
+            }
+
             $expires = null === $row->expires_at ? null : (string) $row->expires_at;
 
             $tokens[] = array(
                 'id' => (int) $row->id,
-                'label' => self::label((string) $row->name),
+                'label' => self::label($name),
                 'holder' => (string) ($row->holder ?? '') !== ''
                     ? (string) $row->holder
                     : (string) ($row->holder_email ?? '—'),
-                'scopes' => is_array($abilities) ? array_values(array_map('strval', $abilities)) : array(),
-                'expires' => $expires,
+                'scopes' => $abilities,
+                'expires' => null === $expires ? 'Never' : substr($expires, 0, 10),
+                'expires_at' => $expires,
                 'last_used' => null === $row->last_used_at ? null : (string) $row->last_used_at,
                 'status' => null !== $expires && strtotime($expires) <= now()->getTimestamp()
                     ? 'expired'

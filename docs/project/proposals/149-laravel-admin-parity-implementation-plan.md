@@ -13072,3 +13072,47 @@ a runner limit, not a failing assertion, and the full suite on CI is unaffected.
 - **The activity event is still attributed to `default`** — unchanged from §130.4.
 - **Legacy tokens keep the heuristic**, by design; a backfill that renames them
   is the same decision §129.4 left open.
+
+## 132. An acknowledgement, so the alert can be answered (2026-11-21)
+
+§131.4 left the gap: an operator who has read the alert and is rotating the
+credentials had no way to say so, and the mail returned the next morning.
+
+### 132.1 The rule
+
+An acknowledgement is a **new activity event**, not an update: activity rows are
+append-only, so the feed records *who said "handled", and when*, rather than
+mutating the finding. It silences that exact signature for **7 days**, but never
+past the **soonest expiry** in the set — a credential about to lapse must still
+be shouted about. A changed set is a different signature and alerts immediately.
+
+The action lives on `/ops/machine-credentials`, and writes
+`machine_token.expiry_acknowledged` to the feed plus an `acknowledged` row to
+the admin audit.
+
+### 132.2 One selector
+
+`MachineTokens::reportable()` / `expiring($days)` now own the selection §131
+fixed, and both the command and the page call them. Until this slice the page
+and the command each had their own idea of "machine credentials"; the
+acknowledgement made that a real risk, because silencing a set the mail does not
+use would be a silent no-op.
+
+### 132.3 Gates
+
+| Run | Result |
+|---|---|
+| `MachineTokenExpiryAlertTest` (now 10 tests) | an ack silences the same set; an ack ends at the soonest expiry, so a credential past its date re-alerts |
+| expiry + credentials suites | **20 passed / 43 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the four files |
+
+### 132.4 What is left
+
+- **The ack is global, not per-estate.** The event is attributed to `default` for
+  the same reason the finding is (§130.4); per-estate acks need the token to
+  record its estate first.
+- **7 days is a number, not a measurement.** It is half the default report
+  window, so an overlooked ack still produces an alert before the deadline; the
+  clamp to the soonest expiry is what makes that safe.
+- **No free-text note.** The ack records the actor and the ids; "rotating on
+  Thursday" has nowhere to go yet.

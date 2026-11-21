@@ -5,6 +5,7 @@ namespace App\Filament\Operator\Pages;
 use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
+use App\Support\ActivityRecorder;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\MachineTokens;
 use BackedEnum;
@@ -60,6 +61,70 @@ final class MachineCredentials extends Page implements HasTable
 
         return $user instanceof User
             && app(AdminAccessPolicy::class)->accessOperatorPanel($user);
+    }
+
+    /**
+     * Silences the daily expiry alert for the set it is currently about.
+     *
+     * The acknowledgement is a NEW activity event, because activity rows are
+     * append-only — the feed records that someone said "handling it", with a
+     * timestamp and an actor, rather than mutating the finding.
+     *
+     * @return array<int, Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return array(
+            Action::make('acknowledgeExpiry')
+                ->label('Acknowledge expiry alerts')
+                ->icon(Heroicon::OutlinedBellSlash)
+                ->requiresConfirmation()
+                ->modalDescription('Silences the daily expiry alert for this exact set '
+                    .'until it changes, for up to 7 days, or until the soonest credential expires. '
+                    .'The acknowledgement is recorded.')
+                ->action(fn () => $this->acknowledgeExpiryAlerts()),
+        );
+    }
+
+    /**
+     * Record the acknowledgement and name what it covers.
+     */
+    public function acknowledgeExpiryAlerts(int $days = 14): void
+    {
+        $rows = MachineTokens::expiring($days);
+        $ids = array_column($rows, 'id');
+
+        if (array() === $ids) {
+            Notification::make()
+                ->title('Nothing to acknowledge')
+                ->body(sprintf('No machine credential expires within %d days.', $days))
+                ->send();
+
+            return;
+        }
+
+        $signature = sha1(implode(',', $ids));
+
+        app(ActivityRecorder::class)->record(
+            'machine_token.expiry_acknowledged',
+            sprintf('Expiry alert acknowledged for %d machine credential(s).', count($ids)),
+            null,
+            array('signature' => $signature, 'ids' => $ids)
+        );
+
+        app(AdminAuditLogger::class)->recordResource(
+            'machine_token',
+            'expiry-alert',
+            'acknowledged',
+            array(),
+            array('ids' => $ids)
+        );
+
+        Notification::make()
+            ->success()
+            ->title('Expiry alert acknowledged')
+            ->body('Silenced for this set for up to 7 days, or until the soonest credential expires.')
+            ->send();
     }
 
     public function table(Table $table): Table
