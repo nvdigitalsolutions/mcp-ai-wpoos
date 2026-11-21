@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Mail\MachineTokensExpiring;
 use App\Support\ActivityRecorder;
+use App\Support\MachineTokens;
+use App\Support\PersonalTokens;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -205,6 +207,21 @@ class ListExpiringMachineTokens extends Command
             ->orderBy('expires_at')
             ->get()
             ->filter(static function (PersonalAccessToken $token): bool {
+                $name = (string) $token->name;
+
+                // A machine credential is identified by its prefix (§129).
+                if (str_starts_with($name, MachineTokens::NAME_PREFIX)) {
+                    return true;
+                }
+
+                // A person's own token is the inventory's and the owner's concern;
+                // it is not a machine credential however narrowly it is scoped.
+                if (str_starts_with($name, PersonalTokens::NAME_PREFIX)) {
+                    return false;
+                }
+
+                // Everything else predates the prefix: keep the old heuristic so a
+                // machine token minted before it still appears in the report.
                 $abilities = is_array($token->abilities) ? $token->abilities : array();
 
                 return array() !== $abilities && ! in_array('*', $abilities, true);

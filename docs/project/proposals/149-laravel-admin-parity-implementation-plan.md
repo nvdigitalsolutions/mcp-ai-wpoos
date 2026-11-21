@@ -2,7 +2,7 @@
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
 **Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **38 numbered slices** (§8–§56) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25), and **§56 opens Wave 3** with the toolkit manifest renderer (`/admin/toolkits`). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
-**Scoreboard** — re-measured 2026-11-21 with the `bin/audit-surface-ownership.php` rules over `docker/laravel/app-skeleton/contracts/surface-ownership.json`: **50 surfaces · 43 built on a Filament panel** (18 `/ops`, 28 `/admin`; `budgets`, `settings.platform` and `tokens.personal` are on both) · **29 console-served** · **4 console-only** (`automation-canvas`, `chat`, `connected-apps`, `wordpress-bridge` — each a recorded disposition, not a gap) · **0 planned-only** · **1 inert** (`identity-provider` on `/admin`) · **2 recorded `absent`** (`chat-profiles` on `/admin`, `onboarding` on `/ops`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Scoreboard** — re-measured 2026-11-21 with the `bin/audit-surface-ownership.php` rules over `docker/laravel/app-skeleton/contracts/surface-ownership.json`: **50 surfaces · 44 built on a Filament panel** (18 `/ops`, 29 `/admin`; `budgets`, `settings.platform` and `tokens.personal` are on both) · **29 console-served** · **4 console-only** (`automation-canvas`, `chat`, `connected-apps`, `wordpress-bridge` — each a recorded disposition, not a gap) · **0 planned-only** · **1 inert** (`identity-provider` on `/admin`) · **2 recorded `absent`** (`chat-profiles` on `/admin`, `onboarding` on `/ops`). §14.2 holds the rule this measures against: a console surface is not admin parity.
 **Validation** — app suite: **1277 tests / 7243 assertions, 0 failures** from `docker/laravel/app-skeleton`, where the parity providers resolve `tests/fixtures/` five levels up. The dev container mounts the app at `/app`, so that walk lands on `/`; the container-only failures have two separate causes, both measured 2026-11-21: the PM providers returned no rows until `docker-compose.laravel.yml` named the bind-mount path, and four `WifiKpisTest` cases were missing a fixture that **is** committed but predated the `/app` copy — all five pass once it is synced. `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-21
 **Scope (Wave 0):** ~3–4 weeks, one engineer
@@ -13017,3 +13017,58 @@ is the rule the contract row's `files` list already encodes.
   first.
 - **No acknowledgement workflow.** The event is a record, not a task; the dedupe
   window is the only thing that stops it repeating.
+
+## 131. The expiry report stops nagging about people, and the identity surface stops calling itself inert (2026-11-21)
+
+### 131.1 The selector
+
+`machineTokens()` meant "scoped and not `*`", a filter written before machine
+credentials had a name (§129). It therefore included a narrowly scoped *personal*
+token, so the alert could email the operator about a credential the inventory
+deliberately leaves to its owner.
+
+The rule is now explicit: `oos-machine:` is a machine credential; `oos-personal:`
+is not, whatever its abilities; anything else predates the prefix and keeps the
+old heuristic, so a legacy machine token still appears in the report. The report
+and the alert share the selector, so §130's dedupe signature changes with it — a
+set that drops a personal token is a different set and alerts once more. That is
+correct: the finding changed.
+
+### 131.2 The state that described a field
+
+`identity-provider` was the last `inert` row, and the state was wrong. Its own
+projection enumerates **eight working keys** (the Auth0 trio, magic-link, three
+assistant REST gates); exactly one field — `guest_token_lifetime` — renders
+disabled and names its obstacle. `inert`, in the audit's own reading, means a
+surface that renders and does nothing.
+
+The row is now `subset`: a reduced field set, which is what `subset` means and
+what the audit counts as built. The disabled key is unchanged — it still renders
+disabled and still says why (`UnimplementedSettings`); hiding it would assert
+that the capability could not exist here, which is a stronger claim than
+"nothing reads this value".
+
+Scoreboard: **50 surfaces · 44 built** (was 43) · 18 `/ops` · 29 `/admin` ·
+**0 inert**.
+
+### 131.3 Gates
+
+| Run | Result |
+|---|---|
+| `MachineTokenExpiryAlertTest` (now 8 tests) | the new case: an `oos-personal:` token expiring in 5 days is not reported and not mailed |
+| expiry + surface + settings-projection suites | **34 passed / 1,789 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the command and the test |
+
+**Local runner note.** That combination peaks at ~137 MB, just over the CLI's
+128 MB default, so `artisan test` on these four filters dies with "Allowed memory
+size exhausted" while `php -d memory_limit=768M vendor/bin/phpunit` passes. It is
+a runner limit, not a failing assertion, and the full suite on CI is unaffected.
+
+### 131.4 What is left
+
+- **The 24-hour dedupe is still the only acknowledgement mechanism** (§130.4).
+  An operator who has read the alert and is handling it has no way to say so,
+  and the alert returns tomorrow.
+- **The activity event is still attributed to `default`** — unchanged from §130.4.
+- **Legacy tokens keep the heuristic**, by design; a backfill that renames them
+  is the same decision §129.4 left open.

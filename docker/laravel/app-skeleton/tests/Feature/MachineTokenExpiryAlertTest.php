@@ -147,6 +147,17 @@ final class MachineTokenExpiryAlertTest extends TestCase
         );
     }
 
+    public function test_it_ignores_a_personal_token_that_expires_soon(): void
+    {
+        $user = User::factory()->admin()->withoutEstate()->create();
+        $user->createToken('oos-personal:notes', array('assistant:1'), Carbon::now()->addDays(5));
+
+        $code = Artisan::call('nvoos:machine-token:expiring');
+
+        $this->assertSame(0, $code, Artisan::output());
+        Mail::assertNothingSent();
+    }
+
     private function token(string $name, int $days): User
     {
         $user = User::factory()->admin()->withoutEstate()->create();
