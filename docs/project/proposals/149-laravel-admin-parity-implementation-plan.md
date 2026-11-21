@@ -13574,3 +13574,106 @@ configured reports `no_cache_layers` instead of pretending to purge.
 | batch 1–3 evidence + annotations + classification | 65 tests, 255 assertions, pass (two runs) |
 | `artisan nvoos:doctor` | `erlang_c_queue_health`, `purge_cache`, `set_cache`, `create_batch` all registered |
 | auditor | `OK — no violations` |
+
+## 142. Batch 4 closes: charts, search, research and agents (2026-11-21)
+
+### 142.1 Scope was 46 rows; 45 took a decision
+
+The plan estimated ~47 rows for this batch. The manifest held exactly **46
+`unverified`** rows in the domain. Of those, ten are `pure` — the chart and
+mermaid builders, the three Erlang-C helpers, `deep_research`,
+`generate_simple_jwt_token` and `wait_for_user` — because their correctness is
+self-evident or unit-testable with no transport. Thirty-five became `ready`, and
+one is left `unverified` with a reason (§142.4).
+
+`load_skill` belongs with the pure group thematically but is not pure: it reads
+the skills directory, so it took a `ready` row with evidence instead.
+
+### 142.2 Four annotations were corrected against the code
+
+The working table recorded `crawl4ai_price_lookup`, `gemini_geospatial_query`,
+`moderate_content` and `create_text_embeddings` as `readOnlyHint: false`. Each
+of the four makes one outbound POST and nothing else — the verb had been read as
+the signal, but the verb is not what the hint means. The manifest's own
+precedent agrees: `web_search`, `geocode_address`, `search_places` and
+`transcribe_openai_audio` are all paid outbound calls declared
+`readOnlyHint: true`.
+
+This is not cosmetic. `MachineToolSafety` vetoes a probe on
+`readOnlyHint: false` (`MachineToolAnnotationsTest::test_read_only_false_vetoes`),
+so declaring four read-only tools state-changing would have quietly removed them
+from machine probing. They now read `true` with `idempotentHint: true`. The
+mutations in the batch — `cancel_higgsfield_request`, `generate_auth0_token`,
+`run_crawl4ai_job` — stay `false`.
+
+The *validated* wrappers needed a similar correction below the surface. Only
+`WebSearchValidatedTool` extends its base tool; `create_post_validated`,
+`get_recent_posts_validated`, `save_post_validated` and
+`search_content_validated` each extend `AbstractTool` with their own strict
+schema. Their reasons say that, rather than claiming an inheritance that does
+not exist — the §137.3 rule again: read the reason from the class.
+
+### 142.3 Annotations applied
+
+| Behaviour | Rows | Hints |
+|---|---|---|
+| Outbound read or query | `web_search` (+ validated), `search_drive`, `search_gmail`, `search_places`, `geocode_address`, `reliefweb_reports`, `get_gdacs_events`, `get_open_meteo_forecast`, `get_nhc_active_storms`, `gemini_geospatial_query`, `crawl4ai_price_lookup`, `moderate_content`, `create_text_embeddings`, `open_openai_logs`, `check_higgsfield_request`, `probe_remote_mcp`, `query_remote_site` | `readOnly: true`, `idempotent: true`, `openWorld: true` |
+| Local read | `get_recent_posts_validated`, `search_content_validated`, `semantic_content_search`, `semantic_context_search`, `mine_agent_memory`, `retrieve_agent_memory`, `load_skill` | `readOnly: true`, `idempotent: true`, `openWorld: false` |
+| Local write | `create_post_validated`, `save_post_validated`, `store_agent_context`, `dispatch_event` | `readOnly: false`, `openWorld: false` |
+| Local write, repeatable | `update_setting` | `readOnly: false`, `idempotent: true` |
+| Local destructive | `delete_setting`, `manage_context_lifecycle` | `readOnly: false`, `destructive: true`, `idempotent: true` |
+| Remote mutation | `cancel_higgsfield_request`, `generate_auth0_token`, `run_crawl4ai_job` | `readOnly: false`, `openWorld: true` |
+
+`store_agent_context` and `dispatch_event` are deliberately not idempotent:
+storing the same context twice appends twice, and dispatching an event twice
+delivers twice. `update_setting` is idempotent because it assigns a value rather
+than accumulating one.
+
+### 142.4 The one row left unverified
+
+`manage_vector_store_files` drives a file batch and polls it. A single-response
+HTTP fake cannot express the poll sequence, so the row stays `unverified` with a
+reason naming the missing fixture rather than being promoted on an untested
+path. Its fixture is the outstanding follow-up for this domain.
+
+### 142.5 A measured gap this batch did not create
+
+Sixty-five pre-existing `ready` rows carry no `evidence` path. They predate the
+batches — the ECA/student/project tools, the HuggingFace dataset readers and the
+core content readers among them. Proposal 160 §7 calls a `ready` row without
+evidence a batch failure; it has not been applied retroactively. Every row in
+this batch carries evidence, so the gap did not widen here. Recorded as a
+follow-up rather than repaired in this PR, because locating credible evidence for
+65 rows is its own pass.
+
+All 194 servable rows do carry annotations — measured, not assumed.
+
+### 142.6 Counts and gates
+
+| Measure | Before | After |
+|---|---|---|
+| servable | 149 | **194** |
+| ready | 119 | 154 |
+| pure | 24 | 34 |
+| unverified | 46 | **1** |
+| unavailable | 9 | 9 |
+| quarantined | 19 | 19 |
+
+| Gate | Result |
+|---|---|
+| `ChartAndPlanningToolsTest` + `ContentAndCrawlerToolsTest` + `MemorySettingsAndEventToolsTest` | 26 tests, 86 assertions, pass |
+| `ProviderConnectorToolsTest` + `SearchAndProviderToolsTest` | 20 tests, 61 assertions, pass |
+| `MachineToolAnnotationsTest` + `MachineToolPickerTest` | 15 tests, 27 assertions, pass |
+| `ToolReadinessClassificationTest` | 1 test, 12 assertions, pass |
+| `nvoos/core` `ToolReadinessTest` | 9 tests, 36 assertions, pass |
+| `nvoos/laravel-adapter` full suite | 316 tests, 1699 assertions, pass |
+| auditor | `OK — no violations` |
+| phpcs | clean |
+
+`ToolReadinessRegistrationTest` passing in full is the useful signal here: it
+builds every servable row from the package container, so all 35 new tools are
+constructible from `nvoos/core` alone, with no unbound contract — the §141.2
+failure mode did not recur.
+
+Proposal 160's definition of done is now met: one `unverified` row, and it
+carries a reason it cannot be classified today.
