@@ -14,6 +14,23 @@ return array(
 
     /*
     |--------------------------------------------------------------------------
+    | Machine-executable tools (Proposal 159 slice 4)
+    |--------------------------------------------------------------------------
+    |
+    | Tools a machine principal may execute over `POST /api/v1/tools/{tool}`
+    | (149 plan §123). Empty by default: a machine executes nothing until an
+    | operator names a tool here **and** the assistant lists it.
+    |
+    | The read-only capability flags in `lib/core` would be the better authority,
+    | but no tool in this runtime declares them yet (214 tool classes, 0 declare),
+    | so a flag-based guard would block everything while reading as protection.
+    | This list is the interim authority; `ReadOnlyToolGuard` becomes usable as
+    | tools start declaring flags.
+    */
+    'machine_tools' => array(),
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin theme (Proposal 149 T-0.6)
     |--------------------------------------------------------------------------
     |

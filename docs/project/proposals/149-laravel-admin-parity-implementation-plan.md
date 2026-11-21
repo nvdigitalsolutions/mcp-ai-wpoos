@@ -12486,3 +12486,96 @@ question goes through that link or through the scope.
   keeps the audit trail is the obvious next step, not a redesign.
 - **Slice 4** — tool execution for `assistant:{id}` — is untouched. `/api/v1/tools`
   remains unannotated and therefore default-denied to machines.
+
+## 123. Rotation, revocation, and machine tool execution (159 slices 3–4)
+
+Two slices in one section because they are the two halves of "what a machine
+credential can do after it exists": keep it healthy (§123.1) and let it act
+(§123.2). The decision that shaped both came from the guidance rather than from the
+code — **rotation and revocation are different operations**, and an execution route
+needs more than one gate.
+
+### 123.1 Rotation is not revocation
+
+The rotation guidance converges on overlapping validity: two credentials valid at
+once so a client can adopt the new one without downtime. The same literature is
+explicit that this makes rotation useless against a leak — a rotation pattern
+deliberately keeps the old secret working. So the two are separate commands, and the
+help text says which is which:
+
+| Command | Effect | Use |
+|---|---|---|
+| `nvoos:machine-token:rotate {id}` | mints a replacement with the same owner, name and scopes; sets the old token's `expires_at` to **now + `--grace`** (default 1440 minutes) | a scheduled change |
+| `nvoos:machine-token:rotate {id} --grace=0` | mints the replacement and **deletes** the old token | an immediate cutover, when the client can be updated in the same window |
+| `nvoos:machine-token:revoke {id}` | deletes it now | a leak |
+
+Rules the command enforces: it refuses a token carrying `*` (that is a user
+credential, and rotating it would issue a narrowed replacement for it), refuses
+`--days` below 1 (a rotating credential is one that expires), and never changes the
+owner or the scope — widening a credential is a mint, not a rotation.
+
+The audit row is written against the **new** token id with `action = rotated`, and
+carries the old id, the old expiry and the grace window. The old token's expiry is
+snapshotted *before* the save, because after it that column holds the deadline this
+rotation imposed.
+
+### 123.2 Machine tool execution — three independent layers
+
+`POST /api/v1/tools/{tool}`. The catalogue (`GET /api/v1/tools`) stays readable to
+any member: it is a directory. Executing is an action, so it takes an assistant
+scope (159 §5 rule 4) and then passes three gates that each catch what the others
+miss:
+
+| Layer | Refusal | Why it is separate |
+|---|---|---|
+| the caller is a machine | `machine_principal_required` | the console has its own execution paths and its own guards; this route is not a general exec API, so a session or `['*']` token is refused **even though** `EnsurePrincipalScope` lets it through |
+| the assistant is assigned the tool | `tool_not_assigned` | the assistant's own `tools` list is estate-curated data |
+| an operator allowlisted it | `tool_not_machine_safe` | "the assistant lists it" was a decision about an assistant, not about autonomous execution |
+
+Then `tool_not_registered` (404) and `invalid_arguments` (422, `arguments` must be an
+object). Every denial writes `tool.machine_denied` with the reason code and the
+assistant id; executions write `tool.machine_executed` / `tool.machine_failed`.
+
+**The flags finding, recorded because it changed the design.** `ReadOnlyToolGuard`
+in `lib/core` is the better authority — it gates on declared capability flags
+(`write`, `state_changing`, `mutating`, `destructive`, `external_side_effect`) — but
+**214 tool classes exist and 0 declare flags**, and with `blockUndeclared` on the
+guard blocks everything. Wiring it in would have been a guard that denies all
+traffic while reading as protection, which is the failure mode this plan keeps
+naming. So `oos.machine_tools` (empty by default) is the interim authority, and the
+guard becomes usable as tools start declaring flags.
+
+The route is default-closed: with the shipped config a machine can execute nothing.
+That is the intended state until an operator names a tool, and the test that proves
+the allowlist is load-bearing is simply the first version of the happy-path test,
+which failed 403 until the fixture set it.
+
+### 123.3 Gates
+
+| Run | Result |
+|---|---|
+| `MintMachineTokenTest` + `MachineTokenLifecycleTest` + `MachineToolExecutionTest` | **26 tests / 79 assertions, 0 failures** |
+| lifecycle coverage | rotation keeps **both** tokens working during the grace window; `--grace=0` deletes the old one (401 on the next call); rotation refuses a `['*']` token and `--days=0`; revoke deletes immediately; both actions leave an audit row |
+| execution coverage | happy path returns the tool's own payload (`base64` → `aGk=`); session and `['*']` token refused as non-machine; an estate-only scope refused by the scope guard; unassigned / unallowlisted / unregistered / bad-arguments each refused with its own code; every denial recorded |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 errors and 0 warnings** on the two commands, the controller, the config and both tests. `routes/api.php` still reports the 6 pre-existing `$triggersPath.'/{id}'` errors on lines this slice did not touch |
+| Live probe (`localhost:8001`) | minted `assistant:6` (#14) → `base64` **200** (`aGk=`), `color_convert` **403 `tool_not_assigned`**; rotated #14 → #15 with a 30-minute grace → **old 200 and new 200**; revoked #15 → **new 401, old still 200**; then both revoked, the probe assistant deleted, and the allowlist restored to empty |
+
+The live sequence is the point of the section: revoking the *replacement* did not
+touch the *old* credential, which is exactly why rotation cannot be used as
+revocation.
+
+### 123.4 What is left
+
+- **Declaring capability flags on tools.** Until some tools implement
+  `ToolCapabilityFlagsInterface`, "safe for a machine" is an operator list rather
+  than a property of the tool. This is the highest-value follow-up because it turns
+  the interim control into a real classification.
+- **Write tools for machines.** Even once flags exist, granting `write` or
+  `destructive` to an autonomous caller needs a human-in-the-loop decision — the
+  OWASP agent guidance is explicit that approvals belong on that path, not on a
+  longer allowlist.
+- **Rotation cadence.** The commands make rotation possible; nothing schedules it.
+  A schedule plus an expiry warning (the same shape as the media sweep) is the
+  natural next step, not a redesign.
+- **The panel form** for minting remains unbuilt and still may not earn its place:
+  minting is an operator act, and the console commands now cover the lifecycle.

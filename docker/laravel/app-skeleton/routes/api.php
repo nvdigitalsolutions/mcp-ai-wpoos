@@ -41,6 +41,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TokenManagerController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolShortcutsController;
+use App\Http\Controllers\MachineToolController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
 use App\Http\Controllers\TriggersController;
@@ -154,6 +155,13 @@ Route::prefix('api/v1')->group(function (): void {
             Route::delete('/chat-memory/{id}', [MemoryController::class, 'destroy']);
 
             Route::get('/tools', ToolsController::class);
+
+            // 159 slice 4 — machine tool execution. The catalogue above
+            // stays readable to any member; executing is an action, so it
+            // requires an assistant scope, the assistant's own tool list,
+            // and an operator allowlist (`oos.machine_tools`).
+            Route::post('/tools/{tool}', MachineToolController::class)
+                ->middleware('scope:assistant');
 
             // The list stays readable: the console shows every role the
             // assistant catalogue. Everything below it is administrative.

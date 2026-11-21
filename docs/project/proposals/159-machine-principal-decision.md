@@ -150,11 +150,18 @@ Concretely:
    `Authenticate`, declarations read from the route, `scope:any` for self routes, and
    the ordering test that proves it is not a no-op.
 3. **Minting**, first as a console command (the `nvoos:auth0-link` precedent), then a
-   panel form if it earns one. *Console half shipped as `nvoos:machine-token` —
-   [149](149-laravel-admin-parity-implementation-plan.md) §122. The panel form is
-   not built, and nothing mints a token implicitly.*
+   panel form if it earns one. *Shipped as `nvoos:machine-token`, with
+   `:rotate` and `:revoke` — [149](149-laravel-admin-parity-implementation-plan.md)
+   §122–§123. Rotation keeps the old credential valid for a grace window;
+   revocation deletes it, and the two are deliberately separate commands. The
+   panel form is not built, and nothing mints a token implicitly.*
 4. **Tool execution for assistant scope**, which is a new route and its own decision
-   about which tools are safe for a machine.
+   about which tools are safe for a machine. *Shipped as
+   `POST /api/v1/tools/{tool}` — [149](149-laravel-admin-parity-implementation-plan.md)
+   §123. Three gates: the caller must be a machine, the assistant must be assigned
+   the tool, and an operator must allowlist it (`oos.machine_tools`, empty by
+   default). The capability flags that would make "safe for a machine" a property
+   of the tool rather than an operator list are declared by no tool yet.*
 
 ## 9. Risks, and what would change this decision
 
