@@ -107,25 +107,25 @@ final class CapabilityFlagVocabulary
      *
      * @return list<string> Canonical flags.
      */
-    public static function normalise( array $flags ): array
+    public static function normalise(array $flags): array
     {
         $normalised = array();
 
-        foreach ( $flags as $flag ) {
-            if ( ! \is_string( $flag ) ) {
+        foreach ($flags as $flag) {
+            if (! \is_string($flag)) {
                 continue;
             }
 
-            $flag = \strtolower( \trim( $flag ) );
+            $flag = \strtolower(\trim($flag));
 
-            if ( '' === $flag ) {
+            if ('' === $flag) {
                 continue;
             }
 
             $normalised[] = self::ALIASES[ $flag ] ?? $flag;
         }
 
-        return \array_values( \array_unique( $normalised ) );
+        return \array_values(\array_unique($normalised));
     }
 
     /**
@@ -133,9 +133,9 @@ final class CapabilityFlagVocabulary
      *
      * @param array<int, string> $flags Raw flags.
      */
-    public static function has( array $flags, string $flag ): bool
+    public static function has(array $flags, string $flag): bool
     {
-        return \in_array( self::ALIASES[ $flag ] ?? \strtolower( $flag ), self::normalise( $flags ), true );
+        return \in_array(self::ALIASES[ $flag ] ?? \strtolower($flag), self::normalise($flags), true);
     }
 
     /**
@@ -144,12 +144,12 @@ final class CapabilityFlagVocabulary
      * @param array<int, string> $flags      Raw flags.
      * @param array<int, string> $candidates Flags to look for.
      */
-    public static function hasAny( array $flags, array $candidates ): bool
+    public static function hasAny(array $flags, array $candidates): bool
     {
-        $normalised = self::normalise( $flags );
+        $normalised = self::normalise($flags);
 
-        foreach ( $candidates as $candidate ) {
-            if ( \in_array( self::ALIASES[ $candidate ] ?? \strtolower( $candidate ), $normalised, true ) ) {
+        foreach ($candidates as $candidate) {
+            if (\in_array(self::ALIASES[ $candidate ] ?? \strtolower($candidate), $normalised, true)) {
                 return true;
             }
         }
@@ -166,16 +166,16 @@ final class CapabilityFlagVocabulary
      *
      * @param array<int, string> $flags Raw flags.
      */
-    public static function hasOutboundMutation( array $flags ): bool
+    public static function hasOutboundMutation(array $flags): bool
     {
-        $normalised = self::normalise( $flags );
+        $normalised = self::normalise($flags);
 
-        if ( \in_array( 'external-communication', $normalised, true ) ) {
+        if (\in_array('external-communication', $normalised, true)) {
             return true;
         }
 
-        $outbound = \array_intersect( $normalised, self::OUTBOUND );
-        $mutating = \array_intersect( $normalised, self::MUTATING );
+        $outbound = \array_intersect($normalised, self::OUTBOUND);
+        $mutating = \array_intersect($normalised, self::MUTATING);
 
         return array() !== $outbound && array() !== $mutating;
     }

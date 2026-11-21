@@ -82,7 +82,8 @@ final class NecessityGate
             return false;
         }
 
-        if (CapabilityFlagVocabulary::hasAny($flags, array(
+        if (
+            CapabilityFlagVocabulary::hasAny($flags, array(
             'write',
             'state-changing',
             'irreversible',
@@ -90,7 +91,8 @@ final class NecessityGate
             'data-destruction',
             'access-control-change',
             'mass-email',
-        ))) {
+            ))
+        ) {
             return false;
         }
 

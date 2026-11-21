@@ -278,8 +278,10 @@ final class ActionSafetyProfile
                 : self::IRREVERSIBILITY_MODERATE;
         }
 
-        if (\in_array('read-only', $flags, true)
-            && ! CapabilityFlagVocabulary::hasAny($flags, array('write', 'state-changing'))) {
+        if (
+            \in_array('read-only', $flags, true)
+            && ! CapabilityFlagVocabulary::hasAny($flags, array('write', 'state-changing'))
+        ) {
             return self::IRREVERSIBILITY_NONE;
         }
 
