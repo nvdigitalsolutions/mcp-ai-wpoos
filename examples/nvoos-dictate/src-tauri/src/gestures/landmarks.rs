@@ -98,9 +98,7 @@ pub(crate) fn element_count(dims: &[i64]) -> Option<usize> {
 pub(crate) fn roles_from_shapes(
     counts: &[Option<usize>],
 ) -> (Option<usize>, Option<usize>, Option<usize>) {
-    let landmark = counts
-        .iter()
-        .position(|c| matches!(c, Some(63) | Some(42)));
+    let landmark = counts.iter().position(|c| matches!(c, Some(63) | Some(42)));
     let mut ones = counts
         .iter()
         .enumerate()
@@ -404,11 +402,9 @@ mod ort_backend {
 
             let size = self.input_size as usize;
             let tensor = match self.layout {
-                InputLayout::Nchw => {
-                    ndarray16::Array::from_shape_vec((1, 3, size, size), data)
-                        .map_err(|e| AppError::Other(format!("tensor reshape: {e}")))?
-                        .into_dyn()
-                }
+                InputLayout::Nchw => ndarray16::Array::from_shape_vec((1, 3, size, size), data)
+                    .map_err(|e| AppError::Other(format!("tensor reshape: {e}")))?
+                    .into_dyn(),
                 InputLayout::Nhwc => {
                     let hwc = chw_to_hwc(&data, size);
                     if hwc.is_empty() {

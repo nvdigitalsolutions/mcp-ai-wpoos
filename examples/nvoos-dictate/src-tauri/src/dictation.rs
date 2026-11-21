@@ -214,7 +214,11 @@ impl DictationController {
         // Resident microphone.
         let settings = state.settings_snapshot();
         tracing::info!(
-            device = settings.audio.input_device.as_deref().unwrap_or("<system default>"),
+            device = settings
+                .audio
+                .input_device
+                .as_deref()
+                .unwrap_or("<system default>"),
             "startup: opening microphone"
         );
         match MicCapture::start(

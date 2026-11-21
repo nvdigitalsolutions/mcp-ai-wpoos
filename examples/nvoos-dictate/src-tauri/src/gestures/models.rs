@@ -50,12 +50,14 @@ pub const HAND_LANDMARK_SHA256: &str =
 /// The v1 catalogue.
 pub const CATALOG: &[LandmarkModelSpec] = &[LandmarkModelSpec {
     id: "hand-landmark",
-    description: "MediaPipe Hands 21-keypoint regressor (fp32 ONNX, NHWC 1x224x224x3, input 0..1), \
+    description:
+        "MediaPipe Hands 21-keypoint regressor (fp32 ONNX, NHWC 1x224x224x3, input 0..1), \
          converted by OpenCV Zoo. This export regresses landmarks from a **cropped hand**, so \
          keep the hand large in frame; the palm-detector stage is not part of this pipeline.",
     file_name: "hand-landmark.onnx",
     size_mb: 4,
-    license: "Apache-2.0 (OpenCV handpose_estimation_mediapipe, converted from Google MediaPipe Hands)",
+    license:
+        "Apache-2.0 (OpenCV handpose_estimation_mediapipe, converted from Google MediaPipe Hands)",
     url: Some(HAND_LANDMARK_URL),
     sha256: Some(HAND_LANDMARK_SHA256),
 }];
