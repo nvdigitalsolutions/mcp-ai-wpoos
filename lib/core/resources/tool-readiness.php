@@ -97,6 +97,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\BulkImportTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'calculate_erlang_c' => array(
@@ -222,6 +223,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\CountPostsTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'count_tokens' => array(
@@ -306,6 +308,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'create_post_validated' => array(
@@ -321,18 +324,21 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateProjectTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'create_student' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\CreateStudentTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'create_task' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateTaskTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'create_text_embeddings' => array(
@@ -400,12 +406,14 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'openWorldHint' => false ),
 		),
 		'delete_project' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeleteProjectTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'delete_setting' => array(
@@ -420,6 +428,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\DeleteTaskTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'dispatch_event' => array(
@@ -878,18 +887,21 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_post_meta' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetPostMetaTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_post_taxonomies' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetPostTaxonomiesTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_post_type_schema' => array(
@@ -911,6 +923,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_recent_posts_validated' => array(
@@ -946,6 +959,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\GetTaskDependenciesTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_user_info' => array(
@@ -1130,6 +1144,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\ListProjectsTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_prompt_cues' => array(
@@ -1162,6 +1177,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\ListTasksTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_vector_stores' => array(
@@ -1361,6 +1377,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'save_post_validated' => array(
@@ -1404,6 +1421,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'search_content_validated' => array(
@@ -1564,12 +1582,14 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\UpdatePostTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'update_project' => array(
 			'class' => 'Nvoos\\Core\\Tool\\UpdateProjectTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'update_setting' => array(
@@ -1584,12 +1604,14 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\UpdateStudentTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'update_task' => array(
 			'class' => 'Nvoos\\Core\\Tool\\UpdateTaskTool',
 			'readiness' => 'ready',
 			'probe' => 'dry_run',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
 		'upload_file' => array(
