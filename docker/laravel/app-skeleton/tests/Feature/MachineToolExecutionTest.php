@@ -94,16 +94,25 @@ final class MachineToolExecutionTest extends TestCase
             ->assertJsonPath('error.code', 'tool_not_assigned');
     }
 
-    public function test_an_unallowlisted_tool_is_refused_even_when_assigned(): void
+    public function test_an_unallowlisted_tool_asks_for_approval_instead(): void
     {
+        // Denying outright kept machines read-only forever. The guidance for an
+        // agent action is propose -> approve -> execute, so an assigned but
+        // unallowlisted tool queues an approval rather than failing.
         config(array('oos.machine_tools' => array('base64')));
 
         [$user, $assistant] = $this->fixture(array('base64', 'color_convert'));
 
         $this->withHeader('Authorization', 'Bearer ' . $this->token($user, $assistant))
             ->postJson('/api/v1/tools/color_convert', array('arguments' => array('color' => '#fff')))
-            ->assertForbidden()
-            ->assertJsonPath('error.code', 'tool_not_machine_safe');
+            ->assertStatus(202)
+            ->assertJsonPath('status', 'pending_approval');
+
+        $this->assertDatabaseHas('nvoos_approvals', array(
+            'tool' => 'color_convert',
+            'assistant_id' => $assistant->getKey(),
+            'status' => 'pending',
+        ));
     }
 
     public function test_a_tool_that_is_not_registered_is_refused(): void
