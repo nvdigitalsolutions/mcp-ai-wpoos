@@ -15,7 +15,7 @@
 
 use crate::cleanup::providers::local_openai::LocalOpenAiProvider;
 use crate::cleanup::providers::openai_shape;
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 
 /// A single crop to relabel, sent from the detect loop to the polish worker.
 #[derive(Debug, Clone)]
@@ -86,6 +86,9 @@ pub fn prepare_request(
 
 /// Crop an RGB frame to a box (padded ~15% for context) and encode it as a
 /// base64 PNG data-URI. Returns an error on an empty/degenerate box.
+///
+/// The encoder itself lives in [`crate::util::image`] so deictic grounding
+/// (Proposal 153) shares one implementation instead of forking it.
 fn crop_to_png_data_uri(
     rgb: &[u8],
     w: u32,
@@ -95,45 +98,7 @@ fn crop_to_png_data_uri(
     bw: u32,
     bh: u32,
 ) -> AppResult<String> {
-    if w == 0 || h == 0 || bw == 0 || bh == 0 {
-        return Err(AppError::Other("empty crop box".into()));
-    }
-    let pad_x = bw / 6;
-    let pad_y = bh / 6;
-    let x0 = x.saturating_sub(pad_x);
-    let y0 = y.saturating_sub(pad_y);
-    let x1 = (x + bw + pad_x).min(w);
-    let y1 = (y + bh + pad_y).min(h);
-    let cw = x1.saturating_sub(x0);
-    let ch = y1.saturating_sub(y0);
-    if cw == 0 || ch == 0 {
-        return Err(AppError::Other("degenerate crop box".into()));
-    }
-
-    let mut img = image::RgbImage::new(cw, ch);
-    for cy in 0..ch {
-        for cx in 0..cw {
-            let sx = x0 + cx;
-            let sy = y0 + cy;
-            let idx = ((sy * w + sx) * 3) as usize;
-            if idx + 2 < rgb.len() {
-                img.put_pixel(cx, cy, image::Rgb([rgb[idx], rgb[idx + 1], rgb[idx + 2]]));
-            }
-        }
-    }
-
-    let mut png: Vec<u8> = Vec::new();
-    {
-        let mut cursor = std::io::Cursor::new(&mut png);
-        image::DynamicImage::ImageRgb8(img)
-            .write_to(&mut cursor, image::ImageFormat::Png)
-            .map_err(|e| AppError::Other(format!("png encode failed: {e}")))?;
-    }
-    let b64 = {
-        use base64::Engine as _;
-        base64::engine::general_purpose::STANDARD.encode(&png)
-    };
-    Ok(format!("data:image/png;base64,{b64}"))
+    crate::util::image::crop_to_data_uri(rgb, w, h, x, y, bw, bh, None)
 }
 
 #[cfg(test)]

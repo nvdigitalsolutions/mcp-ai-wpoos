@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, RwLock};
 
+#[cfg(feature = "gestures")]
+use tauri::Emitter;
 use tauri::{AppHandle, Manager};
 
 use crate::audio::capture::MicCapture;
@@ -113,6 +115,9 @@ pub struct AppState {
     /// Resident vision controller (object detection + tracking). `None` when
     /// disabled or not compiled.
     pub vision: Mutex<Option<Arc<crate::vision::controller::VisionController>>>,
+    /// Resident hand-gesture controller (Proposal 153). `None` when disabled,
+    /// not compiled, or the model is not installed.
+    pub gestures: Mutex<Option<Arc<crate::gestures::controller::GestureController>>>,
     /// Resident browser-agent controller. The `AgentController` is always
     /// present (type-stable); its driver only runs behind the `agent` feature.
     pub agent: crate::agent::controller::AgentController,
@@ -147,6 +152,7 @@ impl AppState {
             mic: Mutex::new(None),
             camera: Mutex::new(None),
             vision: Mutex::new(None),
+            gestures: Mutex::new(None),
             agent: crate::agent::controller::AgentController::new(),
             snippet: std::sync::Arc::new(crate::snippet::controller::SnippetController::new()),
             document: std::sync::Arc::new(crate::document::controller::DocumentController::new()),
@@ -366,6 +372,9 @@ impl AppState {
 
     /// Stop the resident camera and release the device.
     pub fn stop_camera(&self) {
+        // Camera off means gestures off: the worker would otherwise keep
+        // reading a stale ring.
+        self.stop_gestures();
         *self.camera.lock().unwrap() = None;
     }
 
@@ -484,6 +493,261 @@ impl AppState {
             self.restart_vision()?;
         }
         Ok(())
+    }
+
+    /// Start (or restart) the resident gesture loop.
+    ///
+    /// Requires a running camera and a local landmark model. Model resolution
+    /// is fail-closed: no verified download exists yet, so the user must point
+    /// Settings at an ONNX file (see `gestures/models.rs`).
+    pub fn restart_gestures(&self) -> AppResult<()> {
+        #[cfg(not(feature = "gestures"))]
+        {
+            Err(AppError::Unsupported(
+                "hand gestures are not compiled into this build".into(),
+            ))
+        }
+
+        #[cfg(feature = "gestures")]
+        {
+            let settings = self.settings_snapshot();
+            let model_path = crate::gestures::models::resolve_path(
+                &settings.gestures.landmark_model,
+                Some(&settings.gestures.model_path),
+                &self.models_dir(),
+            )?;
+
+            let camera =
+                self.camera.lock().unwrap().clone().ok_or_else(|| {
+                    AppError::NotConfigured("start the camera preview first".into())
+                })?;
+            let frame = camera.frame_vision.clone();
+
+            let mut allowed = Vec::new();
+            for raw in &settings.gestures.allowed_actions {
+                match crate::gestures::ActionId::parse(raw) {
+                    Some(action) => allowed.push(action),
+                    None => tracing::warn!(action = %raw, "ignoring unknown gesture action"),
+                }
+            }
+
+            let cfg = crate::gestures::controller::GestureRunConfig {
+                stabilizer: crate::gestures::stabilize::StabilizerConfig {
+                    enter: settings.gestures.min_confidence,
+                    exit: settings.gestures.exit_confidence,
+                    agree: settings.gestures.debounce_agree,
+                    window: settings.gestures.debounce_window,
+                    min_track_frames: settings.gestures.min_track_frames,
+                },
+                motion: crate::gestures::motion::MotionConfig::default(),
+                router: crate::gestures::router::RouterConfig {
+                    arm_hold_ms: settings.gestures.arm_hold_ms,
+                    arm_gesture: crate::gestures::GestureId::OpenPalm,
+                    cooldown_ms: settings.gestures.cooldown_ms,
+                    armed_timeout_ms: settings.gestures.armed_timeout_ms,
+                    confirm_hold_ms: settings.gestures.confirm_hold_ms,
+                    allowed,
+                },
+                disarm_after_ms: settings.gestures.armed_timeout_ms,
+            };
+
+            let backend = crate::gestures::landmarks::OrtHandPose::load(
+                &model_path,
+                settings.gestures.input_size,
+                settings.gestures.mirror_preview,
+            )?;
+
+            let app = self.app.clone();
+            let sink: crate::gestures::controller::IntentSink =
+                Arc::new(move |intent: crate::gestures::GestureIntent| {
+                    // Guarded actions require the deliberate hold; a quick
+                    // flash only announces that confirmation is pending.
+                    if intent.requires_confirm && !intent.hold_confirmed {
+                        let _ = app.emit("gesture://pending-confirm", &intent);
+                        return;
+                    }
+                    let outcome = match intent.action {
+                        crate::gestures::ActionId::StopDictation => {
+                            crate::dictation::request_stop()
+                        }
+                        crate::gestures::ActionId::ToggleDictation => {
+                            crate::dictation::request_toggle()
+                        }
+                        _ => Ok(()),
+                    };
+                    let _ = app.emit("gesture://action", &intent);
+                    if let Err(error) = outcome {
+                        let _ = app.emit("gesture://error", error.to_string());
+                    }
+                });
+
+            let controller = crate::gestures::controller::GestureController::start(
+                Box::new(backend),
+                cfg,
+                frame,
+                sink,
+            )?;
+            tracing::info!(model = %model_path.display(), "started gesture loop");
+            *self.gestures.lock().unwrap() = Some(Arc::new(controller));
+            Ok(())
+        }
+    }
+
+    /// Stop the resident gesture loop and release the model.
+    pub fn stop_gestures(&self) {
+        *self.gestures.lock().unwrap() = None;
+    }
+
+    /// Re-apply gesture settings (enable/disable, thresholds, allowlist).
+    pub fn reapply_gestures(&self, previous: &Settings) -> AppResult<()> {
+        let current = self.settings_snapshot();
+        if previous.gestures == current.gestures {
+            return Ok(());
+        }
+        self.stop_gestures();
+        if current.gestures.enabled {
+            self.restart_gestures()?;
+        }
+        Ok(())
+    }
+
+    /// Deictic grounding ("point at something and ask", Proposal 153 §7.2).
+    ///
+    /// Reads the live gesture snapshot for the referent, crops that region from
+    /// the vision ring, and asks the configured local multimodal model. Returns
+    /// text for the Home panel only — nothing is inserted into another app and
+    /// no crop is persisted.
+    ///
+    /// Type-stable across builds: without the `gestures` feature the method
+    /// still exists and reports the surface as not compiled, so the IPC
+    /// signature never changes.
+    pub async fn ask_camera(
+        &self,
+        question: &str,
+    ) -> AppResult<crate::gestures::deictic::DeicticAnswer> {
+        #[cfg(not(feature = "gestures"))]
+        {
+            let _ = question;
+            Err(AppError::NotConfigured(
+                "hand gestures are not compiled into this build".into(),
+            ))
+        }
+
+        #[cfg(feature = "gestures")]
+        {
+            self.ask_camera_impl(question).await
+        }
+    }
+
+    #[cfg(feature = "gestures")]
+    async fn ask_camera_impl(
+        &self,
+        question: &str,
+    ) -> AppResult<crate::gestures::deictic::DeicticAnswer> {
+        let question = question.trim();
+        if question.is_empty() {
+            return Err(AppError::Other("type a question first".into()));
+        }
+        let settings = self.settings_snapshot();
+        if !settings.gestures.deictic_enabled {
+            return Err(AppError::NotConfigured(
+                "\"ask your camera\" is off — enable it in Settings → Gestures".into(),
+            ));
+        }
+
+        // Resolve the referent first and drop the locks before any I/O.
+        let snapshot = match self.gestures.lock().unwrap().as_ref() {
+            Some(controller) => controller.snapshot(),
+            None => {
+                return Err(AppError::NotConfigured(
+                    "start hand gestures on the Camera panel first".into(),
+                ))
+            }
+        };
+        let region = {
+            let normalised =
+                crate::gestures::deictic::normalised_region(&snapshot.landmarks, snapshot.gesture);
+            // The snapshot's landmarks are normalised to the vision ring, so
+            // the pixel box must be computed in that ring's space.
+            let frame_size = self
+                .camera
+                .lock()
+                .unwrap()
+                .as_ref()
+                .and_then(|camera| camera.frame_vision.lock().unwrap().clone())
+                .map(|frame| (frame.width, frame.height));
+            match (normalised, frame_size) {
+                (Some(norm), Some((width, height))) => {
+                    crate::gestures::deictic::pixel_region(norm, width, height)
+                }
+                _ => None,
+            }
+        }
+        .ok_or_else(|| {
+            AppError::Other("no hand in view — show a hand to the camera and ask again".into())
+        })?;
+
+        // One frame snapshot for the crop; the guards are released before any I/O.
+        let frame = {
+            let camera =
+                self.camera.lock().unwrap().clone().ok_or_else(|| {
+                    AppError::NotConfigured("start the camera preview first".into())
+                })?;
+            // Bind the clone before the block tail: a `MutexGuard` created in
+            // the tail would outlive `camera`.
+            let frame = camera.frame_vision.lock().unwrap().clone();
+            frame.ok_or_else(|| {
+                AppError::Other("no camera frame yet — wait a moment and retry".into())
+            })?
+        };
+
+        let uri = crate::util::image::crop_to_data_uri(
+            &frame.rgb,
+            frame.width,
+            frame.height,
+            region.x,
+            region.y,
+            region.w,
+            region.h,
+            Some(crate::gestures::deictic::MAX_EDGE),
+        )?;
+
+        let provider = match settings.gestures.deictic_provider.as_str() {
+            "ollama" => crate::cleanup::providers::local_openai::LocalOpenAiProvider::new(
+                crate::cleanup::providers::local_openai::LocalKind {
+                    name: "Ollama",
+                    id: "ollama",
+                },
+                &settings.ollama.base_url,
+                &settings.gestures.deictic_model,
+                settings.ollama.load_timeout_ms,
+                self.secrets.get(KEY_OLLAMA_TOKEN)?,
+            )?,
+            _ => crate::cleanup::providers::local_openai::LocalOpenAiProvider::new(
+                crate::cleanup::providers::local_openai::LocalKind {
+                    name: "LM Studio",
+                    id: "lm_studio",
+                },
+                &settings.lm_studio.base_url,
+                &settings.gestures.deictic_model,
+                settings.lm_studio.load_timeout_ms,
+                self.secrets.get(KEY_LM_STUDIO_TOKEN)?,
+            )?,
+        };
+
+        let started = std::time::Instant::now();
+        let answer = provider.ask_crop(&uri, question).await?.trim().to_string();
+        if answer.is_empty() {
+            return Err(AppError::Other(
+                "the local model returned an empty answer".into(),
+            ));
+        }
+        Ok(crate::gestures::deictic::DeicticAnswer {
+            answer,
+            gesture: snapshot.gesture,
+            region,
+            elapsed_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+        })
     }
 
     /// Build an NV oOS client from stored settings + keychain credential.

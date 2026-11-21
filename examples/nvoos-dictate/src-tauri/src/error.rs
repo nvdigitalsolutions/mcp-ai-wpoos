@@ -99,8 +99,8 @@ impl From<keyring::Error> for AppError {
 
 #[cfg(any(
     feature = "vision",
+    feature = "gestures",
     feature = "moonshine",
-    feature = "silero-vad",
     feature = "snippet-onnx",
     feature = "memory"
 ))]
