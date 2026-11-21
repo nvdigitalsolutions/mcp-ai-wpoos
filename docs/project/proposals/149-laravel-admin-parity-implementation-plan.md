@@ -14057,3 +14057,125 @@ from it. Recorded here, not guessed at.
 
 No constructor changed, so no runtime needs rewiring; the change is confined to
 one private method and the call it feeds.
+
+## 150. CLI identity, the sanitizer ratchet, and what the necessity gate would do today (2026-11-21)
+
+### 150.1 `nvoos:tool --as`
+
+The command ran with `user_id => 0` and no auth provider. That is the WP-CLI
+convention — `wp` executes unauthenticated unless `--user` is given — so the
+default is kept and an explicit flag is added rather than an implicit admin. The
+flag validates its value, so a typo fails as a usage error instead of a
+permission error from whichever tool happened to run.
+
+Two things surfaced while wiring it:
+
+- **`auth_provider` was missing too.** The registry only enforces a tool's
+  required capability when the caller supplies a checker (`ToolRegistry` line
+  ~250), and `AuthProvider::userCan()` already authorises with `Gate::forUser()`.
+  Without the provider in context a `--as` call passed the store's gate and was
+  still refused by the registry — a second instance of §149's seam.
+- **An error object printed as `{}`.** `notFound()` and friends return exception
+  objects, so the command's `json_encode` produced an empty object and exited 0.
+  It now prints the message and returns `FAILURE` on any failure. That is a
+  deliberate CLI correction: a dev command that exits 0 after a failed tool is a
+  foot-gun.
+
+### 150.2 The sanitizer ratchet
+
+The auditor grew one context-contract check: a `ready` row whose class source
+carries an encoded payload (`b64_json`, `audio_base64`, `image_base64`,
+`inline_data`) and which does not implement `LlmSanitizerInterface`.
+
+Seven rows are **baselined** — they rely on the runtime backstop, and the
+baseline is the seven §10.2 measured. Anything outside the baseline is reported
+under `G6` as a **warning**, and the gate still exits 0. The list can only shrink:
+remove an entry when that tool declares its own copy.
+
+Verified in both directions: with the baseline intact the report reads `7 row(s) …
+rely on the runtime backstop` and no `G6` block; removing one entry makes `G6`
+name that row and the exit code stay 0.
+
+This is the ratchet pattern rather than a standing list of warnings — freeze the
+count, refuse new entries, clear at leisure. A permanent seven-warning list is the
+kind of output that gets ignored.
+
+### 150.3 What the necessity gate would do today
+
+Measured, not assumed. Every servable row was resolved from the app container and
+run through `NecessityGate::decide( $flags, $slug, array() )`:
+
+| Measure | Result |
+|---|---|
+| servable rows | 195 |
+| resolved and registered | 195 |
+| **rows declaring capability flags** | **0** |
+| verdicts | `approval_required` 194, `skip` 1 |
+
+**No production tool implements `ToolCapabilityFlagsInterface`** — only test
+doubles do (`NecessityGuardTest`, `ReadOnlyGuardFlaggedTool`, and friends). With no
+flags, `deriveIrreversibilityFromFlags()` returns the unknown default 0.5, and with
+no arguments the necessity classifier returns `optional`; the pair lands on
+`optional_needs_approval` for almost everything — `strip_html`, `time_ago`,
+`validate_json` and `web_search` included.
+
+So the answer to §10.1's open question is sharper than "keep the gate off": the
+score is derived from a declaration **no tool makes**. Enabling the gate today
+would route 194 of 195 tools to approval. `ReadOnlyToolGuard` shares the
+dependency through its `block_undeclared` default, so read-only mode would block
+the same set.
+
+Caveat on the measurement: empty arguments make `optional` the conservative
+default, so this bounds the *worst case*. A real call with arguments may classify
+higher. The bound is close to total, which is enough to decide.
+
+**Recommendation, recorded rather than implemented:** port the flags the
+WordPress twins already declare (§150.4), normalise the two vocabularies, and
+re-measure. That is cheaper than inventing flags and richer than deriving them
+from the readiness annotations, which carry only the four MCP hints.
+
+### 150.4 Where the flags already exist — and why the port dropped them
+
+A first pass concluded "no tool declares flags" and stopped there. That was a
+statement about `lib/core`, not about the product:
+
+| Source | What it holds |
+|---|---|
+| `includes/interfaces/interface-wp-mcp-ai-tool.php` | `get_capability_flags()` is **required** of every tool |
+| `includes/tools/*.php` | **1,488** implementations, one per tool |
+| `includes/abilities/*` | three readers: the ability bridge, its registrar, and the security bridge |
+| admin AJAX | flags are editable per tool (`update_capability_flags`) |
+
+So the declaration was not missing from the product — it was dropped when the
+tools were ported. The WordPress vocabulary, counted across the corpus:
+
+```
+202 requires-capability   150 read-only      119 local-only        99 external-api
+ 71 write                 57 state-changing  55 cacheable          42 network-dependent
+ 38 requires-credentials   27 consumes-tokens 21 rate-limited       21 idempotent
+```
+
+The readiness manifest is **not** a substitute: it carries the four MCP hints
+(`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), which
+cannot express `async`, `cacheable`, `rate-limited` or `local-only`.
+
+And the vocabularies do not line up yet. `ReadOnlyToolGuard::DEFAULT_GATED_FLAGS`
+gates on `state_changing` (underscore) while WordPress declares
+`state-changing` (hyphen); `deriveIrreversibilityFromFlags()` looks for
+`external-communication` while the corpus declares `external-api` and
+`network-dependent`. A verbatim port would still miss those. `read-only`
+(150 tools) and `write` (71) do match, which is most of the value — but a
+normalisation step belongs in the port, not in a follow-up surprise.
+
+The measured worst case in §150.3 is therefore an artefact of the port, not a
+property of the design: with flags carried over, the ~150 `read-only` tools would
+resolve to irreversibility 0 and be allowed rather than routed to approval.
+
+### 150.5 Gates
+
+| Gate | Result |
+|---|---|
+| `NvoosToolCommandTest` | 3 tests, 7 assertions, pass |
+| `NvoosToolCommandTest` + `MachineToolAnnotationsTest` + `MachineToolPickerTest` + `DoctorTest` + `ScheduledToolIdentityTest` | 23 tests, 48 assertions, pass |
+| auditor | `OK — no violations`, `context contract : 7 row(s) … runtime backstop` |
+| phpcs (`phpcs-laravel.xml.dist` for the command, root standard for the auditor) | clean |

@@ -38,6 +38,7 @@
  */
 
 use Nvoos\Core\Application\Tool\ToolReadiness;
+use Nvoos\Core\Domain\Contract\LlmSanitizerInterface;
 
 $root = dirname( __DIR__ );
 
@@ -510,6 +511,71 @@ foreach ( $existing as $row ) {
 
 $total_violations = array_sum( array_map( 'count', $violations ) );
 
+// ─── Context contract: encoded payloads ──────────────────────────────────
+//
+// A `ready` tool whose result carries an encoded payload should keep it out of
+// the model's context. The runtime backstop (`ToolResultSanitizer`) already drops
+// these keys at any depth, so rows that *rely* on it are baselined rather than
+// failing. The list can only shrink: remove an entry when the tool declares its
+// own `sanitizeForLlm()`. A row outside the baseline is a warning, not a failure —
+// the point is that a new one cannot appear silently.
+$sanitizer_baseline = array(
+	'create_image_variation',
+	'edit_openai_image',
+	'generate_cloudflareai_image',
+	'generate_music',
+	'generate_openai_image',
+	'generate_openai_speech',
+	'generate_openai_speech_validated',
+);
+
+$sanitizer = array(
+	'baselined'  => array(),
+	'undeclared' => array(),
+);
+
+foreach ( $existing as $slug => $row ) {
+	if ( 'ready' !== (string) ( $row['readiness'] ?? '' ) ) {
+		// `pure` rows such as `base64` encode on purpose; their payload is the
+		// product, so they are exempt rather than baselined.
+		continue;
+	}
+
+	$fqcn = (string) ( $row['class'] ?? '' );
+
+	if ( '' === $fqcn || ! class_exists( $fqcn ) ) {
+		continue;
+	}
+
+	try {
+		$file = ( new ReflectionClass( $fqcn ) )->getFileName();
+	} catch ( Throwable $e ) {
+		continue;
+	}
+
+	if ( false === $file || ! is_file( $file ) ) {
+		continue;
+	}
+
+	$source = (string) file_get_contents( $file );
+
+	if ( ! preg_match( '/b64_json|audio_base64|image_base64|inline_data|inlineData/', $source ) ) {
+		continue;
+	}
+
+	if ( is_subclass_of( $fqcn, LlmSanitizerInterface::class ) ) {
+		continue;
+	}
+
+	if ( in_array( $slug, $sanitizer_baseline, true ) ) {
+		$sanitizer['baselined'][] = $slug;
+	} else {
+		$sanitizer['undeclared'][] = $slug;
+	}
+}
+
+$warnings = count( $sanitizer['undeclared'] );
+
 if ( $options['json'] ) {
 	fwrite(
 		STDOUT,
@@ -521,6 +587,7 @@ if ( $options['json'] ) {
 				'added'      => $added,
 				'counts'     => $counts,
 				'violations' => $violations,
+				'sanitizer'  => $sanitizer,
 			),
 			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
 		) . "\n"
@@ -561,6 +628,20 @@ if ( $options['json'] ) {
 	}
 
 	fwrite( STDOUT, "\n" . ( 0 === $total_violations ? "OK — no violations.\n" : "FAIL — {$total_violations} violation(s).\n" ) );
+
+	if ( array() !== $sanitizer['baselined'] ) {
+		fwrite(
+			STDOUT,
+			'context contract      : ' . count( $sanitizer['baselined'] ) . " row(s) return an encoded payload and rely on the runtime backstop.\n"
+		);
+	}
+
+	if ( 0 !== $warnings ) {
+		fwrite( STDOUT, "\nG6 encoded payload with no sanitizer (warning, does not fail the gate):\n" );
+		foreach ( $sanitizer['undeclared'] as $slug ) {
+			fwrite( STDOUT, '  - ' . $slug . "\n" );
+		}
+	}
 }
 
 if ( 0 === $total_violations || $options['report'] ) {
