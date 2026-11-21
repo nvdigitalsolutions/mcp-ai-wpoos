@@ -12,6 +12,7 @@ use Nvoos\Core\Tool\EditGeminiImageTool;
 use Nvoos\Core\Tool\EditOpenAIImageTool;
 use Nvoos\Core\Tool\GenerateCloudflareAiImageTool;
 use Nvoos\Core\Tool\GenerateGeminiImageTool;
+use Nvoos\Core\Tool\GenerateHiggsfieldImageTool;
 use Nvoos\Core\Tool\GenerateImageAltTextValidatedTool;
 use Nvoos\Core\Tool\GenerateImageCaptionValidatedTool;
 use Nvoos\Core\Tool\GenerateOpenAIImageTool;
@@ -51,6 +52,7 @@ class ImageAndFileToolsTest extends TestCase
             'services.gemini.key' => 'gemini-test',
             'services.cloudflare.key' => 'cf-test',
             'oos.cloudflare_account_id' => 'acct-1',
+            'services.higgsfield.key' => 'key-id:key-secret',
         ));
     }
 
@@ -326,6 +328,27 @@ class ImageAndFileToolsTest extends TestCase
         Http::assertSent(static fn ($request): bool => 'POST' === $request->method()
             && str_contains($request->url(), '/accounts/acct-1/ai/run/')
             && $request->hasHeader('Authorization', 'Bearer cf-test'));
+    }
+
+    public function test_generate_higgsfield_image_returns_the_request_id(): void
+    {
+        Http::fake(array(
+            'api.higgsfield.ai/*' => Http::response(array(
+                'request_id' => 'req-9',
+                'status_url' => 'https://api.higgsfield.ai/status/req-9',
+            )),
+        ));
+
+        $result = $this->execute(GenerateHiggsfieldImageTool::class, array('prompt' => 'a fox'));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('req-9', $result['data']['request_id']);
+        $this->assertSame('https://api.higgsfield.ai/status/req-9', $result['data']['status_url']);
+
+        // The credential is sent as "Key id:secret", not as a bearer token.
+        Http::assertSent(static fn ($request): bool => 'POST' === $request->method()
+            && str_starts_with($request->url(), 'https://api.higgsfield.ai')
+            && $request->hasHeader('Authorization', 'Key key-id:key-secret'));
     }
 
     // ─── File store ──────────────────────────────────────────────────────
