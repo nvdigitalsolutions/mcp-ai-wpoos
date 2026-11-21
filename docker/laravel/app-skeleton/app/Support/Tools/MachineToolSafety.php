@@ -7,6 +7,7 @@ use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+use Nvoos\Core\Domain\Service\Safety\ToolCapabilityFlagCatalogue;
 
 /**
  * Why a tool may not run unattended — Proposal 159 slice 4, 149 plan §126.
@@ -75,12 +76,16 @@ final class MachineToolSafety
     {
         $candidate = $this->registry->get($slug);
 
-        if (! $candidate instanceof ToolCapabilityFlagsInterface) {
-            return array();
+        $flags = $candidate instanceof ToolCapabilityFlagsInterface
+            ? $candidate->getCapabilityFlags()
+            : array();
+
+        if (array() === $flags) {
+            $flags = ToolCapabilityFlagCatalogue::for($slug);
         }
 
         return array_values(array_intersect(
-            CapabilityFlagVocabulary::normalise($candidate->getCapabilityFlags()),
+            CapabilityFlagVocabulary::normalise($flags),
             CapabilityFlagVocabulary::normalise(ReadOnlyToolGuard::DEFAULT_GATED_FLAGS)
         ));
     }

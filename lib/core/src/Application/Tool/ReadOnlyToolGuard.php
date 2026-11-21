@@ -32,6 +32,7 @@ use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 use Nvoos\Core\Domain\Contract\ToolGuardInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+use Nvoos\Core\Domain\Service\Safety\ToolCapabilityFlagCatalogue;
 
 /**
  * Blocks state-changing tools while a read-only profile is active.
@@ -86,14 +87,15 @@ final class ReadOnlyToolGuard implements ToolGuardInterface
             return null;
         }
 
-        if (! $tool instanceof ToolCapabilityFlagsInterface) {
+        $flags = $this->declaredFlags($slug, $tool);
+
+        if (null === $flags) {
             return $this->blockUndeclared
                 ? sprintf('Tool "%s" is blocked by the read-only profile because it declares no capability flags.', $slug)
                 : null;
         }
 
-        $flags = CapabilityFlagVocabulary::normalise($tool->getCapabilityFlags());
-        $hit   = array_values(array_intersect(
+        $hit = array_values(array_intersect(
             $flags,
             CapabilityFlagVocabulary::normalise($this->gatedFlags)
         ));
@@ -107,5 +109,31 @@ final class ReadOnlyToolGuard implements ToolGuardInterface
             $slug,
             implode(', ', $hit)
         );
+    }
+
+    /**
+     * Flags for a tool: its own declaration, else the corpus catalogue.
+     *
+     * The core tool classes were ported without `getCapabilityFlags()` — zero of
+     * them implement the interface — so the values WordPress declared are
+     * supplied from {@see ToolCapabilityFlagCatalogue}. A slug the catalogue
+     * does not know returns null, which leaves `blockUndeclared` as the
+     * backstop rather than inventing a verdict.
+     *
+     * @return list<string>|null Null when nothing is declared anywhere.
+     */
+    private function declaredFlags(string $slug, object $tool): ?array
+    {
+        if ($tool instanceof ToolCapabilityFlagsInterface) {
+            $declared = CapabilityFlagVocabulary::normalise($tool->getCapabilityFlags());
+
+            if (array() !== $declared) {
+                return $declared;
+            }
+        }
+
+        $catalogue = CapabilityFlagVocabulary::normalise(ToolCapabilityFlagCatalogue::for($slug));
+
+        return array() === $catalogue ? null : $catalogue;
     }
 }
