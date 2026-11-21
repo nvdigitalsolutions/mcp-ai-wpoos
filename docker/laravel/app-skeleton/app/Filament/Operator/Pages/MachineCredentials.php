@@ -10,6 +10,7 @@ use App\Support\Admin\AdminAuditLogger;
 use App\Support\MachineTokens;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -82,14 +83,21 @@ final class MachineCredentials extends Page implements HasTable
                 ->modalDescription('Silences the daily expiry alert for this exact set '
                     .'until it changes, for up to 7 days, or until the soonest credential expires. '
                     .'The acknowledgement is recorded.')
-                ->action(fn () => $this->acknowledgeExpiryAlerts()),
+                ->schema(array(
+                    Textarea::make('note')
+                        ->label('What are you doing?')
+                        ->maxLength(280)
+                        ->rows(2)
+                        ->helperText('Optional. Recorded with the acknowledgement; "rotating Thursday" is the point.'),
+                ))
+                ->action(fn (array $data) => $this->acknowledgeExpiryAlerts(14, (string) ($data['note'] ?? ''))),
         );
     }
 
     /**
      * Record the acknowledgement and name what it covers.
      */
-    public function acknowledgeExpiryAlerts(int $days = 14): void
+    public function acknowledgeExpiryAlerts(int $days = 14, string $note = ''): void
     {
         $rows = MachineTokens::expiring($days);
         $ids = array_column($rows, 'id');
@@ -109,7 +117,11 @@ final class MachineCredentials extends Page implements HasTable
             'machine_token.expiry_acknowledged',
             sprintf('Expiry alert acknowledged for %d machine credential(s).', count($ids)),
             null,
-            array('signature' => $signature, 'ids' => $ids)
+            array(
+                'signature' => $signature,
+                'ids' => $ids,
+                'note' => mb_substr(trim($note), 0, 280),
+            )
         );
 
         app(AdminAuditLogger::class)->recordResource(
@@ -137,6 +149,11 @@ final class MachineCredentials extends Page implements HasTable
                     ->wrap(),
                 TextColumn::make('holder')
                     ->label('Owner'),
+                TextColumn::make('age_days')
+                    ->label('Age')
+                    ->state(fn (array $record): string => null === $record['age_days'] ? '—' : $record['age_days'].' d')
+                    ->color(fn (array $record): string => null !== $record['age_days']
+                        && $record['age_days'] > 90 ? 'warning' : 'gray'),
                 TextColumn::make('scopes')
                     ->label('Scopes')
                     ->state(fn (array $record): string => array() === $record['scopes']

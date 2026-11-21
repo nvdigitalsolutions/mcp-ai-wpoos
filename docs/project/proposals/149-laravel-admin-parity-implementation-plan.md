@@ -13116,3 +13116,61 @@ use would be a silent no-op.
   clamp to the soonest expiry is what makes that safe.
 - **No free-text note.** The ack records the actor and the ids; "rotating on
   Thursday" has nowhere to go yet.
+
+## 133. Credential evidence: the migration, the note, and ack-to-resolution (2026-11-21)
+
+Three recorded decisions from §130–§132, taken together because they answer one
+question: can an operator prove what happened to a machine credential?
+
+### 133.1 Rotation is the migration point
+
+§129.4 claimed a rotated legacy token "adopts the prefix". It did not: rotation
+copied the stored name, so a legacy name stayed legacy — the sentence was a wish,
+not a description. Normalising in `RotateMachineToken` makes it true without a
+rename backfill: an old audit row keeps pointing at the name it recorded, and the
+next rotation is what adopts the prefix. A token that is never rotated stays
+legacy and stays visible to the report through the heuristic; the panel lists it
+once it has been rotated.
+
+### 133.2 The ack carries a note, and the set can resolve
+
+- The acknowledgement takes an optional 280-character note, stored in the event
+  context. "Rotating Thursday" is the difference between a timestamp and evidence.
+- `machine_token.expiry_resolved` is written when an acknowledged set no longer
+  appears — every acked id has gone. This is the metric the incident-response
+  guidance asks for: measuring only time-to-acknowledge "trains people to ack
+  fast and do nothing", so ack-to-resolution needs a resolution event.
+- It runs **before** the empty-window return, so a run with nothing left to
+  report still records the resolution.
+
+### 133.3 Secret age (OWASP NHI7)
+
+`/ops/machine-credentials` gains an **Age** column, warning past 90 days — the
+target OWASP's NHI7 *Long-Lived Secrets* risk names. The mint date was already
+stored; it simply was not shown.
+
+### 133.4 Per-estate attribution: deferred, with the model recorded
+
+**Not built now.** The alert goes to one operator address, so per-estate
+attribution changes no routing today, and the token genuinely carries no estate —
+`--estate` scoped the assistant at mint. When per-estate routing is needed, the
+model is a `nvoos_machine_tokens` companion table (`token_id`, `tenant_id`,
+`created_by`) written at mint, with a nullable column and a `default` backfill —
+the `nvoos_approvals` shape (§124). Recording it here stops the next slice
+inventing a different one.
+
+### 133.5 Gates
+
+| Run | Result |
+|---|---|
+| machine-token + credentials suites | **41 passed / 108 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the six files |
+
+### 133.6 What is left
+
+- **No escalation tier.** An acked, still-expiring set re-alerts at the soonest
+  expiry, but nothing escalates beyond the same address. The incident guidance
+  calls that the failure mode after "acknowledged but unactioned".
+- **Resolution is inferred from disappearance**, not asserted by a person; a
+  revoked-for-the-wrong-reason credential looks identical to a rotated one.
+- **Age is shown, not enforced.** NHI7's 90-day target is a colour, not a policy.

@@ -63,6 +63,11 @@ class ListExpiringMachineTokens extends Command
 
         $rows = MachineTokens::expiring($days);
 
+        // Before anything else: an acknowledged set whose credentials have all
+        // gone (rotated or revoked) is resolved, including on a run that has
+        // nothing left to report.
+        $this->resolveAcknowledgedSets(array_column($rows, 'id'));
+
         if (array() === $rows) {
             $this->info(sprintf('No machine tokens expire within %d days.', $days));
 
@@ -94,6 +99,71 @@ class ListExpiringMachineTokens extends Command
         $this->publishFinding($rows, $days);
 
         return self::FAILURE;
+    }
+
+    /**
+     * Record that an acknowledged set is no longer expiring.
+     *
+     * The incident-response guidance is blunt about why this exists: measuring
+     * only time-to-acknowledge "trains people to ack fast and do nothing". The
+     * resolution event is what makes ack-to-resolution queryable — the ack says
+     * someone saw it, this says the credentials actually went.
+     *
+     * @param list<int|string> $currentIds
+     */
+    private function resolveAcknowledgedSets(array $currentIds): void
+    {
+        $ack = DB::table('nvoos_activity_events')
+            ->where('type', 'machine_token.expiry_acknowledged')
+            ->latest('id')
+            ->first();
+
+        if (null === $ack) {
+            return;
+        }
+
+        $context = json_decode((string) $ack->context, true);
+
+        if (! is_array($context)) {
+            return;
+        }
+
+        $signature = (string) ($context['signature'] ?? '');
+        $ackedIds = array_map('intval', (array) ($context['ids'] ?? array()));
+
+        if ('' === $signature || array() === $ackedIds) {
+            return;
+        }
+
+        $resolved = DB::table('nvoos_activity_events')
+            ->where('type', 'machine_token.expiry_resolved')
+            ->get()
+            ->contains(static function (object $row) use ($signature): bool {
+                $decoded = json_decode((string) $row->context, true);
+
+                return is_array($decoded) && ($decoded['signature'] ?? null) === $signature;
+            });
+
+        if ($resolved) {
+            return;
+        }
+
+        $current = array_map('intval', $currentIds);
+
+        if (array() !== array_intersect($ackedIds, $current)) {
+            return;
+        }
+
+        app(ActivityRecorder::class)->record(
+            'machine_token.expiry_resolved',
+            sprintf('%d acknowledged credential(s) are no longer expiring.', count($ackedIds)),
+            null,
+            array(
+                'signature' => $signature,
+                'ids' => $ackedIds,
+                'acknowledged_at' => (string) $ack->created_at,
+            )
+        );
     }
 
     /**

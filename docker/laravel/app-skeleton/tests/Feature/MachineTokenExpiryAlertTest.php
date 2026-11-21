@@ -202,6 +202,46 @@ final class MachineTokenExpiryAlertTest extends TestCase
         );
     }
 
+    public function test_the_acknowledgement_records_its_note(): void
+    {
+        $this->token('ci-catalogue', 10);
+
+        $this->actingAs($this->operator());
+        Livewire::test(MachineCredentials::class)->call('acknowledgeExpiryAlerts', 14, 'Rotating on Thursday.');
+
+        $row = DB::table('nvoos_activity_events')
+            ->where('type', 'machine_token.expiry_acknowledged')
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($row);
+
+        $context = json_decode((string) $row->context, true);
+
+        $this->assertSame('Rotating on Thursday.', $context['note']);
+    }
+
+    public function test_an_acknowledged_set_resolves_when_the_credentials_go(): void
+    {
+        $this->token('ci-catalogue', 10);
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        $this->actingAs($this->operator());
+        Livewire::test(MachineCredentials::class)->call('acknowledgeExpiryAlerts');
+
+        DB::table('personal_access_tokens')->where('name', 'ci-catalogue')->delete();
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        $row = DB::table('nvoos_activity_events')
+            ->where('type', 'machine_token.expiry_resolved')
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($row, 'Acknowledged, then gone, must be recorded as resolved.');
+    }
+
     private function operator(): User
     {
         $user = User::factory()->admin()->create();

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Support\Admin\AdminAuditLogger;
+use App\Support\MachineTokens;
 use App\Support\TenantContext;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -97,6 +98,13 @@ class RotateMachineToken extends Command
         );
 
         $name = (string) $old->name;
+
+        // Rotation is the migration point for the prefix (§129). A name that
+        // predates it is normalised here rather than renamed in place, so the
+        // old audit rows keep pointing at the name they actually recorded.
+        if (! str_starts_with($name, MachineTokens::NAME_PREFIX)) {
+            $name = MachineTokens::NAME_PREFIX.$name;
+        }
         $token = $owner->createToken($name, $abilities, Carbon::now()->addDays($days));
         $newId = (int) $token->accessToken->getKey();
 
