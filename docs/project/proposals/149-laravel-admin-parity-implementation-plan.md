@@ -14299,3 +14299,107 @@ first, then port — and for a sharper reason than "the vocabularies differ": th
 port is what *activates* the guard. Porting 246 `state-changing` tools before
 this landed would have shipped a read-only profile that admits every one of
 them.
+
+## 152. The capability-flag port: 1,466 tools, 75% of what matters (2026-11-21)
+
+### 152.1 Measuring before designing — twice wrong
+
+`lib/core` cannot load `includes/tools/*`: those classes extend a base that
+needs `ABSPATH`, `__()` and the admin bootstrap. So the flags are extracted
+statically, and the first two attempts at measuring the corpus were wrong in
+instructive ways:
+
+| attempt | result | why it was wrong |
+|---|---|---|
+| `glob('*.php')` + regex | 52% coverage | scanned only the top level — the corpus is 348 + 1,470 files across 40 subdirectories |
+| recursive + regex over the array body | 63%, polluted | balanced-paren scan drifted into neighbouring code; "flags" included `message`, `success`, `edit_posts` |
+| recursive + `token_get_all()` | **63%, clean** | correct |
+
+The measurement is recorded because the first number (`52%`) would have
+justified abandoning the port, and it was an artefact of one `glob()`.
+
+### 152.2 What the extractor has to understand
+
+Three declaration shapes actually occur:
+
+1. `return array( 'read-only', 'cacheable' );` — literal list, 1,447 tools.
+2. `return self::FLAGS;` — array constant. **Not read.** Left absent rather
+   than half-populated.
+3. `return $this->original_tool->get_capability_flags();` — a `*_validated`
+   wrapper delegating to the tool it wraps. Resolved **by convention only, and
+   only when the base slug was itself extracted**; 19 recovered.
+
+`bin/generate-tool-capability-flags.php` emits
+`lib/core/src/Domain/Service/Safety/ToolCapabilityFlagCatalogue.php`, and
+`--check` is a drift gate.
+
+### 152.3 Coverage
+
+| measure | value |
+|---|---|
+| files scanned | 348 core + 1,470 pro |
+| tools with flags | **1,466** (19 via delegation) |
+| manifest rows covered | 155 / 223 (70%) |
+| servable rows covered | **146 / 195 (75%)** |
+
+The 49 uncovered servable rows are split by readiness, and the split is the
+plan for the next batch:
+
+- **19 `pure`** utility tools — `base64`, `format_date`, `generate_uuid`,
+  `hash_string`, `math_eval`, `merge_arrays`, `parse_csv`, `strip_html`,
+  `truncate_text`, `validate_json`, `time_ago`, … Their flags are self-evident
+  (`read-only`, `cacheable`, `idempotent`, `local-only`).
+- **30 `ready`** — the cache/job/settings family (`get_cache`, `set_cache`,
+  `schedule_job`, `list_settings`, …) plus `count_posts`, `update_post`,
+  `delete_file`, `upload_file`, `get_post_meta`, `get_current_user`. These have
+  no WordPress counterpart with that slug, so they need a decision, not a port.
+
+### 152.4 Absence means unknown, not safe
+
+`ToolCapabilityFlagCatalogue::for()` returns an **empty list** for an unknown
+slug. `ReadOnlyToolGuard` keeps its `block_undeclared` rule, so an unknown tool
+is still denied. Nothing in this slice can make a tool *more* permitted than the
+guard would have allowed yesterday — the catalogue only replaces "no flags, so
+deny" with "these flags, so decide".
+
+The three consumers now resolve in the same order — the tool's own declaration
+first, empty meaning "not declared", then the catalogue:
+
+| consumer | wired |
+|---|---|
+| `ReadOnlyToolGuard` | `declaredFlags()` |
+| `NecessityGuard` | inline fallback before `NecessityGate::decide()` |
+| `MachineToolSafety` | `declaredGatedFlags()` |
+
+A tool that *does* declare its own flags still wins; the catalogue is a floor,
+not an override.
+
+### 152.5 What it changes under a read-only profile
+
+Of the 146 covered servable tools: **32 denied, 114 admitted** on their real
+declarations. Before this slice every one of the 195 was denied by
+`block_undeclared`, so the guard had no vocabulary at all.
+
+The denials are the ones that should be there —
+`delete_post (data-destruction, destructive, irreversible, state-changing,
+write)`, `delete_cron_job`, `create_cron_job`, `create_post`, `edit_gemini_image`,
+`generate_gemini_image`. The admissions are the read-only corpus:
+`analyze_image`, `web_search`, `semantic_content_search`, …
+
+### 152.6 Gates
+
+| Gate | Result |
+|---|---|
+| `ToolCapabilityFlagCatalogueTest` (new) | 5 cases — known slug, writer, unknown, delegation, every-entry shape |
+| `ReadOnlyToolGuardTest` + catalogue/vocabulary/gate/profile + `NecessityGuardTest` | 136 tests, 9,036 assertions |
+| full `lib/core` suite | 1,871 tests, 15,357 assertions |
+| app: machine-tool, guard, registry, necessity | 53 tests, 131 assertions |
+| `php bin/generate-tool-capability-flags.php --check` | in step — 1,466 tools |
+| phpcs (root + Laravel) | clean |
+
+### 152.7 Next
+
+Two batches, in this order: the 19 `pure` tools (trivial, self-evident flags),
+then the 30 `ready` cache/job/settings tools, which need a decision about
+whether a Laravel-native cache write is `state-changing` at all. After that the
+measurement in §150.5 can be re-run and `oos.necessity_gate` reconsidered.
