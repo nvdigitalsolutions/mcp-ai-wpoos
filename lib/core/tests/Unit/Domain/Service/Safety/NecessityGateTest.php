@@ -44,7 +44,13 @@ final class NecessityGateTest extends TestCase
             'read-only but irreversible' => array(array('read-only', 'irreversible'), false),
             'read-only but financial' => array(array('read-only', 'financial-impact'), false),
             'read-only but sends mail' => array(array('read-only', 'external-communication'), false),
+            'read-only but sends mail, underscore' => array(array('read-only', 'external_side_effect'), false),
+            'read-only but writes over the api' => array(array('read-only', 'external-api', 'write'), false),
+            'read-only with a network lookup' => array(array('read-only', 'network-dependent'), true),
+            'read-only with underscore state change' => array(array('read-only', 'state_changing'), false),
+            'read-only contradicting itself with write' => array(array('read-only', 'write'), false),
             'read-only but changes access' => array(array('read-only', 'access-control-change'), false),
+            'read-only but mass mails' => array(array('read-only', 'mass-email'), false),
             'undeclared' => array(array(), false),
         );
     }

@@ -938,10 +938,14 @@ return array(
 	| capability flags are blocked by default — "I could not tell whether this
 	| writes" is not a reason to let it write. Allowlist the slugs you trust.
 	|
+	| `gated_flags` defaults to the canonical list, which mirrors the WordPress
+	| chat profile's. Replace the value to override it; the guard normalises
+	| underscore and hyphen spellings either way.
+	|
 	*/
 	'read_only' => array(
 		'enabled'          => (bool) env( 'NVOOS_READ_ONLY', false ),
-		'gated_flags'      => array( 'write', 'state_changing', 'mutating', 'destructive', 'external_side_effect' ),
+		'gated_flags'      => \Nvoos\Core\Application\Tool\ReadOnlyToolGuard::DEFAULT_GATED_FLAGS,
 		'allowed_slugs'    => array(),
 		'block_undeclared' => (bool) env( 'NVOOS_READ_ONLY_BLOCK_UNDECLARED', true ),
 	),

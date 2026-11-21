@@ -14179,3 +14179,123 @@ resolve to irreversibility 0 and be allowed rather than routed to approval.
 | `NvoosToolCommandTest` + `MachineToolAnnotationsTest` + `MachineToolPickerTest` + `DoctorTest` + `ScheduledToolIdentityTest` | 23 tests, 48 assertions, pass |
 | auditor | `OK — no violations`, `context contract : 7 row(s) … runtime backstop` |
 | phpcs (`phpcs-laravel.xml.dist` for the command, root standard for the auditor) | clean |
+
+## 151. Capability flags: one vocabulary, and the hole it was hiding (2026-11-21)
+
+### 151.1 The census
+
+Before porting any flags, measure the corpus they come from. Across `includes`
+and `addons` there are **1,560** `get_capability_flags()` implementations. The
+counts below are files containing the literal, so they are an upper bound per
+flag:
+
+| flag | files | | flag | files |
+|---|---|---|---|---|
+| `requires-capability` | 772 | | `reversible` | 75 |
+| `read-only` | 637 | | `rate-limited` | 66 |
+| `write` | 446 | | `destructive` | 54 |
+| `external-api` | 387 | | `long-running` | 32 |
+| `cacheable` | 309 | | `irreversible` | 24 |
+| `local-only` | 283 | | `data-destruction` | 22 |
+| `state-changing` | 275 | | `access-control-change` | 15 |
+| `network-dependent` | 208 | | `external-communication` | 15 |
+| `idempotent` | 115 | | `financial-impact` | 13 |
+| `async` | 93 | | `state_changing` | 6 |
+| | | | `external_side_effect` | 0 |
+| | | | `mutating` | 0 |
+
+Align that with the two consumers the runtime already had:
+
+| Consumer | Reads | Backing | |
+|---|---|---|---|
+| `NecessityGate` | `read-only`, `write`, `state-changing`, `reversible`, `irreversible`, `data-destruction`, `access-control-change`, `financial-impact` | 13–637 each | ✅ |
+| | `external-communication` | 15, against 595 for `external-api` + `network-dependent` | ❌ |
+| `ReadOnlyToolGuard` | `write`, `destructive` | 446, 54 | ✅ |
+| | `state_changing` | 6 against 275 | ❌ |
+| | `mutating`, `external_side_effect` | 0, 0 | ❌ dead |
+
+### 151.2 The guard gated on spellings nothing writes
+
+The port's `DEFAULT_GATED_FLAGS` was five flags; WordPress's
+`WP_MCP_AI_Chat_Profile::READ_ONLY_GATED_FLAGS` is eight. The port had kept two
+working ones and dropped five (`data-destruction`, `irreversible`,
+`financial-impact`, `access-control-change`, `mass-email`), while the
+replacement spellings it invented matched nothing.
+
+Measured exposure — files declaring a gated concept but **not** `write`, so the
+guard's `write` rule could not catch them by proxy:
+
+| concept | exposed files |
+|---|---|
+| `state-changing` (guard writes `state_changing`) | **246** |
+| `irreversible` | 20 |
+| `data-destruction` | 19 |
+| `access-control-change` | 12 |
+| `financial-impact` | 9 |
+| `mass-email` | 2 |
+
+**It was latent, not live.** Zero classes in `lib/core` implement
+`ToolCapabilityFlagsInterface`, so with `block_undeclared` on (the default) the
+guard denies everything before a flag is ever read. The hole opens the moment
+the flags are ported — which is why this lands before the port, not after it.
+
+### 151.3 Outbound is not automatically irreversible
+
+The obvious fix — alias `external-api` and `network-dependent` onto the gate's
+`external-communication` — would have been wrong. 186 corpus files declare
+`external-api` **with** `read-only`: a lookup against a remote system. Treating
+those as dangerous drops them off the tier-1 fast path and sends every dataset
+query to a human.
+
+`CapabilityFlagVocabulary::hasOutboundMutation()` asks the narrower question: an
+explicit `external-communication`, or an outbound transport paired with `write`
+or `state-changing`. A remote read stays safe; a remote write does not.
+
+### 151.4 One vocabulary
+
+`lib/core/src/Domain/Service/Safety/CapabilityFlagVocabulary.php` is now the
+single definition. It owns the read-only gate list, the alias map
+(`state_changing`, `external_side_effect`, `external_api`, `network_dependent`)
+and the outbound-mutation rule. `ReadOnlyToolGuard`, `NecessityGate` and
+`ActionSafetyProfile` all normalise through it, and `DEFAULT_GATED_FLAGS` is now
+the constant rather than a copy of it.
+
+`lib/laravel-adapter/config/nvoos.php` no longer restates the list — it was a
+third copy that took precedence over the constant, so fixing the constant alone
+would have changed nothing in the app. It now references it, and the resolved
+runtime value was confirmed with `config('oos.read_only')`.
+`MachineToolSafety::declaredGatedFlags()` normalises both sides too.
+
+### 151.5 Two self-contradictions stopped being "safe"
+
+The existing providers had already pinned the important direction (`read-only` +
+`external-api` is safe), but two contradictions slipped through:
+
+- `read-only` + `state-changing` was tier-1 **safe**, because `state-changing`
+  was not on the dangerous list. A tool claiming both is contradicting itself.
+- `read-only` + `write` scored **0.0** irreversibility, for the same reason.
+
+Both now refuse: a mutating flag disqualifies tier 1, and the read-only branch
+of the derivation only returns `NONE` when no mutating flag is present.
+`mass-email` was added to the gate's dangerous list and to the derivation — the
+guard already gated it, and an unsent email cannot be recalled.
+
+### 151.6 Gates
+
+| Gate | Result |
+|---|---|
+| `CapabilityFlagVocabularyTest` (new) | 9 normalise / 10 outbound-mutation / 2 list cases, pass |
+| `ReadOnlyToolGuardTest` + `NecessityGateTest` + `ActionSafetyProfileTest` + `NecessityGuardTest` | 129 tests, 229 assertions, pass |
+| full `lib/core` suite | 1,864 tests, 6,550 assertions, pass |
+| `MachineToolAnnotationsTest` + `MachineToolAllowlistTest` + machine/read-only features | 38 tests, 83 assertions, pass |
+| `lib/laravel-adapter` suite | 316 tests — 13 pre-existing errors (`no such table: users` on sqlite `:memory:`), reproduced on a clean stash |
+| `config('oos.read_only.gated_flags')` at runtime | resolves to the eight-flag list |
+| phpcs (root standard for `lib/core`, Laravel standard for the app + config) | clean |
+
+### 151.7 What this unblocks, and the order it forces
+
+The flags port is now safe to do in the order §150.5 proposed — normalise
+first, then port — and for a sharper reason than "the vocabularies differ": the
+port is what *activates* the guard. Porting 246 `state-changing` tools before
+this landed would have shipped a read-only profile that admits every one of
+them.

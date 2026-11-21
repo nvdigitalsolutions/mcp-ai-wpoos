@@ -6,6 +6,7 @@ use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
 /**
  * Why a tool may not run unattended — Proposal 159 slice 4, 149 plan §126.
@@ -79,8 +80,8 @@ final class MachineToolSafety
         }
 
         return array_values(array_intersect(
-            array_map('strtolower', $candidate->getCapabilityFlags()),
-            ReadOnlyToolGuard::DEFAULT_GATED_FLAGS
+            CapabilityFlagVocabulary::normalise($candidate->getCapabilityFlags()),
+            CapabilityFlagVocabulary::normalise(ReadOnlyToolGuard::DEFAULT_GATED_FLAGS)
         ));
     }
 }
