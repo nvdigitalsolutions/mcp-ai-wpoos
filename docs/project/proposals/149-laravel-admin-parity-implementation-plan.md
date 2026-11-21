@@ -12665,4 +12665,50 @@ controller parses the raw string instead, and says so where it does it.
   if the assignment check passes — which it would not, so the call falls back to
   `tool_not_assigned`. That is the safe ordering, and it is worth keeping in mind
   rather than adding a second snapshot.
-- **Expiry warnings and panel-side revocation** are still unbuilt; see §125.
+- **Expiry reporting** shipped in §125. **Panel-side revocation** is still open:
+  the `/ops` inventory is read-only, and a destructive action needs its own
+  confirmation and audit decision.
+
+## 125. Credential expiry: a report, not a rotation schedule
+
+The rotation guidance says two things that pull in opposite directions: prefer
+short-lived credentials, because they remove the need to schedule rotation at all;
+and where a credential must persist, rotate on a schedule. For a **shown-once** PAT
+the second half cannot be automated — the replacement is printed once at mint time
+and stored hashed, so nothing can deliver it. An automatic rotation would invalidate
+the working token and hand the replacement to nobody.
+
+So the deliverable is the part that is honest: a report of what is about to lapse,
+early enough for an operator to rotate it.
+
+### 125.1 What shipped
+
+| Piece | Detail |
+|---|---|
+| `nvoos:machine-token:expiring` | lists machine credentials (scoped, not `*`) whose `expires_at` falls inside `--days` (default 14) |
+| exit contract | **1 means "there is something to rotate"**, 0 means the window is clear — a scheduler or health check can flag it without parsing a table |
+| `--all` | also states how many machine credentials never expire, which is the other half of an inventory question |
+| schedule | `dailyAt('07:00')`, `withoutOverlapping()`, beside the other `nvoos:*` entries |
+
+A credential given `[]` is excluded along with `*`: neither is a machine principal,
+and neither is this report's business.
+
+### 125.2 Gates
+
+| Run | Result |
+|---|---|
+| `MachineTokenExpiryReportTest` | **6 tests** — a token inside the window is listed and exits 1; beyond the window exits 0; a `*` credential and an empty one are ignored; `--all` reports permanent credentials; `--days=0` is refused |
+| phpcs | **0 errors** on the command and the test. `bootstrap/app.php` still reports its 8 pre-existing `__DIR__.'/…'` errors on lines 18–25, none of them touched here |
+
+### 125.3 What is left
+
+- **The alert channel.** The exit code is a contract nothing consumes yet: the
+  scheduler records the failure, and no person is notified. Wiring it to the same
+  channel the command centre uses is the next step, and it is a product choice
+  rather than a mechanism.
+- **Panel-side revocation** is still open. The `/ops` token inventory is read-only
+  by construction, and adding a destructive action to it needs a confirmation UX
+  decision — a Filament action with a modal is not the hard part; deciding who may
+  click it and what the audit row says is.
+- **Capability-flag backfill** (§123.4) remains the highest-value follow-up: it is
+  what turns "safe for a machine" from an operator list into a property of a tool.

@@ -52,6 +52,14 @@ return Application::configure(basePath: dirname(__DIR__))
             ->everyMinute()
             ->withoutOverlapping();
 
+        // 159 slice 3 — machine credentials expire and nothing rotates them for
+        // you: a replacement token is shown once, so a client cannot fetch it.
+        // This reports what is about to lapse, and exits 1 when there is
+        // something to rotate, which is the honest half of a rotation cadence.
+        $schedule->command('nvoos:machine-token:expiring')
+            ->dailyAt('07:00')
+            ->withoutOverlapping();
+
         // 090-j — the media compression sweep. The expression is configuration
         // rather than code: how often a library should be re-optimised is an
         // operator decision, and an empty value schedules nothing (the console
