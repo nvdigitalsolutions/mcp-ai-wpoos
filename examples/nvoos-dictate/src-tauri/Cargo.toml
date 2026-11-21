@@ -60,6 +60,14 @@ name = "embed_probe"
 path = "examples/embed_probe.rs"
 required-features = ["memory"]
 
+# Hand-gesture de-risk spike (Proposal 153, M0): loads a MediaPipe-compatible
+# 21-landmark ONNX export on the pinned ort runtime and prints decoded
+# landmarks + latency. This is the gate that decides which export ships.
+[[example]]
+name = "gesture_probe"
+path = "examples/gesture_probe.rs"
+required-features = ["gestures"]
+
 # Capture-residency probe (Proposal 144 §4.3, Phase 0): idle callbacks + process
 # CPU in resident vs paused mode, plus pause -> first-callback latency.
 # Default features only (no model or C toolchain needed).
@@ -248,6 +256,13 @@ camera = ["dep:nokhwa", "dep:image"]
 # + ndarray 0.16. Requires the camera feature (the frame source, which pulls
 # nokhwa + image) and the ort/ort-sys pair already used by moonshine/silero-vad.
 vision = ["camera", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
+# Hand-gesture input (Proposal 153): 21-landmark ONNX regressor on the same
+# pinned ort runtime, plus a deterministic geometry classifier that needs no
+# model. The decision layer (normalise/geometry/classify/motion/stabilise/
+# route) is always compiled; this feature gates only the ONNX backend and the
+# resident loop. Weights are never bundled — see gestures/models.rs (fail-closed
+# until the M0 provenance pin lands).
+gestures = ["camera", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
 # Browser agent (dictated web control) — Phase 1 adds the CDP client.
 agent = ["dep:chromiumoxide", "dep:futures"]
 # Screen-to-text snippet OCR (Proposal 100): frozen-screen region capture,
@@ -272,7 +287,14 @@ document = ["snippet", "dep:pdfium-render", "dep:tiff"]
 memory = ["dep:ort", "dep:ort-sys", "dep:tokenizers", "dep:ndarray16"]
 # Searchable-PDF export (102 D9/D10 shared emitter): lopdf rebuilds the
 # source PDF with a rendered page image + invisible text layer.
-snippet-pdf = ["snippet", "dep:lopdf"]
+#
+# It **implies `document`**, and that is not incidental: the emitter
+# re-rasterizes every page through `document::pdf` (Pdfium), so it cannot
+# build — or work — without the document pipeline. Declaring only `snippet`
+# here made `--features snippet-pdf` alone fail to compile ("cannot find
+# `pdf` in `document`"), which CI never saw because the complete-build union
+# always lists `document` too. Keep the implication; do not "relax" it.
+snippet-pdf = ["document", "dep:lopdf"]
 
 [patch.crates-io]
 whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

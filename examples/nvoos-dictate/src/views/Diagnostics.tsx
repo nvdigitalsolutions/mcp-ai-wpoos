@@ -373,6 +373,98 @@ export default function DiagnosticsView() {
       </section>
 
       <section className="card">
+        <h2>Hand gestures</h2>
+        {info.gestures.available ? (
+          <>
+            <ul className="kv">
+              <li>
+                <span>Compiled / enabled</span>
+                <span className={badge(info.gestures.enabled)}>
+                  {info.gestures.enabled ? 'enabled (opt-in)' : 'compiled, disabled'}
+                </span>
+              </li>
+              <li>
+                <span>Loop</span>
+                <span className={badge(info.gestures.running)}>
+                  {info.gestures.running ? 'running' : 'stopped'}
+                </span>
+              </li>
+              <li>
+                <span>Armed</span>
+                <span className={badge(info.gestures.armed)}>
+                  {info.gestures.armed ? 'armed' : 'disarmed'}
+                </span>
+              </li>
+              <li>
+                <span>Landmark model</span>
+                <span className={badge(info.gestures.models[0]?.installed ?? false)}>
+                  {info.gestures.landmark_model}
+                  {info.gestures.models[0]?.installed ? '' : ' (file not found)'}
+                </span>
+              </li>
+              <li>
+                <span>Model path</span>
+                <span>{info.gestures.model_path}</span>
+              </li>
+              <li>
+                <span>Input</span>
+                <span>
+                  {info.gestures.input_size}px · mirror{' '}
+                  {info.gestures.mirror_preview ? 'on' : 'off'}
+                </span>
+              </li>
+              <li>
+                <span>Last gesture</span>
+                <span>
+                  {info.gestures.last_gesture ?? '—'}
+                  {info.gestures.last_gesture ? ` (${info.gestures.confidence.toFixed(2)})` : ''}
+                </span>
+              </li>
+              <li>
+                <span>Last action</span>
+                <span>{info.gestures.last_action ?? '—'}</span>
+              </li>
+              <li>
+                <span>Dictation phase</span>
+                <span>{info.gestures.dictation_phase}</span>
+              </li>
+              <li>
+                <span>Frames / detections</span>
+                <span>
+                  {info.gestures.frames} / {info.gestures.detections}
+                </span>
+              </li>
+              <li>
+                <span>Stable observations / intents</span>
+                <span>
+                  {info.gestures.observations} / {info.gestures.intents}
+                </span>
+              </li>
+              <li>
+                <span>Last inference</span>
+                <span>{info.gestures.last_infer_ms} ms</span>
+              </li>
+              {info.gestures.errors > 0 && (
+                <li>
+                  <span>Errors</span>
+                  <span className="badge warn">
+                    {info.gestures.errors} — {info.gestures.last_error ?? 'unknown'}
+                  </span>
+                </li>
+              )}
+            </ul>
+            <p className="muted">
+              Landmarks and frames are processed on-device only. There is no facial recognition,
+              no identity inference, and no frame egress. The ONNX export is not pinned yet, so
+              supply a local file until Proposal 153 M0 records provenance and a SHA-256.
+            </p>
+          </>
+        ) : (
+          <p className="muted">Hand gestures are not compiled into this build.</p>
+        )}
+      </section>
+
+      <section className="card">
         <h2>Document OCR</h2>
         {info.document.available ? (
           <ul className="diag-list">

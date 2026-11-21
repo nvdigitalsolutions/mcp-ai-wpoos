@@ -40,6 +40,10 @@ pub struct StatusInfo {
     pub vision_running: bool,
     pub vision_detector: Option<String>,
     pub vision_hand_model: Option<String>,
+    pub gestures_available: bool,
+    pub gestures_running: bool,
+    pub gesture_armed: bool,
+    pub gesture_last: Option<String>,
     pub agent_available: bool,
     pub agent_running: bool,
     pub version: String,
@@ -109,6 +113,11 @@ pub fn update_settings(state: State<'_, AppState>, settings: Settings) -> AppRes
             "settings saved, but the vision loop could not be applied: {e}"
         ))
     })?;
+    state.reapply_gestures(&previous).map_err(|e| {
+        AppError::Other(format!(
+            "settings saved, but the gesture loop could not be applied: {e}"
+        ))
+    })?;
     Ok(updated)
 }
 
@@ -121,6 +130,9 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         .memory_counts()
         .map(|(total, indexed, _)| (total, indexed))
         .unwrap_or((0, 0));
+    // Read every gesture field under ONE guard (see
+    // `gesture_status_fields` for why this must not be inlined per-field).
+    let (gesture_armed, gesture_last) = gesture_status_fields(&state.gestures);
     Ok(StatusInfo {
         ptt_key: settings.hotkey.ptt_key.clone(),
         ptt_mode: settings.hotkey.ptt_mode.clone(),
@@ -149,6 +161,10 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         } else {
             None
         },
+        gestures_available: crate::gestures::available(),
+        gestures_running: gestures_running(&state),
+        gesture_armed,
+        gesture_last,
         agent_available: crate::agent::available(),
         agent_running: state.agent.snapshot().running,
         version: env!("CARGO_PKG_VERSION").to_string(),
@@ -283,6 +299,46 @@ fn vision_running(state: &AppState) -> bool {
         .unwrap_or(false)
 }
 
+/// Whether the resident gesture loop is currently running.
+fn gestures_running(state: &AppState) -> bool {
+    state
+        .gestures
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|g| g.snapshot().running)
+        .unwrap_or(false)
+}
+
+/// The `(armed, last_action)` pair reported by `get_status`, read under a
+/// single guard.
+///
+/// This must stay a separate function rather than being inlined into the
+/// `StatusInfo` struct literal. Rust extends a temporary's lifetime to the end
+/// of the enclosing statement, so two `lock()` calls inside one struct literal
+/// keep the first `MutexGuard` alive while the second `lock()` runs — and
+/// `std::sync::Mutex` is not reentrant, so the calling thread blocks on itself
+/// forever. Because sync commands run on Tauri's main thread, that wedges the
+/// whole app: the webview still paints, but every IPC call hangs and the window
+/// reports "not responding".
+fn gesture_status_fields(
+    gestures: &std::sync::Mutex<
+        Option<std::sync::Arc<crate::gestures::controller::GestureController>>,
+    >,
+) -> (bool, Option<String>) {
+    let guard = gestures.lock().unwrap();
+    match guard.as_ref() {
+        Some(controller) => {
+            let snapshot = controller.snapshot();
+            (
+                controller.armed(),
+                snapshot.last_action.map(|a| a.as_str().to_string()),
+            )
+        }
+        None => (false, None),
+    }
+}
+
 // ---- Diagnostics ---------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize)]
@@ -296,6 +352,7 @@ pub struct DiagnosticsInfo {
     pub engine: EngineDiagnostics,
     pub credentials: CredentialDiagnostics,
     pub vision: VisionDiagnostics,
+    pub gestures: GestureDiagnostics,
     pub agent: AgentDiagnostics,
     pub snippet: SnippetDiagnostics,
     pub document: DocumentDiagnostics,
@@ -464,6 +521,31 @@ pub struct VisionDiagnostics {
     pub polish_results: u64,
 }
 
+/// Hand-gesture health (Proposal 153), mirroring the vision block.
+#[derive(Debug, Clone, Serialize)]
+pub struct GestureDiagnostics {
+    pub available: bool,
+    pub enabled: bool,
+    pub running: bool,
+    pub armed: bool,
+    pub landmark_model: String,
+    pub model_path: String,
+    pub input_size: u32,
+    pub mirror_preview: bool,
+    pub frames: u64,
+    pub detections: u64,
+    pub observations: u64,
+    pub intents: u64,
+    pub last_infer_ms: u64,
+    pub errors: u64,
+    pub last_error: Option<String>,
+    pub last_gesture: Option<String>,
+    pub last_action: Option<String>,
+    pub confidence: f32,
+    pub dictation_phase: String,
+    pub models: Vec<crate::gestures::models::LandmarkModelStatus>,
+}
+
 /// Browser-agent health (dictated web control, §6).
 #[derive(Debug, Clone, Serialize)]
 pub struct AgentDiagnostics {
@@ -572,6 +654,7 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
             wp_credentials_stored: state.has_wp_app_password(),
         },
         vision: vision_diagnostics(&state, &settings),
+        gestures: gesture_diagnostics(&state, &settings),
         agent: agent_diagnostics(&state, &settings),
         snippet: snippet_diagnostics(&state, &settings),
         document: document_diagnostics(&state, &settings),
@@ -640,6 +723,53 @@ fn vision_diagnostics(state: &AppState, settings: &Settings) -> VisionDiagnostic
         polish_model: settings.vision.polish_model.clone(),
         polish_calls,
         polish_results,
+    }
+}
+
+/// Build the hand-gesture diagnostics snapshot.
+fn gesture_diagnostics(state: &AppState, settings: &Settings) -> GestureDiagnostics {
+    let guard = state.gestures.lock().unwrap();
+    let controller = guard.as_ref();
+    let snapshot = controller.map(|g| g.snapshot()).unwrap_or_default();
+
+    let expected = {
+        let dir = state.models_dir();
+        crate::gestures::models::find(&settings.gestures.landmark_model)
+            .map(|spec| crate::gestures::models::model_path(spec, &dir))
+            .unwrap_or_else(|| dir.join("hand-landmark.onnx"))
+    };
+    let model_path = if settings.gestures.model_path.trim().is_empty() {
+        expected.display().to_string()
+    } else {
+        settings.gestures.model_path.clone()
+    };
+
+    GestureDiagnostics {
+        available: crate::gestures::available(),
+        enabled: settings.gestures.enabled,
+        running: snapshot.running,
+        armed: snapshot.armed,
+        landmark_model: settings.gestures.landmark_model.clone(),
+        model_path,
+        input_size: settings.gestures.input_size,
+        mirror_preview: settings.gestures.mirror_preview,
+        frames: controller.map(|g| g.frames()).unwrap_or(0),
+        detections: controller.map(|g| g.detections()).unwrap_or(0),
+        observations: controller.map(|g| g.observations()).unwrap_or(0),
+        intents: controller.map(|g| g.intents()).unwrap_or(0),
+        last_infer_ms: controller.map(|g| g.last_infer_ms()).unwrap_or(0),
+        errors: controller.map(|g| g.error_count()).unwrap_or(0),
+        last_error: controller.and_then(|g| g.last_error()),
+        last_gesture: snapshot.gesture.map(|g| g.as_str().to_string()),
+        last_action: snapshot.last_action.map(|a| a.as_str().to_string()),
+        confidence: snapshot.confidence,
+        dictation_phase: match crate::dictation::phase() {
+            crate::dictation::DictationPhase::Idle => "idle",
+            crate::dictation::DictationPhase::Hold => "hold",
+            crate::dictation::DictationPhase::Toggle => "toggle",
+        }
+        .to_string(),
+        models: crate::gestures::models::status_list(&state.models_dir()),
     }
 }
 
@@ -1294,6 +1424,122 @@ pub async fn test_vision_polish(
     Ok(provider.test_connection().await)
 }
 
+// ---- Hand gestures (Proposal 153) ---------------------------------------
+
+/// The gesture vocabulary + action table, for the Settings legend.
+/// The gesture vocabulary and action table.
+#[derive(Debug, Clone, Serialize)]
+pub struct GestureCatalogue {
+    pub gestures: Vec<crate::gestures::catalogue::GestureInfo>,
+    pub actions: Vec<crate::gestures::catalogue::ActionInfo>,
+    /// Whether "ask your camera" (deictic grounding) is enabled in settings.
+    pub deictic_enabled: bool,
+}
+
+/// Whether hand-gesture recognition is compiled into this build.
+#[tauri::command]
+pub fn gestures_available() -> bool {
+    crate::gestures::available()
+}
+
+/// Start (or restart) the resident gesture loop.
+#[tauri::command]
+pub fn start_gestures(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.restart_gestures()
+}
+
+/// Stop the resident gesture loop and release the model.
+#[tauri::command]
+pub fn stop_gestures(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.stop_gestures();
+    Ok(())
+}
+
+/// Latest gesture snapshot (armed state, pose, confidence, landmarks).
+#[tauri::command]
+pub fn get_gesture_state(
+    state: State<'_, AppState>,
+) -> crate::gestures::controller::GestureSnapshot {
+    state
+        .gestures
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|g| g.snapshot())
+        .unwrap_or_default()
+}
+
+/// Arm/disarm from the UI (the keyboard/pointer equivalent of the pose).
+#[tauri::command]
+pub fn set_gesture_arming(window: tauri::Window, state: State<'_, AppState>, armed: bool) -> bool {
+    if window.label() != "main" {
+        return false;
+    }
+    match state.gestures.lock().unwrap().as_ref() {
+        Some(controller) => {
+            controller.set_armed(armed);
+            true
+        }
+        None => false,
+    }
+}
+
+/// The gesture vocabulary and action table.
+#[tauri::command]
+pub fn get_gesture_catalogue(state: State<'_, AppState>) -> GestureCatalogue {
+    GestureCatalogue {
+        gestures: crate::gestures::catalogue::GESTURES.to_vec(),
+        actions: crate::gestures::catalogue::ACTIONS.to_vec(),
+        deictic_enabled: state.settings_snapshot().gestures.deictic_enabled,
+    }
+}
+
+/// The landmark model catalogue with install state.
+#[tauri::command]
+pub fn get_gesture_models(
+    state: State<'_, AppState>,
+) -> Vec<crate::gestures::models::LandmarkModelStatus> {
+    crate::gestures::models::status_list(&state.models_dir())
+}
+
+/// Download the pinned landmark model (SHA-256 verified) for the Settings UI.
+#[tauri::command]
+pub async fn download_gesture_model(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    model: String,
+) -> AppResult<String> {
+    main_window_only(&window)?;
+    let spec = crate::gestures::models::find(&model)
+        .ok_or_else(|| AppError::Model(format!("unknown hand-landmark model '{model}'")))?;
+    let dir = state.models_dir();
+    let app = state.app.clone();
+    let progress = move |fraction: f64| {
+        let _ = app.emit(
+            "model://progress",
+            serde_json::json!({ "engine": "gestures", "model": model, "fraction": fraction }),
+        );
+    };
+    let path = crate::gestures::models::download(spec, &dir, false, progress).await?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// Ask the local multimodal model about the region the user is pointing at
+/// (Proposal 153 §7.2, deictic grounding). Async so the round-trip runs on
+/// Tauri's runtime rather than blocking the UI thread; the answer is returned
+/// to the Home panel and never inserted into another app.
+#[tauri::command]
+pub async fn ask_camera(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    question: String,
+) -> AppResult<crate::gestures::deictic::DeicticAnswer> {
+    main_window_only(&window)?;
+    state.ask_camera(&question).await
+}
+
 // ---- Browser agent (dictated web control) --------------------------------
 
 /// Whether the browser-agent driver is compiled into this build.
@@ -1925,5 +2171,34 @@ mod tests {
     fn rejects_empty() {
         assert!(validate_spa_url("").is_err());
         assert!(validate_spa_url("   ").is_err());
+    }
+
+    /// Regression guard for the startup wedge: `get_status` used to read the
+    /// gesture controller by locking `state.gestures` once per struct-literal
+    /// field, in one statement. The first `MutexGuard` temporary stays alive
+    /// to the end of that statement, so the second `lock()` blocked the
+    /// thread on itself — and sync commands run on Tauri's main thread, which
+    /// froze the entire app (webview painted, every invoke hung).
+    ///
+    /// The read is a pure function of the mutex now, so it can be exercised
+    /// directly. A reintroduced double-lock makes this call never return, and
+    /// the timeout turns that into a test failure instead of a hung suite.
+    #[test]
+    fn gesture_status_fields_reads_do_not_deadlock() {
+        let gestures = std::sync::Mutex::new(
+            None::<std::sync::Arc<crate::gestures::controller::GestureController>>,
+        );
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let fields = super::gesture_status_fields(&gestures);
+            // Keep the guard alive to the end of the statement, which is what
+            // the struct literal used to do.
+            drop(tx.send(fields));
+        });
+        let fields = rx.recv_timeout(std::time::Duration::from_secs(5)).expect(
+            "gesture_status_fields blocked: the gesture mutex is being locked \
+             twice in one expression",
+        );
+        assert_eq!(fields, (false, None));
     }
 }

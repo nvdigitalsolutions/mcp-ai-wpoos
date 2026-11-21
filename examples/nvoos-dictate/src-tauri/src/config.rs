@@ -489,6 +489,84 @@ impl Default for VisionConfig {
     }
 }
 
+/// Hand-gesture input (Proposal 153).
+///
+/// Everything is opt-in and off by default: the camera must already be
+/// running, a landmark model must be supplied, and gestures never start a
+/// recording on their own.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct GesturesConfig {
+    /// Master switch (default off).
+    pub enabled: bool,
+    /// Catalogue id for the landmark model (`hand-landmark`).
+    pub landmark_model: String,
+    /// Explicit local `.onnx` path. When non-empty it wins over the
+    /// catalogue, which is how the feature is usable before M0 pins a
+    /// verified download.
+    pub model_path: String,
+    /// Square input size the export expects (192 or 224 are common).
+    pub input_size: u32,
+    /// Mirror the frame before inference so a selfie preview looks natural;
+    /// handedness is flipped to match.
+    pub mirror_preview: bool,
+    /// How long the arm pose must be held.
+    pub arm_hold_ms: u64,
+    /// Enter threshold for a pose.
+    pub min_confidence: f32,
+    /// Exit threshold (hysteresis).
+    pub exit_confidence: f32,
+    /// Agreeing frames required before a pose is reported.
+    pub debounce_agree: usize,
+    /// Sliding window for the agreement check.
+    pub debounce_window: usize,
+    /// Frames a hand must be present before gestures count.
+    pub min_track_frames: u32,
+    /// Per-action cooldown.
+    pub cooldown_ms: u64,
+    /// Disarm after this long without a hand.
+    pub armed_timeout_ms: u64,
+    /// Hold time that counts as the second confirmation for guarded actions.
+    pub confirm_hold_ms: u64,
+    /// Allowed action ids. Empty means "nothing is allowed".
+    pub allowed_actions: Vec<String>,
+    /// Deictic grounding ("point at something and ask", M5). Off by default:
+    /// it is the only gesture path that sends a crop to a model.
+    pub deictic_enabled: bool,
+    /// `lm_studio` or `ollama` — the local multimodal endpoint to ask.
+    pub deictic_provider: String,
+    /// Model identifier; empty lets the server serve its single loaded model.
+    pub deictic_model: String,
+}
+
+impl Default for GesturesConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            landmark_model: "hand-landmark".to_string(),
+            model_path: String::new(),
+            input_size: 224,
+            mirror_preview: true,
+            arm_hold_ms: 600,
+            min_confidence: 0.75,
+            exit_confidence: 0.55,
+            debounce_agree: 3,
+            debounce_window: 4,
+            min_track_frames: 3,
+            cooldown_ms: 500,
+            armed_timeout_ms: 10_000,
+            confirm_hold_ms: 1_500,
+            allowed_actions: crate::gestures::catalogue::default_allowed()
+                .into_iter()
+                .map(|a| a.as_str().to_string())
+                .collect(),
+            deictic_enabled: false,
+            deictic_provider: "lm_studio".to_string(),
+            deictic_model: String::new(),
+        }
+    }
+}
+
 /// Browser-agent configuration (dictated web control, §6).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
@@ -751,6 +829,7 @@ pub struct Settings {
     pub paste: PasteConfig,
     pub camera: CameraConfig,
     pub vision: VisionConfig,
+    pub gestures: GesturesConfig,
     pub agent: AgentConfig,
     pub privacy: PrivacyConfig,
     pub ui: UiConfig,
