@@ -1178,8 +1178,11 @@ return array(
 		),
 		'manage_vector_store_files' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ManageVectorStoreFilesTool',
-			'readiness' => 'unverified',
-			'reason' => 'Drives a file batch and polls it; a single-response HTTP fake cannot express the poll sequence, so it needs a queued-response fixture (Proposal 160 section 6).',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VectorStoreFilesToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'openWorldHint' => true ),
 		),
 		'mark_eca_attendance' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\MarkEcaAttendanceTool',

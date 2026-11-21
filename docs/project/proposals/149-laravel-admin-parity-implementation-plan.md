@@ -13677,3 +13677,62 @@ failure mode did not recur.
 
 Proposal 160's definition of done is now met: one `unverified` row, and it
 carries a reason it cannot be classified today.
+
+## 143. Batch 4's deferred row lands: the vector-store batch fixture (2026-11-21)
+
+### 143.1 The obstacle was narrower than the note said
+
+§142.4 deferred `manage_vector_store_files` because "a single-response HTTP fake
+cannot express the poll sequence". Reading the code, the create and poll
+endpoints are different URLs — so a per-URL fake map already separates them. What
+a single response genuinely could not express was *re-polling*, and the loop's
+second exit, the time cap.
+
+The fixture therefore uses `Http::sequence()` on the batch-status URL
+(`in_progress` → `completed`), the mechanism the framework documents for exactly
+this case, and asserts four requests: create, two polls, per-file statuses. Two
+assertions carry the weight — `batch_status: completed` and
+`assertSentCount(4)`, since a fixture that never re-polled would return
+`in_progress` and fail both.
+
+A second test nails the other exit: a plain response that keeps reporting
+`in_progress` with `poll_max_seconds: 1`, so the loop must give up on time rather
+than on state. It asserts the queued report and the "still processing" message,
+not a request count, because the iteration count depends on wall-clock timing.
+
+Three more cover the remaining branches: the 404 fallback to headerless
+single-file adds, `remove`, and `list`.
+
+### 143.2 One tool, three actions, so one honest annotation
+
+`manage_vector_store_files` is compound: `add` (batch create and poll), `remove`
+(DELETE), `list` (GET). Annotations are per tool, not per action, so they
+describe the worst action: `readOnly: false`, `destructive: true`,
+`openWorld: true`. The safety engine will therefore veto a machine probe and
+route an allowlisted call to approval — the right outcome for a tool that can
+delete store files. Worth stating because the `list` action alone would have
+justified `readOnly: true`, and that is the annotation error §142.2 corrected
+elsewhere.
+
+`idempotentHint` is omitted: listing and removing are repeatable, but adding the
+same file twice is not something the code guarantees.
+
+### 143.3 Counts and gates
+
+| Measure | Before | After |
+|---|---|---|
+| servable | 194 | **195** |
+| ready | 154 | 155 |
+| unverified | 1 | **0** |
+
+| Gate | Result |
+|---|---|
+| `VectorStoreFilesToolTest` | 5 tests, 33 assertions, pass |
+| `ToolReadinessClassificationTest` + `MachineToolAnnotationsTest` + `MachineToolPickerTest` | 16 tests, 39 assertions, pass |
+| adapter `ToolReadinessRegistrationTest` | 5 tests, 224 assertions, pass |
+| auditor | `OK — no violations` |
+| phpcs | clean |
+
+Proposal 160 is complete: **zero `unverified` rows**, every servable row annotated
+and evidenced. The 65 pre-existing `ready` rows without an `evidence` path
+(§142.5) are the one remaining gap, and it is a backfill rather than a triage.
