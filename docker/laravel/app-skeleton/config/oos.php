@@ -216,6 +216,11 @@ return array(
     */
     'machine_alerts' => array(
         'email' => env('NVOOS_MACHINE_ALERT_EMAIL'),
+        // The critical band. A credential inside it ignores an acknowledgement
+        // and goes to the escalation address: an acked alert whose condition
+        // persists must re-page, or ack becomes a way to silence the safety net.
+        'critical_days' => (int) env('NVOOS_MACHINE_CRITICAL_DAYS', 3),
+        'escalation_email' => env('NVOOS_MACHINE_ESCALATION_EMAIL'),
     ),
 
 );

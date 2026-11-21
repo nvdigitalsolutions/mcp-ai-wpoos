@@ -26,6 +26,7 @@ final class MachineTokensExpiring extends Mailable
     public function __construct(
         public readonly array $rows,
         public readonly int $days,
+        public readonly bool $escalated = false,
     ) {
     }
 
@@ -33,7 +34,8 @@ final class MachineTokensExpiring extends Mailable
     {
         return new Envelope(
             subject: sprintf(
-                '%d machine credential(s) expire within %d days',
+                '%s%d machine credential(s) expire within %d days',
+                $this->escalated ? 'ESCALATED: ' : '',
                 count($this->rows),
                 $this->days
             ),

@@ -242,6 +242,84 @@ final class MachineTokenExpiryAlertTest extends TestCase
         $this->assertNotNull($row, 'Acknowledged, then gone, must be recorded as resolved.');
     }
 
+    public function test_a_critical_credential_escalates_even_when_acknowledged(): void
+    {
+        config(array(
+            'oos.machine_alerts.critical_days' => 3,
+            'oos.machine_alerts.escalation_email' => 'oncall@example.test',
+        ));
+
+        $this->token('ci-catalogue', 2);
+
+        $this->actingAs($this->operator());
+        Livewire::test(MachineCredentials::class)->call('acknowledgeExpiryAlerts');
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        Mail::assertSent(MachineTokensExpiring::class, static function (MachineTokensExpiring $mail): bool {
+            return $mail->hasTo('oncall@example.test') && $mail->escalated;
+        });
+    }
+
+    public function test_the_critical_alert_falls_back_to_the_primary_address(): void
+    {
+        config(array(
+            'oos.machine_alerts.critical_days' => 3,
+            'oos.machine_alerts.escalation_email' => null,
+        ));
+
+        $this->token('ci-catalogue', 2);
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        Mail::assertSent(MachineTokensExpiring::class, static function (MachineTokensExpiring $mail): bool {
+            return $mail->hasTo(self::ADDRESS) && $mail->escalated;
+        });
+    }
+
+    public function test_a_non_critical_set_does_not_escalate(): void
+    {
+        config(array('oos.machine_alerts.critical_days' => 3));
+
+        $this->token('ci-catalogue', 10);
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        Mail::assertSent(MachineTokensExpiring::class, static function (MachineTokensExpiring $mail): bool {
+            return ! $mail->escalated && $mail->hasTo(self::ADDRESS);
+        });
+    }
+
+    public function test_the_critical_alert_is_deduplicated_within_a_day(): void
+    {
+        config(array('oos.machine_alerts.critical_days' => 3));
+
+        $this->token('ci-catalogue', 2);
+
+        Artisan::call('nvoos:machine-token:expiring');
+        $second = Artisan::call('nvoos:machine-token:expiring');
+        $output = Artisan::output();
+
+        $this->assertSame(1, $second);
+        $this->assertStringContainsString('critical alert suppressed', $output);
+
+        Mail::assertSent(MachineTokensExpiring::class, 1);
+    }
+
+    public function test_the_critical_finding_is_recorded_separately(): void
+    {
+        config(array('oos.machine_alerts.critical_days' => 3));
+
+        $this->token('ci-catalogue', 2);
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        $this->assertSame(
+            1,
+            DB::table('nvoos_activity_events')->where('type', 'machine_token.expiring_critical')->count()
+        );
+    }
+
     private function operator(): User
     {
         $user = User::factory()->admin()->create();
