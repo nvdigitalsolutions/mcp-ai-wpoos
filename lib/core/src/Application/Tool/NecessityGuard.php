@@ -37,6 +37,7 @@ use Nvoos\Core\Domain\Contract\ToolGuardInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile;
 use Nvoos\Core\Domain\Service\Safety\NecessityGate;
+use Nvoos\Core\Domain\Service\Safety\ToolCapabilityFlagCatalogue;
 
 final class NecessityGuard implements ToolGuardInterface
 {
@@ -65,8 +66,15 @@ final class NecessityGuard implements ToolGuardInterface
         }
 
         $flags = $tool instanceof ToolCapabilityFlagsInterface
-            ? \array_map('strtolower', $tool->getCapabilityFlags())
+            ? $tool->getCapabilityFlags()
             : array();
+
+        if (array() === $flags) {
+            // The core tool classes carry no flags of their own, so the corpus
+            // catalogue supplies what WordPress declared. Absence stays empty,
+            // and the gate's own "undeclared is not safe" rule takes over.
+            $flags = ToolCapabilityFlagCatalogue::for($slug);
+        }
 
         $decision = NecessityGate::decide($flags, $slug, $arguments);
 

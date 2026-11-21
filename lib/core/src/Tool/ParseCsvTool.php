@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class ParseCsvTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class ParseCsvTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function getSlug(): string
     {
@@ -64,5 +67,18 @@ class ParseCsvTool extends AbstractTool
             }
         }
         return $this->success(count($rows) . ' rows parsed.', array('rows' => $rows,'count' => count($rows),'header' => $hdr ? $header : [],'delimiter' => $del));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }

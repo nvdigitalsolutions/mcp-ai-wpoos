@@ -153,6 +153,32 @@ final class ReadOnlyToolGuardTest extends TestCase
         $this->assertNull($guard->evaluate('web_search', array(), array()));
     }
 
+    public function test_a_tool_with_no_declaration_falls_back_to_the_corpus_catalogue(): void
+    {
+        $guard = new ReadOnlyToolGuard(
+            self::resolver(
+                array(
+                    // Both implement the interface and declare nothing, so the
+                    // corpus catalogue decides.
+                    'delete_post'   => array(),
+                    'analyze_image' => array(),
+                )
+            )
+        );
+
+        $this->assertNotNull($guard->evaluate('delete_post', array(), array()));
+        $this->assertNull($guard->evaluate('analyze_image', array(), array()));
+    }
+
+    public function test_a_tools_own_declaration_wins_over_the_catalogue(): void
+    {
+        $guard = new ReadOnlyToolGuard(
+            self::resolver(array('delete_post' => array('read-only')))
+        );
+
+        $this->assertNull($guard->evaluate('delete_post', array(), array()));
+    }
+
     public function test_a_custom_gated_flag_set_replaces_the_default(): void
     {
         $guard = new ReadOnlyToolGuard(

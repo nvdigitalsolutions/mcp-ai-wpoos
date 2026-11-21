@@ -12,8 +12,10 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class ValidateWorkflowTool extends AbstractTool
+class ValidateWorkflowTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $e)
     {
@@ -51,5 +53,18 @@ class ValidateWorkflowTool extends AbstractTool
             $issues[] = 'No steps defined.';
         }
         return $this->success(array() === $issues ? 'Workflow is valid.' : 'Validation issues found.', array('valid' => array() === $issues,'issues' => $issues,'step_count' => \is_array($steps) ? \count($steps) : 0));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }
