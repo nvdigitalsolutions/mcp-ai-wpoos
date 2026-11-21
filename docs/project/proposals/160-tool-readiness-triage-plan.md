@@ -234,9 +234,16 @@ None of the four unbound contracts appears in either provider, and Laravel's
 container cannot auto-resolve an interface, so reflection fails and the registrar
 skips the tool. Marking any of these `ready` would be a silent no-op.
 
-Adapter size, smallest first: `ProfessionWrite` (1 method, sits beside the already
-bound read-only `ProfessionRepository`), `EmailService` (3), `ImageProcessing` (7,
-via the media worker), `AgentOrchestration` (4, needs the workflow tables).
+Adapter size where an adapter is the right answer: `EmailService` (3 methods,
+over Laravel Mail), `ImageProcessing` (7, via the media worker),
+`AgentOrchestration` (4, needs the workflow tables).
+
+`ProfessionWrite` is the exception - it is not a missing adapter but a decision.
+The catalogue is code-owned reference data (090-g §4.3), and
+`ProfessionRepositoryTest::test_the_laravel_catalogue_is_read_only` pins that this
+runtime's catalogue is not writable: `save_profession` is registered only on the
+WordPress CPT. Implementing the interface here would reverse a deliberate choice,
+so the row stays `unavailable` for good rather than waiting on work.
 
 ### 12.2 Declared but not consulted (28 contracts)
 

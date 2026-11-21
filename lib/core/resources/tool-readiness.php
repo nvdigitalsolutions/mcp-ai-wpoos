@@ -1098,7 +1098,7 @@ return array(
 		'save_profession' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SaveProfessionTool',
 			'readiness' => 'unavailable',
-			'reason' => 'Needs ProfessionWriteInterface, which has no implementation or binding here; the bound ProfessionRepositoryInterface is read-only. A one-method write adapter is the prerequisite (Proposal 160 section 12).',
+			'reason' => 'Needs ProfessionWriteInterface, which this runtime deliberately does not implement: the profession catalogue is code-owned reference data, so the only writable path is the WordPress CPT (ProfessionRepositoryTest::test_the_laravel_catalogue_is_read_only). Not unblockable by an adapter (Proposal 160 section 12.1).',
 		),
 		'schedule_job' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ScheduleJobTool',
