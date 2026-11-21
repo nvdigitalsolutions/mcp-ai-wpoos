@@ -12,10 +12,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
+use App\Support\Tools\MachineToolSafety;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
-use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 
 /**
  * Tool execution for a machine principal — Proposal 159 slice 4.
@@ -50,11 +49,11 @@ use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
  *
  * ## Why the allowlist is still the first gate
  *
- * `ReadOnlyToolGuard` gates on declared capability flags, and no tool in this
- * runtime declares them yet (214 classes, 0 declare), so a guard alone would
- * block everything while reading as protection. The allowlist is honest about
- * being interim. When a tool does declare flags, they are honoured here — a
- * gated flag routes the call to approval even when it is allowlisted.
+ * The signal is MCP's own vocabulary, read from the readiness manifest: a tool
+ * that declares `destructiveHint: true` or `readOnlyHint: false` is routed to a
+ * human even when it is allowlisted. That is a veto, never a permit — see
+ * {@see MachineToolSafety} for why the specification's defaults are not applied
+ * to tools that declare nothing.
  */
 final class MachineToolController
 {
@@ -65,7 +64,8 @@ final class MachineToolController
         Request $request,
         string $tool,
         ToolRegistry $registry,
-        ActivityRecorder $activity
+        ActivityRecorder $activity,
+        MachineToolSafety $safety
     ): JsonResponse {
         $scope = PrincipalScope::forRequest($request->user());
         $assistantId = $scope->assistantId();
@@ -139,15 +139,23 @@ final class MachineToolController
             true
         );
 
-        // A declared gated flag means "not safe unattended", whatever the
-        // allowlist says. No tool declares flags today; this is where they apply.
-        $gated = $this->gatedFlags($tool, $registry);
+        // The allowlist is the operator permitting; an annotation or flag can
+        // only veto. Absence of a claim leaves the operator's decision standing.
+        $veto = $safety->veto($tool);
 
-        if ($allowlisted && array() === $gated) {
+        if ($allowlisted && null === $veto) {
             return $this->run($request, $tool, $arguments, $assistant, $registry, $activity);
         }
 
-        return $this->requestApproval($request, $tool, $arguments, $assistant, $registry, $activity);
+        return $this->requestApproval(
+            $request,
+            $tool,
+            $arguments,
+            $assistant,
+            $registry,
+            $activity,
+            $veto
+        );
     }
 
     /**
@@ -214,7 +222,8 @@ final class MachineToolController
         array $arguments,
         Assistant $assistant,
         ToolRegistry $registry,
-        ActivityRecorder $activity
+        ActivityRecorder $activity,
+        ?string $veto = null
     ): JsonResponse {
         $assistantId = (int) $assistant->getKey();
         $hash = $this->argumentsHash($arguments);
@@ -234,7 +243,8 @@ final class MachineToolController
                 null === $pending->expires_at
                     ? null
                     : Carbon::parse($pending->expires_at)->toDateTimeString(),
-                $tool
+                $tool,
+                $pending->reason
             );
         }
 
@@ -294,7 +304,9 @@ final class MachineToolController
             'assistant_id' => $assistantId,
             'requester_id' => $request->user()?->getAuthIdentifier(),
             'session_id' => null,
-            'reason' => sprintf('A machine credential requested tool [%s].', $tool),
+            'reason' => null === $veto
+                ? sprintf('A machine credential requested tool [%s].', $tool)
+                : sprintf('A machine credential requested tool [%s]: %s.', $tool, $veto),
             'resolution_note' => null,
             'resolved_by' => null,
             'resolved_at' => null,
@@ -310,10 +322,10 @@ final class MachineToolController
             array('tool' => $tool, 'approval_id' => $id)
         );
 
-        return $this->pending($id, $expiresAt->toDateTimeString(), $tool);
+        return $this->pending($id, $expiresAt->toDateTimeString(), $tool, $veto);
     }
 
-    private function pending(int $id, ?string $expiresAt, string $tool): JsonResponse
+    private function pending(int $id, ?string $expiresAt, string $tool, ?string $reason = null): JsonResponse
     {
         return response()->json(
             array(
@@ -326,6 +338,7 @@ final class MachineToolController
                     $tool
                 ),
                 'expires_at' => $expiresAt,
+                'reason' => $reason,
             ),
             202
         );
@@ -337,28 +350,6 @@ final class MachineToolController
             ->where('tool', $tool)
             ->where('assistant_id', $assistantId)
             ->where('arguments_hash', $hash);
-    }
-
-    /**
-     * The gated capability flags this tool declares, if any.
-     *
-     * A tool that declares none is not vouched for; it simply has no reason to
-     * be blocked *by flags*. The allowlist still has to name it.
-     *
-     * @return list<string>
-     */
-    private function gatedFlags(string $tool, ToolRegistry $registry): array
-    {
-        $candidate = $registry->get($tool);
-
-        if (! $candidate instanceof ToolCapabilityFlagsInterface) {
-            return array();
-        }
-
-        return array_values(array_intersect(
-            array_map('strtolower', $candidate->getCapabilityFlags()),
-            ReadOnlyToolGuard::DEFAULT_GATED_FLAGS
-        ));
     }
 
     /**

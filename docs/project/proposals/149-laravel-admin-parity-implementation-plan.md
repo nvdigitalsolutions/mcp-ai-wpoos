@@ -12712,3 +12712,67 @@ and neither is this report's business.
   click it and what the audit row says is.
 - **Capability-flag backfill** (§123.4) remains the highest-value follow-up: it is
   what turns "safe for a machine" from an operator list into a property of a tool.
+
+## 126. Machine safety from the manifest's MCP annotations
+
+§123.4 recorded capability flags as the highest-value follow-up and assumed they
+had to be added to 214 tool classes. They did not: the readiness manifest already
+carries **MCP annotations** per tool, and the data is largely there.
+
+Measured on 2026-11-21 (`lib/core/resources/tool-readiness.php`): **223 rows, 115
+annotated**, and **all 20** state-changing servable tools already declare
+`readOnlyHint: false` — five of them also `destructiveHint: true`
+(`delete_post`, `delete_project`, `delete_task`, `withdraw_student_eca`,
+`manage_eca_waitlist`). So the classification backfill was already done by the
+track that added the annotation schema; **the missing piece was a reader**.
+
+### 126.1 The rule: a veto, never a permit
+
+`oos.machine_tools` is the operator saying "a machine may run this tool". A tool's
+own declaration can only add "…but not unattended":
+
+| Signal | Effect |
+|---|---|
+| `destructiveHint: true` | veto — approval required |
+| `readOnlyHint: false` | veto — approval required |
+| a declared gated capability flag | veto — approval required (no tool declares one; the branch exists for adopters) |
+| `openWorldHint: true` alone | **no** veto |
+| no annotation | **no** claim — the allowlist decides |
+
+The last two rows are the decision worth recording. Adopting the specification's
+defaults literally (`readOnlyHint` false, `destructiveHint` true) for a tool that
+declares *nothing* would route every unannotated tool to a human and make the
+allowlist meaningless — the tool would be presumed guilty. And `openWorldHint`
+describes where data comes from, not whether the call mutates: a read-only dataset
+lookup is still a read, and vetoing it would send every lookup to approval.
+
+This is also how the guidance reads the hints: they are advisory, a client should
+rely on them only for a trusted server, and a server confirms before anything
+declaring itself destructive. A veto uses them for exactly that and nothing more.
+
+### 126.2 What changed
+
+`App\Support\Tools\MachineToolSafety` resolves the veto from `ToolReadiness` plus
+the registry. `MachineToolController` asks it instead of reading capability flags
+directly, and the reason travels with the escalation:
+
+- the approval row's `reason` now says **why** — "…requested tool [create_post]:
+  the tool declares readOnlyHint: false" — so the person approving knows what they
+  are approving;
+- the 202 body carries the same `reason`.
+
+### 126.3 Gates
+
+| Run | Result |
+|---|---|
+| `MachineToolAnnotationsTest` (new, 8 tests) | `readOnlyHint: true` does not veto; `false` does; `destructiveHint: true` does; an undeclared tool makes no claim; `openWorldHint` alone does not veto; a declared gated flag does; an **allowlisted** `create_post` returns 202 and queues an approval; an **allowlisted** `base64` still executes |
+| the five existing machine suites alongside it | **47 tests / 123 assertions, 0 failures** |
+| phpcs | **0 errors, 0 warnings** on the resolver, the controller and the test |
+| Manifest | reverted my own annotation batch after measuring: the rows were already annotated, and a second `annotations` key on the same row is silently overwritten by the later one — the measurement is what caught it |
+
+### 126.4 Why the class-level interface was dropped
+
+Adding `getCapabilityFlags()` to 96 classes would have created a second source of
+truth for a question the manifest already answers, and the interface is implemented
+by no tool today. It is kept as a fallback so a tool that adopts it is honoured,
+but the manifest is the catalogue. Nothing from that attempt was committed.
