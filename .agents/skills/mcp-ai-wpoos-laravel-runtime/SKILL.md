@@ -90,6 +90,29 @@ MSYS_NO_PATHCONV=1 docker exec oos-laravel-app php artisan octane:reload   # lon
 If a new file is missing at runtime, check the copy step first — the skeleton
 is what CI sees, `app/` is what the container sees.
 
+**`docker compose up` binds the checkout it is run from, not the one already
+running.** The compose file's volumes are relative (`../:/workspace/oos`,
+`./laravel/app:/app`) and Compose resolves them against the compose file's own
+directory. Run `up` from a linked worktree and Docker recreates the container
+pointing at *that* worktree — silently, with no error, and the container stays
+healthy.
+
+The symptom is a run against the wrong tree: `/workspace/oos` is where the
+repository "is", yet `git -C /workspace/oos status` shows another branch, and
+`/app` is a copy taken from that other checkout's skeleton — so a method you
+just added is reported as undefined. Check the bind source before debugging a
+missing class:
+
+```sh
+docker inspect oos-laravel-app --format '{{range .Mounts}}{{.Source}} => {{.Destination}}{{"\n"}}{{end}}'
+```
+
+If it names a different worktree, either rerun Compose from the intended
+directory or accept the swap deliberately and sync the skeleton into `app/`
+(the cycle above). Do not start by "fixing" the test: the first run against a
+stale `app/` looks exactly like a genuine failure, and the second run after a
+sync looks like a flake.
+
 **`optimize:clear` does not reach a warm Octane worker.** A route or panel added
 to the skeleton appears in `php artisan route:list` but answers **404 over HTTP**
 until `octane:reload` runs — the worker still holds the old route table. Reload,
