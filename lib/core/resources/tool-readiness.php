@@ -132,8 +132,8 @@ return array(
 		),
 		'check_workflow_health' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CheckWorkflowHealthTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs AgentOrchestrationInterface, which has no implementation in this runtime and no container binding; the registrar would silently skip it. Agent teams and workflows are WordPress-only today (Proposal 160 section 12).',
 		),
 		'client_analyze_sentiment' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ClientAnalyzeSentimentTool',
@@ -199,8 +199,8 @@ return array(
 		),
 		'convert_image_format' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ConvertImageFormatTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs ImageProcessingInterface, which has no Laravel implementation; the WordPress adapter is the only one. The media worker is the intended backend (Proposal 160 §11).',
 		),
 		'count_posts' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CountPostsTool',
@@ -222,8 +222,8 @@ return array(
 		),
 		'create_agent_team' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateAgentTeamTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs AgentOrchestrationInterface, which has no implementation in this runtime and no container binding; the registrar would silently skip it. Agent teams and workflows are WordPress-only today (Proposal 160 section 12).',
 		),
 		'create_batch' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateBatchTool',
@@ -303,8 +303,8 @@ return array(
 		),
 		'crop_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CropImageTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs ImageProcessingInterface, which has no Laravel implementation; the WordPress adapter is the only one. The media worker is the intended backend (Proposal 160 §11).',
 		),
 		'deep_research' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeepResearchTool',
@@ -313,8 +313,8 @@ return array(
 		),
 		'delegate_to_agent' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DelegateToAgentTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs AgentOrchestrationInterface, which has no implementation in this runtime and no container binding; the registrar would silently skip it. Agent teams and workflows are WordPress-only today (Proposal 160 section 12).',
 		),
 		'delete_cache' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeleteCacheTool',
@@ -416,8 +416,8 @@ return array(
 		),
 		'execute_workflow' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExecuteWorkflowTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs AgentOrchestrationInterface, which has no implementation in this runtime and no container binding; the registrar would silently skip it. Agent teams and workflows are WordPress-only today (Proposal 160 section 12).',
 		),
 		'extract_domain' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExtractDomainTool',
@@ -773,88 +773,88 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_info' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetInfoTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_parquet' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetParquetTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_rows' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetRowsTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_size' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetSizeTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_get_statistics' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetGetStatisticsTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_is_valid' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetIsValidTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_list_splits' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetListSplitsTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_preview_rows' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetPreviewRowsTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_dataset_search' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetSearchTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 			'reason' => 'Thin wrapper over datasets-server.huggingface.co. Evidence: HuggingFaceDatasetToolsTest pins the endpoint, the dataset argument, the bearer header and the error path (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'huggingface_recommended_datasets' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceRecommendedDatasetsTool',
 			'readiness' => 'pure',
 			'parity' => 'port',
 			'probe' => 'call',
-			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 			'reason' => 'Returns a static curated list; it makes no request. It was grouped with the ten HTTP tools by mistake in section 85 — HuggingFaceDatasetToolsTest pins that it calls nothing (Proposal 149 section 91).',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
 		'increment_cache' => array(
 			'class' => 'Nvoos\\Core\\Tool\\IncrementCacheTool',
@@ -1058,8 +1058,8 @@ return array(
 		),
 		'resize_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ResizeImageTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs ImageProcessingInterface, which has no Laravel implementation; the WordPress adapter is the only one. The media worker is the intended backend (Proposal 160 §11).',
 		),
 		'retrieve_agent_memory' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RetrieveAgentMemoryTool',
@@ -1068,8 +1068,8 @@ return array(
 		),
 		'rotate_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RotateImageTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs ImageProcessingInterface, which has no Laravel implementation; the WordPress adapter is the only one. The media worker is the intended backend (Proposal 160 §11).',
 		),
 		'run_crawl4ai_job' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RunCrawl4AiJobTool',
@@ -1097,8 +1097,8 @@ return array(
 		),
 		'save_profession' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SaveProfessionTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs ProfessionWriteInterface, which has no implementation or binding here; the bound ProfessionRepositoryInterface is read-only. A one-method write adapter is the prerequisite (Proposal 160 section 12).',
 		),
 		'schedule_job' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ScheduleJobTool',
@@ -1158,13 +1158,13 @@ return array(
 		),
 		'send_group_email' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SendGroupEmailTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Needs EmailServiceInterface, which has no implementation or binding here; the app sends transactional mail through Mail directly. Three-method adapter is the prerequisite (Proposal 160 section 12).',
 		),
 		'send_group_email_validated' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SendGroupEmailValidatedTool',
-			'readiness' => 'unverified',
-			'reason' => 'Auto-added by the auditor; not classified yet.',
+			'readiness' => 'unavailable',
+			'reason' => 'Extends SendGroupEmailTool, so it inherits the mandatory EmailServiceInterface dependency, which has no implementation or binding here. Same three-method adapter unblocks both rows (Proposal 160 section 12).',
 		),
 		'seo_meta_optimizer_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SEOMetaOptimizerTool',
