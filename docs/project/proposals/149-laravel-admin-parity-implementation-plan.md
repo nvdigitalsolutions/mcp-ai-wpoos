@@ -13501,3 +13501,76 @@ as with batch 1.
 | `VideoAndAudioToolsTest` | 9 tests, 43 assertions, pass |
 | video/audio + image/file + annotations + picker + classification | 41 tests, 160 assertions, pass |
 | auditor | `OK — no violations` |
+
+## 141. Batch 3 closes: cache, cron, jobs and batches (2026-11-21)
+
+### 141.1 Scope was 18 rows
+
+The plan estimated ~30 for this batch. The manifest holds 28 matching slugs; six
+were already decided (`check_workflow_health` and `execute_workflow` are
+`unavailable` on `AgentOrchestrationInterface`, `validate_workflow` is `pure`,
+two prompt builders are `quarantined`, `get_cache`/`get_job_status`/`list_*` were
+already `ready`). That leaves **18 `unverified` rows**, all now classified.
+
+### 141.2 A missing binding, not a missing service
+
+`erlang_c_queue_health` failed to construct: the container reported
+`Target [ErlangCInterface] is not instantiable`. The service it wants already
+ships in `nvoos/core`
+(`Nvoos\Core\Domain\Service\Optimization\ErlangC`) — nothing had bound the
+contract. Binding it in `NvoosServiceProvider` is the whole fix, and it belongs
+in the package for the same reason the email adapter does: the readiness manifest
+is shared, so a servable row must be constructible from the package container.
+
+This is the third instance of the same pattern (§12, §138.1, here). The rule is
+worth stating once: **a core contract with a shipped implementation still needs a
+binding, and if a tool depends on it the binding belongs in the package.**
+
+### 141.3 Two behaviours the tests had to respect
+
+- **Cron tools require a caller.** `create_cron_job`, `get_cron_job` and
+  `delete_cron_job` return a forbidden error unless `context['user_id'] > 0`.
+  That is deliberate; the tests pass a user rather than bypassing the check.
+- **A logged exception can swallow the diagnosis.** Before the fixes above, the
+  run died with `Allowed memory size exhausted … in ThrowableToStringMapper.php`.
+  The cause was not the tool: PHPUnit renders exception traces *with arguments*,
+  and one frame held a large object graph, so the renderer allocated ~170 MB and
+  hid the real message. Running the same test with
+  `-d zend.exception_ignore_args=1` printed it immediately. Recorded because it
+  will happen again to whoever sees a memory fatal instead of an assertion.
+
+### 141.4 Annotations applied
+
+| Behaviour | Rows | Hints |
+|---|---|---|
+| Reads a job, batch or cache entry | `get_cron_job`, `get_batch_status`, `monitor_batch`, `erlang_c_queue_health` | `readOnly: true`, `idempotent: true`; `openWorld` true only where the tool calls a provider |
+| Adds a job, schedule or cache entry | `enqueue_job`, `schedule_job`, `create_cron_job` (+ validated), `create_batch`, `increment_cache` | `readOnly: false`, `destructive: false` |
+| Sets a value | `set_cache` | `readOnly: false`, `destructive: false`, `idempotent: true` |
+| Cancels or removes | `cancel_job`, `delete_cron_job`, `delete_cache`, `unschedule_job` | `readOnly: false`, `destructive: true`, `idempotent: true` |
+| Purges cached content | `purge_cache`, `purge_cloudflare_cache`, `purge_varnish_cache` | `readOnly: false`, `destructive: true`, `idempotent: true`, `openWorld: true` |
+
+The purges are the only `destructive` rows in this batch that a machine should
+never run unattended: they discard cached content even though it is recoverable.
+
+`purge_varnish_cache` is `ready` rather than `unavailable`. The runtime bundles no
+Varnish, but the tool's target is a configured `varnish_host`; whether a Varnish
+exists is deployment, not a missing service. `purge_cache` without any layer
+configured reports `no_cache_layers` instead of pretending to purge.
+
+### 141.5 Counts and gates
+
+| Measure | Before | After |
+|---|---|---|
+| servable | 131 | **149** |
+| ready | 101 | 119 |
+| unverified | 64 | **46** |
+| pure | 24 | 24 |
+| unavailable | 9 | 9 |
+| quarantined | 19 | 19 |
+
+| Gate | Result |
+|---|---|
+| `CacheQueueAndBatchToolsTest` | 17 tests, 74 assertions, pass |
+| batch 1–3 evidence + annotations + classification | 65 tests, 255 assertions, pass (two runs) |
+| `artisan nvoos:doctor` | `erlang_c_queue_health`, `purge_cache`, `set_cache`, `create_batch` all registered |
+| auditor | `OK — no violations` |
