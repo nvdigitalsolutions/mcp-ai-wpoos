@@ -226,6 +226,22 @@ final class SettingsSchema
                 'sensitive' => false,
                 'default' => false,
             ],
+            [
+                'key' => 'machine_tools',
+                'storage' => 'machine_tools',
+                'scope' => 'operator',
+                'console' => 'hidden',
+                'type' => 'text',
+                'section_id' => 'machine_access',
+                'section' => 'Machine access',
+                'tab' => 'advanced',
+                'label' => 'Machine-executable tools',
+                'description' => 'Comma-separated tool slugs a machine principal may run (159 slice 4). '
+                    .'Each slug must be registered and servable; unknown slugs are ignored. '
+                    .'A tool still needs the assistant to list it, and its own annotations can veto unattended use.',
+                'sensitive' => false,
+                'default' => '',
+            ],
         ];
     }
 
