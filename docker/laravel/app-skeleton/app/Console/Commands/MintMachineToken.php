@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Assistant;
 use App\Models\User;
 use App\Support\Admin\AdminAuditLogger;
+use App\Support\MachineTokens;
 use App\Support\Auth\PrincipalScope;
 use App\Support\CapabilityMap;
 use App\Support\TenantContext;
@@ -233,17 +234,26 @@ class MintMachineToken extends Command
         ?Carbon $expiresAt,
         AdminAuditLogger $audit
     ): int {
-        $token = $owner->createToken($name, $scopes, $expiresAt);
+        $storedName = MachineTokens::NAME_PREFIX.$name;
+
+        $token = $owner->createToken($storedName, $scopes, $expiresAt);
         $id = (int) $token->accessToken->getKey();
 
-        TenantContext::runAs($estate, static function () use ($audit, $id, $owner, $name, $scopes, $expiresAt): void {
+        TenantContext::runAs($estate, static function () use (
+            $audit,
+            $id,
+            $owner,
+            $storedName,
+            $scopes,
+            $expiresAt
+        ): void {
             $audit->recordResource(
                 'machine_token',
                 (string) $id,
                 'created',
                 array(),
                 array(
-                    'name' => $name,
+                    'name' => $storedName,
                     'owner_id' => $owner->getKey(),
                     'scopes' => $scopes,
                     'expires_at' => $expiresAt?->toIso8601String(),
@@ -254,7 +264,7 @@ class MintMachineToken extends Command
         });
 
         $this->newLine();
-        $this->info(sprintf('Minted machine token #%d [%s]', $id, $name));
+        $this->info(sprintf('Minted machine token #%d [%s]', $id, $storedName));
         $this->line(sprintf('  owner:   %d', $owner->getKey()));
         $this->line(sprintf('  estate:  %s', $estate));
         $this->line(sprintf('  scopes:  %s', implode(', ', $scopes)));
@@ -266,7 +276,7 @@ class MintMachineToken extends Command
         $this->warn('Shown once. It is stored hashed and cannot be recovered.');
         $this->line($token->plainTextToken);
         $this->newLine();
-        $this->line(sprintf('Revoke it in /ops -> Token inventory (row %d).', $id));
+        $this->line(sprintf('Revoke it in /ops -> Machine credentials (row %d).', $id));
 
         return self::SUCCESS;
     }

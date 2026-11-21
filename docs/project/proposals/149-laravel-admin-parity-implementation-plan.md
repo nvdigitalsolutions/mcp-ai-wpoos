@@ -12887,3 +12887,64 @@ for the sake of a list's reading order.
   decision, and the page's shape is the better one.
 - **A config entry cannot be edited here** — by design, and the remove
   confirmation says so rather than leaving the operator to discover it.
+
+## 129. Machine credentials get a panel and a name (2026-11-21)
+
+The mint command has printed "Revoke it in /ops -> Token inventory" since §122.
+The inventory only lists `oos-personal:` tokens, so that instruction has never
+worked: a leaked machine credential could only be revoked with SSH access.
+
+§125.3 recorded the blocker as a product decision — who may click, and what the
+audit row says. The answer was already written on the inventory page: a person's
+token is revoked by its owner "so that the audit trail names the owner as the
+actor". That rule is right, and it means the machine credential does not belong
+on that page at all. It belongs to the operator who issued it.
+
+### 129.1 The identity problem, measured
+
+Three token families share `personal_access_tokens`, separated only by name:
+
+| Family | Stored name | Written by |
+|---|---|---|
+| Personal | `oos-personal:{label}` | the user, `/admin` |
+| Assistant | `oos-assistant-{id}` | the console token manager, `/ops/credentials` |
+| Machine | **free-form `--name`** | `nvoos:machine-token` |
+
+The third had no prefix, so nothing could list it. The fix is the naming, not a
+heuristic over abilities: `nvoos:machine-token` now stores
+`oos-machine:{label}`, and rotation copies the stored name forward, so a rotated
+credential keeps it. Tokens minted before this change remain unlisted — the page
+says so in its empty state rather than pretending they do not exist.
+
+### 129.2 What shipped
+
+- `App\Support\MachineTokens` — the prefix, the listing (joined to the holder),
+  and `revoke()`, which deletes only a row whose name carries the prefix. The
+  guard is defence in depth: a hand-crafted id cannot delete a person's token
+  through this page.
+- `App\Filament\Operator\Pages\MachineCredentials` — `/ops` → Access, sort 26,
+  listing label, owner, scopes, last used, expiry and status, with a confirming
+  revoke action. Every revocation writes `resource=machine_token`,
+  `record_id=<id>`, `action=revoked`, with the stored name and owner in `before`.
+- `MintMachineToken` uses the shared constant and now points at the page that
+  exists.
+
+### 129.3 Gates
+
+| Run | Result |
+|---|---|
+| `MachineCredentialsTest` (new, 5 tests) | lists `oos-machine:` and not `oos-personal:`; revoke deletes and audits; revoke refuses a personal id; minting stores the prefix; an estate administrator gets 403 |
+| `MintMachineTokenTest` | 10 passed — including the end-to-end case that spends the printed token |
+| `OperatorNavigationTest` | 7 passed — the sidebar matches the enum |
+| machine + mint + navigation suites | **60 passed / 172 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the five PHP files |
+
+### 129.4 What is left
+
+- **Pre-prefix tokens are invisible.** They can still be revoked with
+  `nvoos:machine-token:revoke`, and rotating one adopts the prefix because
+  rotation copies the stored name. A backfill that renames them would change
+  what old audit rows point at, so it is a decision.
+- **The expiry report still has no channel** (§125.3). Its exit code is a
+  contract nothing consumes — that is the next slice.
+- **No bulk revoke.** One credential at a time, by design.
