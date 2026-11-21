@@ -1074,9 +1074,12 @@ the changed files is the substantive gate; plan CI waits accordingly.
 	        non-static provider errors at suite construction, not in the test.
 	      - Providers are evaluated **eagerly, before filtering**: a provider
 	        that reads a missing fixture fails the run even with `--filter`
-	        naming an unrelated test. Pass the fixture env vars
-	        (`NVOOS_PM_FIXTURE`, `NVOOS_PM_WRITES_FIXTURE`) instead of
-	        assuming a filtered run is isolated.
+	        naming an unrelated test. `docker/docker-compose.laravel.yml`
+	        sets `NVOOS_PM_FIXTURE` / `NVOOS_PM_WRITES_FIXTURE` to the repo
+	        corpus (`/workspace/oos/tests/fixtures/pm/*.json`), so a
+	        container recreated after that line exists needs no `-e` flags;
+	        one older than it still does. Never assume a filtered run is
+	        isolated.
 
 	   76. **Init-time `wp_insert_post()` → "Attempt to read property 'feeds' on
 	      null" (PHP 8, bootstrap logs; 2026-10-24, SSE offload pass).**
@@ -1391,6 +1394,19 @@ the changed files is the substantive gate; plan CI waits accordingly.
       `wp_die()` throws, so the catch swallowed it and a second response closed
       PHPUnit's own buffer. Rethrow under the test seam only; leave production
       behaviour alone.
+
+  100. **A fixture missing from `/app` is a stale copy, not a missing file
+       (2026-11-21).** `docker/laravel/app` is gitignored and is a **copy** of
+       `docker/laravel/app-skeleton` taken when the stack was built; a fixture
+       added to the skeleton afterwards exists in the repository and in CI but
+       not in `/app`, so a suite fails on a file `git ls-files` says is
+       committed. Check both sides before touching the test:
+       `git ls-files <path>` and `docker exec oos-laravel-app ls <path>`, then
+       sync the file (or rebuild the `app` service). Corollary: a provider that
+       resolves a fixture by walking up from `__DIR__` cannot work under `/app`,
+       because the mount does not preserve the repository path — the container
+       names it in `docker-compose.laravel.yml` instead (`NVOOS_TOKENS_PATH`,
+       `NVOOS_PM_FIXTURE`, `NVOOS_PM_WRITES_FIXTURE`).
 
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 

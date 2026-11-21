@@ -40,6 +40,13 @@ x-spike-environment: &spike-environment
   # CI — resolves to `/examples` here (a bind mount does not preserve the host
   # path). This variable is the container's answer to the same question.
   NVOOS_TOKENS_PATH: /workspace/oos/examples/nvoos-astro-velocity/src/tokens
+  # The PM parity corpus lives in the repository, not the skeleton, and the
+  # test resolves it by walking five levels up from `tests/Feature` — which
+  # lands on `/` here because the app is mounted at /app. Same reason as
+  # NVOOS_TOKENS_PATH above: these point the tests at the bind mount, so a
+  # full `artisan test` needs no -e flags to reach the committed corpus.
+  NVOOS_PM_FIXTURE: /workspace/oos/tests/fixtures/pm/tools.json
+  NVOOS_PM_WRITES_FIXTURE: /workspace/oos/tests/fixtures/pm/writes.json
 
 x-spike-volumes: &spike-volumes
   - ../:/workspace/oos:ro
