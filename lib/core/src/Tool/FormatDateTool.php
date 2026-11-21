@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class FormatDateTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class FormatDateTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function getSlug(): string
     {
@@ -56,5 +59,18 @@ class FormatDateTool extends AbstractTool
             'iso'=>$dt->format('c'),'rfc'=>$dt->format('r'),'unix'=>(string)$dt->getTimestamp(),default=>$dt->format($toFormat)
         };
         return $this->success("Converted: $out", array('input' => $date,'output' => $out,'timestamp' => $ts,'timezone' => $timezone,'iso' => $dt->format('c')));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }

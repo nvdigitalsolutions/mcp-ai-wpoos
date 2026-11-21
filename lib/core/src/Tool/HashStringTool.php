@@ -17,7 +17,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class HashStringTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class HashStringTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     /**
      * Supported hash algorithms.
@@ -102,5 +105,18 @@ class HashStringTool extends AbstractTool
                 'length'    => strlen($hash),
             ),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }
