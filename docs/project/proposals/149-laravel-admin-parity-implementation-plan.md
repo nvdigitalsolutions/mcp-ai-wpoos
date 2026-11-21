@@ -13930,3 +13930,68 @@ each. **Every `ready` row now cites evidence**, and every declared path exists.
 §142.5 recorded 65 unevidenced rows. §144 closed 22 by citation, §146 closed 22
 with tests, and this section closes the last 21. Proposal 160's evidence rule now
 holds for every `ready` row: the manifest claims nothing it cannot point at.
+
+## 148. Proposal 161 phase 1: the LLM sanitizer gets one reader (2026-11-21)
+
+### 148.1 What shipped
+
+| Piece | What it does |
+|---|---|
+| `Nvoos\Core\Domain\Contract\LlmSanitizerInterface` | opt-in `sanitizeForLlm( mixed $result ): mixed`; a tool that implements it owns the model-facing shape of its own result |
+| `Nvoos\Core\Application\Chat\ToolResultSanitizer` | the single reader: the declaration first, the runtime backstop second |
+| `ChatOrchestrator` | both loops call it; the private `sanitizeToolResult()` is gone |
+
+Neither the orchestrator's constructor nor any tool's constructor changed, so no
+runtime has to be rewired.
+
+### 148.2 The bug the change exposed
+
+The two loops disagreed. The non-streaming path sanitised; the streaming path
+encoded the raw result, so an encoded payload reached the model on SSE and not on
+the buffered path. Both produce valid JSON, which is why it survived.
+
+The old sanitizer was also **top-level only**. `b64_json` nested under
+`images[0]` survived — and that nesting is exactly what the image tools return
+(`$images[] = array( 'url' => …, 'b64_json' => … )`).
+
+One measured caveat, so the fix is not over-read: a result that carries a
+`message` key is reduced to that string *before* the sanitizer runs, so most
+base64 never reaches the model today. The sanitizer matters for results **without**
+a message, and for any tool that later chooses to return data.
+
+### 148.3 The two layers, and why both
+
+| Layer | Owner | Covers |
+|---|---|---|
+| Declaration | the tool | shape: which fields the model needs to reason with |
+| Backstop | the runtime | unambiguous encoded keys at **any depth**; oversized strings on the generic path |
+
+A declaration cannot waive the backstop: "no encoded payload reaches the model"
+is a runtime guarantee (161 §10.2). Otherwise a declared copy is respected
+verbatim, including long strings — the tool owns its size budget.
+
+### 148.4 Not changed, deliberately
+
+- **Transcript preservation.** 161 §6 says the full result is preserved in the
+  transcript. Here the session event records the *model-visible* copy, and the raw
+  result is dropped after the loop (except for vision extraction). Preserving it
+  means storing base64 in the database — a storage decision, not a sanitizer one.
+- **The auditor warning** naming the seven binary-returning tools (§10.2 step 2).
+  With the backstop in place they are already safe; the warning is a nudge and it
+  changes the auditor's output contract, so it gets its own pass.
+
+### 148.5 Gates
+
+| Gate | Result |
+|---|---|
+| `ToolResultSanitizerTest` | 7 tests, 10 assertions, pass |
+| `ChatOrchestratorTest` (including the three added) | 53 tests, 142 assertions, pass |
+| `nvoos/core` full suite | 1818 tests, 6498 assertions, pass |
+| app: `SseStreamTest`, `Phase4Test`, `WaterfallDispatchTest`, `ToolExecutionTest`, `MachineToolExecutionTest` | 43 tests, 177 assertions, pass |
+| phpcs | clean |
+
+The streaming assertion reads the messages **sent to the provider**, not stdout:
+`SseHandler::sendHeaders()` drains every output buffer by design, which PHPUnit
+reports as risky. The test restores the buffer level around the call rather than
+suppressing the check. Noting it because the next streaming test will hit the same
+thing.

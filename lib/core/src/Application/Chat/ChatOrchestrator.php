@@ -209,6 +209,15 @@ class ChatOrchestrator
      */
     private ?TraceStoreInterface $traceStore = null;
 
+    /**
+     * The one reader for the model-facing copy of a tool result.
+     *
+     * Lazy because it is stateless: constructing one per orchestrator is fine,
+     * but keeping it out of the constructor leaves the public signature alone
+     * for every runtime that already builds one (Proposal 161 §6).
+     */
+    private ?ToolResultSanitizer $resultSanitizer = null;
+
     public function __construct(
         private readonly ToolRegistry $tools,
         private readonly ProviderRouter $providers,
@@ -1015,8 +1024,13 @@ class ChatOrchestrator
                         ? $result['message']
                         : Json::encodeOr($result, '(unserializable result)');
                 } else {
-                    // Sanitize: strip base64 to save tokens in LLM context.
-                    $resultContent = Json::encodeOr($this->sanitizeToolResult($result), '(unserializable result)');
+                    // The model gets a sanitized copy; the tool's own result is
+                    // untouched. ToolResultSanitizer is the only place that
+                    // decides what "sanitized" means.
+                    $resultContent = Json::encodeOr(
+                        $this->resultSanitizer()->sanitize($result, $this->tools->get($toolName)),
+                        '(unserializable result)'
+                    );
                 }
 
                 // Track byte budget if wired (accounting only — spill
@@ -1597,7 +1611,13 @@ class ChatOrchestrator
                         ? $result['message']
                         : Json::encodeOr($result, '(unserializable result)');
                 } else {
-                    $resultContent = Json::encodeOr($result, '(unserializable result)');
+                    // Same sanitizer as the non-streaming loop. These two paths
+                    // used to disagree — this one encoded the raw result — and
+                    // sharing the reader is what prevents that recurring.
+                    $resultContent = Json::encodeOr(
+                        $this->resultSanitizer()->sanitize($result, $this->tools->get($toolName)),
+                        '(unserializable result)'
+                    );
                 }
 
                 if (null !== $this->budgetTracker) {
@@ -2357,34 +2377,11 @@ class ChatOrchestrator
     }
 
     /**
-     * Sanitize a tool result for LLM consumption.
-     *
-     * Strips base64 data and truncates very long string values
-     * to prevent token waste from inline binary content.
-     *
-     * @param mixed $result Raw tool result.
-     * @return mixed Sanitized result.
+     * The shared sanitizer instance.
      */
-    private function sanitizeToolResult($result)
+    private function resultSanitizer(): ToolResultSanitizer
     {
-        if (! \is_array($result)) {
-            return $result;
-        }
-
-        $stripKeys = array( 'b64_json', 'b64_image', 'base64', 'data', 'inline_data', 'inlineData' );
-        foreach ($stripKeys as $key) {
-            if (isset($result[ $key ])) {
-                unset($result[ $key ]);
-            }
-        }
-
-        foreach ($result as $key => $value) {
-            if (\is_string($value) && \strlen($value) > 10000) {
-                $result[ $key ] = \substr($value, 0, 200) . '…[truncated ' . \strlen($value) . ' bytes]';
-            }
-        }
-
-        return $result;
+        return $this->resultSanitizer ??= new ToolResultSanitizer();
     }
 
     /**
