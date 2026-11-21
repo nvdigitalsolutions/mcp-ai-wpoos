@@ -13433,3 +13433,71 @@ it:
 
 Two rows needed a `parity: port` claim the auditor caught immediately (the two
 `pure` validators shadow WordPress slugs); no row was classified from a heuristic.
+
+## 140. Batch 2 closes: video and audio (2026-11-21)
+
+### 140.1 Scope was 14 rows, not the estimated 10
+
+The plan estimated ten. The manifest holds sixteen matching slugs: fourteen
+`unverified` and two already `quarantined` (`analyze_video_prompt`,
+`generate_video_caption_prompt`). Quarantine is a decision, not a backlog item, so
+the batch is fourteen rows — and the last two stay untouched.
+
+### 140.2 The batch-1 finding held, with two measured surprises
+
+Nine of the fourteen are provider tools calling `HttpClientInterface`, so
+`Http::fake()` is the boundary fake again. The tenth, `check_video_status`, reads
+the job queue rather than a provider and is exercised against a fake
+`QueueClientInterface` returning a completed `JobStatus`.
+
+Two behaviours only the test could reveal, and both are now pinned:
+
+- **`generate_omni_video` reports `queued` only when `async` is true.** The
+  default path reports `processing`. The test passes `async: true`, because the
+  queued path is the one the annotation describes.
+- **Higgsfield credentials are `KEY_ID:KEY_SECRET`**, sent as
+  `Authorization: Key …` rather than a bearer token. The first run failed with the
+  tool's own validation message, which is the right way to learn it.
+
+### 140.3 A batch-1 reason was wrong, and is corrected here
+
+`generate_higgsfield_image` was deferred in §139.2 with the reason "needs a
+request-then-poll fixture". Reading it for this batch showed it does **not** poll:
+it submits and returns `request_id` and `status_url`, exactly like the video tool.
+It is now `ready`, with its own test in the batch-1 evidence file, and the
+incorrect reason is deleted.
+
+The lesson is worth stating plainly: that deferral was written from the tool's
+**family** rather than from its **code**. A row left unclassified for the wrong
+reason is as misleading as a row marked ready without evidence.
+
+`manage_vector_store_files` remains the only batch-1 deferral, and its reason does
+hold — it drives a batch and polls it.
+
+### 140.4 Annotations applied
+
+| Behaviour | Rows | Hints |
+|---|---|---|
+| Submits a generation or edit job | 11 video/speech/music rows | `readOnly: false`, `destructive: false`, `openWorld: true` |
+| Transcribes audio | `transcribe_openai_audio` (+ validated) | `readOnly: true`, `idempotent: true`, `openWorld: true` |
+| Reads a job record | `check_video_status` | `readOnly: true`, `idempotent: true`, `openWorld: false` |
+
+The `_validated` subclasses carry the base tool's evidence and say so in the row,
+as with batch 1.
+
+### 140.5 Counts and gates
+
+| Measure | Before | After |
+|---|---|---|
+| servable | 116 | **131** |
+| ready | 86 | 101 |
+| unverified | 79 | **64** |
+| pure | 24 | 24 |
+| unavailable | 9 | 9 |
+| quarantined | 19 | 19 |
+
+| Gate | Result |
+|---|---|
+| `VideoAndAudioToolsTest` | 9 tests, 43 assertions, pass |
+| video/audio + image/file + annotations + picker + classification | 41 tests, 160 assertions, pass |
+| auditor | `OK — no violations` |
