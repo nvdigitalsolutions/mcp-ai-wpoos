@@ -1395,6 +1395,19 @@ the changed files is the substantive gate; plan CI waits accordingly.
       PHPUnit's own buffer. Rethrow under the test seam only; leave production
       behaviour alone.
 
+  100. **A fixture missing from `/app` is a stale copy, not a missing file
+       (2026-11-21).** `docker/laravel/app` is gitignored and is a **copy** of
+       `docker/laravel/app-skeleton` taken when the stack was built; a fixture
+       added to the skeleton afterwards exists in the repository and in CI but
+       not in `/app`, so a suite fails on a file `git ls-files` says is
+       committed. Check both sides before touching the test:
+       `git ls-files <path>` and `docker exec oos-laravel-app ls <path>`, then
+       sync the file (or rebuild the `app` service). Corollary: a provider that
+       resolves a fixture by walking up from `__DIR__` cannot work under `/app`,
+       because the mount does not preserve the repository path — the container
+       names it in `docker-compose.laravel.yml` instead (`NVOOS_TOKENS_PATH`,
+       `NVOOS_PM_FIXTURE`, `NVOOS_PM_WRITES_FIXTURE`).
+
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
 Moved to `reference/ci-workflow-hardening.md` (the setup-php flake fix from
