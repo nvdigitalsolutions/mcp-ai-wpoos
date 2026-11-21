@@ -13875,3 +13875,58 @@ The remaining 21 are the settings and profession reads, the queue and job lists,
 the file store, the model catalogue, and five near-pure tools
 (`content_freshness_checker`, `get_current_user`, `validate_tool_schema`,
 `verify_information`, `get_post_type_schema`). That is the last batch.
+
+## 147. Batch 6 closes the evidence backfill (2026-11-21)
+
+### 147.1 Result
+
+The last 21 `ready` rows: the settings and profession reads, the queue and job
+lists, the file store, the model catalogue, and five near-pure tools. One test
+each. **Every `ready` row now cites evidence**, and every declared path exists.
+
+### 147.2 Two mechanisms worth writing down
+
+1. **The registry builds its tools at boot.** A fake bound inside a test never
+   reaches a tool the registrar already constructed, so this batch resolves tools
+   by class from the container — `$this->app->make( FooTool::class )` — which is
+   the pattern batches 1–4 used for the same reason. `Http::fake()` is unaffected:
+   the HTTP client is read at call time, so the provider tests behave the same on
+   either path.
+2. **`validationFailed()` and `notFound()` return the exception object** rather
+   than throwing it. A test that expects an error must assert the returned value;
+   `expectException` will never see it. This is the second time the distinction
+   has caused a red test (§141.3 recorded the memory-fatal variant).
+
+### 147.3 Four shapes the code corrected
+
+- `UserInfo` serialises `id`, not `user_id`; only the anonymous branch of
+  `get_current_user` returns `user_id: 0`.
+- The schema message names the *label* — "Schema retrieved for post type:
+  Students" — so the slug does not appear in it.
+- `list_available_models` sorts the ids, so the test asserts the set, not the
+  order.
+- `validate_tool_schema` refuses a bare `tool_file` because file extraction is not
+  implemented here. The WordPress extractor is a stub too, so the observable
+  result matches rather than diverges.
+
+### 147.4 Counts and gates
+
+| Measure | Before | After |
+|---|---|---|
+| ready without evidence | 21 | **0** |
+| servable | 195 | 195 |
+| servable without annotations | 0 | 0 |
+| declared evidence paths that do not exist | 0 | 0 |
+
+| Gate | Result |
+|---|---|
+| `AdminReadAndProviderToolsTest` | 21 tests, 127 assertions, pass |
+| `ToolReadinessClassificationTest` + `MachineToolAnnotationsTest` + `MachineToolPickerTest` | 16 tests, 39 assertions, pass |
+| auditor | `OK — no violations` |
+| phpcs | clean |
+
+### 147.5 The backfill is closed
+
+§142.5 recorded 65 unevidenced rows. §144 closed 22 by citation, §146 closed 22
+with tests, and this section closes the last 21. Proposal 160's evidence rule now
+holds for every `ready` row: the manifest claims nothing it cannot point at.
