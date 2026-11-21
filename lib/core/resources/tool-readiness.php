@@ -205,6 +205,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'content_recommendation_engine_prompt' => array(
@@ -822,6 +823,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\GetCurrentUserTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_eca' => array(
@@ -835,6 +837,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\GetFileInfoTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_gdacs_events' => array(
@@ -849,6 +852,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\GetJobStatusTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_model_information' => array(
@@ -856,6 +860,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'get_nhc_active_storms' => array(
@@ -909,6 +914,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_profession' => array(
@@ -916,6 +922,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_recent_posts' => array(
@@ -939,6 +946,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\GetSettingTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_site_summary' => array(
@@ -946,6 +954,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_student' => array(
@@ -1096,6 +1105,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'list_batches' => array(
@@ -1103,6 +1113,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'list_cron_jobs' => array(
@@ -1110,6 +1121,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_ecas' => array(
@@ -1123,6 +1135,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\ListJobsTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_openai_files' => array(
@@ -1138,6 +1151,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_projects' => array(
@@ -1158,12 +1172,14 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\ListSettingsTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_skills' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ListSkillsTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_students' => array(
@@ -1288,6 +1304,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\ProfessionStatsTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'purge_cache' => array(
@@ -1329,6 +1346,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'reliefweb_reports' => array(
@@ -1414,6 +1432,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'search_content' => array(
@@ -1640,6 +1659,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\ValidateToolSchemaTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'validate_workflow' => array(
@@ -1653,6 +1673,7 @@ return array(
 			'class' => 'Nvoos\\Core\\Tool\\VerifyInformationTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'vision_object_localization_prompt' => array(
