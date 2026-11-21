@@ -13806,3 +13806,72 @@ exists. Proposal 161 §3 carries the standing caveat: a green readiness batch is
 not behavioural equivalence.
 
 No code ships with this section.
+
+## 146. Batch 5: the ContentStore tools and the gate that needs a signed-in user (2026-11-21)
+
+### 146.1 Scope
+
+Twenty-two rows — the largest single batch: posts, projects, tasks, students and
+the batch importer. One test each, all dispatched through `ToolRegistry`.
+
+### 146.2 The finding: the content gates need an authenticated user, not just a context id
+
+`ContentStore::find( $id, $userId )` delegates to `userCanAccess()`, which calls
+`Gate::allows( 'read_content', array( $id, $userId ) )`. Two things follow, and the
+second is the trap:
+
+1. The id must belong to a real row — `contentUser()` resolves
+   `User::query()->find( $userId )`, so a bare `user_id => 1` with no user record
+   is denied.
+2. **Laravel's Gate short-circuits to false when nothing is authenticated**,
+   before the callback runs. A tool executed with `context['user_id']` alone is
+   denied every read, edit and delete, even with a correct row and correct
+   capabilities.
+
+Measured with a throwaway probe: the admin's capability list contained `read`,
+`edit_posts` and `delete_others_posts`, and the gate still returned false; adding
+`actingAs` flipped it to true with nothing else changed.
+
+This is a test concern, not a runtime defect — `MachineToolController` builds its
+context from `$request->user()`, so a machine principal arrives authenticated. It
+is a standing trap for the next execution path (console action, queue worker,
+scheduled job) that dispatches a tool without authenticating first. Recorded
+rather than fixed: the fix is a policy question — authenticate the principal, or
+let the store accept an explicit user independent of the session.
+
+### 146.3 Three expectations the code corrected
+
+- `count_posts` defaults to `status: publish`, not "everything". The test now
+  pins the default and the explicit `draft` filter instead of assuming a total.
+- Content types are `mcp_ai_project`, `mcp_ai_task` and `mcp_ai_student`, not the
+  bare nouns.
+- `save_post` is a create-or-update; one test exercises both branches and asserts
+  the message each returns.
+
+### 146.4 State over interaction
+
+The batch asserts the row, not the call: every test round-trips through
+`ContentStoreInterface` after invoking the tool. The research note is the usual
+one — assert observable outcomes rather than interaction counts — and it earns
+its place here because these tools are thin enough that a correct envelope over a
+wrong write would pass an interaction assertion.
+
+### 146.5 Counts and gates
+
+| Measure | Before | After |
+|---|---|---|
+| ready without evidence | 43 | **21** |
+| declared evidence paths that do not exist | 0 | 0 |
+| servable | 195 | 195 |
+
+| Gate | Result |
+|---|---|
+| `ContentAndProjectToolsTest` | 22 tests, 154 assertions, pass |
+| `ToolReadinessClassificationTest` + `MachineToolAnnotationsTest` + `MachineToolPickerTest` | 16 tests, 39 assertions, pass |
+| auditor | `OK — no violations` |
+| phpcs | clean |
+
+The remaining 21 are the settings and profession reads, the queue and job lists,
+the file store, the model catalogue, and five near-pure tools
+(`content_freshness_checker`, `get_current_user`, `validate_tool_schema`,
+`verify_information`, `get_post_type_schema`). That is the last batch.
