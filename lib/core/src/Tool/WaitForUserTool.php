@@ -12,8 +12,10 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class WaitForUserTool extends AbstractTool
+class WaitForUserTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $e)
     {
@@ -46,5 +48,18 @@ class WaitForUserTool extends AbstractTool
             return $this->errors->validationFailed('Prompt required.', array('prompt' => array('Required.')));
         }
         return $this->success('Waiting for user input.', array('prompt' => $prompt,'timeout' => $this->intParam($arguments, 'timeout_seconds', 300),'status' => 'awaiting_user'));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Returns a status object. It neither pauses execution nor reads or writes
+     * anything, so it is read-only and local, but not cacheable.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return array('local-only', 'read-only');
     }
 }

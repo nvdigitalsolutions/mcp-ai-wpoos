@@ -17,7 +17,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class GenerateUuidTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class GenerateUuidTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function getSlug(): string
     {
@@ -126,5 +129,18 @@ class GenerateUuidTool extends AbstractTool
             0x8000 | ( hexdec(bin2hex(substr($rand, 2, 2))) & 0x3fff ),
             hexdec(bin2hex(substr($rand, 4, 6))),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation, but the output varies per call, so it is
+     * neither cacheable nor idempotent.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL_NON_DETERMINISTIC;
     }
 }

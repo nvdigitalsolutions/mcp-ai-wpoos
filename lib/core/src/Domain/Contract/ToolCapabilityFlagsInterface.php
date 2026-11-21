@@ -37,7 +37,7 @@ interface ToolCapabilityFlagsInterface
     /**
      * @return string[]  Array of capability flag strings.
      *
-     * @see \Nvoos\Core\Domain\Entity\ToolCapabilityFlag  For the canonical flag list.
+     * @see \Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary  For the canonical flag list.
      */
     public function getCapabilityFlags(): array;
 }

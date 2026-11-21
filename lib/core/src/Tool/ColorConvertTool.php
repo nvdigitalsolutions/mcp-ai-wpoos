@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class ColorConvertTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class ColorConvertTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function getSlug(): string
     {
@@ -135,5 +138,18 @@ class ColorConvertTool extends AbstractTool
             };
             $h /= 6;
         } return array((int)round($h * 360),(int)round($s * 100),(int)round($l * 100));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }

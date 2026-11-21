@@ -14403,3 +14403,84 @@ Two batches, in this order: the 19 `pure` tools (trivial, self-evident flags),
 then the 30 `ready` cache/job/settings tools, which need a decision about
 whether a Laravel-native cache write is `state-changing` at all. After that the
 measurement in §150.5 can be re-run and `oos.necessity_gate` reconsidered.
+
+## 153. The 19 pure tools declare their own flags (2026-11-21)
+
+### 153.1 Why they were uncovered
+
+§152 left 49 servable rows without flags. Nineteen of them are `pure` utility
+tools that **have no WordPress counterpart with that slug** — they are
+Laravel-native, so there was nothing to extract. Those need a decision, and this
+is the decision.
+
+They also cannot go in the generated catalogue: it is regenerated from the
+corpus, so a hand-added row would be overwritten the next time the generator
+runs. The right home is the tool class, which is what
+`ToolCapabilityFlagsInterface` exists for.
+
+### 153.2 The audit, not the assumption
+
+Calling them "self-evident" would have been an assumption. Each of the nineteen
+was checked for file, network, database, sleep, attachment and entropy markers;
+two needed reading in full:
+
+| tool | finding |
+|---|---|
+| `parse_csv` | takes `csv` **content** as a string, never a path — no file access |
+| `wait_for_user` | returns `status: awaiting_user`; it does not sleep or block |
+
+`generate_uuid` and `generate_mermaid` call `random_bytes()`, so their output is
+not stable across calls. Everything else is a deterministic transform.
+
+### 153.3 The three groups
+
+| group | count | flags |
+|---|---|---|
+| deterministic transform | 16 | `cacheable`, `idempotent`, `local-only`, `read-only` |
+| non-deterministic local | 2 — `generate_uuid`, `generate_mermaid` | `local-only`, `non-deterministic`, `read-only` |
+| interactive status | 1 — `wait_for_user` | `local-only`, `read-only` |
+
+The first two groups are constants on `CapabilityFlagVocabulary`
+(`PURE_LOCAL`, `PURE_LOCAL_NON_DETERMINISTIC`) so the four words cannot drift
+apart across sixteen classes. `wait_for_user` declares its pair inline because
+it is the only member of its group.
+
+The distinction that matters is `cacheable`. A UUID and a diagram handle differ
+on every call, so caching or reusing them is wrong; the other seventeen are
+functions.
+
+### 153.4 The property the test asserts
+
+`PureToolCapabilityFlagsTest` pins each decision, but its most useful case is
+the last one: **no pure tool carries a flag the read-only profile gates on, and
+none declares an outbound mutation.** That is what makes these declarations safe
+to add — if someone later marks `math_eval` as `state-changing`, the test names
+the class.
+
+### 153.5 Coverage after the batch
+
+| measure | before | after |
+|---|---|---|
+| manifest rows covered | 155 / 223 (70%) | **174 / 223 (78%)** |
+| servable rows covered | 146 / 195 (75%) | **165 / 195 (85%)** |
+| read-only profile | 32 denied, 114 admitted | **32 denied, 133 admitted, 30 undeclared** |
+
+The 30 remaining are all `ready`, and all need a decision rather than a port:
+the cache/job/settings family, plus `count_posts`, `update_post`,
+`delete_file`, `upload_file`, `get_post_meta`, `get_current_user`.
+
+### 153.6 Also fixed
+
+`ToolCapabilityFlagsInterface`'s docblock pointed at
+`Nvoos\Core\Domain\Entity\ToolCapabilityFlag`, a class that does not exist. It
+now points at `CapabilityFlagVocabulary`.
+
+### 153.7 Gates
+
+| Gate | Result |
+|---|---|
+| `PureToolCapabilityFlagsTest` (new) | 20 cases |
+| full `lib/core` suite | 1,891 tests, 15,460 assertions |
+| `php -l` across `lib/core/src/Tool/` | clean |
+| phpcs (root standard) | clean |
+| `bin/generate-tool-capability-flags.php --check` | unaffected — the catalogue is still in step |

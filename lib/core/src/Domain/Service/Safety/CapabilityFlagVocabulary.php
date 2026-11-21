@@ -68,6 +68,27 @@ final class CapabilityFlagVocabulary
     );
 
     /**
+     * Flags for a pure, deterministic, in-process computation.
+     *
+     * A formatter, an encoder, a validator: same input, same output, no I/O.
+     * Declared here rather than repeated in every such tool so the four words
+     * cannot drift apart.
+     *
+     * @var list<string>
+     */
+    public const PURE_LOCAL = array( 'cacheable', 'idempotent', 'local-only', 'read-only' );
+
+    /**
+     * Flags for a pure local computation whose output varies per call.
+     *
+     * A nonce, an id, a diagram handle. Still read-only and still local, but
+     * caching or reusing the result would be wrong.
+     *
+     * @var list<string>
+     */
+    public const PURE_LOCAL_NON_DETERMINISTIC = array( 'local-only', 'non-deterministic', 'read-only' );
+
+    /**
      * Alternate spellings, mapped to the canonical word.
      *
      * @var array<string, string>
