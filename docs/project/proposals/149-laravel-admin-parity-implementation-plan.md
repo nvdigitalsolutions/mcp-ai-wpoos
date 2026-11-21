@@ -2,7 +2,7 @@
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
 **Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **38 numbered slices** (§8–§56) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25), and **§56 opens Wave 3** with the toolkit manifest renderer (`/admin/toolkits`). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
-**Scoreboard** — re-measured 2026-11-21 with the `bin/audit-surface-ownership.php` rules over `docker/laravel/app-skeleton/contracts/surface-ownership.json`: **48 surfaces · 41 built on a Filament panel** (16 `/ops`, 28 `/admin`; `budgets`, `settings.platform` and `tokens.personal` are on both) · **29 console-served** · **4 console-only** (`automation-canvas`, `chat`, `connected-apps`, `wordpress-bridge` — each a recorded disposition, not a gap) · **0 planned-only** · **1 inert** (`identity-provider` on `/admin`) · **2 recorded `absent`** (`chat-profiles` on `/admin`, `onboarding` on `/ops`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Scoreboard** — re-measured 2026-11-21 with the `bin/audit-surface-ownership.php` rules over `docker/laravel/app-skeleton/contracts/surface-ownership.json`: **50 surfaces · 43 built on a Filament panel** (18 `/ops`, 28 `/admin`; `budgets`, `settings.platform` and `tokens.personal` are on both) · **29 console-served** · **4 console-only** (`automation-canvas`, `chat`, `connected-apps`, `wordpress-bridge` — each a recorded disposition, not a gap) · **0 planned-only** · **1 inert** (`identity-provider` on `/admin`) · **2 recorded `absent`** (`chat-profiles` on `/admin`, `onboarding` on `/ops`). §14.2 holds the rule this measures against: a console surface is not admin parity.
 **Validation** — app suite: **1277 tests / 7243 assertions, 0 failures** from `docker/laravel/app-skeleton`, where the parity providers resolve `tests/fixtures/` five levels up. The dev container mounts the app at `/app`, so that walk lands on `/`; the container-only failures have two separate causes, both measured 2026-11-21: the PM providers returned no rows until `docker-compose.laravel.yml` named the bind-mount path, and four `WifiKpisTest` cases were missing a fixture that **is** committed but predated the `/app` copy — all five pass once it is synced. `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-21
 **Scope (Wave 0):** ~3–4 weeks, one engineer
@@ -12838,8 +12838,11 @@ array with no writable surface.
 asks an operator to type slugs into a settings box. This is the page that
 replaces the typing.
 
-It is **not** a parity surface: the WordPress admin has no machine-principal
-allowlist to match, so the 48-surface contract and its scoreboard are unchanged.
+It is **not a parity surface**: the WordPress admin has no machine-principal
+allowlist to match. The contract still needs a row for it — every Filament
+surface file must be declared, and `SurfaceOwnershipTest` is what proves it —
+so the scoreboard moves 48 → 49 surfaces and 41 → 42 built (16 → 17 on `/ops`)
+while console-served, console-only and planned-only do not change.
 This is a new operator surface for a capability only the Laravel runtime has.
 
 ### 128.1 What shipped
@@ -12884,3 +12887,67 @@ for the sake of a list's reading order.
   decision, and the page's shape is the better one.
 - **A config entry cannot be edited here** — by design, and the remove
   confirmation says so rather than leaving the operator to discover it.
+
+## 129. Machine credentials get a panel and a name (2026-11-21)
+
+The mint command has printed "Revoke it in /ops -> Token inventory" since §122.
+The inventory only lists `oos-personal:` tokens, so that instruction has never
+worked: a leaked machine credential could only be revoked with SSH access.
+
+§125.3 recorded the blocker as a product decision — who may click, and what the
+audit row says. The answer was already written on the inventory page: a person's
+token is revoked by its owner "so that the audit trail names the owner as the
+actor". That rule is right, and it means the machine credential does not belong
+on that page at all. It belongs to the operator who issued it.
+
+### 129.1 The identity problem, measured
+
+Three token families share `personal_access_tokens`, separated only by name:
+
+| Family | Stored name | Written by |
+|---|---|---|
+| Personal | `oos-personal:{label}` | the user, `/admin` |
+| Assistant | `oos-assistant-{id}` | the console token manager, `/ops/credentials` |
+| Machine | **free-form `--name`** | `nvoos:machine-token` |
+
+The third had no prefix, so nothing could list it. The fix is the naming, not a
+heuristic over abilities: `nvoos:machine-token` now stores
+`oos-machine:{label}`, and rotation copies the stored name forward, so a rotated
+credential keeps it. Tokens minted before this change remain unlisted — the page
+says so in its empty state rather than pretending they do not exist.
+
+### 129.2 What shipped
+
+- `App\Support\MachineTokens` — the prefix, the listing (joined to the holder),
+  and `revoke()`, which deletes only a row whose name carries the prefix. The
+  guard is defence in depth: a hand-crafted id cannot delete a person's token
+  through this page.
+- `App\Filament\Operator\Pages\MachineCredentials` — `/ops` → Access, sort 26,
+  listing label, owner, scopes, last used, expiry and status, with a confirming
+  revoke action. Every revocation writes `resource=machine_token`,
+  `record_id=<id>`, `action=revoked`, with the stored name and owner in `before`.
+- `MintMachineToken` uses the shared constant and now points at the page that
+  exists.
+- The contract gains a `machine-credentials` row, as every Filament surface
+  must: the scoreboard moves 49 → 50 surfaces and 42 → 43 built (17 → 18 on
+  `/ops`).
+
+### 129.3 Gates
+
+| Run | Result |
+|---|---|
+| `MachineCredentialsTest` (new, 5 tests) | lists `oos-machine:` and not `oos-personal:`; revoke deletes and audits; revoke refuses a personal id; minting stores the prefix; an estate administrator gets 403 |
+| `MintMachineTokenTest` | 10 passed — including the end-to-end case that spends the printed token |
+| `OperatorNavigationTest` | 7 passed — the sidebar matches the enum |
+| machine + mint + navigation suites | **60 passed / 172 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the five PHP files |
+
+### 129.4 What is left
+
+- **Pre-prefix tokens are invisible.** They can still be revoked with
+  `nvoos:machine-token:revoke`, and rotating one adopts the prefix because
+  rotation copies the stored name. A backfill that renames them would change
+  what old audit rows point at, so it is a decision.
+- **The expiry report still has no channel** (§125.3). Its exit code is a
+  contract nothing consumes — that is the next slice.
+- **No bulk revoke.** One credential at a time, by design.

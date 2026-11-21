@@ -117,7 +117,13 @@ enum OperatorNavigationGroup: string implements HasIcon, HasLabel
             self::Health => array('Site health', 'Diagnostics', 'Asset inventory'),
             self::Insight => array('Reports', 'Metrics', 'Observability', 'Datasets'),
             self::Spend => array('Budgets', 'Token usage', 'Token analytics'),
-            self::Access => array('Credentials', 'Personal tokens', 'Audit log', 'Machine tools'),
+            self::Access => array(
+                'Credentials',
+                'Personal tokens',
+                'Audit log',
+                'Machine tools',
+                'Machine credentials',
+            ),
             self::Platform => array('Estates', 'Models', 'Conversation import'),
             self::Settings => array('Settings'),
         };

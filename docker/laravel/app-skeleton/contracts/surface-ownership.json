@@ -649,6 +649,32 @@
       "projection": "Cross-estate on purpose, and that is not a reduction to bypass: an operator asking what happened on one estate needs that estate's rows plus the operator actions that touched it, and the latter carry no estate at all. Both row kinds are shown — request rows (resource null, 'who tried and was refused') and record rows (resource set, 'what changed') — because showing only the second hides every 403/422. Payload and diff columns are redacted at write time by AdminAuditLogger::redact(); this reader does not re-redact, since the write-time pass runs on every path and a second pass would give false confidence.",
       "files": ["app/Filament/Operator/Pages/AuditLog.php"],
       "notes": "Read-only view of nvoos_admin_audit. Append-only by construction; no surface may write it. Shipped 2026-11-17 (§25) with App\\Models\\AdminAudit and App\\Support\\Admin\\AuditTrail. The same slice made the estate credential revoke write a record row: panel actions travel over Livewire's /livewire/update, which AuditAdminRequests deliberately skips, so a destructive panel action would otherwise leave no trace at all."
+    },
+    {
+      "id": "machine-tools",
+      "title": "Machine-executable tools",
+      "audience": "operator",
+      "ops": {"state": "full"},
+      "admin": null,
+      "console": null,
+      "writer": "ops",
+      "plan_gate": null,
+      "projection": "Operator-scope and unreduced: it writes the platform setting the machine-principal tool gate reads, so there is no estate projection to reduce. Only tools the readiness manifest calls servable are listed, and a row that came from `config/oos.machine_tools` has no remove action — the page may widen what a deploy allowed, never narrow it. Annotations are shown as a veto ('If a machine ran it'), not as a guarantee.",
+      "files": ["app/Filament/Operator/Pages/MachineTools.php"],
+      "notes": "No WordPress equivalent: the WP admin has no machine-principal surface, so this is a Laravel-only operator surface recorded rather than left implicit. Shipped 2026-11-21 (149 §128)."
+    },
+    {
+      "id": "machine-credentials",
+      "title": "Machine credentials",
+      "audience": "operator",
+      "ops": {"state": "full"},
+      "admin": null,
+      "console": null,
+      "writer": "ops",
+      "plan_gate": null,
+      "projection": "Machine tokens only, identified by the `oos-machine:` prefix; a token whose name is personal or assistant-scoped is not listed and cannot be revoked through this page. Owner and scopes are shown because a machine credential carries an assistant's authority rather than a person's — the operator who issued it is the operator who revokes it.",
+      "files": ["app/Filament/Operator/Pages/MachineCredentials.php"],
+      "notes": "No WordPress equivalent: the WP admin has no machine-principal credentials. The inventory's read-only rule for a person's own tokens is unchanged and deliberate. Shipped 2026-11-21 (149 §129)."
     }
   ]
 }
