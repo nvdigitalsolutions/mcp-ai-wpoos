@@ -108,6 +108,51 @@ final class ReadOnlyToolGuardTest extends TestCase
         $this->assertNotNull($guard->evaluate('update_post', array(), array()));
     }
 
+    /**
+     * @dataProvider wordpressGatedFlags
+     */
+    public function test_every_flag_the_wordpress_profile_gates_is_denied(string $flag): void
+    {
+        $guard = new ReadOnlyToolGuard(self::resolver(array('tool' => array($flag))));
+
+        $this->assertNotNull($guard->evaluate('tool', array(), array()), sprintf('Expected "%s" to be gated.', $flag));
+    }
+
+    public static function wordpressGatedFlags(): array
+    {
+        return array(
+            'destructive'           => array('destructive'),
+            'data-destruction'      => array('data-destruction'),
+            'irreversible'          => array('irreversible'),
+            'state-changing'        => array('state-changing'),
+            'write'                 => array('write'),
+            'financial-impact'      => array('financial-impact'),
+            'access-control-change' => array('access-control-change'),
+            'mass-email'            => array('mass-email'),
+        );
+    }
+
+    public function test_an_underscore_state_changing_tool_is_denied_by_the_default_set(): void
+    {
+        $guard = new ReadOnlyToolGuard(
+            self::resolver(array('update_post' => array('state_changing')))
+        );
+
+        $reason = $guard->evaluate('update_post', array(), array());
+
+        $this->assertNotNull($reason);
+        $this->assertStringContainsString('state-changing', $reason);
+    }
+
+    public function test_a_read_only_tool_that_reaches_an_api_is_allowed(): void
+    {
+        $guard = new ReadOnlyToolGuard(
+            self::resolver(array('web_search' => array('read-only', 'external-api')))
+        );
+
+        $this->assertNull($guard->evaluate('web_search', array(), array()));
+    }
+
     public function test_a_custom_gated_flag_set_replaces_the_default(): void
     {
         $guard = new ReadOnlyToolGuard(
@@ -122,6 +167,16 @@ final class ReadOnlyToolGuardTest extends TestCase
 
         $this->assertNull($guard->evaluate('update_post', array(), array()));
         $this->assertNotNull($guard->evaluate('run_shell', array(), array()));
+    }
+
+    public function test_a_custom_gated_flag_set_is_normalised(): void
+    {
+        $guard = new ReadOnlyToolGuard(
+            self::resolver(array('update_post' => array('state-changing'))),
+            gatedFlags: array('state_changing'),
+        );
+
+        $this->assertNotNull($guard->evaluate('update_post', array(), array()));
     }
 
     /**
