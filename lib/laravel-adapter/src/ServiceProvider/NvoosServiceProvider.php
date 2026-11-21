@@ -30,6 +30,7 @@ use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\EmailServiceInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
@@ -88,6 +89,7 @@ use Nvoos\Laravel\Adapter\AuthProvider;
 use Nvoos\Laravel\Adapter\CacheStore;
 use Nvoos\Laravel\Adapter\ContentStore;
 use Nvoos\Laravel\Adapter\ErrorFactory;
+use Nvoos\Laravel\Adapter\EmailService;
 use Nvoos\Laravel\Adapter\EventDispatcher;
 use Nvoos\Laravel\Adapter\FileStore;
 use Nvoos\Laravel\Adapter\FileUploadService;
@@ -133,6 +135,12 @@ class NvoosServiceProvider extends ServiceProvider {
 			fn ( $app ) => new RetrievalHarness( $app->make( ToolInvokerInterface::class ) ),
 		);
 		$this->app->bind( EventDispatcherInterface::class, EventDispatcher::class );
+
+		// The readiness manifest is shared with the WordPress runtime, so a tool
+		// marked servable must be constructible here: send_group_email needs this
+		// contract and ToolReadinessRegistrationTest enforces it. Hosts may bind
+		// their own implementation over it for a different transport.
+		$this->app->bind( EmailServiceInterface::class, EmailService::class );
 		$this->app->bind( FileStoreInterface::class, FileStore::class );
 		$this->app->bind( FileUploadServiceInterface::class, function ( $app ) {
 			return new FileUploadService(

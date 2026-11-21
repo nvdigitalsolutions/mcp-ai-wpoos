@@ -13303,3 +13303,66 @@ outside WordPress. The remaining 38 split into:
 
 The 11 rows live in Proposal 160 §12 with the reason per row. Full detail, and
 the four unblocking adapters, are recorded there rather than duplicated here.
+
+## 138. `send_group_email` constructs: the email contract gets an adapter (2026-11-21)
+
+The contract audit (§137) found `EmailServiceInterface` with no implementation
+and no binding, so `ManifestToolRegistrar` skipped `send_group_email` and
+`send_group_email_validated` at boot — a `ready` row would have registered
+nothing. Both rows were `unavailable`.
+
+### 138.1 Where the adapter lives, and why the first answer was wrong
+
+The first attempt put `EmailService` in the host app: mail transport is
+deployment configuration, and the package does not require `illuminate/mail`.
+CI rejected it within minutes — `ToolReadinessRegistrationTest` builds every
+servable row from the **package** container and reported:
+
+```
+Manifest rows marked servable that the container could not construct:
+{"send_group_email":"service not bound: …EmailServiceInterface", …}
+```
+
+That gate is right, and it settles where the contract belongs: the manifest is
+shared with the WordPress runtime, so "servable" cannot depend on one host's
+provider list. `Nvoos\Laravel\Adapter\EmailService` now binds in
+`NvoosServiceProvider`, `Nvoos\Laravel\Mail\OutboundMessage` carries the
+tool-authored body, and `illuminate/mail` joins the package's requires. A host
+may still bind its own implementation over it for a different transport.
+
+Semantics match the WordPress adapter where it matters: `validateRecipient()`
+uses the same `FILTER_VALIDATE_EMAIL` rule, `isAvailable()` reports whether a
+mailer is configured, and `send()` returns `success`. One deliberate difference:
+exceptions are left to propagate. The tool counts a recipient as sent unless
+`send()` throws, and the WordPress adapter swallows transport failures — so
+WordPress reports a failed delivery as sent. Throwing is the only way this
+runtime can report it honestly through the tool's own contract.
+
+### 138.2 A limitation worth pinning: `is_html` cannot carry markup
+
+`AbstractTool::stringParam()` runs `trim(strip_tags())` at the entry gate, so an
+HTML body reaches the mailer with its tags already removed. `is_html` still tells
+the mailable to render HTML; there is simply no markup left to render. This is
+the **core tool**, shared with WordPress, so it is not a Laravel divergence and
+not fixed here — the test pins the behaviour so a future change to the shared
+sanitiser is deliberate.
+
+### 138.3 Rows and gates
+
+| Row | Before | After |
+|---|---|---|
+| `send_group_email` | `unavailable` | `ready`, `parity: port`, `openWorldHint: true` |
+| `send_group_email_validated` | `unavailable` | `ready`, `parity: port` (inherits the send path) |
+
+Servable moves **96 → 98**; the auditor exits 0.
+
+| Suite | Result |
+|---|---|
+| `SendGroupEmailToolTest` (adapter + tool end-to-end, `Mail::fake()`) | 7 tests, 21 assertions, pass |
+| `MachineToolAnnotationsTest` / `MachineToolPickerTest` / `AdminToolCatalogueTest` | 29 tests, 80 assertions, pass |
+| `artisan nvoos:doctor` | both slugs registered at boot |
+| `EmailServiceTest` (package suite) | 5 tests — added; `ToolReadinessRegistrationTest` is the gate that caught the first placement |
+
+Both are annotated `readOnlyHint: false, destructiveHint: false, openWorldHint:
+true` — a send writes nothing locally and is not repeat-safe, so it queues for
+approval under §126 rather than running unattended.
