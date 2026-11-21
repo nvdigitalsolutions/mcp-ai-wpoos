@@ -7,6 +7,10 @@
  * Translates oOS domain events to Laravel events and provides a
  * FilterBus for the filter() pattern.
  *
+ * Also implements the optional waterfall/serial capability, so call sites that
+ * feature-detect it (ChatOrchestrator, ToolRegistry) behave here as they do on
+ * WordPress instead of silently degrading to emit-only.
+ *
  * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
@@ -17,9 +21,11 @@ declare(strict_types=1);
 namespace Nvoos\Laravel\Adapter;
 
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
+use Nvoos\Core\Domain\Event\WaterfallChain;
 use Illuminate\Support\Facades\Event;
 
-class EventDispatcher implements EventDispatcherInterface {
+class EventDispatcher implements EventDispatcherInterface, WaterfallEventDispatcherInterface {
 
 	/**
 	 * Registered PSR-14 listeners keyed by event class name.
@@ -34,6 +40,20 @@ class EventDispatcher implements EventDispatcherInterface {
 	 * @var array<string, array<int, callable[]>>
 	 */
 	private array $filters = array();
+
+	/**
+	 * Registered waterfall listeners keyed by event name.
+	 *
+	 * @var array<string, array<int, callable[]>>
+	 */
+	private array $waterfalls = array();
+
+	/**
+	 * Registered serial listeners keyed by event name.
+	 *
+	 * @var array<string, array<int, callable[]>>
+	 */
+	private array $serials = array();
 
 	/**
 	 * Dispatch an event to all registered listeners (PSR-14).
@@ -87,6 +107,61 @@ class EventDispatcher implements EventDispatcherInterface {
 	}
 
 	/**
+	 * Register a waterfall listener.
+	 *
+	 * Listener signature: function(object $event, callable $next): mixed.
+	 * Higher priorities run first.
+	 *
+	 * @param string   $eventName Event name identifying the listener group.
+	 * @param callable $listener  Around-middleware listener.
+	 * @param int      $priority  Higher numbers run first.
+	 */
+	public function listenWaterfall( string $eventName, callable $listener, int $priority = 10 ): void {
+		$this->waterfalls[ $eventName ][ $priority ][] = $listener;
+	}
+
+	/**
+	 * Dispatch an event through the waterfall chain.
+	 *
+	 * Each listener receives ($event, $next) and must call $next() to delegate;
+	 * returning without calling it short-circuits the chain. The fallback runs
+	 * when every listener delegates.
+	 *
+	 * @param string   $eventName Event name identifying the listener group.
+	 * @param object   $event     Event payload passed to each listener.
+	 * @param callable $final     Fallback: function(object $event): mixed.
+	 * @return mixed  Short-circuit value or the fallback result.
+	 */
+	public function waterfall( string $eventName, object $event, callable $final ): mixed {
+		$listeners = $this->getSortedCallbacks( $this->waterfalls[ $eventName ] ?? array() );
+
+		return WaterfallChain::build( $listeners, $final )( $event );
+	}
+
+	/**
+	 * Register a serial (ordered, non-short-circuiting) listener.
+	 *
+	 * @param string   $eventName Event name identifying the listener group.
+	 * @param callable $listener  Signature: function(object $event): void.
+	 * @param int      $priority  Higher numbers run first.
+	 */
+	public function listenSerial( string $eventName, callable $listener, int $priority = 10 ): void {
+		$this->serials[ $eventName ][ $priority ][] = $listener;
+	}
+
+	/**
+	 * Dispatch an event serially to every listener in priority order.
+	 *
+	 * @param string $eventName Event name identifying the listener group.
+	 * @param object $event     Event payload passed to each listener.
+	 */
+	public function serial( string $eventName, object $event ): void {
+		foreach ( $this->getSortedCallbacks( $this->serials[ $eventName ] ?? array() ) as $listener ) {
+			$listener( $event );
+		}
+	}
+
+	/**
 	 * Register a listener for a dispatched event.
 	 *
 	 * If the event name is a FQCN, it is treated as a PSR-14 event class.
@@ -131,6 +206,36 @@ class EventDispatcher implements EventDispatcherInterface {
 	 */
 	public function removeListener( string $eventName, callable $listener ): bool {
 		$removed = false;
+
+		// Remove from waterfall listeners.
+		if ( isset( $this->waterfalls[ $eventName ] ) ) {
+			foreach ( $this->waterfalls[ $eventName ] as $priority => &$callbacks ) {
+				foreach ( $callbacks as $index => $registered ) {
+					if ( $registered === $listener ) {
+						unset( $callbacks[ $index ] );
+						$removed = true;
+					}
+				}
+				if ( array() === $callbacks ) {
+					unset( $this->waterfalls[ $eventName ][ $priority ] );
+				}
+			}
+		}
+
+		// Remove from serial listeners.
+		if ( isset( $this->serials[ $eventName ] ) ) {
+			foreach ( $this->serials[ $eventName ] as $priority => &$callbacks ) {
+				foreach ( $callbacks as $index => $registered ) {
+					if ( $registered === $listener ) {
+						unset( $callbacks[ $index ] );
+						$removed = true;
+					}
+				}
+				if ( array() === $callbacks ) {
+					unset( $this->serials[ $eventName ][ $priority ] );
+				}
+			}
+		}
 
 		// Remove from PSR-14 / plain listeners.
 		if ( isset( $this->listeners[ $eventName ] ) ) {

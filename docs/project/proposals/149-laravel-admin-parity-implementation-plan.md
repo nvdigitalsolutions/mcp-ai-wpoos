@@ -13220,3 +13220,86 @@ set, because those are the ones someone must act on today.
   notice, not a critical, whatever its scopes can do.
 - **One escalation per day at most.** The daily dedupe applies inside the band;
   a credential one hour from expiry is not re-sent hourly.
+
+## 135. The Laravel dispatcher now offers the waterfall capability (2026-11-21)
+
+`ChatOrchestrator` and `ToolRegistry` gate every waterfall hook on
+`$events instanceof WaterfallEventDispatcherInterface`. That is deliberate
+feature detection: a dispatcher without the capability degrades to emit-only
+rather than failing. The consequence was invisible — the WordPress adapter
+declares both interfaces, the Laravel one declared only the base, so **every
+waterfall filter was skipped in Laravel and nothing reported it**.
+
+Found while auditing every core contract for a non-WordPress implementation
+(§137). Seven call sites were affected in principle: four in `ChatOrchestrator`
+(three `waterfall()` decisions plus the `serial()` gate) and three in
+`ToolRegistry` (pre/post decision and result).
+
+### 135.1 What changed
+
+`Nvoos\Laravel\Adapter\EventDispatcher` now implements
+`WaterfallEventDispatcherInterface` alongside the base contract:
+
+- `listenWaterfall()` / `listenSerial()` store listeners by priority;
+- `waterfall()` delegates to `Nvoos\Core\Domain\Event\WaterfallChain` — the same
+  helper the WordPress adapter uses, so the two runtimes cannot drift;
+- `serial()` runs every listener in priority order;
+- `removeListener()` also forgets waterfall and serial registrations, matching
+  WordPress.
+
+### 135.2 Impact today is neutral, and that is the point
+
+Nothing in the app registers a waterfall listener yet, so every chain currently
+falls straight through to its fallback and behaviour is unchanged. The fix
+matters because the *next* listener registered — an approval gate, a redaction
+pass, a refusal hook — would previously have been accepted and silently ignored.
+The capability is now real before it is used, which is the only order that works
+for an `instanceof` gate.
+
+### 135.3 Gates
+
+| Suite | Result |
+|---|---|
+| `WaterfallDispatchTest` (app, bound dispatcher) | 6 tests, 15 assertions, pass |
+| `EventDispatcherWaterfallTest` (package suite, CI) | 5 tests, capability / delegation / short-circuit / serial order / removal |
+| phpcs (`phpcs-laravel.xml.dist`) | clean on the adapter |
+
+## 136. Recorded, not implemented: the marker interfaces WordPress enforces (2026-11-21)
+
+The same contract audit found a second class of gap that readiness cannot catch.
+WordPress reads these marker interfaces across its tool corpus; core declares
+four of them and consults **none**, and two have no core contract at all:
+
+| WordPress interface | Consumers (`includes/` + Pro) | Core reader |
+|---|---|---|
+| `WP_MCP_AI_Tool_Data_Contract_Interface` | 78 | contract exists, 0 readers |
+| `WP_MCP_AI_Tool_LLM_Sanitizer_Interface` | 30 | contract exists, 0 readers |
+| `WP_MCP_AI_Tool_Model_Requirements_Interface` | 30 | **no core contract** |
+| `WP_MCP_AI_Tool_Rules_Interface` | 22 | contract exists, 0 readers |
+| `WP_MCP_AI_Tool_Safety_Profile_Interface` | 17 | **no core contract** |
+| `WP_MCP_AI_Tool_Flow_Stage_Interface` | 1 | contract exists, 0 readers |
+
+A ported tool that declares an LLM sanitizer, a data contract, a rule set, a
+model requirement or a safety profile constructs fine and **runs with fewer
+guards**; no readiness value reflects that. This is deliberately not implemented
+here: enforcing them changes tool behaviour for every servable row at once and
+needs its own decision on how each seam maps to the Laravel runtime. It is
+recorded so a green readiness batch is never mistaken for behavioural
+equivalence.
+
+## 137. Contract audit: 75 contracts, 38 without a non-WordPress implementation (2026-11-21)
+
+Method: enumerate `lib/core/src/Domain/Contract/`; collect every `implements`,
+`bind`, `singleton` and `scoped` in `lib/core/src`, `lib/laravel-adapter`,
+`lib/craft-adapter` and the app; subtract. **37 of 75** are implemented or bound
+outside WordPress. The remaining 38 split into:
+
+| Group | Count | Consequence |
+|---|---|---|
+| Mandatory tool constructor dependencies | 4 contracts / 11 rows | `unavailable`; `ManifestToolRegistrar` skips them silently |
+| Live but unwired seams (chat/routing) | 5 | graceful degradation; `WaterfallEventDispatcherInterface` fixed in §135 |
+| Inert declarations (nothing references them) | 28 | none — no readiness value invented for them |
+| Optional tool dependencies | 1 (`MjmlCompilerInterface`) | none — the row is `pure` because the argument is optional |
+
+The 11 rows live in Proposal 160 §12 with the reason per row. Full detail, and
+the four unblocking adapters, are recorded there rather than duplicated here.
