@@ -12951,3 +12951,69 @@ says so in its empty state rather than pretending they do not exist.
 - **The expiry report still has no channel** (§125.3). Its exit code is a
   contract nothing consumes — that is the next slice.
 - **No bulk revoke.** One credential at a time, by design.
+
+## 130. The expiry report gets a channel — once, and on the record (2026-11-21)
+
+§125.3 left one item: "The alert channel. The exit code is a contract nothing
+consumes yet: the scheduler records the failure, and no person is notified."
+The command was already scheduled (`bootstrap/app.php`, daily at 07:00), so the
+gap was delivery, not detection.
+
+The guidance for non-human identities points the same way: monitor creation
+*and* expiry, keep a timestamped record (rotation and acknowledgement evidence
+is what maps to the controls), and do not let the alert become noise — repeated
+unactioned alerts erode trust in the alerting process itself. Personal
+credentials are the opposite case (no arbitrary periodic rotation); this slice
+is only about machine credentials.
+
+### 130.1 What shipped
+
+- **Delivery, config-only.** `oos.machine_alerts.email`
+  (`NVOOS_MACHINE_ALERT_EMAIL`). Deliberately not a stored setting: an alert
+  channel a request can edit is a channel an attacker can silence.
+- **`App\Mail\MachineTokensExpiring`** — plain text, one row per credential with
+  id, owner, scopes, expiry and days left. Plain because it may be read on a
+  phone and must survive a client that strips HTML.
+- **The finding is recorded** in `nvoos_activity_events` as
+  `machine_token.expiring`, with a signature and the affected ids — a lost mail
+  is recoverable, a delivered one has a timestamp.
+- **Deduplicated for 24 hours on the same set.** The signature is a hash of the
+  sorted ids; a changed set alerts immediately, an unchanged one waits a day.
+  The command still prints the table and still exits 1 either way: the exit code
+  is the contract, mail is delivery.
+- **A delivery failure cannot hide the finding.** `Mail::send` is wrapped; a
+  failure warns and leaves the exit code alone.
+
+### 130.2 Why not a database notification
+
+`User` is `Notifiable`, but there is no `notifications` table in this app, and
+Filament's mailbox would need one plus a retention policy. Mail plus an
+activity-event record answers both requirements — delivery and evidence —
+without adding a store that would then need pruning. A panel inbox is a
+reasonable later addition *in front of* the same event, not instead of it.
+
+### 130.3 Gates
+
+| Run | Result |
+|---|---|
+| `MachineTokenExpiryAlertTest` (new, 7 tests) | mails when configured; does not email without an address (exit 1 still); records the activity event; no repeat within 24h; re-alerts when the set changes; re-alerts after 25h; an empty window sends nothing |
+| machine-token suites | **30 passed / 85 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the four files |
+
+The surface contract is unchanged: a Mailable is not a Filament surface, which
+is the rule the contract row's `files` list already encodes.
+
+### 130.4 What is left
+
+- **The selector is still an abilities heuristic.** `machineTokens()` means
+  "scoped and not `*`", so a narrowly scoped personal token can appear in this
+  report. Now that machine tokens carry `oos-machine:`, the selector can be
+  exact (prefix ∪ legacy non-personal scoped) — one line, but it changes who
+  gets nagged, so it is a decision.
+- **The activity event is attributed to `default`.** The command runs without a
+  pinned `TenantContext`, and a machine token carries no estate (its `--estate`
+  scoped the assistant at mint time). The row is honest about being
+  deployment-wide; per-estate attribution needs the token to record its estate
+  first.
+- **No acknowledgement workflow.** The event is a record, not a task; the dedupe
+  window is the only thing that stops it repeating.

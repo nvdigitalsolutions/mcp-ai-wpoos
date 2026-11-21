@@ -2,10 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\MachineTokensExpiring;
+use App\Support\ActivityRecorder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\PersonalAccessToken;
+use Throwable;
 
 /**
  * Report machine credentials that are about to expire — Proposal 159 slice 3.
@@ -63,6 +68,21 @@ class ListExpiringMachineTokens extends Command
             return self::SUCCESS;
         }
 
+        $rows = $expiring->map(static function (PersonalAccessToken $token): array {
+            $left = null === $token->expires_at
+                ? null
+                : (int) ceil(Carbon::now()->diffInDays($token->expires_at, false));
+
+            return array(
+                'id' => (int) $token->getKey(),
+                'name' => (string) $token->name,
+                'owner' => (string) ($token->tokenable?->email ?? $token->tokenable_id),
+                'scopes' => implode(', ', (array) $token->abilities),
+                'expires' => (string) $token->expires_at?->toDateTimeString(),
+                'days_left' => null === $left ? '-' : (string) $left,
+            );
+        })->values()->all();
+
         $this->warn(sprintf(
             '%d machine token(s) expire within %d days. Rotate each before it lapses: '
             . 'nvoos:machine-token:rotate {id}.',
@@ -72,23 +92,104 @@ class ListExpiringMachineTokens extends Command
 
         $this->table(
             array('id', 'name', 'owner', 'scopes', 'expires', 'days left'),
-            $expiring->map(static function (PersonalAccessToken $token): array {
-                $left = null === $token->expires_at
-                    ? null
-                    : (int) ceil(Carbon::now()->diffInDays($token->expires_at, false));
-
-                return array(
-                    $token->getKey(),
-                    $token->name,
-                    $token->tokenable?->email ?? $token->tokenable_id,
-                    implode(', ', (array) $token->abilities),
-                    $token->expires_at?->toDateTimeString(),
-                    null === $left ? '-' : (string) $left,
-                );
-            })->all()
+            array_map(
+                static fn (array $row): array => array(
+                    $row['id'],
+                    $row['name'],
+                    $row['owner'],
+                    $row['scopes'],
+                    $row['expires'],
+                    $row['days_left'],
+                ),
+                $rows
+            )
         );
 
+        $this->publishFinding($rows, $days, $expiring->count());
+
         return self::FAILURE;
+    }
+
+    /**
+     * Record the finding and, when configured, mail it once.
+     *
+     * Two properties make this an alert rather than a log line:
+     *
+     *  - it is **auditable** — the same finding lands in the activity feed, so a
+     *    missed mail is recoverable and a delivered one leaves a timestamp;
+     *  - it is **deduplicated** — the same set of credentials does not re-alert
+     *    for 24 hours. An alert that fires every morning about the same token is
+     *    one people learn to ignore, which is worse than no alert at all.
+     *
+     * @param list<array<string, mixed>> $rows
+     */
+    private function publishFinding(array $rows, int $days, int $count): void
+    {
+        $signature = sha1(implode(',', array_column($rows, 'id')));
+
+        if (! $this->shouldAlert($signature)) {
+            $this->line('  (alert suppressed: the same set was reported within 24 hours)');
+
+            return;
+        }
+
+        app(ActivityRecorder::class)->record(
+            'machine_token.expiring',
+            sprintf('%d machine credential(s) expire within %d days.', $count, $days),
+            null,
+            array(
+                'signature' => $signature,
+                'ids' => array_column($rows, 'id'),
+                'days' => $days,
+            )
+        );
+
+        $this->deliver($rows, $days);
+    }
+
+    private function shouldAlert(string $signature): bool
+    {
+        $last = DB::table('nvoos_activity_events')
+            ->where('type', 'machine_token.expiring')
+            ->latest('id')
+            ->first();
+
+        if (null === $last) {
+            return true;
+        }
+
+        $context = json_decode((string) $last->context, true);
+
+        if (! is_array($context) || ($context['signature'] ?? null) !== $signature) {
+            return true;
+        }
+
+        return Carbon::parse((string) $last->created_at)->lessThan(Carbon::now()->subDay());
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function deliver(array $rows, int $days): void
+    {
+        $email = trim((string) config('oos.machine_alerts.email', ''));
+
+        if ('' === $email) {
+            $this->line('  (no alert address: set oos.machine_alerts.email or NVOOS_MACHINE_ALERT_EMAIL)');
+
+            return;
+        }
+
+        try {
+            Mail::to($email)->send(new MachineTokensExpiring($rows, $days));
+        } catch (Throwable $exception) {
+            // A delivery failure must not hide the finding or change the exit code.
+            $this->warn('  alert not delivered: '.$exception->getMessage());
+
+            return;
+        }
+
+        $this->line(sprintf('  alert emailed to %s', $email));
     }
 
     /**
