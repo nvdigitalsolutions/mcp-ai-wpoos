@@ -191,3 +191,108 @@ allowlisted state-changing tool still queues an approval (§124, §126).
 - Every servable row has annotations.
 - The picker's list is exactly the servable set — no more, no less.
 - The plan's batches are recorded in 149 as they land, with counts.
+
+## 11. Batch 1 measured finding - the image contract has one implementation
+
+Enumerating the four transformation tools (`resize_image`, `crop_image`,
+`rotate_image`, `convert_image_format`) found a shared hard dependency on
+`ImageProcessingInterface`. It has exactly one implementation in the tree:
+`lib/wordpress-adapter/src/Adapter/ImageProcessing.php`. There is none in
+`lib/laravel-adapter`, none in `app/`, and no container binding; the container
+carries neither GD nor Imagick.
+
+`ManifestToolRegistrar` builds tools reflectively and **skips** any constructor it
+cannot satisfy, so a `ready` row for these four would have registered nothing and
+reported nothing. They are therefore `unavailable`, not `unverified`.
+
+The app already ships the intended backend - `app/Support/Media/MediaWorkerClient.php`
+alongside `MediaSweeper`, `MediaLibrary` and `OptimizeMediaFile` - so the follow-up
+is a `MediaWorkerImageProcessing` adapter bound to the interface, after which these
+four rows can become `ready` with a test as evidence.
+
+## 12. Contract accounting - every core interface checked against this runtime
+
+The image contract was found by accident, so the rest were checked deliberately.
+
+Method: enumerate all 75 files in `lib/core/src/Domain/Contract/`; collect every
+`implements`, `bind`, `singleton` and `scoped` in `lib/core/src`,
+`lib/laravel-adapter`, `lib/craft-adapter` and `docker/laravel/app-skeleton/app`;
+subtract. 37 of the 75 have an implementation or binding outside WordPress. The
+remaining 38 split into four groups, only the first of which affects readiness.
+
+### 12.1 Mandatory tool dependencies with no implementation (11 rows)
+
+| Contract | Rows | Outcome |
+|---|---|---|
+| `ImageProcessingInterface` | 4 | `unavailable` (§11) |
+| `AgentOrchestrationInterface` | `check_workflow_health`, `create_agent_team`, `delegate_to_agent`, `execute_workflow` | `unavailable` |
+| `EmailServiceInterface` | `send_group_email`, `send_group_email_validated` (inherits it) | `unavailable` |
+| `ProfessionWriteInterface` | `save_profession` | `unavailable` |
+| `MjmlCompilerInterface` | `generate_email_template` | stays `pure` - optional constructor arg, registers today |
+
+None of the four unbound contracts appears in either provider, and Laravel's
+container cannot auto-resolve an interface, so reflection fails and the registrar
+skips the tool. Marking any of these `ready` would be a silent no-op.
+
+Adapter size, smallest first: `ProfessionWrite` (1 method, sits beside the already
+bound read-only `ProfessionRepository`), `EmailService` (3), `ImageProcessing` (7,
+via the media worker), `AgentOrchestration` (4, needs the workflow tables).
+
+### 12.2 Declared but not consulted (28 contracts)
+
+28 contracts are referenced by no core application file at all - only their own
+declaration. They are declarations ahead of use, not gaps: `ChatContinuation`,
+`ChatService`, `CodeFormatting`, `CostTrackingService`, `CronStatus`, `EmbeddingService`,
+`ErrorTrackingService`, `FileOrchestration`, `FileValidationService`, `FinancialData`,
+`LanguageDetection`, `ModelCatalog`, `MusicGeneration`, `OcrService`,
+`OrchestrationControl`, `PerformanceMonitor`, `TimeoutDetection`, `TokenBudgetService`,
+`ToolAsyncExecutor`, `ToolDataContract`, `ToolExecution`, `ToolFlowStage`,
+`ToolLlmSanitizer`, `ToolLoadBalancer`, `ToolRules`, `ToolWriteClass`,
+`ValidationService`, `VisionInference`.
+
+Several have WordPress-named counterparts in `includes/interfaces/` that the
+WordPress adapters satisfy (`HttpClient`, `Options_Store`, `Embedding_Provider`,
+`Cron_Status_Job_Source`, `Tool_Queue`, `Generic_Tool_Response`) - those *are*
+accounted for, under their own names.
+
+### 12.3 Marker interfaces WordPress enforces and core never consults
+
+This is the finding that is not about boot: a ported tool can construct fine and
+still behave differently. WordPress reads these markers across its tool corpus;
+core declares four of them and consults none.
+
+| WordPress interface | Consumers in `includes/` + Pro | Core counterpart consulted? |
+|---|---|---|
+| `WP_MCP_AI_Tool_Data_Contract_Interface` | 78 | contract exists, 0 readers |
+| `WP_MCP_AI_Tool_LLM_Sanitizer_Interface` | 30 | contract exists, 0 readers |
+| `WP_MCP_AI_Tool_Model_Requirements_Interface` | 30 | **no core contract** |
+| `WP_MCP_AI_Tool_Rules_Interface` | 22 | contract exists, 0 readers |
+| `WP_MCP_AI_Tool_Safety_Profile_Interface` | 17 | **no core contract** |
+| `WP_MCP_AI_Tool_Flow_Stage_Interface` | 1 | contract exists, 0 readers |
+
+Consequence: an LLM sanitizer, a data contract, a rule set or a safety profile
+declared by a ported tool is silently ignored in Laravel. Readiness does not catch
+this because the tool still runs - it just runs with fewer guards. This belongs in
+149 as a behavioural row rather than here; it is recorded so a green batch is not
+mistaken for behavioural equivalence.
+
+### 12.4 One adapter is missing a capability its WordPress twin has
+
+`ChatOrchestrator` and `ToolRegistry` gate every waterfall hook on
+`$events instanceof WaterfallEventDispatcherInterface`. The WordPress dispatcher
+implements it (`implements EventDispatcherInterface, WaterfallEventDispatcherInterface`);
+the Laravel one declares only `EventDispatcherInterface`. Every waterfall filter is
+therefore skipped in Laravel, silently, by design of the `instanceof` check.
+
+Cheap to fix and cheap to test; it changes chat behaviour, so it warrants its own
+loop rather than riding along with a manifest batch.
+
+### 12.5 What this changes here
+
+- Manifest: 11 rows now `unavailable` with reasons naming the missing contract;
+  servable count is unchanged at 96 because none of the 11 was servable.
+- Nothing else moved. The 28 inert contracts and the 6 unenforced markers do not
+  affect readiness and are left unclassified on purpose - inventing a readiness
+  value for a contract nothing consults would be noise.
+- Batch 1's remaining 20 rows are unaffected: they need provider fakes, not
+  adapters, and are triaged in batch 1 itself.
