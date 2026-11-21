@@ -226,7 +226,27 @@ jobs:
         run: >
           cargo hack clippy --manifest-path src-tauri/Cargo.toml
           --each-feature --all-targets --keep-going
-          --exclude-features whisper,parakeet,fastconformer
+          --exclude-features whisper,parakeet,fastconformer,silero-vad
+          -- -D warnings
+
+      # `silero-vad` is the one leg where `ort` reaches the graph indirectly
+      # (through `silero-vad-rs`). `ort-sys`'s `copy-dylibs` build script
+      # symlinks the runtime DLLs into the shared `target/<profile>` dirs; on a
+      # runner that denies symlink creation it falls back to `fs::copy`, which
+      # panics with `NotFound` when a later leg meets an entry an earlier one
+      # left behind (observed on #8071: 14 legs green, this one panicked at
+      # ort-sys build.rs:109). Give the leg its own target dir so the
+      # single-feature check still runs — it is the configuration that caught
+      # the `error.rs` `From<ort::Error>` gating bug.
+      - name: Clippy silero-vad in isolation
+        env:
+          # Relative to `examples/nvoos-dictate` (the workflow's
+          # `defaults.run.working-directory`), and nested under `target/` so it
+          # is already gitignored.
+          CARGO_TARGET_DIR: src-tauri/target/clippy-silero
+        run: >
+          cargo clippy --manifest-path src-tauri/Cargo.toml
+          --all-targets --no-default-features --features silero-vad
           -- -D warnings
 
       # Pairs that share a feature-gated dependency: `--each-feature` cannot
@@ -245,7 +265,16 @@ jobs:
         run: >
           cargo hack test --manifest-path src-tauri/Cargo.toml
           --each-feature --lib --keep-going
-          --exclude-features whisper,parakeet,fastconformer
+          --exclude-features whisper,parakeet,fastconformer,silero-vad
+
+      # Same isolation as the clippy leg above (shares its target dir, so the
+      # dependencies are already built by the time this runs).
+      - name: Test silero-vad in isolation
+        env:
+          CARGO_TARGET_DIR: src-tauri/target/clippy-silero
+        run: >
+          cargo test --manifest-path src-tauri/Cargo.toml
+          --lib --no-default-features --features silero-vad
 
       # The integration suite that needs `document` (real PDFs through PDFium)
       # — worth the ~1 min now that the dll is staged.
