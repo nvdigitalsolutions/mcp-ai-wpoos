@@ -13116,3 +13116,107 @@ use would be a silent no-op.
   clamp to the soonest expiry is what makes that safe.
 - **No free-text note.** The ack records the actor and the ids; "rotating on
   Thursday" has nowhere to go yet.
+
+## 133. Credential evidence: the migration, the note, and ack-to-resolution (2026-11-21)
+
+Three recorded decisions from §130–§132, taken together because they answer one
+question: can an operator prove what happened to a machine credential?
+
+### 133.1 Rotation is the migration point
+
+§129.4 claimed a rotated legacy token "adopts the prefix". It did not: rotation
+copied the stored name, so a legacy name stayed legacy — the sentence was a wish,
+not a description. Normalising in `RotateMachineToken` makes it true without a
+rename backfill: an old audit row keeps pointing at the name it recorded, and the
+next rotation is what adopts the prefix. A token that is never rotated stays
+legacy and stays visible to the report through the heuristic; the panel lists it
+once it has been rotated.
+
+### 133.2 The ack carries a note, and the set can resolve
+
+- The acknowledgement takes an optional 280-character note, stored in the event
+  context. "Rotating Thursday" is the difference between a timestamp and evidence.
+- `machine_token.expiry_resolved` is written when an acknowledged set no longer
+  appears — every acked id has gone. This is the metric the incident-response
+  guidance asks for: measuring only time-to-acknowledge "trains people to ack
+  fast and do nothing", so ack-to-resolution needs a resolution event.
+- It runs **before** the empty-window return, so a run with nothing left to
+  report still records the resolution.
+
+### 133.3 Secret age (OWASP NHI7)
+
+`/ops/machine-credentials` gains an **Age** column, warning past 90 days — the
+target OWASP's NHI7 *Long-Lived Secrets* risk names. The mint date was already
+stored; it simply was not shown.
+
+### 133.4 Per-estate attribution: deferred, with the model recorded
+
+**Not built now.** The alert goes to one operator address, so per-estate
+attribution changes no routing today, and the token genuinely carries no estate —
+`--estate` scoped the assistant at mint. When per-estate routing is needed, the
+model is a `nvoos_machine_tokens` companion table (`token_id`, `tenant_id`,
+`created_by`) written at mint, with a nullable column and a `default` backfill —
+the `nvoos_approvals` shape (§124). Recording it here stops the next slice
+inventing a different one.
+
+### 133.5 Gates
+
+| Run | Result |
+|---|---|
+| machine-token + credentials suites | **41 passed / 108 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the six files |
+
+### 133.6 What is left
+
+- **No escalation tier.** An acked, still-expiring set re-alerts at the soonest
+  expiry, but nothing escalates beyond the same address. The incident guidance
+  calls that the failure mode after "acknowledged but unactioned".
+- **Resolution is inferred from disappearance**, not asserted by a person; a
+  revoked-for-the-wrong-reason credential looks identical to a rotated one.
+- **Age is shown, not enforced.** NHI7's 90-day target is a colour, not a policy.
+
+## 134. Escalation: ack pauses the noise, it does not disable the net (2026-11-21)
+
+§133.6 left the one failure mode the incident-response guidance names explicitly:
+an acknowledged set whose condition persists. Its three rules are now all true in
+code, not just in prose:
+
+| Guidance | Implementation |
+|---|---|
+| Ack pauses the noise | 7 days, clamped at the soonest expiry (§132) |
+| Ack never auto-resolves | the finding and exit 1 survive the acknowledgement |
+| Acked + persisting must escalate | **new:** the critical band ignores the ack |
+
+### 134.1 The critical band
+
+A credential within `oos.machine_alerts.critical_days` (default **3**, clamped to
+the report window) is escalated **regardless of whether the set was
+acknowledged**. The escalation:
+
+- writes `machine_token.expiring_critical` — a separate event, so the feed shows
+  that escalation happened rather than a repeat of the same finding;
+- goes to `oos.machine_alerts.escalation_email`, falling back to the primary
+  address when unset, so a deployment with one address still escalates;
+- is deduplicated for 24 hours on its own signature, so escalation is daily, not
+  per-run;
+- is not silenced by a later ack: the band ignores acknowledgements entirely.
+
+The table still prints every expiring credential; the mail carries the critical
+set, because those are the ones someone must act on today.
+
+### 134.2 Gates
+
+| Run | Result |
+|---|---|
+| `MachineTokenExpiryAlertTest` (now 15 tests) | escalates despite an ack; falls back to the primary address; a non-critical set does not escalate; deduped within a day; the critical finding is its own event |
+| expiry + credentials suites | **28 passed / 55 assertions** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the four files |
+
+### 134.3 What is left
+
+- **Still one address.** Escalation changes the subject and the recipient key, not
+  the paging model; there is no on-call rotation or second tier.
+- **The band is time-only.** A destructive-scoped credential at ten days is a
+  notice, not a critical, whatever its scopes can do.
+- **One escalation per day at most.** The daily dedupe applies inside the band;
+  a credential one hour from expiry is not re-sent hourly.

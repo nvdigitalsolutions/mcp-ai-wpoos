@@ -64,7 +64,7 @@ final class MachineTokenLifecycleTest extends TestCase
         );
     }
 
-    public function test_rotation_keeps_the_owner_name_and_scopes(): void
+    public function test_rotation_prefixes_a_legacy_name_and_keeps_the_owner_and_scopes(): void
     {
         [$id] = $this->machineToken();
         $before = DB::table('personal_access_tokens')->where('id', $id)->first();
@@ -77,9 +77,26 @@ final class MachineTokenLifecycleTest extends TestCase
             ->first();
 
         $this->assertNotNull($new);
-        $this->assertSame($before->name, $new->name);
+        $this->assertSame('oos-machine:'.$before->name, $new->name);
         $this->assertSame($before->tokenable_id, $new->tokenable_id);
         $this->assertSame(json_decode($before->abilities, true), json_decode($new->abilities, true));
+    }
+
+    public function test_rotation_keeps_an_already_prefixed_name(): void
+    {
+        $owner = $this->owner();
+        $token = $owner->createToken('oos-machine:ci', array('estate:assistants.list'), Carbon::now()->addDays(90));
+        $id = (int) $token->accessToken->getKey();
+
+        $this->assertSame(0, Artisan::call('nvoos:machine-token:rotate', array('id' => (string) $id)));
+
+        $new = DB::table('personal_access_tokens')
+            ->where('id', '!=', $id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($new);
+        $this->assertSame('oos-machine:ci', $new->name);
     }
 
     public function test_zero_grace_is_revocation(): void

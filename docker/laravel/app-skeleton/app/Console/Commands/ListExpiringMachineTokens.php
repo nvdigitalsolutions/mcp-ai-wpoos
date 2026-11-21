@@ -63,6 +63,11 @@ class ListExpiringMachineTokens extends Command
 
         $rows = MachineTokens::expiring($days);
 
+        // Before anything else: an acknowledged set whose credentials have all
+        // gone (rotated or revoked) is resolved, including on a run that has
+        // nothing left to report.
+        $this->resolveAcknowledgedSets(array_column($rows, 'id'));
+
         if (array() === $rows) {
             $this->info(sprintf('No machine tokens expire within %d days.', $days));
 
@@ -94,6 +99,71 @@ class ListExpiringMachineTokens extends Command
         $this->publishFinding($rows, $days);
 
         return self::FAILURE;
+    }
+
+    /**
+     * Record that an acknowledged set is no longer expiring.
+     *
+     * The incident-response guidance is blunt about why this exists: measuring
+     * only time-to-acknowledge "trains people to ack fast and do nothing". The
+     * resolution event is what makes ack-to-resolution queryable — the ack says
+     * someone saw it, this says the credentials actually went.
+     *
+     * @param list<int|string> $currentIds
+     */
+    private function resolveAcknowledgedSets(array $currentIds): void
+    {
+        $ack = DB::table('nvoos_activity_events')
+            ->where('type', 'machine_token.expiry_acknowledged')
+            ->latest('id')
+            ->first();
+
+        if (null === $ack) {
+            return;
+        }
+
+        $context = json_decode((string) $ack->context, true);
+
+        if (! is_array($context)) {
+            return;
+        }
+
+        $signature = (string) ($context['signature'] ?? '');
+        $ackedIds = array_map('intval', (array) ($context['ids'] ?? array()));
+
+        if ('' === $signature || array() === $ackedIds) {
+            return;
+        }
+
+        $resolved = DB::table('nvoos_activity_events')
+            ->where('type', 'machine_token.expiry_resolved')
+            ->get()
+            ->contains(static function (object $row) use ($signature): bool {
+                $decoded = json_decode((string) $row->context, true);
+
+                return is_array($decoded) && ($decoded['signature'] ?? null) === $signature;
+            });
+
+        if ($resolved) {
+            return;
+        }
+
+        $current = array_map('intval', $currentIds);
+
+        if (array() !== array_intersect($ackedIds, $current)) {
+            return;
+        }
+
+        app(ActivityRecorder::class)->record(
+            'machine_token.expiry_resolved',
+            sprintf('%d acknowledged credential(s) are no longer expiring.', count($ackedIds)),
+            null,
+            array(
+                'signature' => $signature,
+                'ids' => $ackedIds,
+                'acknowledged_at' => (string) $ack->created_at,
+            )
+        );
     }
 
     /**
@@ -137,6 +207,22 @@ class ListExpiringMachineTokens extends Command
      */
     private function publishFinding(array $rows, int $days): void
     {
+        $criticalDays = $this->criticalDays($days);
+        $critical = array_values(array_filter(
+            $rows,
+            static fn (array $row): bool => null !== $row['expires_at']
+                && (int) self::daysLeft($row) <= $criticalDays
+        ));
+
+        // The critical band ignores an acknowledgement on purpose. An acked alert
+        // whose condition persists must re-page; otherwise ack is a way to silence
+        // the safety net (§134).
+        if (array() !== $critical) {
+            $this->escalate($critical, $criticalDays);
+
+            return;
+        }
+
         $signature = sha1(implode(',', array_column($rows, 'id')));
 
         if (! $this->shouldAlert($signature, $rows)) {
@@ -157,6 +243,60 @@ class ListExpiringMachineTokens extends Command
         );
 
         $this->deliver($rows, $days);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $critical
+     */
+    private function escalate(array $critical, int $criticalDays): void
+    {
+        $signature = 'critical:'.sha1(implode(',', array_column($critical, 'id')));
+
+        if ($this->recentEvent('machine_token.expiring_critical', $signature)) {
+            $this->line('  (critical alert suppressed: the same set was escalated within 24 hours)');
+
+            return;
+        }
+
+        app(ActivityRecorder::class)->record(
+            'machine_token.expiring_critical',
+            sprintf('%d machine credential(s) expire within %d days.', count($critical), $criticalDays),
+            null,
+            array(
+                'signature' => $signature,
+                'ids' => array_column($critical, 'id'),
+                'days' => $criticalDays,
+            )
+        );
+
+        $this->deliver($critical, $criticalDays, true);
+    }
+
+    private function criticalDays(int $days): int
+    {
+        $configured = (int) config('oos.machine_alerts.critical_days', 3);
+
+        return max(0, min($configured, $days));
+    }
+
+    private function recentEvent(string $type, string $signature): bool
+    {
+        $last = DB::table('nvoos_activity_events')
+            ->where('type', $type)
+            ->latest('id')
+            ->first();
+
+        if (null === $last) {
+            return false;
+        }
+
+        $context = json_decode((string) $last->context, true);
+
+        if (! is_array($context) || ($context['signature'] ?? null) !== $signature) {
+            return false;
+        }
+
+        return Carbon::parse((string) $last->created_at)->greaterThan(Carbon::now()->subDay());
     }
 
     /**
@@ -211,9 +351,17 @@ class ListExpiringMachineTokens extends Command
     /**
      * @param list<array<string, mixed>> $rows
      */
-    private function deliver(array $rows, int $days): void
+    private function deliver(array $rows, int $days, bool $escalated = false): void
     {
-        $email = trim((string) config('oos.machine_alerts.email', ''));
+        $email = $escalated
+            ? trim((string) config('oos.machine_alerts.escalation_email', ''))
+            : '';
+        $key = 'oos.machine_alerts.escalation_email or NVOOS_MACHINE_ESCALATION_EMAIL';
+
+        if ('' === $email) {
+            $email = trim((string) config('oos.machine_alerts.email', ''));
+            $key = 'oos.machine_alerts.email or NVOOS_MACHINE_ALERT_EMAIL';
+        }
 
         $mailRows = array_map(
             static fn (array $row): array => array(
@@ -228,13 +376,13 @@ class ListExpiringMachineTokens extends Command
         );
 
         if ('' === $email) {
-            $this->line('  (no alert address: set oos.machine_alerts.email or NVOOS_MACHINE_ALERT_EMAIL)');
+            $this->line('  (no alert address: set '.$key.')');
 
             return;
         }
 
         try {
-            Mail::to($email)->send(new MachineTokensExpiring($mailRows, $days));
+            Mail::to($email)->send(new MachineTokensExpiring($mailRows, $days, $escalated));
         } catch (Throwable $exception) {
             // A delivery failure must not hide the finding or change the exit code.
             $this->warn('  alert not delivered: '.$exception->getMessage());

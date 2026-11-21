@@ -126,6 +126,10 @@ final class MachineTokens
                 'expires' => null === $expires ? 'Never' : substr($expires, 0, 10),
                 'expires_at' => $expires,
                 'last_used' => null === $row->last_used_at ? null : (string) $row->last_used_at,
+                'created_at' => null === $row->created_at ? null : (string) $row->created_at,
+                'age_days' => null === $row->created_at
+                    ? null
+                    : (int) Carbon::parse((string) $row->created_at)->diffInDays(now()),
                 'status' => null !== $expires && strtotime($expires) <= now()->getTimestamp()
                     ? 'expired'
                     : 'active',
