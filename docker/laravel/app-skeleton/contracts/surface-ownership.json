@@ -662,6 +662,19 @@
       "projection": "Operator-scope and unreduced: it writes the platform setting the machine-principal tool gate reads, so there is no estate projection to reduce. Only tools the readiness manifest calls servable are listed, and a row that came from `config/oos.machine_tools` has no remove action — the page may widen what a deploy allowed, never narrow it. Annotations are shown as a veto ('If a machine ran it'), not as a guarantee.",
       "files": ["app/Filament/Operator/Pages/MachineTools.php"],
       "notes": "No WordPress equivalent: the WP admin has no machine-principal surface, so this is a Laravel-only operator surface recorded rather than left implicit. Shipped 2026-11-21 (149 §128)."
+    },
+    {
+      "id": "machine-credentials",
+      "title": "Machine credentials",
+      "audience": "operator",
+      "ops": {"state": "full"},
+      "admin": null,
+      "console": null,
+      "writer": "ops",
+      "plan_gate": null,
+      "projection": "Machine tokens only, identified by the `oos-machine:` prefix; a token whose name is personal or assistant-scoped is not listed and cannot be revoked through this page. Owner and scopes are shown because a machine credential carries an assistant's authority rather than a person's — the operator who issued it is the operator who revokes it.",
+      "files": ["app/Filament/Operator/Pages/MachineCredentials.php"],
+      "notes": "No WordPress equivalent: the WP admin has no machine-principal credentials. The inventory's read-only rule for a person's own tokens is unchanged and deliberate. Shipped 2026-11-21 (149 §129)."
     }
   ]
 }
