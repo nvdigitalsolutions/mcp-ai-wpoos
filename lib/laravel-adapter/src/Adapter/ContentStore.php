@@ -27,6 +27,8 @@ use Nvoos\Core\Domain\Error\NotFoundException;
 use Nvoos\Core\Domain\Error\ValidationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class ContentStore implements ContentStoreInterface {
@@ -693,7 +695,47 @@ class ContentStore implements ContentStoreInterface {
 
 		$ability = $abilityMap[ $operation ] ?? 'read_content';
 
-		return Gate::allows( $ability, array( $id, $userId ) );
+		$actor = $this->actor( $userId );
+
+		if ( null === $actor ) {
+			return false;
+		}
+
+		// Authorise as the acting user, not the ambient session. A tool may act
+		// for a different user than the request, and several callers have no
+		// session at all (a timed schedule, a queue worker, the tool command).
+		// Plain `Gate::allows()` short-circuits to false when nothing is
+		// authenticated, whatever user id the caller passed in.
+		return Gate::forUser( $actor )->allows( $ability, array( $id, $userId ) );
+	}
+
+	/**
+	 * Resolve the user an access check is about.
+	 *
+	 * The provider comes from configuration rather than from `Auth::guard()`, which
+	 * cannot be relied on here: `Sanctum::actingAs()` (and any `shouldUse()`) swaps
+	 * the default guard for a request guard that has no user provider at all, and
+	 * calling `getProvider()` on it throws. Reading `auth.providers.*` keeps this
+	 * adapter framework-level — no host application's User class is referenced.
+	 */
+	private function actor( int $userId ): ?Authenticatable {
+		if ( $userId <= 0 ) {
+			return Auth::user();
+		}
+
+		$guard       = (string) config( 'auth.defaults.guard', 'web' );
+		$providerKey = (string) config( 'auth.guards.' . $guard . '.provider', '' );
+
+		// Token guards declare no provider — they resolve users through the
+		// default one. Fall back rather than fail; a host without a `users`
+		// provider simply denies, which is the safe direction.
+		if ( '' === $providerKey ) {
+			$providerKey = 'users';
+		}
+
+		$provider = Auth::createUserProvider( $providerKey );
+
+		return $provider?->retrieveById( $userId );
 	}
 
 	// ─── Private helpers ──────────────────────────────────────────────

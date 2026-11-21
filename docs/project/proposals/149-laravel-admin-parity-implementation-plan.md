@@ -13995,3 +13995,65 @@ The streaming assertion reads the messages **sent to the provider**, not stdout:
 reports as risky. The test restores the buffer level around the call rather than
 suppressing the check. Noting it because the next streaming test will hit the same
 thing.
+
+## 149. Scheduled runs could not touch content (2026-11-21)
+
+### 149.1 The defect
+
+`ContentStore::userCanAccess()` authorised with the ambient `Gate::allows()`.
+Laravel's Gate returns false **before** invoking the callback when nothing is
+authenticated, whatever user id the caller passed in. `ScheduleRunner` resolves an
+actor and passes it only as context (`'user_id' => $userId`), so on every timed run
+`get_post`, `update_post` and `delete_post` were denied — while the same calls
+passed in any test that happened to authenticate first.
+
+Measured, not inferred: `ScheduledToolIdentityTest` fails **2 of 2** without the
+fix and passes 2 of 2 with it. The check was repeated after the implementation was
+revised, so the test is known to catch the bug rather than merely accompany it.
+The existing `ScheduleRunnerTest` had been hiding it: its `setUp` calls
+`Sanctum::actingAs()`, so the schedule it exercises was authorised against a
+session its own harness created.
+
+### 149.2 The fix
+
+`userCanAccess()` resolves the acting user and authorises **as that user** with
+`Gate::forUser()`, so the store no longer depends on the ambient session. That is
+what the store's contract already claimed — a tool may act for a different user
+than the request.
+
+Two details, each of which cost a run, recorded so the next person does not repeat
+them:
+
+- **`Sanctum::actingAs()` rewrites `auth.defaults.guard`.** It calls
+  `shouldUse( 'sanctum' )`, which sets the config default to a token guard that
+  declares **no provider**; `Auth::createUserProvider( '' )` then returns null and
+  every access check denies. The adapter normalises an empty provider to `users`
+  and fails closed if that is absent too.
+- **`Auth::guard()->getProvider()` is not safe here** for the same reason: the
+  request guard has no provider, and the call throws — which surfaced as a 500 on
+  the workflow update route rather than as a denial.
+
+### 149.3 Which dispatchers this covers
+
+| Path | Identity today | Result |
+|---|---|---|
+| `MachineToolController` | `$request->user()` (authenticated) | unchanged |
+| `ScheduleRunner` | context id from `oos.schedules.user_id`, else the first administrator | **works** |
+| `WorkflowRunner` | context id | **works** |
+| `artisan nvoos:tool` | `user_id => 0`, no session | **still denied** — recorded |
+| `SlashCommandExecutor`, `ProbeRunner` | do not dispatch tools | n/a |
+
+The CLI case is a product decision rather than a bug: `nvoos:tool` needs an actor
+rule (`--as`, or the rule schedules already use) before a content tool can run
+from it. Recorded here, not guessed at.
+
+### 149.4 Gates
+
+| Gate | Result |
+|---|---|
+| `ScheduledToolIdentityTest` | 2 tests, 7 assertions — **fails without the fix**, verified by stashing the adapter change |
+| regression set (`ScheduleRunner`, `ScheduleAsync`, `ContentAndProjectTools`, `Workflow`, `WorkflowRun`, `MachineToolExecution`, `MachineToolAllowlist`) | 84 tests, 368 assertions, pass |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+
+No constructor changed, so no runtime needs rewiring; the change is confined to
+one private method and the call it feeds.
