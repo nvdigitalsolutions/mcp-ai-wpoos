@@ -1111,6 +1111,16 @@ actually present under `app/Filament/`. Two consequences:
 
 Name supporting files in the row's `notes` (as prose) instead.
 
+**A new Filament page is three edits, not one.** The class, the
+`OperatorNavigationGroup::items()` entry (or the admin equivalent), and the
+`contracts/surface-ownership.json` row. Two of the three fail loudly:
+`OperatorNavigationTest` compares the rendered sidebar to the enum's ordered
+`items()`, so the page's `navigationSort` must produce the order the list
+declares; `SurfaceOwnershipTest` fails on an undeclared file. The third has no
+test — a page without its nav entry renders at its slug but is invisible in the
+sidebar. 2026-11-21: the `/ops` machine-tools picker shipped without the contract
+row and took the 1,749-test suite red on exactly that assertion.
+
 ## 17. When a feature looks unbuilt: read the code, not the filenames
 
 - **A negative result from a filename search is a statement about filenames.**
