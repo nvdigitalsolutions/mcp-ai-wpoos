@@ -12831,3 +12831,56 @@ array with no writable surface.
 - **Per-estate allowlisting** is not built and was not implied. The list is global
   (the config it replaces was global); an estate that needs a different surface
   requires the `estate:` scope decision 159 §9 already flags.
+
+## 128. The picker: `/ops/machine-tools` (2026-11-21)
+
+§127 shipped the wiring and admitted the field was honest but unpleasant — it
+asks an operator to type slugs into a settings box. This is the page that
+replaces the typing.
+
+It is **not** a parity surface: the WordPress admin has no machine-principal
+allowlist to match, so the 48-surface contract and its scoreboard are unchanged.
+This is a new operator surface for a capability only the Laravel runtime has.
+
+### 128.1 What shipped
+
+- `App\Filament\Operator\Pages\MachineTools` — an array-backed Filament table
+  over `ToolCatalogue::rows()`, filtered to servable tools. Two badges answer the
+  two questions an operator actually has: *If a machine ran it* (its annotation)
+  and *Allowlisted by* (`config` or `setting`).
+- `allowTool()` / `denyTool()` write the same `machine_tools` setting §127
+  defined. **Remove appears only for a `setting` row**, so the page cannot narrow
+  a config entry.
+- The nav entry joins **Access** after *Audit log* (sort 25), because
+  `OperatorNavigationTest` compares the rendered sidebar to the enum's ordered
+  `items()`: the enum list and the sort integer are two halves of one contract.
+- `MachineToolAllowlist::parse()` is public and shared by the reader and the
+  page, so "what does this stored value mean" has one answer instead of two
+  parsers.
+- Every change writes an audit row with `resource=machine_tools`,
+  `record_id=<slug>` and `action=allowed|removed`.
+
+### 128.2 Gates
+
+| Run | Result |
+|---|---|
+| `MachineToolPickerTest` (new, 7 tests) | page renders for an operator; rows carry annotation and source; allow writes and deny removes; a config entry survives a deny; a non-servable slug is refused; every change leaves an audit row; an estate administrator gets 403 |
+| `OperatorNavigationTest` | 7 passed — the rendered sidebar matches the enum, including the new item's position |
+| machine + settings + navigation suites | **76 passed, 1 failed** on the first run — the failure was the navigation contract, and it was real |
+| after the ordering fix | `OperatorNavigationTest` + the new suite: **14 passed** |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors, 0 warnings on the four PHP files |
+
+The navigation failure is worth recording. Adding the enum item *between*
+Credentials and Personal tokens looked right in the list, but the rendered
+sidebar sorts by `navigationSort`, where 22, 23 and 24 were already taken. The
+fix was to put the item last and give it 25 — not to renumber two existing pages
+for the sake of a list's reading order.
+
+### 128.3 What is left
+
+- **Bulk selection** is not built; the page is per-row.
+- **Two audit shapes.** This page records the tool and the action; the settings
+  form (§127.4) records only `keys: ['machine_tools']`. Unifying them is a
+  decision, and the page's shape is the better one.
+- **A config entry cannot be edited here** — by design, and the remove
+  confirmation says so rather than leaving the operator to discover it.

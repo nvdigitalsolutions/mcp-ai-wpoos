@@ -40,11 +40,7 @@ final class MachineToolAllowlist
      */
     public function slugs(): array
     {
-        $stored = $this->settings->value('machine_tools');
-
-        if (is_string($stored)) {
-            $stored = preg_split('/[\s,]+/', $stored) ?: array();
-        }
+        $stored = self::parse($this->settings->value('machine_tools'));
 
         $slugs = array();
 
@@ -68,6 +64,42 @@ final class MachineToolAllowlist
             }
 
             $slugs[$slug] = true;
+        }
+
+        return array_keys($slugs);
+    }
+
+    /**
+     * Split a stored value into slugs.
+     *
+     * The setting is stored as a comma-separated string (a `text` field, so the
+     * settings form renders it), but the store JSON-decodes, so an array is
+     * accepted as well — a picker may write one directly.
+     *
+     * @return list<string>
+     */
+    public static function parse(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = preg_split('/[\s,]+/', $value) ?: array();
+        }
+
+        if (! is_array($value)) {
+            return array();
+        }
+
+        $slugs = array();
+
+        foreach ($value as $candidate) {
+            if (! is_string($candidate)) {
+                continue;
+            }
+
+            $slug = trim($candidate);
+
+            if ('' !== $slug) {
+                $slugs[$slug] = true;
+            }
         }
 
         return array_keys($slugs);
