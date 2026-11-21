@@ -160,8 +160,11 @@ Concretely:
    `POST /api/v1/tools/{tool}` — [149](149-laravel-admin-parity-implementation-plan.md)
    §123. Three gates: the caller must be a machine, the assistant must be assigned
    the tool, and an operator must allowlist it (`oos.machine_tools`, empty by
-   default). The capability flags that would make "safe for a machine" a property
-   of the tool rather than an operator list are declared by no tool yet.*
+   default). A tool that is assigned but not allowlisted — or that declares a
+   gated capability flag — does not run: it queues an approval and the same call
+   executes once a person approves it (149 §124). The capability flags that would
+   make "safe for a machine" a property of the tool rather than an operator list
+   are declared by no tool yet.*
 
 ## 9. Risks, and what would change this decision
 

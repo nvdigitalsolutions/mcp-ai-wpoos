@@ -12579,3 +12579,90 @@ revocation.
   natural next step, not a redesign.
 - **The panel form** for minting remains unbuilt and still may not earn its place:
   minting is an operator act, and the console commands now cover the lifecycle.
+
+## 124. Machine tool approvals — propose, approve, retry (159 slice 4, write half)
+
+§123 shipped machine tool execution that could only **read**: anything not on
+`oos.machine_tools` was refused. That is safe and unusable — an integration that
+needs one write had no path at all. This section replaces the refusal with the
+pattern the agent guidance actually recommends: the machine **proposes**, a person
+decides, and the same call executes once it is approved.
+
+### 124.1 What changed
+
+| Call | Before (§123) | Now |
+|---|---|---|
+| allowlisted, no gated flag | executes | executes |
+| allowlisted, declares a gated flag | executes | **queues an approval** |
+| assigned but not allowlisted | `403 tool_not_machine_safe` | **queues an approval (202)** |
+| not assigned | `403 tool_not_assigned` | unchanged |
+
+The third row is the point. Denying made every write impossible; proposing makes
+it possible and still requires a human. The second row is where the capability
+flags from §123.4 finally do something: a tool that declares `write`,
+`state_changing`, `mutating`, `destructive` or `external_side_effect` is routed
+to approval **even if an operator allowlisted it** — an allowlist is a decision
+about a tool, and a flag is a property of it. No tool declares flags yet, so the
+row is currently inert; it is wired and tested through the flag-free path.
+
+### 124.2 The protocol
+
+1. **First call** — 202 with `status: pending_approval`, an `approval_id` and an
+   expiry. A row lands in `nvoos_approvals` with `tool`, `arguments`,
+   `arguments_hash`, `assistant_id`, `requester_id` and `expires_at`.
+2. **Retries while pending** — return the *same* `approval_id`. A retrying client
+   must not fill the queue with duplicates.
+3. **Approval** — the existing `/api/v1/approvals/{id}/approve` path, unchanged.
+4. **Retry after approval** — the call executes and the approval is **consumed**
+   (`status = consumed`, `consumed_at` set). Consumption is a conditional update
+   (`where consumed_at is null`), so two racing retries cannot both execute.
+5. **Denial** — 403 `approval_denied`, and **no re-queue** for the same call until
+   its window lapses. A refusal is a decision about that payload; asking again with
+   different arguments is a new hash and a new request.
+
+Three properties make that safe, and each has its own test:
+
+- **single use** — an approved call cannot be replayed on one decision;
+- **argument-bound** — `arguments_hash` is a SHA-256 of the canonically
+  key-sorted payload, so approving `{color:#fff}` cannot authorise `{color:#000}`;
+- **expiring** — a stale approval is not reused; the client is sent back to queue.
+
+### 124.3 The schema gap this uncovered
+
+`nvoos_approvals` has carried `tenant_id` since the approvals panel shipped, and
+both `Approval`'s global scope and `ApprovalsController::store()` depend on it —
+but **no migration ever created the column**. A fresh `migrate` produced a table
+that every tenant-scoped read would fail on. This slice adds a guarded migration
+for it, alongside the two columns the protocol needs (`arguments_hash`,
+`consumed_at`), so a fresh install now matches the live schema instead of
+depending on a manual alteration.
+
+The migration is also the reason the model still has no date casts: adding
+`expires_at` as a cast would change the approvals panel's JSON payload. The
+controller parses the raw string instead, and says so where it does it.
+
+### 124.4 Gates
+
+| Run | Result |
+|---|---|
+| `MachineToolApprovalTest` (new) | **7 tests** — a pending call is idempotent (same id, one row); approval executes and consumes; a consumed approval cannot be replayed (a retry queues again); a denial refuses and does not re-queue; an expired approval is not reused; a different payload is not covered; the row carries the estate and the requester |
+| `MachineToolExecutionTest` + `MintMachineTokenTest` + `MachineTokenLifecycleTest` | **33 tests / 101 assertions, 0 failures** in total across the four machine-credential suites |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 errors, 0 warnings** on the controller, the migration and both tests |
+| Schema check | `SHOW COLUMNS FROM nvoos_approvals` on the live database already had `tenant_id`; the new migration is guarded and adds only what is missing, so it is a no-op there and a repair on a fresh install |
+
+### 124.5 What this leaves open
+
+- **Queue flooding.** A machine can propose repeatedly. `throttle:console` bounds
+  the rate, and a pending request is deduplicated, but nothing caps how many
+  *distinct* calls one credential may propose per day. If that becomes real, the
+  cap belongs next to the throttle, not in the controller.
+- **Capability flags are still undeclared** (§123.4). Until tools declare them, the
+  "declares a gated flag" branch is untested against a real tool; it is exercised
+  through the flag-free path only.
+- **Approving against a stale assistant.** The approval records the assistant and
+  the arguments, not the assistant's *configuration*; an approval granted before a
+  tool was removed from the assistant's list would still be consumed on retry only
+  if the assignment check passes — which it would not, so the call falls back to
+  `tool_not_assigned`. That is the safe ordering, and it is worth keeping in mind
+  rather than adding a second snapshot.
+- **Expiry warnings and panel-side revocation** are still unbuilt; see §125.
