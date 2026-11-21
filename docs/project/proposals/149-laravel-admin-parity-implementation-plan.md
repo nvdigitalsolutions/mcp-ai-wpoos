@@ -13784,3 +13784,25 @@ The remaining 43 are the core content readers and writers, the project/task set,
 the settings and profession reads, the job and batch lists, and three singletons
 (`bulk_import`, `recall_memory`, `validate_tool_schema`). Their tests are the next
 batches; Proposal 160 §8's 15–25 rows per PR rule splits them two ways.
+
+## 145. The marker-interface gap gets a decision (2026-11-21)
+
+§136 recorded six marker interfaces that WordPress reads and core does not, and
+deferred how each maps to the Laravel runtime. Proposal 161 answers it.
+
+Two measured facts changed the shape of the answer. First, core implements
+**none** of the six — a grep of `lib/core/src`, `lib/laravel-adapter/src` and
+`app/` for any of the method names returns zero files — so the gap is inert, and
+porting the contracts alone would change nothing. Second, three of the six have a
+live WordPress consumer with a visible effect: LLM context hygiene
+(`rest.php:4428`), model selection at irreversibility ≥ 0.5
+(`model-selector.php:627`), and the necessity gate (`necessity-gate.php:373`).
+
+The decision is **one reader per seam, not six ports**: the LLM sanitizer becomes
+an opt-in declaration read by the orchestrator (phase 1); the safety profile is
+expressed through the annotations already reviewed per row; the data contract,
+model requirements, rules and flow stage stay recorded until a core consumer
+exists. Proposal 161 §3 carries the standing caveat: a green readiness batch is
+not behavioural equivalence.
+
+No code ships with this section.
