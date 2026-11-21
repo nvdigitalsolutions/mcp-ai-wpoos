@@ -5,13 +5,10 @@ namespace App\Console\Commands;
 use App\Mail\MachineTokensExpiring;
 use App\Support\ActivityRecorder;
 use App\Support\MachineTokens;
-use App\Support\PersonalTokens;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Laravel\Sanctum\PersonalAccessToken;
 use Throwable;
 
 /**
@@ -38,6 +35,9 @@ class ListExpiringMachineTokens extends Command
 
     protected $description = 'List machine tokens expiring soon (exit 1 when there are any).';
 
+    /** How long an acknowledgement silences the same set. */
+    private const ACK_DAYS = 7;
+
     public function handle(): int
     {
         $days = (int) $this->option('days');
@@ -48,47 +48,31 @@ class ListExpiringMachineTokens extends Command
             return self::FAILURE;
         }
 
-        $window = Carbon::now()->addDays($days);
-        $tokens = $this->machineTokens();
+        $tokens = MachineTokens::reportable();
 
         if ($this->option('all')) {
             $this->line(sprintf(
                 '%d machine token(s) in total; %d never expire and can never lapse.',
-                $tokens->count(),
-                $tokens->filter(static fn (PersonalAccessToken $token): bool => null === $token->expires_at)->count()
+                count($tokens),
+                count(array_filter(
+                    $tokens,
+                    static fn (array $row): bool => null === $row['expires_at']
+                ))
             ));
         }
 
-        $expiring = $tokens->filter(
-            static fn (PersonalAccessToken $token): bool => null !== $token->expires_at
-                && $token->expires_at->lessThanOrEqualTo($window)
-        );
+        $rows = MachineTokens::expiring($days);
 
-        if ($expiring->isEmpty()) {
+        if (array() === $rows) {
             $this->info(sprintf('No machine tokens expire within %d days.', $days));
 
             return self::SUCCESS;
         }
 
-        $rows = $expiring->map(static function (PersonalAccessToken $token): array {
-            $left = null === $token->expires_at
-                ? null
-                : (int) ceil(Carbon::now()->diffInDays($token->expires_at, false));
-
-            return array(
-                'id' => (int) $token->getKey(),
-                'name' => (string) $token->name,
-                'owner' => (string) ($token->tokenable?->email ?? $token->tokenable_id),
-                'scopes' => implode(', ', (array) $token->abilities),
-                'expires' => (string) $token->expires_at?->toDateTimeString(),
-                'days_left' => null === $left ? '-' : (string) $left,
-            );
-        })->values()->all();
-
         $this->warn(sprintf(
             '%d machine token(s) expire within %d days. Rotate each before it lapses: '
             . 'nvoos:machine-token:rotate {id}.',
-            $expiring->count(),
+            count($rows),
             $days
         ));
 
@@ -97,19 +81,45 @@ class ListExpiringMachineTokens extends Command
             array_map(
                 static fn (array $row): array => array(
                     $row['id'],
-                    $row['name'],
-                    $row['owner'],
-                    $row['scopes'],
+                    $row['label'],
+                    $row['holder'],
+                    implode(', ', $row['scopes']),
                     $row['expires'],
-                    $row['days_left'],
+                    self::daysLeft($row),
                 ),
                 $rows
             )
         );
 
-        $this->publishFinding($rows, $days, $expiring->count());
+        $this->publishFinding($rows, $days);
 
         return self::FAILURE;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function daysLeft(array $row): string
+    {
+        if (null === $row['expires_at']) {
+            return '-';
+        }
+
+        return (string) (int) ceil(Carbon::now()->diffInDays(Carbon::parse((string) $row['expires_at']), false));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private static function soonestExpiry(array $rows): ?Carbon
+    {
+        foreach ($rows as $row) {
+            if (null !== $row['expires_at']) {
+                return Carbon::parse((string) $row['expires_at']);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -125,19 +135,19 @@ class ListExpiringMachineTokens extends Command
      *
      * @param list<array<string, mixed>> $rows
      */
-    private function publishFinding(array $rows, int $days, int $count): void
+    private function publishFinding(array $rows, int $days): void
     {
         $signature = sha1(implode(',', array_column($rows, 'id')));
 
-        if (! $this->shouldAlert($signature)) {
-            $this->line('  (alert suppressed: the same set was reported within 24 hours)');
+        if (! $this->shouldAlert($signature, $rows)) {
+            $this->line('  (alert suppressed: acknowledged, or the same set was reported within 24 hours)');
 
             return;
         }
 
         app(ActivityRecorder::class)->record(
             'machine_token.expiring',
-            sprintf('%d machine credential(s) expire within %d days.', $count, $days),
+            sprintf('%d machine credential(s) expire within %d days.', count($rows), $days),
             null,
             array(
                 'signature' => $signature,
@@ -149,8 +159,37 @@ class ListExpiringMachineTokens extends Command
         $this->deliver($rows, $days);
     }
 
-    private function shouldAlert(string $signature): bool
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function shouldAlert(string $signature, array $rows): bool
     {
+        $now = Carbon::now();
+
+        // An acknowledgement is a NEW event (activity rows are append-only). It
+        // silences this exact set for ACK_DAYS, but never past the soonest
+        // expiry: a credential about to lapse must still be shouted about.
+        $ack = DB::table('nvoos_activity_events')
+            ->where('type', 'machine_token.expiry_acknowledged')
+            ->latest('id')
+            ->first();
+
+        if (null !== $ack) {
+            $context = json_decode((string) $ack->context, true);
+
+            if (is_array($context) && ($context['signature'] ?? null) === $signature) {
+                $until = Carbon::parse((string) $ack->created_at)->addDays(self::ACK_DAYS);
+                $soonest = self::soonestExpiry($rows);
+
+                if (null !== $soonest && $soonest->lessThan($until)) {
+                    $until = $soonest;
+                }
+
+                if ($now->lessThan($until)) {
+                    return false;
+                }
+            }
+        }
         $last = DB::table('nvoos_activity_events')
             ->where('type', 'machine_token.expiring')
             ->latest('id')
@@ -166,7 +205,7 @@ class ListExpiringMachineTokens extends Command
             return true;
         }
 
-        return Carbon::parse((string) $last->created_at)->lessThan(Carbon::now()->subDay());
+        return Carbon::parse((string) $last->created_at)->lessThan($now->copy()->subDay());
     }
 
     /**
@@ -176,6 +215,18 @@ class ListExpiringMachineTokens extends Command
     {
         $email = trim((string) config('oos.machine_alerts.email', ''));
 
+        $mailRows = array_map(
+            static fn (array $row): array => array(
+                'id' => $row['id'],
+                'name' => $row['label'],
+                'owner' => $row['holder'],
+                'scopes' => implode(', ', $row['scopes']),
+                'expires' => $row['expires'],
+                'days_left' => self::daysLeft($row),
+            ),
+            $rows
+        );
+
         if ('' === $email) {
             $this->line('  (no alert address: set oos.machine_alerts.email or NVOOS_MACHINE_ALERT_EMAIL)');
 
@@ -183,7 +234,7 @@ class ListExpiringMachineTokens extends Command
         }
 
         try {
-            Mail::to($email)->send(new MachineTokensExpiring($rows, $days));
+            Mail::to($email)->send(new MachineTokensExpiring($mailRows, $days));
         } catch (Throwable $exception) {
             // A delivery failure must not hide the finding or change the exit code.
             $this->warn('  alert not delivered: '.$exception->getMessage());
@@ -192,40 +243,5 @@ class ListExpiringMachineTokens extends Command
         }
 
         $this->line(sprintf('  alert emailed to %s', $email));
-    }
-
-    /**
-     * Credentials that are machine principals: scoped, and not the `*` that means
-     * the owner's own authority.
-     *
-     * @return Collection<int, PersonalAccessToken>
-     */
-    private function machineTokens(): Collection
-    {
-        return PersonalAccessToken::query()
-            ->with('tokenable')
-            ->orderBy('expires_at')
-            ->get()
-            ->filter(static function (PersonalAccessToken $token): bool {
-                $name = (string) $token->name;
-
-                // A machine credential is identified by its prefix (§129).
-                if (str_starts_with($name, MachineTokens::NAME_PREFIX)) {
-                    return true;
-                }
-
-                // A person's own token is the inventory's and the owner's concern;
-                // it is not a machine credential however narrowly it is scoped.
-                if (str_starts_with($name, PersonalTokens::NAME_PREFIX)) {
-                    return false;
-                }
-
-                // Everything else predates the prefix: keep the old heuristic so a
-                // machine token minted before it still appears in the report.
-                $abilities = is_array($token->abilities) ? $token->abilities : array();
-
-                return array() !== $abilities && ! in_array('*', $abilities, true);
-            })
-            ->values();
     }
 }

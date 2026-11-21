@@ -2,13 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Operator\Pages\MachineCredentials;
 use App\Mail\MachineTokensExpiring;
+use App\Models\Tenant;
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -34,6 +38,8 @@ final class MachineTokenExpiryAlertTest extends TestCase
         parent::setUp();
 
         Mail::fake();
+
+        Filament::setCurrentPanel(Filament::getPanel('operator'));
 
         config(array('oos.machine_alerts.email' => self::ADDRESS));
     }
@@ -156,6 +162,56 @@ final class MachineTokenExpiryAlertTest extends TestCase
 
         $this->assertSame(0, $code, Artisan::output());
         Mail::assertNothingSent();
+    }
+
+    public function test_an_acknowledgement_silences_the_same_set(): void
+    {
+        $this->token('ci-catalogue', 10);
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        $this->actingAs($this->operator());
+        Livewire::test(MachineCredentials::class)->call('acknowledgeExpiryAlerts');
+
+        $code = Artisan::call('nvoos:machine-token:expiring');
+        $output = Artisan::output();
+
+        $this->assertSame(1, $code, 'The finding still exists; only the mail is silenced.');
+        $this->assertStringContainsString('alert suppressed', $output);
+
+        Mail::assertSent(MachineTokensExpiring::class, 1);
+    }
+
+    public function test_an_acknowledgement_ends_at_the_soonest_expiry(): void
+    {
+        $this->token('ci-catalogue', 2);
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        $this->actingAs($this->operator());
+        Livewire::test(MachineCredentials::class)->call('acknowledgeExpiryAlerts');
+
+        Carbon::setTestNow(Carbon::now()->addDays(3));
+
+        Artisan::call('nvoos:machine-token:expiring');
+
+        $this->assertGreaterThanOrEqual(
+            2,
+            Mail::sent(MachineTokensExpiring::class)->count(),
+            'A credential that has passed its expiry must not stay silenced.'
+        );
+    }
+
+    private function operator(): User
+    {
+        $user = User::factory()->admin()->create();
+
+        Tenant::query()
+            ->findOrFail(Tenant::OPERATOR_ID)
+            ->users()
+            ->syncWithoutDetaching(array($user->id => array('role' => 'owner')));
+
+        return $user;
     }
 
     private function token(string $name, int $days): User
