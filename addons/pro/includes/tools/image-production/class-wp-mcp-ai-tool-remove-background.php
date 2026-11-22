@@ -401,7 +401,7 @@ PYTHON;
 		// If result is an error, return sanitized error.
 		if ( is_wp_error( $result ) ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- WP_Error serialised for the prompt, not a tool envelope.
 				'error'   => array(
 					'code'    => $result->get_error_code(),
 					'message' => $result->get_error_message(),
