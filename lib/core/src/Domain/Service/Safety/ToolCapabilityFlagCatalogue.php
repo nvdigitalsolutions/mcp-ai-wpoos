@@ -1496,7 +1496,6 @@ final class ToolCapabilityFlagCatalogue
         'web_browser' => array('async', 'external-api', 'may-timeout', 'network-dependent', 'non-deterministic', 'pro-only', 'rate-limited', 'read-only', 'requires-capability', 'requires-credentials', 'resource-intensive'),
         'web_search' => array('cacheable', 'external-api', 'network-dependent', 'non-deterministic', 'rate-limited', 'read-only', 'requires-capability', 'requires-credentials'),
         'web_search_validated' => array('cacheable', 'external-api', 'network-dependent', 'non-deterministic', 'rate-limited', 'read-only', 'requires-capability', 'requires-credentials'),
-        'when_to_use' => array('cacheable', 'idempotent', 'local-only', 'pro', 'read-only'),
         'withdraw_student_eca' => array('database-write', 'pro'),
         'withdrawal_strategy_planner' => array('computation', 'pro'),
         'woo_coupons' => array('local-only', 'pro', 'read-only', 'requires-plugin', 'write'),

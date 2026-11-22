@@ -15257,3 +15257,85 @@ human decision. The allowlist is unchanged.
 | full Laravel app suite | **1,952 tests, 20,655 assertions** |
 | phpcs PSR-12 (no path arguments) | exit 0 |
 | re-run of `bin/measure-necessity-gate.php` | 143 / 46 / 10 / 0 |
+
+## 161. The capability-flag drift gate runs (2026-11-22)
+
+§152 shipped `bin/generate-tool-capability-flags.php --check` as "a drift gate",
+but nothing executed it. A gate that only runs when a person remembers is a
+script; this wires it into CI.
+
+### 161.1 Why it blocks
+
+The catalogue is the necessity gate's **only** vocabulary for a core tool that
+declares no flags of its own — `/workspace/oos/lib/core/src/Domain/Service/Safety/ToolCapabilityFlagCatalogue.php`.
+If a WordPress tool adds `irreversible` and the catalogue is not regenerated, the
+Laravel runtime keeps the old verdict and nothing says so. That is a silent
+policy change, so the check is a **hard gate**.
+
+It is a separate job (`capability-flags`) rather than a step in the existing
+`readiness` job on purpose: that job is deliberately `continue-on-error` while it
+soaks, and a step inside it would inherit the exemption — a gate that cannot fail
+the build.
+
+### 161.2 Proven to fail
+
+| step | result |
+|---|---|
+| baseline | `Capability-flag catalogue is in step with the WordPress corpus (1466 tools).` — exit 0 |
+| add `performance-impact` to `erlang_c_queue_health`'s declared flags | `ToolCapabilityFlagCatalogue.php is stale. Run: php bin/generate-tool-capability-flags.php` — **exit 1** |
+| revert the probe | exit 0 |
+
+The failing message names the file and the fix, which is the difference between a
+gate someone can act on and a red cross.
+
+### 161.3 The gate's first run found a generator defect
+
+The first CI run went red while the local run was green. That is the gate doing
+its job: the comparison is byte-for-byte, and the generator was not
+platform-independent.
+
+Rendering the catalogue on Linux reproduced it — exactly one row differed:
+
+| platform | `when_to_use` |
+|---|---|
+| Windows | `cacheable, idempotent, local-only, pro, read-only` |
+| Linux | `cacheable, external-api, idempotent, pro, read-only` |
+
+Two causes, both fixed:
+
+1. **Filesystem order decided a duplicate.** `RecursiveDirectoryIterator` order is
+   not stable across platforms, and the scan rule is "first declaration wins".
+   The file list is now sorted per directory, so the winner is the same
+   everywhere.
+2. **An abstract method swallowed the next method's body.** Two Pro base classes
+   declare `abstract public function get_slug();` — no body. The extractor walked
+   forward to the next `{`, which belonged to the *following* method, and read
+   the first string in it: `'when_to_use'`, a **metadata key**, not a slug. The
+   scan now stops at `;` as well as `{`.
+
+After both fixes Windows and Linux render byte-identical files, and the
+catalogue drops the bogus row (**1,466 → 1,465**). The key was harmless at
+lookup time — no tool has that slug — but it made the artefact non-deterministic
+and represented a metadata key as a tool.
+
+### 161.4 What is deliberately not changed
+
+- **The readiness audit stays report-only.** Its `continue-on-error` is a
+  documented soak decision, not an oversight; promoting it is its own call with
+  its own evidence.
+- **The media worker's Node tests are not in CI.** `node --test` passes locally
+  (10 tests, §160), but `npm ci` on a Sharp/`@neplex/vectorizer` dependency tree
+  has never run on the runner, and a first-time blocking job that fails for
+  installation reasons blocks every merge. Left as the next CI item rather than
+  guessed at.
+
+### 161.5 Gates
+
+| Gate | Result |
+|---|---|
+| `php bin/generate-tool-capability-flags.php --check` | exit 0 — **1,465 tools** in step |
+| drift probe | exit 1, then exit 0 after revert |
+| Windows vs Linux render | byte-identical after the fix |
+| workflow YAML parse | two jobs: `readiness`, `capability-flags` |
+| full `lib/core` suite | 1,951 tests, 15,664 assertions |
+| phpcs PSR-12 | exit 0 |
