@@ -359,14 +359,9 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $test_endpoint, 'GET', array() );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => sprintf(
-					/* translators: %s: error message */
-					__( 'Connection test failed: %s', 'mcp-ai-wpoos-pro' ),
-					$result->get_error_message()
-				),
-			);
+			// execute() returns this verbatim, so propagate the underlying
+			// error rather than flattening it into a message string.
+			return $result;
 		}
 
 		return array(

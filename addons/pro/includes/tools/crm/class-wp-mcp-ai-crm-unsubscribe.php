@@ -304,7 +304,7 @@ class WP_MCP_AI_CRM_Unsubscribe {
 		if ( is_wp_error( $result ) ) {
 			return new WP_REST_Response(
 				array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- RFC 8058 unsubscribe response body, not a tool envelope.
 					'message' => $result->get_error_message(),
 				),
 				400

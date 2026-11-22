@@ -163,14 +163,14 @@ class WP_MCP_AI_Tool_Get_Contact_Interactions implements WP_MCP_AI_Tool_Interfac
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array Contact interactions result.
+	 * @return array|WP_Error Contact interactions result, or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_crm_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'CRM Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'toolkit_not_available',
+				__( 'CRM Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -182,9 +182,10 @@ class WP_MCP_AI_Tool_Get_Contact_Interactions implements WP_MCP_AI_Tool_Interfac
 		$limit            = min( max( $limit, 1 ), 500 );
 
 		if ( ! $contact_id ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'A valid contact_id is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'A valid contact_id is required.', 'mcp-ai-wpoos-pro' ),
+				array( 'field' => 'contact_id' )
 			);
 		}
 
