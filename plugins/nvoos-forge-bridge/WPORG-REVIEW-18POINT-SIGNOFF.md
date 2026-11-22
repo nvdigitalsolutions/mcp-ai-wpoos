@@ -249,3 +249,81 @@ Full write-up in `WPORG-REVIEW-FINDINGS.md`; the reply draft is
 
 1. Build + upload `build/nvoos-forge-bridge-v0.3.1.zip`.
 2. SVN: copy the ZIP contents into `trunk/`, then tag `tags/0.3.1/`.
+
+---
+
+## 0.3.2 re-submission — T2 fixes + gate-state route (2026-11-22)
+
+Upload candidate: `build/nvoos-forge-bridge-v0.3.2.zip` (16 files).
+Review ID: `R nvoos-forge-bridge/vsamtani/5Nov26/T2 10Nov26/4.4RC1 (P0TDX399590HGN)`.
+
+The 0.3.1 security fixes (form visibility, client IP, response capture) are
+retained unchanged; 0.3.2 is the version uploaded to the review thread because
+it also carries the `GET /gate` route and the packaging corrections below.
+
+### Changes since the 0.3.0 submission
+
+- **0.3.1 — T2 review fixes** (see the section above and
+  `WPORG-REVIEW-FINDINGS.md`): published-only form resolution for JFB and
+  Elementor, `REMOTE_ADDR`-authoritative rate-limit IP with a trusted-proxy
+  filter, and ajax-equivalent native-response capture. Same-class sweep:
+  routing-carrier override, redirect control characters / object
+  deserialization, uninstall transient cleanup; CI public-write-route gate.
+- **0.3.1 — managed-frontend revalidation** (shipped in the same code batch):
+  optional revalidate endpoint + `NVOOS_REVALIDATE_TOKEN`; disabled until both
+  are saved.
+- **0.3.2 — read-only gate-state route**: `GET /gate` reports maintenance /
+  coming-soon state (booleans, mode keyword, gate-plugin slug) from core,
+  Elementor, or WP Maintenance Mode, with a filter for other gates.
+
+### Packaging corrections made in this pass
+
+| Item | Before | After |
+|---|---|---|
+| `languages/nvoos-forge-bridge.pot` | `Project-Id-Version` 0.3.1; four managed-revalidate strings missing | Regenerated at 0.3.2 — 65 msgids, 0 lost, 4 added |
+| `readme.txt == External Services ==` | GitHub dispatch + Turnstile only | Adds the optional revalidate hop (user-configured URL, bearer token, off by default) |
+| `readme.txt == Changelog ==` | 0.3.1 entry omitted the managed-tier revalidate setting | 0.3.1 bullet added |
+
+### Version sweep (all 0.3.2)
+
+| Location | Value |
+|---|---|
+| `nvoos-forge-bridge.php` header `Version:` | 0.3.2 |
+| `NVOOS_FORGE_BRIDGE_VERSION` constant | 0.3.2 |
+| `readme.txt` `Stable tag:` | 0.3.2 |
+| `readme.txt` changelog | 0.3.2 entry (gate route); 0.3.1/0.3.0 down kept |
+| `languages/nvoos-forge-bridge.pot` `Project-Id-Version` | NV oOS Forge Bridge 0.3.2 |
+| `.wordpress-org/README.md` SVN runbook examples | 0.3.2 |
+| ZIP | `build/nvoos-forge-bridge-v0.3.2.zip` — 16 files, readme.txt at the folder root |
+
+### Validation run (2026-11-22)
+
+| Gate | Result |
+|---|---|
+| `php -l` on every shipped PHP file | No syntax errors |
+| `vendor/bin/phpcs --standard=phpcs.xml.dist .` | 0 violations (exit 0) |
+| PHPUnit (own config, wp-phpunit, WP latest / PHP 8.2) | **80/80 tests, 229 assertions, OK** |
+| `.github/scripts/check-public-write-routes.php` | Exit 0 — every public write route reviewed |
+| `wp plugin check` (PCP) against the built ZIP, full severity | **0 errors, 0 warnings** (`PCP_EXIT:0`) |
+| POT msgid set diff | 0 lost, 4 added (revalidate settings) |
+
+### Reviewer notes for the new route (pre-answered)
+
+- **Read-only** — `GET /gate` returns `{ maintenance, mode, plugin, checkedAt }`.
+  No URLs, template ids, role lists, secrets, or option values other than the
+  gate-plugin slug.
+- **Disclosure class matches `/health`** — the maintenance state is already
+  observable by any visitor (503 / holding page); the route reports which gate
+  is responsible, which is what the build pipeline needs to distinguish "gated"
+  from "edge cache served an anonymous page".
+- **No external calls** — the route reads local options / filesystem state only.
+
+### Remaining owner-side steps (not code)
+
+1. Upload `build/nvoos-forge-bridge-v0.3.2.zip` to the review thread.
+2. SVN: copy the ZIP contents into `trunk/`, then tag `tags/0.3.2/`.
+3. ~~Optional: capture a third screenshot of the redirects settings section and a
+   fourth of the revalidate fields~~ — done 2026-11-22: `screenshot-3.png`
+   (Stored redirects) and `screenshot-4.png` (revalidate fields), captured by
+   `bin/capture-nvoos-forge-bridge-sections.js`; `readme.txt` and
+   `.wordpress-org/README.md` updated in the same commit.

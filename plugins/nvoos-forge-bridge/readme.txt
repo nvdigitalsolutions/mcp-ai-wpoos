@@ -20,6 +20,7 @@ NV oOS Forge Bridge is the WordPress half of a CMS-to-CI rebuild loop, and it wo
 * **Health** — `GET /wp-json/nvoos-forge/v1/health` returns a redacted status (versions, booleans, the webhook host) — never tokens, secrets, or full URLs.
 * **Gate state** — `GET /wp-json/nvoos-forge/v1/gate` reports whether the FRONT END is gated (maintenance / coming soon) and by what: WordPress core's `.maintenance`, Elementor's Maintenance Mode, or WP Maintenance Mode. Read-only and public (the same disclosure class as `/health`), booleans + a mode keyword + a plugin slug only. Any other gate plugin declares itself through the `nvoos_forge_bridge_gate_state` filter. The Astro Forge uses it to tell "the site is gated" from "the gate answered a cached anonymous page".
 * **Form submissions from a generated static site** — `POST /wp-json/nvoos-forge/v1/forms/submit` accepts the forged site's rebuilt forms and dispatches them to the NATIVE handler (JetFormBuilder's form processor or Elementor Pro's form ajax handler), so validation, storage, mail, and post-submit actions run exactly as on WordPress — the plugin never reimplements form handling. Submissions are gated by a CORS origin allowlist (your static origin, one per line), per-IP rate limits, a mandatory honeypot + timestamp spam floor (optional Cloudflare Turnstile with the `action` and `hostname` pinned to your allowlisted origin), and server-side sanitization of every field. Unknown form → 404; no form handler → 501; caught bots get a silent success. The no-JavaScript fallback is an ordinary form POST that redirects back to the static page with `?form=ok|error`.
+* **Direct revalidation for managed frontends (optional)** — when you supply a revalidate endpoint (the forged site's `POST /api/revalidate` URL) and the shared `NVOOS_REVALIDATE_TOKEN`, a content change also sends the affected cache tags straight to that endpoint over a server-to-server POST, so the managed frontend purges in seconds instead of waiting for a rebuild. Independent of the GitHub dispatch and off until both fields are saved.
 * **Stored redirects for a generated static site** — `GET /wp-json/nvoos-forge/v1/redirects` normalizes the redirect rules already stored by **Redirection** (`redirection_items`) and **Rank Math** (`rank_math_redirections`) into `{ source, target, type }`, so a forged static site keeps legacy URLs alive on cutover day. Read-only and opt-in. Only enabled, exact URL matches are exported (max 500, `truncated` reported); regex, query-scoped, and non-URL match types cannot be expressed portably in a static `_redirects` file and are returned as skipped counts instead of being silently widened. An optional shared token gates the endpoint when you do not want your URL structure publicly readable.
 
 == Installation ==
@@ -73,6 +74,8 @@ Optionally, when you enable the Cloudflare Turnstile captcha for the forms bridg
 * **Cloudflare Terms of Service:** https://www.cloudflare.com/website-terms/
 * **Cloudflare Privacy Policy:** https://www.cloudflare.com/privacypolicy/
 
+Optionally, when you save a revalidate endpoint, each content change also sends one server-to-server POST to that URL (the site you configure — normally your own managed frontend) with the affected cache tags and a `Bearer` token. The target is whatever URL you enter; nothing is sent unless both the URL and the token are saved, and no data goes to NV Digital Solutions.
+
 == Source Code ==
 
 The uncompiled source of this plugin lives in the public repository at https://github.com/nvdigitalsolutions/mcp-ai-wpoos under `plugins/nvoos-forge-bridge/`. The plugin ships no compiled assets; everything in the package is the readable source.
@@ -81,6 +84,8 @@ The uncompiled source of this plugin lives in the public repository at https://g
 
 1. Settings page for the rebuild webhook before configuration — the warning notice explains that content changes do not trigger rebuilds yet.
 2. Settings page after configuring the GitHub dispatches URL, token, and HMAC secret — credentials are write-only, shown masked.
+3. Stored redirects section — opt-in export of the rules already stored by Redirection / Rank Math (the provider is detected automatically) with an optional export token.
+4. Optional revalidation for managed frontends — a revalidate endpoint and its write-only bearer token; the hop is disabled until both are saved.
 
 == Changelog ==
 
@@ -88,6 +93,7 @@ The uncompiled source of this plugin lives in the public repository at https://g
 * New: `GET /wp-json/nvoos-forge/v1/gate` — the front-end gate state (maintenance / coming soon) for the Astro Forge's page-session probe (Proposal 152). Detects WordPress core `.maintenance`, Elementor Maintenance Mode, and WP Maintenance Mode; `nvoos_forge_bridge_gate_state` lets any other gate plugin declare itself. Read-only: booleans, a mode keyword and a plugin slug.
 
 = 0.3.1 =
+* New: optional direct revalidation for managed frontends — a configured revalidate endpoint (`/api/revalidate`) plus the shared `NVOOS_REVALIDATE_TOKEN` receives the affected cache tags over a server-to-server POST on each content change, so a managed frontend purges in seconds; independent of the GitHub dispatch and off by default.
 * Security: the public form endpoint only dispatches to PUBLISHED, non-password-protected forms. A draft, pending, private, trashed, or password-protected JetFormBuilder / Elementor form is treated as unknown (404) instead of being submitted to.
 * Security: a submitted field can no longer spoof JetFormBuilder's routing carriers (`_jet_engine_booking_form_id` / `_jet_engine_refer`) to re-target a dispatch to a different form — the resolved, visibility-checked identifier always wins.
 * Security: the per-IP rate limit no longer trusts a client-supplied `X-Forwarded-For` header. `REMOTE_ADDR` is used by default; a forwarding chain is honored only when the direct peer is a configured trusted proxy (`nvoos_forge_bridge_trusted_proxies`), and then the rightmost untrusted hop is used.

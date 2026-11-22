@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Forge Bridge 0.3.1\n"
+"Project-Id-Version: NV oOS Forge Bridge 0.3.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-forge-bridge\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-08T19:19:37+00:00\n"
+"POT-Creation-Date: 2026-11-22T16:08:43+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-forge-bridge\n"
@@ -39,225 +39,241 @@ msgstr ""
 msgid "https://nvdigitalsolutions.com"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-plugin.php:76
-#: includes/class-nvoos-forge-bridge-plugin.php:77
-#: includes/class-nvoos-forge-bridge-settings.php:401
+#: includes/class-nvoos-forge-bridge-plugin.php:78
+#: includes/class-nvoos-forge-bridge-plugin.php:79
+#: includes/class-nvoos-forge-bridge-settings.php:458
 msgid "Forge Bridge"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:302
+#: includes/class-nvoos-forge-bridge-settings.php:343
 msgid "You are not allowed to change these settings."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:403
+#: includes/class-nvoos-forge-bridge-settings.php:460
 msgid "Fires a signed GitHub repository_dispatch when content changes, so the Astro Forge rebuilds the generated frontend. Configure the target repository, a token with dispatch rights, and a shared HMAC secret."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:406
+#: includes/class-nvoos-forge-bridge-settings.php:463
 msgid "Settings saved."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:409
+#: includes/class-nvoos-forge-bridge-settings.php:466
 msgid "The rebuild webhook is not fully configured — content changes will not trigger rebuilds yet."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:412
+#: includes/class-nvoos-forge-bridge-settings.php:469
 msgid "Form submissions are not enabled — enable the bridge and allowlist your static origin before the forged forms go live."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:415
+#: includes/class-nvoos-forge-bridge-settings.php:472
 msgid "Redirect export is enabled but no supported redirect plugin (Redirection or Rank Math) was detected — the endpoint will return an empty list."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:420
+#: includes/class-nvoos-forge-bridge-settings.php:477
 msgid "Rebuild webhook"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:423
+#: includes/class-nvoos-forge-bridge-settings.php:480
 msgid "Enable rebuild webhook"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:427
+#: includes/class-nvoos-forge-bridge-settings.php:484
 msgid "GitHub dispatches URL"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:430
+#: includes/class-nvoos-forge-bridge-settings.php:487
 msgid "Empty disables the webhook."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:434
+#: includes/class-nvoos-forge-bridge-settings.php:491
 msgid "GitHub token"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:437
+#: includes/class-nvoos-forge-bridge-settings.php:494
 msgid "A repo-scoped token with dispatch rights. Leave blank to keep the stored value."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:441
+#: includes/class-nvoos-forge-bridge-settings.php:498
 msgid "HMAC secret"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:444
+#: includes/class-nvoos-forge-bridge-settings.php:501
 msgid "Signs outbound dispatch payloads and verifies inbound rebuild triggers. Leave blank to keep the stored value."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:448
+#: includes/class-nvoos-forge-bridge-settings.php:505
 msgid "Dispatch event type"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:453
+#: includes/class-nvoos-forge-bridge-settings.php:509
+msgid "Revalidate endpoint (managed sites)"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:512
+msgid "Purges the managed frontend cache by tag in seconds. Set this to the site's /api/revalidate URL and the shared NVOOS_REVALIDATE_TOKEN. Empty disables the hop; the GitHub dispatch still rebuilds."
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:516
+msgid "Revalidate token"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:519
+msgid "Must equal the site's NVOOS_REVALIDATE_TOKEN. Leave blank to keep the stored value."
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:524
 msgid "Forms (forged frontend submissions)"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:455
+#: includes/class-nvoos-forge-bridge-settings.php:526
 msgid "The forged static site rebuilds your JetFormBuilder / Elementor Pro forms and posts submissions to this plugin, which dispatches them to the native handler — validation, storage, mail, and post-submit actions run exactly as on WordPress. The static origin must be allowlisted below (one per line)."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:459
+#: includes/class-nvoos-forge-bridge-settings.php:530
 msgid "Enable form submissions"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:463
+#: includes/class-nvoos-forge-bridge-settings.php:534
 msgid "Static origins (allowlist)"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:466
+#: includes/class-nvoos-forge-bridge-settings.php:537
 msgid "The static site origin(s) allowed to submit — one full origin per line. Requests from any other origin are rejected."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:470
+#: includes/class-nvoos-forge-bridge-settings.php:541
 msgid "Captcha (optional)"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:473
+#: includes/class-nvoos-forge-bridge-settings.php:544
 msgid "None"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:474
+#: includes/class-nvoos-forge-bridge-settings.php:545
 msgid "Cloudflare Turnstile"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:476
+#: includes/class-nvoos-forge-bridge-settings.php:547
 msgid "When set, every submission must carry a fresh Turnstile token (action and hostname are pinned to your allowlisted origin)."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:480
+#: includes/class-nvoos-forge-bridge-settings.php:551
 msgid "Turnstile site key"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:484
+#: includes/class-nvoos-forge-bridge-settings.php:555
 msgid "Turnstile secret"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:487
+#: includes/class-nvoos-forge-bridge-settings.php:558
 msgid "Leave blank to keep the stored value."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:491
+#: includes/class-nvoos-forge-bridge-settings.php:562
 msgid "Stored redirects (static site export)"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:493
+#: includes/class-nvoos-forge-bridge-settings.php:564
 msgid "Exports the redirect rules your redirect plugin already stores — Redirection (redirection_items) and Rank Math (rank_math_redirections) — so the forged static site keeps every legacy URL alive on cutover day. Only enabled, exact URL matches are exported: regex, query-scoped, and non-URL match types cannot be expressed portably in a static _redirects file and are reported as skipped counts, never silently widened."
 msgstr ""
 
 #. translators: %s: comma-separated provider names.
-#: includes/class-nvoos-forge-bridge-settings.php:495
+#: includes/class-nvoos-forge-bridge-settings.php:566
 #, php-format
 msgid "Detected: %s."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:497
+#: includes/class-nvoos-forge-bridge-settings.php:568
 msgid "No supported redirect plugin detected."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:502
+#: includes/class-nvoos-forge-bridge-settings.php:573
 msgid "Enable redirect export"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:505
+#: includes/class-nvoos-forge-bridge-settings.php:576
 msgid "Publishes GET /wp-json/nvoos-forge/v1/redirects — read-only, bounded to 500 rules, and safe to leave off when you are not building a static frontend."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:509
+#: includes/class-nvoos-forge-bridge-settings.php:580
 msgid "Export token (optional)"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:512
+#: includes/class-nvoos-forge-bridge-settings.php:583
 msgid "When set, callers must send the same value in the X-Forge-Redirects-Token header (or as a Bearer token). Leave blank to keep the stored value; set it to protect your URL structure from public discovery."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:94
+#: includes/rest/class-nvoos-forge-bridge-forms.php:104
 msgid "Form submissions are disabled on this site."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:101
+#: includes/rest/class-nvoos-forge-bridge-forms.php:111
 msgid "The request origin is not allowed."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:107
+#: includes/rest/class-nvoos-forge-bridge-forms.php:117
 msgid "Too many submissions — try again later."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:137
+#: includes/rest/class-nvoos-forge-bridge-forms.php:147
 msgid "Captcha verification failed."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:227
+#: includes/rest/class-nvoos-forge-bridge-forms.php:237
 msgid "Accepted."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:322
+#: includes/rest/class-nvoos-forge-bridge-forms.php:439
 msgid "Invalid JSON body."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:330
+#: includes/rest/class-nvoos-forge-bridge-forms.php:447
 msgid "The form identifier is required."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:345
+#: includes/rest/class-nvoos-forge-bridge-forms.php:462
 msgid "No form fields were submitted."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:368
+#: includes/rest/class-nvoos-forge-bridge-forms.php:485
 msgid "Too many form fields."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:417
-#: includes/rest/class-nvoos-forge-bridge-forms.php:423
+#: includes/rest/class-nvoos-forge-bridge-forms.php:534
+#: includes/rest/class-nvoos-forge-bridge-forms.php:540
 msgid "The form does not exist on this site."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:425
+#: includes/rest/class-nvoos-forge-bridge-forms.php:542
 msgid "No form handler (JetFormBuilder or Elementor Pro) is active on this site."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:548
+#: includes/rest/class-nvoos-forge-bridge-forms.php:689
 msgid "The JetFormBuilder handler is not available."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:578
+#: includes/rest/class-nvoos-forge-bridge-forms.php:725
 msgid "The JetFormBuilder handler did not produce a response."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:617
+#: includes/rest/class-nvoos-forge-bridge-forms.php:778
 msgid "The Elementor Pro form handler is not available."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:634
+#: includes/rest/class-nvoos-forge-bridge-forms.php:795
 msgid "The Elementor Pro handler did not produce a response."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:678
-#: includes/rest/class-nvoos-forge-bridge-forms.php:707
+#: includes/rest/class-nvoos-forge-bridge-forms.php:839
+#: includes/rest/class-nvoos-forge-bridge-forms.php:868
 msgid "The form handler returned an unrecognized response."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-rebuild.php:95
+#: includes/rest/class-nvoos-forge-bridge-rebuild.php:97
 msgid "Invalid or missing request signature."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-rebuild.php:111
+#: includes/rest/class-nvoos-forge-bridge-rebuild.php:113
 msgid "You are not allowed to create preview tokens."
 msgstr ""
 

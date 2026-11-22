@@ -14,6 +14,8 @@ plugins.svn.wordpress.org. It never ships inside the plugin ZIP
 | `assets/banner-1544x500.png` | ✅ generated (2026-11-02) | Retina variant of the banner. |
 | `assets/screenshot-1.png` | ✅ captured | Settings page before configuration (warning notice). |
 | `assets/screenshot-2.png` | ✅ captured | Settings page after configuring + saving (success notice, masked credentials). |
+| `assets/screenshot-3.png` | ✅ captured (2026-11-22) | Stored redirects section — provider detected, export enabled, token masked. |
+| `assets/screenshot-4.png` | ✅ captured (2026-11-22) | Managed-frontend revalidation — endpoint set, bearer token masked. |
 
 ## Regenerating screenshots
 
@@ -37,6 +39,11 @@ MSYS_NO_PATHCONV=1 docker run --rm --user 33:33 --network oos-wp_default \
 # Capture (plugin must be in the unconfigured state first; the script fills
 # and saves the form for screenshot 2, so reset options between runs):
 node bin/capture-nvoos-forge-bridge-screenshots.js
+
+# Screenshots 3 and 4 are scoped section captures and are safe to run against
+# a configured site. Save a revalidate URL/token and an export token first so
+# the credential fields render their masked placeholders:
+node bin/capture-nvoos-forge-bridge-sections.js
 ```
 
 Reset the plugin state between capture runs (screenshot 1 needs the
@@ -81,12 +88,12 @@ Outputs (all PNG):
 
 ## SVN upload runbook (post-submission)
 
-0. Build the release ZIP: `python bin/build-nvoos-forge-bridge.py --version 0.3.1`
-   → `build/nvoos-forge-bridge-v0.3.1.zip` (top-level folder,
+0. Build the release ZIP: `python bin/build-nvoos-forge-bridge.py --version 0.3.2`
+   → `build/nvoos-forge-bridge-v0.3.2.zip` (top-level folder,
    forward-slash entries).
 1. `svn co https://plugins.svn.wordpress.org/nvoos-forge-bridge` (once).
 2. Copy the plugin ZIP contents into `trunk/` and tag it
-   `tags/0.3.1/` (Guideline 3 — trunk + tag per release).
+   `tags/0.3.2/` (Guideline 3 — trunk + tag per release).
 3. Copy this directory's `assets/` into the SVN checkout's `assets/`.
 4. Assets-only SVN commits do NOT change plugin visibility — the plugin
    goes public on the first `trunk/` code commit.

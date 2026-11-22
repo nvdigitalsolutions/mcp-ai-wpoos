@@ -1,4 +1,4 @@
-# NV oOS Forge Bridge — wp.org Review Reply Draft (0.3.1)
+# NV oOS Forge Bridge — wp.org Review Reply Draft (0.3.2)
 
 Review ID: `R nvoos-forge-bridge/vsamtani/5Nov26/T2 10Nov26/4.4RC1 (P0TDX399590HGN)`
 
@@ -9,7 +9,8 @@ Reply to the review thread; keep it short and factual per the team's request.
 
 Hi,
 
-Thanks for the review. All three findings are addressed in 0.3.1.
+Thanks for the review. All three findings are addressed and version 0.3.2 has
+been uploaded.
 
 **1. Permission callback / non-public forms**
 
@@ -55,12 +56,14 @@ longer terminate the REST request. Filters and buffers are restored in
 
 Every remaining public route is intentionally public and documented as such:
 `/health` (versions, booleans, and the webhook host only), `/preview-tokens/verify`
-(the single-use bearer token in the body is the proof). `/rebuild` stays
-HMAC-gated, `/preview-tokens` stays capability-gated (`edit_pages`), and
-`/redirects` keeps its optional shared-token gate.
+(the single-use bearer token in the body is the proof), and — new in 0.3.2 —
+`/gate` (read-only: maintenance booleans, a mode keyword, and a gate-plugin
+slug; the same disclosure class as `/health`). `/rebuild` stays HMAC-gated,
+`/preview-tokens` stays capability-gated (`edit_pages`), and `/redirects` keeps
+its optional shared-token gate.
 
 The same classes were audited across the plugin, which found and fixed three
-more items in 0.3.1:
+more items:
 
 - A submitted field could spoof JetFormBuilder's routing carriers
   (`_jet_engine_booking_form_id` / `_jet_engine_refer`) and re-target the
@@ -72,17 +75,23 @@ more items in 0.3.1:
 - Uninstall now removes the hashed per-IP rate-limit transients.
 
 To keep this from regressing, CI now runs a small gate
-(`.github/scripts/check-forge-bridge-public-routes.php`) that fails when a
-public CREATABLE / EDITABLE / DELETABLE route is not on a reviewed allowlist
-(with justifications) — and when an allowlisted route goes stale.
+(`.github/scripts/check-public-write-routes.php` with the reviewed allowlist in
+`.github/scripts/public-write-routes.txt`) that fails when a public CREATABLE /
+EDITABLE / DELETABLE route is not on the allowlist (with justifications) — and
+when an allowlisted route goes stale.
+
+I also refreshed the shipped `languages/nvoos-forge-bridge.pot` (it was missing
+the strings for the optional managed-frontend revalidate settings) and added
+that outbound hop to `== External Services ==`.
 
 **Validation**
 
-- PHPUnit on WP 6.9 / PHP 8.2: 71 tests, 204 assertions, passing. New coverage
+- PHPUnit on WP 7.1 / PHP 8.2: 80 tests, 229 assertions, passing. New coverage
   for non-public JetFormBuilder and Elementor forms, spoofed `X-Forwarded-For`
   with and without a trusted proxy, the response capture (including a native
   `wp_send_json_success()` call run in an isolated process), the routing-carrier
   override, and redirect control-character / serialized-object rejection.
+- `Plugin Check` against the built ZIP: 0 errors, 0 warnings (full severity).
 - `phpcs` (WPCS + PHPCompatibilityWP, PHP 7.4+) clean; `php -l` clean.
 
 Keeping the permalink `nvoos-forge-bridge`.
