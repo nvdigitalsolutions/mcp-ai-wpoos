@@ -340,16 +340,20 @@ class Test_Graphify_Connectors extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * WooCommerce driver test_connection returns failure when WC is not loaded.
+	 * WooCommerce driver test_connection follows the interface contract in both
+	 * environments: array on success, WP_Error when WC is absent. CI loads
+	 * WooCommerce; a bare WP test env does not, so the branch must be explicit.
 	 */
 	public function test_woocommerce_driver_test_connection_no_wc() {
 		$driver = new NV_oOS_Graphify_Remote_WooCommerce();
 		$result = $driver->test_connection();
-		$this->assertIsArray( $result );
-		// In the test env WooCommerce isn't loaded, so this MUST return success=false.
-		if ( ! class_exists( 'WooCommerce' ) ) {
-			$this->assertFalse( $result['success'] );
+		if ( class_exists( 'WooCommerce' ) || function_exists( 'wc_get_products' ) ) {
+			$this->assertIsArray( $result );
+			$this->assertTrue( $result['success'] );
+			return;
 		}
+		$this->assertWPError( $result );
+		$this->assertSame( 'nvoos_graphify_connection_failed', $result->get_error_code() );
 	}
 
 	/**

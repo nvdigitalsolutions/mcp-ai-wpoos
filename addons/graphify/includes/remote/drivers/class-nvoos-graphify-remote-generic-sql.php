@@ -181,17 +181,15 @@ class NV_oOS_Graphify_Remote_Generic_SQL implements NV_oOS_Graphify_Remote_Sourc
 		try {
 			$pdo = $this->open_pdo();
 		} catch ( Exception $e ) {
-			return array(
-				// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool; internal admin connection test.
-				'success' => false,
-				'message' => $e->getMessage(),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				$e->getMessage()
 			);
 		}
 		if ( null === $pdo ) {
-			return array(
-				// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool; internal admin connection test.
-				'success' => false,
-				'message' => __( 'PDO is not available on this host.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'PDO is not available on this host.', 'nvoos-graphify' )
 			);
 		}
 		return array(
