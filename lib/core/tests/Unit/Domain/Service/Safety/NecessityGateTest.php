@@ -176,7 +176,26 @@ final class NecessityGateTest extends TestCase
         );
 
         $this->assertSame(ActionSafetyProfile::VERDICT_WARN, $fromFlags['verdict']);
-        $this->assertSame(ActionSafetyProfile::VERDICT_BLOCK, $explicit['verdict']);
+        $this->assertSame(ActionSafetyProfile::VERDICT_APPROVAL_REQUIRED, $explicit['verdict']);
         $this->assertSame(1.0, $explicit['irreversibility']);
+    }
+
+    /**
+     * §155: `send_group_email` declares `irreversible`, and that used to flip the
+     * same concept from approval to block — while this suite already asserts a
+     * needed send "needs a human". A needed, well-formed permanent action is not
+     * overeager, so it must reach a human rather than be refused.
+     */
+    public function test_a_needed_permanent_send_requires_approval(): void
+    {
+        $decision = NecessityGate::decide(
+            array('external-communication', 'irreversible', 'state-changing', 'write'),
+            'send_group_email',
+            array('to' => 'a@b.c', 'subject' => 'hi', 'message' => 'hello')
+        );
+
+        $this->assertSame(ActionSafetyProfile::VERDICT_APPROVAL_REQUIRED, $decision['verdict']);
+        $this->assertSame(ActionSafetyProfile::REASON_HELPFUL_PERMANENT, $decision['reason_code']);
+        $this->assertTrue($decision['requires_approval']);
     }
 }

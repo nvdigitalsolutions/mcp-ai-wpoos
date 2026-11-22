@@ -40,6 +40,8 @@ final class CapabilityFlagVocabularyTest extends TestCase
             'underscore state-changing' => array(array('state_changing'), array('state-changing')),
             'underscore side effect'   => array(array('external_side_effect'), array('external-communication')),
             'underscore external api'  => array(array('external_api'), array('external-api')),
+            'read means read-only'      => array(array('read'), array('read-only')),
+            'database-read means read-only' => array(array('database-read'), array('read-only')),
             'duplicates collapse'      => array(array('write', 'Write', 'WRITE'), array('write')),
             'non-strings are dropped'  => array(array('write', null, 7, array('read-only')), array('write')),
             'empty values are dropped' => array(array('', '  ', 'write'), array('write')),
