@@ -91,18 +91,18 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['booking_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Booking ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Booking ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$booking_id = absint( $arguments['booking_id'] );
 
 		if ( ! get_post( $booking_id ) || get_post_type( $booking_id ) !== 'dj_booking' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid booking ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Invalid booking ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -320,9 +320,12 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		return array(
-			'success' => false,
-			'error'   => __( 'Failed to send confirmation email.', 'mcp-ai-wpoos-pro' ),
+		// Every send path above returned or fell through; reaching here means the
+		// transport refused the message, which is an execution error rather than a
+		// successful send with a sad message.
+		return new WP_Error(
+			'wp_mcp_ai_email_failed',
+			__( 'Failed to send confirmation email.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
