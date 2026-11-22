@@ -149,8 +149,12 @@ return array(
 		),
 		'check_workflow_health' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CheckWorkflowHealthTool',
-			'readiness' => 'unavailable',
-			'reason' => 'WordPress-only by decision (Proposal 149 section 162): AgentOrchestrationInterface composes and delegates agent teams, and this port has no agent runtime. The Laravel WorkflowRunner executes recorded DAG graphs, which is a different capability. Revisit only if an agent runtime lands.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Reads a composed team from the estate-namespaced 24-hour cache through Nvoos\\Laravel\\Adapter\\AgentOrchestration; an expired or foreign team is reported as not found rather than served (Proposal 149 section 163).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AgentOrchestrationTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'openWorldHint' => false ),
 		),
 		'client_analyze_sentiment' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ClientAnalyzeSentimentTool',
@@ -248,8 +252,12 @@ return array(
 		),
 		'create_agent_team' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateAgentTeamTool',
-			'readiness' => 'unavailable',
-			'reason' => 'WordPress-only by decision (Proposal 149 section 162): AgentOrchestrationInterface composes and delegates agent teams, and this port has no agent runtime. The Laravel WorkflowRunner executes recorded DAG graphs, which is a different capability. Revisit only if an agent runtime lands.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Composes a team from this estate assistants through Nvoos\\Laravel\\Adapter\\AgentOrchestration: an explicit agents map, then slug, then primary_role_slugs, then title, then the estate default, recording matched_by on every member. The team is a 24-hour cache entry namespaced by estate, matching the WordPress transient (Proposal 149 section 163).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AgentOrchestrationTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => false ),
 		),
 		'create_batch' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateBatchTool',
@@ -382,8 +390,12 @@ return array(
 		),
 		'delegate_to_agent' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DelegateToAgentTool',
-			'readiness' => 'unavailable',
-			'reason' => 'WordPress-only by decision (Proposal 149 section 162): AgentOrchestrationInterface composes and delegates agent teams, and this port has no agent runtime. The Laravel WorkflowRunner executes recorded DAG graphs, which is a different capability. Revisit only if an agent runtime lands.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Runs one bounded assistant turn as the calling user for a member of a composed team through Nvoos\\Laravel\\Adapter\\AgentOrchestration. A non-member, an expired team and a missing instruction are refused, and depth is a single turn so a delegate cannot delegate again (Proposal 149 section 163).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AgentOrchestrationTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'delete_cache' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeleteCacheTool',
@@ -531,8 +543,12 @@ return array(
 		),
 		'execute_workflow' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExecuteWorkflowTool',
-			'readiness' => 'unavailable',
-			'reason' => 'WordPress-only by decision (Proposal 149 section 162): AgentOrchestrationInterface composes and delegates agent teams, and this port has no agent runtime. The Laravel WorkflowRunner executes recorded DAG graphs, which is a different capability. Revisit only if an agent runtime lands.',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Runs up to ten bounded assistant turns as the calling user over a composed team through Nvoos\\Laravel\\Adapter\\AgentOrchestration, threading prior step results into the next prompt and failing closed on an unresolvable role (Proposal 149 section 163).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AgentOrchestrationTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'extract_domain' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExtractDomainTool',

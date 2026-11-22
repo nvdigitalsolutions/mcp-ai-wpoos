@@ -26,6 +26,9 @@ use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
+use Nvoos\Core\Domain\Contract\AgentOrchestrationInterface;
+use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
+use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
@@ -52,6 +55,7 @@ use Nvoos\Core\Domain\Service\Harness\OutputGuardrail;
 use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
 use Nvoos\Core\Domain\Contract\TraceStoreInterface;
@@ -88,6 +92,7 @@ use Nvoos\Core\Tool\ListTasksTool;
 use Nvoos\Core\Tool\ProfessionStatsTool;
 use Nvoos\Laravel\Tool\CoreToolCatalogue;
 use Nvoos\Laravel\Tool\ManifestToolRegistrar;
+use Nvoos\Laravel\Adapter\AgentOrchestration;
 use Nvoos\Laravel\Adapter\AuthProvider;
 use Nvoos\Laravel\Adapter\CacheStore;
 use Nvoos\Laravel\Adapter\ContentStore;
@@ -157,6 +162,20 @@ class NvoosServiceProvider extends ServiceProvider {
 		// which is the same shape WordPress has without GD/Imagick
 		// (Proposal 149 §160).
 		$this->app->bind( ImageProcessingInterface::class, MediaWorkerImageProcessing::class );
+
+		// Agent orchestration needs assistants (a host contract) and a runner (the
+		// host's chat pipeline). Both are optional so the package can construct
+		// the four orchestration tools without them — the readiness manifest
+		// promises constructibility — while an unconfigured host gets an honest
+		// `success: false` rather than a hollow result (Proposal 149 §163).
+		$this->app->bind( AgentOrchestrationInterface::class, function ( $app ) {
+			return new AgentOrchestration(
+				$app->make( CacheStoreInterface::class ),
+				$app->bound( AssistantServiceInterface::class ) ? $app->make( AssistantServiceInterface::class ) : null,
+				$app->bound( AgentRunnerInterface::class ) ? $app->make( AgentRunnerInterface::class ) : null,
+				$app->bound( TenantResolverInterface::class ) ? $app->make( TenantResolverInterface::class ) : null,
+			);
+		} );
 		$this->app->bind( FileStoreInterface::class, FileStore::class );
 		$this->app->bind( FileUploadServiceInterface::class, function ( $app ) {
 			return new FileUploadService(
