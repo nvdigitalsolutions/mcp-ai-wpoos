@@ -16,8 +16,10 @@ namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class CountPostsTool extends AbstractTool
+class CountPostsTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $errors, private readonly ContentStoreInterface $content)
     {
@@ -52,5 +54,18 @@ class CountPostsTool extends AbstractTool
         $q = new ContentQuery(types:'' !== $type ? array($type) : [], statuses:'' !== $status ? array($status) : array('publish'), search:'' !== $search ? $search : null, authorId:is_numeric($authorId) ? (int)$authorId : null, perPage:1);
         $result = $this->content->query($q);
         return $this->success("$result->total items found.", array('total' => $result->total,'filters' => array_filter(array('type' => $type ?: null,'status' => $status ?: null,'author_id' => $authorId,'search' => $search ?: null))));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Reads a local store. Side-effect free, but not cacheable: the store
+     * can change between two identical calls.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_READ;
     }
 }

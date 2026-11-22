@@ -16,8 +16,10 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\NotFoundException;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class UpdatePostTool extends AbstractTool
+class UpdatePostTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $e, private readonly ContentStoreInterface $c)
     {
@@ -125,5 +127,18 @@ class UpdatePostTool extends AbstractTool
         } catch (\Throwable $e) {
                 return $this->errors->create('update_failed', $e->getMessage());
         }
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Writes to a local store and persists information. Re-settable in
+     * principle, but the previous value is gone, so not `reversible`.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_WRITE;
     }
 }

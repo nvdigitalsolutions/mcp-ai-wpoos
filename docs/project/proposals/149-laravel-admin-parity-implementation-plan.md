@@ -14484,3 +14484,78 @@ now points at `CapabilityFlagVocabulary`.
 | `php -l` across `lib/core/src/Tool/` | clean |
 | phpcs (root standard) | clean |
 | `bin/generate-tool-capability-flags.php --check` | unaffected — the catalogue is still in step |
+## 154. The last 30: native tools declare their flags (2026-11-22)
+
+### 154.1 Why these needed deciding
+
+§153 left 30 servable rows without a flag source. All are `ready`, all
+Laravel-native, and none has a WordPress counterpart with that slug — so there
+was nothing to extract and nothing to inherit from the corpus. Each one had to
+be read and classified.
+
+The marker scan was almost useless here, which is itself the finding: **none of
+the thirty touches a file, socket or database directly.** They inject a store
+interface — `CacheStoreInterface`, `SettingsStoreInterface`,
+`QueueClientInterface`, `ContentStoreInterface`, `FileStoreInterface`,
+`AuthProviderInterface`, `EventDispatcherInterface` — and call one method on it.
+So the flags follow from the injected interface and the method, not from any
+syntax in the class.
+
+### 154.2 The decision table
+
+| group | n | flags |
+|---|---|---|
+| `PURE_LOCAL` | 2 — `list_skills`, `verify_information` | `cacheable`, `idempotent`, `local-only`, `read-only` |
+| `LOCAL_READ` | 12 — cache/settings/job/content/auth reads | `idempotent`, `local-only`, `read-only` |
+| `LOCAL_WRITE_REVERSIBLE` | 7 — cache set/delete/increment, queue enqueue/cancel/schedule/unschedule | `local-only`, `reversible`, `state-changing`, `write` |
+| `LOCAL_WRITE` | 6 — `bulk_import`, `update_post`, `update_setting`, `delete_setting`, `upload_file`, `dispatch_event` | `local-only`, `state-changing`, `write` |
+| `LOCAL_DESTRUCTIVE` | 1 — `delete_file` | `data-destruction`, `irreversible`, `local-only`, `state-changing`, `write` |
+| `REMOTE_CREDENTIALED` | 1 — `generate_cloudflareai_image` | `external-api`, `network-dependent`, `requires-credentials` |
+| inherited | 1 — `generate_sora_video_validated` | whatever `generate_sora_video` declares |
+
+### 154.3 The two judgement calls
+
+**A store read is not `cacheable`.** `get_setting` and `get_cache` are
+idempotent and side-effect free, but the store can change between two identical
+calls, so caching the answer serves a stale one. `cacheable` is reserved for the
+pure group, where the input fully determines the output.
+
+**Cache and queue writes are `reversible`; content and settings writes are
+not.** A cache entry is derived — evict it and it regenerates. A queue entry can
+be cancelled. But an overwritten post body, a replaced setting or a consumed
+upload loses the previous value, so those stay at moderate irreversibility rather
+than dropping to low. That distinction is exactly what
+`deriveIrreversibilityFromFlags()` reads.
+
+### 154.4 Three edge cases found by reading
+
+- **`verify_information` is a pure scorer.** It takes `claim` and `sources` as
+  arguments and measures word overlap; no model call, no I/O. Its manifest
+  readiness is `ready`, but its *behaviour* is read-only, and flags describe
+  behaviour.
+- **`generate_sora_video_validated` is a subclass, not a wrapper.** It
+  `extends GenerateSoraVideoTool`, so it has no `get_capability_flags()` of its
+  own to extract and the generator's delegation rule (§152.2 shape 3) does not
+  apply. It reads the parent's catalogue entry instead, which cannot drift.
+- **`dispatch_event` is a local write.** The dispatcher is in-process, so
+  `local-only` is honest, but listeners are unknown and their effects are not
+  undoable — hence no `reversible`.
+
+### 154.5 Coverage
+
+| measure | §152–153 | now |
+|---|---|---|
+| servable rows with a flag source | 165 / 195 (85%) | **195 / 195 (100%)** |
+| manifest rows with a flag source | 174 / 223 (78%) | **204 / 223 (91%)** |
+
+The 19 manifest rows still without a flag source are all `quarantined` or
+`unavailable` — none is servable, so none reaches the guard.
+
+### 154.6 Gates
+
+| Gate | Result |
+|---|---|
+| `NativeToolCapabilityFlagsTest` (new) | 32 tests, 152 assertions — pins each group, plus "no read tool carries a gated or outbound flag" and "every write tool is denied by a read-only profile" |
+| full `lib/core` suite | 1,923 tests, 15,612 assertions |
+| phpcs PSR-12 (no path arguments, exit code captured) | exit 0, 1,168 files |
+| `php -l` across `lib/core/src/Tool/` | clean |

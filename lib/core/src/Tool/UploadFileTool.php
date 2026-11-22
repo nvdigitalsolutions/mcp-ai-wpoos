@@ -19,8 +19,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class UploadFileTool extends AbstractTool
+class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(
         ErrorFactoryInterface $errors,
@@ -164,5 +166,18 @@ class UploadFileTool extends AbstractTool
         }
         file_put_contents($path, $content);
         return $path;
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Writes to a local store and persists information. Re-settable in
+     * principle, but the previous value is gone, so not `reversible`.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_WRITE;
     }
 }

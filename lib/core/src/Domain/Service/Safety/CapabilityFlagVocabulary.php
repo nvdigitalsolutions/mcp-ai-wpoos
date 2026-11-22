@@ -89,6 +89,66 @@ final class CapabilityFlagVocabulary
     public const PURE_LOCAL_NON_DETERMINISTIC = array( 'local-only', 'non-deterministic', 'read-only' );
 
     /**
+     * Flags for a read against a local store.
+     *
+     * Cache, settings, jobs and content lookups. Idempotent and side-effect
+     * free, but **not** `cacheable`: the store can change between two identical
+     * calls, so caching the answer would serve a stale one.
+     *
+     * @var list<string>
+     */
+    public const LOCAL_READ = array( 'idempotent', 'local-only', 'read-only' );
+
+    /**
+     * Flags for a write the caller can undo.
+     *
+     * Cache entries are derived and queue entries can be cancelled, so setting,
+     * evicting or scheduling them is reversible. Distinct from
+     * {@see LOCAL_WRITE}, which persists information.
+     *
+     * @var list<string>
+     */
+    public const LOCAL_WRITE_REVERSIBLE = array( 'local-only', 'reversible', 'state-changing', 'write' );
+
+    /**
+     * Flags for a local write that persists information.
+     *
+     * A content update, an upload, an import, a setting change, an event
+     * dispatch. Re-settable in principle, but the previous value is gone — so
+     * deliberately **not** `reversible`, which keeps the derived irreversibility
+     * at moderate rather than low.
+     *
+     * @var list<string>
+     */
+    public const LOCAL_WRITE = array( 'local-only', 'state-changing', 'write' );
+
+    /**
+     * Flags for a local write that destroys durable data.
+     *
+     * @var list<string>
+     */
+    public const LOCAL_DESTRUCTIVE = array(
+        'data-destruction',
+        'irreversible',
+        'local-only',
+        'state-changing',
+        'write',
+    );
+
+    /**
+     * Flags for a call that reaches a third-party API with a stored credential.
+     *
+     * Outbound but not a mutation: the response is returned, not persisted.
+     *
+     * @var list<string>
+     */
+    public const REMOTE_CREDENTIALED = array(
+        'external-api',
+        'network-dependent',
+        'requires-credentials',
+    );
+
+    /**
      * Alternate spellings, mapped to the canonical word.
      *
      * @var array<string, string>
