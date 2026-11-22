@@ -114,17 +114,17 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['communication_type'] ) || empty( $arguments['subject'] ) || empty( $arguments['notes'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Communication type, subject, and notes are required.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Communication type, subject, and notes are required.', 'nvoos-content-graph-pro' )
 			);
 		}
 
 		// Need either client_id or booking_id.
 		if ( empty( $arguments['client_id'] ) && empty( $arguments['booking_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Either client_id or booking_id is required.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Either client_id or booking_id is required.', 'nvoos-content-graph-pro' )
 			);
 		}
 
@@ -134,9 +134,9 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 		// Get client ID from booking if needed.
 		if ( ! $client_id && $booking_id ) {
 			if ( ! get_post( $booking_id ) || get_post_type( $booking_id ) !== 'dj_booking' ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Invalid booking ID.', 'nvoos-content-graph-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_not_found',
+					__( 'Invalid booking ID.', 'nvoos-content-graph-pro' )
 				);
 			}
 			$client_email = get_post_meta( $booking_id, '_client_email', true );
