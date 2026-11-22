@@ -28,6 +28,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
      * mass-assignable authentication links are how an account gets taken over by
      * a payload. `nvoos:auth0-link` sets it with `forceFill()`.
      *
+     * `chat_profile` is absent for a related reason: it is a permission
+     * boundary over tool execution, so a mass-assignable one would let a
+     * crafted payload widen its own grant. The API writes it through
+     * `ChatProfileController` and the setter checks the upgrade policy.
+     *
      * @var list<string>
      */
     protected $fillable = [

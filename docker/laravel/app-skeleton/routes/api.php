@@ -8,6 +8,7 @@ use App\Http\Controllers\BlueprintController;
 use App\Http\Controllers\AssistantPortabilityController;
 use App\Http\Controllers\CommandCenterController;
 use App\Http\Controllers\ChatStreamController;
+use App\Http\Controllers\ChatProfileController;
 use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
 use App\Http\Controllers\MagicLoginController;
@@ -153,6 +154,13 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/chat-memory/audit', [MemoryController::class, 'audit']);
             Route::match(['put', 'patch'], '/chat-memory/{id}', [MemoryController::class, 'update']);
             Route::delete('/chat-memory/{id}', [MemoryController::class, 'destroy']);
+
+            // Chat profiles — a per-user permission boundary over tool calls
+            // (Proposal 015 port). The GET is the catalogue plus the resolved
+            // profile; the PUT is the only writer, and selecting the site
+            // default clears the override instead of pinning it.
+            Route::get('/chat-profile', [ChatProfileController::class, 'show']);
+            Route::match(['put', 'patch'], '/chat-profile', [ChatProfileController::class, 'update']);
 
             Route::get('/tools', ToolsController::class);
 
