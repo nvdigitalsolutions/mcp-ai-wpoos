@@ -313,6 +313,9 @@ jobs:
           fi
 
       - name: Post PR comment with API scan results
+        # Reporting must never fail the scan — the same 500 that failed
+        # zap-baseline on #8100 applies here. See that workflow's note.
+        continue-on-error: true
         if: always() && github.event_name == 'pull_request' && steps.parse.outputs.report_exists == 'true'
         uses: actions/github-script@v7
         with:
@@ -373,6 +376,9 @@ jobs:
             }
 
       - name: Post PR comment (no spec generated)
+        # Same rule: a missing spec is a scan problem to report, not a reason
+        # for the reporting step to fail the job.
+        continue-on-error: true
         if: always() && github.event_name == 'pull_request' && steps.openapi.outputs.spec_exists != 'true'
         uses: actions/github-script@v7
         with:
