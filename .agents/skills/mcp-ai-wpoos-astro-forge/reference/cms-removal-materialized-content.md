@@ -68,6 +68,44 @@ Expected a closing tag for `<ul>` (38:959) before the end of `paragraph`
 Arbitrary WordPress HTML will hit this eventually. Ship the body as a sibling
 `<slug>.html`; the loader reads it (and falls back to `body` for plain prose).
 
+### Two documents may share a slug (2026-11-22)
+
+WordPress page slugs are unique among SIBLINGS only, so a site can legitimately
+publish `team` twice (`/about/team/`, `/services/team/`). The writer used to
+name both `team.mdx` and silently overwrite the first — the report counted two
+documents while one file survived. De-duplicating only the FILENAME was not
+enough: the flat `/[slug]/` route reads the frontmatter `slug`, so the build
+still claimed `/team/` twice.
+
+`writeDocuments` now plans the published slugs before writing anything. One
+document keeps the bare slug; the rest get `<slug>-N`, starting at `-2` (the
+WordPress `wp_unique_post_slug` / Drupal Pathauto convention — the first
+duplicate is the second document). A suffix skips every slug another document
+really owns, so a genuine `team-2` is never shadowed. The keeper is
+deterministic: the document whose own `link` is exactly `/<slug>/` wins,
+otherwise the lowest numeric source id, otherwise input order — never API
+order, so re-materializing is a stable diff.
+
+The renamed value goes into BOTH the filename and the frontmatter `slug`, and
+the source's own slug is written as `slugRenamedFrom`. That field keeps the
+original URL reachable: `redirects.json.ts` maps `data.link` (the WordPress
+path) to the published slug, so `/services/team/` 301s to `/team-3/` while
+`/about/team/` 301s to `/team/`. The keeper's own redirect is skipped when
+source equals target, and the link-based tie-break is what stops a renamed
+page's redirect from shadowing the winner. A HYBRID load (`content.snapshot`,
+CMS still live) also merges on `slugRenamedFrom`, so the fallback snapshot
+yields to WordPress's `team` instead of reappearing as `/team-3/`.
+
+The materialized loader keys local entries by the source's numeric `id`
+(`localEntryId`), so both documents survive Astro's glob load. The `route keys`
+gate remains the second guard for content that was NOT captured — hand-written
+hybrid MDX, a CMS that still publishes one slug twice, case variants — and
+`build.strictRoutes: true` makes an exact duplicate a build failure. Do not
+hand-edit a renamed snapshot slug back to the source slug: that reintroduces
+the duplicate route. A renamed page also falls back to the default band
+theming unless the profile's `pageBands` entry is re-keyed (those facts are
+keyed by source slug).
+
 ## Rebuilding with no CMS
 
 ```sh
@@ -172,6 +210,81 @@ Three checks, cheap first — the first two catch almost everything:
 
 monicarajiv: 10/10 routes, 10/10 pages word-identical, 68 media files, 0
 `wp-content` references.
+
+### Posts keep their WordPress id (2026-11-22)
+
+The snapshot writes the source's numeric `id` in each document's frontmatter,
+but a glob entry's store id is the FILENAME (`blog-details`), and every post
+route is `/posts/<entry.id>/<slug>/` — so a detached post moved from
+`/posts/2228/blog-details/` to `/posts/blog-details/blog-details/` and every
+post URL 404'd (`monicarajiv` had no posts, which is why the route check missed
+it). `adoptLocal` now adopts `data.id` as the store id in `localOnly` mode.
+Hand-written local MDX carries no `id` and keeps the slug id — the hybrid-local
+route shape the e2e pins (`/posts/hello-world/hello-world/`). virtuallysrilanka:
+11/11 routes identical before and after the detach.
+
+**Overrides (2026-11-22, issue #8092).** The merge keys on the ROUTE key — the
+collection's slug, normalized — not the store id (a local id is the filename
+slug, a WordPress id is numeric, so an id-keyed set never matched). WordPress
+still wins by default, and the dropped local file is named in a warning. A
+local document may replace a WordPress one with `override: true` in its
+frontmatter; for the id-routed collections (`/<base>/<id>/<slug>/` — posts,
+products, CPTs) the override MUST also carry `id: <wp-id>`, or the build fails
+(overriding without it would move a live URL). Pages need no id — `/[slug]/` is
+the page's own slug, and the WordPress slug wins for the URL.
+
+Two layers guard duplicates besides the merge: the glob loader keys a local
+entry by its frontmatter `slug`, so an EXACT duplicate in one collection is
+dropped with Astro's `DuplicateContentEntrySlugError` warning (a build failure
+under `build.strictRoutes: true`, which writes
+`prerenderConflictBehavior: "error"`); and `verify`'s **route keys** gate reads
+the post-sync store and fails on a URL claimed twice — the cases the glob check
+does not compare (case variants, WordPress-side duplicates, two collections
+mapping one path).
+
+### Re-freeze a snapshot taken before the `sourceFile` field (2026-11-22)
+
+A `media-snapshot` taken from a build whose `localize-media.mjs` predates the
+`sourceFile` report field stores the REWRITTEN stylesheet, so the next cold
+build resolves its `url(/media/…)` refs against the CMS host, 404s every font,
+and rewrites the `@font-face` to `unavailable.svg` (virtuallysrilanka's eicons
+face — every carousel glyph went blank). The fix is to re-freeze from a build
+whose report carries `sourceFile: .forge-cache/source-stylesheets/…`:
+temporarily drop `media.snapshot`, build against the live CMS, run
+`media-snapshot`, restore the flag. The manifest then carries the SOURCE sheet
+text and the second pass resolves its relative font URLs through the snapshot
+(`localized 26 reference(s)`, 0 unavailable, 0 dropped faces).
+
+`media-snapshot` now WARNS about both traps instead of leaving them to a cold
+build: a sheet entry with no `sourceFile` (or whose source text still contains
+`url(/media/…)`) and any `/wp-content/`/`/wp-includes/` URL in the built
+HTML/CSS that the report never localized (an image Astro's `<Image>` consumed).
+Both are advisory by default — the snapshot is still written. `--strict` turns
+them into exit 1 (the write still completes first, so a red CI run leaves a
+coherent snapshot to inspect and a re-run merges over it).
+
+### A materialized build must not authorize the dead CMS (2026-11-22)
+
+`astro.config.mjs` derives `image.domains` from `WP_SITE_URL ?? manifest.url`
+and `SmartImage` hands an authorized URL to Astro's `<Image>`, which DOWNLOADS
+it at build time. A materialized profile kept authorizing its retired CMS, so
+the first genuinely offline rebuild died:
+
+```
+[ERROR] [build] Caught error rendering /: FailedToFetchRemoteImageDimensions:
+  Failed to get the dimensions for http://…/wp-content/uploads/…png
+```
+
+`cmsOrigin()` in `src/lib/media.ts` now returns `''` when the manifest's
+`contentSource` is `materialized`, and `astro.config.mjs` skips the CMS host
+for the same profile. SmartImage falls back to a plain `<img>`, the post-build
+localizer mirrors the committed snapshot, and the build makes no request at
+all (verified with a preload that throws on any request to the retired host:
+exit 0, 29/29 references localized). Two consequences: an allowlisted
+`media.hosts` CDN still optimizes, and the images Astro used to consume have no
+snapshot entry — re-freeze AFTER the switch (virtuallysrilanka went 26 → 29
+URLs; the two PNGs left uncompressed are the localizer's"not smaller as WebP"
+decision, now an advisory on the media-budget gate).
 
 ### The gate that proves it stays detached
 

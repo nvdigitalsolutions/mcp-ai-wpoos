@@ -3,6 +3,9 @@
 	"name": "Virtually Sri Lanka",
 	"frontPage": "home-v3-2",
 	"shape": "one-pager",
+	"content": {
+		"source": "materialized"
+	},
 	"collections": [
 		{
 			"slug": "posts",
@@ -681,12 +684,23 @@
 		}
 	],
 	"deploy": {
-		"runtime": "static",
+		"runtime": "managed",
 		"publicOrigin": "https://virtuallysrilanka.com"
 	},
 	"media": {
 		"localize": true,
-		"mode": "local"
+		"mode": "local",
+		"snapshot": true
+	},
+	"forms": {
+		"delivery": "direct",
+		"mail": {
+			"provider": "brevo",
+			"from": "forms@virtuallysrilanka.com",
+			"fromName": "Virtually Sri Lanka",
+			"to": "info@virtuallysrilanka.com",
+			"subject": "Virtually Sri Lanka website enquiry"
+		}
 	},
 	"colors": {
 		"light": {

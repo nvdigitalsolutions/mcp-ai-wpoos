@@ -293,6 +293,12 @@ export interface ForgeManifest {
 	design?: ForgeDesign;
 	/** Contrast gate mode: 'warn' (default) or 'strict' (fail the build). */
 	designAudit?: 'warn' | 'strict';
+	/**
+	 * Route-conflict policy (2026-11-22) — `strictRoutes: true` makes the
+	 * generated `astro.config.mjs` set `prerenderConflictBehavior: "error"`.
+	 * Absent = Astro's `warn` default (the first path wins).
+	 */
+	build?: { strictRoutes?: boolean };
 	/** The form bridge block (114 §3.9) — endpoint/searchForms consumed by
 	 * the Form design component (env vars override at deploy time). */
 	forms?: { endpoint?: string; origin?: string; searchForms?: string[] };
@@ -4535,6 +4541,9 @@ async function scaffoldProject(
 		// tag to the public origin (a root-relative og:image is invalid).
 		seoImage: profile.seo?.ogImage ?? '',
 		contentSource: profile.content?.source ?? 'wordpress',
+		// Route-conflict policy (2026-11-22): opt-in strictness for the
+		// generated astro.config.mjs. Absent = Astro's `warn` default.
+		...( profile.build?.strictRoutes ? { build: { strictRoutes: true } } : {} ),
 		tokens: profile.tokens,
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',

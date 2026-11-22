@@ -35,10 +35,12 @@ const page = ( id: number, slug: string, title: string, content: string ) => ( {
 let server: Server | undefined;
 let origin = '';
 let outDir = '';
+/** Reset per test; a test may append duplicate-slug pages before capturing. */
+let entries: ReturnType< typeof page >[] = [];
 
 beforeEach( async () => {
 	outDir = await mkdtemp( join( tmpdir(), 'forge-materialize-' ) );
-	const entries = [
+	entries = [
 		page( 11, 'home', 'Home', '<div class="row"><p>Sri Lanka, with love</p></div>' ),
 		page( 12, 'styled', 'Styled', '<p style="color:red" onclick="steal()">Ink</p>' ),
 		page( 99, 'skip-me', 'Skip me', '<p>never shipped</p>' ),
@@ -134,5 +136,27 @@ describe( 'materializeFromWordPress', () => {
 		// snapshot never writes one — `content` (the raw body) especially.
 		expect( fields ).not.toContain( 'content' );
 		expect( fields ).toEqual( [ 'id', 'title', 'slug', 'date', 'modified', 'link' ] );
+	} );
+
+	it( 'publishes unique slugs when two pages share one', async () => {
+		// WordPress page slugs are unique among siblings only. The capture must
+		// leave both pages renderable: one keeps `team`, the other becomes
+		// `team-2` in BOTH the filename and the frontmatter (the route reads the
+		// latter), with the source slug preserved for redirects and hybrid merges.
+		entries.push(
+			page( 13, 'team', 'About team', '<p>about</p>' ),
+			page( 14, 'team', 'Services team', '<p>services</p>' )
+		);
+
+		const documents = await materializeFromWordPress( { profile: profile(), outDir } );
+		const team = documents.filter( ( doc ) => doc.slug.startsWith( 'team' ) );
+
+		expect( team.map( ( doc ) => doc.slug ).sort() ).toEqual( [ 'team', 'team-2' ] );
+		expect( team.find( ( doc ) => doc.slug === 'team-2' )?.slugRenamedFrom ).toBe( 'team' );
+
+		const mdx = await readFile( join( outDir, 'pages', 'team-2.mdx' ), 'utf8' );
+		expect( mdx ).toContain( 'slug: "team-2"' );
+		expect( mdx ).toContain( 'slugRenamedFrom: "team"' );
+		expect( mdx ).toContain( 'link: "https://cms.example.com/team/"' );
 	} );
 } );

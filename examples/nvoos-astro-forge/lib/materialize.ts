@@ -24,6 +24,7 @@ const FRONTMATTER_FIELDS = [
 	'id',
 	'title',
 	'slug',
+	'slugRenamedFrom',
 	'date',
 	'modified',
 	'excerpt',
@@ -34,7 +35,21 @@ const FRONTMATTER_FIELDS = [
 
 export interface MaterializedDocument {
 	collection: string;
+	/**
+	 * The slug the snapshot PUBLISHES: the source's own slug, or `<slug>-N`
+	 * when another document in the same collection already claimed it. This is
+	 * the value the route reads (`/[slug]/` for pages).
+	 */
 	slug: string;
+	/** The filename stem written — always the published slug. */
+	file: string;
+	/**
+	 * Set when the published slug was suffixed because a sibling claimed the
+	 * source's slug: the source's OWN slug (`team` for a document written as
+	 * `team-3`). It is also written to the frontmatter, so a hybrid load still
+	 * merges the snapshot against WordPress by the original slug.
+	 */
+	slugRenamedFrom?: string;
 	mdxBytes: number;
 	htmlBytes: number;
 }
@@ -115,6 +130,142 @@ function yamlValue( value: unknown ): string {
 	return typeof value === 'number' ? String( value ) : JSON.stringify( String( value ) );
 }
 
+/** The comparison key for a slug: trimmed and lower-cased (WP stores lower-case
+ * `post_name`; Astro slugifies a filename). */
+function slugKey( value: string ): string {
+	return value.trim().toLowerCase();
+}
+
+/** The pathname a source link points at (relative links included), lower-cased. */
+function linkPathname( link: unknown ): string | undefined {
+	if ( typeof link !== 'string' || link.trim() === '' ) {
+		return undefined;
+	}
+	try {
+		const pathname = new URL( link, 'https://forge.invalid' ).pathname.toLowerCase();
+		return pathname.endsWith( '/' ) ? pathname : `${ pathname }/`;
+	} catch {
+		return undefined;
+	}
+}
+
+/** A numeric source id, or undefined (a hand-written slug id is not one). */
+function numericId( data: Record< string, unknown > ): number | undefined {
+	const raw = data.id;
+	if ( typeof raw === 'number' && Number.isFinite( raw ) ) {
+		return raw;
+	}
+	if ( typeof raw === 'string' && raw.trim() !== '' && Number.isFinite( Number( raw ) ) ) {
+		return Number( raw );
+	}
+	return undefined;
+}
+
+/**
+ * Which document keeps the unsuffixed slug when two share one.
+ *
+ * Preferred order:
+ *   1. the document whose source `link` is exactly `/<slug>/` — its redirect
+ *      source equals its target, so it emits no rule that could shadow the
+ *      winner (and no chain through a renamed page);
+ *   2. the lowest source id — WordPress ids are stable and unique, so the
+ *      outcome never depends on API order;
+ *   3. input order, for documents without ids.
+ */
+function chooseKeeper(
+	indices: readonly number[],
+	documents: ReadonlyArray< { slug: string; data: Record< string, unknown > } >
+): number {
+	const key = slugKey( documents[ indices[ 0 ] ].slug );
+	const exact = indices.filter(
+		( index ) => linkPathname( documents[ index ].data.link ) === `/${ key }/`
+	);
+	const pool = exact.length > 0 ? exact : indices;
+	return pool.reduce( ( best, index ) => {
+		const candidateId = numericId( documents[ index ].data );
+		const bestId = numericId( documents[ best ].data );
+		if ( candidateId !== bestId ) {
+			return ( candidateId ?? Number.POSITIVE_INFINITY ) <
+				( bestId ?? Number.POSITIVE_INFINITY )
+				? index
+				: best;
+		}
+		return index < best ? index : best;
+	} );
+}
+
+/**
+ * Give every document a slug the collection's flat route can hold.
+ *
+ * WordPress page slugs are unique among SIBLINGS only, so a snapshot can hold
+ * `team` twice (`/about/team/`, `/services/team/`). Astro's glob loader and the
+ * template route `/[slug]/` cannot: the second entry would overwrite the first
+ * (the defect this writer used to paper over by de-duplicating only FILENAMES —
+ * the frontmatter kept the true `team`, so the route still collided).
+ *
+ * The writer now keeps one document on the bare slug and appends `-N` to the
+ * rest: the convention WordPress (`wp_unique_post_slug`), Drupal Pathauto and
+ * npm's `unique-slug` all use. Counting starts at 2 because the first
+ * duplicate is the SECOND document — WordPress never emits `-1` here. A suffix
+ * never takes a slug another document really owns (`team-2`), and the source
+ * slug is preserved as `slugRenamedFrom` so the redirect map can still send the
+ * original URL to the renamed page.
+ *
+ * Deterministic: the keeper is chosen by source link + id (see
+ * `chooseKeeper`), never by API order, so re-materializing produces the same
+ * names and a stable diff.
+ */
+function planPublishedSlugs(
+	documents: ReadonlyArray< {
+		collection: string;
+		slug: string;
+		data: Record< string, unknown >;
+	} >
+): string[] {
+	const published = documents.map( ( doc ) => doc.slug );
+	const byCollection = new Map< string, number[] >();
+	for ( const [ index, doc ] of documents.entries() ) {
+		const group = byCollection.get( doc.collection ) ?? [];
+		group.push( index );
+		byCollection.set( doc.collection, group );
+	}
+
+	for ( const indices of byCollection.values() ) {
+		// EVERY original slug is reserved, including one that will itself be
+		// renamed: a suffix must never shadow a document's real slug (`team-2`).
+		const real = new Set( indices.map( ( index ) => slugKey( documents[ index ].slug ) ) );
+		const used = new Set< string >();
+		const bySlug = new Map< string, number[] >();
+		for ( const index of indices ) {
+			const key = slugKey( documents[ index ].slug );
+			const group = bySlug.get( key ) ?? [];
+			group.push( index );
+			bySlug.set( key, group );
+		}
+
+		for ( const group of bySlug.values() ) {
+			const keeper = chooseKeeper( group, documents );
+			used.add( slugKey( documents[ keeper ].slug ) );
+			for ( const index of group ) {
+				if ( index === keeper ) {
+					continue;
+				}
+				const base = documents[ index ].slug;
+				let suffix = 2;
+				let candidate = `${ base }-${ suffix }`;
+				while ( real.has( slugKey( candidate ) ) || used.has( slugKey( candidate ) ) ) {
+					suffix += 1;
+					candidate = `${ base }-${ suffix }`;
+				}
+				published[ index ] = candidate;
+				used.add( slugKey( candidate ) );
+			}
+		}
+	}
+
+	return published;
+}
+
 /**
  * Write captured entries as `<outDir>/<collection>/<slug>.mdx` (frontmatter) plus
  * `<slug>.html` (the sanitized body).
@@ -132,13 +283,24 @@ async function writeDocuments(
 	} >
 ): Promise< MaterializedDocument[] > {
 	const results: MaterializedDocument[] = [];
-	for ( const doc of documents ) {
+	const published = planPublishedSlugs( documents );
+
+	for ( const [ index, doc ] of documents.entries() ) {
+		const slug = published[ index ];
+		const renamedFrom = slug === doc.slug ? undefined : doc.slug;
+		// The ORIGINAL slug stays available as `slugRenamedFrom`: a hybrid load
+		// merges the snapshot against WordPress by it, and the redirect map keeps
+		// the source URL reachable after the detach.
+		const data =
+			renamedFrom === undefined
+				? doc.data
+				: { ...doc.data, slug, slugRenamedFrom: renamedFrom };
 		const dir = join( outDir, doc.collection );
 		await mkdir( dir, { recursive: true } );
 
 		const lines = [ '---' ];
 		for ( const field of FRONTMATTER_FIELDS ) {
-			const value = doc.data[ field ];
+			const value = data[ field ];
 			if ( value === undefined || value === null || value === '' ) {
 				continue;
 			}
@@ -146,12 +308,19 @@ async function writeDocuments(
 		}
 		lines.push( '---', '' );
 		const mdx = lines.join( '\n' );
-		await writeFile( join( dir, `${ doc.slug }.mdx` ), mdx, 'utf8' );
+		await writeFile( join( dir, `${ slug }.mdx` ), mdx, 'utf8' );
 
 		if ( doc.html !== '' ) {
-			await writeFile( join( dir, `${ doc.slug }.html` ), doc.html, 'utf8' );
+			await writeFile( join( dir, `${ slug }.html` ), doc.html, 'utf8' );
 		}
-		results.push( { collection: doc.collection, slug: doc.slug, mdxBytes: mdx.length, htmlBytes: doc.html.length } );
+		results.push( {
+			collection: doc.collection,
+			slug,
+			file: slug,
+			...( renamedFrom === undefined ? {} : { slugRenamedFrom: renamedFrom } ),
+			mdxBytes: mdx.length,
+			htmlBytes: doc.html.length,
+		} );
 	}
 	return results;
 }

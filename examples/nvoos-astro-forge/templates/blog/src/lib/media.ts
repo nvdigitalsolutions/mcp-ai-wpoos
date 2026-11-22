@@ -36,13 +36,31 @@ function manifestUrl(): string {
 }
 
 /**
+ * Whether the profile declares the CMS gone (`content.source: materialized`).
+ *
+ * A materialized site's content comes from the committed snapshot, so there is
+ * no origin to download from — or to repair stale paths to.
+ */
+export function materializedContent(): boolean {
+	return ( manifest as unknown as { contentSource?: string } ).contentSource === 'materialized';
+}
+
+/**
  * The CMS origin (no trailing slash). `WP_SITE_URL` wins, mirroring the
  * content layer and astro.config.mjs.
  *
  * @param env Environment record (defaults to `import.meta.env`).
- * @returns The CMS origin, or `''` when unknown.
+ * @returns The CMS origin, or `''` when unknown (or when the CMS is gone).
  */
 export function cmsOrigin( env?: MediaEnv ): string {
+	// A materialized profile has NO CMS. Keeping the old origin would authorize
+	// Astro to download images from a host that is about to 404 — and the build
+	// dies on FailedToFetchRemoteImageDimensions. With no origin, SmartImage
+	// falls back to a plain <img> and the post-build localizer mirrors the
+	// committed snapshot (media.snapshot) instead.
+	if ( materializedContent() ) {
+		return '';
+	}
 	const raw = ( readEnv( env ).WP_SITE_URL ?? manifestUrl() ?? '' ).trim();
 	return raw ? raw.replace( /\/+$/, '' ) : '';
 }

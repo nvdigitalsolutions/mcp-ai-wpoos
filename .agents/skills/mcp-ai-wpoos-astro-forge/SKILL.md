@@ -1436,7 +1436,8 @@ stylesheet, which is the point of the path.
 Brevo/Mailjet API). SPF/DKIM/DMARC decide inbox placement. Notes:
 `reference/email-delivery.md` (now also: provider IP allowlists, secret
 hygiene, and why the throttle is proxy-wide). CMS removed, cutover, or
-rebuilding with no WordPress: `reference/cms-removal-materialized-content.md`.
+rebuilding with no WordPress: `reference/cms-removal-materialized-content.md`
+(route parity for posts, the no-CMS image-host rule, snapshot freeze order).
 
 ## Proposal 130 — consent-exempt cookieless beacon (2026-11-19)
 

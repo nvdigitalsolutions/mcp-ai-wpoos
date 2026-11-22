@@ -2175,6 +2175,32 @@ describe( 'scaffold — materialized content (the CMS is gone)', () => {
 	} );
 } );
 
+describe( 'scaffold — build policy (route conflicts)', () => {
+	it( 'writes build.strictRoutes only when the profile asks for it', async () => {
+		const root = await tempDir();
+		const strict = path.join( root, 'strict' );
+		await scaffold( {
+			profile: { ...PROFILE, build: { strictRoutes: true } },
+			targetDir: strict,
+			template: 'blog',
+		} );
+
+		const manifest = JSON.parse( await readFile( path.join( strict, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.build ).toEqual( { strictRoutes: true } );
+		// The config is the consumer — a regression here silently downgrades the
+		// policy back to Astro's `warn` default.
+		const config = await readFile( path.join( strict, 'astro.config.mjs' ), 'utf8' );
+		expect( config ).toContain( "manifest.build?.strictRoutes ? 'error' : 'warn'" );
+
+		// Absent by default: an existing site must not start failing on a
+		// pre-existing duplicate its CMS happens to publish.
+		const plain = path.join( root, 'plain' );
+		await scaffold( { profile: PROFILE, targetDir: plain, template: 'blog' } );
+		const plainManifest = JSON.parse( await readFile( path.join( plain, 'nvoos.json' ), 'utf8' ) );
+		expect( plainManifest.build ).toBeUndefined();
+	} );
+} );
+
 describe( 'scaffold — media snapshot (the CMS-less outage net)', () => {
 	it( 'refuses a media snapshot it cannot find', async () => {
 		// Same promise as content.snapshot: a net that is silently absent is
