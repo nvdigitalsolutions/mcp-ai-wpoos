@@ -127,9 +127,9 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['name'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Playlist name is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Playlist name is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -143,9 +143,9 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$existing_playlist = get_post( $playlist_id );
 
 			if ( ! $existing_playlist || 'dj_playlist' !== $existing_playlist->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Playlist not found.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_not_found',
+					__( 'Playlist not found.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -155,9 +155,9 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'You do not have permission to update this playlist.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'You do not have permission to update this playlist.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -184,10 +184,9 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$result = wp_update_post( $post_data );
 
 			if ( is_wp_error( $result ) ) {
-				return array(
-					'success' => false,
-					'error'   => $result->get_error_message(),
-				);
+				// Re-return the inner error rather than its message: unwrapping loses
+				// the code and any extra data a caller branches on.
+				return $result;
 			}
 		} else {
 			// Create playlist post.
@@ -201,10 +200,7 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$playlist_id = wp_insert_post( $post_data );
 
 			if ( is_wp_error( $playlist_id ) ) {
-				return array(
-					'success' => false,
-					'error'   => $playlist_id->get_error_message(),
-				);
+				return $playlist_id;
 			}
 		}
 
