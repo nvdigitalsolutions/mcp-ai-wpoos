@@ -210,6 +210,37 @@ final class ChatProfile
     }
 
     /**
+     * Advisory text for the system prompt, or an empty string.
+     *
+     * WordPress appends the same idea on `wp_mcp_ai_resolved_system_prompt`.
+     * It is **not** a control — the guard is (§174) — it stops the model
+     * retrying a write the server has already refused, which otherwise burns
+     * turns on a result it cannot change.
+     *
+     * The wording follows the prompt-engineering guidance rather than the
+     * obvious phrasing. "Do not attempt writes" is a negation: the model has
+     * to hold the forbidden action in mind to refuse it, and OpenAI's and
+     * Anthropic's guidance both say the positive form is the stronger one
+     * ("state the desired behavior positively"). So this names the mode, says
+     * what the boundary is, and describes what to do instead — including that
+     * a blocked call is final, so the model does not loop.
+     */
+    public function promptHint(): string
+    {
+        if (! $this->isRestrictive()) {
+            return '';
+        }
+
+        return sprintf(
+            'System: this conversation runs in %s mode. Tools that change data are blocked at the execution layer. '
+            . 'Gather what you need with read-only tools and answer from what you retrieved. '
+            . 'If the task needs a change, describe the change, its target and its effect instead of performing it. '
+            . 'A blocked call is final; carry on with the information you already have.',
+            $this->label
+        );
+    }
+
+    /**
      * Serialize for the REST catalogue and any panel that reads it.
      *
      * `is_default` names the registry's fallback, matching WordPress's

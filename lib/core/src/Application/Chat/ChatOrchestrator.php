@@ -32,6 +32,7 @@ use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Session\SessionLog;
 use Nvoos\Core\Application\Session\SessionTelemetry;
 use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Service\Harness\GuardrailPrompt;
@@ -200,6 +201,15 @@ class ChatOrchestrator
      * its own harness layer.
      */
     private ?HarnessProfileProviderInterface $harnessProfiles = null;
+
+    /**
+     * Optional per-user chat profile, for the advisory mode hint.
+     *
+     * The hint is **not** a control — the guard in `Application/Tool` is — so a
+     * runtime that never wires this is still enforced, just chattier: the model
+     * discovers the boundary by having a write refused instead of being told.
+     */
+    private ?ChatProfileResolverInterface $chatProfiles = null;
 
     /**
      * Optional trace store, so a turn can record what it did.
@@ -385,6 +395,33 @@ class ChatOrchestrator
     }
 
     /**
+     * Wire the per-user chat profile so the system prompt can carry its hint.
+     *
+     * Optional by design. The boundary is enforced at tool dispatch; this only
+     * tells the model where it is, so a read-only turn answers rather than
+     * spending its iterations on calls the server will refuse.
+     */
+    public function setChatProfileResolver(?ChatProfileResolverInterface $profiles): void
+    {
+        $this->chatProfiles = $profiles;
+    }
+
+    /**
+     * The advisory mode hint for this turn, or an empty string.
+     *
+     * Resolved from the server-built context only — the orchestrator's own
+     * `$userId` — so nothing a client sends can name a profile.
+     */
+    private function chatProfileHint(int $userId): string
+    {
+        if (null === $this->chatProfiles) {
+            return '';
+        }
+
+        return $this->chatProfiles->resolve(array( 'user_id' => $userId ))->promptHint();
+    }
+
+    /**
      * Resolve the guard that applies to this turn.
      */
     private function resolveOutputGuard(?array $profile): ?OutputGuard
@@ -420,16 +457,18 @@ class ChatOrchestrator
      * assistant ran on the user's words alone.
      *
      * Composition order matches WordPress: the guardrail block first, then the
-     * assistant's instructions, then whatever the conversation itself carried.
-     * Each part is added only when absent, because a client may already have
-     * injected one and a second copy doubles its weight in the prompt.
+     * assistant's instructions, then the chat profile's mode hint, then whatever
+     * the conversation itself carried. Each part is added only when absent,
+     * because a client may already have injected one and a second copy doubles
+     * its weight in the prompt.
      *
      * @param array<int, array<string, mixed>> $messages        Conversation messages.
      * @param array<string, mixed>             $assistantConfig Assistant configuration; `system_prompt` carries the instructions.
      * @param array<string, mixed>|null        $profile         Resolved harness profile, if any.
+     * @param int                              $userId          Caller, for the chat-profile hint.
      * @return array<int, array<string, mixed>>
      */
-    private function applySystemPrompt(array $messages, array $assistantConfig, ?array $profile): array
+    private function applySystemPrompt(array $messages, array $assistantConfig, ?array $profile, int $userId = 0): array
     {
         $raw          = $assistantConfig['system_prompt'] ?? '';
         $instructions = \is_string($raw) ? \trim($raw) : '';
@@ -457,6 +496,15 @@ class ChatOrchestrator
 
         if ('' !== $instructions && ! \str_contains($existing, $instructions)) {
             $parts[] = $instructions;
+        }
+
+        // The mode hint sits with the other rails, before any client text, so a
+        // client-supplied block cannot bury it. De-duplicated because a resumed
+        // turn may already carry it.
+        $hint = $this->chatProfileHint($userId);
+
+        if ('' !== $hint && ! \str_contains($existing, $hint)) {
+            $parts[] = $hint;
         }
 
         if (array() === $parts) {
@@ -707,7 +755,7 @@ class ChatOrchestrator
         // The harness profile drives both the prompt rails and the response
         // guard, so it is resolved once per turn.
         $profile  = $this->resolveProfile($assistantId);
-        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile);
+        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile, $userId);
 
         // Build tool definitions for this assistant.
         $allowedToolSlugs = $assistantConfig['tools'] ?? array();
@@ -1259,7 +1307,7 @@ class ChatOrchestrator
         // The harness profile drives both the prompt rails and the response
         // guard, so it is resolved once per turn.
         $profile  = $this->resolveProfile($assistantId);
-        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile);
+        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile, $userId);
 
         $iteration          = 0;
         $toolResultMessages = array();

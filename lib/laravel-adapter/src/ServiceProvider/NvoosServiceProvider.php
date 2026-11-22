@@ -412,6 +412,11 @@ class NvoosServiceProvider extends ServiceProvider {
 			$orchestrator->setOutputGuard( self::outputGuardFromConfig() );
 			$orchestrator->setHarnessProfileProvider( $app->make( HarnessProfileProviderInterface::class ) );
 
+			// The read-only mode hint. Advisory only — the guard in ToolRegistry
+			// is the control — but without it the model discovers the boundary by
+			// having a write refused, and spends iterations retrying.
+			$orchestrator->setChatProfileResolver( $app->make( ChatProfileResolverInterface::class ) );
+
 			// Trace capture is a master kill switch on top of the per-assistant
 			// profile: off here means nothing is written, whatever a profile says.
 			$orchestrator->setTraceStore(
