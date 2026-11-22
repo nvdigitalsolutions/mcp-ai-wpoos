@@ -140,6 +140,34 @@ class AiToolBuilderToolkitTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Argument validation must not become a way around the shell-tools gate.
+	 *
+	 * `check_tool_compliance` validates its argument contract before the gate, so
+	 * pin that a call that *does* supply code still hits the operator opt-in
+	 * first. Without this, a future reorder could let a caller reach the phpcs
+	 * shell-out with `WP_MCP_AI_ALLOW_SHELL_TOOLS` disabled.
+	 */
+	public function test_check_tool_compliance_still_gates_on_the_shell_constant(): void {
+		if ( ! $this->load_tool( 'WP_MCP_AI_Tool_Check_Tool_Compliance' ) ) {
+			$this->markTestSkipped( 'Check Tool Compliance is not available.' );
+		}
+
+		if ( defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) && WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+			$this->markTestSkipped( 'Shell tools are enabled in this environment.' );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Check_Tool_Compliance();
+		$result = $tool->execute( array( 'code' => '<?php // stub.' ), array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame(
+			'shell_tools_disabled',
+			$result->get_error_code(),
+			'An argument that satisfies the contract must still hit the shell-tools gate.'
+		);
+	}
+
+	/**
 	 * Tools that fail fast on empty arguments, before any I/O.
 	 *
 	 * `generate_tool_scaffold`, `generate_tool_tests` and `refactor_tool_code` are
