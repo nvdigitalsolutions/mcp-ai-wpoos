@@ -1274,13 +1274,18 @@ the changed files is the substantive gate; plan CI waits accordingly.
       it back in `tearDown()` so later suites see the environment they expect.
       (`wp_set_current_user(0)` alone is not enough; the restore runs inside
       the request, after your setUp.)
-  91. **A standalone-plugin suite whose bootstrap needs `WP_TESTS_*` cannot run
-      in this container.** `plugins/nvoos-forge-bridge` (and similar
-      single-plugin suites) read `WP_TESTS_DOMAIN` / `WP_TESTS_TITLE` /
-      `WP_TESTS_EMAIL` / `WP_PHP_BINARY` and abort without them; this local
-      environment does not define them, CI does. Gates that DO apply locally:
-      `php -l` and `phpcs`. Say "lint only, CI runs the suite" in the PR rather
-      than claiming the tests passed.
+  91. **A standalone-plugin suite whose bootstrap needs `WP_TESTS_*` CAN run
+      locally — in a one-off CLI container, not on the host.**
+      `plugins/nvoos-forge-bridge` (and similar single-plugin suites) read
+      `WP_TESTS_DOMAIN` / `WP_TESTS_TITLE` / `WP_TESTS_EMAIL` /
+      `WP_PHP_BINARY` and abort without them; the host does not define them.
+      Copy the plugin to `/tmp` inside a `wordpress:cli-php8.2` container
+      (never write into the bind mount), `wp core download --skip-content`,
+      write `vendor/wp-phpunit/wp-phpunit/wp-tests-config.php` in the COPY
+      with all four constants plus `DB_*` pointing at `oos-wp-db`, then run
+      `vendor/bin/phpunit -c phpunit.xml.dist`. forge-bridge 0.3.2: 80/80
+      tests, 229 assertions, ~5 s. Host gates (`php -l`, `phpcs`) remain
+      useful, but do not report "lint only" when the container run passed.
   92. **Shared-state flakes in a parallel JS suite.** `examples/nvoos-astro-forge`
       `tests/sites.test.ts` reads the shared `~/.nvoos-forge/sites.json`: it
       fails intermittently in a full parallel `npm test` run and passes in
