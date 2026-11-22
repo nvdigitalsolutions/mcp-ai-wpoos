@@ -6,7 +6,6 @@ use App\Filament\Admin\Navigation\AdminNavigationGroup;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Security\SecuritySnapshotStore;
-use App\Support\SettingsSchema;
 use BackedEnum;
 use UnitEnum;
 use Filament\Pages\Page;
@@ -99,26 +98,7 @@ class SecuritySnapshots extends Page
             return;
         }
 
-        $sensitive = array_flip(SettingsSchema::sensitiveKeys());
-        $rows = array();
-
-        foreach ($snapshot['payload'] as $key => $value) {
-            $key = (string) $key;
-
-            $masked = isset($sensitive[$key]) || $value === SettingsSchema::MASKED_PLACEHOLDER;
-
-            $rows[] = array(
-                'key' => $key,
-                'masked' => $masked,
-                'value' => $masked
-                    ? SettingsSchema::MASKED_PLACEHOLDER
-                    : (is_scalar($value) || null === $value
-                        ? (string) $value
-                        : (string) json_encode($value)),
-            );
-        }
-
-        usort($rows, static fn (array $a, array $b): int => strcmp($a['key'], $b['key']));
+        $rows = SecuritySnapshotStore::maskedRows($snapshot['payload']);
 
         $this->detail = array(
             'snapshot_id' => $snapshot['snapshot_id'],

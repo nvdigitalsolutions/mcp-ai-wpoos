@@ -16050,3 +16050,199 @@ exists to protect.
 | app suite (targeted: catalogue, professions, teams) | 27 tests, 130 assertions |
 | phpcs PSR-12 / WPCS on changed files | exit 0 |
 | licence boundary | unchanged — no PHP tree moved |
+
+## 170. The profession overlay — `save_profession` reaches `ready` (2026-11-22)
+
+§168 served the catalogue. §169 licensed it. §169.5 named what was still
+missing and why it was a store problem rather than a licensing one:
+`save_profession` was the **one** `unavailable` row left in the manifest, and its
+recorded reason said the only writable path was the WordPress CPT.
+
+That reason was half right. The *base* is code-owned reference data and must stay
+read-only. But the WordPress design was never one tier: a seeded profession CPT
+plus whatever an administrator added is already a base and an overlay. Only the
+second tier was missing here.
+
+### 170.1 The decision: two tiers, overlay wins per slug
+
+| Tier | Owner | Written by | Changes on deploy |
+|---|---|---|---|
+| **base** | the product | nobody at runtime | yes — it ships |
+| **overlay** | the estate | `save_profession` | no — it is tenant data |
+
+Reads merge the two with the overlay winning per slug. That is the industry
+default for reference data with tenant edits (a global tier authoritative for
+static data, a tenant tier authoritative for overrides), and it has three
+consequences worth stating because each is a test:
+
+- an estate that edited a profession sees its edit on **every** surface, not only
+  where it wrote it;
+- a base row no estate touched keeps receiving catalogue updates;
+- a slug in neither tier is still absent — the merge cannot invent a row, so
+  `getBySlug()['found']` stays meaningful.
+
+### 170.2 What shipped
+
+| Layer | File | Why there |
+|---|---|---|
+| contract | `lib/core/.../ProfessionOverlayInterface.php` | The merge lives in the MIT package, the storage lives with the host; the seam has to be a contract, or the decorator would have to know about a table. |
+| merge | `lib/laravel-adapter/src/Profession/OverlayProfessionRepository.php` | `ProfessionRepositoryInterface` only. A repository that was also a writer would be two writers for one catalogue. |
+| default store | `lib/laravel-adapter/src/Profession/JsonProfessionOverlay.php` | The MIT fallback: one JSON document per estate, tenant-scoped. |
+| app store | `app/Support/Professions/ProfessionOverlayStore.php` | `nvoos_professions`: unique `(tenant_id, slug)`, global tenant scope, one aggregate query for the version. |
+| model | `app/Models/Profession.php` | Carries the tenant invariant, and supplies `tenant_id` on create so no writer can orphan a row. |
+| migration | `2026_11_22_120000_create_nvoos_professions.php` | Replay-guarded; the composite unique key makes `slug` an upsert per estate. |
+
+The read binding is unchanged in shape — `CachedProfessionRepository` still wraps
+the catalogue — but it now wraps the merge decorator, and the decorator resolves
+the overlay lazily, so pointing `ProfessionOverlayInterface` at the table changed
+the whole read chain without touching the package binding again.
+
+### 170.3 Why a package-side store instead of a softer manifest
+
+The obvious alternative was a readiness model that tolerates "servable, but only
+where `X` is bound". It would have been smaller. It was rejected because
+`testTheContainerBuildsEveryServableTool` is the gate that makes a hollow tool
+impossible to ship: `ready` means *this host can honour it*. A conditional
+readiness class turns that into "usually", and the next optional dependency
+would take the same exemption.
+
+So the package carries a real store. It writes one JSON document per estate under
+`storage/`, using a plain filesystem rather than a Laravel disk, because local
+Flysystem constructs a `finfo` mime detector and a minimal PHP build may not have
+that extension — a store that cannot be constructed is a boot-time skip, which is
+exactly the failure a `ready` row must not have. Write-then-rename keeps a
+concurrent reader from seeing half a document.
+
+### 170.4 Copy-on-write, and what it costs
+
+A save for a slug with no overlay row is **seeded from the base record** before
+the caller's fields are applied. That is what makes the WordPress rule work:
+omitted is not cleared, so a title-only update keeps the description, the
+category and the recommended tools.
+
+The cost is real and is recorded rather than hidden: **the estate takes ownership
+of that row at the first edit**, and stops receiving base catalogue updates for
+it. That is the honest trade — the alternative is silently discarding the
+tenant's edit on the next deploy — and it is what WordPress does too, because
+there the CPT row *is* the whole record.
+
+### 170.5 The cache epoch had to grow with the tier
+
+`CachedProfessionRepository` invalidates generationally: the key embeds
+`catalogueVersion()`. With two tiers, the version has to cover both, so the merge
+decorator returns `{base}|{overlay}` — a content hash of the overlay document in
+the JSON store, `COUNT(*) | MAX(updated_at)` in the app store. Any write changes
+the key, so the previous generation is unreachable in one constant-time step with
+no purge.
+
+The app store memoises that fingerprint because it is read on every catalogue
+access, and the binding is **request-scoped** so the memo dies with the request
+rather than with the Octane worker (the T-0.8 rule). `save()` clears it.
+
+### 170.6 Contract, not just code
+
+`professions.writer` moved `none` → `shared`. `shared` here means *the tool
+writes and no panel does*, which the note now spells out — the earlier note had
+predicted exactly this overlay, so the change is a fulfilled prediction rather
+than a reversal.
+
+The panel deliberately stays read-only. Promoting the tool ends the objection
+that create/edit controls would lie about persistence; it does not license a
+second writer.
+
+### 170.7 Gates
+
+| Gate | Result |
+|---|---|
+| `php bin/audit-tool-readiness.php` | **204** servable (ready 164, pure 34, delegated 6), quarantined 19, **unavailable 0**, no violations |
+| `php bin/generate-tool-capability-flags.php --check` | in step — 1,465 tools |
+| `php bin/sync-professions.php --check` | in step — 12 files, 260 professions |
+| `lib/laravel-adapter` suite | **348** tests, 1,825 assertions |
+| `lib/core` suite | 1,951 tests, 15,664 assertions |
+| app suite (targeted: profession, security, surface, navigation) | 63 tests, 776 assertions |
+| app suite (full) | **1,979** tests, 20,783 assertions, exit 0 |
+| phpcs PSR-12 / WPCS on changed files | exit 0 / exit 0 |
+| `bin/check-license-boundary.sh` | intact |
+
+## 171. `/ops/security` — the last `planned` surface (2026-11-22)
+
+§167's inventory left exactly one `planned` row: the operator half of the
+security surface. Its admin half shipped in §51, and the contract's `projection`
+already described a **chart-free** summary of saved snapshots with masked keys.
+So this was never a question of *what* to build — only of scope.
+
+### 171.1 What shipped, and what did not
+
+Shipped: per-estate counts, the newest snapshots with estate / label / recorded
+at / key count, and a detail panel whose settings are masked at render.
+
+Not shipped, each for a recorded reason:
+
+| Absent | Why |
+|---|---|
+| posture scan | a live console check, not a stored record |
+| header preview | same |
+| self-test | same |
+| posture chart | Wave 6 canvas bundle (§7.10) |
+
+The first three matter because running them on page load would turn a records
+view into a slow, surprising request — the reasoning §51 already recorded.
+
+### 171.2 A second reader, not a loosened scope
+
+`SecuritySnapshotStore` is estate-filtered **by design**: its payload is one
+estate's configuration, and the missing filter was the §51 defect. It must not
+grow an unfiltered query.
+
+`/ops` has no estate selected (§17), so the operator page cannot be estate-scoped
+and should not pretend to be. The answer is a second reader with a second
+audience — `SecuritySnapshotOverview`, unfiltered, operator-only — the same shape
+`/ops/audit-log` already uses for the same reason. The estate is a **column**, not
+a filter.
+
+### 171.3 One masking rule
+
+Masking was inline in the admin page. Two copies is how the panels start
+disagreeing about which keys are sensitive, so it moved to
+`SecuritySnapshotStore::maskedRows()` — static, payload-only — and the admin page
+now calls it too. Masking is a property of the settings catalogue, not of an
+estate's snapshot, which is why the helper is static and sits beside the scoped
+reader.
+
+The test asserts the **rendered output** does not contain the secret, not the
+array: a page can hold a value it never prints.
+
+### 171.4 The identity-provider note needed no code
+
+§167's summary carried a stale claim that the `identity-provider` row still had
+four inert keys. It did not: `UnimplementedSettings::REASONS` contains **one**
+(`guest_token_lifetime`), and the three assistant REST gates gained a reader in
+Proposal 159 slice 2 (`EnsureAssistantRestEnabled`). The row was corrected in an
+earlier pass; this loop verified it against the class rather than against the
+summary. **No change was needed** — recorded so the next inventory does not
+re-reconcile it.
+
+### 171.5 Gates
+
+| Gate | Result |
+|---|---|
+| `SurfaceOwnershipTest` | every Filament file declared; `security.ops` now `subset` with a chart-free projection |
+| `OperatorNavigationTest` | `Security` filed in `Access` at sort 28; group order and labels intact |
+| `/ops/security` behaviour | 6 tests — access predicate, cross-estate list, masking, not-found, no writes |
+| phpcs PSR-12 / WPCS on changed files | exit 0 / exit 0 |
+
+## Parity closure
+
+Every axis the proposal tracks now has a number rather than a plan:
+
+| Axis | Before this loop | After |
+|---|---|---|
+| Tools | 223 rows, 203 servable, **1 unavailable** | 223 rows, **204 servable**, **0 unavailable** |
+| Surfaces | 50 rows, **1 planned**, 1 absent | 50 rows, **0 planned**, 1 absent (`onboarding`) |
+| Console keys | 6 non-route, all with reason codes | unchanged |
+| Flags | 0 rows without flags, 0 violations | unchanged |
+
+The remaining deliberate gaps are the recorded ones, not backlog: `onboarding`
+and `chat-profiles` are `absent` with reasons, `identity-provider` hides ten keys
+that configure absent software, and the posture chart is Wave 6. What is left is
+work that was *decided against*, which is the state a parity plan should reach.

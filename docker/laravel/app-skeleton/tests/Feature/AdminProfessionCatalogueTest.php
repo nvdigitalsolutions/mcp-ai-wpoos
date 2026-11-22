@@ -175,16 +175,25 @@ class AdminProfessionCatalogueTest extends TestCase
 
         $manifest = $this->generatedCatalogue();
 
-        $this->getJson('/api/v1/professions')
-            ->assertOk()
+        $response = $this->getJson('/api/v1/professions')->assertOk();
+
+        $response
             ->assertJsonPath('total', (int) $manifest['professions'])
-            ->assertJsonPath('catalogue_version', (string) $manifest['catalogue_version'])
             ->assertJsonStructure(array(
                 'professions' => array(
                     array('slug', 'title', 'category', 'category_slug', 'description', 'expertise', 'tools_count'),
                 ),
             ))
             ->assertJsonMissingPath('professions.0.role_description');
+
+        // The shipped base version, with the estate overlay's fingerprint
+        // appended when an estate has written one (149 §170). Pinning the
+        // literal would pin this test to "no overlay" rather than to the
+        // generated catalogue, and the overlay is empty in a fresh test app.
+        $this->assertStringStartsWith(
+            (string) $manifest['catalogue_version'],
+            (string) $response->json('catalogue_version')
+        );
     }
 
     /**

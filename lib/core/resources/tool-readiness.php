@@ -1441,8 +1441,11 @@ return array(
 		),
 		'save_profession' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SaveProfessionTool',
-			'readiness' => 'unavailable',
-			'reason' => 'Needs ProfessionWriteInterface, which this runtime deliberately does not implement: the profession catalogue is code-owned reference data, so the only writable path is the WordPress CPT (ProfessionRepositoryTest::test_the_laravel_catalogue_is_read_only). Not unblockable by an adapter (Proposal 160 section 12.1).',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ProfessionOverlayTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => false ),
 		),
 		'schedule_job' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ScheduleJobTool',

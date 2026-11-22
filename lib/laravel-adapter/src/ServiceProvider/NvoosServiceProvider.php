@@ -47,7 +47,9 @@ use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
+use Nvoos\Core\Domain\Contract\ProfessionOverlayInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
+use Nvoos\Core\Domain\Contract\ProfessionWriteInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
@@ -110,6 +112,8 @@ use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
+use Nvoos\Laravel\Profession\JsonProfessionOverlay;
+use Nvoos\Laravel\Profession\OverlayProfessionRepository;
 use Nvoos\Laravel\Adapter\QueueClient;
 use Nvoos\Laravel\Adapter\RegistryToolInvoker;
 use Nvoos\Laravel\Adapter\RateLimiter;
@@ -187,9 +191,33 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( AuthProviderInterface::class, AuthProvider::class );
 		$this->app->bind( ContentStoreInterface::class, ContentStore::class );
 		$this->app->bind( SchemaStoreInterface::class, SchemaStore::class );
+		// The profession catalogue's tenant tier (Proposal 149 §170). The base is
+		// code-owned reference data; this is the half `save_profession` writes.
+		//
+		// The JSON default exists because the readiness manifest is shared: its
+		// `save_profession` row is `ready`, so every host reading the manifest
+		// must be able to build `SaveProfessionTool`, and that tool needs a
+		// writer. The alternative — a readiness model that tolerates
+		// "servable only where X is bound" — would weaken the gate that makes a
+		// hollow tool impossible to ship.
+		//
+		// A host with real storage rebinds `ProfessionOverlayInterface` and both
+		// halves follow, because the read closure below resolves it lazily: the
+		// app points it at `nvoos_professions` without touching this file.
+		$this->app->bind( ProfessionOverlayInterface::class, function ( $app ) {
+			return new JsonProfessionOverlay( new ProfessionRepository( $app['config'] ), $app['config'] );
+		} );
+
+		$this->app->bind( ProfessionWriteInterface::class, function ( $app ) {
+			return $app->make( ProfessionOverlayInterface::class );
+		} );
+
 		$this->app->bind( ProfessionRepositoryInterface::class, function ( $app ) {
 			return new CachedProfessionRepository(
-				new ProfessionRepository( $app['config'] ),
+				new OverlayProfessionRepository(
+					new ProfessionRepository( $app['config'] ),
+					$app->make( ProfessionOverlayInterface::class ),
+				),
 				$app->make( CacheStoreInterface::class ),
 				(int) $app['config']->get( 'oos.professions.cache_ttl', 86400 ),
 			);
