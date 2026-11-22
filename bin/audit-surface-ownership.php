@@ -49,6 +49,7 @@ $report = [
     'console_only' => [],
     'planned_only' => ['total' => 0, 'ops' => [], 'admin' => [], 'both' => []],
     'inert' => ['ops' => [], 'admin' => []],
+    'absent' => ['ops' => [], 'admin' => []],
 ];
 
 foreach ($contract['surfaces'] as $surface) {
@@ -79,6 +80,19 @@ foreach ($contract['surfaces'] as $surface) {
 
     if (in_array($admin, $inertStates, true)) {
         $report['inert']['admin'][] = $id;
+    }
+
+    // `absent` is a decision, not a gap (Proposal 149 §167.2): the row says the
+    // surface was considered and declined, with the reason in `notes`. It is
+    // counted separately from `planned` so a closed plan can be re-measured —
+    // the closure table in the plan quotes this number, and before this it could
+    // only be recovered by grepping the contract.
+    if ('absent' === $ops) {
+        $report['absent']['ops'][] = $id;
+    }
+
+    if ('absent' === $admin) {
+        $report['absent']['admin'][] = $id;
     }
 
     $consoleServed = in_array($console, $servedStates, true);
@@ -137,3 +151,6 @@ echo '  /admin            : '.count($report['planned_only']['admin']).'  ('.$lis
 echo 'inert (rendered, unread): '.count(array_unique(array_merge($report['inert']['ops'], $report['inert']['admin']))).PHP_EOL;
 echo '  /ops              : '.count($report['inert']['ops']).'  ('.$list($report['inert']['ops']).')'.PHP_EOL;
 echo '  /admin            : '.count($report['inert']['admin']).'  ('.$list($report['inert']['admin']).')'.PHP_EOL;
+echo 'absent (declined, reasoned): '.count(array_unique(array_merge($report['absent']['ops'], $report['absent']['admin']))).PHP_EOL;
+echo '  /ops              : '.count($report['absent']['ops']).'  ('.$list($report['absent']['ops']).')'.PHP_EOL;
+echo '  /admin            : '.count($report['absent']['admin']).'  ('.$list($report['absent']['admin']).')'.PHP_EOL;

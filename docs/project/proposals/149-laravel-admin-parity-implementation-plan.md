@@ -2,7 +2,7 @@
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
 **Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). ✅ **WAVE 1 CLOSED.** 🟡 **WAVE 2 IN PROGRESS** — **38 numbered slices** (§8–§56) **shipped** and **the Wave 2 exit gate (key rotation + DLQ drain) is met**; §38 is the branding fix rather than a slice, §44–§46 are accounting/planning, **§55 is the admin navigation and table-UX plan — steps 1–6 shipped 2026-11-17, section complete** (six groups; collapsible rail with keyboard-operable disclosure; global search over title/slug/description opening the record's edit action; one shared data table with a caption, sticky header and in-body empty state, now on all fourteen admin data tables; pagination defaults at 25), and **§56 opens Wave 3** with the toolkit manifest renderer (`/admin/toolkits`). The consumer-port run (§48–§54) added **seven surfaces** that were console-only, and each slice opened by asking whether the store behind it was estate data.
-**Scoreboard** — re-measured 2026-11-21 with the `bin/audit-surface-ownership.php` rules over `docker/laravel/app-skeleton/contracts/surface-ownership.json`: **50 surfaces · 44 built on a Filament panel** (18 `/ops`, 29 `/admin`; `budgets`, `settings.platform` and `tokens.personal` are on both) · **29 console-served** · **4 console-only** (`automation-canvas`, `chat`, `connected-apps`, `wordpress-bridge` — each a recorded disposition, not a gap) · **0 planned-only** · **1 inert** (`identity-provider` on `/admin`) · **2 recorded `absent`** (`chat-profiles` on `/admin`, `onboarding` on `/ops`). §14.2 holds the rule this measures against: a console surface is not admin parity.
+**Scoreboard** — re-measured 2026-11-22 with the `bin/audit-surface-ownership.php` rules over `docker/laravel/app-skeleton/contracts/surface-ownership.json`: **50 surfaces · 44 built on a Filament panel** (19 `/ops`, 29 `/admin`; `security`, `budgets`, `settings.platform` and `tokens.personal` are on both) · **29 console-served** · **4 console-only** (`automation-canvas`, `chat`, `connected-apps`, `wordpress-bridge` — each a recorded disposition, not a gap) · **0 planned-only** · **0 inert** · **2 recorded `absent`** (`chat-profiles` on `/admin`, `onboarding` on `/ops`). §14.2 holds the rule this measures against: a console surface is not admin parity.
 **Validation** — app suite: **1277 tests / 7243 assertions, 0 failures** from `docker/laravel/app-skeleton`, where the parity providers resolve `tests/fixtures/` five levels up. The dev container mounts the app at `/app`, so that walk lands on `/`; the container-only failures have two separate causes, both measured 2026-11-21: the PM providers returned no rows until `docker-compose.laravel.yml` named the bind-mount path, and four `WifiKpisTest` cases were missing a fixture that **is** committed but predated the `/app` copy — all five pass once it is synced. `PASS Tests\Feature\SurfaceOwnershipTest`. A red run of that gate is a contract break, not a flake.
 **Date:** 2026-11-16 · **Header refreshed:** 2026-11-21
 **Scope (Wave 0):** ~3–4 weeks, one engineer
@@ -16368,7 +16368,7 @@ Every axis the proposal tracks now has a number rather than a plan:
 | Axis | Before this loop | After |
 |---|---|---|
 | Tools | 223 rows, 203 servable, **1 unavailable** | 223 rows, **204 servable**, **0 unavailable** |
-| Surfaces | 50 rows, **1 planned**, 1 absent | 50 rows, **0 planned**, 1 absent (`onboarding`) |
+| Surfaces | 50 rows, **1 planned**, 2 absent | 50 rows, **0 planned**, 2 absent (`chat-profiles`, `onboarding`) |
 | Console keys | 6 non-route, all with reason codes | unchanged |
 | Flags | 0 rows without flags, 0 violations | unchanged |
 
@@ -16376,3 +16376,151 @@ The remaining deliberate gaps are the recorded ones, not backlog: `onboarding`
 and `chat-profiles` are `absent` with reasons, `identity-provider` hides ten keys
 that configure absent software, and the posture chart is Wave 6. What is left is
 work that was *decided against*, which is the state a parity plan should reach.
+
+## 173. Closure re-verified (2026-11-22)
+
+The closure above is a measurement, and two of its numbers predated §131 and
+§171. Re-running every axis on the merged tree gives:
+
+| Axis | Closure said | Measured 2026-11-22 | Verdict |
+|---|---|---|---|
+| Surfaces | 50 rows, 0 planned, **1 absent** | 50 rows, 0 planned, **2 absent** (`chat-profiles` on `/admin`, `onboarding` on `/ops`) | table corrected |
+| Filament-built | 44 (18 `/ops`, 29 `/admin`) | 44 (19 `/ops`, 29 `/admin`) | scoreboard corrected |
+| Inert | 1 (`identity-provider`) | **0** | scoreboard corrected |
+| Console-only | 4 | 4 | unchanged |
+| Tools | 223 rows, 204 servable, 0 unavailable | 223 / 204 / 0 violations | unchanged |
+| Console keys | 6 non-route, all reasoned | 45 keys: 39 `route`, 6 reasoned | unchanged |
+| Flags | 0 rows without flags, 0 violations | catalogue in step (1,465 tools) | unchanged |
+
+### 173.1 Why the numbers moved, and why only the numbers did
+
+Nothing was unbuilt. `identity-provider` became `subset` in §131 — eight keys
+work and one disabled field is explained rather than hidden — and §171 added the
+`/ops` half of `security`, which made it the fourth dual-panel surface. That is
+why `/ops` rose by one while the surface total did not: 19 + 29 − 4 = 44.
+
+The `absent` count was never 1. §167.1 lists **two** absences with reasons, the
+contract has always carried both, and the closure table dropped one when it was
+written. `chat-profiles` is the one that was lost.
+
+### 173.2 The audit now reports absences
+
+`bin/audit-surface-ownership.php` printed surfaces, built-by-panel,
+console-only, planned and inert — every state a burn-down needs except `absent`,
+which could only be recovered by grepping the contract. It now prints:
+
+```
+absent (declined, reasoned): 2
+  /ops              : 1  (onboarding)
+  /admin            : 1  (chat-profiles)
+```
+
+### 173.3 Nothing in the record is buildable, and this is why
+
+Each remaining entry is a decision, not a backlog item:
+
+- **`onboarding`** duplicates two writes that already have homes.
+- **`chat-profiles`** — the enforcement port shipped in §174. The panel page is
+  still absent, now for a narrower reason: the profile is a *per-user
+  preference*, so an admin page that set someone else's would be an authority
+  grant rather than a preference, and the record has not decided to build one.
+- **posture scan / header preview / self-test** are live checks the console
+  already owns. Re-running them on page load is the slow request §171 declined,
+  and a second panel copy is the duplication §8.1 exists to prevent.
+- **posture chart** is the Wave 6 canvas bundle (§7.10).
+
+So the plan's status is unchanged: every axis has a number, and the only work
+left is work that was decided against.
+
+## 174. Chat profiles: the enforcement port (2026-11-22)
+
+§167 left `chat-profiles` as one of two recorded absences with a specific
+prerequisite: *"an enforcement port covering both the API and the panel; a page
+without it is worse than no page, because it would advertise a restriction the
+server does not apply."* This is that port. **The page is still absent**, which
+is now a product decision rather than a missing prerequisite.
+
+### 174.1 What already existed, and what did not
+
+`lib/core` already shipped `ReadOnlyToolGuard`: deny-only, registered as a
+monotonic guard, blocking gated flags and (by default) anything that declares
+no flags. What it could not do was vary by principal — it is a **deployment**
+switch (`oos.read_only.enabled`, off by default), so the runtime could be
+read-only, or not, but a *user* could not be.
+
+WordPress resolves a profile per user (`wp_mcp_ai_chat_profile` → site default
+→ `write`, guests read-only) and enforces it at the tool boundary. That gap is
+what §167 recorded.
+
+### 174.2 The industry position: this is a runtime control
+
+Three independent sources shaped the design, and they agree on the part that
+matters:
+
+- **MCP tool annotations are hints, not contracts.** The specification requires
+  clients to treat them as untrusted, and *"the spec assumes the worst until
+  told otherwise"* — an unannotated tool is non-read-only and potentially
+  destructive. *"If a proposal's value depends on the annotation being true,
+  it's asking for a contract, and the right place for that is the authorization
+  layer … or the runtime."* (Model Context Protocol, *Tool Annotations as Risk
+  Vocabulary*, 2026-03.)
+- **OWASP LLM06:2025 (Excessive Agency)** asks for least privilege enforced in
+  the downstream system, with actions *"executed in the user's security
+  context"*. Instructing the model is explicitly not a control.
+- **Claude Code's permission model** is deny → ask → allow with **deny never
+  overridable**, and its documentation draws the line this port follows:
+  *"Instructions in your prompt or CLAUDE.md shape what Claude tries to do;
+  only rules, modes, and hooks change what it's allowed to do."*
+
+Two consequences are load-bearing here, and both are pinned by tests:
+
+1. The profile is resolved from the **server-built context** (`user_id`), and a
+   `chat_profile` a caller drops into that context is ignored.
+2. A blocked write is **denied**, never downgraded to a confirmation prompt.
+
+### 174.3 What shipped
+
+| Layer | Piece |
+|---|---|
+| core | `ChatProfile` — `write` / `read-only`, gated flags taken from `CapabilityFlagVocabulary::READ_ONLY_GATED` so it cannot drift from `ReadOnlyToolGuard` |
+| core | `ChatProfileGuard` — monotonic `ToolGuardInterface`; delegates the flag decision to `ReadOnlyToolGuard` rather than reimplementing it |
+| core | `ChatProfileResolverInterface` — the trust boundary as a port |
+| adapter | `ChatProfileResolver` — `users.chat_profile` → site default → `write`; no per-instance cache, because Octane workers would outlive the request that changed the value |
+| app | migration `users.chat_profile` (nullable = inherit; no backfill, so the deploy changes no behaviour) |
+| app | `GET` / `PUT /api/v1/chat-profile` — catalogue + resolved profile, and the preference writer |
+| config | `oos.chat_profiles.{enabled,default,block_undeclared}`, enabled by default because a user with no selection resolves to `write` |
+
+Two readers, and the difference is the security property:
+
+- `ChatProfile::fromSlug()` is **total** and falls back to `write` — the
+  fail-safe floor, so a bad stored value cannot lock every chat out of tools.
+- `ChatProfile::tryFromSlug()` returns **null** and is what the setter uses. A
+  typo must not become the widest grant.
+
+Selection is asymmetric, mirroring WordPress's `can_user_select()`: entering a
+restrictive profile is a downgrade any signed-in user may make; leaving one is
+an upgrade and needs `manage_options`. Without that, the endpoint that
+restricted a user would be the endpoint they used to un-restrict themselves.
+
+### 174.4 Deliberate omissions
+
+| Not shipped | Why |
+|---|---|
+| panel page | the profile is a per-user preference; a tenant-admin page setting someone else's is an authority grant, not a preference |
+| guest profile | there is no anonymous chat surface here (`guest_token_lifetime` is inert for that reason); a context with no `user_id` is a machine credential or a queued job, governed by the machine allowlist and approval gate |
+| system-prompt hint | advisory only — every source above says the prompt is not the control. Worth adding so the model stops retrying blocked calls, but it changes no guarantee |
+| Pro profile registration | there is no Pro profile catalogue on this runtime to extend |
+
+### 174.5 Gates
+
+| Gate | Result |
+|---|---|
+| `ChatProfileTest` + `ChatProfileGuardTest` (core) | **15 tests / 32 assertions** |
+| `ChatProfileApiTest` + `ChatProfileEnforcementTest` | **14 tests / 48 assertions** — including the ignored client-supplied slug and the no-self-elevation case |
+| tool + security regression (`ToolExecutionTest`, `MachineToolExecutionTest`, `MachineToolApprovalTest`, `MachineToolAllowlistTest`, `AdminToolCatalogueTest`, `SecurityPostureTest`, `ScheduledToolIdentityTest`, `ToolRegistrationTest`, `ToolsReadinessTest`) | **61 tests / 519 assertions** |
+| phpcs PSR-12 on 14 changed files | exit 0 |
+| `bin/check-license-boundary.sh` | intact |
+
+The contract row changed with it: `chat-profiles` stays `admin: absent`, gains
+`writer: console` (the API is the only writer; the SPA still has no key for it),
+and its note now records enforcement as shipped.

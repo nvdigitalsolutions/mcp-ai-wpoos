@@ -952,6 +952,29 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Per-user chat profiles
+	|--------------------------------------------------------------------------
+	|
+	| WordPress lets each user carry a chat profile (`write` or `read-only`).
+	| The resolved profile is enforced at the same pre-dispatch point as the
+	| deployment-wide read-only switch above, so a blocked write is denied
+	| rather than confirmed.
+	|
+	| On by default: a user with no personal selection resolves to `write`, so
+	| the feature changes nothing until someone chooses a restrictive profile.
+	| `default` is the site fallback for those users. `block_undeclared` keeps
+	| the MCP pessimistic default — a tool that declares no capability flags is
+	| assumed to write.
+	|
+	*/
+	'chat_profiles' => array(
+		'enabled'          => (bool) env( 'NVOOS_CHAT_PROFILES', true ),
+		'default'          => (string) env( 'NVOOS_CHAT_PROFILE_DEFAULT', 'write' ),
+		'block_undeclared' => (bool) env( 'NVOOS_CHAT_PROFILES_BLOCK_UNDECLARED', true ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Necessity gate
 	|--------------------------------------------------------------------------
 	|

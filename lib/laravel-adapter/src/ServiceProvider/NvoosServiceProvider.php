@@ -20,6 +20,7 @@ use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Security\InputGuard;
 use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Tool\ChatProfileGuard;
 use Nvoos\Core\Application\Tool\NecessityGuard;
 use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolReadiness;
@@ -31,6 +32,7 @@ use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
+use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EmailServiceInterface;
@@ -97,6 +99,7 @@ use Nvoos\Laravel\Tool\ManifestToolRegistrar;
 use Nvoos\Laravel\Adapter\AgentOrchestration;
 use Nvoos\Laravel\Adapter\AuthProvider;
 use Nvoos\Laravel\Adapter\CacheStore;
+use Nvoos\Laravel\Adapter\ChatProfileResolver;
 use Nvoos\Laravel\Adapter\ContentStore;
 use Nvoos\Laravel\Adapter\ErrorFactory;
 use Nvoos\Laravel\Adapter\EmailService;
@@ -272,6 +275,39 @@ class NvoosServiceProvider extends ServiceProvider {
 
 		// Readiness decisions — the manifest is the registration policy.
 		$this->app->singleton( ToolReadiness::class, static fn (): ToolReadiness => new ToolReadiness() );
+
+		// Per-user chat profiles (Proposal 015 port). The resolver is the only
+		// thing that knows where a preference is stored; the guard asks it, and
+		// the API and any panel ask the same resolver.
+		$this->app->singleton( ChatProfileResolverInterface::class, static function ( $app ): ChatProfileResolver {
+			$profiles = (array) $app['config']->get( 'oos.chat_profiles', array() );
+
+			return new ChatProfileResolver(
+				(bool) ( $profiles['enabled'] ?? true ),
+				(string) ( $profiles['default'] ?? 'write' ),
+			);
+		} );
+
+		// Chat-profile enforcement. On by default, because a user with no
+		// selection resolves to `write`: the guard only bites once someone
+		// chooses a restrictive profile. Registered as a monotonic guard, so a
+		// denial here is not a confirmation prompt and no listener can re-allow
+		// it.
+		$this->app->afterResolving( ToolRegistry::class, function ( ToolRegistry $registry, $app ): void {
+			$profiles = (array) $app['config']->get( 'oos.chat_profiles', array() );
+
+			if ( ! (bool) ( $profiles['enabled'] ?? true ) ) {
+				return;
+			}
+
+			$registry->addGuard(
+				new ChatProfileGuard(
+					$registry,
+					$app->make( ChatProfileResolverInterface::class ),
+					(bool) ( $profiles['block_undeclared'] ?? true ),
+				)
+			);
+		} );
 
 		// Read-only deployment profile (Phase 5.4). Registered as a monotonic
 		// guard, so it runs after every pre-execute listener and cannot be

@@ -76,6 +76,7 @@
 	<rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
 		<exclude-pattern>*/lib/core/tests/Integration/ToolRegistryIntegrationTest.php</exclude-pattern>
 		<exclude-pattern>*/lib/core/tests/Unit/Application/Tool/ReadOnlyToolGuardTest.php</exclude-pattern>
+		<exclude-pattern>*/lib/core/tests/Unit/Application/Tool/ChatProfileGuardTest.php</exclude-pattern>
 		<exclude-pattern>*/lib/core/tests/Unit/Infrastructure/Profession/CachedProfessionRepositoryTest.php</exclude-pattern>
 		<exclude-pattern>*/lib/core/tests/Unit/Tool/LegacyToolAdapterTest.php</exclude-pattern>
 		<exclude-pattern>*/lib/core/tests/Unit/Tool/PortedClusterOneToolsTest.php</exclude-pattern>

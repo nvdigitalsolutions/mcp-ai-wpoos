@@ -632,10 +632,10 @@
       "ops": null,
       "admin": { "state": "absent" },
       "console": null,
-      "writer": "none",
+      "writer": "console",
       "plan_gate": null,
       "projection": null,
-      "notes": "Not a parity gap: WordPress-only by construction (Proposal 015). The feature is a two-value code registry (`write`/`read-only`), a per-user preference in user meta plus `wp_mcp_ai_settings`, and enforcement through the `wp_mcp_ai_before_tool_execution` gate pipeline, seeded into the Pro SPA runtime. Nothing in this runtime implements any of the three — no registry, no preference, no gate — so a page here would render a control nothing reads, which is the UI fiction this contract exists to prevent. `writer` corrected from `admin` to `none` for the same reason as `professions` (§23): no class on this runtime persists a profile. The prerequisite is an enforcement port covering both the API and the panel; a page without it is worse than no page, because it would advertise a restriction the server does not apply."
+      "notes": "Enforcement shipped (Proposal 149 §174). This runtime now has all three pieces the old note said were missing: a two-profile registry in nvoos/core (`write`/`read-only`), a per-user preference on `users.chat_profile`, and a monotonic `ChatProfileGuard` that delegates the flag decision to `ReadOnlyToolGuard`, registered in the tool registry. `GET`/`PUT /api/v1/chat-profile` is the writer, which is why `writer` moved from `none` to `console`: the API is the console's write path. `console` stays null because the SPA has no `console-endpoints.json` key for it yet. The admin page is still `absent`, now for a product reason rather than a missing prerequisite — the profile is a per-user preference, so a tenant-admin page that set someone else's would be an authority grant, not a preference. Still unported and recorded: the guest profile (there is no anonymous chat surface here; `guest_token_lifetime` is inert for that reason), the advisory system-prompt hint, and the Pro profile-registration filter."
     },
     {
       "id": "audit-log",
