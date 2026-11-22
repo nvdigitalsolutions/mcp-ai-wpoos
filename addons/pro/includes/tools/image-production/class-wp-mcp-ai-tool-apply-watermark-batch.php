@@ -200,7 +200,7 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array Watermark results.
+	 * @return array|WP_Error Watermark results, or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments with sanitization.
@@ -235,17 +235,18 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 		);
 
 		if ( empty( $attachment_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No valid attachment IDs provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'No valid attachment IDs provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check GD availability if not dry run.
 		if ( ! $dry_run && ! $this->has_gd_library() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'PHP GD extension is required for watermarking. Please enable the GD extension on your server.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'PHP GD extension is required for watermarking. Please enable the GD extension on your server.', 'mcp-ai-wpoos-pro' ),
+				array( 'engine' => 'gd' )
 			);
 		}
 
@@ -254,9 +255,10 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 		if ( 'logo' === $watermark_type ) {
 			$logo_id = $this->get_site_logo_id();
 			if ( ! $logo_id && ! $dry_run ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'No site logo found. Please set a custom logo in Appearance → Customize → Site Identity.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_not_found',
+					__( 'No site logo found. Please set a custom logo in Appearance → Customize → Site Identity.', 'mcp-ai-wpoos-pro' ),
+					array( 'resource' => 'site_logo' )
 				);
 			}
 		}
