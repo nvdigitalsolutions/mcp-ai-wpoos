@@ -1,0 +1,86 @@
+name: Media Worker Tests
+
+# Proposal 149 §166. The media worker had no CI at all: `node --test` passed
+# locally but `npm ci` had never run on a runner, so the install — not the
+# tests — was the unproven step. Verified once on node:22-slim with no build
+# tools: `npm ci` exit 0 (803 packages), 214 tests, 213 pass / 1 skipped /
+# 0 fail, and `sharp` loads.
+#
+# The job stays NON-BLOCKING until it has been green on ten consecutive pull
+# requests. A first-time blocking job that fails for an installation reason
+# blocks every merge, which is the failure mode §161.4 declined to risk.
+# Remove `continue-on-error` once the soak completes.
+
+on:
+  pull_request:
+    paths:
+      - 'addons/media-worker/**'
+      - '.github/workflows/media-worker-tests.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'addons/media-worker/**'
+      - '.github/workflows/media-worker-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: media-worker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # SOAK — see the header. Non-blocking by decision, not by accident.
+    continue-on-error: true
+
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # `engines` requires >= 22.12.0. One version is enough for a soak:
+        # the risk here is the native install tree, not a language difference.
+        node-version: [ 22.x ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: addons/media-worker/package-lock.json
+
+      - name: Install dependencies
+        working-directory: addons/media-worker
+        env:
+          # No test imports puppeteer, and the worker only needs the browser
+          # for crawl jobs at runtime. Downloading Chromium here would add
+          # ~150 MB to every run for nothing.
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+        run: npm ci --ignore-engines --no-audit --no-fund
+
+      # The tests are dependency-free, so a green suite alone would not prove
+      # the install worked. `sharp` is the module the image pipeline cannot run
+      # without; loading it is the cheapest honest assertion that the native
+      # optional tree resolved.
+      - name: Assert the native image module loads
+        working-directory: addons/media-worker
+        run: |
+          node -e "import('sharp').then((m) => {
+            const version = m.default?.versions?.sharp;
+            if (!version) {
+              throw new Error('sharp loaded but reports no version');
+            }
+            console.log('sharp', version);
+          })"
+
+      - name: Run the test suite
+        working-directory: addons/media-worker
+        run: npm test
