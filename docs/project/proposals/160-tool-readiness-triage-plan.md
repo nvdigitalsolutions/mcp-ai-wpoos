@@ -1,6 +1,6 @@
 # Proposal 160 — Tool Readiness Triage Plan
 
-**Status:** Planned · **Date:** 2026-11-21 · **Owner:** platform
+**Status:** Batches 1–6 landed (149 §139–§147); the four image rows landed 2026-11-22 (149 §160). Open: four orchestration rows. · **Date:** 2026-11-21 · **Owner:** platform
 **Depends on:** 090-M (the readiness manifest), 149 §123–§134 (machine principals)
 **Measured against:** `lib/core/resources/tool-readiness.php`, 2026-11-21
 
@@ -209,6 +209,13 @@ The app already ships the intended backend - `app/Support/Media/MediaWorkerClien
 alongside `MediaSweeper`, `MediaLibrary` and `OptimizeMediaFile` - so the follow-up
 is a `MediaWorkerImageProcessing` adapter bound to the interface, after which these
 four rows can become `ready` with a test as evidence.
+
+**Landed 2026-11-22 (149 §160).** The client moved into `lib/laravel-adapter`
+(`Nvoos\Laravel\Adapter\MediaWorkerClient`) so the *package* can construct all
+four tools — the manifest's promise has to hold for any runtime that loads it,
+not only the app. The adapter adds two sidecar routes, `POST /api/image/transform`
+and `POST /api/image/info`, with explicit pixel, dimension and format bounds. The
+four rows are `ready`; servable is **199**.
 
 ## 12. Contract accounting - every core interface checked against this runtime
 

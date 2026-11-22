@@ -38,6 +38,7 @@ use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
@@ -99,6 +100,7 @@ use Nvoos\Laravel\Adapter\DatabaseTraceStore;
 use Nvoos\Laravel\Adapter\HarnessProfileProvider;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
@@ -148,6 +150,13 @@ class NvoosServiceProvider extends ServiceProvider {
 		// so erlang_c_queue_health could not be constructed. Binding the shipped
 		// service is the whole fix; it has no dependencies of its own.
 		$this->app->bind( ErlangCInterface::class, \Nvoos\Core\Domain\Service\Optimization\ErlangC::class );
+
+		// The port has no PHP image library, so the four image tools need this
+		// contract to be constructible. The media worker is the platform's Sharp
+		// pipeline; `isAvailable()` answers false when no worker is configured,
+		// which is the same shape WordPress has without GD/Imagick
+		// (Proposal 149 §160).
+		$this->app->bind( ImageProcessingInterface::class, MediaWorkerImageProcessing::class );
 		$this->app->bind( FileStoreInterface::class, FileStore::class );
 		$this->app->bind( FileUploadServiceInterface::class, function ( $app ) {
 			return new FileUploadService(

@@ -1008,6 +1008,260 @@ router.post('/optimize', upload.single('file'), async (req, res) => {
   }
 });
 
+// ── Image Transform (Proposal 149 §160) ───────────────────
+// One endpoint for the geometry operations the PHP image adapter needs
+// (resize / crop / rotate) plus an encoder choice, and one for metadata.
+//
+// Untrusted input: the caller is the platform's own runtime, but the file is
+// still attacker-influenced (a user upload), so the bounds are explicit rather
+// than inherited:
+//
+//  - `limitInputPixels` caps a decompression bomb before Sharp allocates
+//  - `failOn: 'error'` rejects truncated or corrupt input instead of guessing
+//  - every geometry value is bounded to TRANSFORM_MAX_DIMENSION
+//  - the output format is an allowlist, so no encoder is reachable by name
+//
+// There is no URL fetch here, so the SSRF surface of a remote-image pipeline
+// does not exist: bytes arrive up the multipart body.
+const TRANSFORM_MAX_INPUT_PIXELS = 100_000_000; // ~10,000 × 10,000
+const TRANSFORM_MAX_DIMENSION = 8192;
+const TRANSFORM_MAX_OFFSET = 1_000_000;
+const TRANSFORM_MAX_OPERATIONS = 8;
+const TRANSFORM_FORMATS = ['png', 'jpeg', 'webp', 'gif'];
+const TRANSFORM_HEX = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * Normalise a format slug to the encoder allowlist. `jpg` is accepted as an
+ * alias; anything else outside the allowlist returns an empty string.
+ *
+ * @param {*} format
+ * @returns {string}
+ */
+function normaliseTransformFormat(format) {
+  const slug = String(format ?? '').toLowerCase();
+
+  if ('jpg' === slug) {
+    return 'jpeg';
+  }
+
+  return TRANSFORM_FORMATS.includes(slug) ? slug : '';
+}
+
+/**
+ * @param {*} value
+ * @param {number} min
+ * @param {number} max
+ * @param {string} label
+ * @returns {number}
+ */
+function boundedInt(value, min, max, label) {
+  const number = Number(value);
+
+  if (!Number.isInteger(number) || number < min || number > max) {
+    throw new Error(`${label} must be an integer between ${min} and ${max}.`);
+  }
+
+  return number;
+}
+
+/**
+ * Parse and bound the `operations` field.
+ *
+ * @param {*} raw JSON string from the multipart body.
+ * @returns {Array<Object>}
+ */
+function parseTransformOperations(raw) {
+  let parsed;
+
+  try {
+    parsed = JSON.parse(String(raw ?? '[]'));
+  } catch {
+    throw new Error('operations must be a JSON array.');
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error('operations must be a JSON array.');
+  }
+
+  if (parsed.length > TRANSFORM_MAX_OPERATIONS) {
+    throw new Error(`A transform accepts at most ${TRANSFORM_MAX_OPERATIONS} operations.`);
+  }
+
+  return parsed.map((operation) => {
+    const type = String(operation?.type ?? '');
+
+    switch (type) {
+      case 'resize': {
+        const width = undefined === operation.width
+          ? undefined
+          : boundedInt(operation.width, 1, TRANSFORM_MAX_DIMENSION, 'width');
+        const height = undefined === operation.height
+          ? undefined
+          : boundedInt(operation.height, 1, TRANSFORM_MAX_DIMENSION, 'height');
+
+        if (undefined === width && undefined === height) {
+          throw new Error('resize needs a width, a height, or both.');
+        }
+
+        const fit = ['cover', 'contain', 'inside', 'fill'].includes(operation.fit)
+          ? operation.fit
+          : 'inside';
+
+        return { type, width, height, fit };
+      }
+
+      case 'crop':
+        return {
+          type,
+          left: boundedInt(operation.left ?? 0, 0, TRANSFORM_MAX_OFFSET, 'left'),
+          top: boundedInt(operation.top ?? 0, 0, TRANSFORM_MAX_OFFSET, 'top'),
+          width: boundedInt(operation.width, 1, TRANSFORM_MAX_DIMENSION, 'width'),
+          height: boundedInt(operation.height, 1, TRANSFORM_MAX_DIMENSION, 'height'),
+        };
+
+      case 'rotate': {
+        const angle = Number(operation.angle ?? 0);
+
+        if (!Number.isFinite(angle)) {
+          throw new Error('angle must be a number.');
+        }
+
+        const requested = String(operation.background ?? '#ffffff');
+        const background = TRANSFORM_HEX.test(requested) ? requested : '#ffffff';
+
+        // Normalise into [0, 360); Sharp accepts negatives but the ticket is
+        // easier to compare when the same rotation has one spelling.
+        return { type, angle: ((angle % 360) + 360) % 360, background };
+      }
+
+      default:
+        throw new Error(`Unknown transform operation: ${type}.`);
+    }
+  });
+}
+
+/**
+ * Apply the parsed operations in order.
+ *
+ * @param {import('sharp').Sharp} pipeline
+ * @param {Array<Object>} operations
+ * @returns {import('sharp').Sharp}
+ */
+function applyTransformOperations(pipeline, operations) {
+  for (const operation of operations) {
+    if ('resize' === operation.type) {
+      pipeline = pipeline.resize(operation.width, operation.height, {
+        fit: operation.fit,
+      });
+    } else if ('crop' === operation.type) {
+      pipeline = pipeline.extract({
+        left: operation.left,
+        top: operation.top,
+        width: operation.width,
+        height: operation.height,
+      });
+    } else if ('rotate' === operation.type) {
+      pipeline = pipeline.rotate(operation.angle, { background: operation.background });
+    }
+  }
+
+  return pipeline;
+}
+
+/**
+ * Encode the pipeline to an allowlisted format.
+ *
+ * @param {import('sharp').Sharp} pipeline
+ * @param {string} format
+ * @param {*} quality
+ * @returns {import('sharp').Sharp}
+ */
+function encodeTransform(pipeline, format, quality) {
+  const parsed = Number.parseInt(quality, 10);
+  const q = Math.max(1, Math.min(100, Number.isFinite(parsed) ? parsed : 90));
+
+  switch (format) {
+    case 'jpeg':
+      return pipeline.jpeg({ quality: q });
+    case 'webp':
+      return pipeline.webp({ quality: q });
+    case 'png':
+      return pipeline.png({ quality: q });
+    case 'gif':
+      return pipeline.gif();
+    default:
+      throw new Error(`Unsupported output format: ${format}.`);
+  }
+}
+
+// ── POST /api/image/transform ── resize / crop / rotate + encode ──
+// Fields: file, operations (JSON), format (optional; defaults to the input
+// format), quality (1-100, default 90).
+router.post('/transform', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const operations = parseTransformOperations(req.body.operations);
+    const pipeline = sharp(req.file.buffer, {
+      limitInputPixels: TRANSFORM_MAX_INPUT_PIXELS,
+      failOn: 'error',
+    });
+
+    const metadata = await pipeline.metadata();
+    const requested = normaliseTransformFormat(req.body.format);
+    const format = requested || normaliseTransformFormat(metadata.format) || 'png';
+
+    const { data, info } = await encodeTransform(
+      applyTransformOperations(pipeline, operations),
+      format,
+      req.body.quality,
+    ).toBuffer({ resolveWithObject: true });
+
+    res.json({
+      success: true,
+      width: info.width,
+      height: info.height,
+      format: info.format,
+      mime_type: `image/${info.format}`,
+      bytes: info.size,
+      b64: data.toString('base64'),
+    });
+  } catch (err) {
+    console.error('[Image Transform]', err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ── POST /api/image/info ── metadata only, no re-encode ──
+router.post('/info', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const metadata = await sharp(req.file.buffer, {
+      limitInputPixels: TRANSFORM_MAX_INPUT_PIXELS,
+      failOn: 'error',
+    }).metadata();
+
+    const format = normaliseTransformFormat(metadata.format) || String(metadata.format ?? 'unknown');
+
+    res.json({
+      success: true,
+      width: metadata.width ?? 0,
+      height: metadata.height ?? 0,
+      format,
+      mime_type: metadata.format ? `image/${metadata.format}` : 'application/octet-stream',
+      bytes: req.file.size,
+    });
+  } catch (err) {
+    console.error('[Image Info]', err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // ── POST /enhance — Sharp-native enhancement (W1a) ──
 // Fields: sharpen (bool or 0-1 strength), contrast (multiplier, default 1),
 // saturation (multiplier, default 1), denoise (bool), strength (0-1 master).
@@ -1415,4 +1669,4 @@ router.post('/vectorize', upload.single('file'), async (req, res) => {
   }
 });
 
-export { router as imageRouter };
+export { router as imageRouter, parseTransformOperations, applyTransformOperations, normaliseTransformFormat, TRANSFORM_MAX_DIMENSION, TRANSFORM_FORMATS };

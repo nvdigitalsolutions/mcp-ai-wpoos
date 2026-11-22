@@ -15146,3 +15146,114 @@ runtimes cannot disagree about what a flag means or which tools are pre-approved
 | phpcs PSR-12 (no path arguments) | exit 0 |
 | phpcs WPCS (unchanged WP tool, sanity) | exit 0 |
 | re-run of `bin/measure-necessity-gate.php` | 143 / 42 / 10 / 0 |
+
+## 160. The image adapter: four dead rows become servable (2026-11-22)
+
+Proposal 160 left four rows `unavailable` on `ImageProcessingInterface` and named
+the media worker as the intended backend. This builds it.
+
+### 160.1 The standard, and where it does not apply
+
+The secure-image-pipeline literature converges on: validate the source host and
+reject internal addresses (SSRF), cap bytes while streaming, limit decoded pixels
+and frames, bound output dimensions, and run the work in a resource-limited
+process. Two of those do not apply here, and saying so is the design:
+
+- **There is no URL fetch.** Bytes arrive up the multipart body from the port's
+  own runtime, so the SSRF surface of a remote-image pipeline does not exist.
+  (`resize_image`'s schema says "URL or path"; both runtimes treat it as a path —
+  WordPress's `wp_get_image_editor()` does the same — so a URL fails identically
+  rather than changing meaning here.)
+- **The resource-limited process is the sidecar.** Sharp is the pipeline the
+  platform already runs; the adapter does not add a PHP one.
+
+The rest are enforced explicitly rather than inherited:
+
+| control | value |
+|---|---|
+| decoded pixels | `limitInputPixels: 100,000,000` (~10,000 × 10,000) |
+| corrupt input | `failOn: 'error'` — reject, do not guess |
+| output dimension | 1–8192 per axis |
+| crop offset | 0–1,000,000 |
+| operations per call | 8 |
+| output format | allowlist `png, jpeg, webp, gif` |
+| upload bytes | multer's existing 50 MB cap |
+
+### 160.2 One endpoint, not four
+
+The sidecar's style is one route per operation (`optimize`, `enhance`, `upscale`,
+`edit`). Four new routes would each repeat the same bounds and encoder, so the
+adapter's needs are served by **one** `POST /api/image/transform` that takes an
+ordered operation list (`resize` / `crop` / `rotate`) plus one encoder, and
+`POST /api/image/info` for metadata. One pipeline, one set of bounds, one place
+to audit.
+
+`jpg` is accepted as an alias for `jpeg`; an unknown format is refused rather
+than defaulted, because a silent default would hide a caller bug.
+
+### 160.3 The adapter belongs to the package, not the app
+
+The first cut bound `ImageProcessingInterface` in `AppServiceProvider`, which
+passes the app but **fails the manifest's own promise**: `ToolReadinessRegistrationTest`
+boots the package alone, and a `ready` row it cannot construct is exactly the
+lie that gate exists to catch. So the client and adapter moved into
+`lib/laravel-adapter` (`Nvoos\Laravel\Adapter\MediaWorkerClient`,
+`MediaWorkerImageProcessing`), bound in `NvoosServiceProvider`. The app's two
+consumers of the client (`MediaCcController`, `OptimizeMediaFile`) now import the
+package class; `MediaCcTest` still passes.
+
+`isAvailable()` is **"configured", not "healthy"**: it is asked before every call,
+and a health probe there would add a network round-trip to a capability check. A
+worker that is down surfaces as an exception from the call, which the tool
+reports as `resize_failed` &c. — the same shape WordPress has without GD/Imagick.
+
+Output is published beside a deterministic name in
+`oos.media_worker.output_dir` (default `storage/app/media-worker`) and written
+with `rename()`, so a reader never sees a partial file and repeating a transform
+rewrites rather than accumulates.
+
+### 160.4 The test caught a real bug
+
+The worker's rotate branch computed its background as
+`HEX.test(String(op.background ?? '#ffffff')) ? op.background : '#ffffff'` — when
+the field was **absent** the default was tested but the *undefined value* was
+returned. Sharp would then have received `background: undefined`. The Node test
+caught it on first run; the default is now the tested string.
+
+### 160.5 Measured
+
+| measure | §159 | now |
+|---|---|---|
+| servable rows | 195 | **199** |
+| allow (schema args) | 143 | 143 |
+| warn | 42 | **46** (the four image writes arrive here) |
+| approval | 10 | 10 |
+| block | 0 | 0 |
+| rows with no flags | 0 | 0 |
+| tier-1 fast path | 121 / 195 (62%) | 121 / 199 (61%) |
+
+The four arrive as `warn`, not `approval`: `write` without `state-changing`
+scores moderate, and a local file transform is worth a log line rather than a
+human decision. The allowlist is unchanged.
+
+### 160.6 What remains in the tool backlog
+
+| item | state |
+|---|---|
+| `AgentOrchestrationInterface` — 4 rows | open: adapter (needs workflow tables) or a WordPress-only decision |
+| `save_profession` | closed by decision (code-owned reference data) |
+| 19 `*_prompt` rows | closed by decision (WordPress slug is canonical) |
+| `generate-tool-capability-flags.php --check` in CI | open — the gate exists, nothing runs it |
+| `readiness_by_runtime` schema | open — 090-m's "one genuine limitation" |
+
+### 160.7 Gates
+
+| Gate | Result |
+|---|---|
+| media-worker `image.transform.test.js` (new) | 10 tests — bounds, normalisation, real Sharp geometry |
+| `ImageProcessingAdapterTest` (new) | 14 tests, 42 assertions — mapping, publication, errors, four tools end-to-end |
+| `lib/laravel-adapter` suite | 316 tests, 1,704 assertions (readiness gate now sees 199) |
+| full `lib/core` suite | 1,951 tests, 15,671 assertions |
+| full Laravel app suite | **1,952 tests, 20,655 assertions** |
+| phpcs PSR-12 (no path arguments) | exit 0 |
+| re-run of `bin/measure-necessity-gate.php` | 143 / 46 / 10 / 0 |

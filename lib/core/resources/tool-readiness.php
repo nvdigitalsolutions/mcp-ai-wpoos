@@ -217,8 +217,12 @@ return array(
 		),
 		'convert_image_format' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ConvertImageFormatTool',
-			'readiness' => 'unavailable',
-			'reason' => 'Needs ImageProcessingInterface, which has no Laravel implementation; the WordPress adapter is the only one. The media worker is the intended backend (Proposal 160 §11).',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'App\\Support\\Media\\MediaWorkerImageProcessing implements ImageProcessingInterface over the media-worker transform endpoint, bound in AppServiceProvider; needs `oos.media_worker.url` at runtime, and the worker is faked in the evidence test (Proposal 149 section 160).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProcessingAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'count_posts' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CountPostsTool',
@@ -360,8 +364,12 @@ return array(
 		),
 		'crop_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CropImageTool',
-			'readiness' => 'unavailable',
-			'reason' => 'Needs ImageProcessingInterface, which has no Laravel implementation; the WordPress adapter is the only one. The media worker is the intended backend (Proposal 160 §11).',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'App\\Support\\Media\\MediaWorkerImageProcessing implements ImageProcessingInterface over the media-worker transform endpoint, bound in AppServiceProvider; needs `oos.media_worker.url` at runtime, and the worker is faked in the evidence test (Proposal 149 section 160).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProcessingAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'deep_research' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeepResearchTool',
@@ -1359,8 +1367,12 @@ return array(
 		),
 		'resize_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ResizeImageTool',
-			'readiness' => 'unavailable',
-			'reason' => 'Needs ImageProcessingInterface, which has no Laravel implementation; the WordPress adapter is the only one. The media worker is the intended backend (Proposal 160 §11).',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'App\\Support\\Media\\MediaWorkerImageProcessing implements ImageProcessingInterface over the media-worker transform endpoint, bound in AppServiceProvider; needs `oos.media_worker.url` at runtime, and the worker is faked in the evidence test (Proposal 149 section 160).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProcessingAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'retrieve_agent_memory' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RetrieveAgentMemoryTool',
@@ -1372,8 +1384,12 @@ return array(
 		),
 		'rotate_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RotateImageTool',
-			'readiness' => 'unavailable',
-			'reason' => 'Needs ImageProcessingInterface, which has no Laravel implementation; the WordPress adapter is the only one. The media worker is the intended backend (Proposal 160 §11).',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'App\\Support\\Media\\MediaWorkerImageProcessing implements ImageProcessingInterface over the media-worker transform endpoint, bound in AppServiceProvider; needs `oos.media_worker.url` at runtime, and the worker is faked in the evidence test (Proposal 149 section 160).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProcessingAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'run_crawl4ai_job' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RunCrawl4AiJobTool',
