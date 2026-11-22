@@ -5,7 +5,9 @@
 Review ID: `R nvoos-forge-bridge/vsamtani/5Nov26/T2 10Nov26/4.4RC1 (P0TDX399590HGN)`
 
 Three findings: the public form route, the rate-limit IP source, and the
-native-response capture. Fixed in 0.3.1.
+native-response capture. Fixed in 0.3.1 and shipped in the 0.3.2 upload
+(0.3.1 was superseded before it reached the review thread; 0.3.2 carries the
+same fixes plus the read-only `/gate` route and the POT/readme corrections).
 
 ### Finding 1 — public form route can dispatch to non-public forms
 
