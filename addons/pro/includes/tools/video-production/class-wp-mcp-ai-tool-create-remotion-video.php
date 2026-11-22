@@ -262,17 +262,17 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Guard: Node.js must be available.
 		if ( ! $this->is_nodejs_available() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Node.js is not available on this server. Remotion requires Node.js to render videos.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'Node.js is not available on this server. Remotion requires Node.js to render videos.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Guard: Remotion render bundle or npm packages must be present.
 		if ( ! $this->check_remotion_availability() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Remotion is not available. Ensure the plugin assets have been built (`npm run build:js:pro`) and that Node.js is installed on the server.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'Remotion is not available. Ensure the plugin assets have been built (`npm run build:js:pro`) and that Node.js is installed on the server.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -298,10 +298,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 		// Build a temporary Remotion project directory.
 		$tmp_dir = $this->create_temp_project( $composition_id, $fps, $duration_in_frames, $width, $height, $custom_script, $props );
 		if ( is_wp_error( $tmp_dir ) ) {
-			return array(
-				'success' => false,
-				'error'   => $tmp_dir->get_error_message(),
-			);
+			return $tmp_dir;
 		}
 
 		// Determine output file path.
@@ -313,17 +310,18 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 
 		if ( is_wp_error( $render_result ) ) {
 			$this->recursive_rmdir( $tmp_dir );
-			return array(
-				'success' => false,
-				'error'   => $render_result->get_error_message(),
-			);
+
+			return $render_result;
 		}
 
 		if ( empty( $render_result['success'] ) ) {
 			$this->recursive_rmdir( $tmp_dir );
-			return array(
-				'success' => false,
-				'error'   => isset( $render_result['error'] ) ? $render_result['error'] : __( 'Remotion render failed with an unknown error.', 'mcp-ai-wpoos-pro' ),
+
+			// The renderer reports failure in its own payload rather than as a
+			// WP_Error, so this is where the two shapes meet.
+			return new WP_Error(
+				'wp_mcp_ai_render_failed',
+				isset( $render_result['error'] ) ? $render_result['error'] : __( 'Remotion render failed with an unknown error.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

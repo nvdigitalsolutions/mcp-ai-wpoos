@@ -957,10 +957,10 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		$carrier_id = $creds['shipengine_carrier_id'] ?? '';
 
 		if ( '' === $api_key ) {
-			return array(
-				'success' => false,
-				'message' => __( 'ShipEngine API key is not configured.', 'mcp-ai-wpoos-pro' ),
-				'carrier' => 'shipengine',
+			return new WP_Error(
+				'wp_mcp_ai_config_error',
+				__( 'ShipEngine API key is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'carrier' => 'shipengine' )
 			);
 		}
 
@@ -978,14 +978,14 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return array(
-				'success' => false,
-				'message' => sprintf(
+			return new WP_Error(
+				$response->get_error_code(),
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Connection failed: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				),
-				'carrier' => 'shipengine',
+				array_merge( (array) $response->get_error_data(), array( 'carrier' => 'shipengine' ) )
 			);
 		}
 
@@ -993,18 +993,18 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 
 		if ( 401 === $code || 403 === $code ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid ShipEngine API key.', 'mcp-ai-wpoos-pro' ),
-				'carrier' => 'shipengine',
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'Invalid ShipEngine API key.', 'mcp-ai-wpoos-pro' ),
+				array( 'carrier' => 'shipengine' )
 			);
 		}
 
 		if ( $code < 200 || $code >= 300 ) {
-			return array(
-				'success' => false,
-				'message' => $this->parse_api_error( $body, 'shipengine', $code ),
-				'carrier' => 'shipengine',
+			return new WP_Error(
+				'wp_mcp_ai_client_unavailable',
+				$this->parse_api_error( $body, 'shipengine', $code ),
+				array( 'carrier' => 'shipengine' )
 			);
 		}
 
@@ -1021,14 +1021,14 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			}
 
 			if ( ! $found ) {
-				return array(
-					'success' => false,
-					'message' => sprintf(
+				return new WP_Error(
+					'wp_mcp_ai_not_found',
+					sprintf(
 						/* translators: %s: carrier ID */
 						__( 'Carrier ID "%s" was not found in your ShipEngine account.', 'mcp-ai-wpoos-pro' ),
 						$carrier_id
 					),
-					'carrier' => 'shipengine',
+					array( 'carrier' => 'shipengine' )
 				);
 			}
 		}
@@ -1075,10 +1075,10 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		$api_secret = $creds['shipstation_api_secret'] ?? '';
 
 		if ( '' === $api_key || '' === $api_secret ) {
-			return array(
-				'success' => false,
-				'message' => __( 'ShipStation API key and secret are not configured.', 'mcp-ai-wpoos-pro' ),
-				'carrier' => 'shipstation',
+			return new WP_Error(
+				'wp_mcp_ai_config_error',
+				__( 'ShipStation API key and secret are not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'carrier' => 'shipstation' )
 			);
 		}
 
@@ -1102,14 +1102,14 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return array(
-				'success' => false,
-				'message' => sprintf(
+			return new WP_Error(
+				$response->get_error_code(),
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Connection failed: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				),
-				'carrier' => 'shipstation',
+				array_merge( (array) $response->get_error_data(), array( 'carrier' => 'shipstation' ) )
 			);
 		}
 
@@ -1117,18 +1117,18 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 
 		if ( 401 === $code || 403 === $code ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid ShipStation V1 credentials.', 'mcp-ai-wpoos-pro' ),
-				'carrier' => 'shipstation',
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'Invalid ShipStation V1 credentials.', 'mcp-ai-wpoos-pro' ),
+				array( 'carrier' => 'shipstation' )
 			);
 		}
 
 		if ( $code < 200 || $code >= 300 ) {
-			return array(
-				'success' => false,
-				'message' => $this->parse_api_error( $body, 'shipstation', $code ),
-				'carrier' => 'shipstation',
+			return new WP_Error(
+				'wp_mcp_ai_client_unavailable',
+				$this->parse_api_error( $body, 'shipstation', $code ),
+				array( 'carrier' => 'shipstation' )
 			);
 		}
 
