@@ -32,12 +32,19 @@ class ProfessionCatalogueTest extends TestCase
 
         $response
             ->assertJsonPath('total', (int) $manifest['professions'])
-            ->assertJsonPath('catalogue_version', (string) $manifest['catalogue_version'])
             ->assertJsonStructure([
                 'professions' => [
                     ['slug', 'title', 'category', 'category_slug', 'description', 'expertise', 'tools_count'],
                 ],
             ]);
+
+        // The shipped base version with the estate overlay's fingerprint
+        // appended when an estate has written one (149 §170); empty in a fresh
+        // test app, so this is the manifest's own version at the prefix.
+        $this->assertStringStartsWith(
+            (string) $manifest['catalogue_version'],
+            (string) $response->json('catalogue_version')
+        );
 
         $rows   = $response->json('professions');
         $titles = array_column($rows, 'title');

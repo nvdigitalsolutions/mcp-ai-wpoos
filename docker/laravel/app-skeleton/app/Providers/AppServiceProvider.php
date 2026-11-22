@@ -28,6 +28,7 @@ use App\Support\Models\ModelCatalogueLookup;
 use App\Support\Orchestration\AssistantAgentRunner;
 use App\Support\Orchestration\TenantContextResolver;
 use App\Support\Pro\ToolkitEngine;
+use App\Support\Professions\ProfessionOverlayStore;
 use App\Support\Pro\ToolkitManifestLoader;
 use App\Support\RemoteSites\RemoteSiteStore;
 use App\Support\Security\SecuritySnapshotStore;
@@ -58,6 +59,8 @@ use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
+use Nvoos\Core\Domain\Contract\ProfessionOverlayInterface;
+use Nvoos\Core\Domain\Contract\ProfessionWriteInterface;
 use Nvoos\Core\Domain\Contract\RoutingMetricsInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
@@ -65,6 +68,7 @@ use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Laravel\Adapter\MemoryStore;
+use Nvoos\Laravel\Adapter\ProfessionRepository;
 use Nvoos\Laravel\Adapter\SettingsStore;
 use Nvoos\Laravel\Adapter\TranscriptStore;
 
@@ -79,6 +83,25 @@ class AppServiceProvider extends ServiceProvider
         // models), so they are bound here rather than in the package provider.
         $this->app->bind(AssistantServiceInterface::class, LaravelAssistantService::class);
         $this->app->bind(TeamServiceInterface::class, LaravelTeamService::class);
+
+        // The profession catalogue's tenant tier (Proposal 149 §170). The
+        // package binds a JSON overlay and a merge decorator around it; this
+        // points both at the estate-scoped table instead. `Profession`'s global
+        // scope supplies the estate, so the base repository passed for
+        // copy-on-write seeding is the BASE tier, never the decorator — asking
+        // the decorator for a slug would come straight back here.
+        //
+        // SCOPED, not singleton: `overlayVersion()` is memoised so the cache key
+        // is cheap, and that memo has to die with the request rather than with
+        // the Octane worker that served it (the T-0.8 rule).
+        $this->app->scoped(
+            ProfessionOverlayStore::class,
+            static fn ($app): ProfessionOverlayStore => new ProfessionOverlayStore(
+                new ProfessionRepository($app['config'])
+            )
+        );
+        $this->app->alias(ProfessionOverlayStore::class, ProfessionOverlayInterface::class);
+        $this->app->alias(ProfessionOverlayStore::class, ProfessionWriteInterface::class);
 
         // The model catalogue answers routing and limit questions for two
         // consumers: ProviderRouter (fallback + hop eligibility) and the

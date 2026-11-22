@@ -123,6 +123,7 @@ enum OperatorNavigationGroup: string implements HasIcon, HasLabel
                 'Audit log',
                 'Machine tools',
                 'Machine credentials',
+                'Security',
             ),
             self::Platform => array('Estates', 'Models', 'Conversation import'),
             self::Settings => array('Settings'),

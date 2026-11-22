@@ -67,7 +67,7 @@ class ProfessionRepository implements ProfessionRepositoryInterface {
 	 * @return array{found: bool, profession?: array<string, mixed>}
 	 */
 	public function getBySlug( string $slug ): array {
-		$key = $this->key( $slug );
+		$key = self::key( $slug );
 
 		if ( '' === $key || ! isset( $this->catalogue()[ $key ] ) ) {
 			return array( 'found' => false );
@@ -85,7 +85,7 @@ class ProfessionRepository implements ProfessionRepositoryInterface {
 	 * @return array<string, string> Slug => title, ordered by title.
 	 */
 	public function getByCategory( string $category ): array {
-		$needle = $this->key( $category );
+		$needle = self::key( $category );
 		$match  = array();
 
 		foreach ( $this->catalogue() as $slug => $profession ) {
@@ -122,7 +122,7 @@ class ProfessionRepository implements ProfessionRepositoryInterface {
 	 * @return string[]
 	 */
 	public function getRecommendedTools( string $slug ): array {
-		$key = $this->key( $slug );
+		$key = self::key( $slug );
 
 		if ( '' === $key || ! isset( $this->catalogue()[ $key ] ) ) {
 			return array();
@@ -247,7 +247,7 @@ class ProfessionRepository implements ProfessionRepositoryInterface {
 					continue;
 				}
 
-				$slug = $this->key( (string) $profession['slug'] );
+				$slug = self::key( (string) $profession['slug'] );
 
 				if ( '' === $slug ) {
 					continue;
@@ -260,12 +260,12 @@ class ProfessionRepository implements ProfessionRepositoryInterface {
 					'slug'             => $slug,
 					'name'             => $title,
 					'description'      => (string) ( $profession['description'] ?? '' ),
-					'category'         => $this->key( (string) ( $profession['category'] ?? 'other' ) ),
+					'category'         => self::key( (string) ( $profession['category'] ?? 'other' ) ),
 					'role_description' => (string) ( $profession['role_description'] ?? '' ),
-					'expertise'        => $this->stringList( $profession['expertise'] ?? array() ),
-					'warnings'         => $this->stringList( $profession['warnings'] ?? array() ),
+					'expertise'        => self::stringList( $profession['expertise'] ?? array() ),
+					'warnings'         => self::stringList( $profession['warnings'] ?? array() ),
 					'knowledge_base'   => (string) ( $profession['knowledge_base'] ?? '' ),
-					'default_tools'    => $this->stringList( $profession['default_tools'] ?? array() ),
+					'default_tools'    => self::stringList( $profession['default_tools'] ?? array() ),
 				);
 			}
 		}
@@ -296,16 +296,24 @@ class ProfessionRepository implements ProfessionRepositoryInterface {
 
 	/**
 	 * Normalise a slug the way WordPress's sanitize_key() does.
+	 *
+	 * Public and static because the overlay store and the merge decorator must
+	 * normalise exactly the same way. Three copies of this regex is the drift
+	 * that puts `data_scientist` and `data-scientist` in one catalogue.
 	 */
-	private function key( string $value ): string {
+	public static function key( string $value ): string {
 		return strtolower( (string) preg_replace( '/[^A-Za-z0-9_\-]/', '', $value ) );
 	}
 
 	/**
+	 * String list, dropping non-strings and empty entries.
+	 *
+	 * Public for the same reason as {@see self::key()}.
+	 *
 	 * @param mixed $value Candidate list.
 	 * @return string[]
 	 */
-	private function stringList( mixed $value ): array {
+	public static function stringList( mixed $value ): array {
 		return array_values(
 			array_filter(
 				(array) $value,

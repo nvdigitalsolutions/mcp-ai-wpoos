@@ -2,6 +2,7 @@
 
 namespace App\Support\Security;
 
+use App\Support\SettingsSchema;
 use Closure;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -146,6 +147,50 @@ final class SecuritySnapshotStore
         return null === $row
             ? array('snapshot_id' => $id, 'id' => $id, 'label' => '', 'created_at' => '', 'keys' => 0)
             : $this->record($row);
+    }
+
+    /**
+     * A payload as render rows: sorted by key, sensitive values masked.
+     *
+     * Static and payload-only on purpose. Masking is a property of the settings
+     * catalogue (`SettingsSchema::sensitiveKeys()`), not of an estate's
+     * snapshot, and both presentations need exactly this mapping — the admin
+     * detail panel and the operator overview. One helper is what stops them
+     * disagreeing about what "masked" means.
+     *
+     * Belt and braces: every snapshot this runtime writes is already masked at
+     * write time, so this second pass only matters for a row that predates the
+     * write-path mask or was inserted by hand. It is the one place a stored
+     * secret could otherwise reach a screen, so it is not optional.
+     *
+     * @param array<string, mixed> $payload Decoded snapshot payload.
+     *
+     * @return list<array{key: string, masked: bool, value: string}>
+     */
+    public static function maskedRows(array $payload): array
+    {
+        $sensitive = array_flip(SettingsSchema::sensitiveKeys());
+        $rows = array();
+
+        foreach ($payload as $key => $value) {
+            $key = (string) $key;
+
+            $masked = isset($sensitive[$key]) || $value === SettingsSchema::MASKED_PLACEHOLDER;
+
+            $rows[] = array(
+                'key' => $key,
+                'masked' => $masked,
+                'value' => $masked
+                    ? SettingsSchema::MASKED_PLACEHOLDER
+                    : (is_scalar($value) || null === $value
+                        ? (string) $value
+                        : (string) json_encode($value)),
+            );
+        }
+
+        usort($rows, static fn (array $a, array $b): int => strcmp($a['key'], $b['key']));
+
+        return $rows;
     }
 
     /**
