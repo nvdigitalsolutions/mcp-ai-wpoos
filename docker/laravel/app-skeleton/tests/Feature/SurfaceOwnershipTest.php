@@ -16,7 +16,9 @@ use Tests\TestCase;
  * - a reduced surface (subset / read-only) with no declared server-side
  *   projection, which is how a "limited" console becomes a UI fiction;
  * - a new Filament page shipped without a row, which is how a customer-facing
- *   admin quietly grows an operator surface.
+ *   admin quietly grows an operator surface;
+ * - an explicit `absent`/`inert` row with no recorded reason, which turns a
+ *   decision into an omission the next reader has to re-derive.
  *
  * The vocabularies are closed. Adding a state or an audience is a deliberate
  * contract change, not a free-text edit.
@@ -126,6 +128,23 @@ class SurfaceOwnershipTest extends TestCase
                         trim((string) ($surface['projection'] ?? '')),
                         sprintf(
                             'Surface "%s" is %s on %s, so it must declare the server-side projection it receives.',
+                            $id,
+                            $state,
+                            $presentation
+                        )
+                    );
+                }
+
+                // An explicit absence is a claim, not a default. `null` already
+                // means "this panel is not part of the product"; writing
+                // `absent` says the surface exists elsewhere and deliberately
+                // does not here, which is only honest with the reason beside it.
+                if (in_array($state, ['absent', 'inert'], true)) {
+                    $this->assertNotSame(
+                        '',
+                        trim((string) ($surface['notes'] ?? '')),
+                        sprintf(
+                            'Surface "%s" is %s on %s, so it must record why in notes.',
                             $id,
                             $state,
                             $presentation

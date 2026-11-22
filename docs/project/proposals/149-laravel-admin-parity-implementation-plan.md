@@ -15714,3 +15714,153 @@ per-runtime verdict.
 | phpcs PSR-12 | exit 0 |
 | phpcs WPCS on changed files | exit 0 |
 | `lib/core` / manifest | unchanged — no manifest or core edit in this section |
+## 166. The media worker's install is finally proven on Linux (2026-11-22)
+
+§161.4 left one item open on purpose: `node --test` passed locally, but
+`npm ci` had never run on a runner. The install — not the tests — was the
+unproven step, and a first-time blocking job that fails for an installation
+reason blocks every merge.
+
+### 166.1 What was measured before the job was written
+
+The suite is dependency-free: `src/queue.test.js` imports `./queue.js`, which
+imports only `node:events`. A green test run therefore proves nothing about the
+803-package dependency tree.
+
+Verified once, faithfully, in `node:22-slim` — a bare image with **no build
+tools**, stricter than `ubuntu-latest`:
+
+| Step | Result |
+|---|---|
+| `npm ci --ignore-engines --no-audit --no-fund` | exit 0 — 803 packages, 5 min |
+| `import('sharp')` | loads, reports 0.35.5 |
+| `npm test` | 214 tests — 213 pass, 1 skipped, 0 fail |
+
+No `apt-get` step is needed: the native modules the install touches resolve from
+prebuilt binaries, and the two that might not (`canvas`, `chartjs-node-canvas`)
+are optional and degrade on their own.
+
+### 166.2 The job
+
+`.github/workflows/media-worker-tests.yml`:
+
+- Node **22.x** (the manifest requires `>= 22.12.0`), npm cache keyed on
+  `addons/media-worker/package-lock.json`.
+- `PUPPETEER_SKIP_DOWNLOAD` — no test imports puppeteer, and the worker needs a
+  browser only for crawl jobs at runtime; downloading Chromium would add
+  ~150 MB per run for nothing.
+- **A `sharp` load assertion after install.** This is what makes the job a gate
+  rather than a formality: the dependency-free tests would pass with a broken
+  install.
+- `npm test`.
+
+Path filters keep it off unrelated pull requests; `concurrency` cancels a
+superseded run on the same ref.
+
+### 166.3 Non-blocking by decision
+
+`continue-on-error: true`, with the promotion condition written in the file:
+**ten consecutive green pull requests, then remove it**. This is §161.4's rule
+applied, not a new policy. A 25-minute timeout bounds a hung install.
+
+### 166.4 What this does not cover
+
+The queue suite and the module load are the whole surface. The HTTP routes, the
+workflow engine and the provider clients still have no Node-level tests. This
+closes the **install** question, not the coverage question, and the plan should
+not be read as saying the worker is tested.
+
+### 166.5 The gate's first run found a real failure
+
+The workflow ran on its own pull request and failed:
+
+```
+not ok 207 - siteDirFor returns group subdirs in multi-tenant mode
+  error: "EACCES: permission denied, mkdir '/srv/worker-tmp/sites/site-a/video'"
+```
+
+`siteDirFor()` creates the directory it returns, and the test pointed it at
+`/srv/worker-tmp`, which is writable only by root. It passed in the
+`node:22-slim` probe because that container runs as root, and it was skipped on
+the earlier `node --test` run, so nothing had ever exercised it unprivileged.
+
+Fixed by pointing the test at `fs.mkdtempSync( os.tmpdir() )` and removing the
+directory in a `finally`: the assertion is about the path shape, not about
+`/srv`. Verified by running the whole suite as **uid 1000** in `node:22-slim` —
+0 failures.
+
+That is the argument for the job in one line: a dependency-free suite can stay
+green for months and still be environment-dependent.
+
+## 167. Every declared admin surface is accounted for (2026-11-22)
+
+§162.5 recorded two open backlog items. §165 closed the first and §166 closed
+the second. This section answers the question that follows: **is anything else
+declared but unbuilt?**
+
+### 167.1 The inventory, read from the contracts
+
+**`surface-ownership.json` — 50 surfaces.**
+
+- No surface is `inert`.
+- Two are `absent`: `onboarding` and `chat-profiles`. Both carry a recorded
+  decision explaining why a page here would be a fiction rather than parity —
+  onboarding duplicates two writes that already have homes, and chat profiles
+  has no registry, no preference and no enforcement gate to read.
+- Seven rows carry zero Filament files, and each is deliberate:
+  console-only (`automation-canvas`), settings-shaped (`chat-channels`,
+  `identity-provider`), WordPress-only (`wordpress-bridge`, `chat-profiles`),
+  external-product (`connected-apps`), not applicable (`onboarding`).
+
+**`console-endpoints.json` — six non-route keys, all with reason codes:**
+
+| key | reason |
+|---|---|
+| `chatChannels` | `toolkit-shaped` |
+| `mediaCc` | `connected-service` |
+| `contentGraph`, `docsHub`, `documentEditor`, `mediaStudio` | `external-product` |
+
+No key carries an unexplained reason.
+
+**Readiness manifest** — 203 servable, one `unavailable` (`save_profession`,
+code-owned reference data).
+
+**Conclusion: no declared surface or console key is unaccounted for.**
+
+### 167.2 The hole this exposed
+
+`SurfaceOwnershipTest` required a `projection` for `subset` / `read-only` /
+`inert`, but **not a rationale for an explicit `absent`**. A new row could say
+`absent` and nothing else, and the gate would pass — turning a decision into an
+omission the next reader has to re-derive. That is the same failure the contract
+exists to prevent, one level up: an unexplained absence looks identical to
+missing work.
+
+The rule added is deliberately narrow:
+
+- `null` still means "this panel is not part of the product" and needs nothing.
+- `absent` and `inert` now require a non-empty `notes`.
+
+Both current absences already carry notes, so the contract needed no edit — the
+gate now enforces what the data already did.
+
+### 167.3 What this does not prove
+
+It proves the declared inventory is internally consistent and every declaration
+is explained. It does **not** re-derive the WordPress admin menu, so a screen
+that never made it into the contract would still be invisible here. That
+reconciliation lives on the WordPress side (`WP_MCP_AI_REST_Console_Endpoints_Test`
+asserts the shared reason map) and is outside this runtime's suite.
+
+It also says nothing about *depth*: a `subset` row with a projection can still
+omit a WordPress control the projection does not mention. Those gaps are named
+individually in their rows (§104, §107, §117) rather than summarised.
+
+### 167.4 Gates
+
+| Gate | Result |
+|---|---|
+| `SurfaceOwnershipTest` | 4 tests, 514 assertions |
+| workflow YAML parse | one job, `on: pull_request, push` |
+| media worker install + suite | `node:22-slim` — 803 packages, 214 tests, 0 fail |
+| phpcs PSR-12 / WPCS | exit 0 / exit 0 |
