@@ -15339,3 +15339,67 @@ and represented a metadata key as a tool.
 | workflow YAML parse | two jobs: `readiness`, `capability-flags` |
 | full `lib/core` suite | 1,951 tests, 15,664 assertions |
 | phpcs PSR-12 | exit 0 |
+
+## 162. The four orchestration rows stay WordPress-only (2026-11-22)
+
+§160 left four rows `unavailable` on `AgentOrchestrationInterface` and called it
+"adapter or decision". This is the decision.
+
+### 162.1 What the four tools need
+
+All four are **team**-centric, not graph-centric:
+
+| tool | inputs |
+|---|---|
+| `create_agent_team` | `task_description`, `roles[]`, `priority` |
+| `execute_workflow` | `team_id`, `workflow` |
+| `delegate_to_agent` | `team_id`, `agent_id`, `task` |
+| `check_workflow_health` | `team_id` |
+
+### 162.2 What the port has — and why it is not this
+
+The Laravel runtime does have orchestration surfaces: `Team`/`TeamMember`
+models, `WorkflowRunner` (a DAG executor) and `TriggerDispatcher` (cron and
+explicit triggers). That is a runtime over **recorded workflow graphs** — the
+graph is data, and the run is recorded in `nvoos_workflow_runs`.
+
+`AgentOrchestrationInterface` is a different capability: compose a team from
+task requirements, delegate a subtask to a named agent, report team health. There
+is no agent executor in this port, and a `team_id` passed to `WorkflowRunner`
+would have no referent. Sharing the word "workflow" does not make them the same
+thing.
+
+### 162.3 Why not a hollow adapter
+
+The manifest's own rule is *a tool may be absent; it may not lie*. A stub
+returning `success: false` would make four rows servable while doing nothing —
+and `check_workflow_health` would answer `found: false` for every team, which
+reads as data rather than as absence. `unavailable` is the honest value, and it
+is what the vocabulary reserves for "this runtime does not bind the service".
+
+### 162.4 The decision
+
+The four rows stay `unavailable`, and their reason now says **"WordPress-only by
+decision"** and names the revisit trigger: an agent runtime landing in this port.
+Recorded here so the next reader does not mistake it for missing work.
+
+That closes the readiness triage: `unavailable` is **5** (these four plus
+`save_profession`, which is code-owned reference data), and `quarantined` is
+**19** (prompt-builder stand-ins, WordPress canonical).
+
+### 162.5 What is left in the tool backlog
+
+| item | state |
+|---|---|
+| `readiness_by_runtime` schema | open — 090-m's "one genuine limitation" |
+| the media worker's Node tests in CI | open — `npm ci` has never run on the runner |
+| every row's readiness, flags and annotations | **closed** — 199 servable, 0 unverified, 0 without flags, 0 blocked verdicts |
+
+### 162.6 Gates
+
+| Gate | Result |
+|---|---|
+| `bin/audit-tool-readiness.php` | 223 rows · 199 servable · 5 unavailable · **no violations** |
+| full `lib/core` suite | 1,951 tests, 15,664 assertions |
+| `bin/generate-tool-capability-flags.php --check` | exit 0 — 1,465 tools in step |
+| phpcs PSR-12 (no path arguments) | exit 0 |
