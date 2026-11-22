@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  media-worker:
     runs-on: ubuntu-latest
 
     # SOAK — see the header. Non-blocking by decision, not by accident.
