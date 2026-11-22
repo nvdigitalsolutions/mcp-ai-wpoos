@@ -850,3 +850,56 @@ case body is **+1 tab**. Authoring a `switch` at 2 tabs means `case` at 2
 tabs, body at 3, nested block at 4. A `switch` nested one level deeper than
 the author expects produces a uniform off-by-one across every line of the
 switch — 87 errors from one mental slip, all fixed by `npx eslint src --fix`.
+
+### `phpcs` on `lib/` — the no-files false green (2026-11-21)
+
+There are **two** PHP style gates with **two different file lists**, and the
+difference is invisible on the command line:
+
+| ruleset | covers | excludes |
+|---|---|---|
+| `phpcs.xml.dist` (WPCS 3.0) | plugin trees (`includes/`, `addons/`, `assets/`) | `*/lib/*`, `*/docker/*` |
+| `phpcs-laravel.xml.dist` (PSR-12) | its whole ruleset file list — **including `lib/core`, `lib/laravel-adapter` and `docker/laravel/app-skeleton`** | — |
+
+So a `lib/core` change is **not** covered by `phpcs.xml.dist` at all, and the
+CI step that catches it is the PSR-12 step, not "WordPress Coding Standards
+(WPCS 3.0)".
+
+**The trap.** Passing an explicit `lib/` path — absolute or relative — matches
+the `*/lib/*` exclude. phpcs then processes **no files**, prints
+`Run "phpcs --help" for usage information` and exits **3**. One session
+reported "phpcs clean" repeatedly on three `lib/core` files carrying 55
+violations between them, because the command was piped to `tail`: the exit
+status came from `tail`, and the tail of a no-files run looks like a clean run.
+
+**Never read phpcs through a pipe without its status.** Capture it as
+`phpcs … ; echo EXIT=$?`, or `${PIPESTATUS[0]}` in bash. Exit 0 means clean;
+exit 3 means *nothing was linted*, which is a failure of the command, not a
+pass.
+
+**Run it the way CI runs it.** The two gates are scoped differently, and that
+is the part to copy exactly:
+
+```bash
+# plugin trees — CI lints ONLY the changed files, passed repo-relative
+git diff --name-only --diff-filter=ACMR origin/alpha-working... -- '*.php' \
+  | xargs -r vendor/bin/phpcs --standard=phpcs.xml.dist
+
+# lib/ + docker/ — this is the step that actually lints lib/core.
+# No path arguments: the ruleset's <file> list decides (1,168 files, ~35s).
+vendor/bin/phpcs --standard=phpcs-laravel.xml.dist --error-severity=1 --warning-severity=8
+```
+
+Do **not** run `phpcs.xml.dist` across the whole tree as a local gate: it is
+7,129 files, it needs `-d memory_limit=512M` to finish, and it reports
+pre-existing findings that CI never sees because it scopes to changed files.
+
+**Prove the file was linted.** Exit 0 *and* the file in scope. For a single
+file the cheapest proof is a deliberate violation: break one line, confirm
+phpcs reports it, revert. `--report=summary` is **not** proof — it prints no
+count line when a run is clean.
+
+**Auto-fix:** `vendor/bin/phpcbf --standard=phpcs-laravel.xml.dist <file>`
+clears the whole class in one pass. When the change is spacing only, say so in
+the PR body — `git diff --ignore-all-space -- <file>` empty is the evidence
+(same rule as §5 above).
