@@ -209,6 +209,27 @@ own reviewable cluster. First completed cluster: **document-generation**
     `stdClass` rows, null handling, and the `reset_factory()` contract.
     Reference fix: PR #7590 (EZuite), mirrored to FlowHub + Shopify Sync.
 
+14. **Phantom helper on the failure path — `Call to undefined method …::error_response()`.**
+    The private `error_response()` helper exists on the `architect-agent` tools
+    only; `check_tool_compliance` copied the call sites without the method, so
+    its first gate was dead code that fataled the moment anything exercised it.
+    Before trusting a failure path, scan every `$this-><helper>(` against the
+    class's own methods (and its traits). A gate that the happy path never
+    reaches stays latent until a test or an operator hits it — which is also why
+    a "missing argument is a WP_Error" test doubles as a gate-liveness test.
+    Reference fix: PR #8107.
+
+15. **Argument validation ordered behind a default-off flag.**
+    `WP_MCP_AI_ALLOW_SHELL_TOOLS` defaults to false, and is false in the PHPUnit
+    bootstrap (PHP constants cannot be redefined), so a shell-gated tool returns
+    its gate error before it ever validates arguments — a missing-argument
+    contract test then asserts `shell_tools_disabled` instead of
+    `wp_mcp_ai_missing_param`. Fix: move the pure presence check
+    (`empty( $arguments[...] )` only, no file read and no command) ahead of the
+    gate, keep the gate ahead of every read / shell-out / write, and pin both
+    halves — empty args give the shared missing-param code, supplied args still
+    give the gate error. Reference fix: PR #8107.
+
 ## Scan procedure
 
 Use the grep tool with the **full project-rooted glob** — a bare
