@@ -15770,6 +15770,28 @@ workflow engine and the provider clients still have no Node-level tests. This
 closes the **install** question, not the coverage question, and the plan should
 not be read as saying the worker is tested.
 
+### 166.5 The gate's first run found a real failure
+
+The workflow ran on its own pull request and failed:
+
+```
+not ok 207 - siteDirFor returns group subdirs in multi-tenant mode
+  error: "EACCES: permission denied, mkdir '/srv/worker-tmp/sites/site-a/video'"
+```
+
+`siteDirFor()` creates the directory it returns, and the test pointed it at
+`/srv/worker-tmp`, which is writable only by root. It passed in the
+`node:22-slim` probe because that container runs as root, and it was skipped on
+the earlier `node --test` run, so nothing had ever exercised it unprivileged.
+
+Fixed by pointing the test at `fs.mkdtempSync( os.tmpdir() )` and removing the
+directory in a `finally`: the assertion is about the path shape, not about
+`/srv`. Verified by running the whole suite as **uid 1000** in `node:22-slim` —
+0 failures.
+
+That is the argument for the job in one line: a dependency-free suite can stay
+green for months and still be environment-dependent.
+
 ## 167. Every declared admin surface is accounted for (2026-11-22)
 
 §162.5 recorded two open backlog items. §165 closed the first and §166 closed

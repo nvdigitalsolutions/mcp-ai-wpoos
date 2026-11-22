@@ -180,17 +180,28 @@ test( 'pathGuard honors STRICT_PATHS in single-tenant mode', () => {
 
 test( 'siteDirFor returns group subdirs in multi-tenant mode', () => {
 	process.env.SITE_TOKENS = '{"site-a":"t1"}';
-	process.env.TEMP_ROOT = '/srv/worker-tmp';
-	assert.equal(
-		siteDirFor( 'site-a', 'video' ),
-		path.join( '/srv/worker-tmp', 'sites', 'site-a', 'video' )
-	);
-	// Unknown groups fall back to 'scratch'.
-	assert.equal(
-		siteDirFor( 'site-a', 'nonsense' ),
-		path.join( '/srv/worker-tmp', 'sites', 'site-a', 'scratch' )
-	);
-	resetEnv();
+
+	// `siteDirFor` creates the directory, so the root must be writable by the
+	// user running the suite. `/srv` is only writable as root, which made this
+	// pass locally and fail on a CI runner. The assertion is about the path
+	// shape, not about `/srv`.
+	const root = fs.mkdtempSync( path.join( os.tmpdir(), 'mw-sitedir-' ) );
+	process.env.TEMP_ROOT = root;
+
+	try {
+		assert.equal(
+			siteDirFor( 'site-a', 'video' ),
+			path.join( root, 'sites', 'site-a', 'video' )
+		);
+		// Unknown groups fall back to 'scratch'.
+		assert.equal(
+			siteDirFor( 'site-a', 'nonsense' ),
+			path.join( root, 'sites', 'site-a', 'scratch' )
+		);
+	} finally {
+		resetEnv();
+		fs.rmSync( root, { recursive: true, force: true } );
+	}
 } );
 
 test( 'siteDirFor falls back to os.tmpdir() in single-tenant mode', () => {
