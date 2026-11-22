@@ -15641,3 +15641,76 @@ does not mistake the difference for unfinished work.
 | `bin/generate-tool-capability-flags.php --check` | exit 0 — 1,465 tools in step |
 | phpcs PSR-12 | exit 0 |
 | phpcs WPCS on changed files | exit 0 |
+
+## 165. The host reports the tool registration it actually achieved (2026-11-22)
+
+§164 closed the last unavailable row. This section closes the *other* end of the
+readiness question: the manifest says what a host should serve, and the host now
+states what it could actually build.
+
+### 165.1 The gap
+
+`ManifestToolRegistrar` skips a row the manifest marked servable when the
+container cannot build it, and `NvoosServiceProvider` records the list:
+
+```php
+$this->app->instance( 'nvoos.tools.skipped', $result['skipped'] );
+```
+
+`ToolReadinessRegistrationTest` asserts that list is empty — but only for the
+**package** host, using the package's bindings. The app overrides several of
+them (`AssistantServiceInterface`, `EmailServiceInterface`, …), and nothing
+asserted the result or showed it to an operator. A servable row the app could
+not build would simply not exist, with the registrar's reason visible to nobody.
+
+### 165.2 What was built
+
+- **`tests/Feature/ToolRegistrationTest.php`** asserts the app's boot produced
+  no skipped servable row. It is deliberately database-free: the question is
+  container construction, not data.
+- **`/ops/diagnostics` gains a Tool registration group**: servable-row count,
+  `Skipped at boot: none` or a count, and one row per skip carrying the
+  registrar's own reason. The group needed no view change — the blade already
+  renders any group as a label/value table.
+- The page reads the **boot-time binding** rather than re-probing. That keeps
+  the page cheap and means it cannot disagree with what the registrar actually
+  did; a re-probe would answer a different question (would it build *now*) and
+  hide a failure that only occurs during boot.
+
+A clean host renders `Skipped at boot: none`, which is the answer an operator
+needs: every advertised tool is actually constructible here.
+
+### 165.3 Why not `readiness_by_runtime`
+
+090-m proposed `{laravel: ready, wordpress: unavailable}` and called it "the one
+genuine limitation" of the design. Checked against the code, the premise does
+not hold today:
+
+- **WordPress never reads this manifest.** There is no `ToolReadiness` or
+  `tool-readiness.php` reference anywhere in `includes/` or
+  `addons/pro/includes`; WordPress has its own registry. A `wordpress:` column
+  would be a hand-maintained field for a reader that does not exist.
+- **The per-host truth already exists, derived.** `nvoos.tools.skipped` reflects
+  the real container, including app overrides. A declared map would be a second,
+  weaker claim — and 090-m's own lesson is that static inference produced both
+  false negatives and false positives.
+
+So the schema change stays closed. The condition to reopen it is concrete: when
+WordPress starts consuming this manifest, derive the per-host value by probing
+each host rather than declaring it.
+
+### 165.4 What this does not prove
+
+A constructible tool can still misbehave. This closes **construction**, not
+behaviour; that remains the `probe` and `evidence` fields' job. The two are
+different axes, and §165.3 is the reason not to collapse them into a single
+per-runtime verdict.
+
+### 165.5 Gates
+
+| Gate | Result |
+|---|---|
+| app suite (targeted: diagnostics, registration, surface ownership, site health) | 29 tests, 592 assertions |
+| phpcs PSR-12 | exit 0 |
+| phpcs WPCS on changed files | exit 0 |
+| `lib/core` / manifest | unchanged — no manifest or core edit in this section |
