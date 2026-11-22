@@ -15048,3 +15048,101 @@ three states.
 | phpcs WPCS on `includes/` + `tests/` | exit 0 |
 | phpcs PSR-12 (no path arguments) | exit 0 |
 | re-run of `bin/measure-necessity-gate.php` | 142 / 42 / 10 / 1 |
+## 159. The last block, and the gate switched on (2026-11-22)
+
+§156 left one `block` and one switch. Both are closed here.
+
+### 159.1 The block was a schema defect, not a gate defect
+
+`erlang_c_queue_health` was the lone `block`: `optional_high_risk`. The review
+asked whether it over-declared `state-changing`/`write`. It does not — the
+**WordPress** tool persists a rolling snapshot (last 100 entries) in an option.
+
+But that flag described the wrong class. The portable port
+(`Nvoos\Core\Tool\ErlangCQueueHealthTool`) persists nothing: it computes and
+returns. It declared no flags of its own, so it inherited WordPress's — and the
+gate dutifully refused it as an outbound mutation of a tool that never writes.
+
+The second half of the defect was the schema: `execute()` rejects an empty call
+with `validationFailed('arrival_rate_per_hour, avg_handle_time, and current_agents
+are required when not fetching from endpoint')`, but the schema declared **no
+`required`** at all. So the only call the measurement could construct was the one
+the code refuses.
+
+Both are fixed:
+
+| fix | why |
+|---|---|
+| the port implements `ToolCapabilityFlagsInterface` with `external-api`, `idempotent`, `read-only`, `requires-capability` | it is a read; the endpoint fetch is a GET; nothing is persisted |
+| the schema declares `anyOf` — `fetch_from_endpoint: true`, or the three inline metrics | the two shapes `execute()` actually accepts |
+
+The WordPress tool keeps its `write` flags, because there it is a write. That is
+a documented divergence in behaviour, not a drift in vocabulary.
+
+`bin/measure-necessity-gate.php` still fills arguments from a top-level
+`required`, so it does not read the `anyOf`. It does not need to: the port is now
+tier-1 safe and never reaches the necessity classifier.
+
+### 159.2 The gate is on
+
+`oos.necessity_gate.enabled` now defaults to **true**
+(`OOS_NECESSITY_GATE=false` turns it off). The remaining preconditions were
+already in place — the ticket channel (§157) and the pre-approved list (§158).
+
+Proven end to end through the real registry, not just the unit tests:
+
+| call | result |
+|---|---|
+| `send_group_email` (well-formed) | denied: `requires human approval — ticket 1697 is pending`; one pending row queued |
+| `erlang_c_queue_health` (empty) | reached the tool body and returned its own login guard; no gate denial |
+
+The first line is the whole feature: a risky call is refused, a ticket exists, and
+the same call runs once approved. The second is the block fix: the port is no
+longer mistaken for a write.
+
+### 159.3 Re-measured
+
+| measure | §158 | now |
+|---|---|---|
+| allow (schema args) | 142 | **143** |
+| warn | 42 | 42 |
+| approval | 10 | 10 |
+| block | 1 | **0** |
+| tier-1 fast path | 120 / 195 (62%) | 121 / 195 (62%) |
+| empty args (allow/warn/approval/block) | 120/13/42/20 | **121/13/42/19** |
+
+The gate refuses nothing on a well-formed call. Ten calls ask a human, and every
+one of them is recoverable: `cancel_higgsfield_request`, `delete_cron_job`,
+`delete_file`, `delete_post`, `mine_agent_memory`, `monitor_batch`,
+`send_group_email`, `send_group_email_validated`, `store_agent_context`,
+`upload_file`.
+
+The empty-args row moved by exactly one block, the erlang tool — which is the
+proof that the flag fix, not a classifier change, did the work: every other
+under-specified permanent call still blocks.
+
+### 159.4 Rollout
+
+| surface | state |
+|---|---|
+| Laravel app | gate on by default; per-deploy off with `OOS_NECESSITY_GATE=false` |
+| WordPress | unchanged — per-assistant harness profile, still off by default |
+| pre-approved list | shared; `pre_approved => array()` restores every prompt |
+| four-eyes | unchanged, off by default (§158) |
+
+The WordPress gate keeps its own switch because it is already a product surface
+(assistant-level). The *vocabulary* and the *allowlist* are shared, so the two
+runtimes cannot disagree about what a flag means or which tools are pre-approved.
+
+### 159.5 Gates
+
+| Gate | Result |
+|---|---|
+| `ErlangCQueueHealthToolTest` (new) | 3 tests: flags, schema shapes, empty call is a validation error |
+| full `lib/core` suite | 1,951 tests, 15,671 assertions |
+| full Laravel app suite | **1,938 tests, 20,609 assertions** |
+| `lib/laravel-adapter` suite | 316 tests, 1,700 assertions (baseline held) |
+| end-to-end registry smoke | ticket queued for `send_group_email`; erlang not gated |
+| phpcs PSR-12 (no path arguments) | exit 0 |
+| phpcs WPCS (unchanged WP tool, sanity) | exit 0 |
+| re-run of `bin/measure-necessity-gate.php` | 143 / 42 / 10 / 0 |
