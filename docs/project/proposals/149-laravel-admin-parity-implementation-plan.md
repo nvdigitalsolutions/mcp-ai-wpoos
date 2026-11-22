@@ -16631,3 +16631,173 @@ guard and the harness provider.
 
 §174.4's table loses its `system-prompt hint` row; the other three omissions
 stand.
+
+## 176. The orchestration and token-manager views (2026-11-23)
+
+§167 concluded that *"no declared surface … is unaccounted for"*, and §167.3
+recorded exactly why that was a narrower claim than it sounded:
+
+> It does **not** re-derive the WordPress admin menu, so a screen that never
+> made it into the contract would still be invisible here.
+
+This section is the re-derivation for the two tabs that were never inventoried:
+`wp-mcp-ai-dashboard&tab=orchestration` (12 `?view=` values) and
+`&tab=token_manager` (9). Both of the pages that prompted the audit — the
+per-tool orchestration table and the per-tool token limits — were missing from
+`surface-ownership.json` entirely. They did not appear in the `absent` tally, so
+the burn-down could not count them.
+
+### 176.1 The inventory
+
+Read from the section classes (`get_view_groups()` for orchestration, the
+`switch` in `render()` for the token manager), then mapped onto what this runtime
+actually serves.
+
+| Tab | View | WordPress | Here |
+|---|---|---|---|
+| orchestration | `overview` | health, preset cards, run stats | partial — `/ops/observability` + `/admin/command-centre`, not as one dashboard |
+| orchestration | `settings` | 35 toggles | **planned** — most configure absent software |
+| orchestration | `presets` | named bundles over `settings`/`thresholds` | **planned** — dependent |
+| orchestration | `thresholds` | 24 bands and caps | **planned** — needs a core contract |
+| orchestration | `memory_health` | read-only health summary | **planned** — `/admin/memory` is the store browser |
+| orchestration | `tools` | per-tool flags + force-sync | **planned** — `tools` here is the read-only catalogue |
+| orchestration | `observability` | run timeline hub | shipped (§84) |
+| orchestration | `rabbitmq` | broker | **absent** — no broker; `/ops/queue` |
+| orchestration | `agents` | agent roles | WordPress-only (§162) |
+| orchestration | `professions` | catalogue | shipped (§23) |
+| orchestration | `teams` | teams | shipped |
+| orchestration | `dspark` | DSPy artifacts | **planned** — new surface, not a port |
+| token | `per_user` | per-user usage | shipped — `/ops/token-usage` |
+| token | `per_tool` | per-tool limits | **shipped here (§176.3)** |
+| token | `per_site` | multisite roll-up | **absent** — the unit is the estate |
+| token | `per_models` | per-model usage | shipped — `/ops/token-analytics` + `/ops/models` |
+| token | `model_manager` | model catalogue | shipped — `/ops/models` |
+| token | `analytics` | analytics hub | shipped — `/ops/token-analytics` |
+| token | `patterns` | recurring shapes | shipped — a section of the same page |
+| token | `anomalies` | outliers | shipped — a section of the same page |
+| token | `trends` | change over time | shipped — a section of the same page |
+
+Eight views therefore move from invisible to recorded: six `planned`, two
+`absent` with a reason. The contract goes from 50 rows to 59, and
+`bin/audit-surface-ownership.php` now prints `planned only: 6` where it printed
+`0` — which is the honest figure, not a regression.
+
+### 176.2 What the research settled
+
+Four sources shaped the per-tool quota, and they agree on the shape rather than
+the details:
+
+- **Rate and volume are different controls.** *"Combine a token bucket for rate
+  with a fixed window for volume: the bucket stops bursts, the daily quota stops
+  slow leaks."* A single limiter cannot do both, and the WordPress page is the
+  fan-out half — a daily window.
+- **Meter before the call where you can; accept the overshoot you cannot
+  remove.** Exact usage is only known after the response, so *"concurrent
+  requests can briefly overshoot"*. A quota that claimed preciseness would be
+  lying about the one number it publishes.
+- **Multiple dimensions, not one bucket.** Requests-per-minute, input tokens,
+  output tokens, concurrency, spend and run budget protect different resources;
+  a serious limiter keeps them separable.
+- **A spike is a symptom.** *"A sudden jump in token spend from one tenant is
+  often a misconfigured agent loop or retry bug rather than organic growth"* —
+  which is why the recorder counts a refused call as zero. Charging refusals
+  would let a looping model exhaust a quota without doing any work.
+- **Tool annotations are hints, not contracts** (MCP, *Tool Annotations as Risk
+  Vocabulary*). That is the position §174.2 already recorded, and it is why
+  `orchestration.tool-overrides` is scoped **narrow-only** in §176.5: a stored
+  override that could remove `destructive` from a flag set would be exactly the
+  "asking for a contract" failure that source names.
+- **`execute_tool` is a first-class span.** OpenTelemetry's GenAI conventions put
+  `invoke_agent` at the root with child `chat` and `execute_tool` spans, and
+  treat content capture as opt-in. The `tool` harness trace record (§98) is this
+  runtime's version of that span, and it stays opt-in per assistant for the same
+  reason.
+
+### 176.3 What shipped: `/admin/tool-quotas`
+
+The `token_manager` → `per_tool` view, as two tables and one page.
+
+| Layer | Piece |
+|---|---|
+| schema | `nvoos_tool_quotas` — one limit per estate per tool, unique `(tenant_id, tool_slug)` |
+| schema | `nvoos_tool_quota_usage` — one counter per estate, user, tool and UTC day |
+| model | `ToolQuota`, `ToolQuotaUsage` — tenant scope + `creating` hook, the rule `Budget` follows (Proposal 153) |
+| store | `ToolQuotaStore` — limits, per-user usage, estate totals, the verdict, `put`/`remove`/`record`/`prune` |
+| guard | `ToolQuotaGuard` — refuses at the ceiling, warns at 80 %, fails closed on an unreadable counter |
+| recorder | `ToolQuotaRecorder` — `strlen / 4` over the result, the ratio WordPress's `estimate_tokens()` uses |
+| wiring | `tools/pre_execute` waterfall (deny) + `AfterToolExecution` (record) |
+| page | `/admin/tool-quotas`, writable, in `Knowledge` beside the catalogue |
+| command | `nvoos:prune-tool-quota-usage`, scheduled 03:30, deleting across **every** estate |
+| config | `oos.tool_quotas.{enabled,retention_days}` |
+
+Six decisions are load-bearing:
+
+1. **The limit is a policy over a proxy, and the page says so.** A tool body
+   makes no provider call, so there is no invoice line to attribute to it. What
+   a tool costs the loop is the payload it puts back into the context on the
+   next turn, which is why the counter is the result's size. Both the page and
+   the refusal say "estimated".
+2. **Opt-in, with three ways to be unmetered.** No row, `enabled = false` and
+   `daily_tokens = 0` all refuse nothing. A quota nobody configured must not
+   break an install, and the same convention already exists for a zero budget
+   (`BudgetStore::STATE_UNLIMITED`).
+3. **Per user, not per estate.** The budget is an estate ceiling; a quota is a
+   per-caller ceiling over one tool, so the badge is computed against the
+   busiest user and the estate total is a separate column. Folding them together
+   would badge an estate "exhausted" because twenty people each used a twentieth.
+4. **A refusal is not recorded**, because a refused call costs nothing and
+   charging it would let a loop exhaust the quota by retrying. This falls out of
+   using `AfterToolExecution`: the waterfall returns before the body runs.
+5. **A dedicated counter, not a query over the trace.** Trace capture is opt-in
+   per assistant, so a quota derived from traces would silently stop applying
+   when an operator turned capture off — a fail-open in a control.
+6. **The listener is a waterfall entry, not a monotonic guard.** `tools/pre_execute`
+   is the registry's allow/deny seam, so the refusal surfaces as `tool_denied`
+   carrying the quota's own message. A guard would produce the same refusal with
+   a generic reason, which is less useful to a model deciding what to do next.
+
+Two wiring traps were found and are now recorded in the code:
+
+- **`EventDispatcherInterface` had to become a singleton.** It was bound with
+  `bind`, so every `make()` built a fresh dispatcher while `ToolRegistry`
+  captured whichever instance it was constructed with. A listener registered
+  anywhere else landed on an object nobody dispatched through. Sharing the hub
+  is the fix; one-instance-per-resolution made listener registration a lottery.
+- **The recorder is registered on Laravel's dispatcher, not the adapter's.**
+  `EventDispatcher::listen()` writes the callable into its own PSR-14 map *and*
+  with Laravel, and `dispatch()` fires both — every tool would have been charged
+  twice. Laravel's dispatcher alone is reached exactly once.
+
+### 176.4 Deliberate omissions
+
+| Not ported | Why |
+|---|---|
+| multipliers | WordPress multiplies a per-user tier base (`low`/`medium`/`high` max tokens). This runtime has no claim tiers, so a multiplier would render and change nothing — `inert`, which this contract refuses to count as parity |
+| per-site roll-up | the unit here is the estate; an estate is not a site, and the estate breakdown already exists |
+| RabbitMQ | this runtime queues through the database/Redis driver; `/ops/queue` is the surface with that job |
+
+### 176.5 The remaining six, in dependency order
+
+| Order | Surface | Prerequisite |
+|---|---|---|
+| 1 | `orchestration.tool-overrides` | a **narrow-only** decorator over `ToolResolverInterface` — guards already read flags through it, so this is a seam rather than a page. Widen must never be expressible |
+| 2 | `orchestration.thresholds` | a core contract for per-call and per-session ceilings; the orchestrator's `tokenBudget` is one deployment value today |
+| 3 | `orchestration.presets` | a projection over 1 + 2, the same dependency the WordPress page has |
+| 4 | `orchestration.memory-health` | read-only over the memory store and 2's bands |
+| 5 | `orchestration.settings` | a toggle-by-toggle map to a reader; the ones that configure absent software are hidden, not disabled (§104's rule) |
+| 6 | `orchestration.dspark` | a decision, not a build: the WordPress page configures a Python pipeline that is absent here |
+
+`rabbitmq` and `per-site` are recorded `absent`, not planned — declining them is
+the decision, and the contract now says so where a reader will look.
+
+### 176.6 Gates
+
+| Gate | Result |
+|---|---|
+| `ToolQuotaTest` | **14 tests / 39 assertions** — floor, ceiling, per-user, cross-estate, recording, refusal-not-recorded, ratio, master switch, cross-estate prune, page, viewer refusal |
+| `SurfaceOwnershipTest` + `AdminNavigationTest` | 9 tests / 545 assertions |
+| the three together | 22 tests / 631 assertions |
+| tool/chat/machine/security/budget blast radius | **583 tests / 3,473 assertions** |
+| phpcs PSR-12 on the 12 gated files | exit 0 |
+| `bin/check-license-boundary.sh` | intact |
+| `bin/audit-surface-ownership.php` | 59 rows, 45 filament-built, 6 planned, 4 absent, 0 inert |

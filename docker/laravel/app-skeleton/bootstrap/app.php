@@ -98,6 +98,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->withoutOverlapping();
         }
 
+        // 149 §176 — per-tool quota usage. One row per estate, user, tool and
+        // day: bounded by callers rather than by calls, so it needs a delete by
+        // date and nothing more. Deliberately after the token rollup and prune
+        // slots, because it has no aggregation step to wait for. 0 disables it.
+        $toolQuotaRetentionDays = (int) config('oos.tool_quotas.retention_days', 30);
+
+        if ($toolQuotaRetentionDays > 0) {
+            $schedule->command('nvoos:prune-tool-quota-usage', ['--days' => $toolQuotaRetentionDays])
+                ->dailyAt('03:30')
+                ->withoutOverlapping();
+        }
+
         // 149 §111 — the access-request digest. §110 made the refusal visible on
         // a page; a page is pull, and the administrator who needs it has no reason
         // to visit it. Daily at a fixed hour, and silent when nothing is pending —

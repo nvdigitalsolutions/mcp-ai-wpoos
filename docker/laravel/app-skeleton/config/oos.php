@@ -282,4 +282,29 @@ return array(
         'escalation_email' => env('NVOOS_MACHINE_ESCALATION_EMAIL'),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Per-tool daily quotas (149 §176)
+    |--------------------------------------------------------------------------
+    |
+    | The daily token ceiling one user may spend per tool, counted from the size
+    | of each tool's result. Like WordPress's `token_manager` → `per_tool`, this
+    | is an operator-facing cost control, not an authorization rule.
+    |
+    | `enabled` is a master switch over both halves: off means the waterfall
+    | listener allows everything and nothing is recorded, so an operator can stop
+    | the per-call upsert without removing a page. A tool with no row, a disabled
+    | row and a zero limit are all unmetered — a control nobody configured must
+    | not refuse anybody.
+    |
+    | `retention_days` bounds the usage table: nothing reads yesterday's counters
+    | (a daily quota resets at midnight UTC), so they are kept only long enough
+    | to answer "what did this cost last week".
+    |
+    */
+    'tool_quotas' => array(
+        'enabled' => (bool) env('NVOOS_TOOL_QUOTAS', true),
+        'retention_days' => (int) env('NVOOS_TOOL_QUOTA_RETENTION_DAYS', 30),
+    ),
+
 );
