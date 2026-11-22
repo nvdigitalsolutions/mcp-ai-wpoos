@@ -14559,3 +14559,133 @@ The 19 manifest rows still without a flag source are all `quarantined` or
 | full `lib/core` suite | 1,923 tests, 15,612 assertions |
 | phpcs PSR-12 (no path arguments, exit code captured) | exit 0, 1,168 files |
 | `php -l` across `lib/core/src/Tool/` | clean |
+## 155. The necessity gate, measured with real flags (2026-11-22)
+
+### 155.1 Method
+
+§150.5 measured the gate when **zero** tools declared flags, so every row fell
+through to `approval_required` and the number said nothing about the gate. Now
+that all 195 servable rows have a flag source (§152–§154), the same measurement
+is meaningful.
+
+Each row is resolved from the app container through `ToolRegistry`, flags taken
+from the tool's own declaration and falling back to the catalogue exactly as
+`NecessityGuard` does, then `NecessityGate::decide()` is called with two
+argument shapes:
+
+- **schema args** — every required parameter filled with a type-appropriate
+  value from the tool's own `getParametersSchema()`. This is what a real,
+  well-formed call looks like.
+- **empty args** — §150.5's input, kept only for comparability.
+
+Servable rows: **195**. Rows without a flag source: **0**. Rows the registry
+could not resolve: **0**.
+
+The measurement is checked in as `bin/measure-necessity-gate.php`, because it
+needs a booted application to resolve the tools and cannot run on plain PHP:
+
+```bash
+php artisan tinker --execute="require '/path/to/bin/measure-necessity-gate.php';"
+```
+
+### 155.2 Results
+
+| input | allow | skip | warn | approval | block |
+|---|---|---|---|---|---|
+| schema args | 124 | 0 | 48 | **17** | **6** |
+| empty args | 112 | 0 | 13 | 50 | 20 |
+| *§150.5, no flags* | *0* | *1* | *0* | *194* | *0* |
+
+Tier-1 fast path (`isSafeTool`, flags only, no arguments): **112 / 195 (57%)**.
+
+Reason codes under schema args: `safe_tool` 112, `helpful_within_bounds` 59,
+`helpful_needs_approval` 14, `helpful_permanent` 5, `optional_needs_approval` 3,
+`optional_high_risk` 1, `optional_low_risk` 1.
+
+The headline is that approval drops from **194 to 17** on well-formed calls.
+The flags did their job.
+
+### 155.3 The six blocks are a defect, not a policy
+
+| tool | flags of note | reason |
+|---|---|---|
+| `delete_post` | data-destruction, irreversibility | `helpful_permanent` |
+| `delete_file` | data-destruction, irreversibility | `helpful_permanent` |
+| `delete_cron_job` | irreversible | `helpful_permanent` |
+| `send_group_email` | external-communication, irreversible | `helpful_permanent` |
+| `send_group_email_validated` | same | `helpful_permanent` |
+| `erlang_c_queue_health` | external-api, state-changing, write | `optional_high_risk` |
+
+`ActionSafetyProfile::determineVerdict()` maps **helpful × permanent → BLOCK**
+with the message "helpful but permanently irreversible — blocked". The docblock
+says the tier exists to stop *overeager* calls, but an overeager call is
+`unnecessary`, and that case already blocks. A **well-formed delete or email the
+task actually asked for** is not overeager — it is exactly the thing a human
+should be asked about, not silently refused.
+
+The distinction is currently invisible at runtime: `NecessityGuard` returns a
+denial for both `block` and `approval_required`, and no approval channel is
+wired. So changing the cell to `approval_required` alters nothing today, but it
+is the correct verdict the day one exists.
+
+`erlang_c_queue_health` is a different shape: a *health check* that declares
+`state-changing` and `write`. That is almost certainly over-declared in the
+corpus, and worth a look before the flags are trusted.
+
+### 155.4 The seventeen approvals
+
+**Eleven are paid media generation** — `generate_gemini_image`,
+`edit_gemini_image`, `generate_higgsfield_image/video`, `generate_sora_video`,
+`generate_veo_video` and their `_validated` twins, plus
+`cancel_higgsfield_request`. They declare `write` **and** `external-api`, so
+`hasOutboundMutation()` is true, irreversibility is high, and a well-formed call
+needs approval.
+
+That is defensible as cost control and terrible as a media workflow: an approval
+prompt on every generated image. It is a policy choice, not a bug — the operator
+either allowlists generation or accepts the prompt.
+
+**Three are ordinary writes** — `mine_agent_memory`, `monitor_batch`,
+`store_agent_context`. Plausible, though approval on every memory store is
+heavy.
+
+**Three are flag drift** — `list_professions`, `list_students`, `upload_file`.
+The first two are read-only tools that never reach tier 1; see §155.5.
+`upload_file` came out `optional` because the schema filler did not satisfy its
+required parameters, so its real verdict is `helpful_needs_approval`.
+
+### 155.5 Eight tools spell "read" a different way
+
+| flags | tools |
+|---|---|
+| `read` | `check_higgsfield_request`, `check_video_status`, `generate_email_template`, `get_profession`, `list_professions` |
+| `database-read` | `get_eca`, `get_task_dependencies`, `list_students` |
+
+None declares `read-only`, so none can reach tier 1 — even though all eight only
+read. `list_professions` (`local-only, read, safe`) and `list_students`
+(`database-read, pro`) are consequently **approval-required reads**, which is
+plainly wrong.
+
+This is the §151 spelling problem in its last form: alias `read` and
+`database-read` onto `read-only` in `CapabilityFlagVocabulary`. Both are
+monotone-safe — a tool that also declares `write` still fails `isSafeTool`.
+
+### 155.6 Verdict on enabling `oos.necessity_gate`
+
+**Not yet.** Two reasons, in order:
+
+1. **The `helpful × permanent` cell blocks legitimate work.** `send_group_email`
+   and `delete_post` are refused outright on a well-formed request. Fix the cell
+   to `approval_required` first — a correctness change with no runtime effect
+   today.
+2. **Two read-only tools are wrongly blocked for approval** because they spell
+   the flag `read`. Alias the spellings.
+
+After those two, working the arithmetic through: the five `helpful_permanent`
+blocks become approvals (`block` 6 → 1, the `optional_high_risk` one stays), the
+eight read-ish tools reach tier 1 (six from `warn`, two from `approval`), giving
+roughly **allow 132, warn 42, approval 20, block 1**. That is a gate an operator
+could switch on, with the single remaining block being a flag-quality outlier.
+
+The unresolved product question is the eleven paid generation tools. Everything
+else is now mechanical.
