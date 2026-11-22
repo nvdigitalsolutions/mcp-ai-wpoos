@@ -112,18 +112,15 @@ class NV_oOS_Graphify_Remote_SPARQL implements NV_oOS_Graphify_Remote_Source_Int
 	public function test_connection() {
 		$endpoint = $this->get_endpoint();
 		if ( empty( $endpoint ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No endpoint_url configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No endpoint_url configured.', 'nvoos-graphify' )
 			);
 		}
 
 		$result = $this->execute_query( 'ASK { ?s ?p ?o }', 'ask' );
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 
 		return array(

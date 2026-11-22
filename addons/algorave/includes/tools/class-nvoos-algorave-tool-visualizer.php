@@ -91,9 +91,10 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$valid_actions = array( 'set_mode', 'set_color', 'toggle', 'fullscreen' );
 		if ( ! in_array( $action, $valid_actions, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid action. Use: set_mode, set_color, toggle, or fullscreen.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'wp_mcp_ai_invalid_arguments',
+				__( 'Invalid action. Use: set_mode, set_color, toggle, or fullscreen.', 'nvoos-algorave' ),
+				array( 'action' => $action )
 			);
 		}
 
@@ -108,9 +109,10 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 				$mode        = sanitize_text_field( $arguments['mode'] ?? 'waveform' );
 				$valid_modes = array( 'waveform', 'spectrum', 'bars', 'circular', 'particles', 'scope', 'spectrogram', 'lissajous' );
 				if ( ! in_array( $mode, $valid_modes, true ) ) {
-					return array(
-						'success' => false,
-						'error'   => __( 'Invalid mode. Use: waveform, spectrum, bars, circular, particles, scope, spectrogram, or lissajous.', 'nvoos-algorave' ),
+					return new WP_Error(
+						'wp_mcp_ai_invalid_arguments',
+						__( 'Invalid mode. Use: waveform, spectrum, bars, circular, particles, scope, spectrogram, or lissajous.', 'nvoos-algorave' ),
+						array( 'mode' => $mode )
 					);
 				}
 				$result['mode']    = $mode;

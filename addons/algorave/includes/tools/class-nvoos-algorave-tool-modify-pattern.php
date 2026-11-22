@@ -89,9 +89,9 @@ class NV_oOS_Algorave_Tool_Modify_Pattern implements WP_MCP_AI_Tool_Interface, W
 		$engine       = sanitize_text_field( $arguments['engine'] ?? 'strudel' );
 
 		if ( empty( $code ) || empty( $modification ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Both the original code and modification description are required.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Both the original code and modification description are required.', 'nvoos-algorave' )
 			);
 		}
 

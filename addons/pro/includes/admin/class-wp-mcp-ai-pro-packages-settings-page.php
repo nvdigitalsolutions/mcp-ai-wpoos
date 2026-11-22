@@ -661,7 +661,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 		$status = $this->check_package_status( $package );
 		if ( ! $status['available'] ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message' => __( 'Package is not installed.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
@@ -743,7 +743,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			);
 		} catch ( Exception $e ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message' => sprintf(
 					/* translators: %s: Error message */
 					__( 'Sharp test failed: %s', 'mcp-ai-wpoos-pro' ),
@@ -773,7 +773,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 					);
 				}
 				return array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'message' => __( 'Canvas package is not installed. Install the NV oOS Canvas Addon plugin to enable canvas support.', 'mcp-ai-wpoos-pro' ),
 				);
 			}
@@ -788,12 +788,12 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			}
 
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message' => __( 'Canvas package is not installed. Install the NV oOS Canvas Addon plugin to enable canvas support.', 'mcp-ai-wpoos-pro' ),
 			);
 		} catch ( Exception $e ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message' => sprintf(
 					/* translators: %s: Error message */
 					__( 'Canvas test failed: %s', 'mcp-ai-wpoos-pro' ),
@@ -939,7 +939,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			);
 		} catch ( Exception $e ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message' => sprintf(
 					/* translators: %s: Error message */
 					__( 'Puppeteer Core test failed: %s', 'mcp-ai-wpoos-pro' ),
@@ -1290,7 +1290,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			);
 		} catch ( Exception $e ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message' => sprintf(
 					/* translators: %s: Error message */
 					__( 'FFmpeg Static test failed: %s', 'mcp-ai-wpoos-pro' ),

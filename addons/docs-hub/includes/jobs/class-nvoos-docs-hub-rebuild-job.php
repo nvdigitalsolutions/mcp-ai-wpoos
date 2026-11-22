@@ -163,7 +163,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 				)
 			);
 			return array(
-				'success'      => false,
+				'success'      => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Job result DTO; WP-CLI and the admin notice read success/pages/broken_links, and the failure is recorded in rebuild state.
 				'pages'        => 0,
 				'broken_links' => 0,
 				'duration_ms'  => (int) round( ( microtime( true ) - $start ) * 1000 ),

@@ -93,9 +93,9 @@ class NV_oOS_Graphify_Tool_Get_Node implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		if ( ! $node ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Node not found. Build the graph first with graphify_build_graph.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Node not found. Build the graph first with graphify_build_graph.', 'nvoos-graphify' )
 			);
 		}
 

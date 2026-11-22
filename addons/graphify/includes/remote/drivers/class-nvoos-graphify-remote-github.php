@@ -96,23 +96,20 @@ class NV_oOS_Graphify_Remote_GitHub extends NV_oOS_Graphify_Remote_Source_Base {
 	public function test_connection() {
 		$token = $this->resolve_token();
 		if ( '' === $token ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No GitHub access_token configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No GitHub access_token configured.', 'nvoos-graphify' )
 			);
 		}
 		$result = $this->get_http()->get( self::API_BASE . '/user', array( 'headers' => $this->auth_headers( $token ) ) );
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status. */
-				'message' => sprintf( __( 'GitHub returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] ),
+				sprintf( __( 'GitHub returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] )
 			);
 		}
 		return array(

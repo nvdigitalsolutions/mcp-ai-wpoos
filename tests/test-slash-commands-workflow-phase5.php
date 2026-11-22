@@ -55,7 +55,7 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 				$call_count++;
 				if ( $call_count < 3 ) {
 					return array(
-						'success' => false,
+						'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 						'error'   => 'temp_failure',
 					);
 				}

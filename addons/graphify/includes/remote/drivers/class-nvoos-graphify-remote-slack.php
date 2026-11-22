@@ -99,9 +99,9 @@ class NV_oOS_Graphify_Remote_Slack extends NV_oOS_Graphify_Remote_Source_Base {
 	public function test_connection() {
 		$token = $this->resolve_token();
 		if ( '' === $token ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No Slack access_token configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No Slack access_token configured.', 'nvoos-graphify' )
 			);
 		}
 		$result = $this->get_http()->get(
@@ -109,16 +109,13 @@ class NV_oOS_Graphify_Remote_Slack extends NV_oOS_Graphify_Remote_Source_Base {
 			array( 'headers' => $this->auth_headers( $token ) )
 		);
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		$body = json_decode( (string) $result['body'], true );
 		if ( ! is_array( $body ) || empty( $body['ok'] ) ) {
-			return array(
-				'success' => false,
-				'message' => isset( $body['error'] ) ? sanitize_text_field( (string) $body['error'] ) : __( 'Slack auth.test failed.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				isset( $body['error'] ) ? sanitize_text_field( (string) $body['error'] ) : __( 'Slack auth.test failed.', 'nvoos-graphify' )
 			);
 		}
 		return array(

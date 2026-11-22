@@ -12,7 +12,7 @@
                 "includes/"
             ],
             "errors": 120,
-            "warnings": 706
+            "warnings": 698
         },
         {
             "name": "addons-pro",
@@ -20,7 +20,7 @@
                 "addons/pro/"
             ],
             "errors": 444,
-            "warnings": 2221
+            "warnings": 2198
         },
         {
             "name": "addons-other",
@@ -28,7 +28,7 @@
                 "addons/"
             ],
             "errors": 270,
-            "warnings": 916
+            "warnings": 841
         },
         {
             "name": "tests",
@@ -36,7 +36,7 @@
                 "tests/"
             ],
             "errors": 1843,
-            "warnings": 1759
+            "warnings": 1757
         },
         {
             "name": "plugins",
@@ -76,7 +76,6 @@
         }
     ],
     "source_budgets": {
-        "WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray": 108,
         "WPMCPAI.Tools.ToolDescriptionGuidance.MissingUsageGuidance": 75,
         "WordPress.DB.DirectDatabaseQuery.DirectQuery": 250,
         "WordPress.DB.DirectDatabaseQuery.NoCaching": 263,
@@ -99,8 +98,9 @@
     },
     "zero_tolerance": [
         "Internal.Exception",
-        "WPMCPAI.Tools.SanitizeAtEntry",
-        "WPMCPAI.Decisions.ScopeDeclared"
+        "WPMCPAI.Decisions.ScopeDeclared",
+        "WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray",
+        "WPMCPAI.Tools.SanitizeAtEntry"
     ],
     "noise": 10
 }

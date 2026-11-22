@@ -73,9 +73,9 @@ class NV_oOS_Graphify_Remote_WooCommerce extends NV_oOS_Graphify_Remote_Source_B
 	/** {@inheritdoc} */
 	public function test_connection() {
 		if ( ! $this->is_woocommerce_active() ) {
-			return array(
-				'success' => false,
-				'message' => __( 'WooCommerce is not active on this site.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'WooCommerce is not active on this site.', 'nvoos-graphify' )
 			);
 		}
 		return array(

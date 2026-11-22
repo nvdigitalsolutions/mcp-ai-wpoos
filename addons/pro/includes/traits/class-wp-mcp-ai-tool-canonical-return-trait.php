@@ -37,7 +37,7 @@ trait WP_MCP_AI_Tool_Canonical_Return_Trait {
 	protected function normalise_result( $result ) {
 		if ( is_wp_error( $result ) ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Legacy compatibility adapter for the pre-envelope return shape; no in-tree callers.
 				'error'   => $result->get_error_message(),
 				'code'    => $result->get_error_code(),
 			);

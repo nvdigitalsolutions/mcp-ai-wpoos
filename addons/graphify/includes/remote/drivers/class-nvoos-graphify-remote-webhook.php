@@ -82,9 +82,9 @@ class NV_oOS_Graphify_Remote_Webhook extends NV_oOS_Graphify_Remote_Source_Base 
 	public function test_connection() {
 		$secret = isset( $this->config['webhook_secret'] ) ? (string) $this->config['webhook_secret'] : '';
 		if ( '' === $secret ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No webhook_secret configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No webhook_secret configured.', 'nvoos-graphify' )
 			);
 		}
 		return array(

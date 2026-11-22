@@ -106,9 +106,9 @@ class NV_oOS_Graphify_Remote_OOS_Federation implements NV_oOS_Graphify_Remote_So
 	public function test_connection() {
 		$base_url = $this->get_base_url();
 		if ( empty( $base_url ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No base_url configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No base_url configured.', 'nvoos-graphify' )
 			);
 		}
 
@@ -116,17 +116,14 @@ class NV_oOS_Graphify_Remote_OOS_Federation implements NV_oOS_Graphify_Remote_So
 		$result = $this->http->get( $url, array( 'headers' => $this->get_auth_headers() ) );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status code */
-				'message' => sprintf( __( 'HTTP %d from remote site.', 'nvoos-graphify' ), $result['status'] ),
+				sprintf( __( 'HTTP %d from remote site.', 'nvoos-graphify' ), $result['status'] )
 			);
 		}
 

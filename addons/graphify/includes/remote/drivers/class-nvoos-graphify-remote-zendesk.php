@@ -110,30 +110,24 @@ class NV_oOS_Graphify_Remote_Zendesk extends NV_oOS_Graphify_Remote_Source_Base 
 	public function test_connection() {
 		$base = $this->resolve_base_url();
 		if ( '' === $base ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No Zendesk subdomain configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No Zendesk subdomain configured.', 'nvoos-graphify' )
 			);
 		}
 		$auth = $this->resolve_auth_headers();
 		if ( is_wp_error( $auth ) ) {
-			return array(
-				'success' => false,
-				'message' => $auth->get_error_message(),
-			);
+			return $auth;
 		}
 		$result = $this->get_http()->get( $base . '/api/v2/users/me.json', array( 'headers' => $auth ) );
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status. */
-				'message' => sprintf( __( 'Zendesk returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] ),
+				sprintf( __( 'Zendesk returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] )
 			);
 		}
 		return array(

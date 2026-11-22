@@ -101,9 +101,9 @@ class NV_oOS_Algorave_Tool_Generate_Pattern implements WP_MCP_AI_Tool_Interface,
 		$description = sanitize_text_field( $arguments['description'] ?? '' );
 
 		if ( empty( $description ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'A description of the desired pattern is required.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'A description of the desired pattern is required.', 'nvoos-algorave' )
 			);
 		}
 
