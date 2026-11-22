@@ -16489,6 +16489,7 @@ Two consequences are load-bearing here, and both are pinned by tests:
 | app | migration `users.chat_profile` (nullable = inherit; no backfill, so the deploy changes no behaviour) |
 | app | `GET` / `PUT /api/v1/chat-profile` — catalogue + resolved profile, and the preference writer |
 | config | `oos.chat_profiles.{enabled,default,block_undeclared}`, enabled by default because a user with no selection resolves to `write` |
+| core | `ChatProfile::promptHint()` and its composition in `ChatOrchestrator` — the advisory half, kept independent of the control (§175) |
 
 Two readers, and the difference is the security property:
 
@@ -16508,8 +16509,9 @@ restricted a user would be the endpoint they used to un-restrict themselves.
 |---|---|
 | panel page | the profile is a per-user preference; a tenant-admin page setting someone else's is an authority grant, not a preference |
 | guest profile | there is no anonymous chat surface here (`guest_token_lifetime` is inert for that reason); a context with no `user_id` is a machine credential or a queued job, governed by the machine allowlist and approval gate |
-| system-prompt hint | advisory only — every source above says the prompt is not the control. Worth adding so the model stops retrying blocked calls, but it changes no guarantee |
 | Pro profile registration | there is no Pro profile catalogue on this runtime to extend |
+
+A fourth omission, the system-prompt hint, closed in §175.
 
 ### 174.5 Gates
 
@@ -16524,3 +16526,108 @@ restricted a user would be the endpoint they used to un-restrict themselves.
 The contract row changed with it: `chat-profiles` stays `admin: absent`, gains
 `writer: console` (the API is the only writer; the SPA still has no key for it),
 and its note now records enforcement as shipped.
+
+## 175. Chat profiles: the advisory hint (2026-11-22)
+
+§174 shipped the control and recorded the hint as a deliberate omission:
+*"advisory only — every source above says the prompt is not the control. Worth
+adding so the model stops retrying blocked calls, but it changes no
+guarantee."* This closes that omission and keeps the same framing: the guard
+decides, the hint only saves iterations.
+
+### 175.1 Why it is worth having at all
+
+Enforcement alone leaves the model to discover the boundary by walking into it.
+A read-only turn asked to "clear the cache" calls the tool, is refused, and
+spends its remaining iterations on variants of the same call — each one a full
+provider round-trip, none of them able to succeed. Telling the model where the
+boundary is before it starts converts that loop into an answer.
+
+The distinction matters at review: this changes **latency and answer quality**,
+never the security property. Deleting the hint would leave every guarantee in
+§174 intact. That is also why it is not a setting — there is no trade-off to
+weigh.
+
+### 175.2 Positive framing, three ways
+
+The obvious wording is a negation, and WordPress's own implementation uses one:
+`WP_MCP_AI_Chat_Profile_Prompt_Hint::append_hint` appends *"Tools that modify
+data are blocked at the execution layer; **do not attempt them**. Prefer
+read-only tools and answer without side effects."* on
+`wp_mcp_ai_resolved_system_prompt` at priority 20.
+
+Ours deliberately does not, for a documented reason:
+
+- **Anthropic's and OpenAI's prompting guidance** both say to state the desired
+  behaviour positively. A negation names the forbidden action, which keeps it
+  salient; the positive form says what to do instead and gives the model
+  somewhere to go.
+- The same guidance says to describe the **alternative**, not just the limit. A
+  model told only "no writes" tends to stall or narrate the refusal; a model
+  told "gather with read-only tools, then answer" finishes the turn.
+
+So the hint names the mode, states the boundary as a fact about the runtime
+rather than an instruction the model could weigh against the user's request,
+describes what to do instead, and closes the loop on retries.
+`ChatProfileTest` pins the absence of `Do not`, so a later edit cannot quietly
+restore the negation.
+
+The full text:
+
+> System: this conversation runs in {label} mode. Tools that change data are
+> blocked at the execution layer. Gather what you need with read-only tools and
+> answer from what you retrieved. If the task needs a change, describe the
+> change, its target and its effect instead of performing it. A blocked call is
+> final; carry on with the information you already have.
+
+Two smaller divergences from the WordPress version follow from the runtime
+rather than from taste:
+
+- **No `__()`.** `lib/core` is framework-agnostic and MIT-licensed; it has no
+  translation layer, and the hint is composed there. Localising it would mean
+  pushing the string back into the host, which buys less than it costs for a
+  one-paragraph prompt rail.
+- **Resolved from the turn's `user_id`**, not `get_current_user_id()`. The
+  orchestrator has no globals; the id it already receives is the server-built
+  one, so the trust boundary is the same one §174 pins — a client-supplied
+  `chat_profile` still cannot reach it.
+
+### 175.3 Composition and de-duplication
+
+`applySystemPrompt()` now takes the caller's id and composes in this order:
+
+1. the guardrail block,
+2. the assistant's instructions,
+3. **the chat-profile hint**,
+4. whatever system text the conversation already carried.
+
+The hint sits before client text so a client-supplied system block cannot bury
+it. It is added only when the existing text does not already contain it —
+`str_contains`, the same test the other rails use — because a resumed turn may
+carry the hint from an earlier request, and a second copy would double its
+weight in the prompt.
+
+Both entry points pass the id: `handleChat()` and `handleChatStreaming()`. The
+streaming path is pinned separately, because it builds its own message array.
+
+The resolver is optional — `setChatProfileResolver(null)` is valid, and the
+default is null. A runtime that never wires it is still enforced, just
+chattier, which keeps the guard and the hint independent as they should be. The
+adapter binds the real resolver in `NvoosServiceProvider`, next to the output
+guard and the harness provider.
+
+### 175.4 Gates
+
+| Gate | Result |
+|---|---|
+| `ChatProfileTest` (core) | **10 tests / 28 assertions** — +2 for the hint, including the `Do not` absence |
+| `ChatProfileGuardTest` (core) | 7 tests / 10 assertions |
+| `ChatOrchestratorTest` (core) | **57 tests / 149 assertions** — +4: hint present, absent for `write`, not duplicated, carried on the streaming path |
+| core, the three files together | **74 tests / 187 assertions** |
+| `ChatProfileApiTest` + `ChatProfileEnforcementTest` | 14 tests / 48 assertions, unchanged |
+| tool-execution blast radius (`ToolExecutionTest`, `MachineToolExecutionTest`) | 11 tests / 26 assertions |
+| phpcs PSR-12 on the 5 changed files | exit 0 |
+| `bin/check-license-boundary.sh` | intact |
+
+§174.4's table loses its `system-prompt hint` row; the other three omissions
+stand.

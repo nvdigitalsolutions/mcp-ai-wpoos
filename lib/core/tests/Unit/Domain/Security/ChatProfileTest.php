@@ -82,6 +82,30 @@ final class ChatProfileTest extends TestCase
         $this->assertFalse(ChatProfile::readOnly()->requiresPrivilegeToSelect());
     }
 
+    public function test_the_permissive_profile_has_no_prompt_hint(): void
+    {
+        $this->assertSame('', ChatProfile::write()->promptHint());
+    }
+
+    /**
+     * The hint states the desired behaviour, not just the forbidden one.
+     *
+     * Anthropic's and OpenAI's prompting guidance both say a negation makes the
+     * model hold the forbidden action in mind; the positive form is stronger.
+     * This is the shape WordPress's filter does not use, and the difference is
+     * deliberate.
+     */
+    public function test_the_restrictive_hint_states_the_mode_and_the_alternative(): void
+    {
+        $hint = ChatProfile::readOnly()->promptHint();
+
+        $this->assertStringContainsString('Read-only mode', $hint);
+        $this->assertStringContainsString('blocked at the execution layer', $hint);
+        $this->assertStringContainsString('describe the change', $hint);
+        $this->assertStringContainsString('A blocked call is final', $hint);
+        $this->assertStringNotContainsString('Do not', $hint);
+    }
+
     public function test_the_catalogue_lists_both_profiles_by_slug(): void
     {
         $catalogue = ChatProfile::catalogue();

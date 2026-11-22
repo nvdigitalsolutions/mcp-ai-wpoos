@@ -21,6 +21,7 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
@@ -31,6 +32,7 @@ use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestErrorDecision;
+use Nvoos\Core\Domain\Security\ChatProfile;
 use Nvoos\Core\Domain\ValueObject\CancellationToken;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
@@ -251,6 +253,33 @@ final class ChatOrchestratorTest extends TestCase
         }
 
         return array( $orchestrator, $errors, $dispatcher );
+    }
+
+    /**
+     * A resolver bound to one profile, for the hint assertions.
+     */
+    private function chatProfile(ChatProfile $profile): ChatProfileResolverInterface
+    {
+        return new class ($profile) implements ChatProfileResolverInterface {
+            public function __construct(private readonly ChatProfile $profile)
+            {
+            }
+
+            public function resolve(array $context): ChatProfile
+            {
+                return $this->profile;
+            }
+
+            public function defaultProfile(): ChatProfile
+            {
+                return ChatProfile::write();
+            }
+
+            public function isEnabled(): bool
+            {
+                return true;
+            }
+        };
     }
 
     private function toolCallResponse(): array
@@ -1328,6 +1357,96 @@ final class ChatOrchestratorTest extends TestCase
 
         $this->assertSame('system', $sent[0]['role']);
         $this->assertStringStartsWith('[Guardrails — Stay on Target]', $sent[0]['content']);
+    }
+
+    // ── Chat-profile hint ───────────────────────────────────────
+
+    /**
+     * The hint tells the model where the boundary is before it hits it.
+     *
+     * Without it the model discovers read-only by having a write refused, and
+     * spends its remaining iterations retrying a call that cannot succeed.
+     */
+    public function test_the_read_only_hint_reaches_the_system_prompt(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setChatProfileResolver($this->chatProfile(ChatProfile::readOnly()));
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+            userId: 7,
+        );
+
+        $system = $dispatcher->router->receivedMessages[0][0];
+
+        $this->assertSame('system', $system['role']);
+        $this->assertStringContainsString('Read-only mode', $system['content']);
+        $this->assertStringContainsString('blocked at the execution layer', $system['content']);
+        $this->assertStringContainsString('A blocked call is final', $system['content']);
+    }
+
+    public function test_the_permissive_profile_contributes_no_hint(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setChatProfileResolver($this->chatProfile(ChatProfile::write()));
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+            userId: 7,
+        );
+
+        $this->assertStringNotContainsString('Read-only mode', $dispatcher->router->receivedMessages[0][0]['content']);
+    }
+
+    /**
+     * A resumed turn may already carry the hint; a second copy would double
+     * its weight in the prompt.
+     */
+    public function test_the_hint_is_not_duplicated_when_the_turn_already_carries_it(): void
+    {
+        $hint = ChatProfile::readOnly()->promptHint();
+
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setChatProfileResolver($this->chatProfile(ChatProfile::readOnly()));
+
+        $orchestrator->handleChat(
+            array(
+                array( 'role' => 'system', 'content' => $hint ),
+                array( 'role' => 'user', 'content' => 'Hi.' ),
+            ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+            userId: 7,
+        );
+
+        $this->assertSame(
+            1,
+            \substr_count($dispatcher->router->receivedMessages[0][0]['content'], 'A blocked call is final')
+        );
+    }
+
+    public function test_the_streaming_path_carries_the_hint_too(): void
+    {
+        $sse = new SseHandler($this->createMock(PlatformFlushInterface::class));
+        $sse->markHeadersSent();
+
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ), null, $sse);
+        $orchestrator->setChatProfileResolver($this->chatProfile(ChatProfile::readOnly()));
+        $dispatcher->router->streamChunks = array();
+
+        \ob_start();
+        $orchestrator->handleChatStreaming(
+            messages: array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            assistantConfig: array( 'provider' => 'openai', 'model' => 'gpt-4o', 'tools' => array() ),
+            userId: 7,
+        );
+        \ob_end_clean();
+
+        $this->assertStringContainsString(
+            'Read-only mode',
+            $dispatcher->router->receivedMessages[0][0]['content']
+        );
     }
 
     // ── Scored tool routing ───────────────────────────────────────
