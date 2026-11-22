@@ -158,10 +158,13 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 		// Validate binary operations have matrix_b.
 		$binary_ops = array( 'add', 'subtract', 'multiply' );
 		if ( in_array( $operation, $binary_ops, true ) && null === $matrix_b ) {
-			return array(
-				'success' => false,
-				/* translators: %s: operation name */
-				'error'   => sprintf( __( 'Operation "%s" requires matrix_b parameter.', 'mcp-ai-wpoos-pro' ), $operation ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				sprintf(
+					/* translators: %s: operation name */
+					__( 'Operation "%s" requires matrix_b parameter.', 'mcp-ai-wpoos-pro' ),
+					$operation
+				)
 			);
 		}
 
@@ -177,9 +180,10 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 
 		if ( false === $math_result || isset( $math_result['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Matrix operations require math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'Matrix operations require math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				array( 'engine' => 'mathjs' )
 			);
 		}
 

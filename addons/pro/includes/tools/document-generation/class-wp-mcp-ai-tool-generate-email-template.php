@@ -171,13 +171,14 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error Generated template, or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate components.
 		if ( empty( $arguments['components'] ) || ! is_array( $arguments['components'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Email components are required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Email components are required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -186,9 +187,9 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 		$mjml_service = new WP_MCP_AI_MJML_Service();
 
 		if ( ! $mjml_service->is_available() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'MJML is not available. Please ensure Node.js and MJML package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'MJML is not available. Please ensure Node.js and MJML package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -213,13 +214,14 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 		$mjml = $mjml_service->generate_template( $arguments['components'], $template_options );
 
 		if ( is_wp_error( $mjml ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_render_failed',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'MJML generation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$mjml->get_error_message()
 				),
+				array( 'cause' => $mjml )
 			);
 		}
 
@@ -255,14 +257,17 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 		$html = $mjml_service->compile( $mjml, $compile_options );
 
 		if ( is_wp_error( $html ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_render_failed',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'MJML compilation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$html->get_error_message()
 				),
-				'mjml'    => $mjml, // Return MJML for debugging.
+				array(
+					'cause' => $html,
+					'mjml'  => $mjml, // Return MJML for debugging.
+				)
 			);
 		}
 

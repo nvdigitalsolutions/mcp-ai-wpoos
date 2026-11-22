@@ -101,13 +101,10 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertEquals( 'permission_denied', $result['error'] );
-		$this->assertArrayHasKey( 'report', $result );
-		$this->assertStringContainsString( 'permission', $result['report'] );
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+		$this->assertStringContainsString( 'permission', $result->get_error_message() );
+		$this->assertEquals( 403, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -122,13 +119,9 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 			array( 'user_id' => $user_id )
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertEquals( 'missing_source', $result['error'] );
-		$this->assertArrayHasKey( 'report', $result );
-		$this->assertStringContainsString( 'Source document', $result['report'] );
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_source', $result->get_error_code() );
+		$this->assertStringContainsString( 'Source document', $result->get_error_message() );
 	}
 
 	/**
@@ -145,10 +138,17 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 			array( 'user_id' => $user_id )
 		);
 
-		// Should return response with documents_count (even if 0 successful).
+		// Either no documents resolve (WP_Error) or the run reports per-document results.
+		if ( is_wp_error( $result ) ) {
+			$this->assertContains(
+				$result->get_error_code(),
+				array( 'wp_mcp_ai_not_found', 'wp_mcp_ai_ocr_failed' )
+			);
+			return;
+		}
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'success', $result );
-		// Could be true or false depending on whether no documents or all failed.
 		$this->assertArrayHasKey( 'report', $result );
 	}
 

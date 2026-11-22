@@ -112,9 +112,9 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['hs_code'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'HS code is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'HS code is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -124,12 +124,14 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$format_validation = $this->validate_hs_code_format( $hs_code );
 
 		if ( ! $format_validation['is_valid'] ) {
-			return array(
-				'success'  => false,
-				'hs_code'  => $hs_code,
-				'is_valid' => false,
-				'errors'   => $format_validation['errors'],
-				'message'  => __( 'HS code format is invalid.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_invalid_arguments',
+				__( 'HS code format is invalid.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'hs_code'  => $hs_code,
+					'is_valid' => false,
+					'errors'   => $format_validation['errors'],
+				)
 			);
 		}
 
