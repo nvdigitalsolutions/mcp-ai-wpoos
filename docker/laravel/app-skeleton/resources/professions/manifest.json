@@ -1,0 +1,10 @@
+{
+    "catalogue_version": "sha256:d8ac05d02a1e4c04",
+    "generated_by": "bin/sync-professions.php",
+    "source": "includes/knowledge-base/professions",
+    "professions": 260,
+    "files": 12,
+    "excluded": [
+        "pro-*.json"
+    ]
+}

@@ -69,6 +69,27 @@ return array(
 
     /*
     |--------------------------------------------------------------------------
+    | Profession catalogue (Proposal 149 §168)
+    |--------------------------------------------------------------------------
+    |
+    | The base catalogue, generated from the WordPress reference data by
+    | `bin/sync-professions.php` and committed with the app. The package's
+    | nine-profession starter is the fallback for a host that ships no
+    | catalogue; this runtime must not run on it, because the console, the
+    | admin page and the team catalogue would all advertise a fraction of what
+    | WordPress has.
+    |
+    | The six `pro-*` packs are deliberately excluded — they are tier data
+    | supplied by a licensed deployment. Point `OOS_PROFESSIONS_PATH` at a
+    | fuller catalogue to replace the snapshot entirely.
+    |
+    */
+    'professions' => array(
+        'path' => env('OOS_PROFESSIONS_PATH', resource_path('professions')),
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin theme (Proposal 149 T-0.6)
     |--------------------------------------------------------------------------
     |

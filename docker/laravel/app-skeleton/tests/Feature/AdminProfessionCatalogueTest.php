@@ -45,12 +45,14 @@ class AdminProfessionCatalogueTest extends TestCase
 
     public function test_the_page_lists_the_catalogue_and_its_version(): void
     {
+        $manifest = $this->generatedCatalogue();
+
         $this->actingAs($this->estateAdmin())
             ->get('/admin/default/professions')
             ->assertOk()
             ->assertSee('Profession catalogue')
             ->assertSee('Accountant')
-            ->assertSee('1.0.0')
+            ->assertSee((string) $manifest['catalogue_version'])
             ->assertSee('Read-only');
     }
 
@@ -59,7 +61,7 @@ class AdminProfessionCatalogueTest extends TestCase
         $this->bootPanel();
 
         Livewire::test(Professions::class)
-            ->set('search', 'ux_designer')
+            ->set('search', 'ui_ux_designer')
             ->assertSee('UX Designer')
             ->assertDontSee('Accountant');
     }
@@ -79,7 +81,7 @@ class AdminProfessionCatalogueTest extends TestCase
         $this->bootPanel();
 
         Livewire::test(Professions::class)
-            ->set('search', 'ux_designer')
+            ->set('search', 'ui_ux_designer')
             ->set('category', 'creative')
             ->call('clearFilters')
             ->assertSet('search', '')
@@ -171,16 +173,42 @@ class AdminProfessionCatalogueTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->admin()->create());
 
+        $manifest = $this->generatedCatalogue();
+
         $this->getJson('/api/v1/professions')
             ->assertOk()
-            ->assertJsonPath('total', 9)
-            ->assertJsonPath('catalogue_version', '1.0.0')
+            ->assertJsonPath('total', (int) $manifest['professions'])
+            ->assertJsonPath('catalogue_version', (string) $manifest['catalogue_version'])
             ->assertJsonStructure(array(
                 'professions' => array(
                     array('slug', 'title', 'category', 'category_slug', 'description', 'expertise', 'tools_count'),
                 ),
             ))
             ->assertJsonMissingPath('professions.0.role_description');
+    }
+
+    /**
+     * The app must serve the generated base catalogue, not the package starter.
+     *
+     * A regression to `nvoos/laravel`'s nine-row default would otherwise be
+     * invisible: the page and the API would simply get smaller, and every
+     * count here would still agree with itself.
+     */
+    public function test_the_app_serves_the_generated_base_catalogue(): void
+    {
+        $manifest = $this->generatedCatalogue();
+
+        $this->assertGreaterThan(
+            9,
+            (int) $manifest['professions'],
+            'The generated snapshot must be larger than the package starter set.'
+        );
+
+        Sanctum::actingAs(User::factory()->admin()->create());
+
+        $this->getJson('/api/v1/professions')
+            ->assertOk()
+            ->assertJsonPath('total', (int) $manifest['professions']);
     }
 
     /**
@@ -217,6 +245,30 @@ class AdminProfessionCatalogueTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin/default/professions')
             ->assertForbidden();
+    }
+
+    /**
+     * The manifest of the generated snapshot shipped with the app.
+     *
+     * Tests derive counts and versions from it rather than pinning literals:
+     * the numbers change whenever the WordPress reference data changes, and a
+     * pinned literal would need editing on every such change.
+     *
+     * @return array<string, mixed>
+     */
+    private function generatedCatalogue(): array
+    {
+        $path = resource_path('professions/manifest.json');
+
+        $this->assertFileExists($path, 'The profession snapshot is missing; run php bin/sync-professions.php.');
+
+        $manifest = json_decode((string) file_get_contents($path), true);
+
+        $this->assertIsArray($manifest);
+        $this->assertArrayHasKey('catalogue_version', $manifest);
+        $this->assertArrayHasKey('professions', $manifest);
+
+        return $manifest;
     }
 
     private function bootPanel(): void

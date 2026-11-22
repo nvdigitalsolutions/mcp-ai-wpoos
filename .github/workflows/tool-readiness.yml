@@ -15,6 +15,12 @@ name: Tool Readiness
 #   G4  the catalogue is byte-identical to what `bin/generate-tool-capability-flags.php`
 #       would emit today
 #
+# A third job guards the profession snapshot, which is generated from the
+# WordPress reference data and checked in as data:
+#
+#   G5  the snapshot is byte-identical to what `bin/sync-professions.php`
+#       would emit today (the six `pro-*` packs excluded by design)
+#
 # G4 is a **hard gate**. A tool whose flags change without the catalogue being
 # regenerated would silently move the necessity gate's verdict — the catalogue is
 # the gate's only vocabulary for a core tool that declares none of its own.
@@ -83,3 +89,26 @@ jobs:
       # catalogue being regenerated.
       - name: Check the catalogue is in step with the corpus
         run: php bin/generate-tool-capability-flags.php --check
+
+  professions:
+    name: Profession catalogue
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      # The app serves a generated snapshot of the WordPress base catalogue.
+      # Fails when a profession document or the generator moves without the
+      # snapshot being regenerated, so the console cannot silently shrink back
+      # to the package's nine-profession starter.
+      - name: Check the snapshot is in step with the reference data
+        run: php bin/sync-professions.php --check

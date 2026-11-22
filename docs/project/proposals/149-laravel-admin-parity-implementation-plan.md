@@ -15864,3 +15864,112 @@ individually in their rows (§104, §107, §117) rather than summarised.
 | workflow YAML parse | one job, `on: pull_request, push` |
 | media worker install + suite | `node:22-slim` — 803 packages, 214 tests, 0 fail |
 | phpcs PSR-12 / WPCS | exit 0 / exit 0 |
+
+## 168. The app serves the WordPress profession catalogue (2026-11-22)
+
+§167 closed the surface inventory. This section closes the last *content* gap
+it named: the profession catalogue was a nine-row starter while WordPress has
+311 professions.
+
+### 168.1 The drift was in size and in identity
+
+| | WordPress | this runtime (before) |
+|---|---|---|
+| Files | 18 | 3 data + manifest |
+| Professions | **311** | **9** |
+| Base set (no `pro-*`) | **260** | — |
+| `business-finance.json` | 24 rows | 3 rows, different bytes |
+
+The adapter's manifest called it a "starter catalogue", so the nine were honest
+— but the app ran on it, which made `/api/v1/professions`, `/admin/professions`
+and the team catalogue advertise 3% of the base catalogue.
+
+The drift was worse than a subset: two starter slugs **do not exist upstream**.
+
+- `ux_designer` → WordPress has `ui_ux_designer` (UI/UX Designer, 8 tools).
+- `contract_lawyer` → no WordPress profession has "contract" in its slug or
+  title; the closest is `lawyer`.
+
+So a consumer who saved `ux_designer` was referencing a role WordPress never
+had. Those references are corrected in this section.
+
+### 168.2 The snapshot, not a sync
+
+`bin/sync-professions.php` writes a base-only snapshot into
+**`docker/laravel/app-skeleton/resources/professions/`** and the app points
+`oos.professions.path` at it.
+
+Three decisions define the shape:
+
+- **Generated, not live.** Professions are read-only reference data; a live
+  sync would need a writer and a second source of truth. The snapshot is a build
+  artefact.
+- **App skeleton, not the package.** `lib/laravel-adapter` is MIT and keeps its
+  starter; the profession data lives in the GPL tree. The app is the GPL side,
+  and a deployment can still point `OOS_PROFESSIONS_PATH` at a fuller,
+  licensed catalogue.
+- **Base only.** The six `pro-*` packs (51 professions) are tier data supplied
+  by a licensed deployment. They are excluded by name and the exclusion is
+  recorded in the manifest.
+
+Documents are copied **byte-for-byte**, so a regeneration diff is the actual
+data change, and `catalogue_version` is a content hash
+(`sha256:` + 16 hex over filename + document hash, sorted). Regenerating an
+unchanged source produces identical bytes — which is what makes `--check` a
+gate rather than a suggestion.
+
+### 168.3 The gate
+
+`tool-readiness.yml` gains a third job, `Profession catalogue` (G5):
+
+```
+php bin/sync-professions.php --check
+```
+
+Editing a WordPress profession document, or the generator, fails the build
+until the snapshot is regenerated. The failure names each stale file and prints
+the command that fixes it. Unlike the media-worker job there is no soak: the
+generator is pure PHP, so there is no install risk to de-risk.
+
+### 168.4 Tests derive; they do not pin
+
+Four tests pinned `9` and `1.0.0`. Those numbers now live in `manifest.json`,
+so the tests read it:
+
+- `ProfessionCatalogueTest` asserts the response's `total` and
+  `catalogue_version` against the manifest, asserts the list is sorted by
+  `strcasecmp` (the repository's comparator, not an approximation), and asserts
+  `ui_ux_designer` is present — which also proves the app is not on the starter.
+- `AdminProfessionCatalogueTest` does the same for `/admin/professions` and adds
+  an explicit `assertGreaterThan(9, …)` so a silent fallback to the starter
+  fails loudly.
+
+A pinned literal would need editing on every data change; the manifest is the
+contract.
+
+### 168.5 Honest limitations
+
+- **The snapshot is data, not enforcement.** The Pro SPA's profession
+  placeholder still reads `ux_designer` (`addons/pro/assets/spa-v2`); that is a
+  separate product surface with its own dist bundle, not rebuilt here.
+- **Playbooks and documents are not in this snapshot.** The WordPress
+  `profession-playbooks` corpus is a different tree. The adapter's
+  `loadKnowledgeBase()` remains empty by design (the legacy loader exposes no
+  per-profession entry point); the inline `knowledge_base` field *is* served on
+  `getBySlug()`.
+- **Regeneration is manual.** The gate tells you when the snapshot is stale; it
+  does not regenerate on merge. That is deliberate — a data change should be
+  reviewable in the diff.
+- **`save_profession` stays `unavailable`.** Serving the catalogue does not
+  create a write path.
+
+### 168.6 Gates
+
+| Gate | Result |
+|---|---|
+| `php bin/sync-professions.php --check` | in step — 12 files, **260** professions, `sha256:d8ac05d02a1e4c04` |
+| app suite (targeted: professions, assistants, teams, stats) | 97 tests, 475 assertions |
+| `lib/laravel-adapter` suite | 337 tests, 1,795 assertions (package starter unchanged) |
+| phpcs PSR-12 / WPCS on changed files | exit 0 / exit 0 |
+| `bin/check-license-boundary.sh` | intact |
+| workflow YAML parse | three jobs: `readiness`, `capability-flags`, `professions` |
