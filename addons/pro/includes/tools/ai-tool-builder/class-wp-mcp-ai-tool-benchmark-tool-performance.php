@@ -150,9 +150,9 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['tool_slug'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Tool slug is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Tool slug is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -168,10 +168,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 		$tool = $this->get_tool_instance( $tool_slug );
 
 		if ( is_wp_error( $tool ) ) {
-			return array(
-				'success' => false,
-				'error'   => $tool->get_error_message(),
-			);
+			return $tool;
 		}
 
 		// Perform warmup runs.

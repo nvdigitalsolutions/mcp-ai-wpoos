@@ -405,11 +405,13 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		$scaffold .= "\t/**\n\t * {@inheritdoc}\n\t */\n";
 		$scaffold .= "\tpublic function execute( array \$arguments = array(), array \$context = array() ) {\n";
 		$scaffold .= "\t\t// TODO: Implement tool logic here.\n\n";
-		$scaffold .= "\t\t// Example validation:\n";
+		$scaffold .= "\t\t// Example validation. A failure is a WP_Error, never an array whose\n";
+		$scaffold .= "\t\t// `success` key is false: that shape is a *successful* call reporting\n";
+		$scaffold .= "\t\t// otherwise, so the agentic loop marks the task as done.\n";
 		$scaffold .= "\t\t// if ( empty( \$arguments['required_param'] ) ) {\n";
-		$scaffold .= "\t\t//     return array(\n";
-		$scaffold .= "\t\t//         'success' => false,\n";
-		$scaffold .= "\t\t//         'error'   => __( 'Required parameter missing.', 'mcp-ai-wpoos-pro' ),\n";
+		$scaffold .= "\t\t//     return new WP_Error(\n";
+		$scaffold .= "\t\t//         'wp_mcp_ai_missing_param',\n";
+		$scaffold .= "\t\t//         __( 'Required parameter missing.', 'mcp-ai-wpoos-pro' )\n";
 		$scaffold .= "\t\t//     );\n";
 		$scaffold .= "\t\t// }\n\n";
 		$scaffold .= "\t\treturn array(\n";
