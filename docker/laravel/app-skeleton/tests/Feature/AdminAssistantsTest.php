@@ -360,7 +360,7 @@ class AdminAssistantsTest extends TestCase
         $tenant = Tenant::query()->findOrFail(Tenant::DEFAULT_ID);
 
         $assistant = $this->assistantIn(Tenant::DEFAULT_ID, 'Design lead', array(
-            'primary_role_slugs' => array('ux_designer'),
+            'primary_role_slugs' => array('ui_ux_designer'),
         ));
 
         $this->actingAs($alice);
@@ -369,10 +369,10 @@ class AdminAssistantsTest extends TestCase
 
         Livewire::test(ManageAssistants::class, array('tenant' => $tenant))
             ->mountTableAction(EditAction::class, $assistant)
-            ->assertTableActionDataSet(array('primary_role_slugs' => array('ux_designer')))
+            ->assertTableActionDataSet(array('primary_role_slugs' => array('ui_ux_designer')))
             ->callMountedTableAction();
 
-        $this->assertSame(array('ux_designer'), $assistant->fresh()->primaryRoleSlugs());
+        $this->assertSame(array('ui_ux_designer'), $assistant->fresh()->primaryRoleSlugs());
     }
 
     public function test_deleting_an_assistant_removes_it(): void

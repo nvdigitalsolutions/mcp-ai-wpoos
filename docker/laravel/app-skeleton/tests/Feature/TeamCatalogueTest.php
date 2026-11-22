@@ -28,7 +28,7 @@ class TeamCatalogueTest extends TestCase
 
     public function test_index_lists_published_teams_with_member_counts(): void
     {
-        $this->seedTeam('Editorial', ['ux_designer', 'contract_lawyer']);
+        $this->seedTeam('Editorial', ['ui_ux_designer', 'lawyer']);
         $this->seedTeam('Platform', ['software_engineer']);
 
         $this->getJson('/api/v1/teams')
@@ -42,7 +42,7 @@ class TeamCatalogueTest extends TestCase
 
     public function test_draft_teams_are_not_listed(): void
     {
-        $this->seedTeam('Hidden', ['ux_designer'], ['status' => 'draft']);
+        $this->seedTeam('Hidden', ['ui_ux_designer'], ['status' => 'draft']);
 
         $this->getJson('/api/v1/teams')
             ->assertOk()
@@ -51,18 +51,18 @@ class TeamCatalogueTest extends TestCase
 
     public function test_members_resolve_catalogue_professions(): void
     {
-        $team = $this->seedTeam('Editorial', ['ux_designer', 'software_engineer']);
+        $team = $this->seedTeam('Editorial', ['ui_ux_designer', 'software_engineer']);
 
         $response = $this->getJson("/api/v1/teams/{$team->id}/members")
             ->assertOk()
             ->assertJsonPath('team_id', (int) $team->id)
             ->assertJsonPath('team_title', 'Editorial')
             ->assertJsonPath('count', 2)
-            ->assertJsonPath('members.0.slug', 'ux_designer')
-            ->assertJsonPath('members.0.title', 'UX Designer')
+            ->assertJsonPath('members.0.slug', 'ui_ux_designer')
+            ->assertJsonPath('members.0.title', 'UI/UX Designer')
             ->assertJsonPath('members.0.category', 'Creative Services')
             ->assertJsonPath('members.0.category_slug', 'creative')
-            ->assertJsonPath('members.0.tools_count', 3)
+            ->assertJsonPath('members.0.tools_count', 8)
             ->assertJsonPath('orchestration_mode', 'sequential')
             ->assertJsonPath('result_aggregation', 'consensus')
             ->assertJsonPath('multi_agent_enabled', false)
@@ -76,7 +76,7 @@ class TeamCatalogueTest extends TestCase
 
     public function test_team_meta_overrides_the_defaults(): void
     {
-        $team = $this->seedTeam('Editorial', ['ux_designer'], [
+        $team = $this->seedTeam('Editorial', ['ui_ux_designer'], [
             'meta' => [
                 '_wp_mcp_ai_team_orchestration_mode' => 'parallel',
                 '_wp_mcp_ai_team_result_aggregation' => 'vote',
@@ -94,12 +94,12 @@ class TeamCatalogueTest extends TestCase
 
     public function test_unknown_profession_slugs_are_skipped_not_fatal(): void
     {
-        $team = $this->seedTeam('Editorial', ['ux_designer', 'retired_role']);
+        $team = $this->seedTeam('Editorial', ['ui_ux_designer', 'retired_role']);
 
         $this->getJson("/api/v1/teams/{$team->id}/members")
             ->assertOk()
             ->assertJsonPath('count', 1)
-            ->assertJsonPath('members.0.slug', 'ux_designer');
+            ->assertJsonPath('members.0.slug', 'ui_ux_designer');
 
         // The list still counts the raw membership, as WordPress does.
         $this->getJson('/api/v1/teams')

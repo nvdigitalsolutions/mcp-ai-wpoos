@@ -81,7 +81,7 @@ class TeamTest extends TestCase
         $this->postJson("/api/v1/org/teams/{$team->id}/members", [
             'user_id' => $user->id,
             'role' => 'manager',
-            'profession_slug' => 'ux_designer',
+            'profession_slug' => 'ui_ux_designer',
         ])->assertCreated();
 
         $this->getJson("/api/v1/org/teams/{$team->id}")
@@ -89,7 +89,7 @@ class TeamTest extends TestCase
             ->assertJsonPath('data.member_count', 2)
             ->assertJsonFragment([
                 'email' => $user->email,
-                'profession_slug' => 'ux_designer',
+                'profession_slug' => 'ui_ux_designer',
             ]);
     }
 

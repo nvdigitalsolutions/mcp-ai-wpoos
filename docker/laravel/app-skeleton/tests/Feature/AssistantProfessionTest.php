@@ -30,26 +30,26 @@ class AssistantProfessionTest extends TestCase
     {
         $this->postJson('/api/v1/assistants', [
             'title' => 'Design Lead',
-            'primary_role_slugs' => ['ux_designer', 'software_engineer'],
+            'primary_role_slugs' => ['ui_ux_designer', 'software_engineer'],
         ])
             ->assertCreated()
-            ->assertJsonPath('primary_role_slugs', ['ux_designer', 'software_engineer']);
+            ->assertJsonPath('primary_role_slugs', ['ui_ux_designer', 'software_engineer']);
 
         $assistant = Assistant::query()->where('slug', 'design-lead')->firstOrFail();
 
-        $this->assertSame(['ux_designer', 'software_engineer'], $assistant->meta['primary_role_slugs']);
+        $this->assertSame(['ui_ux_designer', 'software_engineer'], $assistant->meta['primary_role_slugs']);
     }
 
     public function test_duplicate_professions_are_collapsed(): void
     {
         $this->postJson('/api/v1/assistants', [
             'title' => 'Design Lead',
-            'primary_role_slugs' => ['ux_designer', 'ux_designer'],
+            'primary_role_slugs' => ['ui_ux_designer', 'ui_ux_designer'],
         ])->assertCreated();
 
         $assistant = Assistant::query()->where('slug', 'design-lead')->firstOrFail();
 
-        $this->assertSame(['ux_designer'], $assistant->meta['primary_role_slugs']);
+        $this->assertSame(['ui_ux_designer'], $assistant->meta['primary_role_slugs']);
     }
 
     public function test_at_most_three_professions_are_accepted(): void
@@ -57,7 +57,7 @@ class AssistantProfessionTest extends TestCase
         $this->postJson('/api/v1/assistants', [
             'title' => 'Overloaded',
             'primary_role_slugs' => [
-                'ux_designer',
+                'ui_ux_designer',
                 'software_engineer',
                 'data_scientist',
                 'accountant',
@@ -79,29 +79,29 @@ class AssistantProfessionTest extends TestCase
     {
         $this->postJson('/api/v1/assistants', [
             'title' => 'Design Lead',
-            'primary_role_slugs' => ['ux_designer'],
+            'primary_role_slugs' => ['ui_ux_designer'],
         ])->assertCreated();
 
         $assistant = Assistant::query()->where('slug', 'design-lead')->firstOrFail();
 
         $this->patchJson("/api/v1/assistants/{$assistant->id}", [
-            'primary_role_slugs' => ['contract_lawyer', 'registered_nurse', 'accountant'],
+            'primary_role_slugs' => ['lawyer', 'registered_nurse', 'accountant'],
         ])
             ->assertOk()
-            ->assertJsonPath('data.primary_role_slugs', ['contract_lawyer', 'registered_nurse', 'accountant']);
+            ->assertJsonPath('data.primary_role_slugs', ['lawyer', 'registered_nurse', 'accountant']);
     }
 
     public function test_update_without_the_key_keeps_the_selection(): void
     {
         $this->postJson('/api/v1/assistants', [
             'title' => 'Design Lead',
-            'primary_role_slugs' => ['ux_designer'],
+            'primary_role_slugs' => ['ui_ux_designer'],
         ])->assertCreated();
 
         $assistant = Assistant::query()->where('slug', 'design-lead')->firstOrFail();
 
         $this->patchJson("/api/v1/assistants/{$assistant->id}", ['title' => 'Design Lead 2'])
             ->assertOk()
-            ->assertJsonPath('data.primary_role_slugs', ['ux_designer']);
+            ->assertJsonPath('data.primary_role_slugs', ['ui_ux_designer']);
     }
 }
