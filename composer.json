@@ -63,6 +63,8 @@
     },
     "scripts": {
         "lint": "phpcs",
+        "lint:ratchet": "php .github/scripts/phpcs-ratchet.php --check",
+        "lint:ratchet:update": "php .github/scripts/phpcs-ratchet.php --update",
         "lint:errors-only": "phpcs --error-severity=1 --warning-severity=8",
         "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,docker,tests/helpers,tests/fixtures .",
         "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",

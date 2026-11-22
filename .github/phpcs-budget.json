@@ -1,0 +1,106 @@
+{
+    "_doc": "docs/developer/phpcs-ratchet.md",
+    "_policy": "Budgets only shrink. --update refuses to raise one without --allow-increase, and --check fails when a scope comes in more than `tolerance` under budget without recording the improvement. `noise` is the allowance for run-to-run measurement variation on the over-budget side.",
+    "measured_at": "2026-11-22",
+    "measured_on": "alpha-working@2e6537ffb6 (values measured at 0dfe12b535, delta re-checked)",
+    "ruleset": "phpcs.xml.dist",
+    "tolerance": 25,
+    "scopes": [
+        {
+            "name": "includes",
+            "paths": [
+                "includes/"
+            ],
+            "errors": 120,
+            "warnings": 706
+        },
+        {
+            "name": "addons-pro",
+            "paths": [
+                "addons/pro/"
+            ],
+            "errors": 444,
+            "warnings": 2221
+        },
+        {
+            "name": "addons-other",
+            "paths": [
+                "addons/"
+            ],
+            "errors": 270,
+            "warnings": 916
+        },
+        {
+            "name": "tests",
+            "paths": [
+                "tests/"
+            ],
+            "errors": 1843,
+            "warnings": 1759
+        },
+        {
+            "name": "plugins",
+            "paths": [
+                "plugins/"
+            ],
+            "errors": 106,
+            "warnings": 13
+        },
+        {
+            "name": "core-trees",
+            "paths": [
+                "core/",
+                "shared/",
+                ".agents/",
+                "blueprints/"
+            ],
+            "errors": 198,
+            "warnings": 12
+        },
+        {
+            "name": "misc",
+            "paths": [
+                "examples/",
+                ".github/",
+                "mcp-ai-wpoos.php",
+                "mcp-ai-wpoos-base.php"
+            ],
+            "errors": 28,
+            "warnings": 31
+        },
+        {
+            "name": "uncovered",
+            "paths": [],
+            "errors": 0,
+            "warnings": 0
+        }
+    ],
+    "source_budgets": {
+        "WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray": 108,
+        "WPMCPAI.Tools.ToolDescriptionGuidance.MissingUsageGuidance": 75,
+        "WordPress.DB.DirectDatabaseQuery.DirectQuery": 250,
+        "WordPress.DB.DirectDatabaseQuery.NoCaching": 263,
+        "WordPress.DB.DirectDatabaseQuery.SchemaChange": 15,
+        "WordPress.DB.PreparedSQL.InterpolatedNotPrepared": 9,
+        "WordPress.DB.PreparedSQL.NotPrepared": 3,
+        "WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber": 9,
+        "WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare": 7,
+        "WordPress.DB.SlowDBQuery.slow_db_query_meta_key": 363,
+        "WordPress.DB.SlowDBQuery.slow_db_query_meta_query": 222,
+        "WordPress.DB.SlowDBQuery.slow_db_query_meta_value": 52,
+        "WordPress.DB.SlowDBQuery.slow_db_query_tax_query": 30,
+        "WordPress.Security.EscapeOutput.ExceptionNotEscaped": 6,
+        "WordPress.Security.EscapeOutput.OutputNotEscaped": 82,
+        "WordPress.Security.NonceVerification.Missing": 35,
+        "WordPress.Security.NonceVerification.Recommended": 73,
+        "WordPress.Security.ValidatedSanitizedInput.InputNotSanitized": 33,
+        "WordPress.Security.ValidatedSanitizedInput.InputNotValidated": 26,
+        "WordPress.Security.ValidatedSanitizedInput.MissingUnslash": 27
+    },
+    "zero_tolerance": [
+        "Internal.Exception",
+        "WPMCPAI.Tools.SanitizeAtEntry",
+        "WPMCPAI.Decisions.ScopeDeclared"
+    ],
+    "noise": 10
+}
