@@ -14689,3 +14689,102 @@ could switch on, with the single remaining block being a flag-quality outlier.
 
 The unresolved product question is the eleven paid generation tools. Everything
 else is now mechanical.
+## 156. The gate's two blockers, fixed (2026-11-22)
+
+§155 measured the necessity gate and named two reasons not to enable it. Both
+are fixed here, and the measurement was re-run against the fix.
+
+### 156.1 `helpful × permanent` no longer blocks
+
+`classifyNecessity()` returns `unnecessary`, `optional` or `helpful` — it can
+only return `essential` when a caller supplies a classifier override. So in
+practice **`helpful` is the ceiling**, and the matrix cell `helpful × permanent →
+BLOCK` was a hard block on *every* permanent action:
+
+| tool | why it blocked |
+|---|---|
+| `send_group_email`, `send_group_email_validated` | declares `irreversible` |
+| `delete_post`, `delete_file` | declares `data-destruction` |
+| `delete_cron_job` | declares `irreversible` |
+
+The tier exists to stop *overeager* calls — and an overeager call is
+`unnecessary`, which already blocks in its own branch. A well-formed delete or
+send the task actually asked for is not overeager; it is the case a human should
+be asked about.
+
+The suite already said so. `test_a_needed_external_send_requires_approval` has
+the comment *"Sending mail is externally irreversible, so a needed send still
+needs a human"* — and it passed only because its fixture declared
+`external-communication` **without** `irreversible`, which scores high rather
+than permanent. The corpus tool declares both, so the same concept reached the
+other branch and was refused.
+
+**WordPress delegates to this matrix** — `WP_MCP_AI_Action_Safety_Profile` calls
+`ActionSafetyProfile::determineVerdict()` under a comment reading "The matrix
+lives in lib/core: one source of truth for both runtimes". So the cell changes
+once, for both. The translated sentence keyed on `helpful_permanent` had to move
+with it, from "— blocked." to "— requires human approval."
+
+`optional × permanent` still blocks. That cell fires when arguments are missing,
+and refusing an under-specified permanent action is defensible; §155 measured
+exactly one tool there.
+
+### 156.2 `read` and `database-read` now mean `read-only`
+
+| spelling | servable tools |
+|---|---|
+| `read` | `check_higgsfield_request`, `check_video_status`, `generate_email_template`, `get_profession`, `list_professions` |
+| `database-read` | `get_eca`, `get_task_dependencies`, `list_students` |
+
+Neither reached tier 1, so eight read-only tools were treated as unspecified —
+and two of them, `list_professions` and `list_students`, were
+**approval-required reads**. Both spellings now alias to `read-only` in
+`CapabilityFlagVocabulary`.
+
+The alias is monotone-safe: a tool that also declares `write` or
+`state-changing` still fails `isSafeTool`, and the read-only profile still gates
+it. `safe` is deliberately **not** aliased — it is a vague endorsement, not a
+read declaration, and every tool carrying it also carries `read`.
+
+### 156.3 Re-measured
+
+| measure | §155 | now |
+|---|---|---|
+| tier-1 fast path | 112 / 195 (57%) | **120 / 195 (62%)** |
+| allow (schema args) | 124 | **132** |
+| warn | 48 | **42** |
+| approval | 17 | **20** |
+| block | 6 | **1** |
+| `read`-ish flags not `read-only` | 8 | **0** |
+
+§155.6 projected allow ≈132, warn ≈42, approval ≈20, block 1 before either fix
+existed; the re-run landed on those numbers exactly.
+
+The five former blocks are now approvals (approval 17 → 20 after the two read
+tools left for `allow`, plus five arriving from `block`). The single remaining
+block is `erlang_c_queue_health`, a *health check* that declares
+`state-changing` and `write` — a flag-quality outlier, not a gate defect.
+
+### 156.4 What this means for `oos.necessity_gate`
+
+The gate is now in the shape §155 said would be switchable: **132 allow, 42
+warn, 20 approval, 1 block** on well-formed calls, with the fast path covering
+62% of the corpus. `NecessityGuard` still denies `block` and
+`approval_required`, so turning the option on would refuse the 20 approvals
+until an approval channel exists — which makes the remaining work an approval
+queue, not a matrix change.
+
+The eleven paid media generation tools are still in that 20. That is the last
+product decision: allowlist them or accept the prompt.
+
+### 156.5 Gates
+
+| Gate | Result |
+|---|---|
+| full `lib/core` suite | 1,926 tests, 15,617 assertions |
+| `NecessityGateTest` — new `test_a_needed_permanent_send_requires_approval` | pins the `send_group_email` shape |
+| `CapabilityFlagVocabularyTest` — two new alias cases | `read`, `database-read` |
+| `ActionSafetyProfileTest` matrix | one cell updated, with the reason inline |
+| phpcs PSR-12 (no path arguments) | exit 0 |
+| phpcs WPCS on the changed `includes/` file | exit 0 |
+| re-run of `bin/measure-necessity-gate.php` | 132 / 42 / 20 / 1 |

@@ -158,6 +158,14 @@ final class CapabilityFlagVocabulary
         'external_side_effect' => 'external-communication',
         'external_api'         => 'external-api',
         'network_dependent'    => 'network-dependent',
+        // The corpus has two older ways of saying "this only reads": `read` (17
+        // files) and `database-read` (3). Neither reaches tier 1, so eight
+        // servable tools were being treated as unspecified — §155 measured two
+        // of them as approval-required reads. Both are monotone-safe: a tool
+        // that also declares `write` still fails `isSafeTool` and is still
+        // gated by the read-only profile.
+        'read'                 => 'read-only',
+        'database-read'        => 'read-only',
     );
 
     /**

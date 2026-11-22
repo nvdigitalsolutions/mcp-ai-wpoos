@@ -54,7 +54,12 @@ final class ActionSafetyProfileTest extends TestCase
             array(0.25, 'helpful', 'allow', 0.75, false),
             array(0.5, 'helpful', 'warn', 1.0, false),
             array(0.75, 'helpful', 'approval_required', 1.25, true),
-            array(1.0, 'helpful', 'block', 1.5, true),
+            // §156: was 'block'. `classifyNecessity()` cannot return `essential`
+            // without an explicit classifier override, so `helpful` is the
+            // ceiling — which made this cell a hard block on every permanent
+            // action (send_group_email, delete_post). A needed, well-formed
+            // permanent action is the case a human should be asked about.
+            array(1.0, 'helpful', 'approval_required', 1.5, true),
 
             array(0.0, 'optional', 'warn', 0.75, false),
             array(0.25, 'optional', 'warn', 1.0, false),

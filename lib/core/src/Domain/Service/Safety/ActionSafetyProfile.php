@@ -193,11 +193,18 @@ final class ActionSafetyProfile
             }
 
             if ($irreversibility >= self::IRREVERSIBILITY_PERMANENT) {
+                // A needed, well-formed permanent action is not overeager — it
+                // is exactly the case a human should be asked about. Blocking
+                // belongs to unnecessary work, which the branch above handles.
+                // §155 measured this cell refusing `send_group_email` and
+                // `delete_post` outright while the plain
+                // `external-communication` route reached approval for the same
+                // concept.
                 return self::verdict(
-                    self::VERDICT_BLOCK,
+                    self::VERDICT_APPROVAL_REQUIRED,
                     $riskScore,
                     self::REASON_HELPFUL_PERMANENT,
-                    'Action is helpful but permanently irreversible — blocked.',
+                    'Action is helpful but permanently irreversible — requires human approval.',
                     true
                 );
             }
