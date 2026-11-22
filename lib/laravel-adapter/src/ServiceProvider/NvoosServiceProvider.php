@@ -33,6 +33,7 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EmailServiceInterface;
 use Nvoos\Core\Domain\Contract\ErlangCInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
@@ -247,7 +248,11 @@ class NvoosServiceProvider extends ServiceProvider {
 				return;
 			}
 
-			$registry->addGuard( new NecessityGuard( $registry ) );
+			$approvals = $app->bound( ApprovalTicketInterface::class )
+				? $app->make( ApprovalTicketInterface::class )
+				: null;
+
+			$registry->addGuard( new NecessityGuard( $registry, true, $approvals ) );
 		} );
 
 		// Provider router — configured once; holds mutable health/fallback

@@ -18,6 +18,7 @@ use App\Policies\TenantPolicy;
 use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
+use App\Support\Approvals\DatabaseApprovalTicket;
 use App\Support\Auth\Auth0TokenVerifier;
 use App\Support\Auth\JitProvisioner;
 use App\Support\CapabilityMap;
@@ -46,6 +47,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
@@ -90,6 +92,12 @@ class AppServiceProvider extends ServiceProvider
         // Model-fallback counters (Proposal 149 §71). One row per attempt;
         // the diagnostics page aggregates it.
         $this->app->bind(RoutingMetricsInterface::class, RoutingMetricStore::class);
+
+        // Approval tickets (Proposal 149 §157). The necessity gate records a
+        // ticket when a call needs a human and spends it on the retry. Kept out
+        // of the package because it needs the app's tenant context and the
+        // Approval model's estate scope.
+        $this->app->bind(ApprovalTicketInterface::class, DatabaseApprovalTicket::class);
 
         // The admin palette generator reads a token tree that lives outside the
         // application (the storefront's DTCG sources), so its location is
