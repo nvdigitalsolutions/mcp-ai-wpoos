@@ -14788,3 +14788,131 @@ product decision: allowlist them or accept the prompt.
 | phpcs PSR-12 (no path arguments) | exit 0 |
 | phpcs WPCS on the changed `includes/` file | exit 0 |
 | re-run of `bin/measure-necessity-gate.php` | 132 / 42 / 20 / 1 |
+
+## 157. Approval tickets for the necessity gate (2026-11-22)
+
+§156 left `oos.necessity_gate` in the shape it said would be switchable, with one
+thing still missing: `approval_required` had no way to *be* approved. The guard
+denied the call and told the model so, which is correct fail-closed behaviour but
+not a channel. This adds the channel — a ticket a human approves and the same call
+then spends — so the gate can be turned on without refusing the 20 approvals for
+ever.
+
+### 157.1 The standard
+
+Five properties recur across every approval design worth copying. They were taken
+from the OpenAI Agents SDK's human-in-the-loop approvals, MCP's `elicitation`
+(the server asks, the client's human answers, the answer is scoped to the request),
+LangGraph's `interrupt()`/`Command(resume=…)` pattern, and the general security
+literature on confirmation prompts:
+
+| property | why |
+|---|---|
+| **bound to the exact parameters** | "yes" to a call must not authorise a different payload |
+| **single-use** | an approved call must not be replayable indefinitely |
+| **expiring** | a stale decision must not be acted on days later |
+| **requester ≠ approver** | the person who asked cannot be the person who allows |
+| **fail-closed** | no store, no valid ticket, no proof → deny |
+
+The first four are implemented here. The fourth — requester ≠ approver — is
+**not** enforced yet: `ApprovalsController::resolve` still lets a requester approve
+their own ticket. It is recorded as an open item in §157.7 rather than quietly
+claimed.
+
+### 157.2 What a ticket binds
+
+| property | mechanism |
+|---|---|
+| the tool | `nvoos_approvals.tool` column |
+| the payload | `arguments_hash`, `sha256` of canonicalised JSON |
+| the requester | `requester_id` column |
+| the estate | `tenant_id` column + `Approval`'s global tenant scope |
+| single use | `consumed_at`, set by a conditional `UPDATE … WHERE consumed_at IS NULL` |
+| expiry | `expires_at` (default 86,400 s) |
+
+The session is **recorded** (`session_id`) but is **not** part of the match: a retry
+after a worker restart legitimately arrives from a new session, and the payload
+plus the requester are what the human actually approved.
+
+### 157.3 The fingerprint is copied, not improved
+
+`ApprovalRequest::argumentsFingerprint()` is `MachineToolController::argumentsHash()`
+moved into a value object: `sha256(json_encode(canonical($arguments)))`, where
+canonical `ksort`s keys recursively. Two hashes for one payload would be worse than
+one imperfect scheme, because a machine approval and a necessity approval for the
+same call must agree.
+
+`ksort` sorts **keys**; a list's keys are already in order, so list order is
+preserved. `['a','b']` and `['b','a']` hash differently — the safe direction for an
+ordered argument.
+
+### 157.4 Where the code lives
+
+| file | role |
+|---|---|
+| `lib/core/src/Domain/ValueObject/ApprovalRequest.php` | the call being approved; owns the fingerprint |
+| `lib/core/src/Domain/Contract/ApprovalTicketInterface.php` | `request()` / `consume()` |
+| `lib/core/src/Application/Tool/NecessityGuard.php` | consumes, then requests; denies in between |
+| `docker/laravel/app-skeleton/app/Support/Approvals/DatabaseApprovalTicket.php` | the DB implementation |
+| `AppServiceProvider` | binds the interface to the implementation |
+| `NvoosServiceProvider` | passes the bound ticket to the guard |
+
+The implementation lives in the **app**, not the package, because it needs
+`TenantContext` and the `Approval` model's estate scope. The package binding is
+optional, so a bare adapter still constructs — the guard then fails closed with a
+reason that says no store is bound.
+
+**No migration was needed.** `2026_11_21_120000_add_machine_approval_columns_to_nvoos_approvals.php`
+already added `tenant_id`, `arguments_hash` and `consumed_at` for the machine path;
+this reuses all three.
+
+### 157.5 Two behaviours worth naming
+
+**A retry reuses the pending ticket.** `request()` looks for a matching pending row
+and returns its id rather than inserting a second one. A model retrying after a
+refusal is the normal case; queueing twice would ask the human twice for one
+decision.
+
+**Consumption is a claim, not a read.** `consume()` selects the approved row and
+then updates it with `whereNull('consumed_at')`, returning true only when exactly
+one row was claimed. Two retries racing cannot both execute the tool.
+
+### 157.6 Tests
+
+| case | property |
+|---|---|
+| a request queues a pending ticket | row exists, estate recorded, hash stored, expiry set |
+| a retry reuses the pending ticket | same id, one row, key order canonicalised |
+| an approved ticket is consumed once | pending ≠ permission; first consume true, second false |
+| a different payload does not consume | hash binding |
+| a different requester does not consume | requester binding |
+| an expired ticket does not consume | expiry |
+| a ticket in another estate is invisible | estate scope on both read and spend |
+
+### 157.7 What `oos.necessity_gate` does now
+
+With `ApprovalTicketInterface` bound, `approval_required` **issues a real ticket**
+and the same call runs once a human approves it. Without a binding it denies exactly
+as before. The option remains off by default — but turning it on is now a product
+call about whether the 20 approvals are acceptable prompts (the eleven paid media
+generation tools are the bulk of them), not a missing mechanism.
+
+Open items, all product or follow-up decisions:
+
+| item | state |
+|---|---|
+| requester ≠ approver | standard, **not yet enforced** in `ApprovalsController::resolve` |
+| the eleven paid media tools | allowlist them or accept the prompt |
+| `erlang_c_queue_health` | the single `block`; a health check over-declaring `write`, a flag-quality outlier |
+
+### 157.8 Gates
+
+| Gate | Result |
+|---|---|
+| targeted `ApprovalTicketGuardTest` + `ApprovalRequestTest` | 10 tests, 19 assertions |
+| full `lib/core` suite | 1,936 tests, 15,636 assertions |
+| `lib/laravel-adapter` suite | 316 tests, 1,700 assertions (baseline held) |
+| `DatabaseApprovalTicketTest` (app) | 7 tests, 23 assertions |
+| adjacent approvals (`AdminApprovalsTest`, `MachineToolApprovalTest`, guard tests) | 15 tests, 46 assertions |
+| container binding | `ApprovalTicketInterface` bound |
+| phpcs PSR-12 (no path arguments) | exit 0 |
