@@ -148,22 +148,23 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error Rendered equation, or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if quiz system is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_quiz_system'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Quiz System is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'toolkit_not_available',
+				__( 'Quiz System is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate LaTeX input.
 		if ( empty( $arguments['latex'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'LaTeX expression is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'LaTeX expression is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -188,9 +189,10 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		// Check if KaTeX is available.
 		$katex_available = $this->check_katex_availability();
 		if ( ! $katex_available ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'KaTeX is not available. Please ensure Node.js and KaTeX package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'KaTeX is not available. Please ensure Node.js and KaTeX package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				array( 'engine' => 'katex' )
 			);
 		}
 
@@ -213,10 +215,10 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		$render_time = microtime( true ) - $start_time;
 
 		if ( ! $result || isset( $result['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => isset( $result['error'] ) ? $result['error'] : __( 'Math equation rendering failed.', 'mcp-ai-wpoos-pro' ),
-				'latex'   => $latex,
+			return new WP_Error(
+				'wp_mcp_ai_render_failed',
+				isset( $result['error'] ) ? $result['error'] : __( 'Math equation rendering failed.', 'mcp-ai-wpoos-pro' ),
+				array( 'latex' => $latex )
 			);
 		}
 

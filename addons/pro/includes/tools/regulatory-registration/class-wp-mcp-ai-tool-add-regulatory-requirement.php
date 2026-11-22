@@ -144,13 +144,14 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 		$required_fields = array( 'title', 'country', 'authority', 'requirement_type' );
 		foreach ( $required_fields as $field ) {
 			if ( empty( $arguments[ $field ] ) ) {
-				return array(
-					'success' => false,
-					'error'   => sprintf(
+				return new WP_Error(
+					'wp_mcp_ai_missing_param',
+					sprintf(
 						/* translators: %s: field name */
 						__( '%s is required.', 'mcp-ai-wpoos-pro' ),
 						ucfirst( str_replace( '_', ' ', $field ) )
 					),
+					array( 'field' => $field )
 				);
 			}
 		}
@@ -166,10 +167,7 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 		$requirement_id = wp_insert_post( $requirement_data );
 
 		if ( is_wp_error( $requirement_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $requirement_id->get_error_message(),
-			);
+			return $requirement_id;
 		}
 
 		// Save metadata.

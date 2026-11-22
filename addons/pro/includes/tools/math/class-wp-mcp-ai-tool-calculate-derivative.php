@@ -169,9 +169,10 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 		);
 
 		if ( false === $math_result || isset( $math_result['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Derivative calculation requires math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'Derivative calculation requires math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				array( 'engine' => 'mathjs' )
 			);
 		}
 
