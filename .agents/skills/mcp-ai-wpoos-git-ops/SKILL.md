@@ -36,6 +36,31 @@ description: "Git/GitHub workflow discipline for the mcp-ai-wpoos repo: PRs agai
   artifacts and local state (e.g. `.lighthouseci/`, `test-results/`). Use
   explicit paths, or pathspec exclusions:
   `git add examples/nvoos-astro-velocity ":(exclude)…/test-results"`.
+- **A red check may be inherited, not yours.** Before debugging a failing job
+  on your PR, check whether the base branch fails it on its own head:
+
+  ```sh
+  gh run list --branch alpha-working --workflow "<workflow name>" \
+    --limit 3 --json databaseId,conclusion,headSha
+  gh run view <id> --log-failed | grep -E "✘|Failed asserting"
+  ```
+
+  A job that fails identically on `alpha-working` is pre-existing: say so and
+  leave it to its own PR rather than widening an unrelated change (2026-11-22:
+  an unported CG dj-management envelope drifted `PHPUnit Pro Addon / test
+  (monolith)` red on every PR; the fix landed separately as #8112).
+- **Creating a branch from `origin/alpha-working` with a dirty tree.** The edits
+  carry over on `git switch -c <branch> origin/alpha-working` — but only when
+  the touched files are identical on both sides. Prove it first:
+
+  ```sh
+  git diff --stat origin/alpha-working HEAD -- <the dirty files>
+  ```
+
+  Empty output means the switch is safe. Note the new branch tracks
+  `origin/alpha-working`, so push with an explicit refspec:
+  `git push -u origin HEAD:refs/heads/<branch>` — a bare `git push` can never
+  land on the base branch that way.
 - Commits: imperative subject ≤ 50 chars, body only when useful (wrap at 72).
   Run commits with `GIT_EDITOR=true git commit …`; read-only git with
   `--no-pager`; prefer `git --no-optional-locks status`.

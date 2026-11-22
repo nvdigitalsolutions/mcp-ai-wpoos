@@ -90,6 +90,57 @@ deviations:
   to the addon's `src/` copies, `class_exists` re-checks with the byte-identical
   degrade error. Never change behavior beyond the documented seam.
 
+## When a base sweep lands without the port
+
+A base-tree sweep (canonical envelopes, usage guidance, schema bounds) can
+merge without its CG counterpart. The signature is **matrix-inverted**:
+`test (monolith)` goes red while `test (standalone)` stays green, because the
+monolith matrix serves the swept base class and a CG characterization test
+still asserts the old contract. `test-dj-management-toolkit.php` even carried
+the stale premise in its own docblock ("the base ships the same
+`success => false` shape").
+
+Do **not** re-port the directory to fix one sweep. The port is usually behind
+several unrelated commits at once (2026-11-22: dj-management was behind #8101
+envelopes *and* #6741 guidance *and* #7210 schema bounds), so a wholesale
+re-port imports all of them and turns a 15-file fix into three concerns.
+
+Apply the base commit instead, transformed:
+
+```sh
+git diff <sweep>^ <sweep> -- addons/pro/includes/tools/<toolkit> > /tmp/base.patch
+# rewrite a/ and b/ paths to plugins/nvoos-content-graph-pro/src/tools/<toolkit>/
+# and swap mcp-ai-wpoos-pro -> nvoos-content-graph-pro inside the hunks
+git apply --check /tmp/cg.patch   # successes with only line offsets are the signal
+git apply /tmp/cg.patch
+```
+
+`--check` reporting *only* line offsets is the useful part: it proves the
+pre-sweep port body still matches the pre-sweep base apart from the port header.
+Any failed hunk means real drift — stop and inspect before hand-editing.
+
+Then prove the sweep is complete with two string-level oracles:
+
+- **Body parity.** Cut both sides at the first
+  `if ( ! defined( 'ABSPATH' ) ) {` (that drops the differing port header,
+  `declare(strict_types=1)` and the SPDX banner), normalise blank runs, then
+  diff. What remains should be exactly the *known* unported sweeps — nothing
+  envelope-related.
+- **Code-sequence parity.** `preg_match_all( "/new WP_Error\(\s*'([^']+)'/", … )`
+  over each pair and compare the arrays. Identical sequences prove the failure
+  codes (and their order) match the base without reading 40 hunks by hand.
+
+Grep the CG tests too, not just the source: a stale contract hides in an
+assertion (`assertIsArray` + `$result['success']` +
+`assertArrayHasKey( 'error' )`) whose docblock often states the wrong premise
+outright.
+
+Drift ledger (2026-11-22): CG `src/tools` had 158 `'success' => false` sites
+across 13 toolkits vs 29 in the base tree — dj-management was simply the first
+one a CG test asserted. A port-parity guard (fail when a ported file's failure
+envelope diverges from its base counterpart) is the durable fix; per-commit
+sweeps are not.
+
 ## Byte-identity verifier
 
 Write a one-shot `bin/verify-<cluster>.php` that RECONSTRUCTS the expected
