@@ -25,6 +25,8 @@ use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
 use App\Support\Diagnostics\RoutingMetricStore;
 use App\Support\Models\ModelCatalogueLookup;
+use App\Support\Orchestration\AssistantAgentRunner;
+use App\Support\Orchestration\TenantContextResolver;
 use App\Support\Pro\ToolkitEngine;
 use App\Support\Pro\ToolkitManifestLoader;
 use App\Support\RemoteSites\RemoteSiteStore;
@@ -47,6 +49,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
@@ -58,6 +61,7 @@ use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\RoutingMetricsInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
+use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Laravel\Adapter\MemoryStore;
@@ -98,6 +102,13 @@ class AppServiceProvider extends ServiceProvider
         // of the package because it needs the app's tenant context and the
         // Approval model's estate scope.
         $this->app->bind(ApprovalTicketInterface::class, DatabaseApprovalTicket::class);
+
+        // Orchestration's two host seams (Proposal 149 §163). The adapter itself
+        // is bound by the package; these make it functional here: a runner that
+        // reuses the workflow node's bounded turn, and the estate resolver the
+        // adapter namespaces team records with.
+        $this->app->bind(AgentRunnerInterface::class, AssistantAgentRunner::class);
+        $this->app->bind(TenantResolverInterface::class, TenantContextResolver::class);
 
         // The admin palette generator reads a token tree that lives outside the
         // application (the storefront's DTCG sources), so its location is

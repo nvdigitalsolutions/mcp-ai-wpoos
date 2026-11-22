@@ -15403,3 +15403,164 @@ That closes the readiness triage: `unavailable` is **5** (these four plus
 | full `lib/core` suite | 1,951 tests, 15,664 assertions |
 | `bin/generate-tool-capability-flags.php --check` | exit 0 — 1,465 tools in step |
 | phpcs PSR-12 (no path arguments) | exit 0 |
+
+## 163. The orchestration tools run on this runtime (2026-11-22)
+
+§162 recorded the four orchestration rows as WordPress-only and named the
+revisit trigger: *"an agent runtime landing in this port"*. That trigger had
+already fired. `AgentNodeRunner` **is** an agent runtime — it has backed the
+workflow `agent` node since that node shipped, and it runs one bounded assistant
+turn with the assistant's provider, model and tool set, the caller's identity
+and the estate budget. §162 looked for a *second* executor and missed the one
+already underneath the workflow node.
+
+Two one-method seams were all that separated it from the contract:
+
+- **`AgentRunnerInterface`** — one bounded assistant turn, run as a caller, in
+  the domain. The workflow `agent` node already performed exactly this
+  operation; sharing one runner is what stops the two guard-rail sets drifting.
+- **`TenantResolverInterface`** — the estate, for package code. `TenantContext`
+  is an app class, and the orchestration adapter's team cache must be
+  estate-scoped.
+
+With those bound, `Nvoos\Laravel\Adapter\AgentOrchestration` satisfies the
+contract the four tools already declare. **No tool changed.** The port is an
+adapter, not a fifth implementation of orchestration.
+
+### 163.1 What was built
+
+| Piece | Where | Why |
+|---|---|---|
+| `AgentRunnerInterface` | `lib/core/src/Domain/Contract` | The chat-pipeline seam. Takes the caller id as a parameter, not constructor state, so a delegated run is capability-checked as the person who asked. |
+| `TenantResolverInterface` | `lib/core/src/Domain/Contract` | Lets package code key estate-scoped data without importing an app class. |
+| `AgentOrchestration` | `lib/laravel-adapter/src/Adapter` | Implements all four methods: compose, execute, status, delegate. |
+| Binding | `NvoosServiceProvider` | Binds the adapter with **optional** dependencies; an unconfigured host still constructs and answers `success: false`. |
+| `AssistantAgentRunner` | `app/Support/Orchestration` | Delegates to `AgentNodeRunner`, so a subtask and a workflow node are one operation. |
+| `TenantContextResolver` | `app/Support/Orchestration` | One-line seam onto `TenantContext::current()`. |
+| Bindings | `AppServiceProvider` | Binds both host seams. |
+
+The package binding is deliberately a closure with `$app->bound(...)` guards.
+The readiness registrar promises every servable tool is **constructible**; a
+hard dependency on assistants would make that promise false in a bare package
+test. The trade-off is explicit: a host without the seams gets an honest
+failure, never a hollow success.
+
+### 163.2 Composition is deterministic
+
+Anthropic's orchestrator-workers pattern is for subtasks you cannot predict.
+Agent-team composition is not that: the caller names roles, so an explicit rule
+is cheaper, auditable and reproducible. Roles resolve in this order, and every
+member records which rule fired in `matched_by`:
+
+| Order | Rule | `matched_by` |
+|---|---|---|
+| 1 | Explicit `agents[role] = assistant_id` map | `explicit` |
+| 2 | Assistant slug | `slug` |
+| 3 | Assistant `primary_role_slugs` (`meta`) | `primary_role` |
+| 4 | Assistant title (case-insensitive) | `title` |
+| 5 | The estate's default assistant | `default` |
+
+`matched_by` is the mitigation for the one surprising outcome this design can
+produce: when nothing matches, the default assistant joins the team. A caller
+who expected three specialists can see *why* they got the general assistant
+instead of guessing.
+
+The tool sends `task`, the WordPress service expects `task_type`, and the
+adapter accepts `task`, `task_description`, `instruction`, `instructions`,
+`task_type` and `description`. That breadth is not sloppiness — see §163.5.
+
+### 163.3 Guard rails
+
+Three are load-bearing and each has a test:
+
+- **Depth 1.** `AgentRunnerInterface::run()` takes an assistant id, a prompt,
+  a caller id and a context array. There is no orchestrator handle, so a
+  delegated agent cannot compose a team or delegate again. The host test
+  asserts the runner receives the caller's context **unchanged** — nothing is
+  injected that would widen it.
+- **Caller identity.** `context['user_id']` is passed to the runner, which
+  builds `AgentNodeRunner($userId)`. Registry guards (necessity, read-only,
+  approvals) therefore apply to a sub-agent exactly as they do to the caller.
+  Orchestration is not a privilege-escalation path.
+- **Bounded.** Five members per team, ten steps per workflow, one turn per
+  step, 200 assistants scanned, 4,000 characters of threaded context. Exceeding
+  a bound fails closed; nothing is silently truncated.
+
+Teams are cache entries under `agent_team:{tenant}:{teamId}` with a 24-hour
+TTL — the same shape as the WordPress transient, including its limitation.
+Execution produces activities only; there is no `nvoos_agent_runs` table.
+
+### 163.4 Honest limitations
+
+- **`readiness_by_runtime` was not built.** It was the planned first step, and
+  it turned out not to be a precondition: the package provider boots in this
+  host through Composer discovery (`bootstrap/providers.php` lists only app
+  providers), so a package-level binding makes the tools constructible in both
+  suites. A per-runtime readiness flag is still open in 090-m; it is no longer
+  blocking anything.
+- **The WordPress `create_agent_team` tool is still broken.** It sends `task`;
+  `WP_MCP_AI_Agent_Team_Orchestrator::compose_team()` requires `task_type`, so
+  the WordPress path returns an error on every call. The adapter accepts both
+  spellings, which makes the shared tool work here but does not fix WordPress.
+  That is a separate PR against the base plugin, not a Laravel port concern.
+- **A team does not survive a cache flush**, and its 24-hour expiry is absolute.
+  There is no audit trail of a composition beyond the response the caller got.
+- **Composition never plans.** There is no LLM step choosing roles, so a vague
+  request produces a default-heavy team. That is a deliberate trade: the
+  alternative is a second model call whose output is harder to audit than a
+  rule table.
+- **Two tools call a model**, so their `openWorldHint` is `true` while the
+  capability-flag catalogue says `local-only`. The flag describes the tool's
+  own I/O (no external API); the hint describes the model turn. The annotations
+  test deliberately does not constrain `openWorldHint` for this reason.
+
+### 163.5 Measurement
+
+Manifest: **223 rows, servable 199 → 203**, `unavailable` 5 → 1
+(`save_profession`, still code-owned reference data). Readiness audit: no
+violations.
+
+Necessity gate over the 203 servable rows: 0 unresolved, 0 rows without flags,
+tier-1 safe 122 (60%).
+
+| Input | allow | warn | approval | block |
+|---|---|---|---|---|
+| schema args | 144 | 49 | 10 | 0 |
+| empty args | 122 | 13 | 49 | 19 |
+
+The four new rows, measured with well-formed arguments:
+
+| Tool | Verdict | Reason code |
+|---|---|---|
+| `check_workflow_health` | allow | `safe_tool` |
+| `create_agent_team` | warn | `helpful_within_bounds` |
+| `delegate_to_agent` | warn | `helpful_within_bounds` |
+| `execute_workflow` | warn | `helpful_within_bounds` |
+
+`warn` is the correct tier for the three state-changing tools: the gate asks
+the model to be sure, and does not require an approval ticket for a bounded
+turn.
+
+### 163.6 Gates
+
+| Gate | Result |
+|---|---|
+| `lib/core` suite | 1,951 tests, 15,664 assertions (unchanged) |
+| `lib/laravel-adapter` suite | 316 → **336** tests, 1,704 → **1,791** assertions |
+| app suite (SQLite) | 1,952 → **1,959** tests, 20,655 → **20,694** assertions |
+| `bin/audit-tool-readiness.php` | 223 rows, servable 203, `unavailable` 1 — no violations |
+| `bin/generate-tool-capability-flags.php --check` | exit 0 — 1,465 tools in step |
+| phpcs PSR-12 (`phpcs-laravel.xml.dist`) | exit 0 |
+| phpcs WPCS on changed files | exit 0 |
+| necessity gate | 203 measured; four tools allow/warn, none approval or block |
+
+### 163.7 Reverses §162
+
+§162 kept these rows `unavailable` on two premises: that this port has no agent
+runtime, and that a servable row would therefore have to be a hollow adapter.
+Both are now known to be wrong. `AgentNodeRunner` is the agent runtime — it
+predates the decision — and this adapter is not a stub: it composes from the
+real assistant catalogue, runs the real chat pipeline, and is covered by 20
+package tests and 7 host tests. §162's own rule, *a tool may be absent; it may
+not lie*, is satisfied in the other direction: the rows now tell the truth about
+a capability that exists.
