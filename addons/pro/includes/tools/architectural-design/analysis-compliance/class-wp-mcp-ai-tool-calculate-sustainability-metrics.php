@@ -316,7 +316,7 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 		// EDGE scoring — tropical default, also runs for US when requested.
 		if ( class_exists( 'WP_MCP_AI_Architectural_Sustainability' ) && in_array( $country_code, array( 'LK', 'JM', 'US' ), true ) ) {
 			$edge = WP_MCP_AI_Architectural_Sustainability::score_edge( $country_code, $building_use, $proposed );
-			if ( ! empty( $edge['success'] ) ) {
+			if ( ! is_wp_error( $edge ) && ! empty( $edge['success'] ) ) {
 				$result['edge'] = array(
 					'awarded_tier'             => $edge['awarded_tier'],
 					'awarded_label'            => $edge['awarded_label'],

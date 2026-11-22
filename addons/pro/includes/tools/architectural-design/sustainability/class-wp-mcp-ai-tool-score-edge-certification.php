@@ -209,11 +209,10 @@ class WP_MCP_AI_Tool_Score_Edge_Certification implements WP_MCP_AI_Tool_Interfac
 		}
 
 		$score = WP_MCP_AI_Architectural_Sustainability::score_edge( $country, $use, $proposed );
-		if ( empty( $score['success'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_edge_score_failed',
-				isset( $score['error'] ) ? sanitize_text_field( $score['error'] ) : __( 'Unable to score EDGE certification.', 'mcp-ai-wpoos-pro' )
-			);
+		if ( is_wp_error( $score ) ) {
+			// The helper already returns this tool's published failure code, so the
+			// error propagates unchanged rather than being re-wrapped.
+			return $score;
 		}
 
 		$score['method']     = __( 'IFC EDGE methodology — savings computed against the country / use baseline.', 'mcp-ai-wpoos-pro' );
