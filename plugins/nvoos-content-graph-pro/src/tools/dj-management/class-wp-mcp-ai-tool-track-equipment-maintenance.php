@@ -110,9 +110,9 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['equipment_id'] ) || empty( $arguments['maintenance_type'] ) || empty( $arguments['maintenance_date'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Equipment ID, maintenance type, and maintenance date are required.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Equipment ID, maintenance type, and maintenance date are required.', 'nvoos-content-graph-pro' )
 			);
 		}
 
@@ -120,9 +120,9 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 
 		// Verify equipment exists.
 		if ( ! get_post( $equipment_id ) || get_post_type( $equipment_id ) !== 'dj_equipment' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid equipment ID.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Invalid equipment ID.', 'nvoos-content-graph-pro' )
 			);
 		}
 
