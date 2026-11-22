@@ -150,7 +150,7 @@ return array(
 		'check_workflow_health' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CheckWorkflowHealthTool',
 			'readiness' => 'unavailable',
-			'reason' => 'Needs AgentOrchestrationInterface, which has no implementation in this runtime and no container binding; the registrar would silently skip it. Agent teams and workflows are WordPress-only today (Proposal 160 section 12).',
+			'reason' => 'WordPress-only by decision (Proposal 149 section 162): AgentOrchestrationInterface composes and delegates agent teams, and this port has no agent runtime. The Laravel WorkflowRunner executes recorded DAG graphs, which is a different capability. Revisit only if an agent runtime lands.',
 		),
 		'client_analyze_sentiment' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ClientAnalyzeSentimentTool',
@@ -249,7 +249,7 @@ return array(
 		'create_agent_team' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateAgentTeamTool',
 			'readiness' => 'unavailable',
-			'reason' => 'Needs AgentOrchestrationInterface, which has no implementation in this runtime and no container binding; the registrar would silently skip it. Agent teams and workflows are WordPress-only today (Proposal 160 section 12).',
+			'reason' => 'WordPress-only by decision (Proposal 149 section 162): AgentOrchestrationInterface composes and delegates agent teams, and this port has no agent runtime. The Laravel WorkflowRunner executes recorded DAG graphs, which is a different capability. Revisit only if an agent runtime lands.',
 		),
 		'create_batch' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateBatchTool',
@@ -383,7 +383,7 @@ return array(
 		'delegate_to_agent' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DelegateToAgentTool',
 			'readiness' => 'unavailable',
-			'reason' => 'Needs AgentOrchestrationInterface, which has no implementation in this runtime and no container binding; the registrar would silently skip it. Agent teams and workflows are WordPress-only today (Proposal 160 section 12).',
+			'reason' => 'WordPress-only by decision (Proposal 149 section 162): AgentOrchestrationInterface composes and delegates agent teams, and this port has no agent runtime. The Laravel WorkflowRunner executes recorded DAG graphs, which is a different capability. Revisit only if an agent runtime lands.',
 		),
 		'delete_cache' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeleteCacheTool',
@@ -532,7 +532,7 @@ return array(
 		'execute_workflow' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExecuteWorkflowTool',
 			'readiness' => 'unavailable',
-			'reason' => 'Needs AgentOrchestrationInterface, which has no implementation in this runtime and no container binding; the registrar would silently skip it. Agent teams and workflows are WordPress-only today (Proposal 160 section 12).',
+			'reason' => 'WordPress-only by decision (Proposal 149 section 162): AgentOrchestrationInterface composes and delegates agent teams, and this port has no agent runtime. The Laravel WorkflowRunner executes recorded DAG graphs, which is a different capability. Revisit only if an agent runtime lands.',
 		),
 		'extract_domain' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExtractDomainTool',
