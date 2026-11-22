@@ -24,8 +24,18 @@ use Nvoos\Core\Domain\Contract\ErlangCInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 
-class ErlangCQueueHealthTool extends AbstractTool
+/**
+ * Live queue health, computed with Erlang C.
+ *
+ * The WordPress original persists a rolling snapshot in an option, so it
+ * declares `write` and `state-changing`. Portable by nature, no persistence: it
+ * computes and returns. Inheriting WordPress's flags therefore described
+ * something this class does not do — and the necessity gate refused it as an
+ * outbound mutation. The declaration here is the port's own behaviour.
+ */
+class ErlangCQueueHealthTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(
         ErrorFactoryInterface $errors,
@@ -34,6 +44,19 @@ class ErlangCQueueHealthTool extends AbstractTool
         private readonly HttpClientInterface $http,
     ) {
         parent::__construct($errors);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getCapabilityFlags(): array
+    {
+        return array(
+            'external-api',        // Optional live fetch via the configured endpoint.
+            'idempotent',          // Repeat calls have no additional effect.
+            'read-only',           // Computes and returns; persists nothing.
+            'requires-capability', // Requires manage_options.
+        );
     }
 
     public function getSlug(): string
@@ -90,6 +113,21 @@ class ErlangCQueueHealthTool extends AbstractTool
                 'fetch_from_endpoint'      => array(
                     'type'        => 'boolean',
                     'description' => 'When true, fetch live metrics from the configured queue health endpoint.',
+                ),
+            ),
+            // Two complete shapes, and `execute()` enforces exactly these: the
+            // endpoint supplies the metrics, or the caller supplies the three
+            // the inline calculation needs. Neither is a top-level `required`,
+            // which is why an empty call used to look well-formed to the gate.
+            'anyOf'                => array(
+                array(
+                    'required'   => array( 'fetch_from_endpoint' ),
+                    'properties' => array(
+                        'fetch_from_endpoint' => array( 'const' => true ),
+                    ),
+                ),
+                array(
+                    'required' => array( 'arrival_rate_per_hour', 'avg_handle_time', 'current_agents' ),
                 ),
             ),
             'additionalProperties' => false,

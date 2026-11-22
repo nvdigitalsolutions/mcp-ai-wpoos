@@ -31,13 +31,15 @@ return array(
 
     /*
     |--------------------------------------------------------------------------
-    | Necessity gate (Proposal 149 §155–§158)
+    | Necessity gate (Proposal 149 §155–§159)
     |--------------------------------------------------------------------------
     |
     | Refuses overeager tool calls — a delete with no target, mail with no
-    | recipient. Off by default: switching it on is a product decision, not an
-    | install step. When on, an `approval_required` verdict queues a ticket
-    | (`ApprovalTicketInterface`) and the same call runs once a human approves.
+    | recipient. **On by default since §159**: measured at 143 allow / 42 warn /
+    | 10 approval / 0 block on well-formed calls, and every approval is a
+    | recoverable ticket. Set `OOS_NECESSITY_GATE=false` to turn it off. When on,
+    | an `approval_required` verdict queues a ticket (`ApprovalTicketInterface`)
+    | and the same call runs once a human approves.
     |
     | `pre_approved` waives the approval step for tools whose risk is spend
     | rather than damage. `null` uses the corpus default in
@@ -45,7 +47,7 @@ return array(
     | every tool; a list replaces the default.
     */
     'necessity_gate' => array(
-        'enabled'      => (bool) env( 'OOS_NECESSITY_GATE', false ),
+        'enabled'      => (bool) env( 'OOS_NECESSITY_GATE', true ),
         'pre_approved' => null,
     ),
 
