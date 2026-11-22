@@ -232,7 +232,7 @@ app.get( '/api/health/full', async (_req, res) => {
 				job_queue: caps.redis,
 			},
 			endpoints: {
-				image: [ '/api/image/generate', '/api/image/optimize', '/api/image/batch', '/api/image/enhance', '/api/image/upscale', '/api/image/edit', '/api/image/vectorize', '/api/image/providers' ],
+				image: [ '/api/image/generate', '/api/image/optimize', '/api/image/batch', '/api/image/enhance', '/api/image/upscale', '/api/image/edit', '/api/image/vectorize', '/api/image/transform', '/api/image/info', '/api/image/providers' ],
 				video: [ '/api/video/generate', '/api/video/process', '/api/video/info', '/api/video/models', '/api/video/prediction/:id' ],
 				social: [ '/api/social/post', '/api/social/generate-content', '/api/social/accounts' ],
 				workflow: [ '/api/workflow/social-package', '/api/workflow/brand-assets', '/api/workflow/video-pipeline', '/api/workflow/status' ],

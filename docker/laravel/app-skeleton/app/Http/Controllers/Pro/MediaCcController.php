@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Pro;
 
 use App\Support\Media\MediaLibrary;
 use App\Support\Media\MediaSweeper;
-use App\Support\Media\MediaWorkerClient;
+use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use App\Support\TenantContext;
 use Cron\CronExpression;
 use Illuminate\Http\JsonResponse;

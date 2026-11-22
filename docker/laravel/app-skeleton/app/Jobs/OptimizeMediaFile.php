@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Support\ActivityRecorder;
-use App\Support\Media\MediaWorkerClient;
+use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use App\Support\TenantContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

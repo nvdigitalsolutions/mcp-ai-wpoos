@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support\Media;
+namespace Nvoos\Laravel\Adapter;
 
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -142,6 +142,154 @@ final class MediaWorkerClient
             'savings_bytes' => (int) $body['savings_bytes'],
             'b64' => (string) $body['b64'],
         ];
+    }
+
+    /**
+     * Run geometry operations through the worker (Proposal 149 §160).
+     *
+     * The operations are the sidecar's vocabulary, not a PHP one:
+     * `{type: resize|crop|rotate, …}` applied in order, then one encoder.
+     *
+     * @param string                    $localPath  Absolute path to the source file.
+     * @param string                    $filename   Original filename, for the multipart part.
+     * @param list<array<string, mixed>> $operations Transform operations.
+     * @param string                    $format     Output format; empty keeps the input format.
+     * @param int                       $quality    Encoder quality, 1-100.
+     *
+     * @return array{width: int, height: int, format: string, mime_type: string, bytes: int, b64: string}
+     *
+     * @throws \RuntimeException When unconfigured, unreachable, or the worker
+     *                           answers with an error.
+     */
+    public function transform(
+        string $localPath,
+        string $filename,
+        array $operations,
+        string $format = '',
+        int $quality = 90,
+    ): array {
+        $encoded = json_encode($operations, JSON_UNESCAPED_SLASHES);
+
+        $body = $this->postFile(
+            '/api/image/transform',
+            $localPath,
+            $filename,
+            array(
+                'operations' => false === $encoded ? '[]' : $encoded,
+                'format' => $format,
+                'quality' => max(1, min(100, $quality)),
+            ),
+            $this->transformTimeout(),
+        );
+
+        foreach (array('b64', 'width', 'height', 'format', 'mime_type', 'bytes') as $required) {
+            if (! array_key_exists($required, $body)) {
+                throw new \RuntimeException('Media worker response is missing `'.$required.'`.');
+            }
+        }
+
+        return array(
+            'width' => (int) $body['width'],
+            'height' => (int) $body['height'],
+            'format' => (string) $body['format'],
+            'mime_type' => (string) $body['mime_type'],
+            'bytes' => (int) $body['bytes'],
+            'b64' => (string) $body['b64'],
+        );
+    }
+
+    /**
+     * Read an image's metadata through the worker.
+     *
+     * @param string $localPath Absolute path to the source file.
+     * @param string $filename  Original filename, for the multipart part.
+     *
+     * @return array{width: int, height: int, format: string, mime_type: string, bytes: int}
+     *
+     * @throws \RuntimeException When unconfigured, unreachable, or the worker
+     *                           answers with an error.
+     */
+    public function info(string $localPath, string $filename): array
+    {
+        $body = $this->postFile(
+            '/api/image/info',
+            $localPath,
+            $filename,
+            array(),
+            $this->transformTimeout(),
+        );
+
+        foreach (array('width', 'height', 'format', 'mime_type', 'bytes') as $required) {
+            if (! array_key_exists($required, $body)) {
+                throw new \RuntimeException('Media worker response is missing `'.$required.'`.');
+            }
+        }
+
+        return array(
+            'width' => (int) $body['width'],
+            'height' => (int) $body['height'],
+            'format' => (string) $body['format'],
+            'mime_type' => (string) $body['mime_type'],
+            'bytes' => (int) $body['bytes'],
+        );
+    }
+
+    /**
+     * POST one file to a worker endpoint and decode the JSON envelope.
+     *
+     * `optimize()` predates this helper and is left untouched so its shipped
+     * error contract does not change; the transform paths share this.
+     *
+     * @param array<string, scalar> $fields
+     * @return array<string, mixed>
+     *
+     * @throws \RuntimeException
+     */
+    private function postFile(string $endpoint, string $localPath, string $filename, array $fields, int $timeout): array
+    {
+        if (! $this->configured()) {
+            throw new \RuntimeException('The media worker is not configured.');
+        }
+
+        $stream = is_file($localPath) ? fopen($localPath, 'rb') : false;
+
+        if (false === $stream) {
+            throw new \RuntimeException('Source file is not readable: '.$localPath);
+        }
+
+        try {
+            $response = Http::timeout($timeout)
+                ->acceptJson()
+                ->withHeaders($this->headers())
+                ->attach('file', $stream, $filename)
+                ->post($this->url().$endpoint, $fields);
+        } catch (Throwable $e) {
+            throw new \RuntimeException('Media worker request failed: '.$e->getMessage(), 0, $e);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        $body = $response->json();
+
+        if (! $response->ok() || ! is_array($body)) {
+            $reason = is_array($body) && isset($body['error'])
+                ? (string) $body['error']
+                : 'HTTP '.$response->status();
+
+            throw new \RuntimeException('Media worker error: '.$reason);
+        }
+
+        return $body;
+    }
+
+    private function transformTimeout(): int
+    {
+        return max(1, (int) config(
+            'oos.media_worker.transform_timeout',
+            config('oos.media_worker.optimize_timeout', 60)
+        ));
     }
 
     /**
