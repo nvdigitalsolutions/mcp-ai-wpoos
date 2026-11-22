@@ -1344,15 +1344,20 @@ new one.
 - **Blank slug is absent.** A form submits every field, so `slug: ''` must derive
   from the title rather than from the `'assistant'` fallback — otherwise every
   assistant created from the panel would land on the same slug.
-- **The fourteen `advanced` keys are not on the form yet.** They survive a panel
-  edit (the writer only touches `meta` when `advanced` is present) and stay
-  editable in the console and the REST surface. Rendering `list`/`map` shapes in
-  a Filament form is its own slice; a test pins the preservation.
-- **`provider` and `model` ported as text, not selects.** WordPress renders both
-  as selects; this resource renders both as `TextInput`s. That gap was not
-  recordable on 2026-11-16 because no catalogue existed to populate a select
-  from. §68 built one on 2026-11-18 and scoped it to settings, so the gap is a
-  §68 consequence rather than a §12 omission. Recorded in **§120**.
+- **The fourteen `advanced` keys are on the form (§172).** They render in a
+  collapsed **Advanced** section with four tabs. `formatStateUsing` /
+  `dehydrateStateUsing` carry the one scalar conversion (the comma-joined
+  fallback chain); the tool-slug map is converted at the action boundary by
+  `prebuiltShortcutsToRows()` / `prebuiltShortcutsToMap()`, because a `Repeater`
+  binds a row list and not a map's key. `advanced` joined `$appends` for the same
+  reason `primary_role_slugs` did — `EditAction` hydrates from
+  `attributesToArray()`, so one virtual attribute beats a fill hook.
+- **`provider` and `model` were ported as text, then corrected.** WordPress
+  renders both as selects; the original resource rendered both as `TextInput`s.
+  §68 built the catalogue on 2026-11-18 and scoped it to settings, so the gap
+  fell between two slices. §120 recorded it and shipped the dependent selects on
+  2026-11-22. §172 then ported the advanced keys, so the resource's form
+  vocabulary is at parity with the console and the REST surface.
 - **The table asserts invisibility, not hidden actions.** For a record the
   table cannot resolve, Filament raises `ActionNotResolvableException` instead of
   reporting the action hidden — a weaker and more fragile claim than “this estate
@@ -12182,7 +12187,8 @@ installed. Slice 2 therefore carries an ordering test, not only a scope test.
 
 ## 120. Assistant form: provider and model selects (§12 follow-up)
 
-**State:** recorded 2026-11-21. **Not built** — no code changed in this section.
+**State:** shipped 2026-11-22. Recorded 2026-11-21; the implementation is in
+`AssistantResource` and `AssistantModelSelectTest`.
 
 ### 120.1 The gap, stated as a diff
 
@@ -12331,6 +12337,42 @@ Depends on §68 and on §90.2 (both shipped). Pairs with the `advanced`-keys sli
 both. It is not a correctness fix: the field is editable and round-trips today.
 It is a typo-prevention and ergonomics fix, and a typo'd model is a provider error
 at chat time — which is what the catalogue exists to prevent.
+
+### 120.7 Shipped (2026-11-22)
+
+`AssistantResource` now renders the two dependent selects described above:
+
+| Field | Shape |
+|---|---|
+| `provider` | native `<select>` (18 catalogue providers, under NN/g's threshold), `live()`, `afterStateUpdated()` clears `model` |
+| `model` | searchable JavaScript select, options from `ModelConfigCatalogue::optionsForProvider()`, disabled with `Pick a provider first` until a provider is chosen |
+
+Both option closures carry an off-list stored value as `<value> (current value)`,
+so a deprecated model or a provider with no catalogue rows stays visible and
+saveable. Two additions to the §120.4 sketch, both in the same direction:
+
+- **The model list is preserved even when the provider is empty.** A stored
+  model with no provider would otherwise render an empty select, which looks
+  like the form dropped a value it is about to save. The select stays disabled;
+  the value is displayed and preserved.
+- **`getOptionLabelUsing()` returns a label for any non-empty value.** Filament
+  validates a selection against the option labels, so a strict callback would
+  reject a fine-tune or deployment id the moment someone saved an unrelated
+  field. Returning the catalogue label when the id is known and
+  `<value> (current value)` otherwise keeps the form an advisor, matching the
+  §90.2 boundary rule. No `Rule::in` was added to the REST path.
+
+**Validation.** `AssistantModelSelectTest` **5 tests / 53 assertions** — provider
+change clears the model and rebuilds the options; a Gemini-only id is absent
+from the OpenAI set; a deprecated model is shown as `(current value)` and
+survives an unrelated edit with the wire shape unchanged; a provider with no
+catalogue rows survives; a catalogue model and a custom id both create; the
+child is disabled and says why until a provider is chosen. The assistants and
+catalogue regression set (`AdminAssistantsTest` + `ModelConfigManagerTest` +
+the new file) is **31 tests / 179 assertions, 0 failures**; the broader panel
+gate (navigation, data-table, surface-ownership and panel-blade) is **53 tests /
+778 assertions, 0 failures**; phpcs is clean on both changed files. The fourteen
+`advanced` keys were still unported at that point; §172 ported them.
 
 ## 121. Machine-principal default-deny, and the three settings that finally read (159 slice 2)
 
@@ -16230,6 +16272,94 @@ re-reconcile it.
 | `OperatorNavigationTest` | `Security` filed in `Access` at sort 28; group order and labels intact |
 | `/ops/security` behaviour | 6 tests — access predicate, cross-estate list, masking, not-found, no writes |
 | phpcs PSR-12 / WPCS on changed files | exit 0 / exit 0 |
+
+## 172. Assistant form: the fourteen `advanced` keys (§12.3 follow-up, 2026-11-22)
+
+§12.3 recorded the resource's last form gap: the `advanced` object the console
+and the REST surface already carried had no editor in `/admin/assistants`. The
+stored shapes were the constraint — `list`, `map`, `int_list`, `enum` — and a
+Filament `Repeater` binds a *list of rows*, not a slug-keyed map.
+
+### 172.1 The four tabs
+
+| Tab | Key(s) | Control |
+|---|---|---|
+| Behaviour | `fallback_chain` | `TextInput`, comma-joined (format on hydrate, explode on dehydrate) |
+| Behaviour | `adaptive_tool_cap` | `Select` (on/off); blank inherits the site setting |
+| Behaviour | `prompt_caching`, `disable_tool_shortcuts` | `Toggle` |
+| Knowledge | `memory_files` | `TagsInput` + `nestedRecursiveRules(['integer', 'min:1'])` |
+| Knowledge | `vector_store_id`, `corpus_name` | `TextInput` |
+| Knowledge | `preferred_datasets` | `Repeater`, max 10, `dataset` required |
+| Shortcuts | `tool_shortcuts` | `Repeater` of `{label, payload, tool, description, hidden}` |
+| Shortcuts | `tool_prebuilt_shortcuts` | `Repeater` of `{tool, shortcuts[]}`, converted at the action boundary |
+| Shortcuts | `tool_role_rules` | `Repeater` + `TagsInput`s; `groups` coerced to `int` |
+| Action & access | `external_action_id`, `required_capability` | `TextInput` |
+| Action & access | `external_action_type` | `Select` (workflow / assistant) |
+
+The section is collapsible and collapsed by default: fourteen optional keys above
+the required ones is how an operator stops reading the required ones. It also
+carries `columnSpanFull()`: the form grid is two columns, and a half-width
+section pushed "Action & access" behind a horizontal scrollbar (measured in a
+browser: 412 px section against four tabs needing ~410 px, overflow 1 px+;
+after the fix the section is 848 px and the overflow is 0).
+
+### 172.2 The map is converted at the boundary, not by the field
+
+`tool_prebuilt_shortcuts` is stored as
+`tool => {mode: custom, shortcuts: […]}`. A `Repeater` can only bind
+`{tool, shortcuts}` rows, so `EditAction` gets
+`mutateRecordDataUsing(prebuiltShortcutsToRows)` and
+`mutateDataUsing(prebuiltShortcutsToMap)`, and `CreateAction` gets the inverse
+alone. This is the same seam §120 used for the dependent selects, and it keeps
+the conversion out of the field: a `formatStateUsing` that returned rows would be
+re-applied on every hydrate, and the writer would then see rows where it expects
+a map.
+
+Empty tool rows and overrides with no shortcuts are dropped in
+`prebuiltShortcutsToMap()`, matching the WordPress sanitizer. `mode` is always
+`custom`; `inherit` / `default` are not representable in the editor and the
+server refuses them.
+
+### 172.3 Validation asserts shape, not vocabulary
+
+The structured editors validate their own shape — an integer memory-file list, a
+`alpha_dash` tool slug, a non-empty dataset id — and nothing more. They do not
+assert that the slug exists in a catalogue. That is deliberate, and it is the
+same rule as §90.2 for model ids and §120.3 for providers: the form is an
+advisor, and a form stricter than the writer turns a working configuration into
+data the panel refuses to save. `required_capability` stays free text because
+WordPress accepts any capability string.
+
+### 172.4 The trap: a flat fixture is silently ignored
+
+The first two tests built the record with the advanced keys at the **top level**
+(`array('title' => …) + $this->advancedFixture()`). `AssistantWriter` reads only
+`$data['advanced']`, so every key was silently dropped — and the resulting
+failure looked like a Filament hydration defect (`getState()` returned `null` for
+`advanced.fallback_chain`) rather than a fixture defect. The tell was that
+`assertSchemaStateSet()` finds the component and reads its state; it does not
+re-fill the form.
+
+Recorded because `withAdvancedFields()` is deliberately tolerant of an absent
+`advanced` key — that tolerance is what lets a partial REST payload leave `meta`
+untouched — and tolerance reads exactly like a bug from the outside. The two
+fixtures are now nested, and the clear-value test asserts against a record that
+actually holds the values it clears.
+
+### 172.5 Gates
+
+| Gate | Result |
+|---|---|
+| `AssistantAdvancedFormTest` (new) | **6 tests / 77 assertions** — hydrate all 14, round-trip, create, clear, unknown-meta preservation, shape validation |
+| panel regression, all eight files in one run | **54 tests / 837 assertions** |
+| phpcs PSR-12 on the six changed files | exit 0 |
+| browser pass (Filament 5.11, seeded sqlite instance) | all four tabs render; each Repeater expands (dataset, custom shortcut, nested override, role rule); create → list → edit round-trips `fallback_chain` as `openai, anthropic`; 0 console errors |
+
+The full 14-key shape is exposed by appending `advanced` to the model, and
+`AssistantWriter` is unchanged: the form's dehydrated `advanced` object arrives
+where the writer already expected it, so the coercion rules (absent key untouched,
+present-but-empty clears, unknown `meta` keys preserved) are the same ones the
+REST surface exercises.
 
 ## Parity closure
 

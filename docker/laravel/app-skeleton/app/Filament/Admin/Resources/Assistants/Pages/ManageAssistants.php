@@ -26,6 +26,7 @@ class ManageAssistants extends ManageRecords
     {
         return array(
             CreateAction::make()
+                ->mutateDataUsing(static fn (array $data): array => AssistantResource::prebuiltShortcutsToMap($data))
                 ->using(static fn (array $data): Assistant => AssistantResource::createThroughWriter($data)),
         );
     }
