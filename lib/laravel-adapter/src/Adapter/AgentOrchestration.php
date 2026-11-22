@@ -82,7 +82,7 @@ final class AgentOrchestration implements AgentOrchestrationInterface
         $task = self::taskText($taskRequirements);
 
         if ('' === $task) {
-            return array('success' => false, 'error' => 'A task description is required for team composition.');
+            return array('success' => false, 'error' => 'A task description or task type is required for team composition.');
         }
 
         if (null === $this->assistants) {
@@ -485,9 +485,10 @@ final class AgentOrchestration implements AgentOrchestrationInterface
     /**
      * The instruction text in a tool payload or workflow step.
      *
-     * The `create_agent_team` tool sends `task`; the WordPress service expects
-     * `task_type`. Both spellings are accepted so the shared tool works on
-     * either runtime.
+     * The WordPress `create_agent_team` tool requires `task_type`; this runtime
+     * composes from a description and roles. Both spellings are accepted so one
+     * payload composes a team on either runtime, and `task_type` is recorded on
+     * the team when present.
      *
      * @param array<string, mixed> $payload
      */

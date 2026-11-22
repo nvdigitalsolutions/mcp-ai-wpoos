@@ -255,7 +255,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
-			'reason' => 'Composes a team from this estate assistants through Nvoos\\Laravel\\Adapter\\AgentOrchestration: an explicit agents map, then slug, then primary_role_slugs, then title, then the estate default, recording matched_by on every member. The team is a 24-hour cache entry namespaced by estate, matching the WordPress transient (Proposal 149 section 163).',
+			'reason' => 'Composes a team from this estate assistants through Nvoos\\Laravel\\Adapter\\AgentOrchestration: an explicit agents map, then slug, then primary_role_slugs, then title, then the estate default, recording matched_by on every member. Accepts the WordPress-required task_type as an alternative to a description, and records it on the team, so one payload composes on either runtime. The team is a 24-hour cache entry namespaced by estate, matching the WordPress transient (Proposal 149 section 164).',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AgentOrchestrationTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => false ),
 		),
