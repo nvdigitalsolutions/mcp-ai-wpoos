@@ -246,6 +246,42 @@ final class AdminDiagnosticsTest extends TestCase
         return $assistant;
     }
 
+    public function test_a_clean_boot_reports_no_skipped_tool_rows(): void
+    {
+        $overview = Livewire::test(DiagnosticsPage::class)->instance()->overview();
+
+        $this->assertArrayHasKey('Tool registration', $overview);
+
+        $rows = $overview['Tool registration'];
+
+        $this->assertSame('Servable rows', $rows[0]['label']);
+        $this->assertGreaterThan(0, (int) $rows[0]['value']);
+        $this->assertSame(['label' => 'Skipped at boot', 'value' => 'none'], $rows[1]);
+    }
+
+    public function test_a_tool_the_host_could_not_build_is_named_with_its_reason(): void
+    {
+        // The registrar binds this list only when a servable row fails to
+        // build. Injecting it is the only way to exercise the rendering
+        // without breaking a real binding.
+        $this->app->instance('nvoos.tools.skipped', [
+            'ready_but_unbuildable' => 'service not bound: App\\Contracts\\Missing',
+        ]);
+
+        Livewire::test(DiagnosticsPage::class)
+            ->assertSee('Tool registration')
+            ->assertSee('ready_but_unbuildable')
+            ->assertSee('service not bound');
+
+        $rows = Livewire::test(DiagnosticsPage::class)->instance()->overview()['Tool registration'];
+
+        $this->assertSame(['label' => 'Skipped at boot', 'value' => '1'], $rows[1]);
+        $this->assertSame(
+            ['label' => 'ready_but_unbuildable', 'value' => 'service not bound: App\\Contracts\\Missing'],
+            $rows[2]
+        );
+    }
+
     private function operator(): User
     {
         $user = User::factory()->admin()->create();

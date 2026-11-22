@@ -15,6 +15,7 @@ use UnitEnum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
@@ -40,6 +41,8 @@ use Nvoos\Laravel\Adapter\TokenUsage;
  *
  *  - **Diagnostics** (`diagnostics`) — presence facts about providers, tools,
  *    the queue and the plan. Presence only: no mask, no key, no `••••`.
+ *    Includes the boot-time registration truth: any manifest row marked
+ *    servable that this host could not construct, with the registrar's reason.
  *  - **Probes** (`operations`) — the renderer, parameterised by probe key.
  *  - **Cost** (`cost`) — the 30-day aggregate from `TokenUsage`.
  *
@@ -171,6 +174,7 @@ class DiagnosticsPage extends Page
     {
         $providers = app(ProviderRouter::class);
         $tools = app(ToolRegistry::class);
+        $readiness = app(ToolReadiness::class);
         $settings = app(SettingsStoreInterface::class);
         $entitlement = app(ProEntitlementInterface::class);
         $jobs = app(JobStatusStore::class);
@@ -233,6 +237,7 @@ class DiagnosticsPage extends Page
                 ['label' => 'Plan', 'value' => (string) $entitlement->plan()],
                 ['label' => 'Plan source', 'value' => (string) $entitlement->source()],
             ],
+            'Tool registration' => $this->toolRegistrationRows($readiness),
             'Queue' => $queueRows,
             'Provider credentials' => $providerRows,
             'Routing (30d)' => array_merge($this->routingRows($routing), $this->exportRows()),
@@ -382,6 +387,54 @@ class DiagnosticsPage extends Page
             'total_tokens' => number_format((int) ($summary['total_tokens'] ?? 0)),
             'by_provider' => $byProvider,
         ];
+    }
+
+    /**
+     * The boot-time truth about tool registration.
+     *
+     * `ManifestToolRegistrar` skips a row the manifest marked servable when the
+     * container cannot build it, and the provider binds that list only when it
+     * is non-empty. Reading the binding rather than re-probing keeps the page
+     * cheap and reports the registrar's own reason instead of a guess.
+     *
+     * A clean host renders `Skipped at boot: none`, which is the answer an
+     * operator needs: every advertised tool is actually constructible here.
+     *
+     * @return list<array{label: string, value: string}>
+     */
+    private function toolRegistrationRows(ToolReadiness $readiness): array
+    {
+        $skipped = $this->skippedTools();
+
+        $rows = [
+            ['label' => 'Servable rows', 'value' => (string) count($readiness->servable())],
+            ['label' => 'Skipped at boot', 'value' => [] === $skipped ? 'none' : (string) count($skipped)],
+        ];
+
+        foreach ($skipped as $slug => $reason) {
+            $rows[] = [
+                'label' => (string) $slug,
+                'value' => (string) $reason,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Servable rows this host could not build, as recorded at boot.
+     *
+     * @return array<string, string>
+     */
+    private function skippedTools(): array
+    {
+        if (! app()->bound('nvoos.tools.skipped')) {
+            return [];
+        }
+
+        $skipped = app('nvoos.tools.skipped');
+
+        return is_array($skipped) ? $skipped : [];
     }
 
     private function databaseLabel(): string
