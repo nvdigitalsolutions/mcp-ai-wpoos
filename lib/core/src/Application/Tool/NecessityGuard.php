@@ -8,6 +8,10 @@
  * all the judgement lives in the domain service, which is also what WordPress
  * drives, so the two runtimes cannot disagree about what is overeager.
  *
+ * `$preApproved` is passed straight through to the gate, so an operator can
+ * waive the approval step for tools whose risk is spend rather than damage.
+ * `null` keeps the shared default list; `array()` prompts for everything.
+ *
  * **Two verdicts are not expressible here.** `ToolGuardInterface` can only
  * allow or deny, so:
  *
@@ -48,6 +52,7 @@ final class NecessityGuard implements ToolGuardInterface
         private readonly ToolResolverInterface $tools,
         private readonly bool $enabled = true,
         private readonly ?ApprovalTicketInterface $approvals = null,
+        private readonly ?array $preApproved = null,
     ) {
     }
 
@@ -79,7 +84,7 @@ final class NecessityGuard implements ToolGuardInterface
             $flags = ToolCapabilityFlagCatalogue::for($slug);
         }
 
-        $decision = NecessityGate::decide($flags, $slug, $arguments);
+        $decision = NecessityGate::decide($flags, $slug, $arguments, null, null, $this->preApproved);
 
         if (ActionSafetyProfile::VERDICT_BLOCK === $decision['verdict']) {
             return \sprintf('Tool "%s" is blocked by the necessity gate: %s', $slug, $decision['reason']);

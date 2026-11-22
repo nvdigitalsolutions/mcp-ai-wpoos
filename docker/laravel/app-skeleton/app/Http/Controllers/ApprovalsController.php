@@ -97,10 +97,33 @@ class ApprovalsController
             ], 409);
         }
 
+        $approver = $request->user()?->getAuthIdentifier();
+
+        // Four-eyes, opt-in per deploy (§158). The default is off because in
+        // agent HITL the human IS the principal: the model cannot approve its
+        // own work, but the same human clearing their own session's request is
+        // the design. A second person is a stronger control where an estate has
+        // two operators — and an impossibility where it has one, which is why
+        // this is policy rather than a hard rule.
+        if (
+            config('oos.approvals.require_separate_approver', false)
+            && null !== $row->requester_id
+            && null !== $approver
+            && (string) $row->requester_id === (string) $approver
+        ) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'self_approval_forbidden',
+                    'message' => 'Four-eyes policy: a request must be approved by someone other than its requester.',
+                ],
+            ], 403);
+        }
+
         $this->query()->where('id', $id)->update([
             'status' => $action === 'approve' ? 'approved' : 'denied',
             'resolution_note' => (string) ($data['note'] ?? ''),
-            'resolved_by' => $request->user()?->getAuthIdentifier(),
+            'resolved_by' => $approver,
             'resolved_at' => now(),
             'updated_at' => now(),
         ]);
