@@ -16420,8 +16420,10 @@ absent (declined, reasoned): 2
 Each remaining entry is a decision, not a backlog item:
 
 - **`onboarding`** duplicates two writes that already have homes.
-- **`chat-profiles`** needs a registry, a preference and an enforcement gate; a
-  page without the gate advertises a restriction the server does not apply.
+- **`chat-profiles`** — the enforcement port shipped in §174. The panel page is
+  still absent, now for a narrower reason: the profile is a *per-user
+  preference*, so an admin page that set someone else's would be an authority
+  grant rather than a preference, and the record has not decided to build one.
 - **posture scan / header preview / self-test** are live checks the console
   already owns. Re-running them on page load is the slow request §171 declined,
   and a second panel copy is the duplication §8.1 exists to prevent.
@@ -16429,3 +16431,96 @@ Each remaining entry is a decision, not a backlog item:
 
 So the plan's status is unchanged: every axis has a number, and the only work
 left is work that was decided against.
+
+## 174. Chat profiles: the enforcement port (2026-11-22)
+
+§167 left `chat-profiles` as one of two recorded absences with a specific
+prerequisite: *"an enforcement port covering both the API and the panel; a page
+without it is worse than no page, because it would advertise a restriction the
+server does not apply."* This is that port. **The page is still absent**, which
+is now a product decision rather than a missing prerequisite.
+
+### 174.1 What already existed, and what did not
+
+`lib/core` already shipped `ReadOnlyToolGuard`: deny-only, registered as a
+monotonic guard, blocking gated flags and (by default) anything that declares
+no flags. What it could not do was vary by principal — it is a **deployment**
+switch (`oos.read_only.enabled`, off by default), so the runtime could be
+read-only, or not, but a *user* could not be.
+
+WordPress resolves a profile per user (`wp_mcp_ai_chat_profile` → site default
+→ `write`, guests read-only) and enforces it at the tool boundary. That gap is
+what §167 recorded.
+
+### 174.2 The industry position: this is a runtime control
+
+Three independent sources shaped the design, and they agree on the part that
+matters:
+
+- **MCP tool annotations are hints, not contracts.** The specification requires
+  clients to treat them as untrusted, and *"the spec assumes the worst until
+  told otherwise"* — an unannotated tool is non-read-only and potentially
+  destructive. *"If a proposal's value depends on the annotation being true,
+  it's asking for a contract, and the right place for that is the authorization
+  layer … or the runtime."* (Model Context Protocol, *Tool Annotations as Risk
+  Vocabulary*, 2026-03.)
+- **OWASP LLM06:2025 (Excessive Agency)** asks for least privilege enforced in
+  the downstream system, with actions *"executed in the user's security
+  context"*. Instructing the model is explicitly not a control.
+- **Claude Code's permission model** is deny → ask → allow with **deny never
+  overridable**, and its documentation draws the line this port follows:
+  *"Instructions in your prompt or CLAUDE.md shape what Claude tries to do;
+  only rules, modes, and hooks change what it's allowed to do."*
+
+Two consequences are load-bearing here, and both are pinned by tests:
+
+1. The profile is resolved from the **server-built context** (`user_id`), and a
+   `chat_profile` a caller drops into that context is ignored.
+2. A blocked write is **denied**, never downgraded to a confirmation prompt.
+
+### 174.3 What shipped
+
+| Layer | Piece |
+|---|---|
+| core | `ChatProfile` — `write` / `read-only`, gated flags taken from `CapabilityFlagVocabulary::READ_ONLY_GATED` so it cannot drift from `ReadOnlyToolGuard` |
+| core | `ChatProfileGuard` — monotonic `ToolGuardInterface`; delegates the flag decision to `ReadOnlyToolGuard` rather than reimplementing it |
+| core | `ChatProfileResolverInterface` — the trust boundary as a port |
+| adapter | `ChatProfileResolver` — `users.chat_profile` → site default → `write`; no per-instance cache, because Octane workers would outlive the request that changed the value |
+| app | migration `users.chat_profile` (nullable = inherit; no backfill, so the deploy changes no behaviour) |
+| app | `GET` / `PUT /api/v1/chat-profile` — catalogue + resolved profile, and the preference writer |
+| config | `oos.chat_profiles.{enabled,default,block_undeclared}`, enabled by default because a user with no selection resolves to `write` |
+
+Two readers, and the difference is the security property:
+
+- `ChatProfile::fromSlug()` is **total** and falls back to `write` — the
+  fail-safe floor, so a bad stored value cannot lock every chat out of tools.
+- `ChatProfile::tryFromSlug()` returns **null** and is what the setter uses. A
+  typo must not become the widest grant.
+
+Selection is asymmetric, mirroring WordPress's `can_user_select()`: entering a
+restrictive profile is a downgrade any signed-in user may make; leaving one is
+an upgrade and needs `manage_options`. Without that, the endpoint that
+restricted a user would be the endpoint they used to un-restrict themselves.
+
+### 174.4 Deliberate omissions
+
+| Not shipped | Why |
+|---|---|
+| panel page | the profile is a per-user preference; a tenant-admin page setting someone else's is an authority grant, not a preference |
+| guest profile | there is no anonymous chat surface here (`guest_token_lifetime` is inert for that reason); a context with no `user_id` is a machine credential or a queued job, governed by the machine allowlist and approval gate |
+| system-prompt hint | advisory only — every source above says the prompt is not the control. Worth adding so the model stops retrying blocked calls, but it changes no guarantee |
+| Pro profile registration | there is no Pro profile catalogue on this runtime to extend |
+
+### 174.5 Gates
+
+| Gate | Result |
+|---|---|
+| `ChatProfileTest` + `ChatProfileGuardTest` (core) | **15 tests / 32 assertions** |
+| `ChatProfileApiTest` + `ChatProfileEnforcementTest` | **14 tests / 48 assertions** — including the ignored client-supplied slug and the no-self-elevation case |
+| tool + security regression (`ToolExecutionTest`, `MachineToolExecutionTest`, `MachineToolApprovalTest`, `MachineToolAllowlistTest`, `AdminToolCatalogueTest`, `SecurityPostureTest`, `ScheduledToolIdentityTest`, `ToolRegistrationTest`, `ToolsReadinessTest`) | **61 tests / 519 assertions** |
+| phpcs PSR-12 on 14 changed files | exit 0 |
+| `bin/check-license-boundary.sh` | intact |
+
+The contract row changed with it: `chat-profiles` stays `admin: absent`, gains
+`writer: console` (the API is the only writer; the SPA still has no key for it),
+and its note now records enforcement as shipped.
