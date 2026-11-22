@@ -54,12 +54,23 @@ foreach (NV_FLAGS_DIRS as $dir) {
         new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS)
     );
 
-    foreach ($iterator as $file) {
-        if ('php' !== \strtolower($file->getExtension())) {
-            continue;
-        }
+    $files = array();
 
-        $row = nv_extract_tool((string) \file_get_contents($file->getPathname()));
+    foreach ($iterator as $file) {
+        if ('php' === \strtolower($file->getExtension())) {
+            $files[] = $file->getPathname();
+        }
+    }
+
+    // Directory order is not stable across platforms, and the first-declaration
+    // rule below decides which of two same-slug files wins. The CI gate caught
+    // exactly that: Windows and Linux picked different `when_to_use` winners
+    // because the iteration order differed. Sort so the choice is the same
+    // everywhere.
+    \sort($files, SORT_STRING);
+
+    foreach ($files as $file) {
+        $row = nv_extract_tool((string) \file_get_contents($file));
 
         if (null === $row['slug'] || null === $row['flags']) {
             continue;
@@ -215,11 +226,16 @@ function nv_extract_tool(string $src): array
 
         $open = $nameIndex;
 
-        while ($open < $count && '{' !== $tokens[$open]) {
+        // Stop at `;` as well as `{`: an abstract declaration
+        // (`abstract public function get_slug();`) has no body, and walking
+        // forward to the next brace read the FOLLOWING method's body — which
+        // is how two Pro base classes both produced a slug of `when_to_use`
+        // from their metadata array.
+        while ($open < $count && '{' !== $tokens[$open] && ';' !== $tokens[$open]) {
             ++$open;
         }
 
-        if ($open >= $count) {
+        if ($open >= $count || ';' === $tokens[$open]) {
             continue;
         }
 

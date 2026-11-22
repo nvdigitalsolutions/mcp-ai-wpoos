@@ -15288,7 +15288,37 @@ the build.
 The failing message names the file and the fix, which is the difference between a
 gate someone can act on and a red cross.
 
-### 161.3 What is deliberately not changed
+### 161.3 The gate's first run found a generator defect
+
+The first CI run went red while the local run was green. That is the gate doing
+its job: the comparison is byte-for-byte, and the generator was not
+platform-independent.
+
+Rendering the catalogue on Linux reproduced it — exactly one row differed:
+
+| platform | `when_to_use` |
+|---|---|
+| Windows | `cacheable, idempotent, local-only, pro, read-only` |
+| Linux | `cacheable, external-api, idempotent, pro, read-only` |
+
+Two causes, both fixed:
+
+1. **Filesystem order decided a duplicate.** `RecursiveDirectoryIterator` order is
+   not stable across platforms, and the scan rule is "first declaration wins".
+   The file list is now sorted per directory, so the winner is the same
+   everywhere.
+2. **An abstract method swallowed the next method's body.** Two Pro base classes
+   declare `abstract public function get_slug();` — no body. The extractor walked
+   forward to the next `{`, which belonged to the *following* method, and read
+   the first string in it: `'when_to_use'`, a **metadata key**, not a slug. The
+   scan now stops at `;` as well as `{`.
+
+After both fixes Windows and Linux render byte-identical files, and the
+catalogue drops the bogus row (**1,466 → 1,465**). The key was harmless at
+lookup time — no tool has that slug — but it made the artefact non-deterministic
+and represented a metadata key as a tool.
+
+### 161.4 What is deliberately not changed
 
 - **The readiness audit stays report-only.** Its `continue-on-error` is a
   documented soak decision, not an oversight; promoting it is its own call with
@@ -15299,11 +15329,13 @@ gate someone can act on and a red cross.
   installation reasons blocks every merge. Left as the next CI item rather than
   guessed at.
 
-### 161.4 Gates
+### 161.5 Gates
 
 | Gate | Result |
 |---|---|
-| `php bin/generate-tool-capability-flags.php --check` | exit 0 — 1,466 tools in step |
+| `php bin/generate-tool-capability-flags.php --check` | exit 0 — **1,465 tools** in step |
 | drift probe | exit 1, then exit 0 after revert |
+| Windows vs Linux render | byte-identical after the fix |
 | workflow YAML parse | two jobs: `readiness`, `capability-flags` |
-| phpcs | no PHP changed |
+| full `lib/core` suite | 1,951 tests, 15,664 assertions |
+| phpcs PSR-12 | exit 0 |
