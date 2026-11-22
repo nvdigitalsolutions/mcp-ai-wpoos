@@ -246,24 +246,30 @@ final class ActionSafetyProfile
      * Default irreversibility for a tool that declares capability flags only.
      *
      * An explicit score on the tool wins; this is the fallback, so it errs
-     * high when the flags are ambiguous.
+     * high when the flags are ambiguous. Flags are normalised first, so an
+     * underscore spelling is scored rather than silently ignored, and an
+     * outbound transport counts as high only when the call can write through it.
      *
      * @param array<int, string> $flags Capability flags.
      */
     public static function deriveIrreversibilityFromFlags(array $flags): float
     {
-        $flags = \array_map('strtolower', $flags);
+        $flags = CapabilityFlagVocabulary::normalise($flags);
 
         if (\in_array('irreversible', $flags, true)) {
             return self::IRREVERSIBILITY_PERMANENT;
         }
 
-        $dangerous = array('financial-impact', 'external-communication', 'data-destruction', 'access-control-change');
+        $dangerous = array('financial-impact', 'data-destruction', 'access-control-change', 'mass-email');
 
         foreach ($dangerous as $flag) {
             if (\in_array($flag, $flags, true)) {
                 return self::IRREVERSIBILITY_HIGH;
             }
+        }
+
+        if (CapabilityFlagVocabulary::hasOutboundMutation($flags)) {
+            return self::IRREVERSIBILITY_HIGH;
         }
 
         if (\in_array('write', $flags, true) && \in_array('state-changing', $flags, true)) {
@@ -272,7 +278,10 @@ final class ActionSafetyProfile
                 : self::IRREVERSIBILITY_MODERATE;
         }
 
-        if (\in_array('read-only', $flags, true)) {
+        if (
+            \in_array('read-only', $flags, true)
+            && ! CapabilityFlagVocabulary::hasAny($flags, array('write', 'state-changing'))
+        ) {
             return self::IRREVERSIBILITY_NONE;
         }
 

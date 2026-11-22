@@ -64,31 +64,39 @@ final class NecessityGate
     /**
      * Tier 1 — a tool that cannot do harm, so the gate has nothing to add.
      *
+     * Flags are normalised first, so a tool spelling `external_api` or
+     * `state_changing` is read the same way as its hyphenated twin. A
+     * read-only tool that merely *reaches* an external system stays safe; only
+     * an outbound mutation disqualifies it.
+     *
+     * A tool that claims `read-only` while also declaring a mutating or sending
+     * flag is contradicting itself, and a contradiction is not an assurance.
+     *
      * @param array<int, string> $flags Capability flags.
      */
     public static function isSafeTool(array $flags): bool
     {
-        $flags = \array_map('strtolower', $flags);
+        $flags = CapabilityFlagVocabulary::normalise($flags);
 
         if (! \in_array('read-only', $flags, true)) {
             return false;
         }
 
-        $dangerous = array(
+        if (
+            CapabilityFlagVocabulary::hasAny($flags, array(
+            'write',
+            'state-changing',
             'irreversible',
             'financial-impact',
-            'external-communication',
             'data-destruction',
             'access-control-change',
-        );
-
-        foreach ($dangerous as $flag) {
-            if (\in_array($flag, $flags, true)) {
-                return false;
-            }
+            'mass-email',
+            ))
+        ) {
+            return false;
         }
 
-        return true;
+        return ! CapabilityFlagVocabulary::hasOutboundMutation($flags);
     }
 
     /**

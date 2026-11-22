@@ -75,8 +75,10 @@ final class MachineToolAnnotationsTest extends TestCase
 
         $safety = new MachineToolSafety($this->readiness(array()), $registry);
 
+        // The stub declares `state_changing`; the guard reports the canonical
+        // spelling so one vocabulary reaches the operator.
         $this->assertSame(
-            'the tool declares the capability flag state_changing',
+            'the tool declares the capability flag state-changing',
             $safety->veto('stub_writer')
         );
     }
