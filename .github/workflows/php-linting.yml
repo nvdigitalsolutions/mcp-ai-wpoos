@@ -73,6 +73,23 @@ jobs:
           vendor/bin/phpcs --standard=addons/nvoos-astro-bridge/phpcs.xml.dist \
             addons/nvoos-astro-bridge/includes addons/nvoos-astro-bridge/nvoos-astro-bridge.php addons/nvoos-astro-bridge/uninstall.php
 
+      # The tree-wide budget check lives here, before `Get changed PHP files`,
+      # for the reason given above: that action has wedged in_progress, and a
+      # gate placed after it is decorative. This check does not read the
+      # changed-file list, so nothing is lost by running it first.
+      - name: Run the tree-wide WPCS budget check
+        # The budget may only shrink. A scope over budget (beyond the noise
+        # allowance) fails, and so does a scope more than `tolerance` under
+        # budget: the improvement has to be recorded in the same PR. Policy and
+        # the current numbers live in docs/developer/phpcs-ratchet.md and
+        # .github/phpcs-budget.json.
+        #
+        # No PHPCS --cache: it changes which files are re-tokenised, and a few
+        # WPCS sniffs are order-sensitive, so cached and cold runs disagree by
+        # a few warnings. A budget needs the same answer twice.
+        timeout-minutes: 40
+        run: php .github/scripts/phpcs-ratchet.php --check
+
       # Bounded so a hang here cannot void the three checks below it. Five
       # minutes is generous: the action resolves a file list, it does not lint.
       # The steps that depend on it also guard on `any_changed` / `all_changed_files`,
@@ -126,8 +143,10 @@ jobs:
           
           echo "WPCS Results: $ERRORS errors, $WARNINGS warnings ($FIXABLE auto-fixable)"
           
-          # Set threshold based on current baseline (1175 total errors / 269 files ≈ 4 per file)
-          # Allow max 10 errors per changed file as improvement target
+          # Fast, file-level feedback so an author can see which of their files
+          # is noisy. The hard tree-wide guarantee is the budget check earlier in
+          # this job (docs/developer/phpcs-ratchet.md); this step is attribution,
+          # not the gate.
           MAX_ERRORS_PER_FILE=10
           NUM_FILES=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | wc -w)
           MAX_ERRORS=$((NUM_FILES * MAX_ERRORS_PER_FILE))
@@ -145,49 +164,10 @@ jobs:
             echo "✅ No WPCS errors found"
           fi
 
-      - name: Run WPCS on all files
-        if: github.event_name == 'push'
-        run: |
-          # Run PHPCS with phpcs.xml.dist (uses WPCS 3.0)
-          # Call phpcs directly to get clean JSON output (composer adds extra text)
-          PHPCS_OUTPUT=$(vendor/bin/phpcs --report=json 2>&1 || true)
-          
-          # Extract only the JSON part (last line containing valid JSON)
-          JSON_OUTPUT=$(echo "$PHPCS_OUTPUT" | grep -E '^\{' | tail -1)
-          
-          if [ -z "$JSON_OUTPUT" ]; then
-            echo "No JSON output from PHPCS. Full output:"
-            echo "$PHPCS_OUTPUT"
-            echo "✅ No issues found or unable to parse output"
-            exit 0
-          fi
-          
-          echo "$JSON_OUTPUT"
-          
-          # Parse errors and warnings
-          ERRORS=$(echo "$JSON_OUTPUT" | jq -r '.totals.errors // 0')
-          WARNINGS=$(echo "$JSON_OUTPUT" | jq -r '.totals.warnings // 0')
-          FIXABLE=$(echo "$JSON_OUTPUT" | jq -r '.totals.fixable // 0')
-          
-          echo "WPCS Results: $ERRORS errors, $WARNINGS warnings ($FIXABLE auto-fixable)"
-          echo "📊 Baseline: 1175 errors (target: continuous improvement)"
-          
-          # Current baseline threshold - will be gradually reduced
-          MAX_ERRORS=1200
-          
-          if [ "$ERRORS" -gt "$MAX_ERRORS" ]; then
-            echo "❌ WPCS errors increased: $ERRORS (regression threshold: $MAX_ERRORS)"
-            echo "💡 Run 'composer run format' to auto-fix $FIXABLE violations"
-            exit 1
-          elif [ "$ERRORS" -gt 1175 ]; then
-            echo "⚠️ WPCS errors slightly increased: $ERRORS (baseline: 1175)"
-            echo "Please review and fix new violations"
-          elif [ "$ERRORS" -lt 1175 ]; then
-            echo "✅ WPCS compliance improved! $ERRORS errors (was 1175)"
-            echo "🎉 Improvement: $((1175 - ERRORS)) errors fixed"
-          else
-            echo "📊 WPCS stable at baseline: $ERRORS errors"
-          fi
+      # The tree-wide budget check runs earlier in this job, before
+      # `Get changed PHP files`. Keeping it there is deliberate: the
+      # changed-file action has wedged in_progress for over an hour on several
+      # PRs, and any step after it is left pending — which does not fail a PR.
 
   php-compatibility:
     name: PHP Compatibility Check

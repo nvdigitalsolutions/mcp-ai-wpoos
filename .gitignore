@@ -315,3 +315,8 @@ examples/nvoos-service-exchange/scripts/cloudways-*-probe.mjs
 # Nested git worktrees (e.g. .wt-ajax-guard/) — registered via `git worktree add`,
 # not part of the tree. Keeps them out of `git add -A` sweeps.
 .wt-*/
+
+# PHPCS ratchet — saved JSON reports used with --input.
+# See docs/developer/phpcs-ratchet.md.
+.phpcs-ratchet.json
+build/phpcs.json
