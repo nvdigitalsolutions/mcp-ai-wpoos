@@ -134,9 +134,9 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 			$tool_file = sanitize_text_field( $arguments['tool_file'] );
 
 			if ( ! file_exists( $tool_file ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Tool file not found.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_not_found',
+					__( 'Tool file not found.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -144,9 +144,9 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		if ( empty( $schema ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Either schema or tool_file must be provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Either schema or tool_file must be provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

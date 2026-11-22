@@ -155,32 +155,34 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 			// Security: Validate PHP file extension.
 			$extension = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
 			if ( 'php' !== $extension ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Only PHP files (.php) are allowed.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_invalid_arguments',
+					__( 'Only PHP files (.php) are allowed.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
 			// Security: Resolve canonical path to prevent directory traversal attacks.
 			$resolved = realpath( $file_path );
 			if ( false === $resolved ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Tool file not found or not accessible.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_not_found',
+					__( 'Tool file not found or not accessible.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
 			// Security: Restrict to the WordPress content directory (plugins, themes, etc.).
 			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_config_error',
+					__( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'File must be in the WordPress content directory.', 'mcp-ai-wpoos-pro' ),
+				// A path that escapes the content directory is a refusal, not a bad
+				// argument: the caller asked to read something outside the boundary.
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'File must be in the WordPress content directory.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -192,9 +194,9 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		if ( empty( $code ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Either code or tool_file must be provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Either code or tool_file must be provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

@@ -133,9 +133,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['description'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Description is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Description is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -151,23 +151,23 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 		// Get AI service.
 		$ai_service = $this->get_ai_service( $arguments, $context );
 		if ( is_wp_error( $ai_service ) ) {
-			return array(
-				'success' => false,
-				'error'   => $ai_service->get_error_message(),
-			);
+			return $ai_service;
 		}
 
 		// Generate parameters using AI.
 		$ai_response = $ai_service->generate( $prompt );
 
 		if ( is_wp_error( $ai_response ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			// Keep the inner code and data: a caller branches on those, and the
+			// prefix only adds human context.
+			return new WP_Error(
+				$ai_response->get_error_code(),
+				sprintf(
 					/* translators: %s: error message */
 					__( 'AI generation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$ai_response->get_error_message()
 				),
+				$ai_response->get_error_data()
 			);
 		}
 
@@ -175,10 +175,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 		$parameters = $this->parse_ai_response( $ai_response, $output_format );
 
 		if ( is_wp_error( $parameters ) ) {
-			return array(
-				'success' => false,
-				'error'   => $parameters->get_error_message(),
-			);
+			return $parameters;
 		}
 
 		// Format output based on requested format.
