@@ -45,6 +45,14 @@ final class NecessityGate
     /** An unnecessary call that cannot do damage — skipped silently. */
     public const REASON_UNNECESSARY_READ_ONLY = 'unnecessary_read_only';
 
+    /**
+     * The call would need a human, but the operator pre-approved this tool.
+     *
+     * @since 2.1.0
+     * @var string
+     */
+    public const REASON_PRE_APPROVED = 'pre_approved_tool';
+
     /** Search tools whose only useful input is a query. */
     private const SEARCH_TOOLS = array(
         'web_search',
@@ -153,7 +161,8 @@ final class NecessityGate
         string $slug,
         array $arguments,
         ?float $irreversibility = null,
-        ?callable $classifier = null
+        ?callable $classifier = null,
+        ?array $preApproved = null
     ): array {
         if (self::isSafeTool($flags)) {
             return array(
@@ -188,6 +197,24 @@ final class NecessityGate
         }
 
         $verdict = ActionSafetyProfile::determineVerdict($irreversibility, $necessity);
+
+        // Pre-approval waives the human decision, not the validity check: it is
+        // applied only here, so a `block` (an overeager or under-specified call)
+        // reaches the caller untouched.
+        if (
+            ActionSafetyProfile::VERDICT_APPROVAL_REQUIRED === $verdict['verdict']
+            && PreApprovedTools::contains($slug, $preApproved)
+        ) {
+            return array(
+                'verdict' => ActionSafetyProfile::VERDICT_ALLOW,
+                'reason_code' => self::REASON_PRE_APPROVED,
+                'reason' => 'Tool is pre-approved by the operator: it spends budget but is not destructive.',
+                'risk_score' => $verdict['risk_score'],
+                'irreversibility' => $irreversibility,
+                'necessity' => $necessity,
+                'requires_approval' => false,
+            );
+        }
 
         return array(
             'verdict' => $verdict['verdict'],

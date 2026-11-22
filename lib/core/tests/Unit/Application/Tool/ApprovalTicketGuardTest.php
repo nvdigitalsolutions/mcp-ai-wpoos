@@ -70,6 +70,57 @@ final class ApprovalTicketGuardTest extends TestCase
         $this->assertSame(self::ARGUMENTS, $store->lastRequest->arguments);
     }
 
+    public function test_a_pre_approved_tool_runs_without_a_ticket(): void
+    {
+        $store = new RecordingApprovalStore(false, '42');
+        $resolver = new NecessityTestResolver(
+            new NecessityTestTool('generate_gemini_image', self::MEDIA_FLAGS)
+        );
+
+        $reason = (new NecessityGuard($resolver, true, $store))->evaluate(
+            'generate_gemini_image',
+            array('prompt' => 'a cat'),
+            array()
+        );
+
+        $this->assertNull($reason);
+        $this->assertSame(0, $store->requested);
+        $this->assertSame(0, $store->consumed);
+    }
+
+    public function test_an_empty_pre_approved_list_queues_a_ticket_again(): void
+    {
+        $store = new RecordingApprovalStore(false, '42');
+        $resolver = new NecessityTestResolver(
+            new NecessityTestTool('generate_gemini_image', self::MEDIA_FLAGS)
+        );
+
+        $reason = (new NecessityGuard($resolver, true, $store, array()))->evaluate(
+            'generate_gemini_image',
+            array('prompt' => 'a cat'),
+            array()
+        );
+
+        $this->assertNotNull($reason);
+        $this->assertStringContainsString('ticket 42 is pending', $reason);
+        $this->assertSame(1, $store->requested);
+    }
+
+    /**
+     * The flags `generate_gemini_image` declares in the corpus.
+     */
+    private const MEDIA_FLAGS = array(
+        'async',
+        'consumes-tokens',
+        'external-api',
+        'model-dependent',
+        'rate-limited',
+        'requires-capability',
+        'requires-credentials',
+        'requires-model',
+        'write',
+    );
+
     private function guard(?ApprovalTicketInterface $store): NecessityGuard
     {
         $resolver = new NecessityTestResolver(

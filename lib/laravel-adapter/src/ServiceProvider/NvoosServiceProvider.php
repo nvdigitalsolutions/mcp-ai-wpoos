@@ -252,7 +252,13 @@ class NvoosServiceProvider extends ServiceProvider {
 				? $app->make( ApprovalTicketInterface::class )
 				: null;
 
-			$registry->addGuard( new NecessityGuard( $registry, true, $approvals ) );
+			// `null` keeps the shared corpus default; an explicit list replaces it,
+			// and `array()` asks for the prompt back on every tool.
+			$preApproved = isset( $gate['pre_approved'] ) && \is_array( $gate['pre_approved'] )
+				? \array_values( \array_map( 'strval', $gate['pre_approved'] ) )
+				: null;
+
+			$registry->addGuard( new NecessityGuard( $registry, true, $approvals, $preApproved ) );
 		} );
 
 		// Provider router — configured once; holds mutable health/fallback

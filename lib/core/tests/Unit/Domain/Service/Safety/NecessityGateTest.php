@@ -198,4 +198,85 @@ final class NecessityGateTest extends TestCase
         $this->assertSame(ActionSafetyProfile::REASON_HELPFUL_PERMANENT, $decision['reason_code']);
         $this->assertTrue($decision['requires_approval']);
     }
+
+    /**
+     * §158: a paid generation is a spend decision, not a damage decision, and the
+     * corpus pre-approves it so the prompt stays meaningful for the calls that
+     * can actually hurt.
+     */
+    public function test_a_pre_approved_paid_generation_is_allowed(): void
+    {
+        $decision = NecessityGate::decide(
+            self::MEDIA_FLAGS,
+            'generate_gemini_image',
+            array('prompt' => 'a cat')
+        );
+
+        $this->assertSame(ActionSafetyProfile::VERDICT_ALLOW, $decision['verdict']);
+        $this->assertSame(NecessityGate::REASON_PRE_APPROVED, $decision['reason_code']);
+        $this->assertFalse($decision['requires_approval']);
+    }
+
+    /**
+     * Pre-approval waives the human, not the validity check: an under-specified
+     * call still blocks.
+     */
+    public function test_pre_approval_does_not_waive_a_block(): void
+    {
+        $decision = NecessityGate::decide(
+            self::MEDIA_FLAGS,
+            'generate_gemini_image',
+            array(),
+            ActionSafetyProfile::IRREVERSIBILITY_PERMANENT
+        );
+
+        $this->assertSame(ActionSafetyProfile::VERDICT_BLOCK, $decision['verdict']);
+    }
+
+    /**
+     * An operator can ask for the prompts back simply by passing an empty list.
+     */
+    public function test_an_empty_pre_approved_list_restores_approval(): void
+    {
+        $decision = NecessityGate::decide(
+            self::MEDIA_FLAGS,
+            'generate_gemini_image',
+            array('prompt' => 'a cat'),
+            null,
+            null,
+            array()
+        );
+
+        $this->assertSame(ActionSafetyProfile::VERDICT_APPROVAL_REQUIRED, $decision['verdict']);
+        $this->assertTrue($decision['requires_approval']);
+    }
+
+    /**
+     * A tool outside the list is unaffected by the pre-approval path.
+     */
+    public function test_a_tool_outside_the_list_still_requires_approval(): void
+    {
+        $decision = NecessityGate::decide(
+            self::MEDIA_FLAGS,
+            'cancel_higgsfield_request',
+            array('request_id' => 'abc')
+        );
+
+        $this->assertSame(ActionSafetyProfile::VERDICT_APPROVAL_REQUIRED, $decision['verdict']);
+    }
+
+    /**
+     * The flags `generate_gemini_image` declares in the corpus.
+     */
+    private const MEDIA_FLAGS = array(
+        'async',
+        'consumes-tokens',
+        'external-api',
+        'model-dependent',
+        'rate-limited',
+        'requires-capability',
+        'requires-credentials',
+        'requires-model',
+        'write',
+    );
 }

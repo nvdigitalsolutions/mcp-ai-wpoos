@@ -14916,3 +14916,135 @@ Open items, all product or follow-up decisions:
 | adjacent approvals (`AdminApprovalsTest`, `MachineToolApprovalTest`, guard tests) | 15 tests, 46 assertions |
 | container binding | `ApprovalTicketInterface` bound |
 | phpcs PSR-12 (no path arguments) | exit 0 |
+
+## 158. Approval policy and the paid-media allowlist (2026-11-22)
+
+§157 built the ticket channel. This closes the three things that stood between
+it and a defensible gate: the four-eyes rule, the media-tool prompts, and the
+re-measurement.
+
+### 158.1 What the research says
+
+Two findings shaped the decisions, and one of them overturned the earlier
+recommendation.
+
+**Self-approval must be blocked by the system, not by convention.** The
+segregation-of-duties literature is consistent: "can the agent that did the work
+approve its own work? If the honest answer is 'we tell it not to' … the control
+is advisory, and advisory controls fail under segregation-of-duties scrutiny."
+Blocking self-approval "closes a subtle gap … a privileged user could satisfy the
+letter of an approval requirement while violating its intent."
+
+**But the actor matters.** In maker-checker the maker and checker are both
+*people with their own interests*. In agent HITL the requester is the human's
+session and the approver is that human — the OpenAI Agents SDK, MCP
+`elicitation` and LangGraph `interrupt()` all model it that way. The model cannot
+approve its own work; the same human clearing their own request is the design,
+not a bypass. A second person is a stronger control where an estate has two
+operators and an impossibility where it has one.
+
+**Prompting for routine spend is a known failure mode.** Approval fatigue is the
+standard objection to confirmation prompts, and the maker-checker guidance is
+explicit that rules should be data ("each tenant decides … without a deploy")
+and that controls should sit where the decision actually is. Spend is better
+held by a budget than by a prompt that will be rubber-stamped.
+
+### 158.2 Requester ≠ approver — enforced, opt-in
+
+`ApprovalsController::resolve` now rejects a self-approval with `403
+self_approval_forbidden` when `oos.approvals.require_separate_approver` is on.
+The row is left untouched.
+
+**Off by default**, for the reason above. An estate that turns it on needs two
+operators; a single-member estate would deadlock, and a deadlocked gate is worse
+than an advisory one because it stops work rather than merely weakening a
+control. This is the research's own answer — make the rule data, not code.
+
+| state | behaviour |
+|---|---|
+| policy off (default) | requester may resolve their own ticket — today's behaviour |
+| policy on, requester = approver | `403 self_approval_forbidden`, ticket stays pending |
+| policy on, requester ≠ approver | resolves; `resolved_by` records the approver |
+| policy on, no requester | resolves — no person to be conflicted with |
+
+The machine path is unaffected: it records the token's owner as the requester,
+so an operator resolving a machine ticket from a different account is allowed,
+and a solo operator is not locked out while the policy is off.
+
+### 158.3 The paid-media allowlist
+
+§156 called this "eleven paid media generation tools". The corpus says ten
+generation/edit tools plus `cancel_higgsfield_request`. The ten are pre-approved;
+the cancellation is not.
+
+| why the ten | why not the eleventh |
+|---|---|
+| `consumes-tokens` + `external-api` + `write` is a **cost** profile | `cancel_higgsfield_request` declares `destructive` |
+| generating does not publish or delete anything | "destructive still asks a human" is a rule worth keeping simple |
+| the estate already has a cost tracker and a token budget | its flag is arguably over-declared — a corpus decision, not an allowlist one |
+
+The list lives in `Nvoos\Core\Domain\Service\Safety\PreApprovedTools` so both
+runtimes read one source: Laravel through `oos.necessity_gate.pre_approved`,
+WordPress through `wp_mcp_ai_necessity_gate_pre_approved`.
+
+**The override distinguishes unset from none.** `null` keeps the corpus default;
+`array()` restores the prompt for every tool; a list replaces the default. That
+is the difference that lets an operator opt back into prompts without naming
+every slug.
+
+**Pre-approval waives the human, not the validity check.** It is applied only to
+`approval_required`. A malformed call still blocks — `generate_gemini_image`
+with no prompt is `optional × permanent → block`, and the empty-args row of the
+measurement is unchanged at 42 approvals / 20 blocks.
+
+### 158.4 Re-measured
+
+| measure | §156 | now |
+|---|---|---|
+| allow (schema args) | 132 | **142** |
+| warn | 42 | 42 |
+| approval | 20 | **10** |
+| block | 1 | 1 |
+| `pre_approved_tool` | — | **10** |
+| empty args (allow/warn/approval/block) | 120/13/42/20 | 120/13/42/20 |
+
+Exactly ten rows moved, all from `approval` to `allow`. The empty-args row is
+the proof that the allowlist does not waive blocks.
+
+### 158.5 The bound-vs-unbound finding
+
+Binding `ApprovalTicketInterface` **does not change a single verdict**. The ten
+remaining approvals deny whether or not a store is bound; what changes is that
+the denial becomes actionable — a ticket exists to approve.
+
+| guard state | verdict |
+|---|---|
+| no store bound | deny: "no approval store is bound" |
+| store bound, no ticket | deny, and a ticket is queued |
+| store bound, approved ticket | **allow**, ticket consumed once |
+
+So the gate's numbers are the same either way. The ticket's value is that the
+ten are recoverable, not that they are fewer. `ApprovalTicketGuardTest` pins all
+three states.
+
+### 158.6 What remains
+
+| item | state |
+|---|---|
+| `oos.necessity_gate` | still off; enabling it now exposes **10** prompts, all recoverable |
+| `erlang_c_queue_health` | the single `block`; a health check over-declaring `write` |
+| `cancel_higgsfield_request` | gated by its own `destructive` flag; a corpus review candidate |
+| four-eyes default | off; turned on per deploy by an operator with two members |
+
+### 158.7 Gates
+
+| Gate | Result |
+|---|---|
+| targeted core (`PreApprovedTools`, `NecessityGate`, `ApprovalTicketGuard`, `ApprovalRequest`) | 60 tests, 98 assertions |
+| full `lib/core` suite | 1,948 tests, 15,660 assertions |
+| `lib/laravel-adapter` suite | 316 tests, 1,700 assertions (baseline held) |
+| app approvals (`SeparateApproverPolicy`, `DatabaseApprovalTicket`, `AdminApprovals`, `MachineToolApproval`) | 26 tests, 81 assertions |
+| WordPress surface smoke (stub filters) | 6 checks pass |
+| phpcs WPCS on `includes/` + `tests/` | exit 0 |
+| phpcs PSR-12 (no path arguments) | exit 0 |
+| re-run of `bin/measure-necessity-gate.php` | 142 / 42 / 10 / 1 |

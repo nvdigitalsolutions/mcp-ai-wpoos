@@ -31,6 +31,42 @@ return array(
 
     /*
     |--------------------------------------------------------------------------
+    | Necessity gate (Proposal 149 §155–§158)
+    |--------------------------------------------------------------------------
+    |
+    | Refuses overeager tool calls — a delete with no target, mail with no
+    | recipient. Off by default: switching it on is a product decision, not an
+    | install step. When on, an `approval_required` verdict queues a ticket
+    | (`ApprovalTicketInterface`) and the same call runs once a human approves.
+    |
+    | `pre_approved` waives the approval step for tools whose risk is spend
+    | rather than damage. `null` uses the corpus default in
+    | `Nvoos\Core\Domain\Service\Safety\PreApprovedTools`; `array()` prompts for
+    | every tool; a list replaces the default.
+    */
+    'necessity_gate' => array(
+        'enabled'      => (bool) env( 'OOS_NECESSITY_GATE', false ),
+        'pre_approved' => null,
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Approval policy (Proposal 149 §158)
+    |--------------------------------------------------------------------------
+    |
+    | `require_separate_approver` enforces the four-eyes rule: the person who
+    | requested a ticket may not approve it. Off by default because agent HITL
+    | has the human as the principal — the model cannot approve its own work,
+    | but the same human waving through their own session's request is the
+    | design, not a bypass. Turn it on for estates big enough to have two
+    | operators; a single-member estate would have no one to approve.
+    */
+    'approvals' => array(
+        'require_separate_approver' => (bool) env( 'OOS_REQUIRE_SEPARATE_APPROVER', false ),
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin theme (Proposal 149 T-0.6)
     |--------------------------------------------------------------------------
     |
