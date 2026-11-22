@@ -15,8 +15,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class GetPostTaxonomiesTool extends AbstractTool
+class GetPostTaxonomiesTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $errors, private readonly ContentStoreInterface $content)
     {
@@ -51,5 +53,18 @@ class GetPostTaxonomiesTool extends AbstractTool
         $terms = $this->content->getTaxonomyTerms($postId);
         $count = array_sum(array_map('count', $terms));
         return $this->success("$count terms across " . count($terms) . ' taxonomies.', array('post_id' => $postId,'taxonomies' => $terms,'total_terms' => $count));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Reads a local store. Side-effect free, but not cacheable: the store
+     * can change between two identical calls.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_READ;
     }
 }

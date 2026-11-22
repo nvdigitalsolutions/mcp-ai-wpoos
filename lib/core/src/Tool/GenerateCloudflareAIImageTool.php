@@ -14,8 +14,10 @@ namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class GenerateCloudflareAIImageTool extends AbstractTool
+class GenerateCloudflareAIImageTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h)
     {
@@ -93,5 +95,18 @@ class GenerateCloudflareAIImageTool extends AbstractTool
         } catch (\Throwable $e) {
             return $this->errors->create('request_failed', $e->getMessage());
         }
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Calls a third-party API with a stored credential. Outbound, but the
+     * response is returned rather than persisted.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::REMOTE_CREDENTIALED;
     }
 }

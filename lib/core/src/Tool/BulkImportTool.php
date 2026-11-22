@@ -33,8 +33,10 @@ use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Entity\ContentQuery;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Tool\ProjectManagement\Vocabulary;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class BulkImportTool extends AbstractTool
+class BulkImportTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     /** Maximum rows accepted in one call, matching the toolkit import. */
     public const MAX_ROWS = 500;
@@ -426,5 +428,18 @@ class BulkImportTool extends AbstractTool
         }
 
         return false;
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Writes to a local store and persists information. Re-settable in
+     * principle, but the previous value is gone, so not `reversible`.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_WRITE;
     }
 }

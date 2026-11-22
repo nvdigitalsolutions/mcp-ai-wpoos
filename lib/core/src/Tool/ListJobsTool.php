@@ -18,8 +18,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class ListJobsTool extends AbstractTool
+class ListJobsTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(
         ErrorFactoryInterface $errors,
@@ -109,5 +111,18 @@ class ListJobsTool extends AbstractTool
                 'counts' => $counts,
             ),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Reads a local store. Side-effect free, but not cacheable: the store
+     * can change between two identical calls.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_READ;
     }
 }
