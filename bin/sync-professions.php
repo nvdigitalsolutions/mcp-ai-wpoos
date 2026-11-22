@@ -42,6 +42,8 @@ const PROFESSION_SOURCE           = 'includes/knowledge-base/professions';
 const PROFESSION_TARGET           = 'docker/laravel/app-skeleton/resources/professions';
 const PROFESSION_EXCLUDED_PREFIX  = 'pro-';
 const PROFESSION_MANIFEST         = 'manifest.json';
+const PROFESSION_LICENCE          = 'LICENCE.md';
+const PROFESSION_LICENCE_ID       = 'LicenseRef-Proprietary';
 
 /**
  * Build the snapshot in memory.
@@ -96,6 +98,8 @@ function nvoos_profession_snapshot( string $source ): array {
 
 	$manifest = array(
 		'catalogue_version' => $version,
+		'catalogue_licence' => PROFESSION_LICENCE_ID,
+		'licence_file'      => PROFESSION_LICENCE,
 		'generated_by'      => 'bin/sync-professions.php',
 		'source'            => PROFESSION_SOURCE,
 		'professions'       => $count,
@@ -142,6 +146,16 @@ try {
 
 $target   = $root . '/' . PROFESSION_TARGET;
 $existing = glob( $target . '/*.json' );
+
+// The terms travel with the data. A snapshot without its licence file is not
+// something this script will write or bless.
+if ( ! is_file( $target . '/' . PROFESSION_LICENCE ) ) {
+	fwrite(
+		STDERR,
+		'error: ' . PROFESSION_TARGET . '/' . PROFESSION_LICENCE . ' is missing. The catalogue cannot ship without its licence.' . PHP_EOL
+	);
+	exit( 1 );
+}
 
 if ( false === $existing ) {
 	$existing = array();
