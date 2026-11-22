@@ -17,7 +17,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class StripHtmlTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class StripHtmlTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function getSlug(): string
     {
@@ -112,5 +115,18 @@ class StripHtmlTool extends AbstractTool
                 'text'            => $cleaned,
             ),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }
