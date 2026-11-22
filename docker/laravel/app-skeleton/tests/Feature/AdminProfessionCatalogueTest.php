@@ -212,6 +212,19 @@ class AdminProfessionCatalogueTest extends TestCase
     }
 
     /**
+     * The catalogue's terms travel with it: the manifest names the licence and
+     * the file sits beside the data, so an export or a backup carries both.
+     */
+    public function test_the_catalogue_declares_its_licence(): void
+    {
+        $manifest = $this->generatedCatalogue();
+
+        $this->assertSame('LicenseRef-Proprietary', $manifest['catalogue_licence']);
+        $this->assertSame('LICENCE.md', $manifest['licence_file']);
+        $this->assertFileExists(resource_path('professions/'.$manifest['licence_file']));
+    }
+
+    /**
      * A page that cannot accept a payload is a page that cannot grow a second
      * writer by accident. Adding form state here means the contract row has to
      * move from `read-only` to something that declares a writer.
@@ -266,6 +279,7 @@ class AdminProfessionCatalogueTest extends TestCase
 
         $this->assertIsArray($manifest);
         $this->assertArrayHasKey('catalogue_version', $manifest);
+        $this->assertArrayHasKey('catalogue_licence', $manifest);
         $this->assertArrayHasKey('professions', $manifest);
 
         return $manifest;

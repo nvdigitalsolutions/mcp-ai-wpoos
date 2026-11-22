@@ -1,5 +1,7 @@
 {
     "catalogue_version": "sha256:d8ac05d02a1e4c04",
+    "catalogue_licence": "LicenseRef-Proprietary",
+    "licence_file": "LICENCE.md",
     "generated_by": "bin/sync-professions.php",
     "source": "includes/knowledge-base/professions",
     "professions": 260,

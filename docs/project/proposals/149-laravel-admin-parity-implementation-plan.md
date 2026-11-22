@@ -15973,3 +15973,80 @@ contract.
 | phpcs PSR-12 / WPCS on changed files | exit 0 / exit 0 |
 | `bin/check-license-boundary.sh` | intact |
 | workflow YAML parse | three jobs: `readiness`, `capability-flags`, `professions` |
+
+## 169. The catalogue carries its licence (2026-11-22)
+
+§168 moved the catalogue into the app. The app is sold under a **proprietary**
+licence, and the data had no terms of its own — which left the same content
+under three different implied licences at once.
+
+### 169.1 The three ambiguities
+
+| Copy | Implied licence | Problem |
+|---|---|---|
+| `docker/laravel/app-skeleton/resources/professions` | none | Content copied from the GPL plugin tree into a proprietary app. Lawful only because NV Digital owns the copyright — and nothing said so. |
+| `lib/laravel-adapter/resources/professions` (9 rows) | MIT, by proximity | Authored product data inside an MIT package is a real, if small, grant. |
+| the six `pro-*` packs | none | Excluded by the generator, with no recorded entitlement. |
+
+### 169.2 What was added
+
+- **`resources/professions/LICENCE.md`** — `LicenseRef-Proprietary`, the
+  identifier the repo already uses for commercial code. It states: part of the
+  app; licensed by the copyright holder; the same content is GPL-3.0-or-later
+  in the WordPress plugin; no standalone redistribution; do not edit by hand;
+  the Pro packs are a separate entitlement.
+- **`lib/laravel-adapter/resources/professions/LICENCE.md`** — `MIT`. It states
+  that the nine-row starter is a reduced sample, not the catalogue, and how a
+  deployment replaces it.
+- **The generator emits the terms**: `catalogue_licence` and `licence_file` in
+  the manifest, so the licence is machine-readable beside the data. The package
+  starter's manifest carries the same two keys with `MIT`.
+- **The generator refuses to write or bless a snapshot without its licence
+  file.** The CI gate (`--check`) therefore covers the terms, not only the
+  bytes: deleting `LICENCE.md` fails the build.
+
+The manifest hash is unchanged (`sha256:d8ac05d02a1e4c04`). It fingerprints the
+profession documents, not the metadata, so adding a licence does not read as a
+data change.
+
+### 169.3 Licensing confirmed the placement; it did not move it
+
+The earlier recommendation — "relicense the catalogue and ship the full set in
+the MIT package" — was conditional on a permissive relicensing. With a
+proprietary app it is the wrong move: it would grant 260 authored professions
+under MIT. So the split stays:
+
+- **Package (MIT):** nine-row starter, explicitly MIT, explicitly a sample.
+- **App (proprietary):** the 260-row base catalogue under
+  `LicenseRef-Proprietary`, regenerated from the WordPress source.
+
+A public consumer of `nvoos/laravel` therefore gets nine professions. That is
+the honest shape of the product, not a limitation to paper over.
+
+### 169.4 Recorded decision: the starter is MIT
+
+The nine rows are a deliberate sample licensed with the package. If that grant
+is not wanted, the sample should be **replaced with synthetic rows** rather than
+left ambiguous — recorded here so the next reader does not have to re-derive
+the intent.
+
+### 169.5 What is still missing for WordPress parity
+
+`save_profession`. Licensing is distribution; writability is a store. The
+overlay design (`nvoos_professions` tenant table + `ProfessionWriteInterface`,
+reads merging base + overlay with the overlay winning) is the next loop and is
+unaffected by these terms: the **base stays read-only and licensed**, and the
+overlay is tenant-owned.
+
+That is also why a live sync from WordPress remains the wrong answer — it would
+need a WordPress instance and would overwrite the tenant data the overlay
+exists to protect.
+
+### 169.6 Gates
+
+| Gate | Result |
+|---|---|
+| `php bin/sync-professions.php --check` | in step — 12 files, 260 professions, licence declared |
+| app suite (targeted: catalogue, professions, teams) | 27 tests, 130 assertions |
+| phpcs PSR-12 / WPCS on changed files | exit 0 |
+| licence boundary | unchanged — no PHP tree moved |
