@@ -9,6 +9,16 @@ name: Tool Readiness
 #   O3  a servable core tool that shares a slug with a WordPress tool must carry
 #       a `parity` claim (a deliberate port) rather than shadowing silently
 #
+# The second job guards the capability-flag catalogue, which is extracted
+# statically from the WordPress corpus and checked in as data:
+#
+#   G4  the catalogue is byte-identical to what `bin/generate-tool-capability-flags.php`
+#       would emit today
+#
+# G4 is a **hard gate**. A tool whose flags change without the catalogue being
+# regenerated would silently move the necessity gate's verdict — the catalogue is
+# the gate's only vocabulary for a core tool that declares none of its own.
+#
 # The tree is green as of 090-M Phase 2 (61 servable, 19 quarantined, 0 violations).
 # This job is REPORT-ONLY while the gate soaks: `continue-on-error` keeps it from
 # blocking merges, while the JSON report is uploaded for review. Promote it to a
@@ -51,3 +61,25 @@ jobs:
           path: tool-readiness.json
           if-no-files-found: ignore
           retention-days: 14
+
+  capability-flags:
+    name: Capability-flag catalogue
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      # Static extraction (`token_get_all`), no WordPress bootstrap needed.
+      # Fails when a tool's declared flags have moved without the checked-in
+      # catalogue being regenerated.
+      - name: Check the catalogue is in step with the corpus
+        run: php bin/generate-tool-capability-flags.php --check
