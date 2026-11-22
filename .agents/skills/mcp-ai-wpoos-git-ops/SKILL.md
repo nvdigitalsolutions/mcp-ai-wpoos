@@ -732,6 +732,12 @@ can appear in the repo root. Two failure modes follow:
 - `gh api` / `gh pr comment` intermittently fail here with
   `net/http: TLS handshake timeout` (2026-11-16, several in a row). Retry —
   it is the network, not the token or a missing permission.
+- **`gh run view <id> --json status,conclusion` can return EMPTY while a run
+  is queued** (2026-11-22, forge-bridge #8108: twelve polls printed blank
+  lines). The job-level query stayed reliable and is the one to poll when you
+  only need "did my jobs pass":
+  `gh run view <id> --json jobs --jq '.jobs[] | [.name,.status,(.conclusion//"-")] | @tsv'`.
+  A blank poll is not a failure — do not cancel and retry the workflow.
 - After a forced push, GitHub recomputes conflict status automatically;
   re-check `mergeable` before reporting done.
 

@@ -331,9 +331,19 @@ carries its own review-artifact convention next to the docs-hub one:
   `wordpress:cli` container with the plugin dir mounted (no DB needed).
   Do NOT put the version in `--package-name` — wp-cli appends the
   plugin-header version itself, so "Name 1.0.9" produces
-  "Project-Id-Version: Name 1.0.9 1.0.9". Verify with a msgid set-diff:
+  "Project-Id-Version: Name 1.0.9 1.0.9". **Name the directory you pass after
+  the slug too** — `make-pot /tmp/plugin …` derives
+  `Report-Msgid-Bugs-To: …/support/plugin/plugin`; copy the tree to
+  `/tmp/<slug>` (or pass the real plugin dir) so the header stays
+  `…/support/plugin/<slug>`. Verify with a msgid set-diff:
   `comm -23 <(git show HEAD:<pot> | grep '^msgid "' | sort) <(grep '^msgid "' <pot> | sort)`
   must be empty (1.0.9: +3 msgids, 0 lost).
+- **A POT can be stale in CONTENT, not just in version.** 0.3.1 bumped the
+  `Project-Id-Version` but four strings from a feature that merged after the
+  version-prep commit (`#7535`, managed-tier revalidate settings) were never
+  added — the ZIP would have shipped untranslatable UI. Never treat the
+  version line as proof: diff the msgid sets on EVERY release, and read the
+  added msgids to confirm they match the features in the changelog.
 - **1.0.12 released (2026-10-24):** memory-graph bridge seams (#7145:
   `Bridge::register()` declares the base plugin's provenance + RRF graph
   bridges) and the guest-token read-route fix (#7155 — the old check called
@@ -475,6 +485,28 @@ now wildcard-deletes the hashed rate-limit transients. CI gained
 `.github/scripts/check-public-write-routes.php` + a reviewed allowlist
 (`public-write-routes.txt`) that scans `includes/`, `addons/pro/includes/`, and
 `plugins/` (fails on an un-reviewed public write route or a stale entry).
+
+**Third pass — 0.3.2 packaging (2026-11-22, PR #8108).** The T2 code fixes
+were correct; the PREPARED package was not. A feature commit merged after the
+0.3.0 version-prep (`#7535`, managed-tier revalidate settings) shipped in
+0.3.1 without a changelog bullet, without an `== External Services ==` row
+for its new outbound POST, and without a POT regen — four UI strings were
+missing from the shipped `.pot`. The review artifacts also quoted a CI script
+path that did not exist (`check-forge-bridge-public-routes.php`; the real
+file is `check-public-write-routes.php`), and `.wordpress-org/README.md`
+runbook examples still said 0.3.1 while the header said 0.3.2.
+
+Fix pattern before every upload: **diff the plugin tree since the LAST
+PREPARED ZIP, not just since the last review** —
+`git diff --stat <last-prep-sha>..HEAD -- plugins/<slug>`. Every feature in
+that window owes (a) a changelog bullet, (b) an External Services row when it
+adds any remote call (the revalidate hop is admin-configured and off by
+default, and still must be disclosed), and (c) a POT refresh. Then gate the
+BUILT ZIP (see "Final artifact gate" below), not the working tree. 0.3.2:
+80/80 tests (229 assertions), PCP 0/0 at full severity, PHPUnit Forge Bridge
++ Plugin Check + Public Write-Route Gate green on #8108, ZIP 16 files
+`build/nvoos-forge-bridge-v0.3.2.zip`. Listing screenshots 3–4 (Stored
+redirects + revalidate fields) were added in the same PR.
 
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
@@ -686,6 +718,33 @@ all shipped through a green PCP + phpcs + PHPUnit stack.
    array bypasses the capture code (that is exactly why forge-bridge shipped
    the bug).
 
+### Final artifact gate (every upload, not only at first submission)
+
+Run these against the BUILT ZIP / its extracted tree, never the working copy:
+
+1. **PCP at FULL severity.** `wp plugin check <slug> --format=json` without
+   `--severity=5`; the severity-5 run is a narrow claim and the remaining
+   warnings are reviewer-visible. Zero findings at any severity prints the
+   plain `Success: Checks complete. No errors found.` line and no JSON.
+2. **Clean-install smoke with `WP_DEBUG` on.** `wp plugin install <zip>
+   --activate`, then assert the expected routes register and the plugin logs
+   nothing:
+
+   ```bash
+   wp eval 'foreach(rest_get_server()->get_routes() as $k=>$v){ if(0===strpos($k,"/<ns>/") ) echo $k."\n"; }'
+   grep -c '<slug>' wp-content/debug.log   # must be 0 (no match exits 1)
+   ```
+
+   Route values are arrays — indexing `$v[0]`/`$v[1]` emits "Array to string"
+   warnings that land in `debug.log` and look like plugin noise. Ignore the
+   unrelated `wp_update_plugins()` warning when the container cannot reach
+   WordPress.org.
+3. **POT content and version** — msgid set diff plus `Project-Id-Version`
+   equal to the header version.
+4. **Version sweep on EVERY increment**, including patch versions created by a
+   feature commit: header, constant, `Stable tag`, changelog, POT, and the
+   `.wordpress-org/README.md` runbook examples.
+
 ### Reviewer reply email (template)
 
 Keep it brief, factual, no filler (the review explicitly asks for this).
@@ -719,6 +778,11 @@ Thanks,
 
 Process notes from the pass:
 
+- **Re-read the reply against the repo before sending.** Every script path,
+  file name, and test count quoted in the reply must be verified — the T2
+  draft cited `.github/scripts/check-forge-bridge-public-routes.php`, which
+  never existed (the real gate is `check-public-write-routes.php`). A wrong
+  path invites a follow-up question and undermines the rest of the reply.
 - **Version bump is mandatory per release** (Guideline 15): header `Version`,
   `NVOOS_DOCS_HUB_VERSION`, readme `Stable tag`, changelog, upgrade notice,
   POT `Project-Id-Version`, `.wordpress-org/README.md` example versions.
@@ -978,6 +1042,27 @@ Capture pitfalls (all hit in practice):
   text, and textContent, just not pixels). Adding a screenshot requires
   updating `readme.txt == Screenshots ==` AND the
   `.wordpress-org/README.md` asset table in the same commit.
+
+**Scoped section captures (settings sub-sections).** When a settings page
+outgrows one screen, screenshot individual sections rather than an even
+taller fullPage shot:
+
+- Clip the union of the section heading and the element that follows it
+  (`h2` + `xpath=following-sibling::table[1]`), expanded by ~10px. Scroll the
+  heading to `block: 'center'` first so the fixed admin bar never lands in
+  the clip; compute `boundingBox()` (viewport-relative) and pass the rect as
+  `page.screenshot({ clip })`.
+- Keep separate scripts when capture prerequisites differ: the full-page
+  state shots need an unconfigured reset, while section shots are safe on a
+  configured site. forge-bridge: `capture-nvoos-forge-bridge-screenshots.js`
+  (states 1–2) + `capture-nvoos-forge-bridge-sections.js` (sections 3–4).
+- Render masked-credential states by saving demo values first, then DELETE
+  them afterwards so the QA site returns to its prior state. The QA stack has
+  no object-cache drop-in, so direct `wp_options` INSERT/DELETE is visible
+  immediately; on a cached install flush the cache instead.
+- Read the captured PNGs back (`read_file` renders images) before committing
+  — clip math can succeed while the region is blank, clipped mid-row, or
+  shows a stale "Settings saved" notice.
 
 ## readme.txt standards
 
