@@ -108,6 +108,44 @@ final class AgentOrchestrationTest extends TestCase
         $this->assertSame('default', $result['data']['members'][0]['matched_by']);
     }
 
+    public function test_a_wordpress_shaped_payload_composes(): void
+    {
+        $analyst = $this->assistantIn(Tenant::DEFAULT_ID, 'Research Analyst', array(
+            'slug' => 'research-analyst',
+            'primary_role_slugs' => array('researcher'),
+        ));
+
+        // WordPress requires `task_type` and has no description field. The
+        // canonical payload must compose here rather than fail validation.
+        $result = $this->compose()->execute(array(
+            'task_type' => 'research',
+            'roles' => array('researcher'),
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('research', $result['data']['task_type']);
+        $this->assertSame((int) $analyst->id, $result['data']['members'][0]['assistant_id']);
+    }
+
+    public function test_the_tool_honours_an_explicit_agents_map(): void
+    {
+        $this->assistantIn(Tenant::DEFAULT_ID, 'Copywriter', array('slug' => 'copywriter'));
+        $analyst = $this->assistantIn(Tenant::DEFAULT_ID, 'Research Analyst', array(
+            'slug' => 'research-analyst',
+            'primary_role_slugs' => array('researcher'),
+        ));
+
+        $result = $this->compose()->execute(array(
+            'task_description' => 'Draft the brief',
+            'roles' => array('writer'),
+            'agents' => array('writer' => $analyst->id),
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame((int) $analyst->id, $result['data']['members'][0]['assistant_id']);
+        $this->assertSame('explicit', $result['data']['members'][0]['matched_by']);
+    }
+
     public function test_a_team_is_invisible_from_another_estate(): void
     {
         $this->assistantIn(Tenant::DEFAULT_ID, 'Copywriter', array('slug' => 'copywriter'));

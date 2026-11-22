@@ -15498,11 +15498,10 @@ Execution produces activities only; there is no `nvoos_agent_runs` table.
   providers), so a package-level binding makes the tools constructible in both
   suites. A per-runtime readiness flag is still open in 090-m; it is no longer
   blocking anything.
-- **The WordPress `create_agent_team` tool is still broken.** It sends `task`;
-  `WP_MCP_AI_Agent_Team_Orchestrator::compose_team()` requires `task_type`, so
-  the WordPress path returns an error on every call. The adapter accepts both
-  spellings, which makes the shared tool work here but does not fix WordPress.
-  That is a separate PR against the base plugin, not a Laravel port concern.
+- **The WordPress `create_agent_team` tool is not broken.** An earlier draft of
+  this section said it was. §164 corrects that: the WordPress schema, tool and
+  service all use `task_type`. What was wrong was the **core** tool's rejection
+  of the canonical `task_type` payload, and §164 fixes it.
 - **A team does not survive a cache flush**, and its 24-hour expiry is absolute.
   There is no audit trail of a composition beyond the response the caller got.
 - **Composition never plans.** There is no LLM step choosing roles, so a vague
@@ -15564,3 +15563,81 @@ real assistant catalogue, runs the real chat pipeline, and is covered by 20
 package tests and 7 host tests. §162's own rule, *a tool may be absent; it may
 not lie*, is satisfied in the other direction: the rows now tell the truth about
 a capability that exists.
+
+## 164. The orchestration contract is not the same on both runtimes (2026-11-22)
+
+§163.4 recorded a WordPress bug: that `create_agent_team` sends `task` while
+`WP_MCP_AI_Agent_Team_Orchestrator::compose_team()` requires `task_type`, so the
+WordPress path failed on every call. That was wrong. This section records the
+correction and fixes the defect that *is* real.
+
+### 164.1 What the WordPress tool actually does
+
+`includes/tools/class-wp-mcp-ai-tool-create-agent-team.php` declares
+`task_type` as required, validates `task_type` in `execute()`, and passes
+`task_type` to `compose_team()`. Schema, tool and service agree. **The
+WordPress path is not broken.**
+
+The claim came from the *core* tool, `lib/core/src/Tool/CreateAgentTeamTool.php`,
+which sent `task`/`roles`/`priority` because it targets
+`AgentOrchestrationInterface`, not the WordPress service. Two implementations of
+one slug were read as one implementation failing. The lesson is the one §162 was
+already making about the word "workflow": a shared slug is not a shared code
+path.
+
+### 164.2 The defect that is real
+
+The WordPress tool **requires** `task_type` and has no description field. The
+core tool **required** `task_description` and rejected anything else. So the
+canonical WordPress payload — the one an assistant trained on the WordPress
+schema sends — failed validation on this runtime before it ever reached the
+adapter, which already accepted `task_type`.
+
+Fixed in the tool:
+
+- `task_description` and `task_type` are both optional, and `execute()` requires
+  at least one. Rejecting both still prevents composing a team out of nothing.
+- `task_type` uses WordPress's enum and is recorded on the team, so a caller can
+  see that the type was understood.
+- The **`agents` map** was implemented in the adapter and tested, but
+  unreachable through the tool because the schema did not declare it and
+  `execute()` did not pass it. It is now declared and passed through.
+
+The adapter's error message and `taskText()` docblock were corrected to match:
+`task_type` is an accepted spelling because WordPress requires it, not because
+the WordPress service asked for something else.
+
+Composition stays role-driven. `task_type` names the team's category; it does
+**not** select a role template, because this runtime has no team templates and
+inventing them would be a different feature. The schema says so.
+
+### 164.3 What was deliberately not aligned
+
+The other three tools diverge structurally. Adding WordPress's fields as
+optional parameters would let a WordPress-shaped call succeed while doing
+something different, which is the failure mode the manifest's "a tool may be
+absent; it may not lie" rule exists to prevent.
+
+| slug | WordPress | this runtime |
+|---|---|---|
+| `execute_workflow` | `description` + `task_type` — composes a team, then runs it | `team_id` + `workflow` — runs a team that was already composed |
+| `delegate_to_agent` | `agent_id` + `task` (string); no team | `team_id` + `agent_id` + `task` (object); membership is checked |
+| `check_workflow_health` | optional `workflow_id`; reports on all active workflows | required `team_id`; reports on one composed team |
+
+`parity: port` promises the same **capability**, not the same signature. The
+`team_id` requirement on `delegate_to_agent` is a guard rail — a subtask cannot
+be delegated to an assistant that is not in the team — not a format difference
+to be smoothed over. These stay as they are, recorded here so the next reader
+does not mistake the difference for unfinished work.
+
+### 164.4 Gates
+
+| Gate | Result |
+|---|---|
+| `lib/core` suite | 1,951 tests, 15,664 assertions |
+| `lib/laravel-adapter` suite | 336 → **337** tests, 1,791 → **1,795** assertions |
+| app suite (targeted) | 32 tests, 112 assertions (orchestration + catalogue + annotations) |
+| `bin/audit-tool-readiness.php` | 223 rows, servable 203, `unavailable` 1 — no violations |
+| `bin/generate-tool-capability-flags.php --check` | exit 0 — 1,465 tools in step |
+| phpcs PSR-12 | exit 0 |
+| phpcs WPCS on changed files | exit 0 |

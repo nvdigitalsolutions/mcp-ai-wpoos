@@ -110,11 +110,25 @@ final class AgentOrchestrationTest extends TestCase {
 		$this->assertFalse( $delegated['success'] );
 	}
 
-	public function test_compose_requires_a_task(): void {
+	public function test_compose_requires_a_description_or_a_type(): void {
 		$result = $this->orchestration->composeTeam( array( 'roles' => array( 'writer' ) ) );
 
 		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'task description', $result['error'] );
+		$this->assertStringContainsString( 'task type', $result['error'] );
+	}
+
+	public function test_compose_accepts_a_task_type_without_a_description(): void {
+		$result = $this->orchestration->composeTeam(
+			array(
+				'task_type' => 'research',
+				'roles'     => array( 'researcher' ),
+			)
+		);
+
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'research', $result['team']['task'] );
+		$this->assertSame( 'research', $result['team']['task_type'] );
+		$this->assertSame( 'primary_role', $result['team']['members'][0]['matched_by'] );
 	}
 
 	public function test_compose_fails_when_the_estate_has_no_assistants(): void {
