@@ -525,6 +525,23 @@ export interface SiteProfile {
 	/** Page slug to render at `/` (the WordPress static front page). */
 	frontPage?: string;
 	/**
+	 * The build block (2026-11-22) — how strictly the generated project treats
+	 * route conflicts. Absent = Astro's default (`warn`, the first path wins).
+	 */
+	build?: {
+		/**
+		 * `true` writes `prerenderConflictBehavior: "error"` into the generated
+		 * `astro.config.mjs`: two documents emitting one URL fail the build
+		 * instead of one silently winning. Astro gates BOTH duplicate prerender
+		 * paths and duplicate content ids with this setting.
+		 *
+		 * Opt-in per site, deliberately: turning it on for an existing site can
+		 * surface a pre-existing CMS defect (two pages sharing a slug across
+		 * parents) as a failed build on the next deploy.
+		 */
+		strictRoutes?: boolean;
+	};
+	/**
 	 * How the site navigates — an OPERATOR SETTING, not an inference.
 	 *
 	 * `--inventory` derives a verdict into `inventory.shape`, but that is a

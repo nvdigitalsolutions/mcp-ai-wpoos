@@ -2143,6 +2143,7 @@ const GATE_ORDER = [
 	'band flow',
 	'nav anchors',
 	'built ids',
+	'route keys',
 	'fact consumption',
 	'chrome facts',
 	'font coverage',
@@ -2634,6 +2635,48 @@ async function runVerify( profileRef, options ) {
 				`${ duplicates.length } duplicate id(s), ${ broken.length } targeted`
 			);
 		}
+	}
+	// Route keys (2026-11-22): a duplicate URL is INVISIBLE after a build — the
+	// loser was overwritten. Astro's glob loader already warns and drops an
+	// EXACT duplicate slug in one collection (a build failure under
+	// `build.strictRoutes`); this gate reads the post-sync store, which still
+	// holds what that check does not compare — case variants, WordPress-side
+	// duplicates and two collections mapping one path. Skipped, never passed,
+	// when the store is absent.
+	try {
+		const { findRouteKeyConflicts, readContentStore } = await import( '../lib/route-keys.ts' );
+		const store = readContentStore( options.target );
+		if ( 'error' in store ) {
+			record( 'route keys', 'skip', store.error );
+		} else {
+			const report = findRouteKeyConflicts( store.root, profile.collections ?? [] );
+			if ( report.conflicts.length === 0 ) {
+				console.log(
+					`\u2713 Route keys: ${ report.entries } entr(ies) across ${ report.collections.length } collection(s) \u2014 every URL is claimed once.`
+				);
+				record( 'route keys', 'pass', `${ report.entries } entr(ies), no duplicate URL` );
+			} else {
+				for ( const conflict of report.conflicts.slice( 0, 8 ) ) {
+					console.warn(
+						`\u2717 Route keys: ${ conflict.collection } \u2014 ${ conflict.route } is claimed by ids ${ conflict.ids.join(
+							', '
+						) } (${ conflict.kind })`
+					);
+				}
+				if ( report.conflicts.length > 8 ) {
+					console.warn( `  \u2026 ${ report.conflicts.length - 8 } more.` );
+				}
+				process.exitCode = 1;
+				record(
+					'route keys',
+					'fail',
+					`${ report.conflicts.length } duplicate URL/document claim(s)`
+				);
+			}
+		}
+	} catch ( error ) {
+		// A gate that cannot be evaluated is SKIPPED, never passed.
+		record( 'route keys', 'skip', error instanceof Error ? error.message : String( error ) );
 	}
 	// Fact consumption (the "a component ignored the fact" class): every fact a
 	// band declares must leave its marker in that band's built HTML — jayainc's
@@ -4366,7 +4409,7 @@ program
 	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
 	.option( '--all', 'enable every gate (default \u2014 kept as an explicit alias)' )
-	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, font coverage, text, SEO, tracking)' )
+	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, route keys, font coverage, text, SEO, tracking)' )
 	.option( '--no-bands', 'skip the per-band audit (presence · surface · content · facts · text · geometry per band)' )
 	.option( '--bands-warn', 'report per-band failures as warnings instead of failing the run' )
 	.option( '--bands-json <path>', 'where to write the per-band report (default <target>/verify-artifacts/bands.json)' )
@@ -4786,7 +4829,12 @@ program
 
 		console.log( `\u2713 Materialized ${ documents.length } document(s) into ${ outDir }` );
 		for ( const doc of documents ) {
-			console.log( `  - ${ doc.collection }/${ doc.slug } — ${ doc.htmlBytes } B body` );
+			// A shared slug is now renamed in BOTH the filename and the frontmatter,
+			// so `file` always equals `slug`; the provenance field is the signal.
+			const renamed = doc.slugRenamedFrom
+				? ` (was "${ doc.slugRenamedFrom }" — the slug is shared; both documents kept)`
+				: '';
+			console.log( `  - ${ doc.collection }/${ doc.slug } — ${ doc.htmlBytes } B body${ renamed }` );
 		}
 		// The flag is the DECLARATION that the CMS is gone, so the operator makes
 		// it deliberately: setting it turns every collection local-only.
@@ -4800,6 +4848,7 @@ program
 	.argument( '<profileRef>', 'site.json path or registered site name' )
 	.requiredOption( '--from <dir>', 'the built project carrying .forge-cache/media-localize.json' )
 	.option( '--out <dir>', 'where to write (default: <profile>.media beside the profile)' )
+	.option( '--strict', 'exit 1 when the snapshot carries advisory warnings (CI)' )
 	.action( async ( profileRef, options ) => {
 		const { writeMediaSnapshot } = await import( '../lib/media-snapshot.ts' );
 		const profilePath = profilePathOf( profileRef );
@@ -4809,7 +4858,11 @@ program
 			process.exit( 1 );
 		}
 		try {
-			const result = await writeMediaSnapshot( { projectDir: options.from, outDir } );
+			const result = await writeMediaSnapshot( {
+				projectDir: options.from,
+				outDir,
+				strict: Boolean( options.strict ),
+			} );
 			console.log(
 				`\u2713 Snapshotted ${ result.count } URL(s) / ${ result.files } file(s) (${ ( result.bytes / 1024 / 1024 ).toFixed( 1 ) } MB) into ${ outDir }`
 			);
@@ -4818,6 +4871,12 @@ program
 			}
 			if ( result.missing.length > 10 ) {
 				console.warn( `  \u2026and ${ result.missing.length - 10 } more (the build report names them).` );
+			}
+			for ( const warning of result.warnings.slice( 0, 10 ) ) {
+				console.warn( `  \u26a0 ${ warning }` );
+			}
+			if ( result.warnings.length > 10 ) {
+				console.warn( `  \u2026and ${ result.warnings.length - 10 } more warning(s).` );
 			}
 			console.log( '\nNext: set "media": { "snapshot": true } on the profile, then rebuild.' );
 		} catch ( error ) {
