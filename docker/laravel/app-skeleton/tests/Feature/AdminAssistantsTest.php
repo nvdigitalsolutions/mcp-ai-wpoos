@@ -319,10 +319,12 @@ class AdminAssistantsTest extends TestCase
     }
 
     /**
-     * A panel edit does not carry the fourteen `advanced` keys, and must not
-     * drop them: they are the console's and the REST surface's to edit.
+     * A panel edit now carries the fourteen `advanced` keys rather than leaving
+     * them to the console, so it must round-trip them instead of dropping them.
+     * The structured editors are covered by `AssistantAdvancedFormTest`; this
+     * keeps the simple path pinned on the assistants suite.
      */
-    public function test_a_panel_edit_preserves_the_advanced_meta_keys(): void
+    public function test_a_panel_edit_round_trips_the_advanced_meta_keys(): void
     {
         $alice = $this->estateAdmin(Tenant::DEFAULT_ID);
         $tenant = Tenant::query()->findOrFail(Tenant::DEFAULT_ID);

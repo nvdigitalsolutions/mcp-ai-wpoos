@@ -97,15 +97,16 @@ class Assistant extends Model
     /**
      * Virtual attributes exposed through `attributesToArray()`.
      *
-     * `primary_role_slugs` lives in `meta`, but the `/admin` assistants form
-     * binds a field to that name. Filament fills a form from the record's
-     * attribute array, so without the append the field would hydrate empty on
-     * every edit and the first save would wipe the selection. `toRecord()` and
-     * `toBundleEntry()` are explicit, so the console wire shape is unaffected.
+     * `primary_role_slugs` and `advanced` live in `meta`, but the `/admin`
+     * assistants form binds fields to those names. Filament fills a form from
+     * the record's attribute array, so without the append the fields would
+     * hydrate empty on every edit and the first save would wipe the stored
+     * values. `toRecord()` and `toBundleEntry()` are explicit, so the console
+     * wire shape is unaffected.
      *
      * @var list<string>
      */
-    protected $appends = ['primary_role_slugs'];
+    protected $appends = ['advanced', 'primary_role_slugs'];
 
     /**
      * The estate that owns this assistant (Proposal 149 T-0.7).
@@ -156,6 +157,20 @@ class Assistant extends Model
             'primary_role_slugs' => $this->primaryRoleSlugs(),
             'advanced' => $this->advancedFields(),
         ];
+    }
+
+    /**
+     * Form/serialisation binding for `advanced`.
+     *
+     * Returns every whitelisted key with its type default, so the panel form
+     * always hydrates the full set and can clear a value explicitly. The
+     * REST/console shape stays `toRecord()`'s explicit `advancedFields()`.
+     *
+     * @return array<string, mixed>
+     */
+    public function getAdvancedAttribute(): array
+    {
+        return $this->advancedFields();
     }
 
     /**
