@@ -633,3 +633,72 @@ This closes the original four. `list_mcp_tools`, `get_site_health`,
 `get_system_logs` and `mcp_server_info` all have manifest rows and evidence; the
 next gap in the queue is the assistant / research lifecycle tools, then memory
 extras and WP-shaped media naming.
+
+---
+
+## 15. Addendum: the queue reviewed, and a validated `replaced_by` (2026-11-23)
+
+### What the review found
+
+The four introspection tools are served (§11–§14) and the readiness auditor now
+reports **223 classes, 227 rows, 208 servable, no violations**. So there is no
+"cheap row" left: every remaining gap needs a design decision or a new store, not
+a classification. Recording the findings so the next slice starts from evidence:
+
+| Candidate | Why it is not a slice |
+|---|---|
+| `trace_memory_provenance` | Needs version history and a graph neighbourhood. `MemoryStoreInterface` has `store/get/update/delete/search/listByAgent` — no history, no graph bridge. Implementing it would mean inventing history. |
+| `memory_audit_trail` | There is no memory-write audit store. `nvoos_admin_audit` records operator/admin actions, not memory operations, so reading it here would misattribute the source. |
+| `batch_manage_memory` | A large destructive surface: bulk update, bulk delete, export, import and three tag operations, with filters and `dry_run`. It needs its own safety design (caps, per-id outcomes, confirmation), not a wrapper. |
+| `create_assistant` | `AssistantServiceInterface` is read-only (`validate`, `getConfig`, `getDefault`, `listForUser`). A create/update tool needs a write contract and estate-scoping rules first. |
+| `analyze_image` / `analyze_video` / `analyze_code_sequence` | Provider dispatch with cost and privacy consequences, and the biggest of the queue. M, not S. |
+| WP-shaped media CRUD names | WordPress `get_media` returns an attachment payload; `get_file_info` returns storage metadata. An alias would lie about the shape. |
+| `chat-profiles` console key | No SPA chat-profile UI exists, so the key would be a control with no reader. It has to ship with the switcher. |
+| Higgsfield async persistence | Persisting provider-returned URLs means fetching them, which needs an https-only host allowlist and a size cap first. |
+| A2A / mesh | Needs a transport decision. |
+
+This is why §15 does something small and certain instead of half of an M.
+
+### The gap: a cross-host pointer with no check
+
+`replaced_by` is a **cross-host** pointer: it names the canonical slug on the
+WordPress host (`analyze_image_prompt` → `analyze_image`), which is what §5.2
+documented. Nothing validated it, so a typo in one of the 19 values would send a
+reader to a slug no host serves — the same failure the quarantined rows exist to
+prevent, one step later.
+
+The current values all resolve. Checked against the auditor's WordPress map (356
+slugs indexed from `includes/tools` + `addons/pro/includes/tools`): 19 of 19
+found. So this is a gate, not a data repair — and the first draft of this section
+claimed a typo (`generate_image_captiont`) that `git log -S` shows never existed;
+the "finding" was interleaved terminal output, not the file.
+
+Added:
+
+- The manifest header states what `replaced_by` means and where it is checked.
+- `bin/audit-tool-readiness.php` reports a new **G2 replacement** violation when a
+  target resolves to neither a WordPress tool nor a manifest row. The WordPress
+  map is the one the auditor already builds for the shadow check
+  (`includes/tools` + `addons/pro/includes/tools`), so the gate costs one lookup
+  per row and no new dependency.
+
+The rule is not in `ToolReadiness::violations()`: core ships to hosts that have no
+WordPress corpus, and validating a cross-host pointer without the other host is
+how a check becomes a guess. The auditor owns the corpus, so the auditor owns the
+check.
+
+Proven by injecting a bad pointer into a synthetic manifest:
+
+```
+G2 replaced_by names a slug no host serves (1):
+  - demo_replacement => replaced_by 'no_such_wordpress_slug' is not a WordPress tool or a manifest row
+```
+
+and the committed manifest audits clean (223 / 227 / 208, no violations).
+
+### The next real slice, named
+
+`create_assistant` is the highest-value item that is implementable next, and it
+begins with a contract rather than a tool: an `AssistantWriteInterface` with
+create/update semantics, estate scoping, and the same confirm-then-apply shape as
+the root-key-gated operator writes. That is the decision §16 should open with.

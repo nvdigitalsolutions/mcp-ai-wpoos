@@ -433,6 +433,7 @@ $violations = array(
 	'vocabulary'   => array(),
 	'slug_mismatch' => array(),
 	'shadowed'     => array(),
+	'replacement'  => array(),
 );
 
 $decisions = array();
@@ -460,6 +461,16 @@ foreach ( $existing as $slug => $row ) {
 	$probe = (string) ( $row['probe'] ?? '' );
 	if ( '' !== $probe && ! in_array( $probe, array( 'call', 'validate_only', 'dry_run' ), true ) ) {
 		$violations['vocabulary'][] = $slug . ' => probe \'' . $probe . '\' is outside the probe vocabulary';
+	}
+
+	// `replaced_by` names the canonical slug on the WordPress host, not a row
+	// here. A target no host serves is a 404 for the reader who follows it, so
+	// it must resolve against the WordPress corpus (or, for a future port, a
+	// row in this manifest).
+	$replaced_by = (string) ( $row['replaced_by'] ?? '' );
+
+	if ( '' !== $replaced_by && ! isset( $wordpress[ $replaced_by ] ) && ! isset( $existing[ $replaced_by ] ) ) {
+		$violations['replacement'][] = $slug . ' => replaced_by \'' . $replaced_by . '\' is not a WordPress tool or a manifest row';
 	}
 
 	$fqcn = (string) ( $row['class'] ?? '' );
@@ -614,6 +625,7 @@ if ( $options['json'] ) {
 		'vocabulary'    => 'G2 readiness outside the vocabulary',
 		'slug_mismatch' => 'G2 manifest slug disagrees with the class',
 		'shadowed'      => 'O3 servable core tool shadows a WordPress slug without a parity claim',
+		'replacement'   => 'G2 replaced_by names a slug no host serves',
 	);
 
 	foreach ( $labels as $key => $label ) {
