@@ -491,12 +491,11 @@ if ( ! function_exists( 'wp_mcp_ai_run_process' ) ) {
 		$process = proc_open( $args, $descriptors, $pipes, $cwd );
 
 		if ( ! is_resource( $process ) ) {
-				// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-result utility function.
 				return array(
 					'stdout'    => '',
 					'stderr'    => 'Failed to start process.',
 					'exit_code' => -1,
-					'success'   => false,
+					'success'   => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'timed_out' => false,
 				);
 		}
@@ -606,12 +605,11 @@ if ( ! function_exists( 'wp_mcp_ai_run_shell' ) ) {
 		$process = proc_open( $command, $descriptors, $pipes, $cwd );
 
 		if ( ! is_resource( $process ) ) {
-				// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-result utility function.
 				return array(
 					'stdout'    => '',
 					'stderr'    => 'Failed to start process.',
 					'exit_code' => -1,
-					'success'   => false,
+					'success'   => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'timed_out' => false,
 				);
 		}

@@ -118,15 +118,16 @@ class Test_Graphify_Generic_SQL_Driver extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test_connection without DSN returns a structured failure (no fatal,
-	 * no remote call).
+	 * Test_connection without DSN returns WP_Error, per the source interface
+	 * contract (no fatal, no remote call).
 	 */
 	public function test_connection_returns_failure_when_dsn_missing() {
 		$driver = new NV_oOS_Graphify_Remote_Generic_SQL();
 		$driver->set_config( array() );
 		$result = $driver->test_connection();
-		$this->assertFalse( $result['success'] );
-		$this->assertNotEmpty( $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'nvoos_graphify_connection_failed', $result->get_error_code() );
+		$this->assertNotEmpty( $result->get_error_message() );
 	}
 
 	/**

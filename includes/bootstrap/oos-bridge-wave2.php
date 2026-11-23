@@ -181,14 +181,17 @@ function wp_mcp_ai_oos_file_orchestration( string $provider = 'openai' ): Nvoos\
 				$this->p = $p; }
 			public function uploadFile( string $fp, string $mt, array $o = array() ): array {
 				return array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- OOS bridge fallback returns the domain contract array shape, not a tool envelope.
 					'error'   => 'File orchestration requires OOS engine',
 				);
 			}
 			public function pollStatus( string $id ): array {
 				return array( 'status' => 'unknown' ); }
 			public function deleteFile( string $id ): array {
-				return array( 'success' => false ); }
+				return array(
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- OOS bridge fallback returns the domain contract array shape, not a tool envelope.
+				);
+			}
 			public function setMaxPollingAttempts( int $a ): void {}
 			public function setPollingDelay( int $s ): void {}
 		};

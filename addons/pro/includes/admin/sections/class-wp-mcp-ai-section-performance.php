@@ -686,7 +686,7 @@ composer install</pre>
 
 		if ( ! isset( $test_files[ $test_type ] ) ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message' => sprintf(
 					/* translators: %s: test type */
 					__( 'Unknown test type: %s', 'mcp-ai-wpoos-pro' ),
@@ -699,7 +699,7 @@ composer install</pre>
 
 		if ( ! file_exists( $test_file ) ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message' => sprintf(
 					/* translators: %s: file path */
 					__( 'Test file not found: %s', 'mcp-ai-wpoos-pro' ),
@@ -712,7 +712,7 @@ composer install</pre>
 		$phpunit_bin = WP_MCP_AI_PATH . 'vendor/bin/phpunit';
 		if ( ! file_exists( $phpunit_bin ) ) {
 			return array(
-				'success'       => false,
+				'success'       => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message'       => __( 'Performance tests require development dependencies.', 'mcp-ai-wpoos-pro' ),
 				'details'       => __( 'These tests are designed for local development environments. On production or managed hosting (like Cloudways), performance monitoring is available through the dashboard metrics above.', 'mcp-ai-wpoos-pro' ),
 				'setup_command' => 'composer install',
@@ -745,7 +745,7 @@ composer install</pre>
 		// Check if WordPress test environment is required.
 		if ( strpos( $output_text, 'WP_UnitTestCase' ) !== false || strpos( $output_text, 'WP_TESTS_DIR' ) !== false ) {
 			return array(
-				'success'       => false,
+				'success'       => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message'       => __( 'WordPress test environment not configured. Use CLI command below or run setup first.', 'mcp-ai-wpoos-pro' ),
 				'details'       => __( 'The performance tests require the WordPress test framework. Please run the setup script or use the CLI command.', 'mcp-ai-wpoos-pro' ),
 				'cli_command'   => './bin/run-performance-tests.sh --suite=' . $test_type,
@@ -779,7 +779,7 @@ composer install</pre>
 			);
 		} else {
 			return array(
-				'success'      => false,
+				'success'      => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'message'      => sprintf(
 					/* translators: %s: test type */
 					__( '%s tests failed. See details below.', 'mcp-ai-wpoos-pro' ),
@@ -1138,7 +1138,7 @@ composer install</pre>
 
 			default:
 				return array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'message' => __( 'Unknown test type', 'mcp-ai-wpoos-pro' ),
 				);
 		}

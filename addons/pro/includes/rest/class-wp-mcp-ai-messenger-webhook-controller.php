@@ -324,7 +324,7 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 			// Return 200 to prevent retries for malformed requests.
 			return rest_ensure_response(
 				array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'message' => 'Empty payload',
 				)
 			);
@@ -349,7 +349,7 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 
 			return rest_ensure_response(
 				array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'message' => 'Invalid object type',
 				)
 			);

@@ -106,9 +106,9 @@ class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface,
 		$include_edges = isset( $arguments['include_edges'] ) ? (bool) $arguments['include_edges'] : true;
 
 		if ( empty( $question ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Question is required.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Question is required.', 'nvoos-graphify' )
 			);
 		}
 

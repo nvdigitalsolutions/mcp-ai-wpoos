@@ -93,9 +93,10 @@ class NV_oOS_Algorave_Tool_Play_Control implements WP_MCP_AI_Tool_Interface, WP_
 
 		$valid_actions = array( 'play', 'stop', 'pause', 'record', 'set_bpm', 'set_cps', 'set_bank' );
 		if ( ! in_array( $action, $valid_actions, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid action. Use: play, stop, pause, record, set_bpm, set_cps, or set_bank.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'wp_mcp_ai_invalid_arguments',
+				__( 'Invalid action. Use: play, stop, pause, record, set_bpm, set_cps, or set_bank.', 'nvoos-algorave' ),
+				array( 'action' => $action )
 			);
 		}
 

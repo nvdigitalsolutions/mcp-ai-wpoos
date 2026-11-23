@@ -193,9 +193,9 @@ class NV_oOS_Graphify_Remote_Generic_GraphQL implements NV_oOS_Graphify_Remote_S
 	public function test_connection() {
 		$endpoint = $this->get_endpoint_url();
 		if ( empty( $endpoint ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No endpoint_url configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No endpoint_url configured.', 'nvoos-graphify' )
 			);
 		}
 		$query = isset( $this->config['query'] ) ? trim( (string) $this->config['query'] ) : '';
@@ -207,23 +207,20 @@ class NV_oOS_Graphify_Remote_Generic_GraphQL implements NV_oOS_Graphify_Remote_S
 
 		$result = $this->post_graphql( $endpoint, $query, array() );
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status code */
-				'message' => sprintf( __( 'HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] ),
+				sprintf( __( 'HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] )
 			);
 		}
 		$body = json_decode( (string) $result['body'], true );
 		if ( is_array( $body ) && ! empty( $body['errors'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'GraphQL endpoint returned errors.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'GraphQL endpoint returned errors.', 'nvoos-graphify' )
 			);
 		}
 		return array(

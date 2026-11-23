@@ -50,9 +50,12 @@ CI reported success on every PR. A baseline without a ratchet is a suggestion.
 
 4. **Zero-tolerance sources must be zero.** Parse errors (`Internal.Exception`)
    are not debt. Neither is a rule the tree has already fully satisfied: the
-   sanitize-at-entry and decision-scope sniffs are at zero, and the ratchet keeps
-   them there. `--update` refuses to run while a zero-tolerance source is above
-   zero, so a parse error cannot be "budgeted".
+   sanitize-at-entry and decision-scope sniffs are at zero, and so is
+   `WPMCPAI.Tools.CanonicalReturnEnvelope` since the `#7212` sweep finished —
+   the first class to go from a count to a hard gate. Legitimate DTOs are
+   annotated with their reason; nothing of this class may be budgeted.
+   `--update` refuses to run while a zero-tolerance source is above zero, so a
+   parse error cannot be "budgeted".
 
 5. **No uncovered tree.** Paths are matched first-match-wins against the
    ordered `scopes` list, and the last scope (`uncovered`, empty `paths`) is the
@@ -66,10 +69,10 @@ Order matters — specific prefixes come before general ones.
 
 | Scope | Paths | Errors | Warnings |
 |---|---|---|---|
-| `includes` | `includes/` | 120 | 706 |
-| `addons-pro` | `addons/pro/` | 444 | 2221 |
-| `addons-other` | `addons/` | 270 | 916 |
-| `tests` | `tests/` | 1843 | 1759 |
+| `includes` | `includes/` | 120 | 698 |
+| `addons-pro` | `addons/pro/` | 444 | 2198 |
+| `addons-other` | `addons/` | 270 | 841 |
+| `tests` | `tests/` | 1843 | 1757 |
 | `plugins` | `plugins/` | 106 | 13 |
 | `core-trees` | `core/`, `shared/`, `.agents/`, `blueprints/` | 198 | 12 |
 | `misc` | `examples/`, `.github/`, `mcp-ai-wpoos.php`, `mcp-ai-wpoos-base.php` | 28 | 31 |

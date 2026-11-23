@@ -123,9 +123,10 @@ class WP_MCP_AI_Tool_Page_Agent_Execute implements WP_MCP_AI_Tool_Interface {
 		$max_steps       = isset( $arguments['max_steps'] ) ? absint( $arguments['max_steps'] ) : 0;
 
 		if ( empty( $instruction ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Instruction cannot be empty.', 'nvoos-page-agent' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Instruction cannot be empty.', 'nvoos-page-agent' ),
+				array( 'field' => 'instruction' )
 			);
 		}
 

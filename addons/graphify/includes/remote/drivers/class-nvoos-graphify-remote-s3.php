@@ -155,15 +155,12 @@ class NV_oOS_Graphify_Remote_S3 implements NV_oOS_Graphify_Remote_Source_Interfa
 	public function test_connection() {
 		$result = $this->list_objects_v2( '', 1 );
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		if ( ! empty( $result['error'] ) ) {
-			return array(
-				'success' => false,
-				'message' => (string) $result['error'],
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				(string) $result['error']
 			);
 		}
 		return array(

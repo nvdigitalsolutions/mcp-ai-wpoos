@@ -112,10 +112,7 @@ class NV_oOS_Graphify_Remote_M365 extends NV_oOS_Graphify_Remote_Source_Base {
 	public function test_connection() {
 		$token = $this->resolve_token();
 		if ( is_wp_error( $token ) ) {
-			return array(
-				'success' => false,
-				'message' => $token->get_error_message(),
-			);
+			return $token;
 		}
 		$result = $this->get_http()->get(
 			self::API_BASE . '/me',
@@ -129,16 +126,13 @@ class NV_oOS_Graphify_Remote_M365 extends NV_oOS_Graphify_Remote_Source_Base {
 			);
 		}
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status. */
-				'message' => sprintf( __( 'Microsoft Graph returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] ),
+				sprintf( __( 'Microsoft Graph returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] )
 			);
 		}
 		return array(
