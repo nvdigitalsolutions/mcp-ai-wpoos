@@ -59,6 +59,14 @@ return array(
 			'replaced_by' => 'analyze_file_suitability',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'analyze_image' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AnalyzeImageVisionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AnalyzeImageVisionToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'analyze_image_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AnalyzeImageTool',
 			'readiness' => 'quarantined',

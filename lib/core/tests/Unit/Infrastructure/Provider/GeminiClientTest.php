@@ -122,6 +122,52 @@ final class GeminiClientTest extends TestCase
         );
     }
 
+    /**
+     * `inlineData` carries bytes and nothing else, so the declared media type is
+     * the only evidence of what they are. This answered `image/jpeg` for every
+     * image regardless of what the data URI said, which mislabels every PNG and
+     * WebP — and the old pattern could not match `image/svg+xml` at all.
+     */
+    public function testChatLabelsAnInlineImageWithItsDeclaredMediaType(): void
+    {
+        $captured = '';
+
+        $this->httpClient->method('send')->willReturnCallback(
+            static function (string $method, string $url, array $headers = array(), ?string $body = null) use (&$captured): HttpResponse {
+                $captured = (string) $body;
+
+                return new HttpResponse(200, '{"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}');
+            }
+        );
+
+        $cases = array(
+            'data:image/png;base64,AAAA'       => array( 'image/png', 'AAAA' ),
+            'data:image/webp;base64,BBBB'      => array( 'image/webp', 'BBBB' ),
+            'data:image/svg+xml;base64,CCCC'   => array( 'image/svg+xml', 'CCCC' ),
+        );
+
+        foreach ($cases as $uri => [$mime, $data]) {
+            $this->client->chat(
+                array(
+                    array(
+                        'role'    => 'user',
+                        'content' => array(
+                            array( 'type' => 'text', 'text' => 'What is this?' ),
+                            array( 'type' => 'image_url', 'image_url' => array( 'url' => $uri ) ),
+                        ),
+                    ),
+                ),
+                array( 'model' => 'gemini-2.0-flash' ),
+            );
+
+            $payload = \json_decode($captured, true);
+            $part    = $payload['contents'][0]['parts'][1]['inlineData'] ?? array();
+
+            $this->assertSame($mime, $part['mimeType'] ?? null, "Wrong media type for {$uri}");
+            $this->assertSame($data, $part['data'] ?? null, "Wrong payload for {$uri}");
+        }
+    }
+
     public function testChatNormalizesGeminiFinishReason(): void
     {
         $response = new HttpResponse(200, json_encode(array(

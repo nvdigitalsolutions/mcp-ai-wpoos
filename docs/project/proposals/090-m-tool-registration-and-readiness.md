@@ -1075,3 +1075,124 @@ producing two rows, `overwrite` replacing the prompt in place, `not a bundle` �
 `lib/core` 2079 / 16,068; adapter 348 / 1,833; skeleton import + import-redaction
 + export + portability + registration + diagnostics 51 / 191. Auditor 231 rows /
 212 servable, no violations. phpcs clean on all seven files.
+
+## 20. Addendum: analyze_image, and the transport that was already there (2026-11-23)
+
+### The slice
+
+`analyze_image` was the first of the **19 `replaced_by` promises** — the WP slugs
+that only had a `*_prompt` stand-in, quarantined in the manifest with a pointer to
+the tool they stand in for. `analyze_image_prompt` has carried
+`replaced_by: analyze_image` since §15; this is what it pointed at.
+
+### The finding: no new provider surface was needed
+
+The plan going in assumed a new "run this prompt through a model" contract, because
+`AgentRunnerInterface` is not it — `run()` needs an assistant id, executes that
+assistant's **tool set** (a utility call would recurse into tools), and has no
+image input.
+
+It turned out not to be needed at all. `GeminiClient` and `AnthropicClient`
+already accept OpenAI-format messages carrying an `image_url` segment and convert
+them to their own dialect, and `OpenAiCompatibleClient` speaks it natively. So the
+multimodal transport existed; only the tool did not. `VisionRequest` builds that
+message, `ProviderRouter` picks the client, and the tool is argument handling and
+response extraction. One contract was avoided, not added.
+
+### Where the bytes come from, and the URL refusal
+
+| Source | Path |
+|---|---|
+| `file_id` | the §162 registry: `getMetadata()`, the registry's own `userCanAccess()`, `isImage()`, a size cap, then the bytes |
+| `image_data` | a `data:` URI the caller already holds |
+| `url` | **refused** |
+
+A remote URL is refused for two independent reasons, either sufficient:
+
+1. **Both non-OpenAI converters treat the value as base64 payload.** They strip a
+   `data:` prefix if present and forward the remainder as the image bytes, so a
+   `https://…` string arrives at the provider as garbage. The request would fail,
+   or the model would be asked about nothing.
+2. **An SSRF guard could be written but not enforced.** `HttpClientInterface::send()`
+   exposes no redirect or size controls, so a redirect into a private range walks
+   past any pre-flight check. A guard that cannot be enforced is worse than no
+   guard, because it reads as protection.
+
+The refusal names both alternatives, because a "no" without a next step is how a
+model retries the same call five times. `file_id` also gets the ownership check
+for free: a caller cannot analyse a file it could not download. A file it may not
+access answers **404**, not 403 — the same shape §17 and §18 use, so the three
+tools cannot be compared to learn whether a row exists.
+
+### The Gemini bug this exposed
+
+`GeminiClient::convertMessages()` hardcoded `mimeType: 'image/jpeg'` for every
+inline image, and its data-URI pattern (`image/\w+`) could not match
+`image/svg+xml` or `image/x-icon` even if it had looked. `inlineData` carries
+bytes and nothing else, so the declared type is the *only* evidence of what they
+are — every PNG and WebP sent through Gemini was labelled JPEG.
+
+Since this tool sends non-JPEG data URIs by design, the mislabelling moved from
+latent to load-bearing: it is fixed here, with a test over PNG, WebP and
+`image/svg+xml`.
+
+### Two gates that disagreed with the change, and what each meant
+
+- **G6 (encoded payload with no sanitizer)** flagged the tool on first run. The
+  detector greps the class source for `b64_json|audio_base64|image_base64|inline_data|inlineData`,
+  and the tool's docblock named Gemini's inline image field. The tool returns text
+  and no encoded payload, so silencing it with a no-op `sanitizeForLlm()` would
+  have been a lying surface and baselining it would have diluted a signal whose
+  value is that it stays empty. The docblock now describes the conversion without
+  the identifier.
+- **`testPromptBuildersAreNotReachableUnderTheWordPressSlug`** failed: it listed
+  `analyze_image` among the slugs that must *not* be registered. That assertion
+  encoded the gap as a requirement. The list is now the slugs that still have only
+  a stand-in — `analyze_video`, `extract_image_text`, `batch_embed_content`,
+  `validate_reasoning_chain` — and its docblock says that it shrinks as tools land,
+  so the next agent does not read a stale expectation as a spec.
+
+### Capability and flags
+
+`upload_files`, matching WordPress: a caller may analyse the images it could have
+uploaded. Nine of WordPress's ten flags are declared; **`async` is not**, because
+this call is synchronous and declaring it would send a finished request down the
+queue path. `read-only` is accurate (nothing is written locally), and
+`consumes-tokens`/`external-api`/`rate-limited` are what the necessity gate and the
+read-only profile read.
+
+`max_tokens` is bounded at 8192 so a single call cannot ask for an unbounded
+completion; images are capped at 6 MB raw, which is ~8 MB of base64, and the
+message for the over-size case points at `file_id`.
+
+### Not done, named
+
+The other 18 promises, which fall into three groups: eight more vision tools
+(`analyze_video`, `extract_image_text`, `generate_image_alt_text`,
+`generate_image_caption`, `generate_video_caption`, `vision_object_localization`,
+`vision_product_search`, `analyze_code_sequence`), eight text-model tools
+(`analyze_comment_content`, `analyze_file_suitability`, `auto_categorize_content`,
+`content_recommendation_engine`, `generate_post_excerpt`, `seo_meta_optimizer`,
+`suggest_internal_links`, `validate_reasoning_chain`), one embeddings tool
+(`batch_embed_content`) and one OpenAI-only dispatch (`run_openai_external_action`).
+The vision group is now mostly wiring — `VisionRequest` is the shared piece — and
+the text group needs only the same `messages()` call without the image segment.
+
+### Validation
+
+`AnalyzeImageVisionToolTest` (core, 16 tests: the OpenAI message shape and prompt
+ordering, the WordPress default prompt, a remote URL refused naming both
+alternatives, exactly-one-source, registry read using the stored mime, an
+inaccessible file answering 404, a non-image file, a host without a registry, an
+over-size data URI, an unknown provider named with the registered list, no default
+provider distinguished from an unknown one, a provider refusal surfaced with its
+message, an empty answer treated as an error, a host without a router, and the
+capability/flags). `GeminiClientTest` gains the media-type regression over PNG,
+WebP and `image/svg+xml`. Feature test
+`docker/laravel/app-skeleton/tests/Feature/AnalyzeImageVisionToolTest.php` (4 tests
+with a recording provider on the real singleton router: container registration, the
+end-to-end request including `max_tokens`, a missing `file_id` at 404, and a remote
+URL refused **before** any provider call).
+`lib/core` 2098 / 16,154; adapter 348 / 1,833; skeleton analyze + registration +
+diagnostics + file store 37 / 131. Auditor 232 rows / 213 servable, no violations,
+G6 empty. phpcs clean on all seven files.
