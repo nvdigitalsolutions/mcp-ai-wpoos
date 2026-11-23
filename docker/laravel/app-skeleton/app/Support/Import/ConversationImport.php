@@ -53,6 +53,43 @@ final class ConversationImport
     /** Most messages kept per conversation; the rest are dropped and reported. */
     public const MAX_MESSAGES = 200;
 
+    /**
+     * MIME types an uploaded export may be — Proposal 149 §191.
+     *
+     * `finfo` reports a JSON document as `application/json` and plain text as
+     * `text/plain`; a ShareGPT dump saved as `.txt` lands in the second. Nothing
+     * else is an export, and accepting `text/csv` or a zip "because it might
+     * contain one" would mean parsing arbitrary bytes on the strength of a name.
+     */
+    public const ACCEPTED_MIME_TYPES = array('application/json', 'text/plain');
+
+    /**
+     * The sniffed MIME type of a local file, or null when it cannot be read.
+     *
+     * Deliberately not the client's declared type: a `.json` that is really a
+     * PNG must fail the gate on its bytes.
+     */
+    public static function sniff(string $path): ?string
+    {
+        if (! function_exists('finfo_open')) {
+            return null;
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+        if (false === $finfo) {
+            return null;
+        }
+
+        try {
+            $mime = finfo_file($finfo, $path);
+        } finally {
+            finfo_close($finfo);
+        }
+
+        return is_string($mime) && '' !== $mime ? strtolower($mime) : null;
+    }
+
     /** Prefix that marks a transcript as imported rather than chatted. */
     public const SESSION_PREFIX = 'import:';
 
