@@ -19,6 +19,7 @@ use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\Approvals\DatabaseApprovalTicket;
+use App\Support\Assistants\LaravelAssistantWriter;
 use App\Support\Auth\Auth0TokenVerifier;
 use App\Support\Auth\JitProvisioner;
 use App\Support\CapabilityMap;
@@ -61,6 +62,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
+use Nvoos\Core\Domain\Contract\AssistantWriteInterface;
 use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
@@ -198,6 +200,12 @@ class AppServiceProvider extends ServiceProvider
         // a deployment fact — product name, version, site URL, API base — so the
         // package leaves the collaborator unbound and this app supplies it.
         $this->app->singleton(RuntimeIdentityInterface::class, RuntimeIdentity::class);
+
+        // Assistant writes for `create_assistant` (Proposal 090-M §16). The
+        // adapter is a thin pass-through to the one writer the REST controller and
+        // the `/admin` resource already share, so the tool cannot acquire a second
+        // set of estate, slug or draft rules.
+        $this->app->singleton(AssistantWriteInterface::class, LaravelAssistantWriter::class);
 
         // Approval tickets (Proposal 149 §157). The necessity gate records a
         // ticket when a call needs a human and spends it on the retry. Kept out
