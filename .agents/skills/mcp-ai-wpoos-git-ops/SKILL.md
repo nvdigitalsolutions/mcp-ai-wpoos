@@ -101,6 +101,30 @@ git push --force-with-lease origin <branch>
 - GitHub Docs reference: "Managing stacked pull requests" /
   "Troubleshooting stacked pull requests" (`gh stack rebase` alternative).
 
+## Sequencing a fix-PR against a sweep-PR (2026-11-23)
+
+When a sweep branch cannot go green on its own — because the failing tests are
+fixed by a *separate* PR — ordering is the whole fix:
+
+- **Merge the fix PR first.** The sweep branch predates it, so its full-suite
+  run keeps reporting the same failures however clean its delta is
+  (#8118 → #8117). Merging the sweep first puts those failures on
+  `alpha-working` until the fix lands.
+- **Sync after, don't fold.** Merging the base into the sweep and re-running CI
+  costs one cycle — the same as folding the green PR into the sweep, which
+  costs one cycle *and* destroys a review unit (the folded PR then has to be
+  closed unmerged).
+- **Verify the merge by content, not by the squash subject.**
+  `git show origin/alpha-working:path | grep -n '<marker>'`, or
+  `git grep -n '<marker>' origin/alpha-working -- path`. Subjects can match
+  while the tree differs.
+- **`gh pr checks` exits 8 when checks are merely pending**, not failed. A
+  job-level `status` can also lag its step list by minutes — confirm with
+  `gh api repos/<org>/<repo>/actions/jobs/<id> -q '.status'`.
+- **`git push -u` can fail writing `.git/config` in a shared worktree**
+  (`Permission denied`) *after* the refs have landed. Check the remote ref; do
+  not treat it as a failed push.
+
 ## The PR was merged WHILE you were pushing (2026-11-09)
 
 A squash-merge can land between two of your commits. The `git push` still
