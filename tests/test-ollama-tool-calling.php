@@ -197,7 +197,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * tool_choice string value must be forwarded verbatim.
+	 * Tool_choice string value must be forwarded verbatim.
 	 */
 	public function test_tool_choice_string_forwarded() {
 		$this->mock_http_response( $this->make_chat_response() );
@@ -214,7 +214,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * parallel_tool_calls must be forwarded as a boolean.
+	 * Parallel_tool_calls must be forwarded as a boolean.
 	 */
 	public function test_parallel_tool_calls_forwarded() {
 		$this->mock_http_response( $this->make_chat_response() );
@@ -505,7 +505,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * response_format=json_object must set format:'json' in the payload.
+	 * Response_format=json_object must set format:'json' in the payload.
 	 */
 	public function test_response_format_json_object() {
 		$this->mock_http_response( $this->make_chat_response( '{"answer":"yes"}' ) );
@@ -519,7 +519,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * response_format=json_schema must set format to the schema object.
+	 * Response_format=json_schema must set format to the schema object.
 	 */
 	public function test_response_format_json_schema() {
 		$schema = array(
@@ -543,7 +543,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * options['think'] must be forwarded to the payload.
+	 * Options['think'] must be forwarded to the payload.
 	 */
 	public function test_think_option_forwarded() {
 		$this->mock_http_response( $this->make_chat_response() );
@@ -558,7 +558,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * options['reasoning'] (generic flag) should also enable think.
+	 * Options['reasoning'] (generic flag) should also enable think.
 	 */
 	public function test_reasoning_option_enables_think() {
 		$this->mock_http_response( $this->make_chat_response() );
@@ -573,7 +573,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * options['keep_alive'] must be forwarded to the payload.
+	 * Options['keep_alive'] must be forwarded to the payload.
 	 */
 	public function test_keep_alive_forwarded() {
 		$this->mock_http_response( $this->make_chat_response() );
@@ -587,7 +587,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * num_thread / num_gpu / low_vram must be forwarded inside options.
+	 * Num_thread / num_gpu / low_vram must be forwarded inside options.
 	 */
 	public function test_hardware_options_forwarded() {
 		$this->mock_http_response( $this->make_chat_response() );
@@ -757,7 +757,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * supports_tools() must return true when 'tools' is in capabilities array.
+	 * Supports_tools() must return true when 'tools' is in capabilities array.
 	 */
 	public function test_supports_tools_returns_true() {
 		add_filter(
@@ -781,7 +781,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * supports_tools() must return false when 'tools' is not in capabilities.
+	 * Supports_tools() must return false when 'tools' is not in capabilities.
 	 */
 	public function test_supports_tools_returns_false_without_capability() {
 		add_filter(
@@ -803,7 +803,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_model_capabilities() must return empty array on HTTP error.
+	 * Get_model_capabilities() must return empty array on HTTP error.
 	 */
 	public function test_get_model_capabilities_returns_empty_on_error() {
 		add_filter(

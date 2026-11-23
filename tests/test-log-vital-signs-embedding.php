@@ -85,7 +85,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	// ── format_vitals_for_embedding ────────────────────────────────────────────
 
 	/**
-	 * format_vitals_for_embedding returns a non-empty string.
+	 * Format_vitals_for_embedding returns a non-empty string.
 	 */
 	public function test_format_vitals_returns_string() {
 		$method = $this->reflection->getMethod( 'format_vitals_for_embedding' );
@@ -102,7 +102,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * format_vitals_for_embedding includes "vital signs" and the member ID so
+	 * Format_vitals_for_embedding includes "vital signs" and the member ID so
 	 * that queries for "vital signs" surface the entry.
 	 */
 	public function test_format_vitals_contains_vital_signs_terms() {
@@ -116,12 +116,12 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 		$text = $method->invoke( $this->tool, $measurements, 99, '2024-03-08' );
 
 		$this->assertStringContainsStringIgnoringCase( 'vital signs', $text );
-		$this->assertStringContainsString( '99', $text ); // member_id
+		$this->assertStringContainsString( '99', $text ); // member_id.
 		$this->assertStringContainsString( '2024-03-08', $text );
 	}
 
 	/**
-	 * format_vitals_for_embedding includes kidney health terminology (eGFR,
+	 * Format_vitals_for_embedding includes kidney health terminology (eGFR,
 	 * creatinine) so that semantic search for "kidney health metrics" returns
 	 * entries with these indicators.
 	 */
@@ -150,7 +150,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * format_vitals_for_embedding includes blood pressure when present.
+	 * Format_vitals_for_embedding includes blood pressure when present.
 	 */
 	public function test_format_vitals_includes_blood_pressure() {
 		$method = $this->reflection->getMethod( 'format_vitals_for_embedding' );
@@ -170,7 +170,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	// ── store_vitals_embedding ─────────────────────────────────────────────────
 
 	/**
-	 * store_vitals_embedding with no configured API keys does not crash and
+	 * Store_vitals_embedding with no configured API keys does not crash and
 	 * leaves the index empty (embedding silently skipped).
 	 */
 	public function test_store_vitals_embedding_no_api_key_is_silent() {
@@ -194,7 +194,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * store_vitals_embedding populates the expected fields when an embedding is
+	 * Store_vitals_embedding populates the expected fields when an embedding is
 	 * successfully generated.  We pre-seed the index directly to simulate a
 	 * prior successful store call (avoids needing a real API key).
 	 */
@@ -270,7 +270,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * store_vitals_embedding uses the Gemini task_type RETRIEVAL_DOCUMENT
+	 * Store_vitals_embedding uses the Gemini task_type RETRIEVAL_DOCUMENT
 	 * (not RETRIEVAL_QUERY) so the stored embedding is optimised for document
 	 * retrieval rather than query retrieval.
 	 *
@@ -387,7 +387,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 			array(
 				'entry_id'         => $entry_id,
 				'measurement_date' => '2024-06-15',
-				'creatinine'       => 1,  // integer-rounded value
+				'creatinine'       => 1,  // integer-rounded value.
 			),
 		);
 
