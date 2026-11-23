@@ -11,6 +11,7 @@ use App\Http\Controllers\ChatStreamController;
 use App\Http\Controllers\ChatProfileController;
 use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\MagicLoginController;
 use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\MediaController;
@@ -143,6 +144,11 @@ Route::prefix('api/v1')->group(function (): void {
         // `wp/*` and `media` mirror WordPress's own capabilities: authors may
         // create content and upload files, subscribers may not.
         Route::middleware('throttle:console')->group(function (): void {
+            // Proposal 162 — reading a stored file. A public file's URL is stable and
+            // never needs this route; a private file has no URL at all, so this is the
+            // only way in and the estate is checked per request.
+            Route::get('/files/{id}', FileController::class)->whereNumber('id');
+
             Route::get('/chat-transcripts', [TranscriptsController::class, 'index']);
             Route::post('/chat-transcripts', [TranscriptsController::class, 'store']);
             Route::get('/chat-transcripts/{sessionKey}', [TranscriptsController::class, 'show']);

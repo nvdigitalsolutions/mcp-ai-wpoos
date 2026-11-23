@@ -40,7 +40,16 @@ final readonly class StoredFile implements \JsonSerializable
         public \DateTimeImmutable $createdAt,
         public ?string $publicUrl = null,
         public array $metadata = array(),
+        public string $visibility = 'public',
     ) {
+    }
+
+    /**
+     * Whether reading this file needs an authorisation check.
+     */
+    public function isPrivate(): bool
+    {
+        return 'private' === $this->visibility;
     }
 
     /**
@@ -77,6 +86,7 @@ final readonly class StoredFile implements \JsonSerializable
             'filename'   => $this->filename,
             'mime_type'  => $this->mimeType,
             'size_bytes' => $this->sizeBytes,
+            'visibility' => $this->visibility,
             'public_url' => $this->publicUrl,
             'metadata'   => $this->metadata,
             'owner_id'   => $this->ownerId,

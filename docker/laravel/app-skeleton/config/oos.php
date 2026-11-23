@@ -47,7 +47,7 @@ return array(
     | every tool; a list replaces the default.
     */
     'necessity_gate' => array(
-        'enabled'      => (bool) env( 'OOS_NECESSITY_GATE', true ),
+        'enabled'      => (bool) env('OOS_NECESSITY_GATE', true),
         'pre_approved' => null,
     ),
 
@@ -64,7 +64,7 @@ return array(
     | operators; a single-member estate would have no one to approve.
     */
     'approvals' => array(
-        'require_separate_approver' => (bool) env( 'OOS_REQUIRE_SEPARATE_APPROVER', false ),
+        'require_separate_approver' => (bool) env('OOS_REQUIRE_SEPARATE_APPROVER', false),
     ),
 
     /*
@@ -305,6 +305,40 @@ return array(
     'tool_quotas' => array(
         'enabled' => (bool) env('NVOOS_TOOL_QUOTAS', true),
         'retention_days' => (int) env('NVOOS_TOOL_QUOTA_RETENTION_DAYS', 30),
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | File storage and visibility (Proposal 162)
+    |--------------------------------------------------------------------------
+    |
+    | Two disks, because there are two access models. `public` is web-served and
+    | a stored object's URL is stable; `private` is never served directly — the
+    | read goes through `GET /api/v1/files/{id}`, which checks the estate on every
+    | request.
+    |
+    | The disks are named here rather than derived from `filesystems.default`,
+    | because a deployment that repoints its default disk must not silently move
+    | private objects onto one the web server serves.
+    |
+    | The ceilings are per MIME group: one cap for everything either refuses a
+    | legitimate video or accepts a 500 MB PNG. `NVOOS_FILES_MAX_*` exists so a
+    | deployment can raise the video cap without editing code, but PHP's
+    | `upload_max_filesize` and `post_max_size` still bound what can arrive at all —
+    | a stored limit above those is a limit that never triggers.
+    |
+    */
+    'files' => array(
+        'disks' => array(
+            'public' => env('NVOOS_FILES_DISK_PUBLIC', 'public'),
+            'private' => env('NVOOS_FILES_DISK_PRIVATE', 'local'),
+        ),
+        'limits' => array(
+            'image' => (int) env('NVOOS_FILES_MAX_IMAGE', 20971520),
+            'document' => (int) env('NVOOS_FILES_MAX_DOCUMENT', 26214400),
+            'video' => (int) env('NVOOS_FILES_MAX_VIDEO', 536870912),
+            'audio' => (int) env('NVOOS_FILES_MAX_AUDIO', 104857600),
+        ),
     ),
 
 );
