@@ -384,12 +384,30 @@ export function auditBands( options: BandAuditOptions ): BandAuditReport {
 				passAt: 0.9,
 				warnAt: 0.75,
 			} );
+			// An OUTLINE profile pairs band N with built band N (the source bands
+			// carry synthetic ids, not the builder's). That answers "is this build
+			// the same section-by-section clone", which a positional outline cannot
+			// prove and a product-shaped home deliberately ignores: eca.directory's
+			// home is a 7-band outline captured while the site was in maintenance
+			// mode, so its hero/article/form bands scored 63% on copy the rebuild
+			// renders in a different band. Band FLOW already demotes to warn for
+			// positional outlines for the same reason; fidelity here is a
+			// measurement, not a gate. Presence, surface, content and facts stay
+			// blocking.
+			const positionalDowngrade = positional && report.verdict === 'fail';
 			textCheck = {
-				status: report.verdict,
-				detail: `coverage ${ ( report.coverage * 100 ).toFixed( 1 ) }%`,
+				status: positionalDowngrade ? 'warn' : report.verdict,
+				detail: `coverage ${ ( report.coverage * 100 ).toFixed( 1 ) }%${
+					positionalDowngrade ? ' \u00b7 positional outline \u2014 fidelity not provable' : ''
+				}`,
 			};
-			if ( report.verdict !== 'pass' ) {
+			if ( textCheck.status === 'fail' ) {
 				notes.push( `text ${ textCheck.detail } (${ report.missing.slice( 0, 3 ).join( ' | ' ) })` );
+			} else if ( positionalDowngrade ) {
+				// Keep the table cell short: the suffix already says why it is a warn.
+				notes.push(
+					`text coverage ${ ( report.coverage * 100 ).toFixed( 1 ) }% (${ report.missing.slice( 0, 3 ).join( ' | ' ) })`
+				);
 			}
 		}
 
