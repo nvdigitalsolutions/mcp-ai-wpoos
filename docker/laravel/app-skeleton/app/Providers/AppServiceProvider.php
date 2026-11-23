@@ -25,6 +25,7 @@ use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
 use App\Support\Diagnostics\RoutingMetricStore;
 use App\Support\Health\SiteHealthReport;
+use App\Support\Identity\RuntimeIdentity;
 use App\Support\Logs\SystemLog;
 use App\Support\Models\ModelCatalogueLookup;
 use App\Support\Orchestration\AssistantAgentRunner;
@@ -72,6 +73,7 @@ use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\ProfessionOverlayInterface;
 use Nvoos\Core\Domain\Contract\ProfessionWriteInterface;
 use Nvoos\Core\Domain\Contract\RoutingMetricsInterface;
+use Nvoos\Core\Domain\Contract\RuntimeIdentityInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\SystemLogInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
@@ -191,6 +193,11 @@ class AppServiceProvider extends ServiceProvider
         // binding is what makes it answer here — the audit trail the `/ops/audit-log`
         // page reads, plus failed and aborted harness runs.
         $this->app->singleton(SystemLogInterface::class, SystemLog::class);
+
+        // Runtime identity for `mcp_server_info` (Proposal 090-M §14). Identity is
+        // a deployment fact — product name, version, site URL, API base — so the
+        // package leaves the collaborator unbound and this app supplies it.
+        $this->app->singleton(RuntimeIdentityInterface::class, RuntimeIdentity::class);
 
         // Approval tickets (Proposal 149 §157). The necessity gate records a
         // ticket when a call needs a human and spends it on the retry. Kept out
