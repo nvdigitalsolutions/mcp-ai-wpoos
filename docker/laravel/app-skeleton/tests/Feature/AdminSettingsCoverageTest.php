@@ -188,8 +188,11 @@ class AdminSettingsCoverageTest extends TestCase
             ->assertOk()
             ->assertSee('Settings coverage')
             ->assertSee('change behaviour here')
-            // The leading callout, which is the page's reason to exist.
-            ->assertSee('enforced nowhere');
+            // The two buckets an operator has to understand before the rest of
+            // the page makes sense: the operator-scope controls that enforce
+            // nothing, and the ported WordPress surface, which is not a defect.
+            ->assertSee('Operator control, enforced nowhere')
+            ->assertSee('WordPress settings');
     }
 
     private function estateAdmin(string $tenantId): User
