@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Security\SecurityEventLogger;
 use App\Support\Settings\SettingsService;
 use Closure;
 use Illuminate\Auth\AuthenticationException;
@@ -49,8 +50,10 @@ final class GuardFailedAuthentication
     /** Cache-key namespace; the window TTL is the value's expiry, not the key's. */
     private const PREFIX = 'auth-failures:';
 
-    public function __construct(private readonly SettingsService $settings)
-    {
+    public function __construct(
+        private readonly SettingsService $settings,
+        private readonly SecurityEventLogger $events,
+    ) {
     }
 
     public function handle(Request $request, Closure $next): Response
@@ -83,6 +86,14 @@ final class GuardFailedAuthentication
         }
 
         if ($failures >= $threshold) {
+            $this->events->record(
+                SecurityEventLogger::AUTH_LOCKOUT,
+                $request,
+                null,
+                'Blocked after repeated authentication failures',
+                array('threshold' => $threshold)
+            );
+
             return response()->json(array(
                 'code' => 'auth_rate_limited',
                 'message' => 'Too many failed authentication attempts from this address. Try again later.',
@@ -92,16 +103,16 @@ final class GuardFailedAuthentication
         try {
             $response = $next($request);
         } catch (AuthenticationException $error) {
-            $this->settle($key, $failures, $window, 401);
+            $this->settle($request, $key, $failures, $window, 401);
 
             throw $error;
         } catch (HttpExceptionInterface $error) {
-            $this->settle($key, $failures, $window, $error->getStatusCode());
+            $this->settle($request, $key, $failures, $window, $error->getStatusCode());
 
             throw $error;
         }
 
-        $this->settle($key, $failures, $window, $response->getStatusCode());
+        $this->settle($request, $key, $failures, $window, $response->getStatusCode());
 
         return $response;
     }
@@ -115,11 +126,19 @@ final class GuardFailedAuthentication
      * re-throwing is the only way for this middleware to see the status without
      * taking over the rendering.
      */
-    private function settle(string $key, int $failures, int $window, int $status): void
+    private function settle(Request $request, string $key, int $failures, int $window, int $status): void
     {
         try {
             if (401 === $status) {
                 Cache::put($key, $failures + 1, $window);
+
+                $this->events->record(
+                    SecurityEventLogger::AUTH_FAILURE,
+                    $request,
+                    null,
+                    'Authentication failed',
+                    array('route' => $request->path())
+                );
             } elseif ($status < 400) {
                 Cache::forget($key);
             }

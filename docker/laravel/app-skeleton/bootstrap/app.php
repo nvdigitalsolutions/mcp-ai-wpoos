@@ -4,6 +4,7 @@ use App\Http\Middleware\ApplyCorsPolicy;
 use App\Http\Middleware\EnsureAssistantRestEnabled;
 use App\Http\Middleware\EnforceRequestLimits;
 use App\Http\Middleware\GuardFailedAuthentication;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\EnsurePrincipalScope;
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
@@ -28,6 +29,13 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Console/Commands',
     ])
     ->withSchedule(function (Schedule $schedule): void {
+        // 149 §186 — retention for the security-event stream. Day-granular rule,
+        // so daily is enough; the sweep is one indexed delete and `0` keeps the
+        // rows forever. Only runs where the scheduler does.
+        $schedule->command('nvoos:prune-security-events')
+            ->daily()
+            ->withoutOverlapping();
+
         // 090-h — `cron_schedule` workflow triggers. This entry only fires
         // where the Laravel scheduler runs (`php artisan schedule:work`, or
         // `schedule:run` from cron); the default compose worker runs
@@ -171,6 +179,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // console requests authenticate with the session cookie; MCP/API
         // clients keep using bearer tokens.
         $middleware->statefulApi();
+
+        // 149 §187 — OWASP-recommended response headers from the operator's
+        // settings. Appended to the global stack: it only touches the response, so
+        // its request-phase position does not matter, and appending keeps the
+        // CORS-before-HandleCors ordering above untouched.
+        $middleware->append(SecurityHeaders::class);
 
         // 149 §185 — failed-authentication lockout per address. Registered
         // *before* the limit below so the resulting order is

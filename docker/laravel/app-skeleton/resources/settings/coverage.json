@@ -3136,38 +3136,38 @@
     },
     {
       "key": "enable_security_audit_log",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "enable_security_audit_log"
     },
     {
       "key": "log_successful_auth",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "log_successful_auth"
     },
     {
       "key": "log_file_access",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "inapplicable",
+      "reason": "No file-serving route exists; media is served by URL, so the app never sees the access.",
       "storage": "log_file_access"
     },
     {
       "key": "audit_log_retention_days",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "audit_log_retention_days"
     },
     {
       "key": "enable_security_headers",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "enable_security_headers"
     },
     {
       "key": "enable_hsts",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "enable_hsts"
     },
     {
@@ -3196,8 +3196,8 @@
     },
     {
       "key": "mcp_app_allowed_hosts",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "inapplicable",
+      "reason": "App servers are configured per assistant; this runtime hosts no framable app document.",
       "storage": "mcp_app_allowed_hosts"
     },
     {
@@ -3220,14 +3220,14 @@
     },
     {
       "key": "enable_loopback_ssl_bypass",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "inapplicable",
+      "reason": "wp_remote_* loopback requests have no counterpart; providers are called directly.",
       "storage": "enable_loopback_ssl_bypass"
     },
     {
       "key": "enable_loopback_private_network_requests",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "inapplicable",
+      "reason": "No URL guard or loopback request path exists here to allow or block.",
       "storage": "enable_loopback_private_network_requests"
     },
     {
@@ -3358,20 +3358,20 @@
     },
     {
       "key": "enable_oauth_token_rate_limit",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "inapplicable",
+      "reason": "Tokens are minted by Auth0; there is no OAuth token endpoint here to limit.",
       "storage": "enable_oauth_token_rate_limit"
     },
     {
       "key": "api_error_verbosity",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "inapplicable",
+      "reason": "Error detail is governed by APP_DEBUG; a second verbosity axis would be a second truth.",
       "storage": "api_error_verbosity"
     },
     {
       "key": "strip_asset_versions",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "inapplicable",
+      "reason": "Assets are Vite-built with content hashes, not ?ver= query strings.",
       "storage": "strip_asset_versions"
     },
     {

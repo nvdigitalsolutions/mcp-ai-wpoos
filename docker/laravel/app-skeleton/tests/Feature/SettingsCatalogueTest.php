@@ -39,12 +39,12 @@ class SettingsCatalogueTest extends TestCase
      * @var list<string>
      */
     private const SECURITY_OPERATOR = array(
-        // Infrastructure, root key, SSRF boundary, resource limits.
+        // Infrastructure and resource limits.
+        // The root-key pair stays here: §66 renders operator infrastructure, and a
+        // secrets test pins that the key is writable from /ops and masked. It is
+        // unenforced, which §187.3 records as an open decision.
         'enable_root_security_key',
         'root_security_key',
-        'enable_loopback_ssl_bypass',
-        'enable_loopback_private_network_requests',
-        'mcp_app_allowed_hosts',
         'max_sse_connections_per_user',
         'max_request_body_size_kb',
         'max_json_depth',
@@ -56,8 +56,6 @@ class SettingsCatalogueTest extends TestCase
         'csp_frame_ancestors',
         'cors_allow_origin',
         'cors_allowed_origins',
-        'api_error_verbosity',
-        'strip_asset_versions',
         // Throttling: the platform's middleware, not an estate preference.
         'enable_rate_limiting',
         'rate_limit_requests',
@@ -66,12 +64,31 @@ class SettingsCatalogueTest extends TestCase
         'enable_auth_rate_limiting',
         'auth_rate_limit_threshold',
         'auth_rate_limit_window',
-        'enable_oauth_token_rate_limit',
         // Audit/compliance: platform-wide writer and retention.
         'enable_security_audit_log',
         'log_successful_auth',
-        'log_file_access',
         'audit_log_retention_days',
+    );
+
+    /**
+     * 149 §187 — operator-scope security fields declared inapplicable.
+     *
+     * They configure mechanisms this runtime does not have (a root key, loopback
+     * requests, OAuth token minting, `?ver=` assets, file serving, app hosting), so
+     * they are hidden rather than rendered disabled. They stay in the reviewed-owner
+     * map below because "every security field has an owner" must remain true, but
+     * they are not expected on any surface.
+     *
+     * @var list<string>
+     */
+    private const SECURITY_INAPPLICABLE = array(
+        'enable_loopback_ssl_bypass',
+        'enable_loopback_private_network_requests',
+        'mcp_app_allowed_hosts',
+        'strip_asset_versions',
+        'enable_oauth_token_rate_limit',
+        'log_file_access',
+        'api_error_verbosity',
     );
 
     /**
@@ -464,6 +481,12 @@ class SettingsCatalogueTest extends TestCase
             'An inert field must be listed once: in SECURITY_INERT, not SECURITY_TENANT.'
         );
 
+        $this->assertSame(
+            array(),
+            array_intersect(self::SECURITY_INAPPLICABLE, self::SECURITY_OPERATOR),
+            'An inapplicable field must be listed once: in SECURITY_INAPPLICABLE, not SECURITY_OPERATOR.'
+        );
+
         $actual = array();
 
         foreach (SettingsCatalogue::fields() as $field) {
@@ -474,7 +497,8 @@ class SettingsCatalogueTest extends TestCase
 
         $expected = array_fill_keys(self::SECURITY_OPERATOR, 'operator')
             + array_fill_keys(self::SECURITY_TENANT, 'tenant')
-            + array_fill_keys(self::SECURITY_INERT, 'tenant');
+            + array_fill_keys(self::SECURITY_INERT, 'tenant')
+            + array_fill_keys(self::SECURITY_INAPPLICABLE, 'operator');
 
         ksort($actual);
         ksort($expected);
@@ -502,9 +526,11 @@ class SettingsCatalogueTest extends TestCase
             $this->assertNotContains($key, $writable, $key.' must not be writable by an estate.');
         }
 
-        // The two fields that would be most damaging to hand over.
+        // The two fields that would be most damaging to hand over: one renders and
+        // is masked (§66), the other is declared inapplicable because no app-hosting
+        // surface exists here (§187).
         $this->assertContains('root_security_key', self::SECURITY_OPERATOR);
-        $this->assertContains('mcp_app_allowed_hosts', self::SECURITY_OPERATOR);
+        $this->assertContains('mcp_app_allowed_hosts', self::SECURITY_INAPPLICABLE);
     }
 
     /**

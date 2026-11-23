@@ -63,6 +63,25 @@ final class InapplicableSettings
         // Policy met by a different mechanism.
         'credential_lifetime_days'             => 'Expiry is chosen per token at mint time, not by a policy.',
         'require_confirm_destructive_ops'      => 'The approvals queue meets this intent; no global switch.',
+
+        // 149 §187 — WordPress-only security mechanisms. The shared signal
+        // catalogue marks each of these RUNTIME_WORDPRESS, so a Laravel signal is
+        // not merely unimplemented here: there is nothing on this side for it to
+        // describe.
+        //
+        // The root-key pair is NOT here, deliberately. §66 says operator
+        // infrastructure renders so an estate can see who owns it, and
+        // `SettingsCatalogueTest` pins that the key is writable from `/ops` and
+        // masked as a secret. Hiding it would reverse both. It stays unenforced and
+        // is recorded as an open decision in §187.3.
+        'enable_loopback_ssl_bypass'           => 'wp_remote_* loopback requests have no counterpart; providers are called directly.',
+        'enable_loopback_private_network_requests' => 'No URL guard or loopback request path exists here to allow or block.',
+        'mcp_app_allowed_hosts'                => 'App servers are configured per assistant; this runtime hosts no framable app document.',
+        'strip_asset_versions'                 => 'Assets are Vite-built with content hashes, not ?ver= query strings.',
+        'enable_oauth_token_rate_limit'        => 'Tokens are minted by Auth0; there is no OAuth token endpoint here to limit.',
+        'log_file_access'                      => 'No file-serving route exists; media is served by URL, so the app never sees the access.',
+        // A real idea, but the runtime already answers it with a different control.
+        'api_error_verbosity'                  => 'Error detail is governed by APP_DEBUG; a second verbosity axis would be a second truth.',
     );
 
     /**

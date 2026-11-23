@@ -17956,3 +17956,164 @@ Ten are group 3 of §184.6, and each needs a decision rather than a mechanism:
 `api_error_verbosity`, `strip_asset_versions`. Declaring one is only honest when
 enforcement genuinely belongs elsewhere; the next slice must check each against
 the code before choosing.
+
+---
+
+## 186. The security-event stream (2026-11-23)
+
+Three of the audit controls are enforced, and the fourth is declared.
+
+| Key | Disposition |
+|---|---|
+| `enable_security_audit_log` | master switch, default **off** (`SecurityEventLogger`) |
+| `log_successful_auth` | sign-ins recorded in addition to failures |
+| `audit_log_retention_days` | `nvoos:prune-security-events`, daily, `0` = forever |
+| `log_file_access` | declared inapplicable — see §187 |
+
+### 186.1 A separate table, and why
+
+`nvoos_admin_audit` answers "which admin request changed what". A failed sign-in
+has no admin request and no resource; putting it there would make every audit
+query filter a row kind it does not want. `nvoos_security_events` answers "who
+tried to get in, and did it work" — the question the field's own justification
+names (SOC 2, GDPR).
+
+Append-only, like the admin trail: no `updated_at`, inserts only. `user_id` is not
+a foreign key, because a cascading delete would erase the record of what a removed
+user did.
+
+### 186.2 The master switch defaults off, and that is the point
+
+An audit stream that writes on every install is a privacy problem wearing a
+compliance badge. With the switch off, `record()` returns before touching the
+database, so the default install pays nothing and stores nothing.
+
+### 186.3 What is recorded, and from where
+
+| Event | Source |
+|---|---|
+| `auth.failure` | `GuardFailedAuthentication`, on a 401 |
+| `auth.lockout` | the same middleware, when the threshold blocks |
+| `auth.success` | the two sign-in controllers, only when `log_successful_auth` is on |
+
+The failure events ride the §185 middleware rather than a new listener because
+that is the one place a 401 is visible: `auth:sanctum` throws, and the exception
+handler renders outside the pipeline.
+
+`log_file_access` is **inapplicable**, not unimplemented: there is no
+file-serving route. Media is served by URL from storage, so the app never sees the
+access and a "file access log" would be a list of requests the app cannot observe.
+
+### 186.4 Retention treats `0` as unlimited
+
+The field says "set to 0 for unlimited retention". A sweep that read 0 as "delete
+everything" would be the worst possible reading of "retain indefinitely", so
+`prune()` returns early on a non-positive window. The test pins both directions.
+
+### 186.5 Gates
+
+| Gate | Result |
+|---|---|
+| `SecurityEventLogTest` | **7 tests** — off writes nothing; a 401 records a failure; the lockout is recorded; pruning keeps recent rows; `0` keeps everything; success is gated by its own switch; both sign-in paths call the recorder |
+| phpcs PSR-12 | exit 0 |
+
+---
+
+## 187. Response headers, and the last ten controls (2026-11-23)
+
+The remaining ten are now either enforced or declared, and one is recorded as an
+open decision rather than closed by fiat.
+
+### 187.1 `SecurityHeaders`: four controls, one middleware
+
+`enable_security_headers`, `enable_hsts`, `hsts_max_age` and
+`csp_frame_ancestors` were writable and read by nothing. `SecurityHeaders` is
+appended to the global stack and emits:
+
+| Header | Condition |
+|---|---|
+| `X-Content-Type-Options: nosniff` | umbrella on |
+| `Referrer-Policy: strict-origin-when-cross-origin` | umbrella on |
+| `Permissions-Policy: camera=(), microphone=(), geolocation=()` | umbrella on |
+| `Content-Security-Policy: frame-ancestors 'none' \| 'self'` | policy configured |
+| `X-Frame-Options: SAMEORIGIN` | policy disabled or unrecognised |
+| `Strict-Transport-Security: max-age=N` | `enable_hsts`, `N > 0`, and HTTPS |
+
+Three decisions worth their lines:
+
+- **The app sets headers the proxy may also set.** The package config records that
+  the console proxy owns them, which makes the proxy the *outer* layer, not a
+  reason to leave the app bare: an app that emits none is unprotected the moment
+  it is reached directly (worker port, service mesh, misrouted proxy).
+- **`hsts_max_age` defaults to 0, and `max-age=0` *disables* HSTS.** A zero is
+  therefore treated as "not configured" rather than emitted, and HSTS is only sent
+  when the request is secure or `app.url` declares HTTPS — behind a terminating
+  proxy `isSecure()` is false unless trusted proxies are configured.
+- **`csp_frame_ancestors` is a three-option select, not free text** (`none`,
+  `self`, disabled). Each maps to one token, and anything else maps to none, so a
+  hand-written row cannot smuggle a header. `none` blocks same-origin framing
+  too — that is what the option says; `self` is the one that permits it.
+
+### 187.2 The declarations, and the hole they exposed
+
+| Key | Disposition | Reason |
+|---|---|---|
+| `enable_loopback_ssl_bypass` | inapplicable | no `wp_remote_*` loopback path |
+| `enable_loopback_private_network_requests` | inapplicable | no URL guard to allow or block |
+| `mcp_app_allowed_hosts` | inapplicable | app servers are configured per assistant; no framable app document is hosted |
+| `strip_asset_versions` | inapplicable | Vite assets carry content hashes, not `?ver=` |
+| `enable_oauth_token_rate_limit` | inapplicable | Auth0 mints tokens; no OAuth token endpoint here |
+| `api_error_verbosity` | inapplicable | `APP_DEBUG` is the runtime's control; a second axis would be a second truth |
+| `log_file_access` | inapplicable | no file-serving route |
+
+Declaring exposed a real hole: `SettingsSchema::writableFor('ops')` returned the
+ops surface **unfiltered**, so a key hidden from every form was still writable by
+a crafted payload through `/ops`. The exclusion `admin` already applied now
+applies to `ops` too. `InapplicableSettingsTest` caught it, which is the division
+of labour working as intended.
+
+### 187.3 The root-key pair is left open, deliberately
+
+`enable_root_security_key` and `root_security_key` are **not** declared. They are
+operator-scope, nothing reads them, and declaring them inapplicable would have
+looked like a tidy finish. It would also have reversed two decisions made on
+purpose:
+
+- §66 says operator infrastructure **renders** so an estate can see that it exists
+  and who owns it — `AdminSettingsTest` asserts the field appears on `/admin`.
+- `SettingsCatalogueTest` pins that the key is writable from `/ops` and **masked**
+  as a secret, which is a secrets-handling contract, not an accident.
+
+A sweep is the wrong place to overturn either. The honest options are (a) build a
+root-key mechanism that gates operator actions, or (b) revisit §66 and drop the
+field — and both are decisions for the plan's owner. They remain the only two
+entries in `unenforced-operator`, and `AdminSettingsCoverageTest` now pins that
+bucket as a **closed list** so nothing else can join it quietly.
+
+### 187.4 Where the catalogue stands
+
+| Bucket | Count |
+|---|---:|
+| `enforced` | 72 |
+| `wordpress` | 488 |
+| `inapplicable` | 17 |
+| `wordpress-dynamic` | 12 |
+| `reported` | 7 |
+| `inert` | 3 |
+| `unenforced-operator` | **2** (the root-key pair, §187.3) |
+| `unenforced` | **0** |
+| `stale` | 0 |
+| `unclassified` | 0 |
+
+The sweep that began at §183 with 480 apparent dead controls ends with every
+admin-writable control enforced or declared, and two operator controls recorded as
+a genuine product decision.
+
+### 187.5 Gates
+
+| Gate | Result |
+|---|---|
+| `SecurityHeadersTest` | **8 tests** — baseline headers; umbrella off; policy supersedes XFO; disabled falls back to XFO; a hand-written row cannot inject; HSTS over HTTPS; withheld at age 0; withheld over HTTP |
+| combined run (catalogue, settings, security, coverage, navigation, auth) | **85 tests / 10,111 assertions** |
+| phpcs PSR-12 on fifteen files | exit 0 |
+| `bin/settings-coverage/generate.py` | 601 rows · **72 enforced** · **2 operator-unenforced** |

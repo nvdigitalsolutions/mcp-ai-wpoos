@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\MagicLoginLink;
 use App\Models\User;
 use App\Support\Auth\MagicLinkService;
+use App\Support\Security\SecurityEventLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -120,6 +121,13 @@ class MagicLoginController
 
         Auth::login($user, true);
         $request->session()->regenerate();
+
+        // 149 §186 — the same success record the password path writes.
+        app(SecurityEventLogger::class)->recordSuccess(
+            $request,
+            (int) $user->getAuthIdentifier(),
+            'Signed in with a magic link'
+        );
 
         // `ok` for the shared console, which reads it on both runtimes; the rest
         // is the same payload `/session/login` returns.

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Middleware\ResolveApiTenant;
 use App\Support\CapabilityMap;
+use App\Support\Security\SecurityEventLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -73,6 +74,14 @@ class SessionController
         }
 
         $request->session()->regenerate();
+
+        // 149 §186 — a successful sign-in, recorded only when the operator turned
+        // `log_successful_auth` on. Failures are recorded by
+        // GuardFailedAuthentication, which sees the 401s this path never returns.
+        app(SecurityEventLogger::class)->recordSuccess(
+            $request,
+            (int) Auth::id()
+        );
 
         return $this->me($request);
     }
