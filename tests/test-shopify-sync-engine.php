@@ -287,7 +287,7 @@ class Test_Shopify_Sync_Engine extends WP_UnitTestCase {
 		// With a connection ID that has no client, it should not throw.
 		try {
 			$reflection->invoke( null, array( 'connection_id' => 'nonexistent' ) );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected if wp_mcp_ai_log function is not defined.
 			// The important thing is that the method doesn't crash on valid input shape.
 		}
@@ -304,7 +304,7 @@ class Test_Shopify_Sync_Engine extends WP_UnitTestCase {
 
 		try {
 			$reflection->invoke( null, 'conn_string_id' );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -320,7 +320,7 @@ class Test_Shopify_Sync_Engine extends WP_UnitTestCase {
 
 		try {
 			$reflection->invoke( null, array( 'connection_id' => 'nonexistent' ) );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 

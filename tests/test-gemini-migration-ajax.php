@@ -75,7 +75,7 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 		ob_start();
 		try {
 			do_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - wp_send_json_* calls wp_die().
 		}
 		$output = ob_get_clean();
@@ -117,7 +117,7 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 		ob_start();
 		try {
 			do_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - wp_send_json_* calls wp_die().
 		}
 		$output = ob_get_clean();
@@ -172,7 +172,7 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 		ob_start();
 		try {
 			do_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - wp_send_json_* calls wp_die().
 		}
 		$output = ob_get_clean();
@@ -216,7 +216,7 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 		ob_start();
 		try {
 			do_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - wp_send_json_* calls wp_die().
 		}
 		$output = ob_get_clean();
@@ -244,7 +244,7 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 		ob_start();
 		try {
 			do_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - wp_send_json_* calls wp_die().
 		}
 		$output = ob_get_clean();

@@ -96,7 +96,7 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 				$prop->setAccessible( true );
 				$prop->setValue( null, null );
 			}
-		} catch ( ReflectionException $e ) {
+		} catch ( ReflectionException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Property may not exist on some pages — ignore.
 		}
 	}

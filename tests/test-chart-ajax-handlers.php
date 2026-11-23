@@ -78,7 +78,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_get_usage_trend' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - AJAX handlers call wp_die().
 		}
 
@@ -106,7 +106,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request - should fail.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_get_usage_trend' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -133,7 +133,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request - should fail.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_get_usage_trend' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -158,7 +158,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_get_tier_distribution' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -189,7 +189,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_get_tool_breakdown' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -220,7 +220,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_get_tool_breakdown' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -245,7 +245,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_get_usage_trend' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -272,7 +272,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_update_chart_period' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - AJAX handlers call wp_die().
 		}
 
@@ -304,7 +304,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_update_chart_period' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -333,7 +333,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_refresh_chart' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -363,7 +363,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_refresh_chart' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 

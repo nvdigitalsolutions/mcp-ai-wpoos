@@ -196,7 +196,7 @@ class Test_Orchestration_Dashboard_System_Status extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->dashboard->ajax_get_dashboard_data();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - wp_send_json_success calls wp_die().
 		}
 		$output = ob_get_clean();
