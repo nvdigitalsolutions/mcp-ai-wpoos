@@ -119,7 +119,10 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$defaults = array( '_task_status' => 'todo', '_task_priority' => 'medium' );
+		$defaults = array(
+			'_task_status'   => 'todo',
+			'_task_priority' => 'medium',
+		);
 		$meta     = array_merge( $defaults, $meta );
 
 		foreach ( $meta as $key => $value ) {
@@ -148,7 +151,10 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_b = $this->create_task( 'Task B' );
 
 		$result = $this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
@@ -168,7 +174,10 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_b = $this->create_task( 'Task B' );
 
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
@@ -184,7 +193,10 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task = $this->create_task( 'Self Task' );
 
 		$result = $this->add_tool->execute(
-			array( 'blocking_task_id' => $task, 'blocked_task_id' => $task ),
+			array(
+				'blocking_task_id' => $task,
+				'blocked_task_id'  => $task,
+			),
 			$this->context()
 		);
 
@@ -201,13 +213,19 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 
 		// A blocks B.
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
 		// Attempt B blocks A (would create a cycle).
 		$result = $this->add_tool->execute(
-			array( 'blocking_task_id' => $task_b, 'blocked_task_id' => $task_a ),
+			array(
+				'blocking_task_id' => $task_b,
+				'blocked_task_id'  => $task_a,
+			),
 			$this->context()
 		);
 
@@ -224,17 +242,26 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_c = $this->create_task( 'Task C' );
 
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_b, 'blocked_task_id' => $task_c ),
+			array(
+				'blocking_task_id' => $task_b,
+				'blocked_task_id'  => $task_c,
+			),
 			$this->context()
 		);
 
 		// Attempt C blocks A (closes the loop).
 		$result = $this->add_tool->execute(
-			array( 'blocking_task_id' => $task_c, 'blocked_task_id' => $task_a ),
+			array(
+				'blocking_task_id' => $task_c,
+				'blocked_task_id'  => $task_a,
+			),
 			$this->context()
 		);
 
@@ -250,12 +277,18 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_b = $this->create_task( 'Task B' );
 
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
 		$result = $this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
@@ -278,12 +311,18 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_b = $this->create_task( 'Task B' );
 
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
 		$result = $this->remove_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
@@ -303,12 +342,18 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_b = $this->create_task( 'Task B' );
 
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
 		$this->remove_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
@@ -324,7 +369,10 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_b = $this->create_task( 'Task B' );
 
 		$result = $this->remove_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
@@ -345,11 +393,17 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 
 		// A blocks B, A blocks C.
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_c ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_c,
+			),
 			$this->context()
 		);
 
@@ -372,7 +426,10 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_b = $this->create_task( 'Task B' );
 
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 
@@ -392,7 +449,10 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 		$task_b = $this->create_task( 'Task B' );
 
 		$this->add_tool->execute(
-			array( 'blocking_task_id' => $task_a, 'blocked_task_id' => $task_b ),
+			array(
+				'blocking_task_id' => $task_a,
+				'blocked_task_id'  => $task_b,
+			),
 			$this->context()
 		);
 

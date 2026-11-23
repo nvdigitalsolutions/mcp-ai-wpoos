@@ -52,7 +52,10 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 			new WP_MCP_AI_Rule_Verifier(
 				'runner_test_rule',
 				array(
-					array( 'type' => 'required', 'path' => 'value' ),
+					array(
+						'type' => 'required',
+						'path' => 'value',
+					),
 				)
 			)
 		);
@@ -77,7 +80,10 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 			array(
 				'slug'  => 't',
 				'cases' => array(
-					array( 'slug' => 'c1', 'verifier_slug' => 'runner_test_rule' ),
+					array(
+						'slug'          => 'c1',
+						'verifier_slug' => 'runner_test_rule',
+					),
 				),
 			)
 		);
@@ -89,9 +95,14 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 	public function test_run_reports_passing_case() {
 		$runner    = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
 		$generator = static function () {
-			return array( 'output' => 'hello', 'stated_confidence' => 0.9, 'cost_usd' => 0.01, 'budget_usd' => 1.0 );
+			return array(
+				'output'            => 'hello',
+				'stated_confidence' => 0.9,
+				'cost_usd'          => 0.01,
+				'budget_usd'        => 1.0,
+			);
 		};
-		$report = $runner->run( $this->passing_suite(), $generator, array( 'rewards' => array( 'verified_success' ) ) );
+		$report    = $runner->run( $this->passing_suite(), $generator, array( 'rewards' => array( 'verified_success' ) ) );
 		$this->assertSame( 1, $report['summary']['total'] );
 		$this->assertSame( 1, $report['summary']['passed'] );
 		$this->assertSame( 1.0, $report['summary']['pass_rate'] );
@@ -108,7 +119,7 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$generator = static function () {
 			return array( 'output' => '' );
 		};
-		$report = $runner->run( $this->passing_suite(), $generator );
+		$report    = $runner->run( $this->passing_suite(), $generator );
 		$this->assertSame( 0, $report['summary']['passed'] );
 		$this->assertFalse( $report['cases'][0]['passed'] );
 	}
@@ -121,7 +132,7 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$generator = static function () {
 			return new WP_Error( 'boom', 'no' );
 		};
-		$report = $runner->run( $this->passing_suite(), $generator );
+		$report    = $runner->run( $this->passing_suite(), $generator );
 		$this->assertSame( 0, $report['summary']['passed'] );
 		$this->assertSame( 1, $report['summary']['errors'] );
 		$this->assertSame( 'generator_error', $report['cases'][0]['error']['code'] );
@@ -135,7 +146,7 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$generator = static function () {
 			return 'not an array';
 		};
-		$report = $runner->run( $this->passing_suite(), $generator );
+		$report    = $runner->run( $this->passing_suite(), $generator );
 		$this->assertSame( 'generator_invalid_return', $report['cases'][0]['error']['code'] );
 	}
 
@@ -147,7 +158,12 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->verifiers->register(
 			new WP_MCP_AI_Rule_Verifier(
 				'strict_verifier',
-				array( array( 'type' => 'required', 'path' => 'value' ) )
+				array(
+					array(
+						'type' => 'required',
+						'path' => 'value',
+					),
+				)
 			)
 		);
 		// Inject disallowed provider via reflection by swapping the profile.
@@ -155,14 +171,24 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$ref = new ReflectionObject( $v );
 		$p   = $ref->getProperty( 'independence_profile' );
 		$p->setAccessible( true );
-		$p->setValue( $v, array( 'disallowed_providers' => array( 'openai' ), 'disallowed_models' => array(), 'disallowed_tools' => array() ) );
+		$p->setValue(
+			$v,
+			array(
+				'disallowed_providers' => array( 'openai' ),
+				'disallowed_models'    => array(),
+				'disallowed_tools'     => array(),
+			)
+		);
 
 		$suite = new WP_MCP_AI_Eval_Suite(
 			array(
 				'slug'              => 't',
 				'generator_context' => array( 'provider' => 'openai' ),
 				'cases'             => array(
-					array( 'slug' => 'c1', 'verifier_slug' => 'strict_verifier' ),
+					array(
+						'slug'          => 'c1',
+						'verifier_slug' => 'strict_verifier',
+					),
 				),
 			)
 		);
@@ -171,7 +197,7 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$generator = static function () {
 			return array( 'output' => 'hi' );
 		};
-		$report = $runner->run( $suite, $generator );
+		$report    = $runner->run( $suite, $generator );
 		$this->assertSame( 1, $report['summary']['errors'] );
 		$this->assertSame( 'verifier_error', $report['cases'][0]['error']['code'] );
 	}
@@ -182,17 +208,22 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 	public function test_abstention_is_counted_separately_and_not_passed() {
 		// An LLM judge with no callable abstains.
 		$this->verifiers->register( new WP_MCP_AI_LLM_Judge_Verifier( 'abstainer' ) );
-		$suite = new WP_MCP_AI_Eval_Suite(
+		$suite     = new WP_MCP_AI_Eval_Suite(
 			array(
 				'slug'  => 't',
-				'cases' => array( array( 'slug' => 'c1', 'verifier_slug' => 'abstainer' ) ),
+				'cases' => array(
+					array(
+						'slug'          => 'c1',
+						'verifier_slug' => 'abstainer',
+					),
+				),
 			)
 		);
 		$runner    = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
 		$generator = static function () {
 			return array( 'output' => 'hi' );
 		};
-		$report = $runner->run( $suite, $generator );
+		$report    = $runner->run( $suite, $generator );
 		$this->assertSame( 0, $report['summary']['passed'] );
 		$this->assertSame( 1, $report['summary']['abstained'] );
 		$this->assertSame( 1.0, $report['summary']['abstention_rate'] );
@@ -237,8 +268,14 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 			new WP_MCP_AI_Rule_Verifier(
 				'need_a_and_b',
 				array(
-					array( 'type' => 'required', 'path' => 'value.a' ),
-					array( 'type' => 'required', 'path' => 'value.b' ),
+					array(
+						'type' => 'required',
+						'path' => 'value.a',
+					),
+					array(
+						'type' => 'required',
+						'path' => 'value.b',
+					),
 				)
 			)
 		);
@@ -246,9 +283,21 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 			array(
 				'slug'  => 't',
 				'cases' => array(
-					array( 'slug' => 'c1', 'verifier_slug' => 'need_a_and_b', 'input' => array( 'n' => 1 ) ),
-					array( 'slug' => 'c2', 'verifier_slug' => 'need_a_and_b', 'input' => array( 'n' => 2 ) ),
-					array( 'slug' => 'c3', 'verifier_slug' => 'need_a_and_b', 'input' => array( 'n' => 3 ) ),
+					array(
+						'slug'          => 'c1',
+						'verifier_slug' => 'need_a_and_b',
+						'input'         => array( 'n' => 1 ),
+					),
+					array(
+						'slug'          => 'c2',
+						'verifier_slug' => 'need_a_and_b',
+						'input'         => array( 'n' => 2 ),
+					),
+					array(
+						'slug'          => 'c3',
+						'verifier_slug' => 'need_a_and_b',
+						'input'         => array( 'n' => 3 ),
+					),
 				),
 			)
 		);
@@ -259,12 +308,17 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 				return array( 'output' => array( 'a' => 'yes' ) );
 			}
 			if ( 2 === $n ) {
-				return array( 'output' => array( 'a' => 'yes', 'b' => 'yes' ) );
+				return array(
+					'output' => array(
+						'a' => 'yes',
+						'b' => 'yes',
+					),
+				);
 			}
 			return array( 'output' => array() );
 		};
-		$runner = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
-		$report = $runner->run( $suite, $generator );
+		$runner    = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
+		$report    = $runner->run( $suite, $generator );
 		$this->assertEqualsWithDelta( 0.5, $report['summary']['mean_score'], 0.0001 );
 		$this->assertEqualsWithDelta( 0.5, $report['summary']['median_score'], 0.0001 );
 		$this->assertSame( 1, $report['summary']['passed'] );

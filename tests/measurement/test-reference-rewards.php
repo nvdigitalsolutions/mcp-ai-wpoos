@@ -53,22 +53,59 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 	 * Verified_success returns 1.0 only when passed AND confidence >= 0.5.
 	 */
 	public function test_verified_success_thresholds() {
-		$this->assertSame( 1.0, $this->registry->evaluate( 'verified_success', array( 'verifier_passed' => true, 'verifier_confidence' => 0.9 ) ) );
-		$this->assertSame( 0.0, $this->registry->evaluate( 'verified_success', array( 'verifier_passed' => true, 'verifier_confidence' => 0.4 ) ) );
-		$this->assertSame( 0.0, $this->registry->evaluate( 'verified_success', array( 'verifier_passed' => false, 'verifier_confidence' => 0.9 ) ) );
+		$this->assertSame(
+			1.0,
+			$this->registry->evaluate(
+				'verified_success',
+				array(
+					'verifier_passed'     => true,
+					'verifier_confidence' => 0.9,
+				)
+			)
+		);
+		$this->assertSame(
+			0.0,
+			$this->registry->evaluate(
+				'verified_success',
+				array(
+					'verifier_passed'     => true,
+					'verifier_confidence' => 0.4,
+				)
+			)
+		);
+		$this->assertSame(
+			0.0,
+			$this->registry->evaluate(
+				'verified_success',
+				array(
+					'verifier_passed'     => false,
+					'verifier_confidence' => 0.9,
+				)
+			)
+		);
 	}
 
 	/**
 	 * Cost_adjusted_success penalizes high cost even on success.
 	 */
 	public function test_cost_adjusted_success_penalizes_cost() {
-		$cheap = $this->registry->evaluate(
+		$cheap     = $this->registry->evaluate(
 			'cost_adjusted_success',
-			array( 'verifier_passed' => true, 'verifier_confidence' => 0.9, 'cost_usd' => 0.0, 'budget_usd' => 1.0 )
+			array(
+				'verifier_passed'     => true,
+				'verifier_confidence' => 0.9,
+				'cost_usd'            => 0.0,
+				'budget_usd'          => 1.0,
+			)
 		);
 		$expensive = $this->registry->evaluate(
 			'cost_adjusted_success',
-			array( 'verifier_passed' => true, 'verifier_confidence' => 0.9, 'cost_usd' => 1.0, 'budget_usd' => 1.0 )
+			array(
+				'verifier_passed'     => true,
+				'verifier_confidence' => 0.9,
+				'cost_usd'            => 1.0,
+				'budget_usd'          => 1.0,
+			)
 		);
 		$this->assertSame( 1.0, $cheap );
 		$this->assertEqualsWithDelta( 0.5, $expensive, 0.0001 );
@@ -98,11 +135,38 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 	 */
 	public function test_calibration_brier_extremes() {
 		// Agent says 1.0 confident AND is right: perfect calibration.
-		$this->assertSame( 1.0, $this->registry->evaluate( 'calibration_brier', array( 'stated_confidence' => 1.0, 'verifier_passed' => true ) ) );
+		$this->assertSame(
+			1.0,
+			$this->registry->evaluate(
+				'calibration_brier',
+				array(
+					'stated_confidence' => 1.0,
+					'verifier_passed'   => true,
+				)
+			)
+		);
 		// Agent says 0.0 confident AND is wrong: still perfect calibration (honestly predicted failure).
-		$this->assertSame( 1.0, $this->registry->evaluate( 'calibration_brier', array( 'stated_confidence' => 0.0, 'verifier_passed' => false ) ) );
+		$this->assertSame(
+			1.0,
+			$this->registry->evaluate(
+				'calibration_brier',
+				array(
+					'stated_confidence' => 0.0,
+					'verifier_passed'   => false,
+				)
+			)
+		);
 		// Agent says 1.0 confident but is wrong: worst case.
-		$this->assertSame( 0.0, $this->registry->evaluate( 'calibration_brier', array( 'stated_confidence' => 1.0, 'verifier_passed' => false ) ) );
+		$this->assertSame(
+			0.0,
+			$this->registry->evaluate(
+				'calibration_brier',
+				array(
+					'stated_confidence' => 1.0,
+					'verifier_passed'   => false,
+				)
+			)
+		);
 	}
 
 	/**
@@ -113,7 +177,10 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 			foreach ( array( true, false ) as $passed ) {
 				$val = $this->registry->evaluate(
 					'calibration_brier',
-					array( 'stated_confidence' => $conf, 'verifier_passed' => $passed )
+					array(
+						'stated_confidence' => $conf,
+						'verifier_passed'   => $passed,
+					)
 				);
 				$this->assertGreaterThanOrEqual( 0.0, $val );
 				$this->assertLessThanOrEqual( 1.0, $val );
@@ -126,7 +193,13 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 	 * agent score better than telling the truth on verified_success.
 	 */
 	public function test_no_reward_hack_for_verified_success() {
-		$honest_high = $this->registry->evaluate( 'verified_success', array( 'verifier_passed' => true, 'verifier_confidence' => 1.0 ) );
+		$honest_high = $this->registry->evaluate(
+			'verified_success',
+			array(
+				'verifier_passed'     => true,
+				'verifier_confidence' => 1.0,
+			)
+		);
 		for ( $i = 0; $i < 50; $i++ ) {
 			$val = $this->registry->evaluate(
 				'verified_success',

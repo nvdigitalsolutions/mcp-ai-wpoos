@@ -95,7 +95,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => '',
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -120,7 +123,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => '',
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -145,7 +151,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => '',
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -173,7 +182,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => '{"ok":true}',
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -211,12 +223,18 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 		$captured = null;
 
 		$filter = function ( $preempt, $args, $url ) use ( &$captured ) {
-			$captured = array( 'url' => $url, 'args' => $args );
+			$captured = array(
+				'url'  => $url,
+				'args' => $args,
+			);
 
 			return array(
 				'headers'  => array(),
 				'body'     => '{"created":true}',
-				'response' => array( 'code' => 201, 'message' => 'Created' ),
+				'response' => array(
+					'code'    => 201,
+					'message' => 'Created',
+				),
 			);
 		};
 
@@ -263,7 +281,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => "data: hello\ndata: [DONE]",
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -284,7 +305,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => "data: chunk1\ndata: chunk2\ndata: [DONE]",
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -295,7 +319,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			'https://example.com/stream',
 			array(),
 			function ( $chunk, $done ) use ( &$received ) {
-				$received[] = array( 'chunk' => $chunk, 'done' => $done );
+				$received[] = array(
+					'chunk' => $chunk,
+					'done'  => $done,
+				);
 			}
 		);
 
@@ -318,7 +345,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => "line1\nline2\nline3",
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -329,7 +359,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			'https://example.com/stream',
 			array(),
 			function ( $chunk, $done ) use ( &$received ) {
-				$received[] = array( 'chunk' => $chunk, 'done' => $done );
+				$received[] = array(
+					'chunk' => $chunk,
+					'done'  => $done,
+				);
 			}
 		);
 
@@ -349,7 +382,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => "line1\r\nline2\r\nline3",
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -380,7 +416,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => "line1\n\nline2\n\n",
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -410,7 +449,10 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => 'some data',
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -455,7 +497,14 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 		};
 
 		$http_filter = function ( $preempt, $args, $url ) {
-			return array( 'headers' => array(), 'body' => '', 'response' => array( 'code' => 200, 'message' => 'OK' ) );
+			return array(
+				'headers'  => array(),
+				'body'     => '',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
 		};
 
 		add_filter( 'wp_mcp_ai_http_client_get_args', $args_filter, 10, 2 );
@@ -479,7 +528,14 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 		};
 
 		$http_filter = function ( $preempt, $args, $url ) {
-			return array( 'headers' => array(), 'body' => '', 'response' => array( 'code' => 200, 'message' => 'OK' ) );
+			return array(
+				'headers'  => array(),
+				'body'     => '',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
 		};
 
 		add_filter( 'wp_mcp_ai_http_client_post_args', $args_filter, 10, 2 );
@@ -503,7 +559,14 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 		};
 
 		$http_filter = function ( $preempt, $args, $url ) {
-			return array( 'headers' => array(), 'body' => '', 'response' => array( 'code' => 200, 'message' => 'OK' ) );
+			return array(
+				'headers'  => array(),
+				'body'     => '',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
 		};
 
 		add_filter( 'wp_mcp_ai_http_client_stream_args', $args_filter, 10, 2 );
