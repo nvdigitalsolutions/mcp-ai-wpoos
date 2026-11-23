@@ -449,8 +449,19 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
 	 */
 	protected function register_transcript_handler() {
 		$this->transcript_handler = new class() {
+			/**
+			 * Stored transcript items.
+			 *
+			 * @var array
+			 */
 			public $records = array();
 
+			/**
+			 * Capture an updated transcript item.
+			 *
+			 * @param array $item Transcript item.
+			 * @return bool
+			 */
 			public function update_item( $item ) {
 				$this->records[] = $item;
 				return count( $this->records );

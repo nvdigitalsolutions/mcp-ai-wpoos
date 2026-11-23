@@ -45,7 +45,7 @@ class WP_MCP_AI_Mock_Broken_Schema_Tool implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * Get the parameters schema.
 	 *
-	 * @return array Parameters schema.
+	 * @throws Exception Always.
 	 */
 	public function get_parameters_schema() {
 		throw new Exception( 'Simulated schema generation error' );

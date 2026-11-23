@@ -209,6 +209,12 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 					'large_field' => 'should be removed',
 				);
 			}
+			/**
+			 * Sanitise a tool result for the LLM.
+			 *
+			 * @param mixed $result Tool result.
+			 * @return mixed
+			 */
 			public function sanitize_for_llm( $result ) {
 				// Custom sanitization: only keep 'test' field.
 				return array( 'test' => $result['test'] );

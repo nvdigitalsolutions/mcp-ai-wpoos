@@ -74,7 +74,7 @@ class Test_Veo_Inline_Kick extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * poll_video_async() must bail early when the cooperative tick lock is
+	 * Poll_video_async() must bail early when the cooperative tick lock is
 	 * already held, without calling any downstream code.
 	 */
 	public function test_poll_video_async_bails_when_lock_held() {
@@ -98,7 +98,7 @@ class Test_Veo_Inline_Kick extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * poll_video_async() must return silently when no metadata transient exists
+	 * Poll_video_async() must return silently when no metadata transient exists
 	 * for the given job_id (e.g. after a TTL expiry).
 	 */
 	public function test_poll_video_async_bails_on_missing_metadata() {

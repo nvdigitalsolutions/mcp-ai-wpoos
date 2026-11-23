@@ -896,7 +896,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	}
 
 	/**
-	 * chatTasksDrawer config key defaults to true as of v1.9.3 (PR-G flag flip).
+	 * ChatTasksDrawer config key defaults to true as of v1.9.3 (PR-G flag flip).
 	 *
 	 * @covers WP_MCP_AI_Shortcode
 	 */
@@ -926,7 +926,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	}
 
 	/**
-	 * chatTasksDrawer config key is false when the filter returns false (opt-out).
+	 * ChatTasksDrawer config key is false when the filter returns false (opt-out).
 	 *
 	 * @covers WP_MCP_AI_Shortcode
 	 */

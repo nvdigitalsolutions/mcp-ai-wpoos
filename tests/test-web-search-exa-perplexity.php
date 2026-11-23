@@ -16,7 +16,11 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.ph
  */
 class WP_MCP_AI_Web_Search_Exa_Perplexity_Test extends WP_UnitTestCase {
 
-	/** @var int */
+	/**
+	 * Test user id.
+	 *
+	 * @var int
+	 */
 	private $user_id;
 
 	/**

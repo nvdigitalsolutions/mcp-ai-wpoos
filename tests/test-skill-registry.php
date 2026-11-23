@@ -183,6 +183,7 @@ class WP_MCP_AI_Skill_Registry_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Uninstalling removes the skill.
 	 */
 	public function test_uninstall_skill() {
 		$content = "---\nname: removable-skill\ndescription: Will be removed.\n---\n\nInstructions.";

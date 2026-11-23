@@ -351,7 +351,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * via the same SKILL.md parser used at runtime.
+	 * Via the same SKILL.md parser used at runtime.
 	 *
 	 * The Pro directory ships alongside the Pro add-on and is installed via
 	 * `install_bundled_skills_from_dir()` on Pro activation. It is exercised

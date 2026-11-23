@@ -47,11 +47,15 @@ class WP_MCP_AI_Test_Tool_Alias_New implements WP_MCP_AI_Tool_Interface {
 }
 
 /**
+ * Tool deprecated alias tests.
+ *
  * @group p5-part-2
  */
 class Test_Tool_Deprecated_Alias extends WP_UnitTestCase {
 
 	/**
+	 * Tool registry under test.
+	 *
 	 * @var WP_MCP_AI_Tool_Registry
 	 */
 	protected $registry;

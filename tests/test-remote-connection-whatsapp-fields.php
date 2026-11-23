@@ -561,7 +561,7 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	/**
 	 * Test that the phone-number endpoint does NOT include quality_rating in its fields.
 	 *
-	 * quality_rating requires whatsapp_business_management permission which App Access
+	 * The quality_rating field requires whatsapp_business_management permission which App Access
 	 * Tokens lack.  It must be fetched as a separate optional request so that a 403
 	 * response from that field does not fail the whole connection test.
 	 */

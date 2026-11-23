@@ -65,7 +65,7 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 		add_filter(
 			'wp_mcp_ai_chat_session_stream_frame',
 			function ( $data ) {
-				return $data; // pass-through
+				return $data; // pass-through.
 			}
 		);
 
@@ -264,7 +264,7 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * init() registers the action hook exactly once.
+	 * Init() registers the action hook exactly once.
 	 *
 	 * @test
 	 */
@@ -282,7 +282,7 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * wp_mcp_ai_chat_session_stream_frame filter can modify the frame payload.
+	 * Wp_mcp_ai_chat_session_stream_frame filter can modify the frame payload.
 	 *
 	 * @test
 	 */

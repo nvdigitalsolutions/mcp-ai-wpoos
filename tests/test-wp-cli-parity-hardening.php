@@ -76,7 +76,7 @@ class Test_WP_CLI_Parity_Hardening extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_tools reads the canonical array and ignores legacy string shapes.
+	 * Get_tools reads the canonical array and ignores legacy string shapes.
 	 */
 	public function test_meta_map_get_tools_reads_array_only() {
 		$id                    = wp_insert_post(

@@ -116,7 +116,7 @@ class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'input_image', $result['type'] );
 		$this->assertArrayHasKey( 'image_url', $result );
 		$this->assertEquals( 'https://example.com/image.jpg', $result['image_url']['url'] );
-		// Detail should be extracted from image_url.detail
+		// Detail should be extracted from image_url.detail.
 		$this->assertArrayHasKey( 'detail', $result );
 		$this->assertEquals( 'low', $result['detail'] );
 	}

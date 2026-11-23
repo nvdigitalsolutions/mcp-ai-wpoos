@@ -14,6 +14,9 @@ class WP_MCP_AI_REST_Chat_Error_Logging_Test extends WP_UnitTestCase {
 	 */
 	protected $rest_controller;
 
+	/**
+	 * Prepare the REST server before each test.
+	 */
 	public function set_up(): void {
 		parent::set_up();
 
@@ -23,6 +26,9 @@ class WP_MCP_AI_REST_Chat_Error_Logging_Test extends WP_UnitTestCase {
 		$this->rest_controller = new WP_MCP_AI_REST( $registry, $client );
 	}
 
+	/**
+	 * Rate-limit details are included in the log message.
+	 */
 	public function test_build_chat_error_log_message_includes_rate_limit_details() {
 		$error = new WP_Error(
 			'wp_mcp_ai_api_error',
@@ -71,6 +77,9 @@ class WP_MCP_AI_REST_Chat_Error_Logging_Test extends WP_UnitTestCase {
 		$this->assertSame( 12, $context['rate_limit_reset_seconds'] );
 	}
 
+	/**
+	 * Non-rate-limit errors use the default message.
+	 */
 	public function test_build_chat_error_log_message_defaults_for_non_rate_limit_errors() {
 		$error = new WP_Error(
 			'wp_mcp_ai_api_error',

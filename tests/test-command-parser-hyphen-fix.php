@@ -143,11 +143,11 @@ class Test_Command_Parser_Hyphen_Fix extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertEquals( 'optimize-perf', $result['command'], 'Entire command name should be captured' );
 
-		// Ensure -perf is NOT treated as a flag
+		// Ensure -perf is NOT treated as a flag.
 		$this->assertArrayNotHasKey( 'p', $result['flags'], 'Should not have -p flag' );
 		$this->assertArrayNotHasKey( 'perf', $result['flags'], 'Should not have -perf flag' );
 
-		// Ensure -perf is NOT treated as a positional argument
+		// Ensure -perf is NOT treated as a positional argument.
 		$this->assertEmpty( $result['args'], 'Should not have any positional arguments' );
 	}
 

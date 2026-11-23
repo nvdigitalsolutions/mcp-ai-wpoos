@@ -378,7 +378,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 			 *
 			 * @param array $arguments Tool arguments.
 			 * @param array $context Execution context.
-			  * @throws Exception Always, to simulate a failing tool.
+			 * @throws Exception Always, to simulate a failing tool.
 			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				throw new Exception( 'Intentional exception for testing' );

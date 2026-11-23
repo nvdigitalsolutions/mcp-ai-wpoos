@@ -504,7 +504,7 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 	/**
 	 * Test that OpenAI image model support flag correctly gates response_format.
 	 *
-	 * gpt-image-1 and gpt-image-1.5 must NOT support response_format, while
+	 * The gpt-image-1 and gpt-image-1.5 models must NOT support response_format, while
 	 * DALL-E variants must. This verifies the existing helper that the fixed
 	 * edit_image() method now uses.
 	 */
