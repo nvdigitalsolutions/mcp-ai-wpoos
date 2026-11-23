@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/bootstrap.php';
 
 /**
+ * Graphify remote registry and tools.
+ *
  * @coversDefaultClass NV_oOS_Graphify_Remote_Registry
  */
 class Test_Graphify_Remote extends WP_UnitTestCase {
@@ -156,7 +158,7 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 	}
 
 	/**
-	 * is_sensitive_key() correctly identifies sensitive config keys.
+	 * Is_sensitive_key() correctly identifies sensitive config keys.
 	 *
 	 * @covers NV_oOS_Graphify_Crypto::is_sensitive_key
 	 */
@@ -227,7 +229,7 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 	}
 
 	/**
-	 * cosine_similarity of identical vectors = 1.0.
+	 * Cosine_similarity of identical vectors = 1.0.
 	 *
 	 * @covers NV_oOS_Graphify_Embeddings::cosine_similarity
 	 */
@@ -243,7 +245,7 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 	}
 
 	/**
-	 * cosine_similarity of orthogonal vectors = 0.0.
+	 * Cosine_similarity of orthogonal vectors = 0.0.
 	 *
 	 * @covers NV_oOS_Graphify_Embeddings::cosine_similarity
 	 */
@@ -264,7 +266,7 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * list_remote_sources tool returns success with expected structure.
+	 * List_remote_sources tool returns success with expected structure.
 	 *
 	 * @covers NV_oOS_Graphify_Tool_List_Remote_Sources::execute
 	 */
@@ -280,7 +282,7 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sync_remote_source tool requires manage_options capability.
+	 * Sync_remote_source tool requires manage_options capability.
 	 *
 	 * @covers NV_oOS_Graphify_Tool_Sync_Remote_Source::execute
 	 */
@@ -298,7 +300,7 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 	}
 
 	/**
-	 * retrieve_context tool returns success=true and context_text when no nodes exist.
+	 * Retrieve_context tool returns success=true and context_text when no nodes exist.
 	 *
 	 * @covers NV_oOS_Graphify_Tool_Retrieve_Context::execute
 	 */

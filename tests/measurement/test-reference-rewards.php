@@ -50,7 +50,7 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 	}
 
 	/**
-	 * verified_success returns 1.0 only when passed AND confidence >= 0.5.
+	 * Verified_success returns 1.0 only when passed AND confidence >= 0.5.
 	 */
 	public function test_verified_success_thresholds() {
 		$this->assertSame( 1.0, $this->registry->evaluate( 'verified_success', array( 'verifier_passed' => true, 'verifier_confidence' => 0.9 ) ) );
@@ -59,7 +59,7 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 	}
 
 	/**
-	 * cost_adjusted_success penalizes high cost even on success.
+	 * Cost_adjusted_success penalizes high cost even on success.
 	 */
 	public function test_cost_adjusted_success_penalizes_cost() {
 		$cheap = $this->registry->evaluate(
@@ -75,7 +75,7 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 	}
 
 	/**
-	 * cost_adjusted_success stays in [0,1] under adversarial cost values.
+	 * Cost_adjusted_success stays in [0,1] under adversarial cost values.
 	 */
 	public function test_cost_adjusted_success_bounded() {
 		for ( $i = 0; $i < 20; $i++ ) {
@@ -94,7 +94,7 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 	}
 
 	/**
-	 * calibration_brier: perfect calibration gets 1.0, worst case gets 0.0.
+	 * Calibration_brier: perfect calibration gets 1.0, worst case gets 0.0.
 	 */
 	public function test_calibration_brier_extremes() {
 		// Agent says 1.0 confident AND is right: perfect calibration.
@@ -106,7 +106,7 @@ class Test_WP_MCP_AI_Reference_Rewards extends WP_UnitTestCase {
 	}
 
 	/**
-	 * calibration_brier stays in [0,1] for adversarial stated_confidence.
+	 * Calibration_brier stays in [0,1] for adversarial stated_confidence.
 	 */
 	public function test_calibration_brier_bounded_under_adversarial() {
 		foreach ( array( -10.0, -1.0, 0.0, 0.5, 1.0, 2.0, 99.9 ) as $conf ) {

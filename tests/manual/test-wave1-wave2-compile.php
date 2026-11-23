@@ -19,6 +19,12 @@ spl_autoload_register(
 
 $ok   = 0;
 $fail = 0;
+/**
+ * Assert that a class or interface exists.
+ *
+ * @param string $class Class or interface name.
+ * @return void
+ */
 function check( string $class ): void {
 	global $ok, $fail;
 	if ( class_exists( $class ) || interface_exists( $class ) ) {
@@ -27,6 +33,13 @@ function check( string $class ): void {
 		++$fail;
 		printf( "  FAIL %s\n", $class ); }
 }
+/**
+ * Assert that a class implements the expected contract.
+ *
+ * @param string $cls   Class name.
+ * @param string $iface Contract interface name.
+ * @return void
+ */
 function verify( string $cls, string $iface ): void {
 	global $ok, $fail;
 	$obj  = new $cls();

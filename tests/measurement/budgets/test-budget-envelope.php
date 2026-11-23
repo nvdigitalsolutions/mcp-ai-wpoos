@@ -13,16 +13,25 @@
  */
 class Test_WP_MCP_AI_Budget_Envelope extends WP_UnitTestCase {
 
+	/**
+	 * A budget without a slug is rejected.
+	 */
 	public function test_requires_slug() {
 		$this->expectException( 'InvalidArgumentException' );
 		new WP_MCP_AI_Budget_Envelope( array( 'metric_ids' => array( 'm' ), 'limit' => 1.0 ) );
 	}
 
+	/**
+	 * A budget without metric ids is rejected.
+	 */
 	public function test_requires_metric_ids() {
 		$this->expectException( 'InvalidArgumentException' );
 		new WP_MCP_AI_Budget_Envelope( array( 'slug' => 's', 'limit' => 1.0 ) );
 	}
 
+	/**
+	 * A non-positive limit is rejected.
+	 */
 	public function test_requires_positive_limit() {
 		$this->expectException( 'InvalidArgumentException' );
 		new WP_MCP_AI_Budget_Envelope(
@@ -30,6 +39,9 @@ class Test_WP_MCP_AI_Budget_Envelope extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Defaults apply and metric ids are normalised.
+	 */
 	public function test_defaults_and_normalization() {
 		$e = new WP_MCP_AI_Budget_Envelope(
 			array(
@@ -51,6 +63,9 @@ class Test_WP_MCP_AI_Budget_Envelope extends WP_UnitTestCase {
 		$this->assertSame( WP_MCP_AI_Budget_Envelope::SCOPE_REQUEST, $e->get_scope() );
 	}
 
+	/**
+	 * The warn ratio is clamped to the 0-1 range.
+	 */
 	public function test_warn_ratio_clamped() {
 		$e = new WP_MCP_AI_Budget_Envelope(
 			array( 'slug' => 's', 'metric_ids' => array( 'm' ), 'limit' => 10, 'warn_ratio' => 1.5 )
@@ -62,6 +77,9 @@ class Test_WP_MCP_AI_Budget_Envelope extends WP_UnitTestCase {
 		$this->assertSame( 0.0, $e2->get_warn_ratio() );
 	}
 
+	/**
+	 * An unknown scope falls back to request.
+	 */
 	public function test_invalid_scope_falls_back_to_request() {
 		$e = new WP_MCP_AI_Budget_Envelope(
 			array( 'slug' => 's', 'metric_ids' => array( 'm' ), 'limit' => 10, 'scope' => 'weirdo' )
@@ -69,6 +87,9 @@ class Test_WP_MCP_AI_Budget_Envelope extends WP_UnitTestCase {
 		$this->assertSame( WP_MCP_AI_Budget_Envelope::SCOPE_REQUEST, $e->get_scope() );
 	}
 
+	/**
+	 * Only scalar tags survive sanitisation.
+	 */
 	public function test_tags_sanitized() {
 		$e = new WP_MCP_AI_Budget_Envelope(
 			array(

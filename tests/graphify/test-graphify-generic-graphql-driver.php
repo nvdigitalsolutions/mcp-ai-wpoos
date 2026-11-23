@@ -60,7 +60,7 @@ class Test_Graphify_Generic_GraphQL_Driver extends WP_UnitTestCase {
 	}
 
 	/**
-	 * test_connection without endpoint_url returns WP_Error, per the source
+	 * Test_connection without endpoint_url returns WP_Error, per the source
 	 * interface contract (no fatal, no remote call).
 	 */
 	public function test_connection_returns_failure_when_endpoint_missing() {
@@ -73,7 +73,7 @@ class Test_Graphify_Generic_GraphQL_Driver extends WP_UnitTestCase {
 	}
 
 	/**
-	 * fetch_nodes / fetch_edges return [] when not configured rather than
+	 * Fetch_nodes / fetch_edges return [] when not configured rather than
 	 * raising — matches generic_rest behaviour.
 	 */
 	public function test_fetch_returns_empty_when_not_configured() {

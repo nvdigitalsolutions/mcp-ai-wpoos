@@ -236,7 +236,7 @@ class WP_MCP_AI_REST_MCP_OAuth_Resource_Server_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * tools/list advertises per-tool security schemes when Auth0 is configured.
+	 * Tools/list advertises per-tool security schemes when Auth0 is configured.
 	 */
 	public function test_tools_list_advertises_security_schemes() {
 		$this->set_auth0_configuration( true );
@@ -261,7 +261,7 @@ class WP_MCP_AI_REST_MCP_OAuth_Resource_Server_Test extends WP_UnitTestCase {
 
 		// Read-only tool → site:read only; write-flagged tool adds content:write.
 		// (get_user_info resolves to the registry's validated twin, whose flags
-		// lack read-only — so it exercises the write-scope branch.)
+		// lack read-only — so it exercises the write-scope branch.).
 		$this->assertArrayHasKey( 'nvoos_get_profile', $by_name );
 		$this->assertSame( array( 'site:read' ), $by_name['nvoos_get_profile']['securitySchemes'][0]['scopes'] );
 		$this->assertArrayHasKey( 'get_user_info', $by_name );

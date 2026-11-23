@@ -14,20 +14,29 @@
 class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 
 	/**
+	 * Verifier registry instance.
+	 *
 	 * @var WP_MCP_AI_Verifier_Registry
 	 */
 	private $verifiers;
 
 	/**
+	 * Reward function registry instance.
+	 *
 	 * @var WP_MCP_AI_Reward_Function_Registry
 	 */
 	private $rewards;
 
 	/**
+	 * Metric collector instance.
+	 *
 	 * @var WP_MCP_AI_Metric_Collector
 	 */
 	private $collector;
 
+	/**
+	 * Reset the registries and register the test verifier.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Verifier_Registry::reset_instance();
@@ -51,6 +60,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		WP_MCP_AI_Reference_Rewards::register( $this->rewards );
 	}
 
+	/**
+	 * Reset the registries between tests.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Verifier_Registry::reset_instance();
 		WP_MCP_AI_Reward_Function_Registry::reset_instance();
@@ -71,6 +83,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * A passing case is reported as passed.
+	 */
 	public function test_run_reports_passing_case() {
 		$runner    = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
 		$generator = static function () {
@@ -85,6 +100,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->assertTrue( $report['cases'][0]['passed'] );
 	}
 
+	/**
+	 * A failing case is reported as not passed.
+	 */
 	public function test_run_reports_failing_case() {
 		$runner    = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
 		$generator = static function () {
@@ -95,6 +113,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->assertFalse( $report['cases'][0]['passed'] );
 	}
 
+	/**
+	 * A WP_Error from the generator becomes an error case.
+	 */
 	public function test_generator_wp_error_becomes_error_case() {
 		$runner    = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
 		$generator = static function () {
@@ -106,6 +127,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->assertSame( 'generator_error', $report['cases'][0]['error']['code'] );
 	}
 
+	/**
+	 * A non-array generator return becomes an error case.
+	 */
 	public function test_invalid_generator_return_becomes_error_case() {
 		$runner    = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
 		$generator = static function () {
@@ -115,6 +139,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->assertSame( 'generator_invalid_return', $report['cases'][0]['error']['code'] );
 	}
 
+	/**
+	 * An independence violation surfaces as a verifier error.
+	 */
 	public function test_independence_violation_becomes_verifier_error() {
 		// Register a verifier that disallows provider=openai.
 		$this->verifiers->register(
@@ -149,6 +176,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->assertSame( 'verifier_error', $report['cases'][0]['error']['code'] );
 	}
 
+	/**
+	 * Abstentions are counted separately from passes.
+	 */
 	public function test_abstention_is_counted_separately_and_not_passed() {
 		// An LLM judge with no callable abstains.
 		$this->verifiers->register( new WP_MCP_AI_LLM_Judge_Verifier( 'abstainer' ) );
@@ -168,6 +198,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->assertSame( 1.0, $report['summary']['abstention_rate'] );
 	}
 
+	/**
+	 * A non-callable generator returns an error report.
+	 */
 	public function test_non_callable_generator_returns_error_report() {
 		$runner = new WP_MCP_AI_Eval_Runner( $this->verifiers, $this->rewards, $this->collector );
 		$report = $runner->run( $this->passing_suite(), 'not_a_function_that_exists_anywhere' );
@@ -175,6 +208,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->assertSame( 0, $report['summary']['total'] );
 	}
 
+	/**
+	 * The completion action fires with the finished report.
+	 */
 	public function test_completion_action_fires() {
 		$received = null;
 		add_action(
@@ -192,6 +228,9 @@ class Test_WP_MCP_AI_Eval_Runner extends WP_UnitTestCase {
 		$this->assertSame( 1, $received['summary']['total'] );
 	}
 
+	/**
+	 * Mean and median scores aggregate the case results.
+	 */
 	public function test_median_and_mean_score() {
 		// Three cases with different required paths to yield varied outcomes.
 		$this->verifiers->register(

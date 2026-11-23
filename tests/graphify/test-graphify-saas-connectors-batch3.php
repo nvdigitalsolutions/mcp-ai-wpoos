@@ -168,7 +168,7 @@ class Test_Graphify_Saas_Connectors_Batch3 extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sys_user records map to 'person' nodes with email surfaced at the
+	 * Sys_user records map to 'person' nodes with email surfaced at the
 	 * top level for entity resolution.
 	 */
 	public function test_servicenow_user_to_node_with_email() {
@@ -189,7 +189,7 @@ class Test_Graphify_Saas_Connectors_Batch3 extends WP_UnitTestCase {
 	}
 
 	/**
-	 * cmdb_ci records map to 'configuration_item' nodes carrying the
+	 * Cmdb_ci records map to 'configuration_item' nodes carrying the
 	 * sys_class_name in properties.
 	 */
 	public function test_servicenow_ci_to_node() {

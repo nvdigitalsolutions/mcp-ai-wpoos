@@ -50,13 +50,13 @@ class Test_ACP_Session_Manager extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'sessionId', $result );
 		$this->assertStringStartsWith( 'sess_', $result['sessionId'] );
 
-		// Verify session data was saved to transient
+		// Verify session data was saved to transient.
 		$session_data = get_transient( WP_MCP_AI_ACP_Session_Manager::TRANSIENT_PREFIX . $result['sessionId'] );
 		$this->assertNotFalse( $session_data );
 		$this->assertEquals( $this->user_id, $session_data['user_id'] );
 		$this->assertIsArray( $session_data['messages'] );
 
-		// Verify added to user meta
+		// Verify added to user meta.
 		$user_sessions = get_user_meta( $this->user_id, '_acp_sessions', true );
 		$this->assertContains( $result['sessionId'], $user_sessions );
 	}
@@ -65,7 +65,7 @@ class Test_ACP_Session_Manager extends WP_UnitTestCase {
 	 * Test loading an existing session.
 	 */
 	public function test_load_session() {
-		// Create a session directly via transient
+		// Create a session directly via transient.
 		$session_id = 'sess_test123';
 		$session_data = array(
 			'id'      => $session_id,
@@ -83,7 +83,7 @@ class Test_ACP_Session_Manager extends WP_UnitTestCase {
 	 * Test loading session belonging to another user.
 	 */
 	public function test_load_session_unauthorized() {
-		// Create a session for a different user
+		// Create a session for a different user.
 		$other_user_id = $this->factory->user->create();
 		$session_id    = 'sess_unauth';
 		$session_data  = array(

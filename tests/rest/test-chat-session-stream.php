@@ -134,7 +134,7 @@ class Test_Chat_Session_Stream_Controller extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * resolveChatSessionId logic (pure PHP proxy): sanitized session IDs are
+	 * ResolveChatSessionId logic (pure PHP proxy): sanitized session IDs are
 	 * accepted by the frame buffer.
 	 *
 	 * @test
