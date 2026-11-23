@@ -107,6 +107,16 @@ for fixing.
 
 Behaviour that surprises people:
 
+- **A comment-only catch still counts as empty**
+  (`Generic.CodeAnalysis.EmptyStatement.DetectedCatch`). The natural fix —
+  leaving `// Expected: …` inside the block — does not suppress it, because
+  the sniff treats a body with no statement as empty whatever the comment
+  says. It needs the ignore on the `catch` line itself. Append it as a
+  trailing comment rather than inventing a second convention: 72 sites in
+  `tests/` already used that form, so check the family first and match it.
+  Confirm placement on a file that is already clean before applying it at
+  scale — an ignore on the following line only works if it is *above* the
+  `catch`, which reads as a stray comment in the try block.
 - **A sniff stops at the first problem in a docblock.** Capitalising the short
   description can reveal a `LongNotCapital` long description on the next run,
   so the count may not fall by exactly the number you fixed.
