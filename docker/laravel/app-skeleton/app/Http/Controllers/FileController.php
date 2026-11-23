@@ -40,8 +40,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  * ## What it deliberately does not do
  *
- * No `Range` handling. Video playback wants it and doing it badly is worse than
- * not doing it (Proposal 162 §162.7); the whole representation is streamed.
+ * Multi-range requests. `Range: bytes=0-1,5-6` is answered with the whole
+ * representation (200), which RFC 9110 §14.2 permits for a server that does not
+ * implement the multipart form; browsers ask for one range at a time, and a
+ * half-correct multipart response is worse than none.
+ *
+ * It also does not honour `If-Range`. This route emits no `ETag` or
+ * `Last-Modified`, so a validator a client sends cannot be matched — and
+ * honouring the range anyway is how a resumed download lands on the wrong bytes.
+ * `If-Range` therefore gets the full representation.
  */
 final class FileController
 {
@@ -75,21 +82,177 @@ final class FileController
             || str_starts_with($mime, 'video/')
             || str_starts_with($mime, 'audio/');
 
-        return $disk->response(
-            (string) $row->path,
-            $name,
-            array(
-                'Content-Type' => $mime,
-                'X-Content-Type-Options' => 'nosniff',
-                'Content-Disposition' => sprintf(
-                    '%s; filename="%s"',
-                    $inline ? 'inline' : 'attachment',
-                    addcslashes($name, "\"\\")
-                ),
-                'Content-Security-Policy' => "default-src 'none'; sandbox",
-                'Cache-Control' => 'private, no-store, max-age=0',
+        $headers = array(
+            'Content-Type' => $mime,
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Disposition' => sprintf(
+                '%s; filename="%s"',
+                $inline ? 'inline' : 'attachment',
+                addcslashes($name, "\"\\")
+            ),
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
+            'Cache-Control' => 'private, no-store, max-age=0',
+        );
+
+        // Proposal 162 §162.7 — byte ranges. A player seeks by asking for one;
+        // without `Accept-Ranges` it will not try, and without a 206 every seek
+        // re-downloads from zero.
+        $absolute = $this->localPath($disk, (string) $row->path);
+
+        if (null === $absolute) {
+            // A remote driver streams the whole representation; ranged reads are
+            // its transport's job, not this controller's.
+            return $disk->response((string) $row->path, $name, $headers);
+        }
+
+        $size = (int) filesize($absolute);
+
+        $headers['Accept-Ranges'] = 'bytes';
+
+        $range = $this->requestedRange($request, $size);
+
+        if (false === $range) {
+            // Unsatisfiable: tell the client how long the representation is so it
+            // can recover, instead of silently sending something else.
+            return response()->stream(
+                static function (): void {
+                },
+                416,
+                $headers + array('Content-Range' => 'bytes */'.$size)
+            );
+        }
+
+        if (null === $range) {
+            return response()->stream(
+                $this->sink($absolute, 0, $size),
+                200,
+                $headers + array('Content-Length' => (string) $size)
+            );
+        }
+
+        [$start, $end] = $range;
+
+        return response()->stream(
+            $this->sink($absolute, $start, $end - $start + 1),
+            206,
+            $headers + array(
+                'Content-Range' => sprintf('bytes %d-%d/%d', $start, $end, $size),
+                'Content-Length' => (string) ($end - $start + 1),
             )
         );
+    }
+
+    /**
+     * The range this request asks for.
+     *
+     * @return array{0: int, 1: int}|null|false Null serves the whole file, false
+     *                                          means the range is unsatisfiable.
+     */
+    private function requestedRange(Request $request, int $size): array|false|null
+    {
+        // No validator is emitted by this route, so an `If-Range` cannot match.
+        // Serving the full representation is the safe answer (RFC 9110 §13.1.5).
+        if ('' !== trim((string) $request->header('If-Range'))) {
+            return null;
+        }
+
+        $header = trim((string) $request->header('Range'));
+
+        // Absent, malformed, or more than one range: send everything. A multipart
+        // 206 is permitted to be declined, and declining is honest.
+        if (! preg_match('/^bytes=(\d*)-(\d*)$/i', $header, $matches)) {
+            return null;
+        }
+
+        $first = $matches[1];
+        $last  = $matches[2];
+
+        if ('' === $first && '' === $last) {
+            return null;
+        }
+
+        if ($size <= 0) {
+            return null;
+        }
+
+        if ('' === $first) {
+            // Suffix form: the last N bytes.
+            $length = (int) $last;
+
+            if ($length <= 0) {
+                return false;
+            }
+
+            return array(max(0, $size - $length), $size - 1);
+        }
+
+        $start = (int) $first;
+
+        if ($start >= $size) {
+            return false;
+        }
+
+        $end = '' === $last ? $size - 1 : min((int) $last, $size - 1);
+
+        if ($end < $start) {
+            return false;
+        }
+
+        return array($start, $end);
+    }
+
+    /**
+     * Emit exactly `$length` bytes from `$start`.
+     *
+     * Chunked rather than `readfile()` so a 4 GB video never becomes a 4 GB
+     * string, and bounded so a truncated read cannot spin.
+     */
+    private function sink(string $absolute, int $start, int $length): callable
+    {
+        return static function () use ($absolute, $start, $length): void {
+            $handle = fopen($absolute, 'rb');
+
+            if (false === $handle) {
+                return;
+            }
+
+            if ($start > 0) {
+                fseek($handle, $start);
+            }
+
+            $remaining = $length;
+
+            while ($remaining > 0 && ! feof($handle)) {
+                $chunk = fread($handle, (int) min(65536, $remaining));
+
+                if (false === $chunk || '' === $chunk) {
+                    break;
+                }
+
+                echo $chunk;
+
+                $remaining -= strlen($chunk);
+            }
+
+            fclose($handle);
+        };
+    }
+
+    /**
+     * The on-disk path, or null when the driver is remote.
+     *
+     * Ranged reads need a seekable file. Rather than assume the disk is local,
+     * ask for the path and fall back to a whole-representation stream.
+     */
+    private function localPath(\Illuminate\Filesystem\FilesystemAdapter $disk, string $path): ?string
+    {
+        try {
+            $absolute = $disk->path($path);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return is_file($absolute) ? $absolute : null;
     }
 
     /**
