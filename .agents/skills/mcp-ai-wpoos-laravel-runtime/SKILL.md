@@ -188,7 +188,7 @@ directly inside the container as well.
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
 | App | `docker exec -w /app oos-laravel-app php -d memory_limit=1G vendor/bin/phpunit` — after the sync above. `artisan test` is fine for a filtered run but spawns a child; use phpunit directly for the full suite. The two `NVOOS_PM_*_FIXTURE` overrides are a container-only requirement | **920 tests / 5,125 assertions** (2026-11-17, after the console-tenancy slice); 6 failures were pre-existing scratch-container gaps, not code |
-| Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 180 passed / 678 assertions, **no failures** (2026-11-15, after the two stale status tests were corrected). Run it with **host** PHP: the container's `vendor/nvoos/core` symlink is Windows-absolute and does not resolve on Linux |
+| Adapter | `vendor/bin/phpunit` (`lib/laravel-adapter`) — scratch copy or container, see §19 | **348 tests / 1,825 assertions**, OK (2026-11-23). The only gate that catches a broken **package** binding: the app binds most of the same contracts itself, so a provider binding that lands on a nonexistent class name passes the app suite |
 | Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1751 tests / 6185 assertions (2026-11-15, after the harness port, the chat-path wiring, the PII parity work, server-side system-prompt ownership, the necessity gate and the tool preset catalogue); green apart from the no-coverage-driver warning |
 | Lint (Laravel trees) | `php vendor/bin/phpcs --standard=phpcs-laravel.xml.dist --error-severity=1 --warning-severity=8` (repo root) | **807 files, 0 errors** (2026-11-15, after the posture defaults landed). Covers `lib/core/src`, `lib/core/tests`, `lib/laravel-adapter/**` and `docker/laravel/app-skeleton/**`. `lib/core` was added last; it was reformatted from tabs to spaces in #7805. The two indentation sniffs are ruleset-wide excludes, so tabs are not actually forbidden in `lib/core` — see plan §22. If the run is red, check the anonymous-class sniff (`new class (`) first: three such errors reached `alpha-working` via #7813 and #7816 and were fixed in the posture PR — see plan §26 |
 | Console smoke (G1) | `npm run test:e2e` (`examples/nvoos-complete-velocity`) | 6 passed / ~30 s (2026-11-14). Builds `.e2e-dist/` (`--mode laravel`) and serves it through `scripts/serve.mjs`; the committed `dist/` is untouched. Needs the stack up and `localhost:4318` in `SANCTUM_STATEFUL_DOMAINS` |
@@ -1164,3 +1164,59 @@ on every file you touched and reads as style debt you introduced.
   count alone supports neither.
 - Verify with `php -l` and a re-run of phpcs after normalising; a heredoc-written
   file also needs the EOL pass, not just Python edits.
+
+## 19. The adapter suite, and the bug class only it catches (2026-11-23)
+
+Neither `lib/core` nor `lib/laravel-adapter` commits a `vendor`, so the package
+suite cannot run from the tree as checked out. Copy the two directories (13 MB) to
+a scratch location that preserves the `../core` path-repo layout, then let the
+container resolve and run:
+
+```sh
+mkdir -p <scratch> && cp -r lib/core lib/laravel-adapter <scratch>/
+docker run --rm -v "<scratch>:/pkg" -w /pkg/laravel-adapter \
+  -e COMPOSER_HOME=/tmp/composer oos-laravel-app \
+  sh -c 'composer update --no-interaction --prefer-dist --no-progress \
+         && vendor/bin/phpunit --no-coverage'
+```
+
+`oos-laravel-app` has PHP 8.3 and Composer 2.10, and packagist is reachable from
+it, so `composer update` is the whole setup (~1 min, Testbench included). One
+test resolves `tests/../../../docker/laravel/app-skeleton/resources/settings/
+catalogue.json`, so a scratch tree also needs the repo's `docker/` mounted at
+`/docker` or two `SettingsStoreEndpointWiringTest` cases fail for the wrong
+reason.
+
+**Why the setup is worth it: a shadowed binding hides a broken default.** The
+app's `AppServiceProvider` binds many of the same contracts the package binds, so
+a package binding that lands on a *nonexistent class name* is never asked for in
+the app and the app suite stays green. The package suite is the only gate that
+boots `NvoosServiceProvider` on its own.
+
+**The bug class: a lost `use` line is silent.** PHP resolves an unimported
+`Foo::class` to `<current namespace>\Foo` with no error and no autoload, so
+deleting an import turns a binding into a no-op. The failure is delayed and
+alphabetical: the registry still builds, then the first tool whose constructor
+*declares* the real contract cannot be constructed, and every slug after it never
+registers. The tells in `ToolReadinessRegistrationTest`:
+
+- `nvoos.tools.skipped` reads `{"<tool>": "service not bound: <Contract>"}`;
+- `testRegisteredSetMatchesTheManifest` diffs from mid-alphabet to `z`, not on a
+  single slug.
+
+Detect in one pass: every `<Alias>::class`, `new <Alias>` and `<Alias> $param` in
+the provider must have a matching `use`, because `Nvoos\Laravel\ServiceProvider\
+Foo` never exists. The sweep that found this one also found two more: an
+unimported `TenantResolverInterface` (so `AgentOrchestration` always namespaced
+its cache under `default`, whatever estate was active) and `Domain\Exception\*`
+imports in the workflow controller (the classes live under `Domain\Error\*`, so a
+refused write answered 500 instead of 403).
+
+**Run long suites against a snapshot.** Another agent editing
+`docker/laravel/app-skeleton/tests` during a 20-minute run kills PHPUnit at
+suite-build with `classNameFromFileName(): Argument #1 ($suiteClassFile) must be
+of type string, false given` — it scanned a file that was then deleted. Copy the
+skeleton (`cp -a docker/laravel/app-skeleton <scratch>/appsnap`) and mount that;
+the vendor volume's `nvoos/*` symlinks still point at `/workspace/oos/lib/…`, so
+`lib/` edits stay live. Mount `oos-laravel_laravel_storage` for speed: without it
+the suite runs 2–3× slower (~4.5 s/test).
