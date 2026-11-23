@@ -288,6 +288,114 @@ final class FileStoreVisibilityTest extends TestCase
         }
     }
 
+    public function test_a_range_request_answers_206_with_exactly_those_bytes(): void
+    {
+        $user = User::factory()->create();
+
+        $file = $this->store()->storeWithVisibility(
+            $this->source('abcdefghij', 'txt'),
+            'bytes.txt',
+            'text/plain',
+            (int) $user->getKey(),
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE
+        );
+
+        $response = $this->actingAs($user)->get('/api/v1/files/'.$file->id, array(
+            'Range' => 'bytes=2-5',
+        ));
+
+        $response->assertStatus(206);
+        $response->assertHeader('Content-Range', 'bytes 2-5/10');
+        $response->assertHeader('Content-Length', '4');
+        $response->assertHeader('Accept-Ranges', 'bytes');
+        $this->assertSame('cdef', $response->streamedContent());
+    }
+
+    public function test_a_suffix_range_answers_the_tail(): void
+    {
+        $user = User::factory()->create();
+
+        $file = $this->store()->storeWithVisibility(
+            $this->source('abcdefghij', 'txt'),
+            'tail.txt',
+            'text/plain',
+            (int) $user->getKey(),
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE
+        );
+
+        $response = $this->actingAs($user)->get('/api/v1/files/'.$file->id, array(
+            'Range' => 'bytes=-3',
+        ));
+
+        $response->assertStatus(206);
+        $response->assertHeader('Content-Range', 'bytes 7-9/10');
+        $this->assertSame('hij', $response->streamedContent());
+    }
+
+    public function test_a_range_past_the_end_is_416_with_the_length(): void
+    {
+        $user = User::factory()->create();
+
+        $file = $this->store()->storeWithVisibility(
+            $this->source('abcdefghij', 'txt'),
+            'short.txt',
+            'text/plain',
+            (int) $user->getKey(),
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE
+        );
+
+        $response = $this->actingAs($user)->get('/api/v1/files/'.$file->id, array(
+            'Range' => 'bytes=99-100',
+        ));
+
+        // RFC 9110 §15.5.17: the unsatisfied form tells the client the length so
+        // it can recover instead of guessing.
+        $response->assertStatus(416);
+        $response->assertHeader('Content-Range', 'bytes */10');
+    }
+
+    public function test_a_full_response_advertises_accept_ranges(): void
+    {
+        $user = User::factory()->create();
+
+        $file = $this->store()->storeWithVisibility(
+            $this->source('abcdefghij', 'txt'),
+            'whole.txt',
+            'text/plain',
+            (int) $user->getKey(),
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE
+        );
+
+        $response = $this->actingAs($user)->get('/api/v1/files/'.$file->id);
+
+        // Without this header a player does not attempt to seek at all.
+        $response->assertOk();
+        $response->assertHeader('Accept-Ranges', 'bytes');
+        $response->assertHeader('Content-Length', '10');
+        $this->assertSame('abcdefghij', $response->streamedContent());
+    }
+
+    public function test_a_multi_range_request_falls_back_to_the_whole_file(): void
+    {
+        $user = User::factory()->create();
+
+        $file = $this->store()->storeWithVisibility(
+            $this->source('abcdefghij', 'txt'),
+            'multi.txt',
+            'text/plain',
+            (int) $user->getKey(),
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE
+        );
+
+        $response = $this->actingAs($user)->get('/api/v1/files/'.$file->id, array(
+            'Range' => 'bytes=0-1,5-6',
+        ));
+
+        // Declining the multipart form is permitted, and honest.
+        $response->assertOk();
+        $this->assertSame('abcdefghij', $response->streamedContent());
+    }
+
     public function test_another_estate_cannot_reach_the_file(): void
     {
         $user = User::factory()->create();

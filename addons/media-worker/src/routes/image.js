@@ -1148,6 +1148,13 @@ function parseTransformOperations(raw) {
  * @returns {import('sharp').Sharp}
  */
 function applyTransformOperations(pipeline, operations) {
+  // Auto-orient from EXIF before any geometry. Sharp does not do this
+  // implicitly: without it a phone photo whose orientation lives only in the
+  // EXIF tag is resized sideways, and the tag is dropped on re-encode, so
+  // nothing downstream can tell that the result is wrong. An upright image is
+  // unchanged by this call.
+  pipeline = pipeline.rotate();
+
   for (const operation of operations) {
     if ('resize' === operation.type) {
       pipeline = pipeline.resize(operation.width, operation.height, {

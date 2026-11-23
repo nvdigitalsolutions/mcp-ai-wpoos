@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Application\Media;
 
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
+use Nvoos\Core\Domain\Entity\StoredFile;
 
 final class GeneratedMediaPersister
 {
@@ -200,15 +201,7 @@ final class GeneratedMediaPersister
                     $tenant,
                 );
 
-                $stored[$index] = array(
-                    'attachment_id' => $file->id,
-                    'source_url'    => $file->publicUrl,
-                    'slug'          => $file->slug,
-                    'filename'      => $file->filename,
-                    'mime_type'     => $file->mimeType,
-                    'size_bytes'    => $file->sizeBytes,
-                    'visibility'    => $file->visibility,
-                );
+                $stored[$index] = $this->entry($file);
             } catch (\Throwable $error) {
                 // A refusal and a disk error are different problems, but both are
                 // reported the same way: the generation survives and the store's
@@ -222,6 +215,96 @@ final class GeneratedMediaPersister
         }
 
         return array('stored' => $stored, 'failed' => $failed);
+    }
+
+    /**
+     * Store one already-local file and return its payload entry.
+     *
+     * A transform hands over a path because the image processor has already
+     * written the bytes; routing them through base64 would encode and decode
+     * the same file twice for nothing.
+     *
+     * @param array<string, mixed> $context    Execution context.
+     * @param string               $visibility One of the VISIBILITY_* constants.
+     * @param string               $baseName   Display name; the store makes it unique.
+     * @param string               $mimeHint   Declared type, verified against the bytes.
+     *
+     * @return array{media: array<string, mixed>|null, error: string|null}
+     */
+    public function storeFile(
+        string $localPath,
+        array $context,
+        string $visibility,
+        string $baseName,
+        string $mimeHint,
+    ): array {
+        if (! \is_file($localPath)) {
+            return array( 'media' => null, 'error' => "There is no file to store at {$localPath}." );
+        }
+
+        $owner  = (int) ($context['user_id'] ?? $context['owner_id'] ?? 0);
+        $tenant = $this->tenantFrom($context);
+
+        try {
+            return array(
+                'media' => $this->entry(
+                    $this->files->storeWithVisibility($localPath, $baseName, $mimeHint, $owner, $visibility, $tenant),
+                ),
+                'error' => null,
+            );
+        } catch (\Throwable $error) {
+            return array( 'media' => null, 'error' => $error->getMessage() );
+        }
+    }
+
+    /**
+     * Persist a single local file and merge the result into a tool payload.
+     *
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $context
+     * @param string               $baseName
+     * @param string               $visibility
+     * @param string               $mimeHint
+     *
+     * @return array<string, mixed>
+     */
+    public function attachFile(
+        array $payload,
+        string $localPath,
+        array $context,
+        string $baseName,
+        string $visibility,
+        string $mimeHint = 'image/png',
+    ): array {
+        $outcome = $this->storeFile($localPath, $context, $visibility, $baseName, $mimeHint);
+
+        if (null !== $outcome['media']) {
+            $payload['media'] = array( $outcome['media'] );
+        }
+
+        if (null !== $outcome['error']) {
+            $payload['media_failed'] = array( $outcome['error'] );
+        }
+
+        return $payload;
+    }
+
+    /**
+     * The payload shape every stored file is reported as.
+     *
+     * @return array<string, mixed>
+     */
+    private function entry(StoredFile $file): array
+    {
+        return array(
+            'attachment_id' => $file->id,
+            'source_url'    => $file->publicUrl,
+            'slug'          => $file->slug,
+            'filename'      => $file->filename,
+            'mime_type'     => $file->mimeType,
+            'size_bytes'    => $file->sizeBytes,
+            'visibility'    => $file->visibility,
+        );
     }
 
     /**

@@ -19,17 +19,24 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
+use Nvoos\Core\Application\Media\ContentImages;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\ValidationException;
 
 class CreatePostTool extends AbstractTool
 {
+    /**
+     * `$files` is optional: a host with no registry can create posts, it just
+     * cannot resolve a numeric `content_images` source.
+     */
     public function __construct(
         ErrorFactoryInterface $errors,
         private readonly ContentStoreInterface $content,
+        private readonly ?FileStoreInterface $files = null,
     ) {
         parent::__construct($errors);
     }
@@ -82,7 +89,7 @@ class CreatePostTool extends AbstractTool
                     'description' => 'Describe the post that would be created without writing it.',
                     'default'     => false,
                 ),
-            ),
+            ) + ContentImages::parameters(),
             'required'             => array( 'title' ),
             'additionalProperties' => false,
         );
@@ -103,11 +110,22 @@ class CreatePostTool extends AbstractTool
             return $this->errors->forbidden('You must be logged in to create content.');
         }
 
+        // Proposal 162 §162.9.5 — `content_images` is embedded here rather than
+        // handed to the store, so a bad source is refused before a post exists.
+        try {
+            $content = ContentImages::embed($this->stringParam($arguments, 'content'), $arguments, $this->files);
+        } catch (ValidationException $e) {
+            return $this->errors->validationFailed(
+                $e->getMessage(),
+                array( 'content_images' => array( $e->getMessage() ) ),
+            );
+        }
+
         $command = new CreateContentCommand(
             title: $title,
             type: $this->stringParam($arguments, 'type', 'post'),
             status: $this->stringParam($arguments, 'status', 'draft'),
-            content: $this->stringParam($arguments, 'content'),
+            content: $content,
             authorId: $userId,
             excerpt: $this->stringParam($arguments, 'excerpt') ?: null,
         );
