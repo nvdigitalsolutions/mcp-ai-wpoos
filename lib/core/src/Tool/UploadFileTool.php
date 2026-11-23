@@ -119,14 +119,14 @@ class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterfac
         $mimeType = $this->stringParam($arguments, 'mime_type', 'application/octet-stream');
         $visibility = $this->stringParam($arguments, 'visibility', FileVisibilityStoreInterface::VISIBILITY_PRIVATE);
 
-        if ( ! in_array( $visibility, array( FileVisibilityStoreInterface::VISIBILITY_PUBLIC, FileVisibilityStoreInterface::VISIBILITY_PRIVATE ), true ) ) {
+        if (!in_array($visibility, array(FileVisibilityStoreInterface::VISIBILITY_PUBLIC, FileVisibilityStoreInterface::VISIBILITY_PRIVATE), true)) {
             return $this->errors->validationFailed(
                 'visibility must be "private" or "public".',
                 array( 'visibility' => array( 'Use private unless the content is meant to be world-readable.' ) ),
             );
         }
 
-        $tenantId = isset( $context['tenant_id'] ) ? (string) $context['tenant_id'] : null;
+        $tenantId = isset($context['tenant_id']) ? (string) $context['tenant_id'] : null;
 
         try {
             if ('' !== $filePath) {
@@ -183,7 +183,7 @@ class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterfac
         string $visibility,
         ?string $tenantId,
     ): \Nvoos\Core\Domain\Entity\StoredFile {
-        if ( $this->files instanceof FileVisibilityStoreInterface ) {
+        if ($this->files instanceof FileVisibilityStoreInterface) {
             return $this->files->storeWithVisibility(
                 $path,
                 $filename,
@@ -194,7 +194,7 @@ class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterfac
             );
         }
 
-        return $this->files->store( $path, $filename, $mimeType, $userId );
+        return $this->files->store($path, $filename, $mimeType, $userId);
     }
 
     private function saveBase64Temp(string $base64): string
