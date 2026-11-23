@@ -27,7 +27,19 @@
  * Success reports the fields a caller needs to continue: the id, the slug and the
  * status the host actually applied (not the one it was asked for). Failure is
  * `success: false` plus a message safe to show a model — the host logs the
- * exception; it does not leak a driver error into a transcript.
+ * exception; it does not leak a driver error into a transcript. `code` names the
+ * refusal when the caller should distinguish them (`assistant_not_found`); the
+ * message is what a model relays.
+ *
+ * ## Duplication
+ *
+ * `duplicate()` is a read-then-create inside the same estate, not a second
+ * writer: the source's own fields and `meta` are copied onto a new draft. Three
+ * things are deliberately not copied — the slug (the host derives and
+ * de-duplicates one), `is_default` (promoting an assistant clears the flag on
+ * every other in the estate), and the published status (a duplicate starts as a
+ * draft). A source in another estate is reported as **not found**, because a
+ * `forbidden` would confirm the record exists.
  *
  * @package Nvoos\Core
  * @since   2.1.0
@@ -59,4 +71,14 @@ interface AssistantWriteInterface
      * @return array{success: bool, assistant_id?: int, slug?: string, status?: string, error?: string}
      */
     public function create(array $draft): array;
+
+    /**
+     * Copy an assistant in the host's current estate into a new draft.
+     *
+     * An empty `$title` lets the host name it (`"<original> (Copy)"`). The copy
+     * never inherits `is_default`, a published status or the source's slug.
+     *
+     * @return array{success: bool, assistant_id?: int, slug?: string, status?: string, code?: string, error?: string}
+     */
+    public function duplicate(int $assistantId, string $title = ''): array;
 }

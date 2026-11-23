@@ -2,6 +2,7 @@
 
 namespace App\Support\Assistants;
 
+use App\Models\Assistant;
 use App\Services\AssistantWriter;
 use Nvoos\Core\Domain\Contract\AssistantWriteInterface;
 
@@ -48,6 +49,61 @@ final class LaravelAssistantWriter implements AssistantWriteInterface
             'assistant_id' => (int) $assistant->getKey(),
             'slug'         => (string) $assistant->slug,
             'status'       => (string) $assistant->status,
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function duplicate(int $assistantId, string $title = ''): array
+    {
+        // The model's global scope pins the current estate, so a foreign id is
+        // indistinguishable from a missing one — which is the point.
+        $source = Assistant::query()->find($assistantId);
+
+        if (null === $source) {
+            return array(
+                'success' => false,
+                'code'    => 'assistant_not_found',
+                'error'   => 'No assistant with that id exists in this estate.',
+            );
+        }
+
+        $title = mb_substr(trim($title), 0, 255);
+
+        // An explicit allowlist, not `$source->getAttributes()`: ids, slugs,
+        // timestamps and `is_default` are not properties of a new assistant, and
+        // a future column would otherwise be copied without anyone deciding it
+        // should be.
+        $draft = array(
+            'title'         => '' !== $title ? $title : mb_substr($source->title . ' (Copy)', 0, 255),
+            'description'   => $source->description,
+            'system_prompt' => $source->system_prompt,
+            'provider'      => $source->provider,
+            'model'         => $source->model,
+            'temperature'   => $source->temperature,
+            'max_tokens'    => $source->max_tokens,
+            'tools'         => is_array($source->tools) ? $source->tools : array(),
+            'meta'          => is_array($source->meta) ? $source->meta : array(),
+        );
+
+        try {
+            $copy = $this->writer->create($draft);
+        } catch (\Throwable $error) {
+            report($error);
+
+            return array(
+                'success' => false,
+                'code'    => 'assistant_duplicate_failed',
+                'error'   => 'The assistant could not be duplicated.',
+            );
+        }
+
+        return array(
+            'success'      => true,
+            'assistant_id' => (int) $copy->getKey(),
+            'slug'         => (string) $copy->slug,
+            'status'       => (string) $copy->status,
         );
     }
 }
