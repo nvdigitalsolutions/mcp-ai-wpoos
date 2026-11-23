@@ -73,7 +73,10 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 				'provider'        => 'gemini',
 				'model'           => 'gemini-1.5-pro',
 				'messages'        => array(
-					array( 'role' => 'user', 'content' => 'Make a video.' ),
+					array(
+						'role'    => 'user',
+						'content' => 'Make a video.',
+					),
 				),
 			)
 		);
@@ -147,7 +150,7 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 		// Simulate completion: this stores terminal_status etc on the row.
 		do_action( 'wp_mcp_ai_job_completed', $job_id, array( 'url' => 'https://example.com/v.mp4' ), array() );
 
-		$ready_args = null;
+		$ready_args      = null;
 		$dispatched_args = null;
 		add_action(
 			'wp_mcp_ai_chat_continuation_ready',
@@ -229,7 +232,7 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 
 		$this->assertIsArray( $ready );
 		$this->assertEquals( 'failed', $ready['status'] );
-		$last = end( $ready['snapshot']['messages'] );
+		$last    = end( $ready['snapshot']['messages'] );
 		$decoded = json_decode( $last['content'], true );
 		$this->assertEquals( 'failed', $decoded['status'] );
 		$this->assertEquals( 'gemini_quota', $decoded['result']['error']['code'] );

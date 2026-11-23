@@ -31,7 +31,10 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		'user_id'         => 7,
 		'tool_name'       => 'generate_veo_video',
 		'messages'        => array(
-			array( 'role' => 'user', 'content' => 'Make a video' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Make a video',
+			),
 		),
 	);
 
@@ -236,8 +239,8 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		$open_spans = WP_MCP_AI_Otel_Span_Exporter::get_test_open_spans();
 		$this->assertArrayNotHasKey( 'continuation_' . $job_id, $open_spans );
 
-		$buffer   = WP_MCP_AI_Otel_Span_Exporter::get_test_buffer();
-		$names    = array_column( $buffer, 'name' );
+		$buffer = WP_MCP_AI_Otel_Span_Exporter::get_test_buffer();
+		$names  = array_column( $buffer, 'name' );
 		$this->assertContains( 'nvoos.chat.continuation.errored', $names );
 	}
 

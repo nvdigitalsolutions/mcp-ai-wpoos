@@ -42,7 +42,7 @@ $total   = 0;
  */
 function test_bug( $bug_id, $description, $tool_class, $args, $expect_pass, $expected_error_code = '' ) {
 	global $user_id, $passed, $failed, $total;
-	$total++;
+	++$total;
 
 	WP_CLI::log( sprintf( "\n[%s] %s", $bug_id, $description ) );
 
@@ -64,32 +64,30 @@ function test_bug( $bug_id, $description, $tool_class, $args, $expect_pass, $exp
 		if ( $expect_pass ) {
 			if ( is_wp_error( $result ) ) {
 				WP_CLI::warning( sprintf( '  FAIL (expected pass): %s', $result->get_error_message() ) );
-				$failed++;
+				++$failed;
 			} else {
 				WP_CLI::success( '  PASS (bug fixed).' );
-				$passed++;
+				++$passed;
+			}
+		} elseif ( is_wp_error( $result ) ) {
+			if ( $expected_error_code && $result->get_error_code() !== $expected_error_code ) {
+				WP_CLI::log( sprintf( '  EXPECTED: Got error "%s" (expected code "%s", got "%s"). Bug may have changed.', $result->get_error_message(), $expected_error_code, $result->get_error_code() ) );
+				++$passed; // Still counts as "not a fatal crash".
+			} else {
+				WP_CLI::log( sprintf( '  EXPECTED: %s', $result->get_error_message() ) );
+				++$passed;
 			}
 		} else {
-			if ( is_wp_error( $result ) ) {
-				if ( $expected_error_code && $result->get_error_code() !== $expected_error_code ) {
-					WP_CLI::log( sprintf( '  EXPECTED: Got error "%s" (expected code "%s", got "%s"). Bug may have changed.', $result->get_error_message(), $expected_error_code, $result->get_error_code() ) );
-					$passed++; // Still counts as "not a fatal crash".
-				} else {
-					WP_CLI::log( sprintf( '  EXPECTED: %s', $result->get_error_message() ) );
-					$passed++;
-				}
-			} else {
-				WP_CLI::warning( '  UNEXPECTED PASS: Bug may have been silently fixed.' );
-				$failed++;
-			}
+			WP_CLI::warning( '  UNEXPECTED PASS: Bug may have been silently fixed.' );
+			++$failed;
 		}
 	} catch ( \Throwable $e ) {
 		if ( $expect_pass ) {
 			WP_CLI::warning( sprintf( '  FATAL (expected pass): %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine() ) );
-			$failed++;
+			++$failed;
 		} else {
 			WP_CLI::log( sprintf( '  FATAL (expected): %s', $e->getMessage() ) );
-			$passed++;
+			++$passed;
 		}
 	}
 }
@@ -112,7 +110,16 @@ test_bug( 'B10', 'analyze_code_sequence success() -> format_chat_response()', 'W
 // ============================================================================
 // B11: validate_reasoning_chain — trim() on array + success(). FIXED in v1.1.34.
 // ============================================================================
-test_bug( 'B11', 'validate_reasoning_chain trim() guard + success()', 'WP_MCP_AI_Tool_Validate_Reasoning_Chain', array( 'reasoning_steps' => array( 'Step 1', 'Step 2' ), 'conclusion' => 'test' ), true );
+test_bug(
+	'B11',
+	'validate_reasoning_chain trim() guard + success()',
+	'WP_MCP_AI_Tool_Validate_Reasoning_Chain',
+	array(
+		'reasoning_steps' => array( 'Step 1', 'Step 2' ),
+		'conclusion'      => 'test',
+	),
+	true
+);
 
 // ============================================================================
 // B7: transcode_video — undefined method get_video_file_info().
@@ -137,22 +144,22 @@ $total += 2;
 // ============================================================================
 WP_CLI::log( "\n[B3] Cron CLI command — cannot test via eval-file (CLI-only)." );
 WP_CLI::log( '  Run: wp mcp-ai cron list' );
-$total++;
+++$total;
 
 // ============================================================================
 // B4: Chat CLI — fatal error. (CLI-only, skip in eval-file)
 // ============================================================================
 WP_CLI::log( "\n[B4] Chat CLI command — cannot test via eval-file (CLI-only)." );
 WP_CLI::log( '  Run: wp mcp-ai chat "Hello"' );
-$total++;
+++$total;
 
 // ============================================================================
 // B5: Connection --url conflict. Already fixed (uses --remote-url).
 // ============================================================================
 WP_CLI::log( "\n[B5] Connection --url conflict — already uses --remote-url." );
 WP_CLI::success( '  PASS (verified via code review).' );
-$passed++;
-$total++;
+++$passed;
+++$total;
 
 // ============================================================================
 // Report.

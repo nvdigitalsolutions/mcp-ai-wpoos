@@ -37,7 +37,7 @@ class Test_WP_MCP_AI_LLM_Judge_Verifier extends WP_UnitTestCase {
 	 * Callable via constructor.
 	 */
 	public function test_constructor_callable() {
-		$v = new WP_MCP_AI_LLM_Judge_Verifier(
+		$v      = new WP_MCP_AI_LLM_Judge_Verifier(
 			'llm_judge',
 			static function () {
 				return array(
@@ -64,7 +64,12 @@ class Test_WP_MCP_AI_LLM_Judge_Verifier extends WP_UnitTestCase {
 			'wp_mcp_ai_llm_judge_callable',
 			static function () {
 				return static function () {
-					return array( 'passed' => false, 'score' => 0.1, 'confidence' => 0.9, 'reasons' => array( 'bad' ) );
+					return array(
+						'passed'     => false,
+						'score'      => 0.1,
+						'confidence' => 0.9,
+						'reasons'    => array( 'bad' ),
+					);
 				};
 			}
 		);
@@ -77,7 +82,7 @@ class Test_WP_MCP_AI_LLM_Judge_Verifier extends WP_UnitTestCase {
 	 * Non-array return is a WP_Error.
 	 */
 	public function test_invalid_return_is_error() {
-		$v = new WP_MCP_AI_LLM_Judge_Verifier(
+		$v      = new WP_MCP_AI_LLM_Judge_Verifier(
 			'llm_judge',
 			static function () {
 				return 'bad';
@@ -104,7 +109,7 @@ class Test_WP_MCP_AI_LLM_Judge_Verifier extends WP_UnitTestCase {
 	 * Score / confidence get clamped; unexpected reason types filtered.
 	 */
 	public function test_result_normalization() {
-		$v = new WP_MCP_AI_LLM_Judge_Verifier(
+		$v      = new WP_MCP_AI_LLM_Judge_Verifier(
 			'llm_judge',
 			static function () {
 				return array(
@@ -127,7 +132,7 @@ class Test_WP_MCP_AI_LLM_Judge_Verifier extends WP_UnitTestCase {
 	 * Independence profile from constructor flows through.
 	 */
 	public function test_independence_profile() {
-		$v = new WP_MCP_AI_LLM_Judge_Verifier(
+		$v       = new WP_MCP_AI_LLM_Judge_Verifier(
 			'llm_judge',
 			null,
 			array( 'disallowed_providers' => array( 'openai' ) )

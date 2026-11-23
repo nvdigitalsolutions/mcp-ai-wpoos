@@ -508,7 +508,7 @@ class Test_MCP_App_Tool_Bridge extends WP_UnitTestCase {
 			'inputSchema' => array( 'type' => 'object' ),
 		);
 
-		$bridge    = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, array(), 'Test' );
+		$bridge     = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, array(), 'Test' );
 		$definition = $bridge->get_definition();
 
 		$this->assertArrayHasKey( 'name', $definition );
@@ -522,7 +522,10 @@ class Test_MCP_App_Tool_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_capability_flags() {
 		$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge(
-			array( 'name' => 'test', 'inputSchema' => array( 'type' => 'object' ) ),
+			array(
+				'name'        => 'test',
+				'inputSchema' => array( 'type' => 'object' ),
+			),
 			array(),
 			'Test'
 		);
@@ -538,7 +541,10 @@ class Test_MCP_App_Tool_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_execute_requires_permissions() {
 		$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge(
-			array( 'name' => 'test', 'inputSchema' => array( 'type' => 'object' ) ),
+			array(
+				'name'        => 'test',
+				'inputSchema' => array( 'type' => 'object' ),
+			),
 			array( 'server_url' => 'https://example.com/mcp' ),
 			'Test'
 		);
@@ -564,11 +570,14 @@ class Test_MCP_App_Tool_Bridge extends WP_UnitTestCase {
 			'properties' => array(
 				'query' => array( 'type' => 'string' ),
 			),
-			'required' => array( 'query' ),
+			'required'   => array( 'query' ),
 		);
 
 		$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge(
-			array( 'name' => 'search', 'inputSchema' => $schema ),
+			array(
+				'name'        => 'search',
+				'inputSchema' => $schema,
+			),
 			array(),
 			'Search'
 		);
@@ -587,7 +596,10 @@ class Test_MCP_App_Tool_Bridge extends WP_UnitTestCase {
 		);
 
 		$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge(
-			array( 'name' => 'test', 'inputSchema' => array( 'type' => 'object' ) ),
+			array(
+				'name'        => 'test',
+				'inputSchema' => array( 'type' => 'object' ),
+			),
 			$config,
 			'Test'
 		);

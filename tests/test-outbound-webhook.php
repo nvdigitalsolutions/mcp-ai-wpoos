@@ -66,8 +66,8 @@ class Test_Outbound_Webhook extends WP_UnitTestCase {
 	 * Test unsubscribe removes the subscription.
 	 */
 	public function test_unsubscribe_removes_subscription() {
-		$wh = $this->get_instance();
-		$id = $wh->subscribe( 'https://example.com/hook', array( 'workflow.completed' ) );
+		$wh     = $this->get_instance();
+		$id     = $wh->subscribe( 'https://example.com/hook', array( 'workflow.completed' ) );
 		$result = $wh->unsubscribe( $id );
 		$this->assertTrue( $result );
 		$this->assertEmpty( $wh->list_subscriptions() );
@@ -77,7 +77,7 @@ class Test_Outbound_Webhook extends WP_UnitTestCase {
 	 * Test unsubscribe returns false for unknown ID.
 	 */
 	public function test_unsubscribe_returns_false_for_unknown() {
-		$wh = $this->get_instance();
+		$wh     = $this->get_instance();
 		$result = $wh->unsubscribe( 'nonexistent_id_xyz' );
 		$this->assertFalse( $result );
 	}
@@ -117,7 +117,12 @@ class Test_Outbound_Webhook extends WP_UnitTestCase {
 			'pre_http_request',
 			function ( $preempt, $args, $url ) use ( &$calls ) {
 				$calls[] = $url;
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ) );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+				);
 			},
 			10,
 			3

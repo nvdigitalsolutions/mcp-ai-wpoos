@@ -124,8 +124,8 @@ class Test_Site_Node_Implementations extends WP_UnitTestCase {
 		$node   = new WP_MCP_AI_Site_Node_Text_Block();
 		$result = $node->execute(
 			array(
-				'tag'     => 'p',
-				'content'  => 'Hello, World!',
+				'tag'       => 'p',
+				'content'   => 'Hello, World!',
 				'className' => 'greeting',
 			)
 		);
@@ -142,7 +142,12 @@ class Test_Site_Node_Implementations extends WP_UnitTestCase {
 	 */
 	public function test_text_block_falls_back_to_div_for_invalid_tag() {
 		$node   = new WP_MCP_AI_Site_Node_Text_Block();
-		$result = $node->execute( array( 'tag' => 'script', 'content' => 'alert(1)' ) );
+		$result = $node->execute(
+			array(
+				'tag'     => 'script',
+				'content' => 'alert(1)',
+			)
+		);
 
 		$this->assertStringStartsWith( '<div', $result['html'] );
 		$this->assertStringNotContainsString( '<script', $result['html'] );

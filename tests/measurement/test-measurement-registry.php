@@ -89,8 +89,25 @@ class Test_WP_MCP_AI_Measurement_Registry extends WP_UnitTestCase {
 	 */
 	public function test_register_rejects_missing_required() {
 		$this->assertFalse( $this->registry->register( array() ) );
-		$this->assertFalse( $this->registry->register( array( 'id' => 'a.b', 'label' => 'x', 'type' => 'counter' ) ) );
-		$this->assertFalse( $this->registry->register( array( 'id' => 'a.b', 'label' => '', 'type' => 'counter', 'unit' => 'x' ) ) );
+		$this->assertFalse(
+			$this->registry->register(
+				array(
+					'id'    => 'a.b',
+					'label' => 'x',
+					'type'  => 'counter',
+				)
+			)
+		);
+		$this->assertFalse(
+			$this->registry->register(
+				array(
+					'id'    => 'a.b',
+					'label' => '',
+					'type'  => 'counter',
+					'unit'  => 'x',
+				)
+			)
+		);
 	}
 
 	/**
@@ -171,8 +188,24 @@ class Test_WP_MCP_AI_Measurement_Registry extends WP_UnitTestCase {
 	 * Privacy tier filter returns the correct subset.
 	 */
 	public function test_by_privacy_tier() {
-		$this->registry->register( array( 'id' => 'm1', 'label' => 'm1', 'type' => 'counter', 'unit' => 'n', 'privacy_tier' => 'public' ) );
-		$this->registry->register( array( 'id' => 'm2', 'label' => 'm2', 'type' => 'counter', 'unit' => 'n', 'privacy_tier' => 'sensitive' ) );
+		$this->registry->register(
+			array(
+				'id'           => 'm1',
+				'label'        => 'm1',
+				'type'         => 'counter',
+				'unit'         => 'n',
+				'privacy_tier' => 'public',
+			)
+		);
+		$this->registry->register(
+			array(
+				'id'           => 'm2',
+				'label'        => 'm2',
+				'type'         => 'counter',
+				'unit'         => 'n',
+				'privacy_tier' => 'sensitive',
+			)
+		);
 		$public = $this->registry->by_privacy_tier( 'public' );
 		$this->assertCount( 1, $public );
 		$this->assertArrayHasKey( 'm1', $public );

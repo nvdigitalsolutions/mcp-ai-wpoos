@@ -27,7 +27,10 @@ class Test_WP_MCP_AI_Schema_Verifier extends WP_UnitTestCase {
 	public function test_type_string() {
 		$v = new WP_MCP_AI_Schema_Verifier(
 			'schema_verifier',
-			array( 'type' => 'string', 'minLength' => 2 )
+			array(
+				'type'      => 'string',
+				'minLength' => 2,
+			)
 		);
 		$this->assertTrue( $v->verify( array( 'value' => 'hi' ) )['passed'] );
 		$this->assertFalse( $v->verify( array( 'value' => 'x' ) )['passed'] );
@@ -45,13 +48,34 @@ class Test_WP_MCP_AI_Schema_Verifier extends WP_UnitTestCase {
 				'required'   => array( 'name', 'age' ),
 				'properties' => array(
 					'name' => array( 'type' => 'string' ),
-					'age'  => array( 'type' => 'integer', 'minimum' => 0 ),
+					'age'  => array(
+						'type'    => 'integer',
+						'minimum' => 0,
+					),
 				),
 			)
 		);
-		$this->assertTrue( $v->verify( array( 'value' => array( 'name' => 'a', 'age' => 1 ) ) )['passed'] );
+		$this->assertTrue(
+			$v->verify(
+				array(
+					'value' => array(
+						'name' => 'a',
+						'age'  => 1,
+					),
+				)
+			)['passed']
+		);
 		$this->assertFalse( $v->verify( array( 'value' => array( 'name' => 'a' ) ) )['passed'] );
-		$this->assertFalse( $v->verify( array( 'value' => array( 'name' => 'a', 'age' => -1 ) ) )['passed'] );
+		$this->assertFalse(
+			$v->verify(
+				array(
+					'value' => array(
+						'name' => 'a',
+						'age'  => -1,
+					),
+				)
+			)['passed']
+		);
 	}
 
 	/**
@@ -74,7 +98,10 @@ class Test_WP_MCP_AI_Schema_Verifier extends WP_UnitTestCase {
 			'schema_verifier',
 			array(
 				'type'  => 'array',
-				'items' => array( 'type' => 'integer', 'minimum' => 1 ),
+				'items' => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
 			)
 		);
 		$this->assertTrue( $v->verify( array( 'value' => array( 1, 2, 3 ) ) )['passed'] );
@@ -88,7 +115,11 @@ class Test_WP_MCP_AI_Schema_Verifier extends WP_UnitTestCase {
 	public function test_string_pattern_and_max_length() {
 		$v = new WP_MCP_AI_Schema_Verifier(
 			'schema_verifier',
-			array( 'type' => 'string', 'pattern' => '/^[a-z]+$/', 'maxLength' => 5 )
+			array(
+				'type'      => 'string',
+				'pattern'   => '/^[a-z]+$/',
+				'maxLength' => 5,
+			)
 		);
 		$this->assertTrue( $v->verify( array( 'value' => 'hello' ) )['passed'] );
 		$this->assertFalse( $v->verify( array( 'value' => 'Hello' ) )['passed'] );
@@ -101,7 +132,10 @@ class Test_WP_MCP_AI_Schema_Verifier extends WP_UnitTestCase {
 	public function test_value_fallback() {
 		$v = new WP_MCP_AI_Schema_Verifier(
 			'schema_verifier',
-			array( 'type' => 'object', 'required' => array( 'x' ) )
+			array(
+				'type'     => 'object',
+				'required' => array( 'x' ),
+			)
 		);
 		$this->assertTrue( $v->verify( array( 'x' => 1 ) )['passed'] );
 		$this->assertFalse( $v->verify( array( 'y' => 1 ) )['passed'] );

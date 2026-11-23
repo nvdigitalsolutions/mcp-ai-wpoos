@@ -118,7 +118,12 @@ class Test_QMS_Workflow extends WP_UnitTestCase {
 		$post_id  = $this->make_record( array( '_qms_reviewer_ids' => array( $reviewer ) ) );
 
 		WP_MCP_AI_QMS_Workflow::transition( $post_id, WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW, array( 'reason' => 'go' ) );
-		$rows = WP_MCP_AI_QMS_Audit_Log::query( array( 'post_id' => $post_id, 'event' => 'state_transition' ) );
+		$rows = WP_MCP_AI_QMS_Audit_Log::query(
+			array(
+				'post_id' => $post_id,
+				'event'   => 'state_transition',
+			)
+		);
 		$this->assertNotEmpty( $rows );
 		$this->assertSame( 'state_transition', $rows[0]['event'] );
 		$this->assertSame( WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW, $rows[0]['to_state'] );

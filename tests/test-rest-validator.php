@@ -771,7 +771,10 @@ class Test_REST_Validator extends WP_UnitTestCase {
 	 */
 	public function test_sanitize_tool_result_for_llm_returns_string() {
 		$result = $this->validator->sanitize_tool_result_for_llm(
-			array( 'success' => true, 'posts' => array( 'title' => 'Hello' ) ),
+			array(
+				'success' => true,
+				'posts'   => array( 'title' => 'Hello' ),
+			),
 			'get_posts'
 		);
 		$this->assertIsString( $result, 'sanitize_tool_result_for_llm must always return a string' );

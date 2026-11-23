@@ -58,7 +58,7 @@ class WP_MCP_AI_Web_Search_Exa_Perplexity_Test extends WP_UnitTestCase {
 	 * @param string $key_option Setting key for the API key.
 	 */
 	private function set_provider( $provider, $api_key = 'test-api-key', $key_option = '' ) {
-		$settings                       = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                        = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['web_search_provider'] = $provider;
 		if ( '' !== $key_option ) {
 			$settings[ $key_option ] = $api_key;
@@ -245,7 +245,10 @@ class WP_MCP_AI_Web_Search_Exa_Perplexity_Test extends WP_UnitTestCase {
 
 		$tool = new WP_MCP_AI_Tool_Web_Search();
 		$tool->execute(
-			array( 'query' => 'fresh news', 'freshness' => 'pw' ),
+			array(
+				'query'     => 'fresh news',
+				'freshness' => 'pw',
+			),
 			array( 'user_id' => $this->user_id )
 		);
 
@@ -289,7 +292,7 @@ class WP_MCP_AI_Web_Search_Exa_Perplexity_Test extends WP_UnitTestCase {
 					'response' => array( 'code' => 200 ),
 					'body'     => wp_json_encode(
 						array(
-							'choices' => array(
+							'choices'   => array(
 								array(
 									'message' => array(
 										'role'    => 'assistant',
@@ -334,7 +337,12 @@ class WP_MCP_AI_Web_Search_Exa_Perplexity_Test extends WP_UnitTestCase {
 					'body'     => wp_json_encode(
 						array(
 							'choices' => array(
-								array( 'message' => array( 'role' => 'assistant', 'content' => 'ok' ) ),
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'ok',
+									),
+								),
 							),
 						)
 					),
@@ -423,7 +431,12 @@ class WP_MCP_AI_Web_Search_Exa_Perplexity_Test extends WP_UnitTestCase {
 					'body'     => wp_json_encode(
 						array(
 							'choices' => array(
-								array( 'message' => array( 'role' => 'assistant', 'content' => 'ok' ) ),
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'ok',
+									),
+								),
 							),
 						)
 					),
@@ -436,7 +449,10 @@ class WP_MCP_AI_Web_Search_Exa_Perplexity_Test extends WP_UnitTestCase {
 
 		$tool = new WP_MCP_AI_Tool_Web_Search();
 		$tool->execute(
-			array( 'query' => 'latest news', 'freshness' => 'pd' ),
+			array(
+				'query'     => 'latest news',
+				'freshness' => 'pd',
+			),
 			array( 'user_id' => $this->user_id )
 		);
 

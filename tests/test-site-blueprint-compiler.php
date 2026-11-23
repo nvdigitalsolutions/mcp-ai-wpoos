@@ -119,7 +119,7 @@ class Test_Site_Blueprint_Compiler extends WP_UnitTestCase {
 	 * Test compile() produces correct node ID prefixing.
 	 */
 	public function test_compile_prefixes_internal_node_ids() {
-		$bp = $this->compiler->load( 'hero-with-cta' );
+		$bp    = $this->compiler->load( 'hero-with-cta' );
 		$graph = $this->compiler->compile( $bp );
 
 		foreach ( $graph['nodes'] as $node_id => $config ) {
@@ -186,7 +186,10 @@ class Test_Site_Blueprint_Compiler extends WP_UnitTestCase {
 		$bp = array(
 			'slug'          => 'empty-bp',
 			'name'          => 'Empty',
-			'internalGraph' => array( 'nodes' => array(), 'edges' => array() ),
+			'internalGraph' => array(
+				'nodes' => array(),
+				'edges' => array(),
+			),
 		);
 
 		$result = $this->compiler->compile( $bp );
@@ -201,11 +204,14 @@ class Test_Site_Blueprint_Compiler extends WP_UnitTestCase {
 	 */
 	public function test_e2e_hero_blueprint() {
 		$bp    = $this->compiler->load( 'hero-with-cta' );
-		$graph = $this->compiler->compile( $bp, array(
-			'heading'    => 'Build Faster',
-			'subheading' => 'The site builder you always wanted.',
-			'cta_text'   => 'Try It Free',
-		) );
+		$graph = $this->compiler->compile(
+			$bp,
+			array(
+				'heading'    => 'Build Faster',
+				'subheading' => 'The site builder you always wanted.',
+				'cta_text'   => 'Try It Free',
+			)
+		);
 
 		$result  = $this->executor->execute( $graph, 'hero-with-cta' );
 		$outputs = $result['outputs'];
@@ -225,12 +231,15 @@ class Test_Site_Blueprint_Compiler extends WP_UnitTestCase {
 	 */
 	public function test_e2e_two_column_blueprint() {
 		$bp    = $this->compiler->load( 'two-column-text' );
-		$graph = $this->compiler->compile( $bp, array(
-			'left_heading'  => 'Speed',
-			'left_body'     => 'Lightning-fast page loads.',
-			'right_heading' => 'Security',
-			'right_body'    => 'Enterprise-grade protection.',
-		) );
+		$graph = $this->compiler->compile(
+			$bp,
+			array(
+				'left_heading'  => 'Speed',
+				'left_body'     => 'Lightning-fast page loads.',
+				'right_heading' => 'Security',
+				'right_body'    => 'Enterprise-grade protection.',
+			)
+		);
 
 		$result  = $this->executor->execute( $graph, 'two-column-text' );
 		$outputs = $result['outputs'];

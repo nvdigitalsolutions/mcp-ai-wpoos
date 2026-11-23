@@ -103,7 +103,15 @@ class Test_Chat_Jobs_Otel_Hooks extends WP_UnitTestCase {
 
 		// Verify the action is registered (test that any add_action registered to
 		// it will fire when do_action is called manually, matching the contract).
-		do_action( 'wp_mcp_ai_chat_jobs_snapshot', array( 'jobs' => array(), 'counts' => array() ), $this->admin_id, '99' );
+		do_action(
+			'wp_mcp_ai_chat_jobs_snapshot',
+			array(
+				'jobs'   => array(),
+				'counts' => array(),
+			),
+			$this->admin_id,
+			'99'
+		);
 
 		$this->assertTrue( $fired, 'wp_mcp_ai_chat_jobs_snapshot action must fire.' );
 		$this->assertIsArray( $payload[0], 'First argument must be the response array.' );
@@ -126,8 +134,14 @@ class Test_Chat_Jobs_Otel_Hooks extends WP_UnitTestCase {
 		);
 
 		$jobs_payload = array(
-			array( 'job_id' => 'a', 'status' => 'running' ),
-			array( 'job_id' => 'b', 'status' => 'queued' ),
+			array(
+				'job_id' => 'a',
+				'status' => 'running',
+			),
+			array(
+				'job_id' => 'b',
+				'status' => 'queued',
+			),
 		);
 		do_action( 'wp_mcp_ai_chat_jobs_snapshot', array( 'jobs' => $jobs_payload ), 1, null );
 
@@ -290,7 +304,10 @@ class Test_Chat_Jobs_Otel_Hooks extends WP_UnitTestCase {
 		$caught = false;
 		try {
 			WP_MCP_AI_Otel_Span_Exporter::on_chat_jobs_snapshot(
-				array( 'jobs' => array(), 'counts' => array() ),
+				array(
+					'jobs'   => array(),
+					'counts' => array(),
+				),
 				$this->admin_id,
 				null
 			);
