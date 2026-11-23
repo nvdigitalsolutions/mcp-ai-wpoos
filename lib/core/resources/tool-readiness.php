@@ -1163,6 +1163,14 @@ return array(
 			'reason' => 'Returns a static curated list; it makes no request. It was grouped with the ten HTTP tools by mistake in section 85 — HuggingFaceDatasetToolsTest pins that it calls nothing (Proposal 149 section 91).',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'import_assistant' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ImportAssistantTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImportAssistantToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'openWorldHint' => false ),
+		),
 		'increment_cache' => array(
 			'class' => 'Nvoos\\Core\\Tool\\IncrementCacheTool',
 			'readiness' => 'ready',

@@ -20,6 +20,7 @@ use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\Approvals\DatabaseApprovalTicket;
 use App\Support\Assistants\LaravelAssistantExporter;
+use App\Support\Assistants\LaravelAssistantImporter;
 use App\Support\Assistants\LaravelAssistantWriter;
 use App\Support\Auth\Auth0TokenVerifier;
 use App\Support\Auth\JitProvisioner;
@@ -64,6 +65,7 @@ use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\AssistantExportInterface;
+use Nvoos\Core\Domain\Contract\AssistantImportInterface;
 use Nvoos\Core\Domain\Contract\AssistantWriteInterface;
 use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
@@ -214,6 +216,12 @@ class AppServiceProvider extends ServiceProvider
         // controller and the `/admin` page already call, so the bundle shape and
         // the credential denylist cannot diverge by transport.
         $this->app->singleton(AssistantExportInterface::class, LaravelAssistantExporter::class);
+
+        // Assistant imports for `import_assistant` (Proposal 090-M §19). The third
+        // transport onto the same engine, so the bundle assertion, the conflict
+        // modes and the credential denylist are the ones the REST route and the
+        // `/admin` page already use.
+        $this->app->singleton(AssistantImportInterface::class, LaravelAssistantImporter::class);
 
         // Approval tickets (Proposal 149 §157). The necessity gate records a
         // ticket when a call needs a human and spends it on the retry. Kept out
