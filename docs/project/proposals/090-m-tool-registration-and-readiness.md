@@ -1330,3 +1330,108 @@ the WordPress verdict shape surviving the round trip, and an unknown provider
 refused at 422). `lib/core` 2120 / 16,292; adapter 348 / 1,853; skeleton text tools
 + readiness + analyze + registration + diagnostics 26 / 358. Auditor 237 rows /
 218 servable, no violations, G6 empty. phpcs clean on all thirteen files.
+
+## 22. Addendum: three image readers, and the fourth one deferred (2026-11-23)
+
+### What shipped, and what did not
+
+`extract_image_text`, `generate_image_alt_text` and `generate_image_caption`. The
+plan was four; `vision_object_localization` was **deliberately not built**. Its
+WordPress implementation does not use a chat completion at all — it builds an image
+source and calls a `Cloud_Vision_Client` with its own response shape. Porting it
+means porting a second vision transport and guessing a bounding-box schema that
+cannot be verified from this repository, and a tool that returns plausible-looking
+boxes it cannot validate is worse than a tool that is not there yet. It stays
+quarantined behind its `replaced_by` pointer.
+
+### `ImageInput`, and folding `analyze_image` onto it
+
+Four vision tools need the same six steps — one source only, ownership checked, type
+checked, size capped, bytes read, data URI built — and `analyze_image` had grown a
+private copy. Rather than copy it three more times, it is now
+`Application\Media\ImageInput`, and `analyze_image` was folded onto it in the same
+change. Its 16 unit tests and 4 feature tests are the proof the extraction
+preserved behaviour, and they stayed green.
+
+`ImageInput::parameters()` also returns the two schema fragments, so the four tools
+declare their image arguments identically instead of drifting — the same pattern
+`GeneratedMediaPersister::parameters()` already uses for the generation tools.
+
+### An empty answer is a finding, for exactly two tools
+
+Every completion tool treats a blank answer as a failure, because a blank success
+reads as "nothing to report" and that is how a caller concludes the input was
+empty. Two of these tools invert that:
+
+- **`extract_image_text`** — a photograph of a dog contains no text. That is a
+  correct result, and the payload says so with `has_text: false`.
+- **`generate_image_alt_text`** — a purely decorative image should have *empty* alt
+  text, not a description of itself. The model is asked to return a sentinel and
+  the tool maps it to `alt_text: ""` with `decorative: true`.
+
+Both call `completeTool(..., allowEmpty: true)`. The flag defaults to false, so a
+tool added later cannot inherit the permissive behaviour by accident.
+
+### Two tidiers, because one would destroy layout
+
+`tidyText()` collapses whitespace to a single line — right for an alt text, a
+caption or an excerpt, all of which are rendered where a newline shows as a stray
+gap. `extract_image_text` with `preserve_layout` needs the opposite: collapsing its
+newlines would throw away the thing the caller asked for. So `tidyBlock()` does the
+structural cleanup only (quotes, fences) and `tidyText()` is `tidyBlock()` plus the
+collapse. A test asserts the line break survives when layout is requested and is
+gone when it is not.
+
+### Alt text: reported, not truncated
+
+Guidance for accessible alt text sits near **125 characters** — not a hard limit,
+but the length past which a screen-reader user starts skimming. The tool asks for
+that, then reports `characters` and `within_recommended_length` rather than cutting
+the string: truncating mid-phrase leaves a reader with a broken sentence and no
+sign that anything was dropped. Same principle as §21's SEO lengths.
+
+`context` is a parameter because the same photograph needs different alt text on a
+product page and in a blog post, and the caller knows the page while the model
+does not.
+
+### A caption is not alt text
+
+They are separate tools with separate instructions and separate fields, not one
+calling the other with a longer limit. Alt text *replaces* the image for someone who
+cannot see it; a caption is *visible* and adds what the picture cannot show — what
+happened, who is involved, why it matters. `generate_image_caption` imposes no
+length ceiling and says so: a hard limit there would be a product decision the tool
+has no basis for.
+
+### One WordPress parameter not offered
+
+`extract_image_text` also offers `include_metadata`. It is not offered here: the
+character and word counts are always returned because they cost nothing, and a
+parameter that changes nothing in the answer is a lying surface.
+
+### Validation
+
+`VisionImageToolsTest` (core, 10 tests: slug/capability/flags for all three, image
+required before any provider call, a missing file at 404, an image with no text
+succeeding with `has_text: false`, layout preserved with `preserve_layout` and
+collapsed without it, the decorative sentinel producing empty alt text, over-long
+alt text reported and left intact, a caption that was only framing refused, and a
+caption's length agreeing with its `characters`). Feature test
+`docker/laravel/app-skeleton/tests/Feature/VisionImageToolsTest.php` (4 tests on the
+real singleton router: all three register, an OCR read end to end including the
+data URI reaching the provider, over-long alt text reported, the decorative
+sentinel, and an unknown provider refused at 422). `lib/core` 2136 / 16,372;
+adapter 348 / 1,856; skeleton vision + text + readiness + analyze + registration +
+diagnostics 31 / 385. Auditor 240 rows / 221 servable, no violations, G6 empty.
+phpcs clean on all ten files.
+
+### What is left
+
+Ten promises. Two video tools (`analyze_video`, `generate_video_caption`) need frame
+extraction the runtime does not have. Three need a content index
+(`suggest_internal_links`, `content_recommendation_engine`, `auto_categorize_content`),
+one needs the file registry plus a purpose taxonomy (`analyze_file_suitability`),
+one needs an embedding call (`batch_embed_content`), one needs a product catalogue
+(`vision_product_search`), one needs the cloud-vision transport
+(`vision_object_localization`), and `run_openai_external_action` is OpenAI-only
+dispatch with no cross-provider meaning.
