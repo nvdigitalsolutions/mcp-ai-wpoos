@@ -14,6 +14,49 @@ const SECTION = ( inner: string ) =>
 const WIDGET = ( name: string, inner: string ) =>
 	`<div class="elementor-widget elementor-widget-${ name }"><div class="elementor-widget-container">${ inner }</div></div>`;
 
+describe( 'classifyHtml — WordPress placeholder content', () => {
+	// WordPress installs "Hello world!" (slug hello-world) and "Sample Page"
+	// on every site. A builder's posts widget renders them as a real card, so a
+	// rebuild published one as the school's only story (eca.directory, 2026-11-24).
+	const POSTS_WIDGET = ( title: string, body = '' ) =>
+		WIDGET(
+			'posts',
+			`<div class="elementor-posts-container elementor-posts"><div class="elementor-post"><h3 class="elementor-post__title">${ title }</h3>${ body }</div></div>`
+		);
+
+	it( 'drops a card that is only the default post title', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our Updates</h2>' ) +
+				WIDGET( 'text-editor', '<h3>News &amp; Insights</h3><p>Follow along as we roll out live enrolment.</p>' ) +
+				POSTS_WIDGET( 'Hello world!' )
+		);
+		const sections = classifyHtml( html );
+		const titles = ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).not.toContain( 'Hello world!' );
+		expect( titles ).toContain( 'News & Insights' );
+	} );
+
+	it( 'keeps a card that carries copy, even when the title reads like one', () => {
+		// An article ABOUT the default content is copy, not a placeholder.
+		const html = SECTION(
+			WIDGET( 'text-editor', '<h3>Hello world!</h3><p>Why every WordPress site starts with this post.</p>' ) +
+				WIDGET( 'text-editor', '<h3>News &amp; Insights</h3><p>Follow along as we roll out live enrolment.</p>' )
+		);
+		const titles = ( classifyHtml( html )[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).toContain( 'Hello world!' );
+	} );
+
+	it( 'keeps a real post card next to the placeholder', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our Updates</h2>' ) +
+				POSTS_WIDGET( 'Hello world!' ) +
+				POSTS_WIDGET( 'Michaelmas fixtures published' )
+		);
+		const titles = ( classifyHtml( html )[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).toEqual( [ 'Michaelmas fixtures published' ] );
+	} );
+} );
+
 describe( 'classifyHtml — vendor-prefixed widget families (Phlox/Auxin)', () => {
 	it( 'rebuilds aux_* widgets like the core Elementor ones', () => {
 		const html = SECTION(

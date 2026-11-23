@@ -970,6 +970,7 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 		return undefined;
 	}
 	const items: SectionItem[] = [];
+	let droppedPlaceholder = false;
 	for ( const [ columnIndex, column ] of columns.entries() ) {
 		const collected = collectSlots( column );
 		// The LANE index rides every item, including the ones after a skipped lane:
@@ -1005,9 +1006,48 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 			// lane's surface. Skipping the item must not renumber the lanes.
 			continue;
 		}
+		if ( isPlaceholderCard( item ) ) {
+			// WordPress's default "Hello world!" post, rendered by the source's
+			// own posts widget. The lane keeps its index like any skipped column.
+			droppedPlaceholder = true;
+			continue;
+		}
 		items.push( item );
 	}
-	return items.length >= 2 ? items : undefined;
+	// A single surviving card is still a column grid WHEN one was removed here:
+	// falling back to the raw band HTML would put the placeholder straight back
+	// (the sanitized markup still carries the source's posts widget).
+	return items.length >= 2 || ( droppedPlaceholder && items.length >= 1 ) ? items : undefined;
+}
+
+/**
+ * WordPress ships one placeholder post and one placeholder page on every
+ * install — "Hello world!" (slug `hello-world`) and "Sample Page"
+ * (`sample-page`) — and every setup checklist tells the owner to delete them.
+ *
+ * A rebuild cannot delete CMS content, and a builder's "Latest posts" widget
+ * renders whatever the CMS returns, so a dropped-in card titled "Hello world!"
+ * published as if it were the school's only story (eca.directory's updates
+ * band, 2026-11-24). Drop the CARD, not the record: the post keeps its route,
+ * so removing the placeholder in the CMS is still all it takes for the card to
+ * come back.
+ *
+ * Matching is on the TITLE only and only for a card with no body, media or
+ * attribution — an article that quotes "Hello world!" is copy, not a placeholder.
+ */
+const PLACEHOLDER_TITLES = new Set( [ 'hello world', 'sample page' ] );
+
+function isPlaceholderCard( item: SectionItem ): boolean {
+	if ( item.body || item.media || item.author ) {
+		return false;
+	}
+	const title = ( item.title ?? '')
+		.toLowerCase()
+		.replace( /\s+/g, ' ' )
+		// "Hello world!" also arrives as "Hello world" and "Hello, world!"
+		// depending on the WP version and locale.
+		.replace( /^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '' );
+	return title.length > 0 && PLACEHOLDER_TITLES.has( title );
 }
 
 /** Merge widget slots into one section draft. */
@@ -1117,7 +1157,16 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		slots.body = body;
 	}
 	if ( items.length > 0 ) {
-		slots.items = items;
+		// One guard covers EVERY item path (structured extract, icon list, posts
+		// widget): WordPress's placeholder post must never publish as a card.
+		// Placed here because the same band reaches `items` through three
+		// different branches and a per-branch check had already missed two.
+		const published = items.filter( ( item ) => ! isPlaceholderCard( item ) );
+		if ( published.length !== items.length ) {
+			slots.items = published.length > 0 ? published : undefined;
+		} else {
+			slots.items = items;
+		}
 	}
 	const title = pickHeadingTitle( headingCandidates );
 	if ( title ) {
