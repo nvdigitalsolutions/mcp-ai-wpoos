@@ -17709,3 +17709,137 @@ what the scan cannot see.
 | phpcs PSR-12 | exit 0 |
 | `bin/audit-surface-ownership.php` | 59 rows · 50 built · 0 planned · 5 absent · 0 inert |
 | `bin/settings-coverage/generate.py` | 601 rows · 59 enforced · 0 admin-writable unenforced |
+
+---
+
+## 184. Edge policy: CORS and request limits from the operator's settings (2026-11-23)
+
+§183 left 22 operator-scope security controls writable from `/ops` and read by no
+enforcement point. This is the first four, chosen because they are the ones with
+a real enforcement point already in the stack that simply read the wrong source.
+
+| Key | Was read from | Now read from |
+|---|---|---|
+| `cors_allow_origin` | nothing | the settings store |
+| `cors_allowed_origins` | nothing | the settings store |
+| `max_request_body_size_kb` | nothing | the settings store |
+| `max_json_depth` | nothing | the settings store |
+
+`config/cors.php` read `NVOOS_CORS_ORIGINS` all along, so CORS *was* enforced —
+just never from the control an operator would use. That is §183.9's defect class
+again: a control that saves and is ignored reports a policy the runtime does not
+have.
+
+### 184.1 CORS: precedence is "stored wins only when it has content"
+
+`ApplyCorsPolicy` is prepended to the global middleware stack so it runs before
+the framework's `HandleCors`, which reads `config('cors')` while handling the
+request. Two decisions carry it:
+
+**A boot-time config write would have been wrong.** CORS is read per request, and
+under Octane a boot-time write freezes the first request's value for the life of
+the worker. A middleware scopes it to the request.
+
+**An empty stored list must not win.** `cors_allowed_origins` defaults to the
+empty string. Treating that as authoritative would wipe an existing
+`NVOOS_CORS_ORIGINS` on every request — an operator who never opened the admin
+would silently lose their cross-origin clients. So:
+
+| Stored value | Effective policy |
+|---|---|
+| mode `star` | `['*']`, credentials off |
+| mode `site`, list non-empty | the site's own origin + the listed origins |
+| mode `site`, list empty | `config/cors.php` — unchanged |
+
+Two smaller rules, both from a real failure mode:
+
+- **The wildcard cannot carry credentials.** The Fetch standard makes
+  `Access-Control-Allow-Origin: *` invalid on a credentialed request, and
+  `config/cors.php` sets `supports_credentials` true. Leaving both would hand an
+  operator CORS that browsers reject — a silent outage rather than a policy.
+  Selecting `star` therefore also turns credentials off, which is the only
+  combination that works and what "any domain may call the API" can safely mean.
+  The posture report still flags the wildcard as `cors_restricted: fail`.
+- **A bare `*` in the textarea is dropped.** The wildcard is what the select is
+  for; honouring it in a free-text list would let a textarea quietly open the API
+  to every site. Entries are normalised to `scheme://host[:port]` with no trailing
+  slash, because `HandleCors` compares the `Origin` header literally.
+
+A useful side effect: `SecurityController` grades `cors_restricted` by reading
+`config('cors.allowed_origins')`. Because the middleware sets the effective
+policy before the controller runs, the posture card now reports what is applied
+rather than the environment default.
+
+### 184.2 Request limits: JSON only, and measured twice
+
+`EnforceRequestLimits` is prepended to the `api` group. OWASP ASVS 5.0 states the
+reason in V2.2 — a number that "controls how many times a loop will take place…
+could lead to excessive processing and a potential denial of service condition" —
+and V2.4.1 asks for anti-automation controls. Depth is the same argument one
+level down, because `json_decode` recurses.
+
+**JSON only, deliberately.** The field describes "chat and tool endpoints", and
+those are JSON. Media uploads are multipart and already bounded by PHP's
+`upload_max_filesize` and `post_max_size`; applying a kilobyte-derived cap to
+uploads would break images to protect a JSON parser.
+
+**Size is declared *and* measured.** `Content-Length` gives a cheap rejection
+before the body is touched, but it is not the authority: a chunked body declares
+none, and a lying client declares the wrong one. The authoritative check runs on
+the bytes actually read, which costs nothing extra because the depth check has
+already materialised the body. A request is refused if *either* measurement
+exceeds the limit.
+
+**`0` means no limit**, which is the field's own contract.
+
+### 184.3 The ordering trap the test found
+
+`$middleware->statefulApi()` prepends Sanctum's `EnsureFrontendRequestsAreStateful`
+to the `api` group, and that middleware brings CSRF validation with it. Registering
+`EnforceRequestLimits` *before* `statefulApi()` looked right in the source and was
+wrong at runtime: CSRF sat ahead of the limit, so an oversized body was answered
+with `419` without ever being measured. The registration now sits after that call,
+with the reason written beside it. The failing assertion was `413` expected,
+`419` received — a wrong-status test is worth more than a comment.
+
+### 184.4 Failure behaviour, stated rather than assumed
+
+If the settings store cannot be read, both middlewares let the request through
+with the configured policy unchanged. These controls protect availability; making
+every request fail because the database holding the limit is unavailable would be
+the outage they exist to prevent. For CORS the fallback is the deployment's own
+baseline, never "allow all".
+
+### 184.5 Gates
+
+| Gate | Result |
+|---|---|
+| `EdgePolicyTest` | **9 tests / 20 assertions** — wildcard without credentials; listed origins echoed; trailing slash normalised; bare wildcard ignored; empty list leaves env alone; oversize → 413; `0` disables; deep → 400; a normal body passes |
+| `AdminSettingsCoverageTest`, `Security*`, `SurfaceOwnershipTest`, `InputGuard*` | pass — 81 tests / 1,222 assertions in the combined run |
+| phpcs PSR-12 on four changed files | exit 0 |
+| `bin/settings-coverage/generate.py` | 601 rows · **63 enforced** · **18 operator-unenforced** |
+
+### 184.6 The remaining 18
+
+`enforced` moved 59 → 63; `unenforced-operator` 22 → 18. What is left falls into
+three groups, and the next slice should take them in that order:
+
+1. **Buildable now, same shape as this slice** — `enable_auth_rate_limiting`,
+   `auth_rate_limit_threshold`, `auth_rate_limit_window` (Laravel's `RateLimiter`
+   already exists; the settings need to feed the limiter), and
+   `max_sse_connections_per_user` (`SseHandler` exists and needs a counter).
+2. **Audit logging** — `enable_security_audit_log`, `log_successful_auth`,
+   `log_file_access`, `audit_log_retention_days`. `AdminAuditLogger` already
+   records admin actions; this is the security-event stream beside it, plus the
+   retention sweep the fourth key names.
+3. **Proxy- or feature-owned, likely to be declared rather than built** —
+   `enable_hsts` and `enable_security_headers` (the package config says the console
+   proxy owns the headers and ships its own HSTS ramp), `mcp_app_allowed_hosts`,
+   `enable_root_security_key`/`root_security_key`, `enable_loopback_ssl_bypass`,
+   `enable_loopback_private_network_requests`, `enable_oauth_token_rate_limit`,
+   `api_error_verbosity` (`APP_DEBUG` is the real control; the posture already
+   grades it), `strip_asset_versions` (no `?ver=` URLs exist in this runtime).
+
+Declaring is the honest answer for group 3 only when the enforcement genuinely
+belongs elsewhere — the same judgement §183.9 applied to guest access and 2FA, and
+the opposite of what it applied to the PII filter.
