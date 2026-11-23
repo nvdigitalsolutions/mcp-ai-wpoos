@@ -34,6 +34,10 @@ use App\Support\RemoteSites\RemoteSiteStore;
 use App\Support\Security\SecuritySnapshotStore;
 use App\Support\Settings\SettingsService;
 use App\Support\Token\TiktokenService;
+use App\Support\ToolQuota\ToolQuotaExceededException;
+use App\Support\ToolQuota\ToolQuotaGuard;
+use App\Support\ToolQuota\ToolQuotaRecorder;
+use App\Support\ToolQuota\ToolQuotaUnverifiableException;
 use App\Support\TenantContext;
 use App\Support\TenantEntitlement;
 use App\Spike\SpikeStreamingProvider;
@@ -53,6 +57,7 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
@@ -67,6 +72,10 @@ use Nvoos\Core\Domain\Contract\TeamServiceInterface;
 use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
+use Nvoos\Core\Domain\Decision\PreToolDecision;
+use Nvoos\Core\Domain\Event\AfterToolExecution;
+use Nvoos\Core\Domain\Event\ToolsPreExecute;
+use Nvoos\Laravel\Adapter\EventDispatcher;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
 use Nvoos\Laravel\Adapter\SettingsStore;
@@ -79,6 +88,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // ── The tool dispatcher must be shared (149 §176) ──────────
+        //
+        // The package binds `EventDispatcherInterface` with `bind`, so every
+        // `make()` built a fresh dispatcher. `ToolRegistry` captures the instance
+        // it is constructed with, which means a listener registered anywhere else
+        // is silently dropped — it lands on an object nobody dispatches through.
+        //
+        // An event dispatcher is a shared hub, and one-instance-per-resolution
+        // makes listener registration a lottery. Sharing it is what lets the
+        // per-tool quota waterfall reach the registry's own `tools/pre_execute`.
+        //
+        // To hear the after hook, register on Laravel's dispatcher instead: this
+        // class's `listen()` registers with both maps and `dispatch()` fires
+        // both, which would double-charge every tool.
+        $this->app->singleton(EventDispatcherInterface::class, EventDispatcher::class);
+
+        $this->registerToolQuotaListeners();
+
         // The assistant and team contracts are host-specific (Eloquent
         // models), so they are bound here rather than in the package provider.
         $this->app->bind(AssistantServiceInterface::class, LaravelAssistantService::class);
@@ -252,6 +279,66 @@ class AppServiceProvider extends ServiceProvider
             static fn (): MemoryStore => new MemoryStore(
                 static fn (): string => TenantContext::current()
             )
+        );
+    }
+
+    /**
+     * Wire per-tool daily quotas (149 §176).
+     *
+     * **A waterfall listener, not a monotonic guard.** `tools/pre_execute` is
+     * the registry's allow/deny seam, so a refusal surfaces as `tool_denied`
+     * carrying the quota's own message — the model can read it and route around
+     * the tool instead of retrying. A guard would produce the same refusal with
+     * a generic reason.
+     *
+     * **Registered in `register()`, not `boot()`.** `ToolRegistry` is a singleton
+     * built with whichever dispatcher instance it is handed, and it may be
+     * resolved during another provider's boot. Waiting for `afterResolving` would
+     * be too late: a singleton already in the container is returned without
+     * firing resolving callbacks. This is also why the dispatcher is bound as a
+     * singleton above.
+     *
+     * **The recorder goes on Laravel's dispatcher, not this one.**
+     * `EventDispatcher::listen()` registers the callable in its own PSR-14 map
+     * *and* with Laravel, and `dispatch()` fires both — for a counter that means
+     * charging every tool twice. Laravel's dispatcher alone is reached exactly
+     * once, from `dispatch()`'s framework pass, whichever instance dispatched.
+     *
+     * Both halves re-read `oos.tool_quotas.enabled` per call rather than
+     * snapshotting it here, so the master switch also works when it is flipped
+     * after boot (tests, tinker) and not only on a fresh deploy.
+     */
+    private function registerToolQuotaListeners(): void
+    {
+        $events = $this->app->make(EventDispatcherInterface::class);
+
+        $events->listenWaterfall(
+            'tools/pre_execute',
+            static function (ToolsPreExecute $event, callable $next): mixed {
+                try {
+                    app(ToolQuotaGuard::class)->assertWithinQuota($event->slug, $event->context);
+                } catch (ToolQuotaExceededException | ToolQuotaUnverifiableException $error) {
+                    // Both are refusals: one because the ceiling was reached, the
+                    // other because the counter could not be trusted.
+                    return PreToolDecision::deny($error->getMessage());
+                }
+
+                return $next($event);
+            },
+            // Ahead of a later policy listener: the check is one indexed lookup,
+            // and refusing here saves the work a later listener would do.
+            20
+        );
+
+        Event::listen(
+            AfterToolExecution::class,
+            static function (AfterToolExecution $event): void {
+                app(ToolQuotaRecorder::class)->record(
+                    $event->toolSlug,
+                    $event->context,
+                    $event->result
+                );
+            }
         );
     }
 

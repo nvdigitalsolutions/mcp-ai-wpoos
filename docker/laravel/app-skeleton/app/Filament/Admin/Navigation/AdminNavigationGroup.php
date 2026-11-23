@@ -121,7 +121,7 @@ enum AdminNavigationGroup: string implements HasIcon, HasLabel
                 'Command centre', 'Assistants', 'Teams', 'Access requests', 'Blueprints', 'Portability',
             ),
             self::Knowledge => array(
-                'Tools', 'Toolkits', 'Knowledge (OKF)', 'Paper Store', 'Media', 'Memory',
+                'Tools', 'Tool quotas', 'Toolkits', 'Knowledge (OKF)', 'Paper Store', 'Media', 'Memory',
                 'Agent skills', 'Professions',
             ),
             self::Automation => array('Automations', 'Workflow runs', 'Approvals'),
