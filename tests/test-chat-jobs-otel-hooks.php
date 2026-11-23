@@ -60,7 +60,7 @@ class Test_Chat_Jobs_Otel_Hooks extends WP_UnitTestCase {
 	// ── Snapshot hook ─────────────────────────────────────────────────────────
 
 	/**
-	 * handle_cron_status_request fires wp_mcp_ai_chat_jobs_snapshot with the
+	 * Handle_cron_status_request fires wp_mcp_ai_chat_jobs_snapshot with the
 	 * response array, user_id, and assistant_id.
 	 */
 	public function test_snapshot_hook_fires_with_correct_args() {
@@ -282,7 +282,7 @@ class Test_Chat_Jobs_Otel_Hooks extends WP_UnitTestCase {
 	// ── OTel span handler contracts ───────────────────────────────────────────
 
 	/**
-	 * on_chat_jobs_snapshot buffers a span without throwing.
+	 * On_chat_jobs_snapshot buffers a span without throwing.
 	 */
 	public function test_on_chat_jobs_snapshot_does_not_throw() {
 		WP_MCP_AI_Otel_Span_Exporter::reset_for_tests();
@@ -302,7 +302,7 @@ class Test_Chat_Jobs_Otel_Hooks extends WP_UnitTestCase {
 	}
 
 	/**
-	 * on_chat_jobs_cancel buffers a span without throwing.
+	 * On_chat_jobs_cancel buffers a span without throwing.
 	 */
 	public function test_on_chat_jobs_cancel_does_not_throw() {
 		WP_MCP_AI_Otel_Span_Exporter::reset_for_tests();
@@ -318,7 +318,7 @@ class Test_Chat_Jobs_Otel_Hooks extends WP_UnitTestCase {
 	}
 
 	/**
-	 * on_chat_jobs_retry buffers a span without throwing.
+	 * On_chat_jobs_retry buffers a span without throwing.
 	 */
 	public function test_on_chat_jobs_retry_does_not_throw() {
 		WP_MCP_AI_Otel_Span_Exporter::reset_for_tests();
@@ -334,7 +334,7 @@ class Test_Chat_Jobs_Otel_Hooks extends WP_UnitTestCase {
 	}
 
 	/**
-	 * on_before/on_after_chat_jobs_stream open/close a span without throwing.
+	 * On_before/on_after_chat_jobs_stream open/close a span without throwing.
 	 */
 	public function test_stream_span_open_close_does_not_throw() {
 		WP_MCP_AI_Otel_Span_Exporter::reset_for_tests();

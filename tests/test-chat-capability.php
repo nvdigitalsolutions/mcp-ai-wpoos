@@ -16,10 +16,16 @@ class WP_MCP_AI_Chat_Capability_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * The default capability is edit_posts.
+	 */
 	public function test_default_capability_is_edit_posts() {
 		$this->assertSame( 'edit_posts', wp_mcp_ai_get_required_chat_capability() );
 	}
 
+	/**
+	 * The filter allows public access.
+	 */
 	public function test_filter_allows_public_access() {
 		add_filter(
 			'wp_mcp_ai_chat_capability',
@@ -31,6 +37,9 @@ class WP_MCP_AI_Chat_Capability_Test extends WP_UnitTestCase {
 		$this->assertSame( 'public', wp_mcp_ai_get_required_chat_capability( 123, 'rest' ) );
 	}
 
+	/**
+	 * The filter value is sanitized.
+	 */
 	public function test_filter_value_is_sanitized() {
 		add_filter(
 			'wp_mcp_ai_chat_capability',
@@ -42,6 +51,9 @@ class WP_MCP_AI_Chat_Capability_Test extends WP_UnitTestCase {
 		$this->assertSame( 'manage_options', wp_mcp_ai_get_required_chat_capability( 0, 'ShortCode' ) );
 	}
 
+	/**
+	 * The filter can disable the capability check.
+	 */
 	public function test_filter_can_disable_capability_check() {
 		add_filter( 'wp_mcp_ai_chat_capability', '__return_false' );
 

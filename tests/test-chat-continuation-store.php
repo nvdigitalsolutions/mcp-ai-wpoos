@@ -9,15 +9,23 @@
  */
 
 /**
+ * Chat continuation store tests.
+ *
  * @group continuation
  */
 class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 
+	/**
+	 * Reset the continuation store state.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Chat_Continuation_Store::reset_for_tests();
 	}
 
+	/**
+	 * Reset the continuation store state after each test.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Chat_Continuation_Store::reset_for_tests();
 		parent::tearDown();
@@ -111,7 +119,7 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * delete() should remove the row and clean the indices.
+	 * Delete() should remove the row and clean the indices.
 	 */
 	public function test_delete_removes_row_and_index() {
 		$session = 'sess_' . wp_generate_uuid4();
@@ -212,7 +220,7 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * generate_session_id() produces non-empty IDs and runs the filter.
+	 * Generate_session_id() produces non-empty IDs and runs the filter.
 	 */
 	public function test_generate_session_id_runs_filter() {
 		$called = false;

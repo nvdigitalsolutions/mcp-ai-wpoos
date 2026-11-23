@@ -80,7 +80,7 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	/**
 	 * Test that AJAX action is registered.
 	 *
-	 * nopriv is intentionally NOT registered: handle_execute_action()
+	 * Nopriv is intentionally NOT registered: handle_execute_action()
 	 * requires current_user_can( 'read' ) and always rejects unauthenticated
 	 * requests (see the handler constructor).
 	 */
@@ -134,7 +134,7 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	public function test_file_upload_validation() {
 		$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $handler );
 		$method     = $reflection->getMethod( 'handle_file_upload' );
 		$method->setAccessible( true );
@@ -159,7 +159,7 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	public function test_file_upload_size_limit() {
 		$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $handler );
 		$method     = $reflection->getMethod( 'handle_file_upload' );
 		$method->setAccessible( true );
@@ -169,7 +169,7 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 			'type'     => 'image/jpeg',
 			'tmp_name' => '/tmp/test',
 			'error'    => 0,
-			'size'     => 99999999, // Way over 10MB limit
+			'size'     => 99999999, // Way over 10MB limit.
 		);
 
 		$result = $method->invoke( $handler, $file );
@@ -184,7 +184,7 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	public function test_is_image_tool() {
 		$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $handler );
 		$method     = $reflection->getMethod( 'is_image_tool' );
 		$method->setAccessible( true );

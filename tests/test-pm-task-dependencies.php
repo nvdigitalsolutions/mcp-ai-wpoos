@@ -35,11 +35,15 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 	private $add_tool;
 
 	/**
+	 * Remove-dependency tool under test.
+	 *
 	 * @var WP_MCP_AI_Tool_Remove_Task_Dependency
 	 */
 	private $remove_tool;
 
 	/**
+	 * Get-dependencies tool under test.
+	 *
 	 * @var WP_MCP_AI_Tool_Get_Task_Dependencies
 	 */
 	private $get_tool;
@@ -332,7 +336,7 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 	// ── get_task_dependencies ────────────────────────────────────────────────
 
 	/**
-	 * get_task_dependencies returns depends_on and blocks lists.
+	 * Get_task_dependencies returns depends_on and blocks lists.
 	 */
 	public function test_get_dependencies_returns_full_graph() {
 		$task_a = $this->create_task( 'Task A' );
@@ -361,7 +365,7 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * can_start is false when upstream tasks are not completed.
+	 * Can_start is false when upstream tasks are not completed.
 	 */
 	public function test_can_start_is_false_when_blocker_not_done() {
 		$task_a = $this->create_task( 'Task A', array( '_task_status' => 'todo' ) );
@@ -381,7 +385,7 @@ class WP_MCP_AI_Task_Dependencies_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * can_start is true when all upstream tasks are completed.
+	 * Can_start is true when all upstream tasks are completed.
 	 */
 	public function test_can_start_is_true_when_all_blockers_done() {
 		$task_a = $this->create_task( 'Task A', array( '_task_status' => 'completed' ) );

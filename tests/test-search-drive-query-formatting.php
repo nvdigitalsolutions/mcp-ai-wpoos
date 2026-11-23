@@ -320,19 +320,19 @@ class Test_Search_Drive_Query_Formatting extends WP_UnitTestCase {
 
 		// Input: "test\'injection" (backslash + single-quote in the middle).
 		// Expected in Drive query: fullText contains 'test\\\'injection'
-		//   - \\ = escaped backslash (Drive API literal: \)
-		//   - \' = escaped single-quote (Drive API literal: ')
+		// - \\ = escaped backslash (Drive API literal: \)
+		// - \' = escaped single-quote (Drive API literal: ')
 		// Using chr() to keep the expected string unambiguous regardless of PHP quoting rules.
 		// chr(92)=\, chr(39)='.
 		$input            = 'test' . chr( 92 ) . chr( 39 ) . 'injection';
 		$result           = $method->invoke( $this->tool, $input );
 		$expected_segment = 'fullText contains '
-			. chr( 39 )           // opening single-quote
+			. chr( 39 )           // opening single-quote.
 			. 'test'
-			. chr( 92 ) . chr( 92 ) // escaped backslash: \\
-			. chr( 92 ) . chr( 39 ) // escaped single-quote: \'
+			. chr( 92 ) . chr( 92 ) // escaped backslash: \\.
+			. chr( 92 ) . chr( 39 ) // escaped single-quote: \'.
 			. 'injection'
-			. chr( 39 );            // closing single-quote
+			. chr( 39 );            // closing single-quote.
 		$this->assertStringContainsString( $expected_segment, $result );
 	}
 }
