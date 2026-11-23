@@ -127,7 +127,14 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 	 * A chat completion without a key returns WP_Error.
 	 */
 	public function test_chat_completion_returns_error_without_key() {
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'Hi' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			)
+		);
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_missing_digitalocean_api_key', $result->get_error_code() );
 	}
@@ -169,7 +176,14 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'Hi' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			)
+		);
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 'Hello, world.', $result['content'] );
@@ -213,7 +227,7 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 											'id'       => 'call_1',
 											'type'     => 'function',
 											'function' => array(
-												'name'      => 'lookup',
+												'name' => 'lookup',
 												'arguments' => '{"q":"hi"}',
 											),
 										),
@@ -241,7 +255,12 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 			),
 		);
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			),
 			array( 'tools' => $tools )
 		);
 
@@ -267,7 +286,14 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'Hi' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			)
+		);
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_digitalocean_auth_error', $result->get_error_code() );
 	}
@@ -286,7 +312,14 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'Hi' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			)
+		);
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_rate_limit_exceeded', $result->get_error_code() );
 		$data = $result->get_error_data();
@@ -306,7 +339,14 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'Hi' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			)
+		);
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_digitalocean_invalid_response', $result->get_error_code() );
 	}
@@ -337,7 +377,14 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'Hi' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			)
+		);
 		$this->assertEquals( 'thinking...', $result['reasoning_content'] );
 	}
 
@@ -445,11 +492,27 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->mock_http(
 			array(
 				'response' => array( 'code' => 200 ),
-				'body'     => wp_json_encode( array( 'choices' => array( array( 'message' => array( 'content' => 'ok' ), 'finish_reason' => 'stop' ) ) ) ),
+				'body'     => wp_json_encode(
+					array(
+						'choices' => array(
+							array(
+								'message'       => array( 'content' => 'ok' ),
+								'finish_reason' => 'stop',
+							),
+						),
+					)
+				),
 			)
 		);
 
-		$this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'Hi' ) ) );
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			)
+		);
 		$this->assertSame( 'https://proxy.example.com/v1/chat/completions', $this->captured_requests[0]['url'] );
 	}
 
@@ -459,7 +522,10 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 	public function test_count_tokens_heuristic() {
 		$count = $this->client->count_tokens(
 			array(
-				array( 'role' => 'user', 'content' => 'hello world!' ),
+				array(
+					'role'    => 'user',
+					'content' => 'hello world!',
+				),
 			)
 		);
 		$this->assertGreaterThan( 0, $count );

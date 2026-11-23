@@ -92,7 +92,12 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$measurements = array(
-			'blood_pressure' => array( 'systolic' => 120, 'diastolic' => 80, 'reading' => '120/80', 'status' => 'normal' ),
+			'blood_pressure' => array(
+				'systolic'  => 120,
+				'diastolic' => 80,
+				'reading'   => '120/80',
+				'status'    => 'normal',
+			),
 		);
 
 		$result = $method->invoke( $this->tool, $measurements, 1, '2024-01-01' );
@@ -110,7 +115,11 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$measurements = array(
-			'heart_rate' => array( 'value' => 72, 'unit' => 'bpm', 'status' => 'normal' ),
+			'heart_rate' => array(
+				'value'  => 72,
+				'unit'   => 'bpm',
+				'status' => 'normal',
+			),
 		);
 
 		$text = $method->invoke( $this->tool, $measurements, 99, '2024-03-08' );
@@ -130,13 +139,34 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$measurements = array(
-			'egfr'       => array( 'value' => 72.0, 'unit' => 'mL/min/1.73m²' ),
-			'creatinine' => array( 'value' => 1.1, 'unit' => 'mg/dL' ),
-			'bun'        => array( 'value' => 20.0, 'unit' => 'mg/dL' ),
-			'potassium'  => array( 'value' => 4.2, 'unit' => 'mEq/L' ),
-			'sodium'     => array( 'value' => 140.0, 'unit' => 'mg/day' ),
-			'phosphorus' => array( 'value' => 3.5, 'unit' => 'mg/dL' ),
-			'albumin'    => array( 'value' => 4.0, 'unit' => 'g/dL' ),
+			'egfr'       => array(
+				'value' => 72.0,
+				'unit'  => 'mL/min/1.73m²',
+			),
+			'creatinine' => array(
+				'value' => 1.1,
+				'unit'  => 'mg/dL',
+			),
+			'bun'        => array(
+				'value' => 20.0,
+				'unit'  => 'mg/dL',
+			),
+			'potassium'  => array(
+				'value' => 4.2,
+				'unit'  => 'mEq/L',
+			),
+			'sodium'     => array(
+				'value' => 140.0,
+				'unit'  => 'mg/day',
+			),
+			'phosphorus' => array(
+				'value' => 3.5,
+				'unit'  => 'mg/dL',
+			),
+			'albumin'    => array(
+				'value' => 4.0,
+				'unit'  => 'g/dL',
+			),
 		);
 
 		$text = $method->invoke( $this->tool, $measurements, 1, '2024-03-08' );
@@ -157,7 +187,12 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$measurements = array(
-			'blood_pressure' => array( 'systolic' => 130, 'diastolic' => 85, 'reading' => '130/85', 'status' => 'elevated' ),
+			'blood_pressure' => array(
+				'systolic'  => 130,
+				'diastolic' => 85,
+				'reading'   => '130/85',
+				'status'    => 'elevated',
+			),
 		);
 
 		$text = $method->invoke( $this->tool, $measurements, 1, '2024-01-01' );

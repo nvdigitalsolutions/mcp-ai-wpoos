@@ -186,7 +186,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'What is the weather in Paris?' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'What is the weather in Paris?',
+				),
+			),
 			array( 'tools' => $this->make_tool_definition() )
 		);
 
@@ -203,7 +208,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hello' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			),
 			array(
 				'tools'       => $this->make_tool_definition(),
 				'tool_choice' => 'auto',
@@ -220,7 +230,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hello' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			),
 			array(
 				'tools'               => $this->make_tool_definition(),
 				'parallel_tool_calls' => false,
@@ -238,7 +253,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hello' ) )
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			)
 		);
 
 		$this->assertArrayNotHasKey( 'tools', $this->last_request_body, 'tools key must not appear when not needed.' );
@@ -255,7 +275,10 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'What is the weather?' ),
+			array(
+				'role'    => 'user',
+				'content' => 'What is the weather?',
+			),
 			array(
 				'role'       => 'assistant',
 				'content'    => '',
@@ -305,7 +328,10 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'Weather?' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Weather?',
+			),
 			array(
 				'role'       => 'assistant',
 				'content'    => '',
@@ -352,7 +378,10 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'Hello' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
 			array(
 				'role'         => 'tool',
 				'content'      => 'result',
@@ -364,7 +393,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->client->create_chat_completion( $messages ); // No tools option.
 
 		$sent_messages = $this->last_request_body['messages'];
-		$tool_messages = array_filter( $sent_messages, function ( $m ) { return 'tool' === $m['role']; } );
+		$tool_messages = array_filter(
+			$sent_messages,
+			function ( $m ) {
+				return 'tool' === $m['role'];
+			}
+		);
 
 		$this->assertEmpty( $tool_messages, 'No tool-role messages should remain when tools are absent.' );
 
@@ -391,7 +425,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		);
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Weather in Paris?' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Weather in Paris?',
+				),
+			),
 			array( 'tools' => $this->make_tool_definition() )
 		);
 
@@ -419,7 +458,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response( 'The weather is 22°C.' ) );
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Weather?' ) )
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Weather?',
+				),
+			)
 		);
 
 		$choice = $result['choices'][0];
@@ -482,7 +526,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		);
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Weather?' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Weather?',
+				),
+			),
 			array(
 				'tools'  => $this->make_tool_definition(),
 				'stream' => true,
@@ -511,7 +560,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response( '{"answer":"yes"}' ) );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Answer with JSON.' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Answer with JSON.',
+				),
+			),
 			array( 'response_format' => array( 'type' => 'json_object' ) )
 		);
 
@@ -530,7 +584,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response( '{"answer":"yes"}' ) );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Answer with JSON schema.' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Answer with JSON schema.',
+				),
+			),
 			array(
 				'response_format' => array(
 					'type'        => 'json_schema',
@@ -549,7 +608,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Think about it.' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Think about it.',
+				),
+			),
 			array( 'think' => true )
 		);
 
@@ -564,7 +628,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Reason.' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Reason.',
+				),
+			),
 			array( 'reasoning' => true )
 		);
 
@@ -579,7 +648,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hello' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			),
 			array( 'keep_alive' => '5m' )
 		);
 
@@ -593,7 +667,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $this->make_chat_response() );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hello' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			),
 			array(
 				'num_thread' => 4,
 				'num_gpu'    => 1,
@@ -630,7 +709,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $mock_response );
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'What is the answer?' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'What is the answer?',
+				),
+			),
 			array( 'think' => true )
 		);
 
@@ -673,7 +757,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $compat_response, 200, '/v1/chat/completions' );
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hello' ) )
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			)
 		);
 
 		$this->assertStringContainsString( '/v1/chat/completions', $this->last_request_url, 'Loopback must use /v1/chat/completions.' );
@@ -698,7 +787,10 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 			'choices' => array(
 				array(
 					'index'         => 0,
-					'message'       => array( 'role' => 'assistant', 'content' => 'Hi' ),
+					'message'       => array(
+						'role'    => 'assistant',
+						'content' => 'Hi',
+					),
 					'finish_reason' => 'stop',
 				),
 			),
@@ -706,12 +798,22 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $compat_response );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hello' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			),
 			array( 'system_prompt' => 'You are a helpful assistant.' )
 		);
 
-		$messages = $this->last_request_body['messages'];
-		$system_messages = array_filter( $messages, function ( $m ) { return 'system' === $m['role']; } );
+		$messages        = $this->last_request_body['messages'];
+		$system_messages = array_filter(
+			$messages,
+			function ( $m ) {
+				return 'system' === $m['role'];
+			}
+		);
 
 		$this->assertNotEmpty( $system_messages, 'System prompt must be a system-role message in loopback mode.' );
 		$first_system = array_values( $system_messages )[0];
@@ -736,7 +838,10 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 			'choices' => array(
 				array(
 					'index'         => 0,
-					'message'       => array( 'role' => 'assistant', 'content' => '' ),
+					'message'       => array(
+						'role'    => 'assistant',
+						'content' => '',
+					),
 					'finish_reason' => 'stop',
 				),
 			),
@@ -744,7 +849,12 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->mock_http_response( $compat_response );
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Weather?' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Weather?',
+				),
+			),
 			array( 'tools' => $this->make_tool_definition() )
 		);
 
