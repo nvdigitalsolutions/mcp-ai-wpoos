@@ -68,6 +68,14 @@ return array(
 			'replaced_by' => 'analyze_comment_content',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'analyze_file_suitability' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AnalyzeFileSuitabilityLocalTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AnalyzeFileSuitabilityToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'analyze_file_suitability_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AnalyzeFileSuitabilityTool',
 			'readiness' => 'quarantined',

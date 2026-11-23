@@ -1647,3 +1647,89 @@ environment-only errors in a one-off runner (three need
 `examples/nvoos-astro-velocity/src/tokens/core.json` outside the mounted tree, two data
 providers yield no datasets for the same reason — none in a changed area). Auditor 242
 rows / 223 servable, no violations. phpcs clean on all three files at the CI severities.
+
+## 25. Addendum: analyze_file_suitability, and an answer that disagrees with itself (2026-11-24)
+
+### Why this one was cheap
+
+It was recorded as needing "a file registry and a purpose taxonomy". The registry landed
+with the media work, and the "taxonomy" turned out to be a five-row table of provider
+limits, not data. The tool is size, extension and a bounded read of the bytes: no model,
+no network, no credentials. Its flags say so — `read-only`, `local-only`, `idempotent`,
+`requires-capability`.
+
+### The defect it replaces
+
+The WordPress tool reports two things that contradict each other. It collects a warning
+when an image is under 100 pixels wide…
+
+```php
+if ( $width < 100 || $height < 100 ) {
+    $warnings[] = __( 'Image is very small. May not provide good results for vision tasks.' );
+}
+```
+
+…and returns `suitable => true`, because only size and format ever flip that flag. The
+message is then built from the count it just collected:
+
+```php
+_n( 'File has %d warning preventing use.', 'File has %d warnings preventing use.', $warning_count )
+```
+
+So a usable file is announced as having warnings "preventing use". A caller has no way
+to tell advice from a refusal.
+
+### One invariant
+
+```
+suitable === (warnings === [])
+```
+
+Blocking, in `warnings`: over the purpose's size ceiling; a format the purpose does not
+accept; a spreadsheet or presentation aimed at a vector store; a text file with nothing
+in it; a JSONL file whose first lines do not parse. Everything else is
+`recommendations`: an image under 100px or over 4096px, text that is not UTF-8, one
+malformed JSONL line, a file at 90% of its ceiling, the PDF/DOCX ingestion advice.
+
+The two lists never overlap, and a test runs five differently-broken files through the
+tool asserting the invariant on each. Two cases moved in the move: the encoding check
+stays advisory (WordPress also kept it non-blocking) and "no JSONL line parses" became
+blocking, because a fine-tune or batch input with no parseable line cannot be used
+whatever the caller intends.
+
+### Privacy, and why "not found" is the right answer
+
+When the caller passes a user id, `FileStoreInterface::userCanAccess()` runs before the
+metadata is read, and a file the caller may not see answers exactly as a file that does
+not exist. `forbidden` would confirm that a file with that id exists, which is the thing
+the check is protecting.
+
+### Two things the runner taught us
+
+- **The real file store refuses a zero-byte upload.** It sniffs
+  `application/x-empty` and rejects it at `store()`. So the tool's "empty file" branch is
+  reachable only just under the 10-byte threshold, and the app test uses `"hi\n"`. The
+  unit test keeps the true-zero case, which a host with a laxer store can still reach.
+- **A store can hand back a path that does not exist.** The file check therefore reports
+  `content_checked: false` with a recommendation rather than claiming the content was
+  inspected. A metadata-only answer remains a valid answer, and the payload says which
+  one it gave.
+
+### Validation
+
+`AnalyzeFileSuitabilityToolTest` (core, 18 tests: slug/capability/flags; the missing
+`file_id`; the missing store; an unknown purpose; a missing file; **another user's file
+answering as missing**; a suitable UTF-8 text file; over the ceiling; an unaccepted
+format naming what is accepted; a spreadsheet blocked with the conversion advice; an
+empty file; JSONL with no parseable line; non-UTF-8 as advice; a one-pixel image as
+advice; one bad JSONL line as advice; **the invariant across five broken files**;
+`check_content: false` touching no file; an unopenable file reported honestly). Feature
+test `docker/laravel/app-skeleton/tests/Feature/AnalyzeFileSuitabilityToolTest.php`
+(5 tests against the real store and real disks: registration, a stored text file whose
+`localPath` the check can actually open, a near-empty file, a missing id, and another
+user's file answering as missing).
+
+`lib/core` 2,205 / 16,580; adapter 350 / 1,871 with the two new probes
+(`content_recommendation_engine` on its success path and `analyze_file_suitability` on
+its not-found path). Auditor 243 rows / 224 servable, no violations. phpcs clean on all
+four files at the CI severities.
