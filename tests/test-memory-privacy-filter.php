@@ -42,7 +42,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * @return string
 	 */
 	private static function fake_openai_key() {
-		return 'sk-' . 'NOTAREAL' . str_repeat( 'a', 30 );
+		return 'sk-' . 'NOTAREAL' . str_repeat( 'a', 30 ); // phpcs:ignore Generic.Strings.UnnecessaryStringConcat -- Key prefix split so no key-shaped literal lands on disk.
 	}
 
 	/**
@@ -51,7 +51,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * @return string
 	 */
 	private static function fake_anthropic_key() {
-		return 'sk-' . 'ant-fake-' . str_repeat( 'a', 30 );
+		return 'sk-' . 'ant-fake-' . str_repeat( 'a', 30 ); // phpcs:ignore Generic.Strings.UnnecessaryStringConcat -- Key prefix split so no key-shaped literal lands on disk.
 	}
 
 	/**
@@ -60,7 +60,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * @return string
 	 */
 	private static function fake_github_pat() {
-		return 'ghp_' . 'NOTAREAL' . str_repeat( 'a', 28 );
+		return 'ghp_' . 'NOTAREAL' . str_repeat( 'a', 28 ); // phpcs:ignore Generic.Strings.UnnecessaryStringConcat -- Key prefix split so no key-shaped literal lands on disk.
 	}
 
 	/**
@@ -123,7 +123,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		$openai_body   = 'NOTAREAL' . $alpha30;
 		$openai_proj   = 'proj-NOTAREAL' . $alpha30;
 		$anthropic     = 'ant-fake-' . $alpha30;
-		$aws_id        = 'AKIA' . 'NOTAREALKEY12345';
+		$aws_id        = 'AKIA' . 'NOTAREALKEY12345'; // phpcs:ignore Generic.Strings.UnnecessaryStringConcat -- Key prefix split so no key-shaped literal lands on disk.
 		$aws_secret    = 'NOTAREAL' . str_repeat( 'b', 32 );
 		$gh_pat_body   = 'NOTAREAL' . str_repeat( 'a', 28 );
 		$gh_srv_body   = 'NOTAREAL' . str_repeat( 'b', 28 );
@@ -145,7 +145,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 			'github_oauth_token'  => array( 'github_oauth_token', 'gho_' . $gh_oauth_body, 'gh oauth:' ),
 			'google_api_key'      => array( 'google_api_key', 'AIza' . $google_body, 'google key:' ),
 			'slack_token'         => array( 'slack_token', 'xoxb-' . $slack_body, 'slack:' ),
-			'stripe_secret_key'   => array( 'stripe_secret_key', 'sk_' . 'live_' . $stripe_body, 'stripe:' ),
+			'stripe_secret_key'   => array( 'stripe_secret_key', 'sk_' . 'live_' . $stripe_body, 'stripe:' ), // phpcs:ignore Generic.Strings.UnnecessaryStringConcat -- Key prefix split so no key-shaped literal lands on disk.
 			'bearer_token'        => array( 'bearer_token', 'Authorization: Bearer ' . $bearer_body, 'header:' ),
 			'private_block'       => array( 'private_block', '<private>fake SSN here</private>', 'note:' ),
 		);
