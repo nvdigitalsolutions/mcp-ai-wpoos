@@ -19,6 +19,7 @@ use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
 use App\Support\AdminThemeGenerator;
 use App\Support\Approvals\DatabaseApprovalTicket;
+use App\Support\Assistants\LaravelAssistantExporter;
 use App\Support\Assistants\LaravelAssistantWriter;
 use App\Support\Auth\Auth0TokenVerifier;
 use App\Support\Auth\JitProvisioner;
@@ -62,6 +63,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
+use Nvoos\Core\Domain\Contract\AssistantExportInterface;
 use Nvoos\Core\Domain\Contract\AssistantWriteInterface;
 use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
@@ -206,6 +208,12 @@ class AppServiceProvider extends ServiceProvider
         // the `/admin` resource already share, so the tool cannot acquire a second
         // set of estate, slug or draft rules.
         $this->app->singleton(AssistantWriteInterface::class, LaravelAssistantWriter::class);
+
+        // Assistant exports for `export_assistant` (Proposal 090-M §18). Same
+        // arrangement: the adapter adapts the one portability engine the REST
+        // controller and the `/admin` page already call, so the bundle shape and
+        // the credential denylist cannot diverge by transport.
+        $this->app->singleton(AssistantExportInterface::class, LaravelAssistantExporter::class);
 
         // Approval tickets (Proposal 149 §157). The necessity gate records a
         // ticket when a call needs a human and spends it on the retry. Kept out
