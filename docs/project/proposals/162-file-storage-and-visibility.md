@@ -478,3 +478,51 @@ which must resize to 2×4 rather than 2×1.
 checkout does not have, so that assertion is covered by CI rather than locally.
 The PHP side was run: `ContentAndCrawlerToolsTest` + `ImageProcessingAdapterTest`
 (26 tests), the readiness guards (21), and the adapter suite (348).
+
+### 162.9.5 Images in the body
+
+`featured_image_id` (§162.9.3) answers "what represents this post". It does not
+answer "what is in it". WordPress's `create_post` takes a `content_images` array
+and renders each entry as an image block
+(`trait-wp-mcp-ai-tool-content-media.php`); this runtime now accepts the same
+argument on `create_post` and `create_post_validated`.
+
+**The argument, copied exactly.** `{source, alt, caption, position}` with
+`source` a stored file id or an absolute URL, `position` one of
+`start|middle|end` (default `middle`), and a cap of five. `middle` means "after
+the paragraph at the midpoint of the body", which is what the WordPress trait
+does.
+
+**Two deliberate departures, both because copying would be wrong here.**
+
+- **Attributes are written into the markup.** WordPress emits
+  `<figure class="wp-block-image"><img class="wp-image-12" ...>`, then relies on
+  `wp_filter_content_tags()` to add `srcset`, `sizes`, `loading` and the
+  intrinsic size at render time, keyed off that class. This runtime has no render
+  filter, so the block carries `width`, `height`, `loading="lazy"` and
+  `decoding="async"` itself. Dimensions come from `getimagesize()` on the stored
+  bytes and are omitted when they cannot be read — a missing attribute is a
+  missed optimisation, a guessed one is a distorted image. web.dev's image
+  guidance is explicit that every `<img>` should carry `width` and `height` so
+  the browser can reserve space and avoid layout shift.
+- **A private file is refused** (`422`). WordPress has a single media
+  visibility; here a private file deliberately has no public URL, so embedding
+  it would ship an `<img>` that returns 401 for every anonymous reader. A broken
+  image is worse than an error the caller can act on.
+
+**Escaping.** `alt` and the caption are escaped with `ENT_QUOTES`; the caption is
+`strip_tags()`-ed first, because it arrives from a model and an image block is
+not a place to accept HTML. `source` strings are restricted to absolute
+`http(s)` or a site-relative path — `javascript:` and `data:` are rejected — which
+is the equivalent of WordPress's `esc_url()` protocol allowlist.
+
+**Not ported: `content_charts`.** The WordPress trait renders charts by emitting
+`<script src=".../chart.min.js">` plus an inline `<script>` into post content.
+That is a stored-XSS shape and a CSP problem, and this runtime already has chart
+fences and `create_chart` as the supported path. Declining it is a decision, not
+an omission.
+
+*Validation:* `ContentAndCrawlerToolsTest` (12 tests, 3 new), the readiness
+guards (17), and the adapter suite (348). The embed tests use a real registry row
+backed by a real 1×1 PNG on a faked disk, so the dimensions assertion exercises
+`getimagesize()` rather than a stub.
