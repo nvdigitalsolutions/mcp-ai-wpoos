@@ -526,3 +526,40 @@ an omission.
 guards (17), and the adapter suite (348). The embed tests use a real registry row
 backed by a real 1×1 PNG on a faked disk, so the dimensions assertion exercises
 `getimagesize()` rather than a stub.
+
+### 162.9.6 Byte ranges on the private route
+
+§162.7 deferred `Range` handling with the note that "doing it badly is worse than
+not doing it". Stored video made that untenable: a player seeks by asking for one
+byte range, and without `Accept-Ranges` on the full response it does not ask at
+all — every scrub re-downloads from zero.
+
+`FileController` now answers the single-range form:
+
+| Request | Response |
+|---|---|
+| no `Range`, or a malformed one, or more than one range | `200` with `Accept-Ranges: bytes`, the whole representation |
+| `bytes=2-5` | `206`, `Content-Range: bytes 2-5/10`, `Content-Length: 4` |
+| `bytes=-3` | `206`, the last three bytes (`bytes 7-9/10`) |
+| `bytes=99-100` on a 10-byte file | `416`, `Content-Range: bytes */10` |
+
+**Multi-range is declined, deliberately.** RFC 9110 §14.2 permits a server that
+does not implement `multipart/byteranges` to ignore the `Range` header, and
+browsers ask for one range at a time. A half-correct multipart response — wrong
+boundaries, a missing `Content-Type` per part — breaks playback in ways that are
+harder to diagnose than the full download it replaces.
+
+**`If-Range` gets the full representation.** This route emits no `ETag` or
+`Last-Modified`, so a validator a client sends cannot be matched; honouring the
+range anyway is exactly how a resumed download ends up assembled from two
+different versions of a file.
+
+**Seeking needs a seekable file.** The ranged path opens the file and `fseek`s to
+the start offset, streaming 64 KB chunks, so a 4 GB video is never a 4 GB string.
+A remote driver cannot be seeked that way, so `localPath()` asks the driver for a
+path and, when there isn't one (`S3`, `ftp`), the controller falls back to the
+previous whole-representation stream with no `Accept-Ranges` — the driver's own
+ranged read is its transport's job, not this controller's.
+
+Authorization is unchanged: ranges are answered only after the same estate lookup,
+owner check and `oos-file.access` gate, so a `206` is not a way around the check.
