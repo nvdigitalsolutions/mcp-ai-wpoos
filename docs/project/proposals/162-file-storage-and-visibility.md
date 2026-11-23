@@ -196,3 +196,63 @@ the store is framework-agnostic and the tenant is an app concept.
   behaviour is not bundled into this change.
 - **Per-estate quotas.** The path carries the estate so a quota report is possible;
   enforcement is not built here.
+
+## 162.8 The media slug is a column, not a derivation
+
+`MediaController` answered `slug` with `pathinfo( $filename, PATHINFO_FILENAME )`
+— the display name, minus its extension. That is fine until the display name
+changes, and then it is not fine at all: tightening the registry's
+`sanitize_file_name()`-style pass moved every slug with it, and a `wp/v2/media`
+client that routed on a slug saw `pixel` arrive as `Pixel`. A key a client stores
+must not move because a title's case changed.
+
+WordPress never had this problem because it keeps three fields apart:
+
+| WordPress | `nvoos_files` before §162.8 | `nvoos_files` after |
+|---|---|---|
+| `post_title` — what the library shows, case preserved | `filename` | `filename` (case preserved) |
+| `post_name` — the slug, lowercased and unique | derived on read | `slug` (a column, unique per estate) |
+| `_wp_attached_file` — where the bytes live | `path` (ULID basename) | `path` (unchanged) |
+
+### The rules, and why each one
+
+- **A column.** Deriving a route-adjacent key from a display field couples two
+  decisions that must be free to change independently. `uniqueSlug()` writes the
+  value once, at insert; readers stop guessing.
+- **Unique per estate, not globally.** `wp_unique_post_slug()` is unique per site
+  because slugs *are* routes on a site. Here the route is `/api/v1/media/{id}` —
+  the id is the key — so the slug is a label, and two estates may legitimately both
+  hold `logo`. The index is `(tenant_id, slug)`.
+- **The suffix starts at 2.** `pixel`, `pixel-2`, `pixel-3` — exactly what
+  `wp_unique_post_slug()` does. After 99 collisions a six-character ULID tail is
+  appended instead of walking an unbounded loop on a hostile name.
+- **The display name keeps its case.** `post_title` is not lowercased and neither
+  is `filename` now; only the slug is. The extension is still forced to the sniffed
+  one, so a title cannot claim a type the bytes do not have.
+- **Nullable, with a reader fallback, and no backfill.** Every pre-existing row has
+  no slug. Backfilling means inventing uniqueness across rows that never had any,
+  and a wrong guess is worse than a documented fallback: `MediaController::slugOf()`
+  derives the old value for those rows and reads the column for every new one.
+- **The unique index is the authority; the computed slug is a guess.** Two uploads
+  can compute the same first-free slug in the same instant. The index refuses the
+  loser, `insertRow()` recomputes — now seeing the winner's row — and retries, up
+  to three times, after which the driver's error is surfaced rather than swallowed.
+  The bytes are unaffected: the object path is a ULID chosen before the row is
+  written, so a retry cannot orphan or rename a file.
+- **No plain `slug` index.** The only lookup is `(tenant_id, slug)`, which the
+  composite unique already covers; a second index would only cost writes. Both the
+  column and the index are existence-guarded, so the migration replays.
+
+### What this discharges
+
+§162.7 deferred "Delegating `FileUploadService` to `FileStore`" so the media
+library's tested behaviour was not bundled into the visibility change. That
+delegation landed in the same change as this section: `FileUploadService` takes an
+optional `FileVisibilityStoreInterface` and, when the host binds one, writes both
+the bytes and the row through it — one id scheme, one path convention, one
+checksum, one place that knows what a stored file is. The hand-written path stays
+for hosts that bind only the upload service, because `nvoos/laravel-adapter` is
+consumed outside this repository.
+
+The migration only adds a nullable column and its index; it does not read or
+rewrite a row.

@@ -82,6 +82,21 @@ class Phase3dTest extends TestCase
         $this->assertSame('pixel', $response->json('slug'));
     }
 
+    public function test_a_second_upload_of_the_same_name_gets_the_next_slug(): void
+    {
+        // wp_unique_post_slug() appends -2; the media surface now reads the slug
+        // column rather than deriving it from the stored filename.
+        $this->actAsUser();
+
+        $this->post('/api/v1/media', ['file' => $this->png()], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('slug', 'pixel');
+
+        $this->post('/api/v1/media', ['file' => $this->png()], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('slug', 'pixel-2');
+    }
+
     public function test_upload_rejects_a_disallowed_mime_type(): void
     {
         $this->actAsUser();

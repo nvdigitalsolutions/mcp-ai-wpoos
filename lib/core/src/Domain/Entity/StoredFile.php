@@ -41,6 +41,7 @@ final readonly class StoredFile implements \JsonSerializable
         public ?string $publicUrl = null,
         public array $metadata = array(),
         public string $visibility = 'public',
+        public string $slug = '',
     ) {
     }
 
@@ -87,6 +88,7 @@ final readonly class StoredFile implements \JsonSerializable
             'mime_type'  => $this->mimeType,
             'size_bytes' => $this->sizeBytes,
             'visibility' => $this->visibility,
+            'slug'       => $this->slug,
             'public_url' => $this->publicUrl,
             'metadata'   => $this->metadata,
             'owner_id'   => $this->ownerId,
