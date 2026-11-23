@@ -98,6 +98,15 @@ return array(
 			'replaced_by' => 'analyze_image',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'analyze_video' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AnalyzeVideoCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Sends the stored video to the provider whole; needs a provider that accepts video inline (Gemini). OpenAI refuses a video in that slot and its refusal is returned unchanged.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'analyze_video_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AnalyzeVideoTool',
 			'readiness' => 'quarantined',
@@ -923,6 +932,15 @@ return array(
 			'reason' => 'Extends GenerateVeoVideoTool, so it shares the same request path and evidence.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoAndAudioToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
+		),
+		'generate_video_caption' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GenerateVideoCaptionCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Sends the stored video to the provider whole and truncates the caption to max_length locally. Needs a provider that accepts video inline (Gemini).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'generate_video_caption_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateVideoCaptionTool',

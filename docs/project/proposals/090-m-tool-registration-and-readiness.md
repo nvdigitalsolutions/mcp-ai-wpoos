@@ -1947,3 +1947,71 @@ cost nothing, and a missing key writing nothing).
 
 `lib/core` 2,243 / 16,701; adapter 350 / 1,873; auditor 245 rows / 226 servable, no
 violations. phpcs clean on all three files at the CI severities.
+
+## 29. Addendum: the video pair, and a prerequisite that was not one (2026-11-24)
+
+### §27's framing is superseded
+
+§27 recorded `analyze_video` and `generate_video_caption` as blocked on a
+frame-extraction decision: bundle `ffmpeg`, delegate to the media worker, or use a hosted
+service. Two checks retired that framing.
+
+1. **The media worker's video endpoint has no frame operation.** Its documented
+   `operation` enum is `resize | trim | convert | compress | gif`. So the "cheap" option
+   in §27 did not exist.
+2. **Frames are the wrong input anyway.** A model given stills cannot see motion, and
+   "what happens next" is the question a video tool exists to answer.
+
+So neither tool extracts frames. The stored video is sent to the provider whole, and the
+`ffmpeg` question never arises for them.
+
+### What carries it
+
+`AbstractVideoCompletionTool` resolves the stored file, checks its mime, reads its
+bytes and hands the provider a `data:video/…;base64,…` URI — the same segment type §22
+uses for images, which `GeminiClient` converts to `inlineData` with the declared mime.
+Gemini therefore reasons about the video natively.
+
+**OpenAI is the provider that refuses.** Its chat endpoint accepts an image in that slot
+and rejects a video. That is the provider's refusal to give: the tool states the
+requirement in its description and manifest `reason`, and the provider's own message
+reaches the caller unchanged rather than being rewritten into something vaguer.
+
+### Three guards
+
+- **`video/` or nothing.** A PDF sent down this path would spend a completion to be
+  refused *and* would describe the bytes to the model as something they are not, so the
+  mime is checked first. A test pins that the refusal costs no completion.
+- **12 MB, and the arithmetic is in the docblock.** Gemini's inline ceiling is about
+  20 MB per request and base64 adds a third, so 12 MB of raw bytes becomes ~16 MB
+  encoded. The refusal names the actual size and the ceiling **in bytes**, because both
+  can render as "11.4 MB" and that sentence would be absurd.
+- **The caption is bounded here.** A prompt that says "at most 200 characters" is a
+  request; a truncation is a guarantee. `truncated: true` says when the cut happened,
+  and surrounding quotes are stripped because models add them when told not to.
+
+### Four WordPress parameters not offered
+
+| WordPress | Here |
+|---|---|
+| `video_url`, `url` | Not offered. This runtime does not fetch remote URLs — the same rule `ImageInput` states — so a caller stores the video and passes `file_id`. |
+| `attachment_id` | `file_id`. The attachment id has no meaning off WordPress. |
+| `frame_count` (on the Pro frame extractor) | Not offered: nothing extracts frames. |
+| `store_in_meta`-style options | None. These two tools write nothing. |
+
+### Validation
+
+`VideoToolsTest` (core, 15 tests: both slugs, capability and flags with `write` absent;
+the required `file_id` naming the no-remote-URL rule; the missing file store; a missing
+file; another user's file answering as missing; **a PDF refused before any completion**;
+an oversized video refused with both figures; **the bytes leaving as a `video/mp4` data
+URI**; the analysis type reaching the prompt; timestamps only when asked; the analysis
+returned with its type; a long caption truncated and flagged; a short caption untouched;
+quotes stripped; `max_length` clamped). Feature test
+`docker/laravel/app-skeleton/tests/Feature/VideoToolsTest.php` (4 tests against the real
+file store: both tools registered, a real stored video analysed with the store's sniffed
+`video/mp4` visible in the request segment, a caption truncated to the limit, and a
+stored text document refused with no completion spent).
+
+`lib/core` 2,262 / 16,769; adapter 350 / 1,875; auditor 247 rows / 228 servable, no
+violations. phpcs clean on all five files at the CI severities.
