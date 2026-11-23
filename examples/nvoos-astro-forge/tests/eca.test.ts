@@ -22,23 +22,29 @@ import {
 	bookingUrl,
 	buildFacets,
 	buildIcs,
+	buildTermCalendar,
 	canonicalDay,
+	closureFor,
 	closureInstances,
 	ECA_DEFAULT_STAGES,
 	escapeIcsText,
 	filterEca,
 	firstOccurrence,
 	foldIcsLine,
+	formatDate,
 	formatPrice,
 	formatStamp,
 	htmlDecode,
 	inferProvider,
 	inferStages,
 	makeSummary,
+	monthGrid,
+	monthsBetween,
 	normalizeBasePath,
 	normalizeBookingType,
 	normalizeEca,
 	normalizePeriod,
+	occurrenceDates,
 	parseClockTime,
 	parseDays,
 	parseProsePrice,
@@ -1061,5 +1067,112 @@ describe( 'zonedStamp / formatStamp', () => {
 
 	it( 'passes an unparseable stamp through', () => {
 		expect( formatStamp( 'soon' ) ).toBe( 'soon' );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// P4 — the term calendar. Dates below are the real Michaelmas 2026-27 ones:
+// ECAs start Mon 7 Sep, half-term 19–23 Oct, term ends Tue 15 Dec.
+// ---------------------------------------------------------------------------
+
+describe( 'occurrenceDates', () => {
+	it( 'walks weekly from the first matching day and skips the half-term', () => {
+		// 15 Tuesdays fall between 2026-09-08 and 2026-12-15; 20 Oct is half-term.
+		const dates = occurrenceDates( { days: [ 'Tuesday' ] }, MICHAELMAS );
+		expect( dates ).toHaveLength( 14 );
+		expect( dates[ 0 ] ).toBe( '2026-09-08' );
+		expect( dates ).not.toContain( '2026-10-20' );
+		expect( dates[ dates.length - 1 ] ).toBe( '2026-12-15' );
+	} );
+
+	it( 'yields one series per meeting day', () => {
+		const wed = occurrenceDates( { days: [ 'Wednesday' ] }, MICHAELMAS );
+		const thu = occurrenceDates( { days: [ 'Thursday' ] }, MICHAELMAS );
+		const both = occurrenceDates( { days: [ 'Wednesday', 'Thursday' ] }, MICHAELMAS );
+		// Wednesday and Thursday have different counts in one term, so the only
+		// honest assertion is union == sum of the parts (and no overlap).
+		expect( both.length ).toBe( wed.length + thu.length );
+		expect( both ).not.toContain( '2026-10-21' );
+		expect( both ).not.toContain( '2026-10-22' );
+	} );
+
+	it( 'bounds an open-ended term instead of looping', () => {
+		const open = { ...MICHAELMAS, end: undefined };
+		const dates = occurrenceDates( { days: [ 'Tuesday' ] }, open );
+		expect( dates.length ).toBeGreaterThan( 20 );
+		expect( dates.length ).toBeLessThanOrEqual( 26 );
+	} );
+
+	it( 'returns nothing for an unknown schedule', () => {
+		expect( occurrenceDates( { days: [] }, MICHAELMAS ) ).toEqual( [] );
+		expect( occurrenceDates( { days: [ 'Tuesday' ] }, { ...MICHAELMAS, start: 'nope' } ) ).toEqual( [] );
+	} );
+} );
+
+describe( 'closureFor', () => {
+	it( 'names the closure covering a date', () => {
+		expect( closureFor( '2026-10-20', MICHAELMAS ) ).toBe( 'Half term' );
+		expect( closureFor( '2026-10-19', MICHAELMAS ) ).toBe( 'Half term' );
+		expect( closureFor( '2026-10-23', MICHAELMAS ) ).toBe( 'Half term' );
+	} );
+
+	it( 'is null outside one', () => {
+		expect( closureFor( '2026-10-26', MICHAELMAS ) ).toBeNull();
+	} );
+} );
+
+describe( 'buildTermCalendar', () => {
+	const records = [ normalise( RECORD_FULL ), normalise( RECORD_TITLE_YEARS ) ];
+	const calendar = buildTermCalendar( records, MICHAELMAS );
+
+	it( 'keys every meeting date once', () => {
+		const dates = calendar.map( ( entry ) => entry.date );
+		expect( new Set( dates ).size ).toBe( dates.length );
+		expect( dates ).toEqual( [ ...dates ].sort() );
+	} );
+
+	it( 'carries the closure on half-term days even with nothing meeting', () => {
+		const monday = calendar.find( ( entry ) => entry.date === '2026-10-19' );
+		expect( monday?.closure ).toBe( 'Half term' );
+		expect( monday?.items ).toEqual( [] );
+	} );
+
+	it( 'lists a day in start-time order', () => {
+		const tuesday = calendar.find( ( entry ) => entry.date === '2026-09-08' );
+		expect( tuesday?.items.length ).toBeGreaterThan( 0 );
+		const starts = tuesday?.items.map( ( item ) => item.start ?? '' ) ?? [];
+		expect( starts ).toEqual( [ ...starts ].sort() );
+	} );
+} );
+
+describe( 'month grid', () => {
+	it( 'pads a Monday-first month to whole weeks', () => {
+		// 2026-09-01 is a Tuesday, so the first Monday-first cell is empty.
+		const cells = monthGrid( 2026, 9 );
+		expect( cells[ 0 ].date ).toBeNull();
+		expect( cells[ 1 ].date ).toBe( '2026-09-01' );
+		expect( cells.length % 7 ).toBe( 0 );
+		expect( cells.filter( ( cell ) => cell.date ).length ).toBe( 30 );
+	} );
+
+	it( 'starts a Monday month with no padding', () => {
+		const cells = monthGrid( 2026, 6 );
+		expect( cells[ 0 ].date ).toBe( '2026-06-01' );
+	} );
+
+	it( 'lists the months a term spans', () => {
+		expect( monthsBetween( '2026-09-07', '2026-12-15' ) ).toEqual( [
+			{ year: 2026, month: 9 },
+			{ year: 2026, month: 10 },
+			{ year: 2026, month: 11 },
+			{ year: 2026, month: 12 },
+		] );
+		expect( monthsBetween( '2027-01-05', '2027-01-06' ) ).toEqual( [ { year: 2027, month: 1 } ] );
+		expect( monthsBetween( 'nope', '2026-12-15' ) ).toEqual( [] );
+	} );
+
+	it( 'formats a date deterministically', () => {
+		expect( formatDate( '2026-09-08' ) ).toBe( 'Tue 8 Sep' );
+		expect( formatDate( 'nope' ) ).toBe( 'nope' );
 	} );
 } );

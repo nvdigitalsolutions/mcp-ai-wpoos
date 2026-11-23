@@ -431,6 +431,32 @@ flood, the token/provenance checks stop a single crafted request.
     The fix belongs in sanitisation (same-origin absolute → path), so every site
     becomes host-independent at once.
 
+## Mirror-push mechanics (verified 2026-11-24)
+
+- **`forge deploy --mirror-repo` is self-sufficient.** It emits
+  `.github/workflows/{deploy,rebuild}.yml`, `scripts/{mirror-push,verify-deployed,verify-dispatch}.mjs`
+  and then runs `mirror-push` itself — so a project scaffolded WITHOUT deploy
+  options can still be mirrored. No re-scaffold, no missing-script error.
+- **The token has three homes, in this order:** `GITHUB_TOKEN` env → the vault →
+  fail. A green `gh auth status` does NOT help: `gh` never exports its token and
+  the forge will not shell-substitute one into place, so a logged-in CLI still
+  refuses the deploy.
+- **The vault needs a key.** `NVOOS_FORGE_VAULT_KEY`, or the documented
+  `NVOOS_FORGE_VAULT_PLAINTEXT=1` fallback. **A vault written in plaintext mode
+  must be opened in plaintext mode** — `vault list` and `vault delete` otherwise
+  throw `VaultError: Vault file … was written in plaintext mode`. A one-off
+  plaintext push therefore leaves a credential that cannot be removed unless you
+  remember the flag; re-run the delete with it and confirm the file
+  (`~/.nvoos-forge/vault.json`) holds no `gh*_` prefix afterwards.
+- **`deploy.json` ships `buildId: ""`** unless `FORGE_BUILD_ID` is set at BUILD
+  time. The deployed-smoke then has no identity to compare against, so a stale
+  artifact passes as fresh. Set it in CI, never by hand.
+- **Never invent a `*.cloudwaysapps.com` canonical.** Those hostnames belong to
+  specific apps — `eca-6797003…`, for instance, is the **Laravel runtime**, not
+  whatever site is being forged. A guessed host bakes wrong `canonical`/`og:url`
+  into every page. With no public origin yet, canonicalise to the eventual
+  production domain and pair it with `NVOOS_FORGE_NOINDEX=1` (pitfall 9).
+
 ## Where the rest lives
 
 - Generation, scaffolds, gates, media localization → `mcp-ai-wpoos-astro-forge`

@@ -184,6 +184,14 @@ before touching `lib/presets.ts`:
   validates against the format, every record is reachable from at least one
   landing, facet counts match the records, no empty landings, no orphan
   terms. Planned as `verify --eca`.
+- **A preset with its own detail route must declare `canonicalPath`.** The
+  generic extra-collection route is `/<base>/<id>/<slug>/`; the ECA preset
+  serves `/<base>/<slug>/`. The redirect map is built from the collection's
+  shape, so without `WpCollection.canonicalPath: 'slug'` every legacy
+  `/eca/<slug>/` 301 pointed at `/<base>/<id>/<slug>/` — a path the build never
+  wrote. Verified the hard way: 105 redirects into 404s, invisible until the
+  mirrored artifact was inspected. Belt and braces, the detail route also
+  emits the `<id>/<slug>` alias and canonicalises to the short form.
 - **Toolkit meta needs TWO opt-ins, and fails silently without them.**
   `wp/v2/mcp_ai_eca` *does* expose all 18 `_eca_*` keys — but only when the
   request names `meta` in `_fields` **and** the collection declares it as

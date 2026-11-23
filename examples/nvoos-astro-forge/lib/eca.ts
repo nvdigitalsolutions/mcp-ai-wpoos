@@ -244,7 +244,21 @@ export interface ForgeEca {
 		window?: ForgeEcaBookingWindow;
 	};
 	/** Rename a venue without editing content (`'SS 18'` → `'Senior School, Room 18'`). */
-	venueAliases?: Record<string, string>;
+	venueAliases?: Record< string, string >;
+	/**
+	 * Who to contact, rendered on `/help/`. A school's real answer is a named
+	 * person and an address, not a contact form, so the config carries both.
+	 */
+	contacts?: Array< {
+		label: string;
+		role?: string;
+		email?: string;
+	} >;
+	/** Questions answered on `/help/` — booking, fees, absences. */
+	faqs?: Array< {
+		question: string;
+		answer: string;
+	} >;
 }
 
 /** A category term as the site serves it — id, display name, slug. */
@@ -455,6 +469,29 @@ export function parseClockTime( raw: unknown ): { minutes: number; hhmm: string 
 
 function pad2( n: number ): string {
 	return n < 10 ? '0' + String( n ) : String( n );
+}
+
+const WEEKDAY_ABBR = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
+const MONTH_ABBR = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+const MONTH_FULL = [
+	'January',
+	'February',
+	'March',
+	'April',
+	'May',
+	'June',
+	'July',
+	'August',
+	'September',
+	'October',
+	'November',
+	'December',
+];
+
+/** `2026, 9` → `September 2026`, for a calendar caption. */
+export function monthLabel( year: number, month: number ): string {
+	const name = MONTH_FULL[ month - 1 ];
+	return name ? name + ' ' + year : String( year );
 }
 
 /**
@@ -909,8 +946,7 @@ export function zonedStamp( date: Date, timeZone: string ): string {
 export function formatStamp( stamp: string ): string {
 	const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec( stamp.trim() );
 	if ( ! match ) return stamp;
-	const date = new Date( Date.UTC( Number( match[ 1 ] ), Number( match[ 2 ] ) - 1, Number( match[ 3 ] ) ) );
-	const day = date.toLocaleDateString( 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' } );
+	const day = formatDate( match[ 1 ] + '-' + match[ 2 ] + '-' + match[ 3 ] );
 	const hours = Number( match[ 4 ] );
 	const suffix = hours < 12 ? 'am' : 'pm';
 	const hour12 = hours % 12 === 0 ? 12 : hours % 12;
@@ -1612,6 +1648,160 @@ export function closureInstances( term: ForgeEcaTerm, days: string[], time: stri
 		}
 	}
 	return out;
+}
+
+// ---------------------------------------------------------------------------
+// Term calendar + timetable (Proposal 163 §P4)
+//
+// All of it is pure date maths, deliberately OUTSIDE the Astro pages: a
+// calendar that is wrong only in the rendered HTML is untestable, and a wrong
+// date here is the kind of error a family plans around.
+// ---------------------------------------------------------------------------
+
+/** A term with no end date still needs a bound: half a year is plenty. */
+export const MAX_TERM_WEEKS = 26;
+
+/** The label of the closure covering `date`, or null. */
+export function closureFor( date: string, term: ForgeEcaTerm ): string | null {
+	for ( const closure of term.closures ?? [] ) {
+		if ( ! parseYmd( closure.from ) || ! parseYmd( closure.to ) ) continue;
+		if ( date >= closure.from && date <= closure.to ) return closure.label ?? 'Closed';
+	}
+	return null;
+}
+
+/**
+ * Every date this schedule meets inside a term, closures excluded.
+ *
+ * One activity yields one series per meeting day (a two-day activity meets
+ * twice a week), so the result is de-duplicated and sorted.
+ */
+export function occurrenceDates( schedule: Pick< EcaSchedule, 'days' >, term: ForgeEcaTerm ): string[] {
+	if ( ! parseYmd( term.start ) ) return [];
+	const end = term.end && parseYmd( term.end ) ? term.end : addDays( term.start, MAX_TERM_WEEKS * 7 );
+	const out: string[] = [];
+
+	for ( const day of schedule.days ) {
+		let cursor = firstOccurrence( term.start, day );
+		// One guard for a malformed term, one for the open-ended cap.
+		for ( let guard = 0; cursor && cursor <= end && guard < MAX_TERM_WEEKS * 2; guard++ ) {
+			if ( ! closureFor( cursor, term ) ) out.push( cursor );
+			cursor = addDays( cursor, 7 );
+		}
+	}
+
+	return [ ...new Set( out ) ].sort();
+}
+
+/** One activity on one date, trimmed to what a calendar cell renders. */
+export interface EcaCalendarItem {
+	id: number;
+	title: string;
+	url: string;
+	start: string | null;
+	end: string | null;
+}
+
+/** One date in the term, with everything meeting that day. */
+export interface EcaCalendarEntry {
+	/** `YYYY-MM-DD`. */
+	date: string;
+	/** Closure label when the school is shut that day. */
+	closure: string | null;
+	items: EcaCalendarItem[];
+}
+
+/**
+ * The whole term as a date-keyed agenda.
+ *
+ * Closure days are included even when nothing meets, so half-term renders as a
+ * greyed row instead of silently vanishing (the most common school-calendar
+ * complaint after "the club is on the wrong day").
+ */
+export function buildTermCalendar( records: EcaRecord[], term: ForgeEcaTerm ): EcaCalendarEntry[] {
+	const map = new Map< string, EcaCalendarEntry >();
+	const ensure = ( date: string ): EcaCalendarEntry => {
+		const existing = map.get( date );
+		if ( existing ) return existing;
+		const created: EcaCalendarEntry = { date, closure: closureFor( date, term ), items: [] };
+		map.set( date, created );
+		return created;
+	};
+
+	for ( const record of records ) {
+		for ( const date of occurrenceDates( record.schedule, term ) ) {
+			ensure( date ).items.push( {
+				id: record.id,
+				title: record.title,
+				url: record.url,
+				start: record.schedule.start,
+				end: record.schedule.end,
+			} );
+		}
+	}
+
+	for ( const closure of term.closures ?? [] ) {
+		if ( ! parseYmd( closure.from ) || ! parseYmd( closure.to ) ) continue;
+		let cursor = closure.from;
+		for ( let guard = 0; cursor <= closure.to && guard < 400; guard++ ) {
+			ensure( cursor );
+			cursor = addDays( cursor, 1 );
+		}
+	}
+
+	return [ ...map.values() ]
+		.sort( ( a, b ) => a.date.localeCompare( b.date ) )
+		.map( ( entry ) => ( { ...entry, items: entry.items.sort( ( a, b ) => ( a.start ?? 'zz' ).localeCompare( b.start ?? 'zz' ) ) } ) );
+}
+
+/**
+ * A Monday-first month grid, padded to whole weeks with `null` cells.
+ *
+ * Monday-first on purpose: the whole format orders days Monday → Sunday, and a
+ * calendar that starts on Sunday would put Saturday and Sunday at opposite
+ * ends of the row from every other surface on the site.
+ */
+export function monthGrid( year: number, month: number ): Array< { date: string | null } > {
+	const first = new Date( Date.UTC( year, month - 1, 1 ) );
+	const offset = ( first.getUTCDay() + 6 ) % 7;
+	const daysInMonth = new Date( Date.UTC( year, month, 0 ) ).getUTCDate();
+	const cells: Array< { date: string | null } > = [];
+
+	for ( let i = 0; i < offset; i++ ) cells.push( { date: null } );
+	for ( let day = 1; day <= daysInMonth; day++ ) cells.push( { date: stampYmd( { y: year, m: month, d: day } ) } );
+	while ( cells.length % 7 !== 0 ) cells.push( { date: null } );
+
+	return cells;
+}
+
+/** The `{ year, month }` pairs a term spans, inclusive. */
+export function monthsBetween( from: string, to: string ): Array< { year: number; month: number } > {
+	const start = parseYmd( from );
+	const end = parseYmd( to );
+	if ( ! start || ! end ) return [];
+
+	const out: Array< { year: number; month: number } > = [];
+	let year = start.y;
+	let month = start.m;
+	while ( year < end.y || ( year === end.y && month <= end.m ) ) {
+		out.push( { year, month } );
+		month += 1;
+		if ( month > 12 ) {
+			month = 1;
+			year += 1;
+		}
+	}
+	return out;
+}
+
+/** `2026-09-08` → `Tue 8 Sep`. Fixed abbreviation tables, never ICU. */
+export function formatDate( ymd: string ): string {
+	const parsed = parseYmd( ymd );
+	if ( ! parsed ) return ymd;
+	// A build's output must not change with the runner's ICU version: en-GB
+	// renders September as "Sept" on some Node builds and "Sep" on others.
+	const weekday = WEEKDAY_ABBR[ new Date( Date.UTC( parsed.y, parsed.m - 1, parsed.d ) ).getUTCDay() ];
+	return weekday + ' ' + parsed.d + ' ' + MONTH_ABBR[ parsed.m - 1 ];
 }
 
 // ---------------------------------------------------------------------------

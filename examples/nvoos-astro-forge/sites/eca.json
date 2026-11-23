@@ -29,7 +29,51 @@
 				"allocations": "2026-09-02T00:00",
 				"note": "Places are allocated after the window closes: by preference, availability and group balance."
 			}
-		}
+		},
+		"contacts": [
+			{
+				"label": "ECA Coordinator",
+				"role": "Senior School ECA programme",
+				"email": "celeste.ranasinghe@britishschool.lk"
+			},
+			{
+				"label": "IT Support",
+				"role": "SOCS logins and technical problems",
+				"email": "itsupport@britishschool.lk"
+			},
+			{
+				"label": "Sport enquiries",
+				"role": "Netball, girls basketball and girls football",
+				"email": "jermin.fernando@britishschool.lk"
+			},
+			{
+				"label": "Sport enquiries",
+				"role": "Karate, tennis, table tennis and badminton",
+				"email": "dineshi.ananda@britishschool.lk"
+			}
+		],
+		"faqs": [
+			{
+				"question": "How do I book an activity?",
+				"answer": "Log in to SOCS with your registered email address and select activities during the booking window. The system is linked to iSAMS, so your child's details are already synced."
+			},
+			{
+				"question": "How are places allocated?",
+				"answer": "Where possible by preference or first come, first served, then by availability and group balance. Confirmations are shared through SOCS once the booking window closes."
+			},
+			{
+				"question": "Is there a cost?",
+				"answer": "Most activities are free. Those run by an external coach are charged per term, year or month and are paid directly to that provider unless stated otherwise."
+			},
+			{
+				"question": "We missed the booking window. What now?",
+				"answer": "Allocations are processed after the window closes. Contact the ECA Coordinator about spare places — some activities have capacity left once allocations are confirmed."
+			},
+			{
+				"question": "Who do I tell about a change or an absence?",
+				"answer": "For societies, contact the teacher in charge. For sports, use the sport contact listed above. For booking changes, contact the ECA Coordinator."
+			}
+		]
 	},
 	"design": {
 		"mode": "rebuild",

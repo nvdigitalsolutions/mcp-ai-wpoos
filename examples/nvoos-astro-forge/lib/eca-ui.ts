@@ -49,6 +49,14 @@ export function ecaRouteFiles( profile: SiteProfile ): ForgeFile[] {
 		{ path: 'src/pages/stage/[stage].astro', content: stageLanding( basePath ) },
 		{ path: 'src/pages/category/[category].astro', content: categoryLanding( basePath ) },
 		{ path: 'src/pages/type/[type].astro', content: typeLanding( basePath ) },
+		{ path: 'src/lib/eca-shortlist.ts', content: SHORTLIST_LIB },
+		{ path: 'src/components/eca/ShortlistButton.astro', content: shortlistButton() },
+		{ path: 'src/pages/shortlist/index.astro', content: shortlistPage() },
+		{ path: 'src/pages/help/index.astro', content: helpPage() },
+		{ path: 'src/pages/eca-index.json.ts', content: indexEndpoint() },
+		{ path: 'src/pages/calendar/index.astro', content: calendarPage() },
+		{ path: 'src/pages/timetable/[stage].astro', content: timetablePage() },
+		{ path: 'src/pages/terms/index.astro', content: termsPage() },
 		{ path: 'src/pages/feeds/[slug].ics.ts', content: icsEndpoint( taxonomyBase ) },
 	];
 }
@@ -68,8 +76,8 @@ function siteLib( slug: string ): string {
 import { getCollection } from 'astro:content';
 
 import { sanitizeHtml } from '../forge/sanitize.ts';
-import { buildFacets, filterEca, normalizeEca } from '../forge/eca.ts';
-import type { EcaFacets, EcaFilter, EcaRecord, RawEcaPost } from '../forge/eca.ts';
+import { buildFacets, buildTermCalendar, filterEca, monthGrid, monthLabel, monthsBetween, normalizeEca } from '../forge/eca.ts';
+import type { EcaCalendarEntry, EcaFacets, EcaFilter, EcaRecord, ForgeEca, ForgeEcaTerm, RawEcaPost } from '../forge/eca.ts';
 import { ecaConfig, ecaRestBase, ecaSourceOrigin, ecaTerms } from './eca.generated.ts';
 
 type CollectionKey = Parameters< typeof getCollection >[ 0 ];
@@ -156,6 +164,71 @@ export function stageLabel( id: string ): string {
 /** Time-band id → its configured label. */
 export function timeBandLabel( id: string ): string | null {
 	return ecaConfig.timeBands?.find( ( band ) => band.id === id )?.label ?? null;
+}
+
+/** A month of the term, already chunked into rendered weeks. */
+export interface EcaCalendarMonthView {
+	label: string;
+	weeks: Array< Array< { date: string | null; entry: EcaCalendarEntry | null } > >;
+}
+
+/** The term as month grids for /calendar/. Null when no term is configured. */
+export async function termCalendar(): Promise< { term: ForgeEcaTerm; months: EcaCalendarMonthView[] } | null > {
+	const term = ecaConfig.terms?.[ 0 ];
+	if ( ! term ) return null;
+
+	const records = await loadActivities();
+	const entries = buildTermCalendar( records, term );
+	const byDate = new Map( entries.map( ( entry ) => [ entry.date, entry ] ) );
+	// An open-ended term is bounded by its last occurrence, not by today.
+	const last = term.end ?? entries[ entries.length - 1 ]?.date ?? term.start;
+
+	const months = monthsBetween( term.start, last ).map( ( { year, month } ) => {
+		const cells = monthGrid( year, month ).map( ( cell ) => ( {
+			date: cell.date,
+			entry: cell.date ? byDate.get( cell.date ) ?? null : null,
+		} ) );
+		const weeks: EcaCalendarMonthView['weeks'] = [];
+		for ( let index = 0; index < cells.length; index += 7 ) weeks.push( cells.slice( index, index + 7 ) );
+		return { label: monthLabel( year, month ), weeks };
+	} );
+
+	return { term, months };
+}
+
+/** The weekly grid for one stage: which days and bands are in use, and by what. */
+export async function timetableFor( stage: string ): Promise< {
+	days: string[];
+	bands: NonNullable< ForgeEca['timeBands'] >;
+	cells: Map< string, EcaRecord[] >;
+	term: ForgeEcaTerm | null;
+	total: number;
+} > {
+	const records = ( await loadActivities() ).filter(
+		( record ) => record.stages.includes( stage ) && record.schedule.day !== null && record.schedule.startMinutes !== null,
+	);
+
+	const days = ( ecaConfig.days ?? DAY_ORDER ).filter( ( day ) =>
+		records.some( ( record ) => record.schedule.days.includes( day ) ),
+	);
+	const bands = ( ecaConfig.timeBands ?? [] ).filter( ( band ) =>
+		records.some( ( record ) => record.schedule.timeOfDay === band.id ),
+	);
+
+	const cells = new Map< string, EcaRecord[] >();
+	for ( const record of records ) {
+		for ( const day of record.schedule.days ) {
+			const key = day + '|' + ( record.schedule.timeOfDay ?? '' );
+			const list = cells.get( key ) ?? [];
+			list.push( record );
+			cells.set( key, list );
+		}
+	}
+	for ( const list of cells.values() ) {
+		list.sort( ( a, b ) => ( a.schedule.startMinutes ?? 0 ) - ( b.schedule.startMinutes ?? 0 ) );
+	}
+
+	return { days, bands, cells, term: ecaConfig.terms?.[ 0 ] ?? null, total: records.length };
 }
 `;
 }
@@ -269,6 +342,68 @@ const ECA_CSS = `/* eca.css — the catalogue's own surface (Proposal 163 §P2).
 .eca-cta[aria-disabled="true"] { background: var(--forge-surface-alt); color: var(--forge-muted); cursor: default; }
 .eca-note { font-size: var(--forge-scale-small); color: var(--forge-muted); }
 .eca-prose :is(p, ul, ol) { max-width: 65ch; }
+
+/* --- section nav --- */
+.eca-subnav { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: var(--forge-space-sm); font-size: var(--forge-scale-small); }
+.eca-subnav a { color: var(--forge-accent); font-weight: 600; text-decoration: none; }
+.eca-subnav a:hover { text-decoration: underline; }
+
+/* --- calendar --- */
+.eca-month + .eca-month { margin-top: var(--forge-space-lg); }
+.eca-cal { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.eca-cal caption { text-align: left; font-family: var(--forge-font-display); font-size: var(--forge-scale-h3); padding-bottom: 0.4rem; }
+.eca-cal th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--forge-muted); padding: 0.3rem 0.35rem; border-bottom: 1px solid var(--forge-line); }
+.eca-cal td { vertical-align: top; height: 5.5rem; padding: 0.3rem 0.35rem; border-bottom: 1px solid var(--forge-line); font-size: 0.78rem; }
+.eca-cal td time { display: block; font-weight: 700; color: var(--forge-muted); margin-bottom: 0.15rem; }
+.eca-cal td ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.1rem; }
+.eca-cal td a { color: var(--forge-ink); text-decoration: none; }
+.eca-cal td a:hover { color: var(--forge-accent); text-decoration: underline; }
+.eca-cal .eca-closed { background: var(--forge-surface-alt); color: var(--forge-muted); font-style: italic; }
+.eca-cal .eca-outside { border-bottom-color: transparent; }
+.eca-term th { width: 12rem; text-align: left; border-bottom: 1px solid var(--forge-line); padding: 0.4rem 0; }
+.eca-term td { height: auto; }
+
+/* --- timetable --- */
+.eca-tt { width: 100%; border-collapse: collapse; }
+.eca-tt caption { text-align: left; font-family: var(--forge-font-display); font-size: var(--forge-scale-h3); padding-bottom: 0.5rem; }
+.eca-tt th, .eca-tt td { border: 1px solid var(--forge-line); padding: 0.4rem 0.45rem; vertical-align: top; font-size: var(--forge-scale-small); }
+.eca-tt thead th { background: var(--forge-surface-alt); text-align: left; }
+.eca-tt tbody th { text-align: left; width: 9rem; background: var(--forge-surface-alt); }
+.eca-tt ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.eca-tt li strong { display: block; font-weight: 600; }
+.eca-tt li span { color: var(--forge-muted); }
+
+.eca-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* --- shortlist --- */
+.eca-card__actions { padding: 0 var(--forge-space-sm) var(--forge-space-sm); }
+.eca-save {
+	font: inherit; font-size: var(--forge-scale-small); cursor: pointer;
+	padding: 0.2rem 0.6rem; border-radius: 999px;
+	border: 1px solid var(--forge-line); background: var(--forge-surface); color: var(--forge-muted);
+}
+.eca-save[aria-pressed="true"] { border-color: var(--forge-accent); color: var(--forge-accent); font-weight: 600; }
+.eca-save[hidden] { display: none; }
+.eca-shortlist-item { display: grid; gap: 0.35rem; }
+.eca-shortlist-item .eca-save { justify-self: start; }
+
+/* --- help --- */
+.eca-help h2 { margin-top: var(--forge-space); }
+.eca-steps { max-width: 60ch; display: grid; gap: 0.5rem; padding-left: 1.3rem; }
+.eca-faq { display: grid; gap: 0.9rem; max-width: 65ch; margin: 0; }
+.eca-faq dt { font-weight: 700; }
+.eca-faq dd { margin: 0.15rem 0 0; color: var(--forge-muted); }
+.eca-contacts { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.eca-contacts strong { font-weight: 700; }
+.eca-contacts span, .eca-contacts a { color: var(--forge-muted); font-size: var(--forge-scale-small); }
+
+/* --- print: schools print the timetable --- */
+@media print {
+	.eca-rail, .eca-subnav, .eca-banner, .eca-cta { display: none !important; }
+	.eca-tt, .eca-cal { font-size: 10pt; }
+	.eca-cal td { height: auto; }
+	.eca-card { break-inside: avoid; box-shadow: none; }
+}
 `;
 
 // ---------------------------------------------------------------------------
@@ -282,6 +417,7 @@ function activityCard(): string {
 import { ecaBasePath } from '../../lib/eca.generated.ts';
 import { bookingLabel, formatClock } from '../../forge/eca.ts';
 import type { EcaRecord } from '../../forge/eca.ts';
+import ShortlistButton from './ShortlistButton.astro';
 
 interface Props {
 	record: EcaRecord;
@@ -339,6 +475,9 @@ const text = [ record.title, record.summary, record.provider ?? '', record.venue
 			{ record.capacity.state === 'waitlist' && <span class="eca-tag eca-tag--full">Waitlist</span> }
 		</span>
 	</a>
+	<div class="eca-card__actions">
+		<ShortlistButton slug={ record.slug } />
+	</div>
 </li>
 `;
 }
@@ -419,7 +558,14 @@ const { title, intro, records, facets, active, showFacets = true, total } = Astr
 const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 ---
 
-<section class="eca-shell">
+<section class="eca-shell" data-pagefind-body>
+	<nav class="eca-subnav" aria-label="ECA sections">
+		<a href={ ecaBasePath + '/' }>All activities</a>
+		<a href="/calendar/">Calendar</a>
+		<a href="/terms/">Term dates</a>
+		<a href="/help/">Help</a>
+		<a href="/shortlist/">Shortlist</a>
+	</nav>
 	<h1>{ title }</h1>
 	{ intro && <p class="eca-lede">{ intro }</p> }
 	{ active && (
@@ -577,6 +723,13 @@ const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 		}
 	</script>
 ) }
+
+<script>
+	// Outside the facet-rail conditional on purpose: a landing page hides the
+	// rail but still renders save buttons.
+	import { initShortlistButtons } from '../../lib/eca-shortlist.ts';
+	initShortlistButtons();
+</script>
 `;
 }
 
@@ -626,6 +779,7 @@ function activityDetail( basePath: string, schoolName: string ): string {
 // The activity page — facts, the booking hand-off, and a calendar feed.
 import Base from '../../layouts/Base.astro';
 import BookingBanner from '../../components/eca/BookingBanner.astro';
+import ShortlistButton from '../../components/eca/ShortlistButton.astro';
 import { loadActivities } from '../../lib/eca-site.ts';
 import { ecaConfig } from '../../lib/eca.generated.ts';
 import { bookingCtaLabel, bookingUrl, formatClock } from '../../forge/eca.ts';
@@ -709,6 +863,7 @@ const jsonLd = {
 						<span class="eca-cta" aria-disabled="true">{ cta }</span>
 					) }
 				</p>
+				<p><ShortlistButton slug={ record.slug } /></p>
 				{ record.pricing.paid && ecaConfig.booking?.note && <p class="eca-note">{ ecaConfig.booking.note }</p> }
 				{ record.schedule.day && record.schedule.start && (
 					<p class="eca-note">Add to your calendar: <a href={ record.links.ics }>weekly .ics</a></p>
@@ -727,6 +882,10 @@ const jsonLd = {
 		<BookingBanner />
 	</main>
 	<script type="application/ld+json" set:html={ JSON.stringify( jsonLd ) } />
+	<script>
+		import { initShortlistButtons } from '../../lib/eca-shortlist.ts';
+		initShortlistButtons();
+	</script>
 </Base>
 `;
 }
@@ -854,5 +1013,532 @@ export const GET: APIRoute = ( { props, url, site } ) => {
 		},
 	} );
 };
+`;
+}
+
+function calendarPage(): string {
+	return `---
+// /calendar/ — the term as month grids.
+//
+// Server-rendered tables, no island: the dates are fixed at build time, and a
+// real <table> with a <caption> is navigable by a screen reader in a way a
+// div grid of dates never is.
+import Base from '../../layouts/Base.astro';
+import { termCalendar } from '../../lib/eca-site.ts';
+import { formatClock, formatDate } from '../../forge/eca.ts';
+
+const data = await termCalendar();
+const HEAD = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
+const description = data ? 'Every ' + data.term.label + ' activity date, week by week.' : 'Term calendar';
+---
+
+<Base title="Term calendar" description={ description }>
+	<main class="eca-shell">
+		<nav class="eca-subnav" aria-label="ECA sections">
+			<a href="/activities/">All activities</a>
+			<a href="/terms/">Term dates</a>
+		</nav>
+		<h1>Term calendar</h1>
+
+		{ data ? (
+			<>
+				<p class="eca-lede">
+					{ data.term.label } · activities begin <time datetime={ data.term.start }>{ formatDate( data.term.start ) }</time>
+					{ data.term.end && <> · last day <time datetime={ data.term.end }>{ formatDate( data.term.end ) }</time></> }
+				</p>
+
+				{ data.months.map( ( month ) => (
+					<section class="eca-month">
+						<table class="eca-cal">
+							<caption>{ month.label }</caption>
+							<thead>
+								<tr>
+									{ HEAD.map( ( day ) => (
+										<th scope="col" abbr={ day }>{ day.slice( 0, 3 ) }<span class="eca-sr"> { day }</span></th>
+									) ) }
+								</tr>
+							</thead>
+							<tbody>
+								{ month.weeks.map( ( week ) => (
+									<tr>
+										{ week.map( ( cell ) => (
+											<td class={ cell.date === null ? 'eca-outside' : cell.entry?.closure ? 'eca-closed' : undefined }>
+												{ cell.date && (
+													<>
+														<time datetime={ cell.date }>{ Number( cell.date.slice( 8 ) ) }</time>
+														{ cell.entry?.closure && <em>{ cell.entry.closure }</em> }
+														{ cell.entry && cell.entry.items.length > 0 && (
+															<ul>
+																{ cell.entry.items.map( ( item ) => (
+																	<li>
+																		<a href={ item.url }>{ item.title }</a>
+																		{ item.start && <span> { formatClock( item.start ) }</span> }
+																	</li>
+																) ) }
+															</ul>
+														) }
+													</>
+												) }
+											</td>
+										) ) }
+									</tr>
+								) ) }
+							</tbody>
+						</table>
+					</section>
+				) ) }
+			</>
+		) : (
+			<p class="eca-empty">No term is configured yet, so there is no calendar to show.</p>
+		) }
+	</main>
+</Base>
+`;
+}
+
+function timetablePage(): string {
+	return `---
+// /timetable/<stage>/
+//
+// A real table: <th scope="col"> for days, <th scope="row"> for time bands.
+// A div grid would look the same and be unnavigable, and it would not print.
+import Base from '../../layouts/Base.astro';
+import { catalogue, stageLabel, timetableFor } from '../../lib/eca-site.ts';
+import { formatClock } from '../../forge/eca.ts';
+
+export async function getStaticPaths() {
+	const { facets } = await catalogue();
+	return facets.stage.map( ( entry ) => ( { params: { stage: entry.value }, props: { stage: entry.value } } ) );
+}
+
+const { stage } = Astro.props;
+const label = stageLabel( stage );
+const { days, bands, cells, term, total } = await timetableFor( stage );
+const grid = days.map( ( day ) => ( {
+	day,
+	columns: bands.map( ( band ) => cells.get( day + '|' + band.id ) ?? [] ),
+} ) );
+const description = 'Weekly timetable of ' + label + ' activities.';
+---
+
+<Base title={ label + ' timetable' } description={ description }>
+	<main class="eca-shell">
+		<nav class="eca-subnav" aria-label="ECA sections">
+			<a href="/activities/">All activities</a>
+			<a href="/calendar/">Calendar</a>
+			<a href="/terms/">Term dates</a>
+		</nav>
+		<h1>{ label } timetable</h1>
+		<p class="eca-lede">
+			{ term ? term.label + ' · ' : '' }{ total } activities with a published day and time. Columns are weekdays, rows are time of day.
+		</p>
+
+		{ days.length > 0 && bands.length > 0 ? (
+			<table class="eca-tt">
+				<caption>{ label } — one week</caption>
+				<thead>
+					<tr>
+						<th scope="col">Time</th>
+						{ days.map( ( day ) => <th scope="col">{ day }</th> ) }
+					</tr>
+				</thead>
+				<tbody>
+					{ bands.map( ( band, bandIndex ) => (
+						<tr>
+							<th scope="row">{ band.label }</th>
+							{ grid.map( ( column ) => (
+								<td>
+									{ column.columns[ bandIndex ].length === 0 ? (
+										<span aria-hidden="true">—</span>
+									) : (
+										<ul>
+											{ column.columns[ bandIndex ].map( ( record ) => (
+												<li>
+													<strong><a href={ record.url }>{ record.title }</a></strong>
+													<span>{ formatClock( record.schedule.start ) }{ record.venue ? ' · ' + record.venue : '' }</span>
+												</li>
+											) ) }
+										</ul>
+									) }
+								</td>
+							) ) }
+						</tr>
+					) ) }
+				</tbody>
+			</table>
+		) : (
+			<p class="eca-empty">No { label } activity has a published day and time yet.</p>
+		) }
+
+		<p class="eca-note">Each activity page offers a weekly .ics reminder for your own calendar.</p>
+	</main>
+</Base>
+`;
+}
+
+function termsPage(): string {
+	return `---
+// /terms/ — term dates, closures and the booking window in one place, so the
+// dates a family needs are not buried in a PDF.
+import Base from '../../layouts/Base.astro';
+import BookingBanner from '../../components/eca/BookingBanner.astro';
+import { ecaConfig } from '../../lib/eca.generated.ts';
+import { formatDate, formatStamp } from '../../forge/eca.ts';
+
+const term = ecaConfig.terms?.[ 0 ] ?? null;
+const window = ecaConfig.booking?.window ?? null;
+const closures = term?.closures ?? [];
+---
+
+<Base title="Term dates" description="Term dates, closures and the ECA booking window.">
+	<main class="eca-shell">
+		<nav class="eca-subnav" aria-label="ECA sections">
+			<a href="/activities/">All activities</a>
+			<a href="/calendar/">Calendar</a>
+		</nav>
+		<h1>Term dates</h1>
+		<BookingBanner />
+
+		{ term ? (
+			<table class="eca-cal eca-term">
+				<caption>{ term.label }</caption>
+				<tbody>
+					<tr>
+						<th scope="row">Activities begin</th>
+						<td><time datetime={ term.start }>{ formatDate( term.start ) }</time></td>
+					</tr>
+					{ term.end && (
+						<tr>
+							<th scope="row">Activities end</th>
+							<td><time datetime={ term.end }>{ formatDate( term.end ) }</time></td>
+						</tr>
+					) }
+					{ closures.map( ( closure ) => (
+						<tr>
+							<th scope="row">{ closure.label ?? 'Closed' }</th>
+							<td>
+								<time datetime={ closure.from }>{ formatDate( closure.from ) }</time>
+								–
+								<time datetime={ closure.to }>{ formatDate( closure.to ) }</time>
+							</td>
+						</tr>
+					) ) }
+					{ window && (
+						<tr>
+							<th scope="row">Booking opens</th>
+							<td>{ formatStamp( window.opens ) }</td>
+						</tr>
+					) }
+					{ window && (
+						<tr>
+							<th scope="row">Booking closes</th>
+							<td>{ formatStamp( window.closes ) }</td>
+						</tr>
+					) }
+					{ window?.allocations && (
+						<tr>
+							<th scope="row">Allocations published</th>
+							<td>{ formatStamp( window.allocations ) }</td>
+						</tr>
+					) }
+				</tbody>
+			</table>
+		) : (
+			<p class="eca-empty">Term dates are not published yet.</p>
+		) }
+
+		{ ecaConfig.booking?.note && <p class="eca-note">{ ecaConfig.booking.note }</p> }
+	</main>
+</Base>
+`;
+}
+
+// ---------------------------------------------------------------------------
+// P5 — shortlist, help, and the JSON index
+// ---------------------------------------------------------------------------
+
+const SHORTLIST_LIB = `// eca-shortlist.ts — the shortlist, in this browser only (Proposal 163 §P5).
+//
+// The key is versioned: a shape change must never crash a returning visitor
+// holding the previous payload. Nothing leaves the browser until the family
+// books on the school system, which is the whole point of a shortlist.
+export const SHORTLIST_KEY = 'nvoos-eca:shortlist:v1';
+export const SHORTLIST_EVENT = 'nvoos-eca:shortlist';
+
+export function readShortlist(): string[] {
+	try {
+		const raw = localStorage.getItem( SHORTLIST_KEY );
+		if ( ! raw ) return [];
+		const parsed: unknown = JSON.parse( raw );
+		return Array.isArray( parsed ) ? parsed.filter( ( entry ): entry is string => typeof entry === 'string' ) : [];
+	} catch {
+		return [];
+	}
+}
+
+export function writeShortlist( slugs: string[] ): void {
+	try {
+		localStorage.setItem( SHORTLIST_KEY, JSON.stringify( [ ...new Set( slugs ) ] ) );
+	} catch {
+		// Private mode or a full quota: the catalogue still works, the shortlist
+		// silently does not. Never throw from a preference write.
+	}
+	window.dispatchEvent( new CustomEvent( SHORTLIST_EVENT ) );
+}
+
+export function toggleShortlist( slug: string ): string[] {
+	const current = readShortlist();
+	const next = current.includes( slug ) ? current.filter( ( entry ) => entry !== slug ) : [ ...current, slug ];
+	writeShortlist( next );
+	return next;
+}
+
+/**
+ * Wire every save button in a subtree.
+ *
+ * Buttons ship hidden, so a no-JS visitor never sees a control that cannot
+ * work — the same progressive rule the facet rail follows.
+ */
+export function initShortlistButtons( root: ParentNode = document ): void {
+	const buttons = Array.from( root.querySelectorAll< HTMLButtonElement >( '[data-eca-shortlist]' ) );
+	if ( buttons.length === 0 ) return;
+
+	const paint = (): void => {
+		const saved = readShortlist();
+		for ( const button of buttons ) {
+			const slug = button.getAttribute( 'data-eca-shortlist' ) ?? '';
+			const on = saved.includes( slug );
+			button.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+			button.textContent = on ? 'Saved' : 'Save';
+		}
+	};
+
+	for ( const button of buttons ) {
+		button.hidden = false;
+		button.addEventListener( 'click', () => {
+			toggleShortlist( button.getAttribute( 'data-eca-shortlist' ) ?? '' );
+			paint();
+		} );
+	}
+
+	paint();
+	window.addEventListener( SHORTLIST_EVENT, paint );
+}
+`;
+
+function shortlistButton(): string {
+	return `---
+// The save control. Hidden until the island wires it.
+interface Props {
+	slug: string;
+}
+
+const { slug } = Astro.props;
+---
+
+<button type="button" class="eca-save" data-eca-shortlist={ slug } aria-pressed="false" hidden>Save</button>
+`;
+}
+
+function indexEndpoint(): string {
+	return `// /eca-index.json — the catalogue as data (Proposal 163 §P5).
+//
+// The shortlist reads this instead of scraping the DOM: one request, a stable
+// shape, and no coupling to the rendered card markup.
+import type { APIRoute } from 'astro';
+
+import { loadActivities } from '../lib/eca-site.ts';
+
+export const GET: APIRoute = async () => {
+	const records = await loadActivities();
+	const body = records.map( ( record ) => ( {
+		slug: record.slug,
+		title: record.title,
+		url: record.url,
+		day: record.schedule.days.join( ' ' ),
+		start: record.schedule.start,
+		type: record.type,
+		stages: record.stages,
+		years: record.yearGroups,
+		venue: record.venue,
+		price: record.pricing.display,
+		free: ! record.pricing.paid,
+		summary: record.summary,
+	} ) );
+
+	return new Response( JSON.stringify( body ), {
+		headers: { 'content-type': 'application/json; charset=utf-8' },
+	} );
+};
+`;
+}
+
+function shortlistPage(): string {
+	return `---
+// /shortlist/ — noindex: a per-visitor page has no business in an index, and
+// it is empty for everyone but its owner anyway.
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Your shortlist" description="Activities you have saved in this browser." seo={ { robots: 'noindex, follow' } }>
+	<main class="eca-shell">
+		<nav class="eca-subnav" aria-label="ECA sections">
+			<a href="/activities/">All activities</a>
+			<a href="/calendar/">Calendar</a>
+			<a href="/terms/">Term dates</a>
+			<a href="/help/">Help</a>
+		</nav>
+		<h1>Your shortlist</h1>
+		<p class="eca-lede">
+			Saved in this browser only — nothing is sent to the school until you book on the booking system.
+		</p>
+
+		<ul class="eca-grid" data-eca-shortlist-list></ul>
+		<p class="eca-empty" data-eca-shortlist-empty hidden>
+			Nothing saved yet. Use “Save” on any activity to build a shortlist.
+		</p>
+	</main>
+
+	<script>
+		import { SHORTLIST_EVENT, readShortlist, writeShortlist } from '../../lib/eca-shortlist.ts';
+
+		interface IndexEntry {
+			slug: string;
+			title: string;
+			url: string;
+			day: string;
+			start: string | null;
+			venue: string | null;
+			price: string | null;
+			free: boolean;
+		}
+
+		const list = document.querySelector( '[data-eca-shortlist-list]' );
+		const empty = document.querySelector( '[data-eca-shortlist-empty]' );
+
+		const render = async (): Promise< void > => {
+			if ( ! list || ! empty ) return;
+			const slugs = readShortlist();
+			list.replaceChildren();
+			empty.hidden = slugs.length > 0;
+			if ( slugs.length === 0 ) return;
+
+			let index: IndexEntry[] = [];
+			try {
+				const response = await fetch( '/eca-index.json' );
+				if ( response.ok ) index = ( await response.json() ) as IndexEntry[];
+			} catch {
+				index = [];
+			}
+			const bySlug = new Map( index.map( ( entry ) => [ entry.slug, entry ] ) );
+
+			for ( const slug of slugs ) {
+				const entry = bySlug.get( slug );
+				const item = document.createElement( 'li' );
+				item.className = 'eca-card eca-shortlist-item';
+
+				const link = document.createElement( 'a' );
+				link.className = 'eca-card__link';
+				link.href = entry ? entry.url : '/activities/' + slug + '/';
+				const title = document.createElement( 'strong' );
+				title.textContent = entry ? entry.title : slug;
+				link.append( title );
+				if ( entry ) {
+					const meta = document.createElement( 'span' );
+					meta.className = 'eca-card__meta';
+					meta.textContent = [ entry.day, entry.start ?? '', entry.venue ?? '', entry.free ? 'Free' : entry.price ?? '' ]
+						.filter( Boolean )
+						.join( ' · ' );
+					link.append( meta );
+				}
+
+				const remove = document.createElement( 'button' );
+				remove.type = 'button';
+				remove.className = 'eca-save';
+				remove.textContent = 'Remove';
+				remove.setAttribute( 'aria-pressed', 'true' );
+				remove.addEventListener( 'click', () => {
+					writeShortlist( readShortlist().filter( ( value ) => value !== slug ) );
+					void render();
+				} );
+
+				item.append( link, remove );
+				list.append( item );
+			}
+		};
+
+		void render();
+		window.addEventListener( SHORTLIST_EVENT, () => void render() );
+	</script>
+</Base>
+`;
+}
+
+function helpPage(): string {
+	return `---
+// /help/ — how booking works, who to ask, and the questions the school actually
+// gets asked. The answers come from the site config, not from this template.
+import Base from '../../layouts/Base.astro';
+import BookingBanner from '../../components/eca/BookingBanner.astro';
+import { ecaConfig } from '../../lib/eca.generated.ts';
+
+const contacts = ecaConfig.contacts ?? [];
+const faqs = ecaConfig.faqs ?? [];
+const url = ecaConfig.booking?.url ?? null;
+const label = ecaConfig.booking?.label ?? 'Book';
+---
+
+<Base title="How booking works" description="How to book an activity, who to contact, and what happens after the booking window.">
+	<main class="eca-shell eca-help" data-pagefind-body>
+		<nav class="eca-subnav" aria-label="ECA sections">
+			<a href="/activities/">All activities</a>
+			<a href="/calendar/">Calendar</a>
+			<a href="/terms/">Term dates</a>
+			<a href="/shortlist/">Shortlist</a>
+		</nav>
+		<h1>How booking works</h1>
+		<BookingBanner />
+
+		<section>
+			<h2>Four steps</h2>
+			<ol class="eca-steps">
+				<li>Shortlist what you like here, then log in to the booking system with your registered email address.</li>
+				<li>Choose activities for the term. Some are allocated by preference, others first come, first served.</li>
+				<li>Allocations are published after the booking window closes, and confirmations arrive through the system.</li>
+				<li>Activities begin on the first day of the term and run weekly until the term ends, except during closures.</li>
+			</ol>
+			{ url && <p><a class="eca-cta" href={ url } rel="noopener">{ label }</a></p> }
+		</section>
+
+		{ faqs.length > 0 && (
+			<section>
+				<h2>Questions</h2>
+				<dl class="eca-faq">
+					{ faqs.map( ( entry ) => (
+						<>
+							<dt>{ entry.question }</dt>
+							<dd>{ entry.answer }</dd>
+						</>
+					) ) }
+				</dl>
+			</section>
+		) }
+
+		{ contacts.length > 0 && (
+			<section>
+				<h2>Who to contact</h2>
+				<ul class="eca-contacts">
+					{ contacts.map( ( contact ) => (
+						<li>
+							<strong>{ contact.label }</strong>
+							{ contact.role && <span> — { contact.role }</span> }
+							{ contact.email && <span> · <a href={ 'mailto:' + contact.email }>{ contact.email }</a></span> }
+						</li>
+					) ) }
+				</ul>
+			</section>
+		) }
+	</main>
+</Base>
 `;
 }
