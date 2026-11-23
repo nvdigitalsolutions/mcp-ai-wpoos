@@ -256,3 +256,96 @@ consumed outside this repository.
 
 The migration only adds a nullable column and its index; it does not read or
 rewrite a row.
+
+## 162.9 Generated media becomes a stored file
+
+### The gap, with evidence
+
+`generate_openai_image` calls the provider and returns what it said:
+
+```php
+$images[] = array( 'url' => ..., 'b64_json' => ..., 'revised_prompt' => ... );
+return $this->success( 'Image(s) generated successfully.', ... );
+```
+
+The canonical WordPress tool with the same slug does one more thing. It calls
+`wp_upload_bits()`, `wp_insert_attachment()`, `wp_generate_attachment_metadata()`,
+writes `_wp_mcp_ai_openai_image_meta`, and returns `attachment_id`, `source_url`
+and `file_name` alongside the provider payload
+(`includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php` →
+`store_image_attachment()`).
+
+So on this runtime a generated image had no id, no owner, no visibility and no
+slug: it never appeared on `/admin/media` or `/api/v1/media`, and a caller who
+wanted it later had to keep a provider URL that expires. Every image, video and
+music tool in the manifest had the same shape. This is a **tool-contract gap**,
+not a surface gap, and §162 is what makes closing it possible.
+
+### The mechanism
+
+One collaborator, `Nvoos\Core\Application\Media\GeneratedMediaPersister`, so the
+logic exists once rather than once per tool. It takes the provider's entries and:
+
+1. reads `b64_json`, refusing an entry that has none with a reason;
+2. decodes it, refusing malformed base64 with a reason;
+3. writes a temp file and hands the **path** to
+   `FileVisibilityStoreInterface::storeWithVisibility()`, passing the owner,
+   the estate and the visibility from the execution context;
+4. removes the temp file in `finally`, and returns
+   `['stored' => [...], 'failed' => [...]]`.
+
+Three rules make it safe in front of a paid call:
+
+- **Bytes only.** It never fetches the provider's temporary URL. A tool that
+  intends to keep the bytes asks the provider for `b64_json`
+  (`response_format` is overridden for that call only) and returns the store's
+  stable URL instead. No second network hop, no SSRF surface, no dependency on
+  a link's TTL.
+- **Never throw.** A generation that succeeded is not reported as failed
+  because a disk was full. Refusals and storage errors land in `media_failed`
+  keyed by item, next to the bytes that were still returned.
+- **The store decides the type.** The MIME hint is a hint; the registry sniffs
+  the bytes and applies its allowlist and size caps (§162.7). This class does
+  not restate that policy, so the two cannot drift.
+
+### Parity rules adopted from WordPress
+
+| WordPress behaviour | Here |
+|---|---|
+| always saves the image as an attachment | `save_to_media` defaults to `true` **when the host binds a registry** |
+| stem from `file_name`, else `openai-image` | same |
+| name `{stem}-{Ymd-His}`; extension from the format | same, except the extension is the store's, because the bytes decide it |
+| `openai-image-{job_id}` when the context carries a job | same, from `context['parent_job_id']` |
+| returns `attachment_id`, `source_url`, `file_name` | `media[]` entries carry `attachment_id`, `source_url`, `slug`, `filename`, `mime_type`, `size_bytes`, `visibility` |
+
+One deliberate extension: a `visibility` argument (`public` by default), because
+the file layer's whole point is that the caller can choose. Defaulting to
+`public` keeps the WordPress-visible behaviour.
+
+### Standards applied
+
+- **OWASP File Upload Cheat Sheet** (already §162.3): validate the type from the
+  bytes rather than trusting a header; application-generated filenames; size
+  limits. All three are the store's job and are inherited here by construction.
+- **Mutable names are not identities.** The store keys objects by ULID and rows
+  by id; the display name advances with `-2`, `-3` and never addresses anything.
+  A retried call therefore cannot overwrite an earlier generation.
+- **Idempotency.** A retry still produces a second row: bytes are unique per
+  call and the store does not dedupe across estates (§162.7). Deduplicating a
+  re-run is a cost feature, not a correctness one, and is left out on purpose.
+
+### Implementation plan
+
+| Slice | Work | Gate |
+|---|---|---|
+| 1 | `GeneratedMediaPersister` + `generate_openai_image` (`save_to_media`, `file_name`, `visibility`) | `ImageAndFileToolsTest` (bytes reach the store, refusal keeps the image, opt-out stores nothing) |
+| 2 | the other image generators: `generate_gemini_image`, `generate_cloudflareai_image`, `generate_higgsfield_image`, `create_image_variation`, `edit_openai_image`, `edit_gemini_image` | one probe each, same three assertions |
+| 3 | video: `generate_veo_video`, `generate_sora_video`, `generate_omni_video`, `generate_higgsfield_video` | as above, plus the 206 follow-up below |
+| 4 | audio/music: `generate_music`, `generate_openai_speech`, `transcribe_openai_audio` | as above |
+| 5 | documents: `generate_document`-class tools and Paper Store artifact creation | as above |
+
+**Named follow-up for slice 3:** a stored video is streamable only from a
+private route that answers `Range` with `206 Partial Content` (RFC 9110
+§15.3.7); serving whole bodies makes browser playback re-download from byte
+zero on every seek. That is the §162.7 deferral and it is now on the critical
+path for video toolkits rather than a nicety.
