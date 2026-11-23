@@ -30,6 +30,9 @@ class Test_Graphify_Inline_Kick extends WP_UnitTestCase {
 	 */
 	private $post_id;
 
+	/**
+	 * Create the published fixture post.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->post_id = self::factory()->post->create(
@@ -40,6 +43,9 @@ class Test_Graphify_Inline_Kick extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Clear the tick lock and the inline-kick filters.
+	 */
 	public function tearDown(): void {
 		// Clear the tick lock transient and object-cache entry.
 		delete_transient( NV_oOS_Graphify::TICK_LOCK_KEY );
@@ -52,7 +58,7 @@ class Test_Graphify_Inline_Kick extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * on_save_post() must register a shutdown action when the inline kick
+	 * On_save_post() must register a shutdown action when the inline kick
 	 * is enabled (the default).
 	 */
 	public function test_on_save_post_registers_shutdown_action() {
@@ -131,7 +137,7 @@ class Test_Graphify_Inline_Kick extends WP_UnitTestCase {
 	}
 
 	/**
-	 * on_save_post() must bail early (no shutdown action) for non-published
+	 * On_save_post() must bail early (no shutdown action) for non-published
 	 * posts and revisions.
 	 */
 	public function test_draft_post_skips_inline_kick() {

@@ -1,8 +1,8 @@
 {
     "_doc": "docs/developer/phpcs-ratchet.md",
     "_policy": "Budgets only shrink. --update refuses to raise one without --allow-increase, and --check fails when a scope comes in more than `tolerance` under budget without recording the improvement. `noise` is the allowance for run-to-run measurement variation on the over-budget side.",
-    "measured_at": "2026-11-22",
-    "measured_on": "alpha-working@2e6537ffb6 (values measured at 0dfe12b535, delta re-checked)",
+    "measured_at": "2026-11-23",
+    "measured_on": "alpha-working@5f29f57d70 (tests re-measured after the docblock sweep; other scopes carry their 2e6537ffb6 values)",
     "ruleset": "phpcs.xml.dist",
     "tolerance": 25,
     "scopes": [
@@ -35,7 +35,7 @@
             "paths": [
                 "tests/"
             ],
-            "errors": 1843,
+            "errors": 1647,
             "warnings": 1757
         },
         {

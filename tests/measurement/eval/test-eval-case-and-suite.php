@@ -13,16 +13,25 @@
  */
 class Test_WP_MCP_AI_Eval_Case_And_Suite extends WP_UnitTestCase {
 
+	/**
+	 * A case without a slug is rejected.
+	 */
 	public function test_case_requires_slug() {
 		$this->expectException( 'InvalidArgumentException' );
 		new WP_MCP_AI_Eval_Case( array( 'verifier_slug' => 'rule_verifier' ) );
 	}
 
+	/**
+	 * A case without a verifier slug is rejected.
+	 */
 	public function test_case_requires_verifier_slug() {
 		$this->expectException( 'InvalidArgumentException' );
 		new WP_MCP_AI_Eval_Case( array( 'slug' => 'c1' ) );
 	}
 
+	/**
+	 * Case defaults are applied when values are omitted.
+	 */
 	public function test_case_defaults() {
 		$c = new WP_MCP_AI_Eval_Case(
 			array(
@@ -37,6 +46,9 @@ class Test_WP_MCP_AI_Eval_Case_And_Suite extends WP_UnitTestCase {
 		$this->assertNull( $c->get_target_confidence() );
 	}
 
+	/**
+	 * Metadata and target confidence round-trip from the case.
+	 */
 	public function test_case_metadata_and_target_confidence() {
 		$c = new WP_MCP_AI_Eval_Case(
 			array(
@@ -57,11 +69,17 @@ class Test_WP_MCP_AI_Eval_Case_And_Suite extends WP_UnitTestCase {
 		$this->assertSame( 0.8, $c->get_target_confidence() );
 	}
 
+	/**
+	 * A suite without a slug is rejected.
+	 */
 	public function test_suite_requires_slug() {
 		$this->expectException( 'InvalidArgumentException' );
 		new WP_MCP_AI_Eval_Suite( array() );
 	}
 
+	/**
+	 * A suite accepts cases as arrays or as instances.
+	 */
 	public function test_suite_accepts_cases_as_arrays_or_instances() {
 		$suite = new WP_MCP_AI_Eval_Suite(
 			array(
@@ -77,6 +95,9 @@ class Test_WP_MCP_AI_Eval_Case_And_Suite extends WP_UnitTestCase {
 		$this->assertNotNull( $suite->get_case( 'b' ) );
 	}
 
+	/**
+	 * A duplicate case slug replaces the earlier case.
+	 */
 	public function test_duplicate_case_slug_replaces_earlier() {
 		$suite = new WP_MCP_AI_Eval_Suite( array( 'slug' => 's1' ) );
 		$suite->add_case( new WP_MCP_AI_Eval_Case( array( 'slug' => 'a', 'verifier_slug' => 'rule_verifier', 'label' => 'old' ) ) );
@@ -85,6 +106,9 @@ class Test_WP_MCP_AI_Eval_Case_And_Suite extends WP_UnitTestCase {
 		$this->assertSame( 'new', $suite->get_case( 'a' )->get_label() );
 	}
 
+	/**
+	 * Suite tags keep scalars and drop the rest.
+	 */
 	public function test_suite_tags_filtered_to_scalars() {
 		$suite = new WP_MCP_AI_Eval_Suite(
 			array(

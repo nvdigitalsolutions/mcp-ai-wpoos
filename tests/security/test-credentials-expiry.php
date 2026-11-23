@@ -18,15 +18,22 @@
 class WP_MCP_AI_Credentials_Expiry_Tests extends WP_UnitTestCase {
 
 	/**
+	 * Assistant post ID.
+	 *
 	 * @var int
 	 */
 	protected $assistant_id;
 
 	/**
+	 * Test user ID.
+	 *
 	 * @var int
 	 */
 	protected $user_id;
 
+	/**
+	 * Create the assistant and user fixtures.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -42,6 +49,9 @@ class WP_MCP_AI_Credentials_Expiry_Tests extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
 	}
 
+	/**
+	 * Delete the fixtures and reset the credential index.
+	 */
 	public function tearDown(): void {
 		wp_delete_post( $this->assistant_id, true );
 		if ( $this->user_id ) {

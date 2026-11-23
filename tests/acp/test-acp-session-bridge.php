@@ -32,7 +32,7 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 
 		$this->bridge       = new WP_MCP_AI_ACP_Session_Bridge();
 		
-		// Create a basic mock for the chat service
+		// Create a basic mock for the chat service.
 		$this->chat_service = $this->getMockBuilder( 'WP_MCP_AI_Chat_Service' )
 			->disableOriginalConstructor()
 			->getMock();
@@ -50,7 +50,7 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 		$session         = $session_manager->create_session( array() );
 		$session_id      = $session['sessionId'];
 
-		// Mock a successful chat service response
+		// Mock a successful chat service response.
 		$this->chat_service->expects( $this->once() )
 			->method( 'process_chat_request' )
 			->willReturn( array(
@@ -69,11 +69,11 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 
 		$result = $this->bridge->handle_prompt( $params );
 
-		// Validate the stopReason
+		// Validate the stopReason.
 		$this->assertArrayHasKey( 'stopReason', $result );
 		$this->assertEquals( 'end_turn', $result['stopReason'] );
 
-		// Validate the queued update
+		// Validate the queued update.
 		$updates = get_transient( 'acp_updates_' . $session_id );
 		$this->assertNotEmpty( $updates );
 		$this->assertEquals( 'session/update', $updates[0]['method'] );
@@ -89,7 +89,7 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 		$session         = $session_manager->create_session( array() );
 		$session_id      = $session['sessionId'];
 
-		// Mock an error chat service response
+		// Mock an error chat service response.
 		$this->chat_service->expects( $this->once() )
 			->method( 'process_chat_request' )
 			->willReturn( new WP_Error( 'test_error', 'LLM failure mock' ) );
@@ -106,10 +106,10 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 
 		$result = $this->bridge->handle_prompt( $params );
 
-		// Validate the stopReason
+		// Validate the stopReason.
 		$this->assertEquals( 'refusal', $result['stopReason'] );
 
-		// Validate the queued update contains the error message
+		// Validate the queued update contains the error message.
 		$updates = get_transient( 'acp_updates_' . $session_id );
 		$this->assertNotEmpty( $updates );
 		$this->assertStringContainsString( 'LLM failure mock', $updates[0]['params']['update']['content']['text'] );
