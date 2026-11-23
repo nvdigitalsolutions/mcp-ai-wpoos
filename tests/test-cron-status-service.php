@@ -897,9 +897,21 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
 
 		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			/**
+			 * Source slug.
+			 *
+			 * @return string
+			 */
 			public function get_slug() {
 				return 'phase1_test_source';
 			}
+			/**
+			 * Jobs owned by this source.
+			 *
+			 * @param int      $user_id      User id filter.
+			 * @param int|null $assistant_id Assistant id filter.
+			 * @return array
+			 */
 			public function get_jobs( $user_id = 0, $assistant_id = null ) {
 				return array(
 					array(
@@ -954,9 +966,21 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
 
 		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			/**
+			 * Source slug.
+			 *
+			 * @return string
+			 */
 			public function get_slug() {
 				return 'phase1_counts_source';
 			}
+			/**
+			 * Jobs owned by this source.
+			 *
+			 * @param int      $user_id      User id filter.
+			 * @param int|null $assistant_id Assistant id filter.
+			 * @return array
+			 */
 			public function get_jobs( $user_id = 0, $assistant_id = null ) {
 				return array(
 					array(
@@ -997,9 +1021,21 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
 
 		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			/**
+			 * Source slug.
+			 *
+			 * @return string
+			 */
 			public function get_slug() {
 				return 'phase1_invalid_source';
 			}
+			/**
+			 * Jobs owned by this source.
+			 *
+			 * @param int      $user_id      User id filter.
+			 * @param int|null $assistant_id Assistant id filter.
+			 * @return array
+			 */
 			public function get_jobs( $user_id = 0, $assistant_id = null ) {
 				return array(
 					array( 'no_job_id_here' => true ),
@@ -1033,18 +1069,42 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
 
 		$bad = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			/**
+			 * Source slug.
+			 *
+			 * @return string
+			 */
 			public function get_slug() {
 				return 'phase1_bad_source';
 			}
+			/**
+			 * Jobs owned by this source.
+			 *
+			 * @param int      $user_id      User id filter.
+			 * @param int|null $assistant_id Assistant id filter.
+			 * @throws \RuntimeException Always, to simulate a failing source.
+			 */
 			public function get_jobs( $user_id = 0, $assistant_id = null ) {
 				throw new \RuntimeException( 'simulated source failure' );
 			}
 		};
 
 		$good = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			/**
+			 * Source slug.
+			 *
+			 * @return string
+			 */
 			public function get_slug() {
 				return 'phase1_good_source';
 			}
+			/**
+			 * Jobs owned by this source.
+			 *
+			 * @param int      $user_id      User id filter.
+			 * @param int|null $assistant_id Assistant id filter.
+			 * @return array
+			 */
 			public function get_jobs( $user_id = 0, $assistant_id = null ) {
 				return array(
 					array(
@@ -1085,9 +1145,21 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
 
 		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			/**
+			 * Source slug.
+			 *
+			 * @return string
+			 */
 			public function get_slug() {
 				return 'phase1_scope_source';
 			}
+			/**
+			 * Jobs owned by this source.
+			 *
+			 * @param int      $user_id      User id filter.
+			 * @param int|null $assistant_id Assistant id filter.
+			 * @return array
+			 */
 			public function get_jobs( $user_id = 0, $assistant_id = null ) {
 				return array(
 					array(

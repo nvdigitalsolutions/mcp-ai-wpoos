@@ -8,7 +8,13 @@
  */
 class WP_MCP_AI_Force_Chat_Client extends WP_MCP_AI_OpenAI_Client {
 
-	/** @inheritDoc */
+	/**
+	 * Whether the Responses API should be used.
+	 *
+	 * @param array $messages Conversation messages.
+	 * @param array $options  Request options.
+	 * @return bool
+	 */
 	protected function should_use_responses_api( array $messages, array $options ) {
 		return false;
 	}
@@ -19,7 +25,13 @@ class WP_MCP_AI_Force_Chat_Client extends WP_MCP_AI_OpenAI_Client {
  */
 class WP_MCP_AI_Force_Responses_Client extends WP_MCP_AI_OpenAI_Client {
 
-	/** @inheritDoc */
+	/**
+	 * Whether the Responses API should be used.
+	 *
+	 * @param array $messages Conversation messages.
+	 * @param array $options  Request options.
+	 * @return bool
+	 */
 	protected function should_use_responses_api( array $messages, array $options ) {
 		return true;
 	}
@@ -1056,6 +1068,9 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Nested payload text.', $response['response']['choices'][0]['message']['content'] );
 	}
 
+	/**
+	 * Responses output text segments are collapsed.
+	 */
 	public function test_responses_output_text_segments_are_collapsed() {
 		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$defaults['openai_api_key'] = 'sk-test';
@@ -2870,9 +2885,16 @@ class WP_MCP_AI_Testable_OpenAI_Client extends WP_MCP_AI_OpenAI_Client {
  */
 class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 
-	/** @var WP_MCP_AI_Testable_OpenAI_Client */
+	/**
+	 * Testable client instance.
+	 *
+	 * @var WP_MCP_AI_Testable_OpenAI_Client
+	 */
 	private $client;
 
+	/**
+	 * Reset the client before each test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->client = new WP_MCP_AI_Testable_OpenAI_Client();
@@ -2882,6 +2904,12 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 	// Helpers
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Build a user message.
+	 *
+	 * @param string $text Message text.
+	 * @return array
+	 */
 	private function user_msg( $text = 'Hello' ) {
 		return array(
 			'role'    => 'user',
@@ -2889,6 +2917,12 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Build a system message.
+	 *
+	 * @param string $text Message text.
+	 * @return array
+	 */
 	private function system_msg( $text = 'You are an assistant.' ) {
 		return array(
 			'role'    => 'system',
@@ -2896,6 +2930,12 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Build an assistant message.
+	 *
+	 * @param string $text Message text.
+	 * @return array
+	 */
 	private function assistant_msg( $text = 'Sure.' ) {
 		return array(
 			'role'    => 'assistant',
@@ -2903,6 +2943,13 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Build an assistant message that requests tool calls.
+	 *
+	 * @param array       $tool_ids Tool ids to request.
+	 * @param string|null $text     Optional message text.
+	 * @return array
+	 */
 	private function assistant_with_tool_calls( array $tool_ids, $text = null ) {
 		$tool_calls = array();
 		foreach ( $tool_ids as $id => $name ) {
@@ -2925,6 +2972,14 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 		return $msg;
 	}
 
+	/**
+	 * Build a tool-result message.
+	 *
+	 * @param string $call_id Tool call id.
+	 * @param string $name    Tool name.
+	 * @param string $content JSON result payload.
+	 * @return array
+	 */
 	private function tool_msg( $call_id, $name = 'some_tool', $content = '{"result":"ok"}' ) {
 		return array(
 			'role'         => 'tool',

@@ -76,6 +76,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 	// Tool metadata
 	// ---------------------------------------------------------------------
 
+	/**
+	 * The tool exposes its slug and capability flags.
+	 */
 	public function test_tool_slug_and_capability_flags() {
 		$this->assertSame( 'plan_schedules_from_workflow', $this->tool->get_slug() );
 		$flags = $this->tool->get_capability_flags();
@@ -84,6 +87,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertContains( 'bulk', $flags );
 	}
 
+	/**
+	 * The parameters schema is a valid object.
+	 */
 	public function test_parameters_schema_is_valid_object() {
 		$schema = $this->tool->get_parameters_schema();
 		$this->assertIsArray( $schema );
@@ -98,6 +104,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 	// Permissions
 	// ---------------------------------------------------------------------
 
+	/**
+	 * A non-admin user is denied.
+	 */
 	public function test_non_admin_is_denied() {
 		$result = $this->tool->execute(
 			array( 'workflow_text' => 'Respond to emails' ),
@@ -111,6 +120,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 	// Parsing
 	// ---------------------------------------------------------------------
 
+	/**
+	 * Workflow text parses into line items.
+	 */
 	public function test_workflow_text_parses_lines_into_items() {
 		$text = "Respond to emails\nCheck WhatsApp messages on internal groups\nWeekly sales updates";
 
@@ -136,6 +148,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Empty input returns WP_Error.
+	 */
 	public function test_empty_input_returns_error() {
 		$result = $this->tool->execute(
 			array(),
@@ -145,6 +160,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 'no_workflow_items', $result->get_error_code() );
 	}
 
+	/**
+	 * Heading lines set the category for following items.
+	 */
 	public function test_heading_lines_set_category_for_following_items() {
 		$text = "## Marketing\nReview social posts\nPlan campaigns\n## Sales\nWeekly sales updates";
 
@@ -162,6 +180,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertContains( 'Sales', $result['plan'][2]['tags'] );
 	}
 
+	/**
+	 * List bullets are stripped from items.
+	 */
 	public function test_list_bullets_are_stripped() {
 		$text = "- Respond to emails\n* Check WhatsApp\n1. Follow up tasks";
 
@@ -183,6 +204,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 	// Cadence inference
 	// ---------------------------------------------------------------------
 
+	/**
+	 * A weekly keyword infers weekly cadence.
+	 */
 	public function test_weekly_keyword_infers_weekly_cadence() {
 		$result = $this->tool->execute(
 			array(
@@ -195,6 +219,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 'weekly', $result['plan'][0]['schedule'] );
 	}
 
+	/**
+	 * A monthly keyword infers monthly cadence when registered.
+	 */
 	public function test_monthly_keyword_infers_monthly_cadence_when_registered() {
 		// monthly may not be registered by core; only assert when it is.
 		if ( ! array_key_exists( 'monthly', wp_get_schedules() ) ) {
@@ -211,6 +238,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 'monthly', $result['plan'][0]['schedule'] );
 	}
 
+	/**
+	 * The default cadence applies when no keyword is present.
+	 */
 	public function test_default_cadence_is_used_when_no_keyword() {
 		$result = $this->tool->execute(
 			array(
@@ -228,6 +258,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 	// Persistence
 	// ---------------------------------------------------------------------
 
+	/**
+	 * A dry run persists no schedules.
+	 */
 	public function test_dry_run_does_not_persist_schedules() {
 		$before = WP_MCP_AI_Pro_Schedule_Manager::get_schedules();
 
@@ -245,6 +278,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertCount( 2, $result['plan'] );
 	}
 
+	/**
+	 * A non-dry run persists the schedules.
+	 */
 	public function test_non_dry_run_persists_schedules() {
 		$result = $this->tool->execute(
 			array(
@@ -261,6 +297,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( 2, count( $persisted ) );
 	}
 
+	/**
+	 * An urgent keyword infers high priority.
+	 */
 	public function test_priority_inferred_from_urgent_keyword() {
 		$result = $this->tool->execute(
 			array(
@@ -273,6 +312,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 1, $result['plan'][0]['priority'] );
 	}
 
+	/**
+	 * An explicit priority overrides inference.
+	 */
 	public function test_explicit_priority_overrides_inference() {
 		$result = $this->tool->execute(
 			array(
@@ -290,6 +332,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 7, $result['plan'][0]['priority'] );
 	}
 
+	/**
+	 * A published assistant selects the assistant run action.
+	 */
 	public function test_default_assistant_uses_assistant_run_when_published_assistant_exists() {
 		$assistant_id = self::factory()->post->create(
 			array(
@@ -312,6 +357,9 @@ class Test_Pro_Tool_Plan_Schedules_From_Workflow extends WP_UnitTestCase {
 		$this->assertSame( $assistant_id, $result['plan'][0]['assistant_config']['assistant_id'] );
 	}
 
+	/**
+	 * Without an assistant the task hook is used.
+	 */
 	public function test_no_assistant_falls_back_to_task_hook() {
 		$result = $this->tool->execute(
 			array(

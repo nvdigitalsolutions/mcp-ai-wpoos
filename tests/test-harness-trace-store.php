@@ -16,8 +16,16 @@
  */
 class Test_Harness_Trace_Store extends WP_UnitTestCase {
 
+	/**
+	 * Assistant post ID.
+	 *
+	 * @var int
+	 */
 	private $assistant_id;
 
+	/**
+	 * Create the assistant fixture.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->assistant_id = $this->factory->post->create(
@@ -28,11 +36,17 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Delete the fixture.
+	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
 
+	/**
+	 * Starting a run returns a non-empty run id.
+	 */
 	public function test_start_run_returns_non_empty_run_id() {
 		$run_id = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 		$this->assertIsString( $run_id );
@@ -43,11 +57,17 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Trace_Store::delete_all_for_assistant( $this->assistant_id );
 	}
 
+	/**
+	 * An invalid assistant id returns WP_Error.
+	 */
 	public function test_start_run_with_invalid_assistant_returns_error() {
 		$result = WP_MCP_AI_Harness_Trace_Store::start_run( 0 );
 		$this->assertWPError( $result );
 	}
 
+	/**
+	 * Writing and reading an artifact round-trips.
+	 */
 	public function test_write_and_read_artifact_round_trip() {
 		$run_id = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 		$data   = array(
@@ -66,6 +86,9 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Trace_Store::delete_all_for_assistant( $this->assistant_id );
 	}
 
+	/**
+	 * Writing text and reading it back works.
+	 */
 	public function test_write_text_and_read() {
 		$run_id = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 		$text   = 'Hello from trace store test.';
@@ -80,6 +103,9 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Trace_Store::delete_all_for_assistant( $this->assistant_id );
 	}
 
+	/**
+	 * Appending JSONL and reading it back works.
+	 */
 	public function test_append_jsonl_and_read() {
 		$run_id = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 
@@ -110,6 +136,9 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Trace_Store::delete_all_for_assistant( $this->assistant_id );
 	}
 
+	/**
+	 * Finishing a run records its duration.
+	 */
 	public function test_finish_run_records_duration() {
 		$run_id = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 
@@ -127,6 +156,9 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Trace_Store::delete_all_for_assistant( $this->assistant_id );
 	}
 
+	/**
+	 * Listing runs returns them in order.
+	 */
 	public function test_list_runs_returns_ordered_runs() {
 		$run1 = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 		WP_MCP_AI_Harness_Trace_Store::finish_run( $run1 );
@@ -145,6 +177,9 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Trace_Store::delete_all_for_assistant( $this->assistant_id );
 	}
 
+	/**
+	 * The run manifest lists its artifacts.
+	 */
 	public function test_get_run_manifest_returns_files() {
 		$run_id = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 		WP_MCP_AI_Harness_Trace_Store::write_artifact( $run_id, 'profile.json', array( 'enabled' => true ) );
@@ -160,6 +195,9 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Trace_Store::delete_all_for_assistant( $this->assistant_id );
 	}
 
+	/**
+	 * An active run reports as active.
+	 */
 	public function test_is_active_returns_true_for_active_run() {
 		$run_id = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 		$this->assertTrue( WP_MCP_AI_Harness_Trace_Store::is_active( $run_id ) );
@@ -170,11 +208,17 @@ class Test_Harness_Trace_Store extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Trace_Store::delete_all_for_assistant( $this->assistant_id );
 	}
 
+	/**
+	 * A missing artifact returns null.
+	 */
 	public function test_read_artifact_returns_null_for_missing() {
 		$result = WP_MCP_AI_Harness_Trace_Store::read_artifact( 'nonexistent_run_999', 'meta.json', $this->assistant_id );
 		$this->assertNull( $result );
 	}
 
+	/**
+	 * Deleting all runs for an assistant cleans up.
+	 */
 	public function test_delete_all_for_assistant_cleans_up() {
 		$run_id = WP_MCP_AI_Harness_Trace_Store::start_run( $this->assistant_id );
 		WP_MCP_AI_Harness_Trace_Store::finish_run( $run_id );
