@@ -18415,3 +18415,92 @@ path looks less exercised.
 | regression run (root key, queue, machine credentials, machine tools, budgets, estate credentials, model config, settings catalogue, coverage, surface ownership) | **188 tests / 10,401 assertions**, green apart from the two known PM-provider `No tests found` errors |
 | phpcs PSR-12 on nine files | exit 0 |
 | `coverage.json` | unchanged — this section adds no settings |
+
+## 190. The skill manager, and the security pass it was waiting for (2026-11-23)
+
+`SkillCatalogue` has been read-only since §49, and said so in its own docblock:
+
+> Read-only on purpose: WordPress ships a manager (install from raw SKILL.md or a
+> remote catalogue, replace, delete). Those are file writes driven by HTTP input
+> and deserve their own security pass; until then the picker is populated and
+> nothing pretends to install.
+
+That is a deferral with a precondition, not a decline. This section is the
+precondition. The writes ship with it, in one change, because a manager without
+the pass is exactly what §49 refused to build.
+
+### 190.1 Placement: `/ops`, not `/admin`
+
+A skill lives in one directory (`config('oos.skills.path')`) and every estate
+reads it. Installing one therefore changes the **deployment**, not an estate's
+content, so the writes belong to the operator. `/admin` keeps its read-only
+catalogue — a tenant admin still needs to know what an assistant can be told to
+do, and still may not change it. `agent-skills` moves `ops: null` → `full`,
+`admin` stays `read-only`, and `writer` moves `console` → `ops`: the console never
+had these writes, so nothing was taken away from it.
+
+### 190.2 The four rules, as decisions
+
+OWASP's file-upload guidance is usually written against multipart uploads. The
+reasons behind it apply unchanged to text pasted into a form, and each one is a
+choice in `SkillInstaller`:
+
+| Rule | Here |
+|---|---|
+| never trust the client's filename | there is no filename. The folder is named from the **parsed** frontmatter `name`, slugified, and must match `SLUG_PATTERN` |
+| never trust the declared content type | there is no upload and no MIME type. The only accepted input is text that parses as a SKILL.md |
+| keep the write inside a known directory | the slug cannot carry a separator, and `assertInsideRoot()` re-resolves the target before every write |
+| bound what can be written | 256 KB, 80-character name, 1,024-character description |
+
+The name rule does double duty. `../../etc/passwd` slugifies to `etc-passwd`, so a
+traversal attempt does not get refused so much as become meaningless — and the
+test asserts the file lands **inside** the root rather than asserting an error
+message. The description cap matters for a reason the other caps do not: the
+description is injected into every prompt that lists skills, so an unbounded one
+is a prompt-budget problem before it is a storage problem.
+
+### 190.3 Two more that the standard list does not cover
+
+**Atomic writes.** The file is written to a temp name in the root and `rename()`d
+into place. A crash mid-write cannot leave a half-parsed skill for the catalogue to
+report, and `rename` within one filesystem is atomic.
+
+**Symlinks are refused, not followed.** A skill folder that is a symlink is an
+attempt to make this writer touch something outside the root — or a deployment
+mistake. Either way the answer is the same, and it is "no".
+
+### 190.4 Delete is narrow, and refuses rather than guesses
+
+`delete()` removes `SKILL.md` and then the folder, and only when `SKILL.md` is the
+only entry. A recursive delete of a path named by HTTP input is how an installer
+becomes a remote file deletion bug. If a folder holds anything else, the answer is
+"remove it on the server", not "this panel will work out which files you meant".
+
+The emptiness check runs **before** the first `unlink()`, so a refusal leaves the
+folder exactly as it was. The test asserts both halves.
+
+### 190.5 All three actions ask for the root key
+
+Install, replace and delete all go through §189's `RootKeyAction::guard()`. Replace
+and delete are obviously destructive; install is included because a skill's body is
+loaded into the model's context and its description into every skill listing, which
+makes installing one closer to installing a prompt than to uploading an image. The
+gate is the same mechanism, not a second one.
+
+### 190.6 What is still not ported, and why that is a decision
+
+WordPress also installs from a **remote catalogue**. That is not a file write with
+a network transport; it is a fetch of third-party instructions into a surface that
+feeds every prompt in the deployment. It needs a trust decision — who may publish,
+whether a version is pinned, what happens when the source changes underneath you —
+and none of those have an answer here yet. Leaving it out is a recorded decision
+rather than an unfinished control, and the contract says so.
+
+### 190.7 Gates
+
+| Gate | Result |
+|---|---|
+| `SkillManagerTest` | **15 tests / 31 assertions** — slug from name; no frontmatter refused; no name refused; name that slugifies to nothing refused; oversize refused; duplicate refused and replace accepted; traversal lands inside the root; CRLF accepted; delete removes; delete refuses extra files and does not half-delete; path-shaped slug refused; unknown skill refused; operator installs from the page; tenant admin forbidden; the page lists what is installed |
+| regression run (skills, agent skills, surface ownership, panel blade, root key, settings catalogue, coverage) | **84 tests / 9,931 assertions**, green apart from the two known PM-provider `No tests found` errors |
+| phpcs PSR-12 on five files | exit 0 |
+| `coverage.json` | unchanged — this section adds no settings |

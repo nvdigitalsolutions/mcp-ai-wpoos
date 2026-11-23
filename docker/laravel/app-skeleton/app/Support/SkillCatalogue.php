@@ -88,4 +88,54 @@ final class SkillCatalogue
     {
         return $this->path;
     }
+
+    /**
+     * The same catalogue, with the folder that holds each skill.
+     *
+     * The manager needs the slug to name a row in an action; `all()` stays as the
+     * console's four-field projection so a new field here cannot change what the
+     * console already renders.
+     *
+     * @return list<array{slug: string, name: string, description: string, license: string, compatibility: string}>
+     */
+    public function installed(): array
+    {
+        if ('' === $this->path || ! is_dir($this->path)) {
+            return array();
+        }
+
+        $directories = glob($this->path.'/*', GLOB_ONLYDIR);
+        $directories = is_array($directories) ? $directories : array();
+
+        sort($directories);
+
+        $skills = array();
+
+        foreach ($directories as $directory) {
+            $file = $directory.'/SKILL.md';
+
+            if (! is_readable($file)) {
+                continue;
+            }
+
+            $content = file_get_contents($file); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local skill file, not remote.
+            $parsed = is_string($content) ? SkillRegistry::parseSkillMd($content) : null;
+
+            if (null === $parsed) {
+                continue;
+            }
+
+            $skills[] = array(
+                'slug' => basename($directory),
+                'name' => (string) $parsed['name'],
+                'description' => (string) $parsed['description'],
+                'license' => (string) $parsed['license'],
+                'compatibility' => (string) $parsed['compatibility'],
+            );
+        }
+
+        usort($skills, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+
+        return $skills;
+    }
 }
