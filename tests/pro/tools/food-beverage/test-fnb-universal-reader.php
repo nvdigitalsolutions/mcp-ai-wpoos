@@ -81,8 +81,12 @@ class Test_Fnb_Universal_Reader extends WP_UnitTestCase {
 
 		$reader = new WP_MCP_AI_Fnb_Universal_Reader();
 
-		$file    = array( 'id' => 'x', 'name' => 'final_sales.csv', 'mimeType' => 'text/csv' );
-		$columns = array( 'date', 'month', 'item_id', 'item', 'type', 'qty_sold', 'price', 'revenue' );
+		$file     = array(
+			'id'       => 'x',
+			'name'     => 'final_sales.csv',
+			'mimeType' => 'text/csv',
+		);
+		$columns  = array( 'date', 'month', 'item_id', 'item', 'type', 'qty_sold', 'price', 'revenue' );
 		$assigned = $this->invoke_private( $reader, 'assign_role', array( $file, $columns ) );
 
 		$this->assertSame( '6.0', $assigned['table_id'] );
@@ -98,7 +102,11 @@ class Test_Fnb_Universal_Reader extends WP_UnitTestCase {
 		}
 
 		$reader   = new WP_MCP_AI_Fnb_Universal_Reader();
-		$file     = array( 'id' => 'x', 'name' => 'sales_may.csv', 'mimeType' => 'text/csv' );
+		$file     = array(
+			'id'       => 'x',
+			'name'     => 'sales_may.csv',
+			'mimeType' => 'text/csv',
+		);
 		$columns  = array( 'date', 'month', 'item_id', 'type', 'qty_sold', 'price_lkr', 'revenue_lkr' );
 		$assigned = $this->invoke_private( $reader, 'assign_role', array( $file, $columns ) );
 
@@ -114,7 +122,11 @@ class Test_Fnb_Universal_Reader extends WP_UnitTestCase {
 		}
 
 		$reader   = new WP_MCP_AI_Fnb_Universal_Reader();
-		$file     = array( 'id' => 'x', 'name' => 'menu.csv', 'mimeType' => 'text/csv' );
+		$file     = array(
+			'id'       => 'x',
+			'name'     => 'menu.csv',
+			'mimeType' => 'text/csv',
+		);
 		$columns  = array( 'col_a', 'col_b' );
 		$assigned = $this->invoke_private( $reader, 'assign_role', array( $file, $columns ) );
 
@@ -131,17 +143,17 @@ class Test_Fnb_Universal_Reader extends WP_UnitTestCase {
 		}
 
 		$map = array(
-			'inv no'          => 'invoice',
-			'invoice number'  => 'invoice',
-			'quantity sold'   => 'qty_sold',
-			'units sold'      => 'qty_sold',
-			'sales'           => 'revenue',
-			'gross'           => 'revenue',
-			'net'             => 'revenue',
-			'unit price'      => 'price',
-			'expense amount'  => 'amount',
-			'entry id'        => 'entry_id',
-			'sku'             => 'item_id',
+			'inv no'         => 'invoice',
+			'invoice number' => 'invoice',
+			'quantity sold'  => 'qty_sold',
+			'units sold'     => 'qty_sold',
+			'sales'          => 'revenue',
+			'gross'          => 'revenue',
+			'net'            => 'revenue',
+			'unit price'     => 'price',
+			'expense amount' => 'amount',
+			'entry id'       => 'entry_id',
+			'sku'            => 'item_id',
 		);
 
 		foreach ( $map as $header => $expected ) {
@@ -157,8 +169,12 @@ class Test_Fnb_Universal_Reader extends WP_UnitTestCase {
 			$this->markTestSkipped( 'F&B universal reader not available' );
 		}
 
-		$reader   = new WP_MCP_AI_Fnb_Universal_Reader();
-		$file     = array( 'id' => 'x', 'name' => 'supplier_invoices.csv', 'mimeType' => 'text/csv' );
+		$reader = new WP_MCP_AI_Fnb_Universal_Reader();
+		$file   = array(
+			'id'       => 'x',
+			'name'     => 'supplier_invoices.csv',
+			'mimeType' => 'text/csv',
+		);
 		// Real-world invoice-adjacent headers that map onto the expense-ledger
 		// canonical keys via the dictionary.
 		$columns  = array( 'entry id', 'vendor', 'inv no', 'expense line', 'group', 'for month', 'invoice date', 'expense amount', 'due date', 'paid date', 'status' );

@@ -28,7 +28,7 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 		parent::set_up();
 		remove_all_filters( 'pre_http_request' );
 
-		$defaults                          = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults                           = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$defaults['lm_studio_endpoint_url'] = 'http://127.0.0.1:1234';
 		$defaults['lm_studio_model']        = 'llama-3-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
@@ -188,7 +188,12 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 			3
 		);
 
-		$messages = array( array( 'role' => 'user', 'content' => 'Use a tool' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Use a tool',
+			),
+		);
 		$options  = array(
 			'tools'       => array(
 				array(
@@ -197,7 +202,10 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 					'function' => array(
 						'name'        => 'my_tool',
 						'description' => 'Test',
-						'parameters'  => array( 'type' => 'object', 'properties' => array() ),
+						'parameters'  => array(
+							'type'       => 'object',
+							'properties' => array(),
+						),
 					),
 				),
 			),
@@ -242,7 +250,12 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 			3
 		);
 
-		$messages = array( array( 'role' => 'user', 'content' => 'No tools' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'No tools',
+			),
+		);
 		$options  = array(
 			'tools'       => array(
 				array(
@@ -251,7 +264,10 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 					'function' => array(
 						'name'        => 'my_tool',
 						'description' => 'Test',
-						'parameters'  => array( 'type' => 'object', 'properties' => array() ),
+						'parameters'  => array(
+							'type'       => 'object',
+							'properties' => array(),
+						),
 					),
 				),
 			),
@@ -296,7 +312,12 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 			3
 		);
 
-		$messages = array( array( 'role' => 'user', 'content' => 'Call specific tool' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Call specific tool',
+			),
+		);
 		$options  = array(
 			'tools'       => array(
 				array(
@@ -305,7 +326,10 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 					'function' => array(
 						'name'        => 'specific_tool',
 						'description' => 'A specific tool',
-						'parameters'  => array( 'type' => 'object', 'properties' => array() ),
+						'parameters'  => array(
+							'type'       => 'object',
+							'properties' => array(),
+						),
 					),
 				),
 			),
@@ -354,7 +378,12 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 			3
 		);
 
-		$messages = array( array( 'role' => 'user', 'content' => 'Parallel tools' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Parallel tools',
+			),
+		);
 		$options  = array(
 			'tools'               => array(
 				array(
@@ -363,7 +392,10 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 					'function' => array(
 						'name'        => 'my_tool',
 						'description' => 'Test',
-						'parameters'  => array( 'type' => 'object', 'properties' => array() ),
+						'parameters'  => array(
+							'type'       => 'object',
+							'properties' => array(),
+						),
 					),
 				),
 			),
@@ -408,7 +440,12 @@ class WP_MCP_AI_LM_Studio_Tool_Parity_Test extends WP_UnitTestCase {
 			3
 		);
 
-		$messages = array( array( 'role' => 'user', 'content' => 'No tools here' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'No tools here',
+			),
+		);
 		$this->client->create_chat_completion( $messages, array( 'tool_choice' => 'auto' ) );
 
 		$this->assertNotNull( $payload_sent );

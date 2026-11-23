@@ -48,14 +48,36 @@ class Test_QMS_Audit_Log extends WP_UnitTestCase {
 	 * Queries filter by subsystem and event.
 	 */
 	public function test_query_filters_by_subsystem_and_event() {
-		WP_MCP_AI_QMS_Audit_Log::record( array( 'event' => 'foo', 'post_id' => 100, 'subsystem' => 'qms' ) );
-		WP_MCP_AI_QMS_Audit_Log::record( array( 'event' => 'bar', 'post_id' => 100, 'subsystem' => 'para' ) );
+		WP_MCP_AI_QMS_Audit_Log::record(
+			array(
+				'event'     => 'foo',
+				'post_id'   => 100,
+				'subsystem' => 'qms',
+			)
+		);
+		WP_MCP_AI_QMS_Audit_Log::record(
+			array(
+				'event'     => 'bar',
+				'post_id'   => 100,
+				'subsystem' => 'para',
+			)
+		);
 
-		$qms = WP_MCP_AI_QMS_Audit_Log::query( array( 'post_id' => 100, 'subsystem' => 'qms' ) );
+		$qms = WP_MCP_AI_QMS_Audit_Log::query(
+			array(
+				'post_id'   => 100,
+				'subsystem' => 'qms',
+			)
+		);
 		$this->assertCount( 1, $qms );
 		$this->assertSame( 'foo', $qms[0]['event'] );
 
-		$para = WP_MCP_AI_QMS_Audit_Log::query( array( 'post_id' => 100, 'subsystem' => 'para' ) );
+		$para = WP_MCP_AI_QMS_Audit_Log::query(
+			array(
+				'post_id'   => 100,
+				'subsystem' => 'para',
+			)
+		);
 		$this->assertCount( 1, $para );
 		$this->assertSame( 'bar', $para[0]['event'] );
 	}

@@ -246,18 +246,24 @@ foreach ( $fnb_classes as $fnb_class_file ) {
 
 // Report-builder smoke: R-03 weekend plan and R-08 cost review build cleanly.
 $r03 = WP_MCP_AI_Fnb_Report_Builder::build( 'R-03', array( 'date' => '2026-10-09' ) );
-$r08 = WP_MCP_AI_Fnb_Report_Builder::build( 'R-08', array( 'month' => '2026-09', 'prev_month' => '2026-08' ) );
+$r08 = WP_MCP_AI_Fnb_Report_Builder::build(
+	'R-08',
+	array(
+		'month'      => '2026-09',
+		'prev_month' => '2026-08',
+	)
+);
 if ( is_wp_error( $r03 ) || empty( $r03['sections'] ) ) {
 	echo "[FAIL] R-03 weekend prep plan did not build\n";
 	++$failures;
 } else {
-	echo "[PASS] R-03 weekend prep plan built (" . count( $r03['sections'] ) . " sections)\n";
+	echo '[PASS] R-03 weekend prep plan built (' . count( $r03['sections'] ) . " sections)\n";
 }
 if ( is_wp_error( $r08 ) || empty( $r08['sections'] ) ) {
 	echo "[FAIL] R-08 monthly cost review did not build\n";
 	++$failures;
 } else {
-	echo "[PASS] R-08 monthly cost review built (" . count( $r08['sections'] ) . " sections)\n";
+	echo '[PASS] R-08 monthly cost review built (' . count( $r08['sections'] ) . " sections)\n";
 }
 
 $oracle = require $toolkit_dir . '/tests/expected-values.php';
@@ -327,7 +333,7 @@ $check( 'M-11 kWh per cover Sep', $num( 'kwh_per_cover_2026_09' ), $m11['value']
 $m18 = WP_MCP_AI_Fnb_Metrics::m18_waste_pct( '2026-09' );
 $check( 'M-18 waste value Sep', $num( 'waste_logged_value_2026_09' ), $m18['waste_value'], 0.2 );
 
-$m20 = WP_MCP_AI_Fnb_Metrics::m20_budget_variance( '2026-09' );
+$m20     = WP_MCP_AI_Fnb_Metrics::m20_budget_variance( '2026-09' );
 $by_line = array();
 foreach ( $m20['rows'] as $row ) {
 	$by_line[ $row['line'] ] = $row;
@@ -335,7 +341,7 @@ foreach ( $m20['rows'] as $row ) {
 $check( 'M-20 food revenue vs budget', $num( 'food_revenue_sep_vs_budget' ), $by_line['Food revenue']['variance'], 0.2 );
 $check( 'M-20 maintenance vs budget', $num( 'maintenance_sep_vs_budget' ), $by_line['Maintenance']['variance'], 0.2 );
 
-$eng = WP_MCP_AI_Fnb_Metrics::menu_engineering( '2026-09' );
+$eng       = WP_MCP_AI_Fnb_Metrics::menu_engineering( '2026-09' );
 $quadrants = array_count_values( array_column( $eng['rows'], 'quadrant' ) );
 echo 'Menu-engineering quadrants (Sep): ' . wp_json_encode( $quadrants ) . "\n";
 

@@ -95,7 +95,11 @@ class Test_Harness_Eval_Scheduler_Inline_Kick extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Harness_Eval_Scheduler::tick();
 
 		$this->assertSame(
-			array( 'processed' => 0, 'skipped' => 0, 'errors' => 0 ),
+			array(
+				'processed' => 0,
+				'skipped'   => 0,
+				'errors'    => 0,
+			),
 			$result,
 			'tick() must return an all-zero summary when the lock is already held.'
 		);

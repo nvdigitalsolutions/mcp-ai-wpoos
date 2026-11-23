@@ -84,7 +84,10 @@ class Test_Slash_Command_Model extends WP_UnitTestCase {
 	public function test_set_requires_manage_options() {
 		$result = $this->command->execute(
 			array(),
-			array( 'set' => 'gpt-4o', 'assistant-id' => 1 ),
+			array(
+				'set'          => 'gpt-4o',
+				'assistant-id' => 1,
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 		$this->assertWPError( $result );
@@ -112,7 +115,10 @@ class Test_Slash_Command_Model extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 		$result = $this->command->execute(
 			array(),
-			array( 'set' => 'gpt-4o', 'assistant-id' => 9999999 ),
+			array(
+				'set'          => 'gpt-4o',
+				'assistant-id' => 9999999,
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 		$this->assertWPError( $result );
@@ -134,7 +140,10 @@ class Test_Slash_Command_Model extends WP_UnitTestCase {
 
 		$result = $this->command->execute(
 			array(),
-			array( 'current' => true, 'assistant-id' => $assistant_id ),
+			array(
+				'current'      => true,
+				'assistant-id' => $assistant_id,
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 		$this->assertNotWPError( $result );

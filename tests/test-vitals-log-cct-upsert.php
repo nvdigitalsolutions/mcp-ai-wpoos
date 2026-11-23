@@ -151,8 +151,8 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Existing row has bp_systolic; incoming also has egfr (not in existing).
-		$existing              = new stdClass();
-		$existing->bp_systolic = 120;
+		$existing                   = new stdClass();
+		$existing->bp_systolic      = 120;
 		$existing->measurement_time = '';
 
 		$incoming = array(
@@ -177,14 +177,14 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'is_near_duplicate' );
 		$method->setAccessible( true );
 
-		$existing              = new stdClass();
-		$existing->bp_systolic = 105;
-		$existing->bp_diastolic = 56;
+		$existing                   = new stdClass();
+		$existing->bp_systolic      = 105;
+		$existing->bp_diastolic     = 56;
 		$existing->measurement_time = '18:00';
 
 		$incoming = array(
-			'bp_systolic'  => 105,
-			'bp_diastolic' => 56,
+			'bp_systolic'      => 105,
+			'bp_diastolic'     => 56,
 			'measurement_time' => '18:03', // 3 min apart — within dedup window.
 		);
 
@@ -237,28 +237,28 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 					'creatinine'       => 1.44,
 				),
 				array(
-					'member_id'        => 2976,
-					'measurement_date' => '2026-02-09',
-					'measurement_time' => '18:00',
-					'source'           => 'import',
-					'notes'            => 'ED vitals.',
-					'bp_systolic'      => 105,
-					'bp_diastolic'     => 56,
-					'heart_rate'       => 67,
+					'member_id'         => 2976,
+					'measurement_date'  => '2026-02-09',
+					'measurement_time'  => '18:00',
+					'source'            => 'import',
+					'notes'             => 'ED vitals.',
+					'bp_systolic'       => 105,
+					'bp_diastolic'      => 56,
+					'heart_rate'        => 67,
 					'oxygen_saturation' => 96,
-					'respiratory_rate' => 19,
+					'respiratory_rate'  => 19,
 				),
 				array(
-					'member_id'        => 2976,
-					'measurement_date' => '2026-02-09',
-					'measurement_time' => '18:20',
-					'source'           => 'import',
-					'notes'            => 'ED vitals.',
-					'bp_systolic'      => 90,
-					'bp_diastolic'     => 61,
-					'heart_rate'       => 65,
+					'member_id'         => 2976,
+					'measurement_date'  => '2026-02-09',
+					'measurement_time'  => '18:20',
+					'source'            => 'import',
+					'notes'             => 'ED vitals.',
+					'bp_systolic'       => 90,
+					'bp_diastolic'      => 61,
+					'heart_rate'        => 65,
 					'oxygen_saturation' => 96,
-					'respiratory_rate' => 19,
+					'respiratory_rate'  => 19,
 				),
 			)
 		);
@@ -587,14 +587,14 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$constant   = $reflection->getConstant( 'CSV_COLUMN_MAP' );
 
 		$spot_checks = array(
-			'hct'       => 'hematocrit',
-			'rbc'       => 'rbc',
-			'wbc'       => 'wbc',
-			'plt'       => 'platelets',
-			'mcv'       => 'mcv',
-			'mch'       => 'mch',
-			'mchc'      => 'mchc',
-			'rdw'       => 'rdw',
+			'hct'  => 'hematocrit',
+			'rbc'  => 'rbc',
+			'wbc'  => 'wbc',
+			'plt'  => 'platelets',
+			'mcv'  => 'mcv',
+			'mch'  => 'mch',
+			'mchc' => 'mchc',
+			'rdw'  => 'rdw',
 		);
 
 		foreach ( $spot_checks as $alias => $field ) {
@@ -662,23 +662,31 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'parse_fhir_json' );
 		$method->setAccessible( true );
 
-		$fhir = json_encode( array(
-			'resourceType' => 'Bundle',
-			'entry'        => array(
-				array(
-					'resource' => array(
-						'resourceType'     => 'Observation',
-						'effectiveDateTime' => '2026-03-01T09:00:00Z',
-						'code'             => array(
-							'coding' => array(
-								array( 'system' => 'http://loinc.org', 'code' => '718-7' ),
+		$fhir = json_encode(
+			array(
+				'resourceType' => 'Bundle',
+				'entry'        => array(
+					array(
+						'resource' => array(
+							'resourceType'      => 'Observation',
+							'effectiveDateTime' => '2026-03-01T09:00:00Z',
+							'code'              => array(
+								'coding' => array(
+									array(
+										'system' => 'http://loinc.org',
+										'code'   => '718-7',
+									),
+								),
+							),
+							'valueQuantity'     => array(
+								'value' => 13.5,
+								'unit'  => 'g/dL',
 							),
 						),
-						'valueQuantity'    => array( 'value' => 13.5, 'unit' => 'g/dL' ),
 					),
 				),
-			),
-		) );
+			)
+		);
 
 		$result = $method->invoke( $tool, $fhir );
 
@@ -703,12 +711,14 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'parse_json_array' );
 		$method->setAccessible( true );
 
-		$payload = json_encode( array(
+		$payload = json_encode(
 			array(
-				'measurement_date' => '2026-03-01',
-				'hemoglobin'       => 13.5,
-			),
-		) );
+				array(
+					'measurement_date' => '2026-03-01',
+					'hemoglobin'       => 13.5,
+				),
+			)
+		);
 
 		$result = $method->invoke( $tool, $payload );
 

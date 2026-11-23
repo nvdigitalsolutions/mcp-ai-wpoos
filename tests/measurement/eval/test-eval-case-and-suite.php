@@ -85,8 +85,16 @@ class Test_WP_MCP_AI_Eval_Case_And_Suite extends WP_UnitTestCase {
 			array(
 				'slug'  => 's1',
 				'cases' => array(
-					array( 'slug' => 'a', 'verifier_slug' => 'rule_verifier' ),
-					new WP_MCP_AI_Eval_Case( array( 'slug' => 'b', 'verifier_slug' => 'rule_verifier' ) ),
+					array(
+						'slug'          => 'a',
+						'verifier_slug' => 'rule_verifier',
+					),
+					new WP_MCP_AI_Eval_Case(
+						array(
+							'slug'          => 'b',
+							'verifier_slug' => 'rule_verifier',
+						)
+					),
 				),
 			)
 		);
@@ -100,8 +108,24 @@ class Test_WP_MCP_AI_Eval_Case_And_Suite extends WP_UnitTestCase {
 	 */
 	public function test_duplicate_case_slug_replaces_earlier() {
 		$suite = new WP_MCP_AI_Eval_Suite( array( 'slug' => 's1' ) );
-		$suite->add_case( new WP_MCP_AI_Eval_Case( array( 'slug' => 'a', 'verifier_slug' => 'rule_verifier', 'label' => 'old' ) ) );
-		$suite->add_case( new WP_MCP_AI_Eval_Case( array( 'slug' => 'a', 'verifier_slug' => 'rule_verifier', 'label' => 'new' ) ) );
+		$suite->add_case(
+			new WP_MCP_AI_Eval_Case(
+				array(
+					'slug'          => 'a',
+					'verifier_slug' => 'rule_verifier',
+					'label'         => 'old',
+				)
+			)
+		);
+		$suite->add_case(
+			new WP_MCP_AI_Eval_Case(
+				array(
+					'slug'          => 'a',
+					'verifier_slug' => 'rule_verifier',
+					'label'         => 'new',
+				)
+			)
+		);
 		$this->assertSame( 1, $suite->count_cases() );
 		$this->assertSame( 'new', $suite->get_case( 'a' )->get_label() );
 	}
@@ -116,7 +140,7 @@ class Test_WP_MCP_AI_Eval_Case_And_Suite extends WP_UnitTestCase {
 				'tags' => array( 'easy', 42, array( 'nope' ), null, 'gsm8k' ),
 			)
 		);
-		$tags = $suite->get_tags();
+		$tags  = $suite->get_tags();
 		$this->assertContains( 'easy', $tags );
 		$this->assertContains( '42', $tags );
 		$this->assertContains( 'gsm8k', $tags );

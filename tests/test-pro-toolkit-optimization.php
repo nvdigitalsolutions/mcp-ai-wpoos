@@ -248,7 +248,7 @@ class Test_Pro_Toolkit_Optimization extends WP_UnitTestCase {
 		$stored = get_option( 'wp_mcp_ai_autorespond_templates', array() );
 		// The DB was updated directly, so get_option may still have the old cached value.
 		// Check DB directly.
-		$raw = $wpdb->get_var(
+		$raw     = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",
 				'wp_mcp_ai_autorespond_templates'
@@ -442,7 +442,10 @@ class Test_Pro_Toolkit_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_cal_cap_schedule_count_passes_under_limit() {
 		$schedules = array(
-			'sched_1' => array( 'name' => 'Test', 'updated_at' => gmdate( 'Y-m-d H:i:s' ) ),
+			'sched_1' => array(
+				'name'       => 'Test',
+				'updated_at' => gmdate( 'Y-m-d H:i:s' ),
+			),
 		);
 
 		$capped = WP_MCP_AI_Calendar_Orchestration_Optimization::cap_schedule_count( $schedules, array() );

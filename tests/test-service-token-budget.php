@@ -73,7 +73,10 @@ class Test_Service_Token_Budget extends WP_UnitTestCase {
 	 */
 	public function test_calculate_budget_returns_expected_keys() {
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'Hello' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
 		);
 
 		$result = WP_MCP_AI_Token_Budget_Manager::calculate_budget( 'gpt-4o', $messages );
@@ -91,8 +94,14 @@ class Test_Service_Token_Budget extends WP_UnitTestCase {
 	 */
 	public function test_calculate_budget_used_within_limit() {
 		$messages = array(
-			array( 'role' => 'system', 'content' => 'You are a helpful assistant.' ),
-			array( 'role' => 'user', 'content' => 'Tell me a joke.' ),
+			array(
+				'role'    => 'system',
+				'content' => 'You are a helpful assistant.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => 'Tell me a joke.',
+			),
 		);
 
 		$result = WP_MCP_AI_Token_Budget_Manager::calculate_budget( 'gpt-4o', $messages );
@@ -106,7 +115,10 @@ class Test_Service_Token_Budget extends WP_UnitTestCase {
 	 */
 	public function test_truncate_messages_returns_messages_when_within_budget() {
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'Hi' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hi',
+			),
 		);
 
 		$result = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, 'gpt-4o', 10000 );
@@ -121,7 +133,10 @@ class Test_Service_Token_Budget extends WP_UnitTestCase {
 	 */
 	public function test_truncate_messages_returns_empty_for_zero_max_tokens() {
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'Hello' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
 		);
 
 		$result = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, 'gpt-4o', 0 );

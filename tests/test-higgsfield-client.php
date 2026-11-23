@@ -282,7 +282,12 @@ class Test_Higgsfield_Client extends WP_UnitTestCase {
 			function () {
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'status' => 'nsfw', 'request_id' => 'req-1' ) ),
+					'body'     => wp_json_encode(
+						array(
+							'status'     => 'nsfw',
+							'request_id' => 'req-1',
+						)
+					),
 				);
 			},
 			10,

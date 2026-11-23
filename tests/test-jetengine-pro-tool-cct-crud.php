@@ -1299,7 +1299,10 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 				'action'   => 'bulk_create',
 				'cct_slug' => 'vitals_log',
 				'items'    => array(
-					array( 'member_id' => 1, 'measurement_date' => '2026-01-01' ),
+					array(
+						'member_id'        => 1,
+						'measurement_date' => '2026-01-01',
+					),
 				),
 			),
 			array( 'user_id' => 1 )

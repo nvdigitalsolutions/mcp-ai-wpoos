@@ -104,7 +104,12 @@ class WP_MCP_AI_OKF_Skill_Bridge_Test extends WP_UnitTestCase {
 				'type'        => 'Policy',
 				'title'       => 'Refunds',
 				'description' => 'Refund policy.',
-				'verified'    => array( array( 'by' => 'human:admin', 'at' => gmdate( 'c' ) ) ),
+				'verified'    => array(
+					array(
+						'by' => 'human:admin',
+						'at' => gmdate( 'c' ),
+					),
+				),
 			),
 			'# Policy' . "\n\n" . 'Refunds within 30 days.'
 		);
@@ -241,9 +246,12 @@ class WP_MCP_AI_OKF_Skill_Bridge_Test extends WP_UnitTestCase {
 		$this->seed_bundle();
 		$assistant_id = $this->create_assistant( array( 'site-knowledge:policies/unverified' ) );
 
-		add_filter( 'wp_mcp_ai_okf_skill_bridge_min_trust', static function () {
-			return 'human-reviewed';
-		} );
+		add_filter(
+			'wp_mcp_ai_okf_skill_bridge_min_trust',
+			static function () {
+				return 'human-reviewed';
+			}
+		);
 
 		$blocked = WP_MCP_AI_OKF_Skill_Bridge::resolve( null, 'site-knowledge:policies/unverified', $assistant_id );
 

@@ -170,13 +170,16 @@ class WP_MCP_AI_Self_Hosted_OCR_Client_Test extends WP_UnitTestCase {
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		}
 
-		$captured_body = null;
+		$captured_body   = null;
 		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_body ) {
 			if ( false !== strpos( $url, '/v1/models' ) ) {
 				return array(
 					'headers'  => array(),
 					'body'     => wp_json_encode( array( 'data' => array() ) ),
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 				);
 			}
 
@@ -196,7 +199,10 @@ class WP_MCP_AI_Self_Hosted_OCR_Client_Test extends WP_UnitTestCase {
 						),
 					),
 				),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -239,13 +245,16 @@ class WP_MCP_AI_Self_Hosted_OCR_Client_Test extends WP_UnitTestCase {
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		}
 
-		$captured_body = null;
+		$captured_body   = null;
 		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_body ) {
 			if ( false !== strpos( $url, '/v1/models' ) ) {
 				return array(
 					'headers'  => array(),
 					'body'     => wp_json_encode( array( 'data' => array() ) ),
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 				);
 			}
 
@@ -265,7 +274,10 @@ class WP_MCP_AI_Self_Hosted_OCR_Client_Test extends WP_UnitTestCase {
 						),
 					),
 				),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -305,7 +317,10 @@ class WP_MCP_AI_Self_Hosted_OCR_Client_Test extends WP_UnitTestCase {
 				return array(
 					'headers'  => array(),
 					'body'     => wp_json_encode( array( 'data' => array() ) ),
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 				);
 			}
 
@@ -323,7 +338,10 @@ class WP_MCP_AI_Self_Hosted_OCR_Client_Test extends WP_UnitTestCase {
 						),
 					),
 				),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 

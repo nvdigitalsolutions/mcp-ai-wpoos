@@ -101,7 +101,10 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	 */
 	public function test_get_returns_array_value() {
 		$key  = $this->key( 'get_array' );
-		$data = array( 'a' => 1, 'b' => 'two' );
+		$data = array(
+			'a' => 1,
+			'b' => 'two',
+		);
 		update_option( $key, $data );
 
 		$this->assertSame( $data, $this->store->get( $key ) );
@@ -295,7 +298,10 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	 */
 	public function test_update_get_roundtrip_array() {
 		$key  = $this->key( 'roundtrip_arr' );
-		$data = array( 'nested' => array( 'deep' => true ), 'count' => 99 );
+		$data = array(
+			'nested' => array( 'deep' => true ),
+			'count'  => 99,
+		);
 
 		$this->store->update( $key, $data );
 
