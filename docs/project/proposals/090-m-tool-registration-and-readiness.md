@@ -971,3 +971,107 @@ and missing ids indistinguishable at 404 with nothing leaked, `blueprint` refuse
 at 422). `lib/core` 2066 / 16,009; adapter 348 / 1,832; skeleton export +
 portability + registration + diagnostics + duplicate 45 / 171. Auditor 230 rows /
 211 servable, no violations. phpcs clean on all eight files.
+
+## 19. Addendum: import_assistant, and the sanitiser that would have eaten the prompts (2026-11-23)
+
+### The slice
+
+`import_assistant` was named by two presets and had no row. The app could import
+from the REST portability controller and the `/admin` portability page; an agent
+could not.
+
+The tool is a third transport onto `App\Services\AssistantPortability`:
+
+```
+tool ──► AssistantImportInterface ──► LaravelAssistantImporter ──► AssistantPortability::importJson()
+REST  ────────────────────────────────────────────────────────────► AssistantPortability::importJson()
+/admin ───────────────────────────────────────────────────────────► AssistantPortability::importJson()
+```
+
+**Not** a loop over `create_assistant`. A bundle is a document with a shape, a
+version and conflict semantics; creating each entry individually would ignore
+`format_version`, create duplicates instead of matching existing assistants, and
+cannot express `skip` at all.
+
+### `manage_options`, because overwrite *is* restore
+
+`overwrite` replaces an existing assistant's prompt, provider and tool list. That
+is not a side effect — it is what restore is, and it is why WordPress gates this
+tool on `manage_options` while `create_assistant` needs only `edit_posts`.
+`edit_posts` may add an assistant; it may not replace one. The approvals queue
+picks the call up from the `state-changing` flag.
+
+### Modes are refused, never coerced
+
+The engine falls back to `skip` for a mode it does not know. Left to itself that
+would make an unknown mode silently mean *did nothing*, and a caller that asked
+to overwrite would be told it had. The tool refuses the mode before the engine
+sees it, naming the three it accepts.
+
+`status_override` is **not** offered. A bundle records each assistant's status
+and restore puts it back — a restore that levelled everything to draft would not
+be a restore. An override would be a way to *change* status during a restore,
+which is the operation `create_assistant` withholds, so the document is the only
+source of status.
+
+`confirm_destructive` is **not** offered either: nothing in this runtime reads
+it. Confirmation is the approvals queue's job, and a parameter with no consumer
+is a lying surface.
+
+### The sanitiser that would have eaten the prompts
+
+The first draft read the payload through `AbstractTool::stringParam()`. That
+helper is right for a value typed by a human into a field and wrong for a
+document: it runs **`strip_tags()`** on the whole string. A bundle whose system
+prompt contains `<b>` or `<script>` would have arrived at the engine with those
+fragments removed — silently, and only inside the prompts. The tool now reads
+`$arguments['json']` directly, type-checks it, trims the edges, and lets the
+engine decide whether it is a bundle. A unit test pins a document containing HTML
+reaching the engine byte-for-byte.
+
+This is the two-gate rule applied honestly: sanitise *at entry* means establish
+type and shape, not rewrite content the caller is responsible for. A transport
+document is not user-facing HTML.
+
+### Input ceiling vs output ceiling
+
+2 MB, matching WordPress. It is a different guard from §18's 256 KB: an export's
+ceiling protects a conversation from a result it must carry for every later turn,
+while an import's payload is already in the conversation because the caller sent
+it. The report that comes back is small regardless of bundle size.
+
+### Two failure classes, and why this mapping differs from §18
+
+| Failure | Code | Status |
+|---|---|---|
+| not JSON, not a bundle, wrong version, empty | `bundle_invalid` | **422** |
+| host failure (database, disk) | `assistant_import_failed` | its own code |
+
+Every import refusal is about the payload, so 422 is right and replaying the
+bytes will fail the same way. `export_assistant` maps its one refusal to 404
+instead, because that one is about a record — the difference is the meaning, not
+an inconsistency.
+
+### Not done, named
+
+`file_id` / attachment input. WordPress offers `attachment_id` because it has a
+media library; the file registry (§162) can carry the equivalent here, but it
+needs an ownership check and a read path that this slice did not need, and
+pasting a document is the path an agent actually takes.
+
+### Validation
+
+`ImportAssistantToolTest` (core, 11 tests: document required, over-ceiling
+refused, unknown mode refused **without reaching the engine**, `skip` is the
+default, mode is case-insensitive, `dry_run` forwarded and reflected in the
+message, `bundle_invalid` → 422 carrying the host's reason, host failure → its
+own code, host without an importer, `manage_options` + no `reversible` flag, and
+the document arriving unsanitised). Feature test
+`docker/laravel/app-skeleton/tests/Feature/ImportAssistantToolTest.php` (7 tests
+on the real engine: container registration, a dry run reporting `imported: 1`
+while writing nothing, `skip` leaving the stored prompt untouched, `duplicate`
+producing two rows, `overwrite` replacing the prompt in place, `not a bundle` →
+422, and an **editor refused with 403** through the registry's capability gate).
+`lib/core` 2079 / 16,068; adapter 348 / 1,833; skeleton import + import-redaction
++ export + portability + registration + diagnostics 51 / 191. Auditor 231 rows /
+212 servable, no violations. phpcs clean on all seven files.
