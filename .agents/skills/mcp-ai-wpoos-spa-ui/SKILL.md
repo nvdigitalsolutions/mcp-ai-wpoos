@@ -296,6 +296,22 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   app alone never changes the live console; every spa-v2 source fix must
   be compiled into **both** `addons/pro/assets/spa-v2/assets/dist/` and
   `examples/nvoos-complete-velocity/dist/` (see the rebuild map below).
+- **Console backend profile is a runtime setting (2026-11-23):** one artifact
+  serves both the WordPress plugin and the Laravel runtime. `scripts/serve.mjs`
+  reads `NVOOS_BACKEND` (`wordpress|laravel|hybrid`), proxies the matching
+  prefixes (`/wp-json…` vs `/api`, `/mcp`, `/sanctum`), and stamps the client:
+  the served SPA entry gets `<script src="/app-config.js">`, and that route
+  answers `window.__NVOOS_BACKEND__="<profile>"`, which `buildTimeBackend()`
+  reads **before** the build-time `VITE_NVOOS_BACKEND`. Keep the stamp external
+  (so a future `script-src 'self'` CSP needs no nonce/hash) and `no-cache` +
+  ETag. Two failure modes: a WordPress-profile bundle behind a laravel proxy
+  calls `/wp-json/...`, which is not forwarded → the static handler answers
+  `index.html` (200 text/html, no error, and the boot assertion no-ops for the
+  wordpress profile); and the **mirror artifact is shared** by every
+  `*-complete-velocity` app, so never rebuild `dist/` in a Laravel profile to
+  switch one deployment — set the env var. Sanctum must list the **browser**
+  origin (`serve.mjs` forwards Origin for laravel), and the proxy strips
+  `Set-Cookie: Domain`, leaving host-only session cookies.
 - **Console nav gating (Proposal 084 Phase 0, shipped 2026-10-20):**
   the sidebar, dashboard quick-actions, and route guards all consume one
   catalogue — `examples/nvoos-complete-velocity/src/console/nav-features.tsx`

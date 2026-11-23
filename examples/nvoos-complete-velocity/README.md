@@ -70,6 +70,18 @@ through `scripts/serve.mjs`, so the committed `dist/` is never rewritten. It
 needs the Laravel stack up and its origin in `SANCTUM_STATEFUL_DOMAINS` — the
 prerequisites are in [`e2e/README.md`](e2e/README.md).
 
+### Backend profile is a runtime setting
+
+`scripts/serve.mjs` reads `NVOOS_BACKEND` (`wordpress` | `laravel` | `hybrid`),
+proxies the matching prefixes, and stamps the client profile into the page it
+serves: the SPA entry gets `<script src="/app-config.js">`, and that route
+answers `window.__NVOOS_BACKEND__="<profile>"`. `runtime-config.ts` reads that
+global first, so **one prebuilt `dist/` serves both runtimes** — switching a
+deployment between WordPress and Laravel is an env-var change plus a restart,
+not a rebuild. A `VITE_NVOOS_BACKEND` baked into the artifact (`.env.laravel`,
+`--mode laravel`) is only the fallback when the stamp is absent (`vite dev`,
+`vite preview`, an older server).
+
 ## Deploy sync
 
 `npm run sync:dist` builds and stages `dist/` (git-tracked). Merges touching

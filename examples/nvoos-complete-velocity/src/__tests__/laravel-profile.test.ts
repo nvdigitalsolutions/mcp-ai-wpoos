@@ -8,7 +8,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { backendPaths, resolveBackend } from '../backend-profile';
+import { backendPaths, buildTimeBackend, resolveBackend } from '../backend-profile';
 import {
   assertBackendContract,
   buildConsoleRuntime,
@@ -26,6 +26,7 @@ const origin = (): string => window.location.origin;
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  delete (globalThis as { __NVOOS_BACKEND__?: string }).__NVOOS_BACKEND__;
 });
 
 describe('resolveBackend', () => {
@@ -39,6 +40,24 @@ describe('resolveBackend', () => {
     expect(resolveBackend('laravel')).toBe('laravel');
     expect(resolveBackend(' LARAVEL ')).toBe('laravel');
     expect(resolveBackend('hybrid')).toBe('hybrid');
+  });
+});
+
+describe('buildTimeBackend', () => {
+  it('defaults to wordpress when nothing is stamped', () => {
+    expect(buildTimeBackend()).toBe('wordpress');
+  });
+
+  it('prefers the runtime stamp over the build-time env', () => {
+    // scripts/serve.mjs stamps `window.__NVOOS_BACKEND__` from NVOOS_BACKEND,
+    // which is what lets one prebuilt bundle serve every runtime.
+    (globalThis as { __NVOOS_BACKEND__?: string }).__NVOOS_BACKEND__ = 'laravel';
+    expect(buildTimeBackend()).toBe('laravel');
+  });
+
+  it('ignores an unrecognised stamp', () => {
+    (globalThis as { __NVOOS_BACKEND__?: string }).__NVOOS_BACKEND__ = 'larvel';
+    expect(buildTimeBackend()).toBe('wordpress');
   });
 });
 
