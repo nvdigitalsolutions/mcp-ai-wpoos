@@ -3184,14 +3184,14 @@
     },
     {
       "key": "cors_allow_origin",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "cors_allow_origin"
     },
     {
       "key": "cors_allowed_origins",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "cors_allowed_origins"
     },
     {
@@ -3328,14 +3328,14 @@
     },
     {
       "key": "max_request_body_size_kb",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "max_request_body_size_kb"
     },
     {
       "key": "max_json_depth",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "max_json_depth"
     },
     {

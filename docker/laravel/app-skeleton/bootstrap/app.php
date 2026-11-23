@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\ApplyCorsPolicy;
 use App\Http\Middleware\EnsureAssistantRestEnabled;
+use App\Http\Middleware\EnforceRequestLimits;
 use App\Http\Middleware\EnsurePrincipalScope;
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
@@ -157,10 +159,26 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // 149 §184 — CORS from the operator's settings, not only from
+        // `NVOOS_CORS_ORIGINS`. This must run before the framework's `HandleCors`,
+        // which reads `config('cors')` while handling the request; `prepend` puts
+        // it first in the global stack for exactly that reason. See the class
+        // docblock for the precedence rule and the wildcard/credentials trap.
+        $middleware->prepend(ApplyCorsPolicy::class);
+
         // Sanctum SPA cookie mode (Proposal 090-B, ADR-4). Same-origin
         // console requests authenticate with the session cookie; MCP/API
         // clients keep using bearer tokens.
         $middleware->statefulApi();
+
+        // 149 §184 — request-size and JSON-depth limits. Registered *after*
+        // `statefulApi()` on purpose: that call prepends the Sanctum stateful
+        // middleware (which brings CSRF validation), so registering first would
+        // leave CSRF ahead of the limit and answer an oversized body with 419
+        // without ever measuring it. First in the group means a 1 MB body is
+        // refused before CSRF, authentication, tenancy and the controller each
+        // do work on it.
+        $middleware->prependToGroup('api', EnforceRequestLimits::class);
 
         // API-only runtime: there is no `login` route, and `Authenticate`
         // resolves `route('login')` before the exception handler runs, which
