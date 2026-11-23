@@ -102,12 +102,48 @@ class Test_Site_Node_Registry extends WP_UnitTestCase {
 		$this->registry->init();
 
 		$custom = new class implements WP_MCP_AI_Site_Node_Interface {
+			/**
+			 * Return the node slug.
+			 *
+			 * @return string
+			 */
 			public function get_slug(): string        { return 'custom_test_node'; }
+			/**
+			 * Return the node name.
+			 *
+			 * @return string
+			 */
 			public function get_name(): string        { return 'Custom Test'; }
+			/**
+			 * Return the node description.
+			 *
+			 * @return string
+			 */
 			public function get_description(): string { return 'Custom test node.'; }
+			/**
+			 * Return the node category.
+			 *
+			 * @return string
+			 */
 			public function get_category(): string    { return 'integration'; }
+			/**
+			 * Return the node inputs.
+			 *
+			 * @return array
+			 */
 			public function get_inputs(): array       { return array(); }
+			/**
+			 * Return the node outputs.
+			 *
+			 * @return array
+			 */
 			public function get_outputs(): array      { return array(); }
+			/**
+			 * Execute the node.
+			 *
+			 * @param array $inputs Node inputs.
+			 * @return array
+			 */
 			public function execute( array $inputs )  { return array( 'ok' => true ); }
 		};
 

@@ -30,6 +30,12 @@ class Fake_Inline_Async_Tick_Host {
 	const TICK_LOCK_PREFIX      = 'wp_mcp_ai_test_inline_lock_';
 	const TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_test_inline';
 
+	/**
+	 * Acquire the tick lock for a job.
+	 *
+	 * @param string $job_id Job id.
+	 * @return bool
+	 */
 	public static function acquire( $job_id ) {
 		return self::inline_async_acquire_tick_lock(
 			self::TICK_LOCK_PREFIX . $job_id,
@@ -38,6 +44,12 @@ class Fake_Inline_Async_Tick_Host {
 		);
 	}
 
+	/**
+	 * Release the tick lock for a job.
+	 *
+	 * @param string $job_id Job id.
+	 * @return void
+	 */
 	public static function release( $job_id ) {
 		self::inline_async_release_tick_lock(
 			self::TICK_LOCK_PREFIX . $job_id,
@@ -45,20 +57,43 @@ class Fake_Inline_Async_Tick_Host {
 		);
 	}
 
+	/**
+	 * Whether the loop should continue.
+	 *
+	 * @param int  $started_at     Loop start timestamp.
+	 * @param bool $queue_has_work Whether work remains.
+	 * @param int  $budget         Time budget in seconds.
+	 * @return bool
+	 */
 	public static function should_loop( $started_at, $queue_has_work, $budget = 20 ) {
 		return self::inline_async_should_loop( $started_at, $queue_has_work, $budget );
 	}
 
+	/**
+	 * Whether inline kick is enabled for the job.
+	 *
+	 * @param string $job_id Job id.
+	 * @return bool
+	 */
 	public static function kick_enabled( $job_id ) {
 		return self::inline_async_kick_enabled( $job_id, __CLASS__ );
 	}
 
+	/**
+	 * Run the kick callable for a job.
+	 *
+	 * @param string   $job_id   Job id.
+	 * @param callable $callable Callback to run.
+	 * @return mixed
+	 */
 	public static function run_kick( $job_id, $callable ) {
 		self::inline_async_run_kick( __CLASS__, $job_id, $callable );
 	}
 }
 
 /**
+ * Inline async tick trait tests.
+ *
  * @group inline-async-tick
  */
 class Test_Inline_Async_Tick_Trait extends WP_UnitTestCase {

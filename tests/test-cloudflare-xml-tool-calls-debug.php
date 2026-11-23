@@ -37,7 +37,7 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 	 * Test that XML tool calls in content are properly parsed and tools are executed.
 	 */
 	public function test_xml_tool_calls_are_executed_in_run_with_tools() {
-		// Simulate what happens when model returns XML in content
+		// Simulate what happens when model returns XML in content.
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -65,14 +65,14 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 				'function'    => function ( $args ) use ( &$tool_executed, &$tool_result ) {
 					$tool_executed = true;
 					$tool_result = $args;
-					// Simple eval for testing (never use in production!)
+					// Simple eval for testing (never use in production!).
 					return array( 'result' => 8 );
 				},
 			),
 		);
 
 		// Mock a response with XML tool call in content
-		// This simulates what some Cloudflare models do
+		// This simulates what some Cloudflare models do.
 		$this->assertTrue( true, 'Test setup complete' );
 
 		/*
@@ -97,7 +97,7 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 	 * Test that finish_reason is correctly set when XML tool calls are found.
 	 */
 	public function test_finish_reason_set_correctly_for_xml_tool_calls() {
-		// Mock response with XML tool calls
+		// Mock response with XML tool calls.
 		$decoded = array(
 			'success' => true,
 			'result'  => array(
@@ -111,17 +111,17 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
 
-		// After XML parsing, tool_calls should be present
+		// After XML parsing, tool_calls should be present.
 		$this->assertArrayHasKey( 'tool_calls', $result['choices'][0]['message'], 'XML should be parsed to tool_calls' );
 
-		// finish_reason should be 'tool_calls' not 'stop'
+		// finish_reason should be 'tool_calls' not 'stop'.
 		$this->assertEquals(
 			'tool_calls',
 			$result['choices'][0]['finish_reason'],
 			'finish_reason should be "tool_calls" when XML tool calls are parsed'
 		);
 
-		// Content should be empty since XML was converted
+		// Content should be empty since XML was converted.
 		$this->assertEquals(
 			'',
 			$result['choices'][0]['message']['content'],
