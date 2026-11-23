@@ -36,6 +36,9 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * Removing a job unschedules its event.
+	 */
 	public function test_remove_job_unschedules_event() {
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		$hook     = 'wp_mcp_ai_remove_job';
@@ -62,6 +65,9 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		$this->assertFalse( wp_next_scheduled( $hook ) );
 	}
 
+	/**
+	 * Pruning keeps recently executed jobs.
+	 */
 	public function test_maybe_prune_jobs_retains_recent_executed_jobs() {
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		$hook     = 'wp_mcp_ai_prune_job';
@@ -91,6 +97,9 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $jobs, 'Job should be retained for 24 hours after execution' );
 	}
 
+	/**
+	 * Pruning removes old executed jobs.
+	 */
 	public function test_maybe_prune_jobs_removes_old_executed_jobs() {
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		$hook     = 'wp_mcp_ai_old_job';
@@ -113,6 +122,9 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		$this->assertSame( array(), $jobs, 'Jobs older than 24 hours should be pruned' );
 	}
 
+	/**
+	 * Pruning removes jobs without a timestamp.
+	 */
 	public function test_maybe_prune_jobs_removes_jobs_without_timestamp() {
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		$hook     = 'wp_mcp_ai_no_timestamp_job';
@@ -143,6 +155,9 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		$this->assertSame( array(), $jobs, 'Jobs without timestamp should be pruned immediately' );
 	}
 
+	/**
+	 * Pruning respects the settings registry.
+	 */
 	public function test_maybe_prune_jobs_respects_settings_registry() {
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		$hook     = 'wp_mcp_ai_custom_retention_job';

@@ -14,11 +14,24 @@
 class WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
 
+	/**
+	 * Tool slug.
+	 *
+	 * @var string
+	 */
 	protected $slug;
+	/**
+	 * Tool name.
+	 *
+	 * @var string
+	 */
 	protected $name;
 
 	/**
 	 * Constructor.
+	 *
+	 * @param string $slug Tool slug.
+	 * @param string $name Tool name.
 	 */
 	public function __construct( $slug = 'mock_tool', $name = 'Mock Tool' ) {
 		$this->slug = $slug;
@@ -77,6 +90,8 @@ class WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
 }
 
 /**
+ * Tool registry tests.
+ *
  * @group tool-registry
  */
 class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {

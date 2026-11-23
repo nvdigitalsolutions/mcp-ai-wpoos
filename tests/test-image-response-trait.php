@@ -25,6 +25,12 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 		$tool = new class() {
 			use WP_MCP_AI_Tool_Image_Response;
 
+			/**
+			 * Convert a single-image result to HTML.
+			 *
+			 * @param array $result Result payload.
+			 * @return array
+			 */
 			public function test_add_image_html( $result ) {
 				return $this->add_image_html_to_response( $result );
 			}
@@ -77,6 +83,12 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 		$tool = new class() {
 			use WP_MCP_AI_Tool_Image_Response;
 
+			/**
+			 * Convert a multi-image result to HTML.
+			 *
+			 * @param array $result Result payload.
+			 * @return array
+			 */
 			public function test_add_multiple_images_html( $result ) {
 				return $this->add_multiple_images_html_to_response( $result );
 			}
@@ -124,6 +136,12 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 		$tool = new class() {
 			use WP_MCP_AI_Tool_Image_Response;
 
+			/**
+			 * Convert a single-image result to HTML.
+			 *
+			 * @param array $result Result payload.
+			 * @return array
+			 */
 			public function test_add_image_html( $result ) {
 				return $this->add_image_html_to_response( $result );
 			}
@@ -153,6 +171,12 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 		$tool = new class() {
 			use WP_MCP_AI_Tool_Image_Response;
 
+			/**
+			 * Convert a single-image result to HTML.
+			 *
+			 * @param array $result Result payload.
+			 * @return array
+			 */
 			public function test_add_image_html( $result ) {
 				return $this->add_image_html_to_response( $result );
 			}
@@ -184,6 +208,12 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 		$tool = new class() {
 			use WP_MCP_AI_Tool_Image_Response;
 
+			/**
+			 * Read the alt text from a result.
+			 *
+			 * @param array $result Result payload.
+			 * @return string
+			 */
 			public function test_get_alt_text( $result ) {
 				return $this->get_image_alt_text( $result );
 			}

@@ -20,6 +20,9 @@
  */
 class Test_Harness_Eval_Scheduler_Inline_Kick extends WP_UnitTestCase {
 
+	/**
+	 * Reset the scheduler state.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -28,6 +31,9 @@ class Test_Harness_Eval_Scheduler_Inline_Kick extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Eval_Scheduler::unschedule();
 	}
 
+	/**
+	 * Reset the scheduler state after each test.
+	 */
 	public function tearDown(): void {
 		// Clean up cron event and tick lock.
 		WP_MCP_AI_Harness_Eval_Scheduler::unschedule();
@@ -45,7 +51,7 @@ class Test_Harness_Eval_Scheduler_Inline_Kick extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * maybe_schedule_cron() must register a shutdown action the first time
+	 * Maybe_schedule_cron() must register a shutdown action the first time
 	 * the cron event is scheduled (when the inline kick is enabled).
 	 */
 	public function test_maybe_schedule_cron_adds_shutdown_action() {
@@ -114,7 +120,7 @@ class Test_Harness_Eval_Scheduler_Inline_Kick extends WP_UnitTestCase {
 	}
 
 	/**
-	 * do_tick() on a site with no opted-in assistants must return a
+	 * Do_tick() on a site with no opted-in assistants must return a
 	 * processed=0 summary without errors.
 	 */
 	public function test_do_tick_with_no_opted_in_assistants() {
