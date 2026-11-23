@@ -769,3 +769,56 @@ describe( 'classifyHtml — vendor-agnostic band split (Proposal 137, render hal
 		expect( sections.map( ( section ) => section.kind ) ).toEqual( [ 'text', 'text', 'form' ] );
 	} );
 } );
+
+describe( 'container-page text recovery (eca.directory, 2026-11-23)', () => {
+	it( 'reads a builder icon list one item per entry', () => {
+		const html = SECTION(
+			WIDGET(
+				'icon-list',
+				'<ul class="elementor-icon-list-items">' +
+					'<li class="elementor-icon-list-item"><a href="#"><span class="elementor-icon-list-icon"><i class="fas fa-check"></i></span><span class="elementor-icon-list-text">Branding &amp; SSO setup</span></a></li>' +
+					'<li class="elementor-icon-list-item"><a href="#"><span class="elementor-icon-list-icon"><i class="fas fa-check"></i></span><span class="elementor-icon-list-text">Analytics dashboards</span></a></li>' +
+					'</ul>'
+			)
+		);
+		const sections = classifyHtml( html );
+		const items = sections[ 0 ].slots.items ?? [];
+		expect( items.map( ( item ) => item.title ) ).toEqual( [ 'Branding & SSO setup', 'Analytics dashboards' ] );
+		expect( items.every( ( item ) => item.icon ) ).toBe( true );
+	} );
+
+	it( 'reads a Heading widget that renders as a div', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<div class="elementor-heading-title elementor-size-default">Compare User Roles</div>' ) +
+				WIDGET( 'text-editor', '<p>Students and parents see different views.</p>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'Compare User Roles' );
+		expect( sections[ 0 ].slots.body ).toContain( 'Students and parents see different views.' );
+	} );
+
+	it( 'reads an icon box whose title is a div (the counter pattern)', () => {
+		const html = SECTION(
+			WIDGET(
+				'icon-box',
+				'<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-icon"><span class="elementor-icon"><i class="fas fa-star"></i></span></div>' +
+					'<div class="elementor-icon-box-content"><div class="elementor-icon-box-title"><span>4.8</span></div>' +
+					'<p class="elementor-icon-box-description">Ratings</p></div></div>'
+			)
+		);
+		const sections = classifyHtml( html );
+		const item = ( sections[ 0 ].slots.items ?? [] )[ 0 ];
+		expect( item?.title ).toBe( '4.8' );
+		expect( item?.body ).toBe( 'Ratings' );
+	} );
+
+	it( 'never emits an item with no title, copy or media', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Band title</h2>' ) +
+				WIDGET( 'spacer', '<div class="elementor-spacer"><div class="elementor-spacer-inner"></div></div>' )
+		);
+		const sections = classifyHtml( html );
+		const items = sections[ 0 ].slots.items ?? [];
+		expect( items.every( ( item ) => Boolean( item.title || item.body || item.media ) ) ).toBe( true );
+	} );
+} );

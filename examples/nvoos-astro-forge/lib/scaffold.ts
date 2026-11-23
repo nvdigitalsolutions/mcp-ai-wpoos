@@ -30,6 +30,8 @@ import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
+import { ECA_CONFIG_PATH, ecaCollection, ecaScaffoldWarnings, renderEcaGenerated } from './eca-scaffold.ts';
+import { ecaRouteFiles } from './eca-ui.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor, isCookielessVendor } from './tracking.ts';
 import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ForgeSectionColumn, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
@@ -669,6 +671,8 @@ async function writeGeneratedManifest( targetDir: string ): Promise<void> {
 		'src/lib/animations.generated.ts',
 		'src/lib/vocabulary.generated.ts',
 		'src/lib/tracking.generated.ts',
+		// Present only on an ECA profile — the loop tolerates a missing file.
+		'src/lib/eca.generated.ts',
 		'src/lib/managed.generated.ts',
 		'public/tokens.dtcg.json',
 		'public/_headers',
@@ -697,6 +701,12 @@ function collectionLiteral(collection: WpCollection, indent = '\t'): string {
 		`${indent}perPage: ${collection.perPage ?? 100},`,
 		`${indent}maxPages: ${collection.maxPages ?? 50},`,
 	];
+	// Extra REST keys the collection needs verbatim (Proposal 163). Emitted
+	// explicitly: a passthrough field that never reaches the generated config is
+	// a silently missing dataset, not a build error.
+	if (collection.passthrough && collection.passthrough.length > 0) {
+		lines.push(`${indent}passthrough: [${collection.passthrough.map((field) => tsString(field)).join(', ')}],`);
+	}
 	if (collection.exclude && collection.exclude.length > 0) {
 		lines.push(`${indent}exclude: [${collection.exclude.map((s) => tsString(s)).join(', ')}],`);
 	}
@@ -778,8 +788,11 @@ export function renderContentConfig(profile: SiteProfile): string {
 			? `, local: { pattern: ${tsString(localSource.pattern)}, base: ${tsString(localSource.base)} }`
 			: '';
 		const localOnlyOption = materialized ? ', localOnly: true' : '';
+		// A big Elementor page tree is megabytes of markup in ONE REST page; a
+		// cheap host can take 30s+ to serialise it. The transport cap is
+		// therefore a build knob (`WP_FETCH_TIMEOUT_MS`), not a hard 15s.
 		block.push(
-			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}${localOnlyOption}, userAgent: import.meta.env.WP_USER_AGENT }) }),`
+			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}${localOnlyOption}, userAgent: import.meta.env.WP_USER_AGENT, timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined }) }),`
 		);
 	}
 	block.push(`};`);
@@ -2612,8 +2625,8 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t/** The header\u2019s BOX per viewport (measured): the container\u2019s cap,',
 		'\t * gutter and the brand mark\u2019s rendered height. `measure` is present only',
 		'\t * where the cap is binding. */',
-		'\t/** The header trailing icon links (the source envelope / search glyph). */',
-		'\theaderActions?: Array<{ icon?: string; label?: string; href?: string }>;',
+		'\t/** The header trailing controls: icon links and labelled CTA pills. */',
+		'\theaderActions?: Array<{ icon?: string; label?: string; href?: string; text?: string; fill?: string; ink?: string; hideMobile?: boolean; style?: { padding?: string; radius?: string; size?: string; weight?: string; transform?: string; letterSpacing?: string } }>;',
 		'\tgeometry?: {',
 		"\t\twide?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
 		"\t\tdesktop?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
@@ -2768,10 +2781,16 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 			entry.push( `geometry: { ${ devices.join( ', ' ) } }` );
 		}
 	}
-	// The trailing ICON links: a glyph from the vendor font, which never ships, so
-	// the rebuild re-draws it. One desktop fact, beside the per-viewport boxes.
-	if ( chrome.geometry?.actions && chrome.geometry.actions.length > 0 ) {
-		const actions = chrome.geometry.actions.map( ( action ) => {
+	// The trailing ICON links and the labelled CTA PILLS, beside the per-viewport
+	// boxes. A glyph comes from the vendor font (which never ships) so the
+	// rebuild re-draws it; a pill carries its own measured fill/ink/box. Both are
+	// `headerActions` to the template — it renders a pill when `text` is present.
+	const actionFacts = [ ...( chrome.geometry?.actions ?? [] ), ...( chrome.headerActions ?? [] ) ].filter(
+		( action, index, list ) =>
+			list.findIndex( ( other ) => ( other.text ?? other.icon ?? other.label ) === ( action.text ?? action.icon ?? action.label ) ) === index
+	);
+	if ( actionFacts.length > 0 ) {
+		const actions = actionFacts.map( ( action ) => {
 			const parts: string[] = [];
 			if ( action.icon ) {
 				parts.push( `icon: ${ tsString( action.icon ) }` );
@@ -2781,6 +2800,24 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 			}
 			if ( action.href ) {
 				parts.push( `href: ${ tsString( action.href ) }` );
+			}
+			// A labelled pill (the source's own header CTA) plus its measured
+			// fill/ink/box — the template renders it as a button, not a glyph.
+			if ( action.text ) {
+				parts.push( `text: ${ tsString( action.text ) }` );
+			}
+			if ( action.fill ) {
+				parts.push( `fill: ${ tsString( action.fill ) }` );
+			}
+			if ( action.ink ) {
+				parts.push( `ink: ${ tsString( action.ink ) }` );
+			}
+			if ( action.style ) {
+				parts.push( `style: ${ JSON.stringify( action.style ) }` );
+			}
+			// The source hides its conversion pills on phones.
+			if ( ( action as { hideMobile?: boolean } ).hideMobile ) {
+				parts.push( 'hideMobile: true' );
 			}
 			return `{ ${ parts.join( ', ' ) } }`;
 		} );
@@ -4109,6 +4146,11 @@ async function scaffoldProject(
 	for (const file of FORGE_LIB_FILES) {
 		await copyFile(path.join(FORGE_ROOT, 'lib', file), path.join(forgeDir, file));
 	}
+	// The ECA normaliser is vendored ONLY for an ECA profile: a blog rebuild has
+	// no use for it, and every always-vendored lib costs the customer repo.
+	if (profile.eca) {
+		await copyFile(path.join(FORGE_ROOT, 'lib', 'eca.ts'), path.join(forgeDir, 'eca.ts'));
+	}
 
 	// 2b. Ship the NOTICE — MIT attribution for the vendored libs plus the
 	//     generated-output rule (the customer owns the site).
@@ -4118,6 +4160,13 @@ async function scaffoldProject(
 	const configPath = path.join(targetDir, 'src', 'content.config.ts');
 	const source = await readFile(configPath, 'utf8');
 	await writeFile(configPath, rewriteContentConfig(source, profile), 'utf8');
+
+	// 3a. ECA catalogue (Proposal 163 §P1) — the site config module. Grounded on
+	//     `profile.eca` so a non-ECA rebuild is byte-identical to today's output.
+	//     The routes that consume it land in §P2.
+	if (profile.eca) {
+		await writeFile(path.join(targetDir, ECA_CONFIG_PATH), renderEcaGenerated(profile), 'utf8');
+	}
 
 	// 3a0. Tracker & measurement capture (Proposal 130) — bake the measured
 	//      tracking surface into src/lib/tracking.generated.ts and drop the
@@ -4246,6 +4295,12 @@ async function scaffoldProject(
 		// No design module in the template — nothing to write.
 	}
 	const warnings = tokenWarnings( mergedTokens, profile.design, profile.colors );
+	// ECA scaffold advisories (Proposal 163 §P1) — a missing term list withholds
+	// every .ics feed and a missing hand-off renders the register CTA as copy.
+	// Both behaviours are correct but surprising, so the operator is told now.
+	if (profile.eca) {
+		warnings.push(...ecaScaffoldWarnings(profile));
+	}
 
 	// 3a2. Wireframe pages (Proposal 115 §3) — every page the profile's
 	//      wireframe block captures becomes a static route, so the rebuild
@@ -4314,6 +4369,12 @@ async function scaffoldProject(
 		if (CORE_COLLECTIONS.has(collection.slug)) {
 			continue;
 		}
+		// The `eca` preset ships its own catalogue, landings and detail page
+		// (Proposal 163 §P2) — the generic pair would emit conflicting dynamic
+		// routes for the same passthrough.
+		if (profile.eca && collection.slug === ecaCollection(profile).slug) {
+			continue;
+		}
 		// `basePath` lets an extra collection keep the source's URLs
 		// (/blog/portfolio/…); the route directory follows it, so the
 		// component imports need the matching depth.
@@ -4324,6 +4385,17 @@ async function scaffoldProject(
 		await mkdir(dir, { recursive: true });
 		await writeFile(path.join(dir, 'index.astro'), renderCollectionIndexRoute(collection.slug, base, up), 'utf8');
 		await writeFile(path.join(dir, '[...parts].astro'), renderCollectionEntryRoute(collection.slug, base, up), 'utf8');
+	}
+
+	// 3c-3. The ECA front-end (Proposal 163 §P2) — catalogue, facet rail, detail
+	//       page, four landing families and the .ics endpoint. Written as whole
+	//       files because none of them is a variation on a core template route.
+	if (profile.eca) {
+		for (const file of ecaRouteFiles(profile)) {
+			const destination = path.join(targetDir, file.path);
+			await mkdir(path.dirname(destination), { recursive: true });
+			await writeFile(destination, file.content, 'utf8');
+		}
 	}
 
 	// 3d. Preset surface toggles + render mode (104 §4.3 / Q4) — the minimal

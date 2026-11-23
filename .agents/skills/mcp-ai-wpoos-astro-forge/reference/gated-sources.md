@@ -198,3 +198,31 @@ in every mode. Authorization: the `wordpress_logged_in_fixture=1` cookie, the
 
 Never: spoof a crawler UA, solve a JS challenge, forge a cookie, brute-force a
 password, or disable the gate on production to make a build pass.
+
+## 9. A CACHED holding page is the trap the probe cannot see (2026-11-23)
+
+An Elementor Maintenance Mode gate behind Cloudways Breeze served the
+"Coming Soon" page **from cache** to anonymous readers while the origin was
+already live for a logged-in session:
+
+- `x-cache: HIT` + `s-maxage=2592000` (30 days) on the holding page — the
+  cached copy outlives the gate being switched off.
+- `app_purge_cache` on that app answered `403 insufficient_scope` (the API
+  token lacks the cache scope), so the operator could not flush it from the
+  CLI either.
+- The anonymous HTML was **74 KB** and the authenticated HTML **268 KB** — the
+  size is the tell. Never trust an anonymous read for gate state, and never
+  conclude "the gate is off" from it.
+- Practical consequence: `--allow-blocked` would have scaffolded the holding
+  page (the one artifact the pipeline must never produce). Refuse instead; the
+  remediation is a purge at the edge/host, then re-probe.
+
+## 10. One REST page can be 1.2 MB and ~30 s (raise the timeout)
+
+An Elementor page whose `content.rendered` carries every widget's markup
+returned **1.2 MB for one `wp/v2/pages` entry** and took ~30 s on a cold
+origin. The generated project's loader inherits `WpClient`'s default timeout,
+so a build dies on `TimeoutError` with no page named. Set
+`WP_FETCH_TIMEOUT_MS=60000` (the scaffold wires it into `content.config.ts`)
+and check `--check` sizes before scaffolding — a collection's `maxPages`
+times the per-page cost is the build's real budget.

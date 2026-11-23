@@ -117,6 +117,29 @@
 			]
 		},
 		{
+			"id": "eca",
+			"bestFor": "Schools and clubs: an extra-curricular activities catalogue.",
+			"detect": [
+				"mcp_ai_eca post type advertised",
+				"activity/course records with a schedule",
+				"no wc/v3 namespace required"
+			],
+			"render": "static",
+			"kinds": [
+				"hero",
+				"feature-grid",
+				"stats",
+				"testimonial",
+				"steps",
+				"cta",
+				"content"
+			],
+			"surfaces": [
+				"search",
+				"sitemap"
+			]
+		},
+		{
 			"id": "minimal",
 			"bestFor": "The smallest useful site: posts and pages, no search surface.",
 			"detect": [

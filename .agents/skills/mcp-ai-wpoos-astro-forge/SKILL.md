@@ -913,6 +913,27 @@ Three passes close the "capture everything beyond content" gap — notes:
 `rulesInMedia`, and typecheck-as-a-gate. Full notes:
 `reference/fidelity-gates.md`.
 
+## Measured chrome + band-list fidelity (2026-11-23)
+
+Three rebuild failures, now rules — full detail in
+[`reference/measured-chrome-and-band-fidelity.md`](reference/measured-chrome-and-band-fidelity.md):
+
+- **Chrome surfaces and ink are MEASURED.** `applyChromeSurfaces` overwrites the
+  harvest's header/footer surface + dominant ink from the colour pass (a
+  transparent header takes the BODY surface); `navInk` must appear in the
+  header's ink palette or the palette wins; header CTA pills are measured in the
+  browser (`measureHeaderActions` — computed fill/ink/box + `hideMobile`) and
+  stored as `profile.chromeActions` so `reconcileHeader` re-applies them.
+- **The band list EXCLUDES header/footer chrome.** Elementor renders its
+  header/footer templates into the homepage but the REST page body excludes
+  them, so counting them made 9 bands where the build renders 7 — and every
+  POSITIONAL audit compared band N with band N+2. `allSectionNodes` +
+  `collectBands` both skip a band inside `header`/`footer`/`elementor-location-*`.
+- **Words may never be lost.** A kind that will not paint a slot cannot be the
+  band's kind: `RENDERED_SLOTS` + a <50%-of-source-words check demotes the band
+  to its RAW slice (`kind: 'text'` + `html`), and `sectionHasContent` counts
+  `section.html` or the demoted band loses its measured box.
+
 ## Content, colour and pixel parity gates (2026-11-09)
 
 Three gates close the "words went missing / the colours never applied / the

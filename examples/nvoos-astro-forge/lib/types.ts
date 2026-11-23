@@ -16,6 +16,7 @@ import type {
 	ComparisonRow,
 } from './semantic.ts';
 import type { ForgeVerify } from './gate-policy.ts';
+import type { ForgeEca } from './eca.ts';
 
 /** One WordPress REST collection (e.g. posts, pages, a CPT). */
 export interface WpCollection {
@@ -56,6 +57,23 @@ export interface WpCollection {
 	 * collection (Proposal 135 §D4), where documents carry an explicit slug.
 	 */
 	source?: 'wp' | 'payload' | 'local';
+	/**
+	 * Extra top-level REST keys copied verbatim into each entry's `data`.
+	 *
+	 * The loader projects a fixed, sanitised field set on purpose — a content
+	 * store carrying every raw field is unbounded. A collection that needs more
+	 * (the ECA toolkit's `meta`, its taxonomy ids) names those keys explicitly.
+	 */
+	passthrough?: string[];
+	/**
+	 * The canonical entry URL shape, for the redirect map.
+	 *
+	 * Default `id-slug` (`/activities/10850/ai-for-kids/`) matches the generic
+	 * extra-collection route the scaffold emits. A preset that ships its OWN
+	 * detail route (the ECA catalogue uses `/activities/<slug>/`) must say so,
+	 * or its 301s point at a path the build never wrote.
+	 */
+	canonicalPath?: 'id-slug' | 'slug';
 	/**
 	 * Auth source for the generated project: application passwords
 	 * (default) or WooCommerce consumer key/secret (wc/v3 endpoints).
@@ -653,6 +671,15 @@ export interface SiteProfile {
 	 */
 	stickyHeader?: ForgeStickyHeader;
 	/**
+	 * The header's labelled CTA pills, MEASURED in the browser
+	 * (`analyze --geometry`). The stylesheet harvest resolves a builder var
+	 * against whichever declaration it finds first, and Elementor scopes a
+	 * button's colour to a rule the harvest may never fetch — eca.directory's
+	 * accent “Try Demo” came back as a Bootstrap red `#d9534f` from a foreign
+	 * `--e-global-color-primary`. A pill's paint is a computed fact.
+	 */
+	chromeActions?: ForgeMeasuredHeaderAction[];
+	/**
 	 * The animated-effect inventory (`analyze --animations`) — CSS keyframes,
 	 * transitions, WAAPI, library signatures, video/SMIL. `verify --animations`
 	 * compares the built page's `document.getAnimations()` against it.
@@ -739,6 +766,18 @@ export interface SiteProfile {
 	 * Mirrors `forge.lock.json` in the generated project.
 	 */
 	locked?: { at: string; by?: string; reason?: string };
+	/**
+	 * The ECA block (Proposal 163) — the extra-curricular front-end contract.
+	 *
+	 * Present means this site is an ECA catalogue, and the scaffold emits the
+	 * activity routes, facets, calendar, timetable and ICS feeds instead of the
+	 * blog IA. The record format itself lives in `lib/eca.ts` (`nvoos-eca/v1`);
+	 * this block is only the SITE config — stages, terms, time bands, currency
+	 * and the registration hand-off. Stages are deliberately config rather than
+	 * code: `junior-school`/`senior-school` fits one school, `primary`/
+	 * `secondary`/`sixth-form` fits the next, and neither needs a release.
+	 */
+	eca?: ForgeEca;
 }
 
 /**
@@ -1601,9 +1640,18 @@ export interface ForgeMark {
  * Keyed by the Elementor section id the semantic classifier carries on
  * each rebuilt section, so the source band theming re-applies positionally.
  */
-export interface ForgeSection {
+	export interface ForgeSection {
 	/** Elementor's elementor-element-<id> class suffix. */
 	id?: string;
+	/**
+	 * The vendor's own element id when `id` carries one (`elementor-element-<id>`).
+	 *
+	 * `id` is the band's identity; `vendorId` is what makes it ADDRESSABLE on the
+	 * source — the scoped CSS and the browser select `.elementor-element-<id>`, so
+	 * geometry, interaction and colour measurement can only resolve a band through
+	 * it. Absent on a band whose builder exposes no id (a structural hash id).
+	 */
+	vendorId?: string;
 	/** The band's classified kind (Proposal 136 §4.2). Advisory: the build
 	 * emits it as `data-section` and `verify` compares the two when present.
 	 * Absent → the fact gate still requires a valid kind on the built band. */
@@ -2008,6 +2056,39 @@ export interface ForgeChromeAction {
 	label?: string;
 	/** The destination, already resolved to `mailto:` where possible. */
 	href?: string;
+	/**
+	 * The source control's VISIBLE text, when it is a labelled pill rather than
+	 * an icon link (“Try Demo”, “Sign In”). Present → the rebuild renders a text
+	 * button in the header instead of a bare glyph.
+	 */
+	text?: string;
+	/** The pill's measured FILL (background shorthand resolved from the sheet). */
+	fill?: string;
+	/** The pill's measured ink (its own `color`), when it states one. */
+	ink?: string;
+	/** The pill's measured text style + box (padding, radius, size, weight). */
+	style?: ForgeChromeStyle;
+	/** The SOURCE hides this action at phone widths (`elementor-hidden-mobile`). */
+	hideMobile?: boolean;
+}
+
+/**
+ * A header CTA pill as the BROWSER paints it (`measureHeaderActions`).
+ *
+ * The harvest's `ForgeChromeAction` describes what the stylesheets say; this
+ * says what the page computes. They disagree whenever a builder var resolves
+ * differently under the cascade (eca.directory: the accent pill's fill came
+ * back as `#d9534f` from a foreign `--e-global-color-primary`).
+ */
+export interface ForgeMeasuredHeaderAction {
+	text: string;
+	href?: string;
+	fill?: string;
+	ink?: string;
+	/** The source HIDES this control at phone widths (`elementor-hidden-mobile`).
+	 * Measured at 390px — a rebuild that showed it overflowed the header row. */
+	hideMobile?: boolean;
+	style?: ForgeChromeStyle;
 }
 
 /**

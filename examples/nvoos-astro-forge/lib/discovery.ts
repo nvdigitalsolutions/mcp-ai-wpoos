@@ -319,7 +319,18 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	// like that must never clobber an analyzed design (2026-11-11: a plain
 	// `analyze --geometry --write` left the profile with `design: { chrome }`).
 	if ( fresh.design && isAnalyzedDesign( fresh.design ) ) {
-		merged.design = applyDesignPins( fresh.design, existing.pins );
+		const withPins = applyDesignPins( fresh.design, existing.pins ) ?? fresh.design;
+		const design = withPins;
+		// A MEASUREMENT outlives a harvest-only refresh. `--design` without
+		// `--geometry` re-harvests the chrome from CSS and carries no geometry, so
+		// the measured facts (menu type, chrome size) were silently downgraded to
+		// unresolved builder vars — eca.directory's nav became
+		// `var( --e-global-typography-…-font-size )` on the second pass. Carry the
+		// previous measurement; `reconcileHeader` re-derives the styles from it.
+		if ( ! design.chrome?.geometry && existing.design?.chrome?.geometry ) {
+			design.chrome = { ...design.chrome, geometry: existing.design.chrome.geometry };
+		}
+		merged.design = design;
 	} else if ( fresh.design?.chrome && existing.design?.chrome ) {
 		// A `--geometry` run measures CHROME facts (the top strip, the mobile menu,
 		// the nav disclosure) but carries no design block, so the merge kept the
@@ -366,6 +377,12 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	// re-analysis (an operator pin on `design.behavior` still drives the classes).
 	if ( fresh.stickyHeader ) {
 		merged.stickyHeader = fresh.stickyHeader;
+	}
+	// The header pills' computed paint — a measured source fact like the sticky
+	// header. A `--geometry` re-forge refreshes it; `reconcileHeader` re-applies
+	// it to the design block that actually ships.
+	if ( fresh.chromeActions ) {
+		merged.chromeActions = fresh.chromeActions;
 	}
 	// The animated-effect inventory (142) is a source fact too. Only a draft
 	// that MEASURED it replaces the stored one; a `--geometry` run must not wipe

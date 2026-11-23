@@ -20,7 +20,7 @@ import { extractBandsFromHtml } from './bands.ts';
 import { extractElementCss } from './element-css.ts';
 import { promoteOutlineBands } from './design.ts';
 import { measureBandFacts, measureGeometry } from './geometry.ts';
-import { measureRegionColors, applyBandSurfaces } from './region-colors.ts';
+import { measureRegionColors, applyBandSurfaces, bandRegionName, bandRegionSelector } from './region-colors.ts';
 import { measureInteractions } from './interactions.ts';
 import { bandCoverage, describeBandCoverage } from './band-coverage.ts';
 import { createHash } from 'node:crypto';
@@ -44,8 +44,11 @@ export interface MeasurePagesOptions {
 function selectorsFor( sections: ForgeSection[] ): Record< string, string > {
 	return Object.fromEntries(
 		sections
-			.filter( ( section ) => section.id && section.anchor )
-			.map( ( section ) => [ section.id as string, `#${ section.anchor }` ] )
+			.map( ( section ) => {
+				const selector = bandRegionSelector( section );
+				return section.id && selector ? [ section.id, selector ] : undefined;
+			} )
+			.filter( ( entry ): entry is [ string, string ] => Boolean( entry ) )
 	);
 }
 
@@ -116,22 +119,25 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 			// is "transparent" (the site surface already paints it), so it is not
 			// recorded — otherwise every band would carry the body colour.
 			try {
-				const regions = [
+				const regions: Array< { name: string; selectors: string[]; descendantFill?: boolean } > = [
 					{ name: '__body', selectors: [ 'body' ] },
-					...sections
-						.filter( ( section ) => section.id && section.anchor )
-						.map( ( section ) => ( {
-							name: section.id as string,
-							selectors: [ `#${ section.anchor }` ],
-							descendantFill: true,
-						} ) ),
 				];
+				for ( const section of sections ) {
+					const selector = bandRegionSelector( section );
+					const name = bandRegionName( section );
+					if ( selector && name ) {
+						regions.push( { name, selectors: [ selector ], descendantFill: true } );
+					}
+				}
 				const colors = await measureRegionColors( { url: page.url, modes: [ 'light' ], regions, effective: true } );
 				const light = colors.light ?? {};
 				const bodyBg = light.__body?.background;
 				applyBandSurfaces(
 					sections,
-					( section ) => ( section.id ? light[ section.id ] : undefined ),
+					( section ) => {
+						const name = bandRegionName( section );
+						return name ? light[ name ] : undefined;
+					},
 					bodyBg
 				);
 			} catch {

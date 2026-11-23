@@ -19,6 +19,7 @@ import { extname, join, normalize, sep } from 'node:path';
 
 import { inkForSurface } from './design.ts';
 import { gateContextOptions } from './gate.ts';
+import { settle } from './page-settle.ts';
 
 import type {
 	BandBoxDeclaration,
@@ -37,6 +38,7 @@ import type {
 	ForgeChromeGeometry,
 	ForgeFooterBrand,
 	ForgeGeometry,
+	ForgeMeasuredHeaderAction,
 	ForgeMobileNav,
 	ForgeStickyHeader,
 	ForgeTopbarFacts,
@@ -100,43 +102,6 @@ export async function loadChromium(): Promise< PlaywrightChromium > {
 			'Geometry measurement needs Playwright. Install it in the forge (npm i -D playwright).'
 		);
 	}
-}
-
-/**
- * Wait until the page's boxes have stopped moving: fonts loaded, every
- * viewport scrolled through so lazy images have fetched, and animations off.
- * Lazy image loading is the one thing that silently changes band height.
- */
-async function settle( page: import('playwright').Page ): Promise< void > {
-	await page.addStyleTag( {
-		content:
-			'*,*::before,*::after{animation:none!important;transition:none!important;' +
-			'scroll-behavior:auto!important}html{scroll-behavior:auto!important}',
-	} );
-	await page.evaluate( async () => {
-		const doc = document as Document & { fonts?: { ready: Promise< unknown > } };
-		if ( doc.fonts ) {
-			await doc.fonts.ready;
-		}
-		const height = document.body.scrollHeight;
-		for ( let y = 0; y < height; y += window.innerHeight ) {
-			window.scrollTo( 0, y );
-			await new Promise( ( resolve ) => setTimeout( resolve, 60 ) );
-		}
-		window.scrollTo( 0, 0 );
-		await Promise.all(
-			Array.from( document.images )
-				.filter( ( image ) => ! image.complete )
-				.map(
-					( image ) =>
-						new Promise( ( resolve ) => {
-							image.addEventListener( 'load', resolve, { once: true } );
-							image.addEventListener( 'error', resolve, { once: true } );
-							setTimeout( resolve, 3000 );
-						} )
-				)
-		);
-	} );
 }
 
 export interface MeasureOptions {
@@ -1262,6 +1227,170 @@ export function mergeElementFacts(
 		}
 	}
 	return [ ...byPath.values() ];
+}
+
+/**
+ * Measure the header's labelled CTA pills (“Try Demo”, “Sign In”) as the
+ * browser paints them.
+ *
+ * The stylesheet harvest reads DECLARATIONS: it resolves a builder var against
+ * the first `--e-global-color-primary` it finds, and Elementor scopes a button's
+ * colour to a rule that may live in a stylesheet the harvest never fetched.
+ * eca.directory's accent pill came back `#d9534f` (a foreign Bootstrap red)
+ * beside a correctly-resolved dark pill. Computed styles are the only faithful
+ * source, exactly as they are for the nav's type and the footer's size.
+ *
+ * Desktop viewport on purpose: a builder hides conversion controls on phones
+ * (`elementor-hidden-mobile`) and a hidden control measures 0×0.
+ */
+export async function measureHeaderActions( options: {
+	url: string;
+	timeout?: number;
+} ): Promise< ForgeMeasuredHeaderAction[] > {
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const context = await browser.newContext( gateContextOptions( { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 } ) );
+		const page = await context.newPage();
+		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+		await settle( page );
+		const actions = await page.evaluate( () => {
+			const alphaOf = ( value: string ): number => {
+				const match = /rgba?\(([^)]+)\)/.exec( value );
+				if ( ! match ) {
+					return value === 'transparent' ? 0 : 1;
+				}
+				const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() ).filter( Boolean );
+				return parts.length >= 4 ? Number( parts[ 3 ] ) : 1;
+			};
+			// The profile stores colours as `#rrggbb` (the token/contrast passes
+			// parse hex only), so an OPAQUE computed `rgb()` collapses here. A
+			// translucent ink keeps its `rgba()` form — the alpha is the look.
+			const toHex = ( value: string ): string => {
+				const match = /rgba?\(([^)]+)\)/.exec( value );
+				if ( ! match ) {
+					return value;
+				}
+				const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() ).filter( Boolean );
+				if ( parts.length >= 4 && Number( parts[ 3 ] ) < 0.95 ) {
+					return value;
+				}
+				const channels = parts.slice( 0, 3 ).map( ( channel ) => Math.max( 0, Math.min( 255, Math.round( parseFloat( channel ) ) ) ) );
+				return `#${ channels.map( ( channel ) => channel.toString( 16 ).padStart( 2, '0' ) ).join( '' ) }`;
+			};
+			// A gradient is a surface only when every stop is opaque: Elementor's
+			// hover shade (`rgba(0,0,0,.35)` → transparent) is an overlay, and the
+			// flat background-colour beneath it is the pill.
+			const gradientIsSurface = ( image: string ): boolean => {
+				if ( ! image || image === 'none' ) {
+					return false;
+				}
+				if ( image.includes( 'url(' ) ) {
+					return true;
+				}
+				const stops = image.match( /rgba?\([^)]+\)/g ) ?? [];
+				return stops.length > 0 && stops.every( ( stop ) => alphaOf( stop ) >= 0.95 );
+			};
+			const header = document.querySelector( 'header, #masthead, #header, .site-header, .elementor-location-header, nav' );
+			if ( ! header ) {
+				return [];
+			}
+			const out: Array< {
+				text: string;
+				href?: string;
+				fill?: string;
+				ink?: string;
+				hideMobile?: boolean;
+				style?: { padding?: string; radius?: string; size?: string; weight?: string; transform?: string };
+			} > = [];
+			for ( const node of header.querySelectorAll( 'a, button' ) ) {
+				const classes = typeof node.className === 'string' ? node.className : '';
+				if ( ! /(?:^|\s)(?:elementor-button|btn|button|aux-button)(?:\s|$)/.test( classes ) ) {
+					continue;
+				}
+				const text = ( node.textContent || '' ).replace( /\s+/g, ' ' ).trim();
+				if ( ! text || out.some( ( action ) => action.text === text ) ) {
+					continue;
+				}
+				const rect = node.getBoundingClientRect();
+				const style = getComputedStyle( node );
+				if ( rect.width < 1 || rect.height < 1 || style.visibility === 'hidden' || style.display === 'none' ) {
+					continue;
+				}
+				const action: ( typeof out )[ number ] = { text };
+				const href = node.getAttribute( 'href' );
+				if ( href ) {
+					action.href = href;
+				}
+				if ( alphaOf( style.backgroundColor ) >= 0.95 ) {
+					action.fill = toHex( style.backgroundColor );
+				} else if ( gradientIsSurface( style.backgroundImage ) ) {
+					action.fill = style.backgroundImage;
+				}
+				if ( style.color && alphaOf( style.color ) >= 0.5 ) {
+					action.ink = toHex( style.color );
+				}
+				const box: NonNullable< ( typeof out )[ number ][ 'style' ] > = {};
+				const sides = [ style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft ];
+				if ( new Set( sides ).size <= 2 ) {
+					box.padding = sides[ 0 ] === sides[ 1 ] ? sides[ 0 ] : `${ sides[ 0 ] } ${ sides[ 1 ] }`;
+				}
+				if ( style.borderRadius && style.borderRadius !== '0px' ) {
+					box.radius = style.borderRadius;
+				}
+				if ( style.fontSize ) {
+					box.size = style.fontSize;
+				}
+				if ( style.fontWeight ) {
+					box.weight = style.fontWeight;
+				}
+				if ( style.textTransform && style.textTransform !== 'none' ) {
+					box.transform = style.textTransform;
+				}
+				if ( Object.keys( box ).length > 0 ) {
+					action.style = box;
+				}
+				out.push( action );
+				if ( out.length >= 2 ) {
+					break;
+				}
+			}
+			return out;
+		} );
+		// A builder hides its conversion pills on phones (`elementor-hidden-mobile`,
+		// a `.hide-sm` utility). Measured at desktop only, the rebuild rendered them
+		// at 390px too and the header row overflowed (eca.directory's “Try De…”).
+		// One extra viewport records the fact instead of guessing it.
+		if ( actions.length > 0 ) {
+			await page.setViewportSize( { width: 390, height: 844 } );
+			await page.waitForTimeout( 400 );
+			const visibleMobile = await page.evaluate( ( texts: string[] ) => {
+				const header = document.querySelector( 'header, #masthead, #header, .site-header, .elementor-location-header, nav' );
+				if ( ! header ) {
+					return texts.map( () => false );
+				}
+				return texts.map( ( text ) => {
+					for ( const node of header.querySelectorAll( 'a, button' ) ) {
+						if ( ( node.textContent || '' ).replace( /\s+/g, ' ' ).trim() !== text ) {
+							continue;
+						}
+						const rect = node.getBoundingClientRect();
+						const style = getComputedStyle( node );
+						return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden';
+					}
+					return false;
+				} );
+			}, actions.map( ( action ) => action.text ) );
+			actions.forEach( ( action, index ) => {
+				if ( visibleMobile[ index ] === false ) {
+					action.hideMobile = true;
+				}
+			} );
+		}
+		return actions;
+	} finally {
+		await browser.close();
+	}
 }
 
 /**
@@ -3494,7 +3623,17 @@ export async function measureMobileNav( options: {
 				}
 			}
 			pitches.sort( ( a, b ) => a - b );
-			const biggest = [ ...boxes ].sort( ( a, b ) => b.area - a.area )[ 0 ];
+			// The drawer's ink is the colour the MENU uses, not its largest (or
+			// first) row — the current page's row is painted in the accent
+			// (eca.directory's "Home"), so taking one link reported the ACTIVE
+			// state as the menu colour and the rebuild painted every drawer link
+			// accent (2026-11-23). Vote by AREA so one highlighted row cannot
+			// outvote the rest.
+			const areaByColor = new Map< string, number >();
+			for ( const box of boxes ) {
+				areaByColor.set( box.color, ( areaByColor.get( box.color ) ?? 0 ) + box.area );
+			}
+			const dominantInk = [ ...areaByColor.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ]?.[ 0 ];
 			const position = getComputedStyle( panel ?? list ).position;
 			return {
 				...( opaque
@@ -3502,7 +3641,7 @@ export async function measureMobileNav( options: {
 					: panel && surfaceStyle.backgroundImage !== 'none'
 						? { background: surfaceStyle.backgroundImage }
 						: {} ),
-				...( biggest ? { ink: biggest.color } : {} ),
+				...( dominantInk ? { ink: dominantInk } : {} ),
 				padX: Math.round( Number.parseFloat( surfaceStyle.paddingLeft ) || 0 ),
 				padY: Math.round( Number.parseFloat( surfaceStyle.paddingTop ) || 0 ),
 				...( pitches.length > 0 ? { itemPitch: Math.round( pitches[ Math.floor( pitches.length / 2 ) ] ) } : {} ),

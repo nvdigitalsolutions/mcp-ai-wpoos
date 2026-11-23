@@ -374,3 +374,29 @@ describe( 'templates/blog bridge-redirects', () => {
 		expect( [ ...PORTABLE_STATUSES ].sort() ).toEqual( [ 301, 302, 303, 307, 308, 404, 410 ].sort() );
 	} );
 } );
+
+describe( 'CPT entries redirect to their OWN route, not /posts/', () => {
+	// The scaffold builds a CPT collection under its `basePath`
+	// (`/eca/<id>/<slug>/`); the map used to send every non-core collection to
+	// `/posts/<id>/<slug>/`, which 404s (eca.directory, 2026-11-23).
+	const profile: SiteProfile = {
+		url: 'https://eca.example',
+		frontPage: 'home',
+		collections: [
+			{ slug: 'eca', restBase: 'wp/v2/mcp_ai_eca', basePath: '/eca', fields: [ 'id', 'slug', 'link' ] },
+			{ slug: 'case-studies', restBase: 'wp/v2/case_studies', fields: [ 'id', 'slug', 'link' ] },
+		],
+	};
+	const tables = {
+		'wp/v2/mcp_ai_eca': [ { id: 10784, slug: 'art-and-craft', link: 'https://eca.example/eca/art-and-craft/' } ],
+		'wp/v2/case_studies': [ { id: 5, slug: 'acme', link: 'https://eca.example/case-studies/acme/' } ],
+	};
+
+	it( 'uses basePath when declared and /<slug>/ otherwise', async () => {
+		const client = new WpClient( { baseUrl: 'https://eca.example', fetchImpl: fakeFetch( tables ) } );
+		const { redirects } = await generateRedirects( profile, client );
+		expect( redirects ).toContainEqual( { from: '/eca/art-and-craft/', to: '/eca/10784/art-and-craft/', status: 301 } );
+		expect( redirects ).toContainEqual( { from: '/case-studies/acme/', to: '/case-studies/5/acme/', status: 301 } );
+		expect( redirects.every( ( entry ) => ! entry.to.startsWith( '/posts/' ) ) ).toBe( true );
+	} );
+} );

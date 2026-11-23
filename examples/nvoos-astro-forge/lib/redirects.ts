@@ -266,7 +266,17 @@ export async function generateRedirects(
 			} else if ( collection.slug === 'products' ) {
 				push( source, `/products/${ entry.id }/${ entry.slug }/` );
 			} else {
-				push( source, `/posts/${ entry.id }/${ entry.slug }/` );
+				// Every other collection is a CPT, whose ROUTE the scaffold emits
+				// under `basePath` (default `/<slug>`) as `/<base>/<id>/<slug>/`.
+				// Sending its entries to `/posts/…` pointed a 301 at a 404 —
+				// eca.directory's 105 `/eca/<slug>/` URLs all resolved to
+				// `/posts/<id>/<slug>/` while the pages were built at
+				// `/eca/<id>/<slug>/`.
+				const base = ( collection.basePath ?? ( collection.slug === 'posts' ? '/posts' : `/${ collection.slug }` ) ).replace(
+					/\/+$/,
+					''
+				);
+				push( source, collection.canonicalPath === 'slug' ? `${ base }/${ entry.slug }/` : `${ base }/${ entry.id }/${ entry.slug }/` );
 			}
 		}
 	}

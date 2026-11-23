@@ -39,7 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { confirm, isCancel, password as passwordPrompt, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
-import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredChromeSize, applyMeasuredHeader, applyMeasuredNavStyle, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
+import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredChromeSize, applyMeasuredHeader, applyMeasuredHeaderActions, applyMeasuredNavStyle, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
 import { compareBuildIdentity, parseBuildMarker } from '../lib/build-identity.ts';
 import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuild } from '../lib/animations.ts';
@@ -51,7 +51,7 @@ import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } fr
 import { openGate } from '../lib/gate.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureMobileNav, loadChromium, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureHeaderActions, measureMobileNav, loadChromium, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { describePropertyCoverage, propertyCoverage } from '../lib/property-coverage.ts';
@@ -66,7 +66,7 @@ import { measureIconFonts, usedDroppedFamilies } from '../lib/font-audit.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
-import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
+import { applyBandSurfaces, applyChromeSurfaces, bandRegionName, bandRegionSelector, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
 import { compareChromeGeometry, compareFooterBrand, compareMobileNav } from '../lib/chrome-audit.ts';
 import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
@@ -732,7 +732,22 @@ async function runAnalyze( url, options ) {
 							const measured = geometry.navStyle;
 							console.log( `✓ Nav type: ${ measured.size } ${ measured.weight }${ measured.transform ? ` ${ measured.transform }` : "" }${ measured.letterSpacing ? `, ${ measured.letterSpacing } tracking` : "" }.` );
 						}
-						// The copyright bar's computed size — the stylesheet harvest reads a
+							// The header's labelled CTA pills, computed. The harvest resolves a
+							// builder var against the first declaration it finds, so a pill's real
+							// colour can be a foreign palette entry (eca.directory's accent pill
+							// read `#d9534f`).
+							try {
+								const actions = await measureHeaderActions( { url: profile.url } );
+								if ( actions.length > 0 ) {
+									profile.chromeActions = actions;
+									if ( applyMeasuredHeaderActions( profile.design?.chrome, actions ) ) {
+										console.log( `✓ Header pills measured: ${ actions.map( ( action ) => `${ action.text } (${ action.fill ?? 'no fill' })` ).join( ', ' ) }.` );
+									}
+								}
+							} catch ( error ) {
+								console.warn( `\u26a0 Header pills skipped: ${ error instanceof Error ? error.message : error }` );
+							}
+						// The copyright bar’s computed size — the stylesheet harvest reads a
 						// DECLARATION, so `1.125rem` shipped the footer 2px large
 						// (monicarajiv, 2026-11-21).
 						if ( applyMeasuredChromeSize( profile.design.chrome, geometry ) ) {
@@ -985,7 +1000,8 @@ async function runAnalyze( url, options ) {
 		try {
 			const modes = parseColorModes( options.colorsModes );
 			// The band surfaces matter as much as the chrome: measure one region per
-			// renderable band anchor, with the composited background.
+			// renderable band (its anchor, else its vendor id), with the composited
+			// background.
 			const regions = [ ...DEFAULT_COLOR_REGIONS, ...bandColorRegions( renderableBands( profile.design ) ) ];
 			const measured = await measureRegionColorsDetailed( { url: profile.url, modes, regions, effective: true } );
 			profile.colors = measured.modes;
@@ -1006,16 +1022,45 @@ async function runAnalyze( url, options ) {
 			}
 			// Bake the measured band SURFACES into the homepage's band facts: a
 			// gradient painted on a child layer is invisible to the CSS harvest (the
-			// sanitizer drops the `<style>` that declared it), and an outline band
-			// carries no facts at all. Pinned facts win — `applyBandSurfaces` never
-			// overwrites a surface that is already set.
+			// sanitizer drops the `<style>` that declared it), and the harvest can
+			// read a rule for a layer or variant the page never renders. Measurement
+			// WINS; operator pins are re-applied after the analysis (`applyDesignPins`
+			// on merge), so a pin still beats it.
 			const light = profile.colors.light ?? {};
 			if ( profile.design ) {
+				// A pinned surface is operator-owned: `applyDesignPins` re-applies it on
+				// every merge, but this pass runs BEFORE the merge, so name the pinned
+				// bands here rather than letting the measurement win and lose the pin.
+				const pinnedBands = new Set(
+					( profile.pins ?? [] )
+						.map( ( pin ) => /^sections\.([^.]+)\.(?:bgColor|bgGradient|bgImage)$/.exec( pin.path )?.[ 1 ] )
+						.filter( Boolean )
+				);
 				applyBandSurfaces(
 					profile.design.sections ?? [],
-					( section ) => ( section.anchor ? light[ `band:${ section.anchor }` ] : undefined ),
-					light.body?.background
+					( section ) => {
+						const name = bandRegionName( section );
+						return name ? light[ name ] : undefined;
+					},
+					light.body?.background,
+					{ preserve: ( section ) => Boolean( section.id && pinnedBands.has( section.id ) ) }
 				);
+				// The same rule for CHROME: the stylesheet harvest reads declarations a
+				// layer or variant may never paint (eca.directory's `#d30c5c` header and
+				// footer bar, its accent footer ink), while the browser reads the paint.
+				// Pins survive through `preserve` and `applyDesignPins` on the merge.
+				const pinnedChrome = new Set(
+					( profile.pins ?? [] )
+						.map( ( pin ) => /^chrome\.(\w+)$/.exec( pin.path )?.[ 1 ] )
+						.filter( Boolean )
+						.map( ( field ) => `chrome.${ field }` )
+				);
+				const chromeApplied = applyChromeSurfaces( profile.design.chrome, profile.colors, {
+					preserve: ( path ) => pinnedChrome.has( path ),
+				} );
+				if ( chromeApplied.length > 0 ) {
+					console.log( `\u2713 Chrome surfaces from the browser: ${ chromeApplied.join( ', ' ) }.` );
+				}
 			}
 		} catch ( error ) {
 			console.warn( `\u26a0 Colour baseline skipped: ${ error instanceof Error ? error.message : error }` );
@@ -1062,6 +1107,11 @@ async function runAnalyze( url, options ) {
 		// The copyright bar's measured size outranks the stylesheet harvest for the
 		// same reason the menu's does.
 		applyMeasuredChromeSize( target?.design?.chrome, target?.design?.chrome?.geometry );
+		// The header pills' paint, measured. A `--design`-only re-harvest re-reads
+		// the stylesheets and re-resolves a builder var against the wrong
+		// declaration (eca.directory's accent pill → `#d9534f`), so the stored
+		// measurement must win again here.
+		applyMeasuredHeaderActions( target?.design?.chrome, target?.chromeActions ?? profile.chromeActions );
 		return target;
 	};
 	reconcileHeader( profile );
@@ -1778,16 +1828,21 @@ async function runWizard( url, options ) {
  * a transparent header and skipped the very surface that was wrong.
  */
 function bandColorRegions( bands ) {
-	const anchors = bands
-		.map( ( band ) => band.anchor )
-		.filter( ( anchor, index, list ) => Boolean( anchor ) && list.indexOf( anchor ) === index );
-	// `descendantFill`: a builder paints a band's surface on a child layer, so the
-	// ancestor walk alone reads the page body for every band.
-	return anchors.map( ( anchor ) => ( {
-		name: `band:${ anchor }`,
-		selectors: [ `#${ anchor }` ],
-		descendantFill: true,
-	} ) );
+	const regions = [];
+	const named = new Set();
+	for ( const band of bands ) {
+		// An anchor when the source exposes one, else the vendor's element class:
+		// a builder band with no anchor was previously unmeasurable, so its
+		// harvested surface shipped unopposed.
+		const selector = bandRegionSelector( band );
+		const name = bandRegionName( band );
+		if ( ! selector || ! name || named.has( name ) ) {
+			continue;
+		}
+		named.add( name );
+		regions.push( { name, selectors: [ selector ], descendantFill: true } );
+	}
+	return regions;
 }
 
 /**

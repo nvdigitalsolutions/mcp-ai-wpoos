@@ -178,6 +178,66 @@ describe( 'probeGate classification', () => {
 	} );
 } );
 
+describe( 'marker scan ignores admin chrome', () => {
+	function stubFetch( html: string ): typeof fetch {
+		return ( async ( input: RequestInfo | URL ) => {
+			const href = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+			if ( new URL( href ).pathname.startsWith( '/wp-json' ) ) {
+				return new Response( JSON.stringify( { name: 'Stub' } ), {
+					status: 200,
+					headers: { 'content-type': 'application/json' },
+				} );
+			}
+			return new Response( html, { status: 200, headers: { 'content-type': 'text/html' } } );
+		} ) as typeof fetch;
+	}
+
+	const liveCopy = 'A live page with real directory content. '.repeat( 30 );
+
+	/**
+	 * A logged-in read of an open site. WooCommerce badges the admin toolbar
+	 * with `…badge-store-coming-soon` and enqueues `coming-soon.css` for it;
+	 * Elementor adds an `wp-admin-bar-elementor-maintenance-on` toggle. The
+	 * toolbar nests a div, which is what pins the balanced strip.
+	 */
+	const loggedInPage =
+		'<!doctype html><html><head><title>Directory</title>' +
+		"<link rel='stylesheet' id='wc-coming-soon-css' href='https://example.test/wp-content/plugins/woocommerce/assets/css/coming-soon.css?ver=11.3.1' />" +
+		'</head><body class="logged-in wp-theme-kadence elementor-default">' +
+		'<div id="wpadminbar" class="nojq nojs"><div class="quicklinks" id="wp-toolbar"><ul id="wp-admin-bar-root-default" class="ab-top-menu">' +
+		'<li id="wp-admin-bar-site-visibility-badge"><a class="ab-item" href="#"><span class="woocommerce-site-status-badge-store-coming-soon">Coming soon</span></a></li>' +
+		'<li id="wp-admin-bar-elementor-maintenance-on"><a class="ab-item" href="#">Maintenance Mode</a></li>' +
+		'</ul></div></div>' +
+		`<main class="entry-content"><h1>ECA Directory</h1><p>${ liveCopy }</p></main>` +
+		'</body></html>';
+
+	it( 'reads a logged-in page carrying admin-bar badges as open', async () => {
+		const probe = await probeGate( profileFor( 'https://example.test' ), { fetchImpl: stubFetch( loggedInPage ) } );
+		expect( probe.state ).toBe( 'open' );
+		expect( probe.evidence.join( ' ' ) ).not.toContain( 'holding-page marker' );
+	} );
+
+	it( 'does not treat Elementor admin-bar styles as the gate template', async () => {
+		const html =
+			'<html><body class="elementor-default">' +
+			'<style>#wp-admin-bar-elementor-maintenance-on::before{content:""}</style>' +
+			`<main class="entry-content"><p>${ liveCopy }</p></main>` +
+			'</body></html>';
+		const probe = await probeGate( profileFor( 'https://example.test' ), { fetchImpl: stubFetch( html ) } );
+		expect( probe.state ).toBe( 'open' );
+	} );
+
+	it( 'still reads an Elementor maintenance-mode template as gated', async () => {
+		const html =
+			'<html><body class="elementor-template-canvas elementor-kit-21 elementor-maintenance-mode">' +
+			'<div class="gate"><h1>Coming soon</h1><p>Launching shortly.</p></div>' +
+			'</body></html>';
+		const probe = await probeGate( profileFor( 'https://example.test' ), { fetchImpl: stubFetch( html ) } );
+		expect( probe.state ).toBe( 'gated' );
+		expect( probe.fingerprint ).toBe( 'elementor-maintenance' );
+	} );
+} );
+
 describe( 'openGate', () => {
 	it( 'logs in with a username/password and unlocks a 503 gate', async () => {
 		await withEnv(
@@ -398,10 +458,38 @@ describe( 'gateContextOptions', () => {
 		expect( gateContextOptions( options ) ).toBe( options );
 	} );
 
-	it( 'merges the active cookies into the context options', () => {
+	it( 'merges the active cookies into a Playwright storageState', () => {
 		const cookies: ForgeGateCookie[] = [ { name: 'a', value: 'b', domain: 'example.com', path: '/' } ];
 		setActiveGateCookies( cookies );
-		expect( gateContextOptions( { deviceScaleFactor: 1 } ) ).toEqual( { deviceScaleFactor: 1, cookies } );
+		expect( gateContextOptions( { deviceScaleFactor: 1 } ) ).toEqual( {
+			deviceScaleFactor: 1,
+			storageState: {
+				origins: [],
+				cookies: [
+					{
+						name: 'a',
+						value: 'b',
+						domain: 'example.com',
+						path: '/',
+						secure: false,
+						httpOnly: false,
+						sameSite: 'Lax',
+						expires: -1,
+					},
+				],
+			},
+		} );
+		setActiveGateCookies( [] );
+	} );
+
+	// `newContext({ cookies })` is not a Playwright option and is ignored
+	// silently — only `storageState` carries a session into the browser. Every
+	// browser pass navigated the holding page because of it (2026-11-23).
+	it( 'always emits the numeric expires Playwright requires', () => {
+		setActiveGateCookies( [ { name: 'a', value: 'b', domain: 'example.com', path: '/', expires: 1795620575 } ] );
+		expect( gateContextOptions( {} ).storageState?.cookies[ 0 ].expires ).toBe( 1795620575 );
+		setActiveGateCookies( [ { name: 'a', value: 'b', domain: 'example.com', path: '/' } ] );
+		expect( gateContextOptions( {} ).storageState?.cookies[ 0 ].expires ).toBe( -1 );
 		setActiveGateCookies( [] );
 	} );
 } );
