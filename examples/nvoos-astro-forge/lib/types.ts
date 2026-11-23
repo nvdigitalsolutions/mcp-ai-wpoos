@@ -525,6 +525,21 @@ export interface SiteProfile {
 	/** Display name (discovery fills it when absent). */
 	name?: string;
 	/**
+	 * Transport tuning for the CMS source.
+	 *
+	 * The per-request cap is a property of the SOURCE, not of whoever runs the
+	 * build: eca.directory serialises its 19 Elementor pages into one 1.23 MB REST
+	 * response that takes ~26s, so the client's 15s default aborted the build on
+	 * the fleet runner while the same build passed locally with
+	 * `WP_FETCH_TIMEOUT_MS=60000`. Baked into the generated `content.config.ts` as
+	 * the FALLBACK (`WP_FETCH_TIMEOUT_MS` still wins), so `npm run build` works on
+	 * any host without remembering an env var.
+	 */
+	fetch?: {
+		/** Per-request transport cap in ms. Positive integer. Absent = 15s. */
+		timeoutMs?: number;
+	};
+	/**
 	 * The page-gate block (Proposal 152) — the login session every
 	 * rendered-HTML pass needs when the source is in maintenance / coming-soon
 	 * mode. Absent = default env names, and nothing is sent to a public site.

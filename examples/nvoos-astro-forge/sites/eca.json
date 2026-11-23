@@ -1,12 +1,29 @@
 {
 	"url": "https://eca.directory",
 	"name": "ECA Directory",
+	"fetch": { "timeoutMs": 60000 },
 	"eca": {
 		"basePath": "/activities",
 		"schoolName": "The British School in Colombo",
 		"timezone": "Asia/Colombo",
 		"currency": "LKR",
 		"currencySymbol": "Rs.",
+		"stages": [
+			{
+				"id": "junior-school",
+				"label": "Junior School",
+				"yearGroups": { "from": 1, "to": 6 },
+				"match": ["junior", "js", "primary", "prep", "foundation"],
+				"blurb": "Activities for Junior School pupils, Years 1 to 6."
+			},
+			{
+				"id": "senior-school",
+				"label": "Senior School",
+				"yearGroups": { "from": 7, "to": 13 },
+				"match": ["senior", "ss", "secondary", "sixth form"],
+				"blurb": "Activities for Senior School pupils, Years 7 to 13."
+			}
+		],
 		"terms": [
 			{
 				"id": "michaelmas-2026",

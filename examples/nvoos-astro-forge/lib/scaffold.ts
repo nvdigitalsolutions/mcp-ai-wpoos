@@ -780,6 +780,17 @@ export function renderContentConfig(profile: SiteProfile): string {
 	// globs; any extra collection (a CPT, a storefront catalogue) resolves the
 	// same way, so `forge materialize` output works for it too.
 	const materialized = isMaterializedContent(profile);
+	// A profile-declared cap is only honoured when it is a real positive integer:
+	// a typo must not become `|| 0` (falsy → default, silently) or a negative
+	// number handed to AbortSignal.timeout (which throws).
+	const declaredTimeout = Number(profile.fetch?.timeoutMs);
+	const timeoutFallback =
+		Number.isFinite(declaredTimeout) && declaredTimeout > 0
+			? Math.min(Math.floor(declaredTimeout), 600_000)
+			: null;
+	const timeoutExpr = timeoutFallback
+		? `Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || ${timeoutFallback}`
+		: 'Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined';
 	for (const collection of profile.collections) {
 		const authVar = collection.authMode === 'wc-consumer' ? 'wcAuth' : 'applicationAuth';
 		// Hybrid local (106 P2): posts/pages merge the local MDX glob under the
@@ -796,9 +807,12 @@ export function renderContentConfig(profile: SiteProfile): string {
 		const localOnlyOption = materialized ? ', localOnly: true' : '';
 		// A big Elementor page tree is megabytes of markup in ONE REST page; a
 		// cheap host can take 30s+ to serialise it. The transport cap is
-		// therefore a build knob (`WP_FETCH_TIMEOUT_MS`), not a hard 15s.
+		// therefore a build knob (`WP_FETCH_TIMEOUT_MS`), not a hard 15s — and
+		// the profile's own `fetch.timeoutMs` is baked in as the FALLBACK, so a
+		// host that knows nothing about the source still gets a cap that fits it
+		// (eca.directory needs >26s; the fleet runner aborted at 15s).
 		block.push(
-			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}${localOnlyOption}, userAgent: import.meta.env.WP_USER_AGENT, timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined }) }),`
+			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}${localOnlyOption}, userAgent: import.meta.env.WP_USER_AGENT, timeoutMs: ${timeoutExpr} }) }),`
 		);
 	}
 	block.push(`};`);
