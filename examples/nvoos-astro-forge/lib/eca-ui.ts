@@ -49,6 +49,9 @@ export function ecaRouteFiles( profile: SiteProfile ): ForgeFile[] {
 		{ path: 'src/pages/stage/[stage].astro', content: stageLanding( basePath ) },
 		{ path: 'src/pages/category/[category].astro', content: categoryLanding( basePath ) },
 		{ path: 'src/pages/type/[type].astro', content: typeLanding( basePath ) },
+		{ path: 'src/pages/calendar/index.astro', content: calendarPage() },
+		{ path: 'src/pages/timetable/[stage].astro', content: timetablePage() },
+		{ path: 'src/pages/terms/index.astro', content: termsPage() },
 		{ path: 'src/pages/feeds/[slug].ics.ts', content: icsEndpoint( taxonomyBase ) },
 	];
 }
@@ -68,8 +71,8 @@ function siteLib( slug: string ): string {
 import { getCollection } from 'astro:content';
 
 import { sanitizeHtml } from '../forge/sanitize.ts';
-import { buildFacets, filterEca, normalizeEca } from '../forge/eca.ts';
-import type { EcaFacets, EcaFilter, EcaRecord, RawEcaPost } from '../forge/eca.ts';
+import { buildFacets, buildTermCalendar, filterEca, monthGrid, monthLabel, monthsBetween, normalizeEca } from '../forge/eca.ts';
+import type { EcaCalendarEntry, EcaFacets, EcaFilter, EcaRecord, ForgeEca, ForgeEcaTerm, RawEcaPost } from '../forge/eca.ts';
 import { ecaConfig, ecaRestBase, ecaSourceOrigin, ecaTerms } from './eca.generated.ts';
 
 type CollectionKey = Parameters< typeof getCollection >[ 0 ];
@@ -156,6 +159,71 @@ export function stageLabel( id: string ): string {
 /** Time-band id → its configured label. */
 export function timeBandLabel( id: string ): string | null {
 	return ecaConfig.timeBands?.find( ( band ) => band.id === id )?.label ?? null;
+}
+
+/** A month of the term, already chunked into rendered weeks. */
+export interface EcaCalendarMonthView {
+	label: string;
+	weeks: Array< Array< { date: string | null; entry: EcaCalendarEntry | null } > >;
+}
+
+/** The term as month grids for /calendar/. Null when no term is configured. */
+export async function termCalendar(): Promise< { term: ForgeEcaTerm; months: EcaCalendarMonthView[] } | null > {
+	const term = ecaConfig.terms?.[ 0 ];
+	if ( ! term ) return null;
+
+	const records = await loadActivities();
+	const entries = buildTermCalendar( records, term );
+	const byDate = new Map( entries.map( ( entry ) => [ entry.date, entry ] ) );
+	// An open-ended term is bounded by its last occurrence, not by today.
+	const last = term.end ?? entries[ entries.length - 1 ]?.date ?? term.start;
+
+	const months = monthsBetween( term.start, last ).map( ( { year, month } ) => {
+		const cells = monthGrid( year, month ).map( ( cell ) => ( {
+			date: cell.date,
+			entry: cell.date ? byDate.get( cell.date ) ?? null : null,
+		} ) );
+		const weeks: EcaCalendarMonthView['weeks'] = [];
+		for ( let index = 0; index < cells.length; index += 7 ) weeks.push( cells.slice( index, index + 7 ) );
+		return { label: monthLabel( year, month ), weeks };
+	} );
+
+	return { term, months };
+}
+
+/** The weekly grid for one stage: which days and bands are in use, and by what. */
+export async function timetableFor( stage: string ): Promise< {
+	days: string[];
+	bands: NonNullable< ForgeEca['timeBands'] >;
+	cells: Map< string, EcaRecord[] >;
+	term: ForgeEcaTerm | null;
+	total: number;
+} > {
+	const records = ( await loadActivities() ).filter(
+		( record ) => record.stages.includes( stage ) && record.schedule.day !== null && record.schedule.startMinutes !== null,
+	);
+
+	const days = ( ecaConfig.days ?? DAY_ORDER ).filter( ( day ) =>
+		records.some( ( record ) => record.schedule.days.includes( day ) ),
+	);
+	const bands = ( ecaConfig.timeBands ?? [] ).filter( ( band ) =>
+		records.some( ( record ) => record.schedule.timeOfDay === band.id ),
+	);
+
+	const cells = new Map< string, EcaRecord[] >();
+	for ( const record of records ) {
+		for ( const day of record.schedule.days ) {
+			const key = day + '|' + ( record.schedule.timeOfDay ?? '' );
+			const list = cells.get( key ) ?? [];
+			list.push( record );
+			cells.set( key, list );
+		}
+	}
+	for ( const list of cells.values() ) {
+		list.sort( ( a, b ) => ( a.schedule.startMinutes ?? 0 ) - ( b.schedule.startMinutes ?? 0 ) );
+	}
+
+	return { days, bands, cells, term: ecaConfig.terms?.[ 0 ] ?? null, total: records.length };
 }
 `;
 }
@@ -269,6 +337,46 @@ const ECA_CSS = `/* eca.css — the catalogue's own surface (Proposal 163 §P2).
 .eca-cta[aria-disabled="true"] { background: var(--forge-surface-alt); color: var(--forge-muted); cursor: default; }
 .eca-note { font-size: var(--forge-scale-small); color: var(--forge-muted); }
 .eca-prose :is(p, ul, ol) { max-width: 65ch; }
+
+/* --- section nav --- */
+.eca-subnav { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: var(--forge-space-sm); font-size: var(--forge-scale-small); }
+.eca-subnav a { color: var(--forge-accent); font-weight: 600; text-decoration: none; }
+.eca-subnav a:hover { text-decoration: underline; }
+
+/* --- calendar --- */
+.eca-month + .eca-month { margin-top: var(--forge-space-lg); }
+.eca-cal { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.eca-cal caption { text-align: left; font-family: var(--forge-font-display); font-size: var(--forge-scale-h3); padding-bottom: 0.4rem; }
+.eca-cal th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--forge-muted); padding: 0.3rem 0.35rem; border-bottom: 1px solid var(--forge-line); }
+.eca-cal td { vertical-align: top; height: 5.5rem; padding: 0.3rem 0.35rem; border-bottom: 1px solid var(--forge-line); font-size: 0.78rem; }
+.eca-cal td time { display: block; font-weight: 700; color: var(--forge-muted); margin-bottom: 0.15rem; }
+.eca-cal td ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.1rem; }
+.eca-cal td a { color: var(--forge-ink); text-decoration: none; }
+.eca-cal td a:hover { color: var(--forge-accent); text-decoration: underline; }
+.eca-cal .eca-closed { background: var(--forge-surface-alt); color: var(--forge-muted); font-style: italic; }
+.eca-cal .eca-outside { border-bottom-color: transparent; }
+.eca-term th { width: 12rem; text-align: left; border-bottom: 1px solid var(--forge-line); padding: 0.4rem 0; }
+.eca-term td { height: auto; }
+
+/* --- timetable --- */
+.eca-tt { width: 100%; border-collapse: collapse; }
+.eca-tt caption { text-align: left; font-family: var(--forge-font-display); font-size: var(--forge-scale-h3); padding-bottom: 0.5rem; }
+.eca-tt th, .eca-tt td { border: 1px solid var(--forge-line); padding: 0.4rem 0.45rem; vertical-align: top; font-size: var(--forge-scale-small); }
+.eca-tt thead th { background: var(--forge-surface-alt); text-align: left; }
+.eca-tt tbody th { text-align: left; width: 9rem; background: var(--forge-surface-alt); }
+.eca-tt ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.eca-tt li strong { display: block; font-weight: 600; }
+.eca-tt li span { color: var(--forge-muted); }
+
+.eca-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* --- print: schools print the timetable --- */
+@media print {
+	.eca-rail, .eca-subnav, .eca-banner, .eca-cta { display: none !important; }
+	.eca-tt, .eca-cal { font-size: 10pt; }
+	.eca-cal td { height: auto; }
+	.eca-card { break-inside: avoid; box-shadow: none; }
+}
 `;
 
 // ---------------------------------------------------------------------------
@@ -420,6 +528,11 @@ const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 ---
 
 <section class="eca-shell">
+	<nav class="eca-subnav" aria-label="ECA sections">
+		<a href={ ecaBasePath + '/' }>All activities</a>
+		<a href="/calendar/">Calendar</a>
+		<a href="/terms/">Term dates</a>
+	</nav>
 	<h1>{ title }</h1>
 	{ intro && <p class="eca-lede">{ intro }</p> }
 	{ active && (
@@ -854,5 +967,242 @@ export const GET: APIRoute = ( { props, url, site } ) => {
 		},
 	} );
 };
+`;
+}
+
+function calendarPage(): string {
+	return `---
+// /calendar/ — the term as month grids.
+//
+// Server-rendered tables, no island: the dates are fixed at build time, and a
+// real <table> with a <caption> is navigable by a screen reader in a way a
+// div grid of dates never is.
+import Base from '../../layouts/Base.astro';
+import { termCalendar } from '../../lib/eca-site.ts';
+import { formatClock, formatDate } from '../../forge/eca.ts';
+
+const data = await termCalendar();
+const HEAD = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
+const description = data ? 'Every ' + data.term.label + ' activity date, week by week.' : 'Term calendar';
+---
+
+<Base title="Term calendar" description={ description }>
+	<main class="eca-shell">
+		<nav class="eca-subnav" aria-label="ECA sections">
+			<a href="/activities/">All activities</a>
+			<a href="/terms/">Term dates</a>
+		</nav>
+		<h1>Term calendar</h1>
+
+		{ data ? (
+			<>
+				<p class="eca-lede">
+					{ data.term.label } · activities begin <time datetime={ data.term.start }>{ formatDate( data.term.start ) }</time>
+					{ data.term.end && <> · last day <time datetime={ data.term.end }>{ formatDate( data.term.end ) }</time></> }
+				</p>
+
+				{ data.months.map( ( month ) => (
+					<section class="eca-month">
+						<table class="eca-cal">
+							<caption>{ month.label }</caption>
+							<thead>
+								<tr>
+									{ HEAD.map( ( day ) => (
+										<th scope="col" abbr={ day }>{ day.slice( 0, 3 ) }<span class="eca-sr"> { day }</span></th>
+									) ) }
+								</tr>
+							</thead>
+							<tbody>
+								{ month.weeks.map( ( week ) => (
+									<tr>
+										{ week.map( ( cell ) => (
+											<td class={ cell.date === null ? 'eca-outside' : cell.entry?.closure ? 'eca-closed' : undefined }>
+												{ cell.date && (
+													<>
+														<time datetime={ cell.date }>{ Number( cell.date.slice( 8 ) ) }</time>
+														{ cell.entry?.closure && <em>{ cell.entry.closure }</em> }
+														{ cell.entry && cell.entry.items.length > 0 && (
+															<ul>
+																{ cell.entry.items.map( ( item ) => (
+																	<li>
+																		<a href={ item.url }>{ item.title }</a>
+																		{ item.start && <span> { formatClock( item.start ) }</span> }
+																	</li>
+																) ) }
+															</ul>
+														) }
+													</>
+												) }
+											</td>
+										) ) }
+									</tr>
+								) ) }
+							</tbody>
+						</table>
+					</section>
+				) ) }
+			</>
+		) : (
+			<p class="eca-empty">No term is configured yet, so there is no calendar to show.</p>
+		) }
+	</main>
+</Base>
+`;
+}
+
+function timetablePage(): string {
+	return `---
+// /timetable/<stage>/
+//
+// A real table: <th scope="col"> for days, <th scope="row"> for time bands.
+// A div grid would look the same and be unnavigable, and it would not print.
+import Base from '../../layouts/Base.astro';
+import { catalogue, stageLabel, timetableFor } from '../../lib/eca-site.ts';
+import { formatClock } from '../../forge/eca.ts';
+
+export async function getStaticPaths() {
+	const { facets } = await catalogue();
+	return facets.stage.map( ( entry ) => ( { params: { stage: entry.value }, props: { stage: entry.value } } ) );
+}
+
+const { stage } = Astro.props;
+const label = stageLabel( stage );
+const { days, bands, cells, term, total } = await timetableFor( stage );
+const grid = days.map( ( day ) => ( {
+	day,
+	columns: bands.map( ( band ) => cells.get( day + '|' + band.id ) ?? [] ),
+} ) );
+const description = 'Weekly timetable of ' + label + ' activities.';
+---
+
+<Base title={ label + ' timetable' } description={ description }>
+	<main class="eca-shell">
+		<nav class="eca-subnav" aria-label="ECA sections">
+			<a href="/activities/">All activities</a>
+			<a href="/calendar/">Calendar</a>
+			<a href="/terms/">Term dates</a>
+		</nav>
+		<h1>{ label } timetable</h1>
+		<p class="eca-lede">
+			{ term ? term.label + ' · ' : '' }{ total } activities with a published day and time. Columns are weekdays, rows are time of day.
+		</p>
+
+		{ days.length > 0 && bands.length > 0 ? (
+			<table class="eca-tt">
+				<caption>{ label } — one week</caption>
+				<thead>
+					<tr>
+						<th scope="col">Time</th>
+						{ days.map( ( day ) => <th scope="col">{ day }</th> ) }
+					</tr>
+				</thead>
+				<tbody>
+					{ bands.map( ( band, bandIndex ) => (
+						<tr>
+							<th scope="row">{ band.label }</th>
+							{ grid.map( ( column ) => (
+								<td>
+									{ column.columns[ bandIndex ].length === 0 ? (
+										<span aria-hidden="true">—</span>
+									) : (
+										<ul>
+											{ column.columns[ bandIndex ].map( ( record ) => (
+												<li>
+													<strong><a href={ record.url }>{ record.title }</a></strong>
+													<span>{ formatClock( record.schedule.start ) }{ record.venue ? ' · ' + record.venue : '' }</span>
+												</li>
+											) ) }
+										</ul>
+									) }
+								</td>
+							) ) }
+						</tr>
+					) ) }
+				</tbody>
+			</table>
+		) : (
+			<p class="eca-empty">No { label } activity has a published day and time yet.</p>
+		) }
+
+		<p class="eca-note">Each activity page offers a weekly .ics reminder for your own calendar.</p>
+	</main>
+</Base>
+`;
+}
+
+function termsPage(): string {
+	return `---
+// /terms/ — term dates, closures and the booking window in one place, so the
+// dates a family needs are not buried in a PDF.
+import Base from '../../layouts/Base.astro';
+import BookingBanner from '../../components/eca/BookingBanner.astro';
+import { ecaConfig } from '../../lib/eca.generated.ts';
+import { formatDate, formatStamp } from '../../forge/eca.ts';
+
+const term = ecaConfig.terms?.[ 0 ] ?? null;
+const window = ecaConfig.booking?.window ?? null;
+const closures = term?.closures ?? [];
+---
+
+<Base title="Term dates" description="Term dates, closures and the ECA booking window.">
+	<main class="eca-shell">
+		<nav class="eca-subnav" aria-label="ECA sections">
+			<a href="/activities/">All activities</a>
+			<a href="/calendar/">Calendar</a>
+		</nav>
+		<h1>Term dates</h1>
+		<BookingBanner />
+
+		{ term ? (
+			<table class="eca-cal eca-term">
+				<caption>{ term.label }</caption>
+				<tbody>
+					<tr>
+						<th scope="row">Activities begin</th>
+						<td><time datetime={ term.start }>{ formatDate( term.start ) }</time></td>
+					</tr>
+					{ term.end && (
+						<tr>
+							<th scope="row">Activities end</th>
+							<td><time datetime={ term.end }>{ formatDate( term.end ) }</time></td>
+						</tr>
+					) }
+					{ closures.map( ( closure ) => (
+						<tr>
+							<th scope="row">{ closure.label ?? 'Closed' }</th>
+							<td>
+								<time datetime={ closure.from }>{ formatDate( closure.from ) }</time>
+								–
+								<time datetime={ closure.to }>{ formatDate( closure.to ) }</time>
+							</td>
+						</tr>
+					) ) }
+					{ window && (
+						<tr>
+							<th scope="row">Booking opens</th>
+							<td>{ formatStamp( window.opens ) }</td>
+						</tr>
+					) }
+					{ window && (
+						<tr>
+							<th scope="row">Booking closes</th>
+							<td>{ formatStamp( window.closes ) }</td>
+						</tr>
+					) }
+					{ window?.allocations && (
+						<tr>
+							<th scope="row">Allocations published</th>
+							<td>{ formatStamp( window.allocations ) }</td>
+						</tr>
+					) }
+				</tbody>
+			</table>
+		) : (
+			<p class="eca-empty">Term dates are not published yet.</p>
+		) }
+
+		{ ecaConfig.booking?.note && <p class="eca-note">{ ecaConfig.booking.note }</p> }
+	</main>
+</Base>
 `;
 }
