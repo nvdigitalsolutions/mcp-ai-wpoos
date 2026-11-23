@@ -49,6 +49,7 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Domain\Service\Text\TopicTerms;
 
 final class SuggestInternalLinksCompletionTool extends AbstractCompletionTool
 {
@@ -66,27 +67,17 @@ final class SuggestInternalLinksCompletionTool extends AbstractCompletionTool
 
     private const MAX_SUGGESTIONS = 10;
 
-    /**
-     * Words that carry no topic. Deliberately short: this is a search hint, and a
-     * long list would be a worse guess, not a better one.
-     */
-    private const STOPWORDS = array(
-        'about', 'after', 'again', 'against', 'also', 'among', 'because', 'been',
-        'before', 'being', 'between', 'both', 'could', 'does', 'doing', 'down',
-        'during', 'each', 'from', 'further', 'have', 'having', 'here', 'hers',
-        'into', 'itself', 'just', 'more', 'most', 'much', 'must', 'only', 'other',
-        'over', 'same', 'should', 'some', 'such', 'than', 'that', 'their', 'them',
-        'then', 'there', 'these', 'they', 'this', 'those', 'through', 'under',
-        'until', 'very', 'was', 'were', 'what', 'when', 'where', 'which', 'while',
-        'will', 'with', 'would', 'your', 'yours',
-    );
+    private readonly TopicTerms $topics;
 
     public function __construct(
         ErrorFactoryInterface $errors,
         ?ProviderRouter $providers = null,
         private readonly ?ContentStoreInterface $content = null,
+        ?TopicTerms $topics = null,
     ) {
         parent::__construct($errors, $providers);
+
+        $this->topics = $topics ?? new TopicTerms();
     }
 
     public function getSlug(): string
@@ -295,28 +286,16 @@ final class SuggestInternalLinksCompletionTool extends AbstractCompletionTool
     }
 
     /**
-     * Rank the words of the content by frequency, dropping the ones that carry no
-     * topic.
+     * Rank the words of the content, dropping the ones that carry no topic.
+     *
+     * The derivation itself lives in `TopicTerms` because the recommendation
+     * engine needs the same rule; two copies would drift.
      *
      * @return list<string>
      */
     private function terms(string $content, string $title): array
     {
-        $words = \preg_split('/[^\p{L}\p{N}]+/u', \mb_strtolower($title . ' ' . $content)) ?: array();
-
-        $counts = array();
-
-        foreach ($words as $word) {
-            if (\mb_strlen($word) < 4 || \in_array($word, self::STOPWORDS, true) || \ctype_digit($word)) {
-                continue;
-            }
-
-            $counts[ $word ] = ($counts[ $word ] ?? 0) + 1;
-        }
-
-        \arsort($counts);
-
-        return \array_slice(\array_keys($counts), 0, self::MAX_TERMS);
+        return $this->topics->top($title . ' ' . $content, self::MAX_TERMS);
     }
 
     /**

@@ -21,6 +21,7 @@ Houses pure business-logic service implementations — classes that contain doma
 | `Nvoos\Core\Domain\Service\Entitlement\ProPlanCatalog` | `Entitlement/ProPlanCatalog.php` | `WP_MCP_AI_Pro_License::has_feature()`, Laravel `LicensedProEntitlement` |
 | `Nvoos\Core\Domain\Service\Optimization\ErlangC` | `Optimization/ErlangC.php` | Queue analysis tools |
 | `Nvoos\Core\Domain\Service\Text\SemanticCompressor` | `Text/SemanticCompressor.php` | Context compression (TBD — adapter bridges to legacy) |
+| `Nvoos\Core\Domain\Service\Text\TopicTerms` | `Text/TopicTerms.php` | `suggest_internal_links`, `content_recommendation_engine` — the search terms both retrieval tools derive |
 
 ## Subdirectories
 
@@ -28,7 +29,7 @@ Houses pure business-logic service implementations — classes that contain doma
 |---|---|
 | `Budget/` | Byte/token budget tracking and accounting |
 | `Entitlement/` | Commercial plan → feature policy table shared by both runtimes |
-| `Text/` | Text processing (compression, chunking, summarization) |
+| `Text/` | Text processing: topic-term derivation, and (planned) compression/chunking |
 | `Tool/` | Tool lifecycle descriptors, chain prediction |
 | `Optimization/` | Math/algorithms (PSO, Erlang C, code optimization) |
 | `Validation/` | Input validation, schema validation |
