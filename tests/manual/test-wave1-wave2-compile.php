@@ -53,8 +53,8 @@ function verify( string $cls, string $iface ): void {
 	}
 }
 
-$C = 'Nvoos\\Core\\Domain\\Contract\\';
-$W = 'Nvoos\\WordPress\\Adapter\\';
+$contract_ns = 'Nvoos\\Core\\Domain\\Contract\\';
+$adapter_ns  = 'Nvoos\\WordPress\\Adapter\\';
 
 echo "=== All Contracts (11 original + 32 new = 43) ===\n";
 $contracts = array(
@@ -92,7 +92,7 @@ $contracts = array(
 	'VisionInferenceInterface',
 );
 foreach ( $contracts as $i ) {
-	check( $C . $i ); }
+	check( $contract_ns . $i ); }
 
 echo "\n=== Domain Services (2) ===\n";
 check( 'Nvoos\\Core\\Domain\\Service\\Budget\\DataBudgetTracker' );
@@ -132,42 +132,42 @@ foreach ( array(
 	'FinancialData',
 	'VisionInference',
 ) as $a ) {
-	check( $W . $a ); }
+	check( $adapter_ns . $a ); }
 
 echo "\n=== Interface Implementation ===\n";
 verify( 'Nvoos\\Core\\Domain\\Service\\Budget\\DataBudgetTracker', 'DataBudgetTrackerInterface' );
 verify( 'Nvoos\\Core\\Domain\\Service\\Optimization\\ErlangC', 'ErlangCInterface' );
-verify( $W . 'SemanticCompressor', 'SemanticCompressorInterface' );
-verify( $W . 'DataBudgetTracker', 'DataBudgetTrackerInterface' );
-verify( $W . 'ErrorTrackingService', 'ErrorTrackingServiceInterface' );
-verify( $W . 'CostTrackingService', 'CostTrackingServiceInterface' );
-verify( $W . 'ModelCatalog', 'ModelCatalogInterface' );
-verify( $W . 'TokenBudgetService', 'TokenBudgetServiceInterface' );
-verify( $W . 'FileValidationService', 'FileValidationServiceInterface' );
-verify( $W . 'FileUploadService', 'FileUploadServiceInterface' );
-verify( $W . 'FileOrchestration', 'FileOrchestrationInterface' );
-verify( $W . 'RateLimiter', 'RateLimiterInterface' );
-verify( $W . 'EmbeddingService', 'EmbeddingServiceInterface' );
-verify( $W . 'MemoryStore', 'MemoryStoreInterface' );
-verify( $W . 'AssistantService', 'AssistantServiceInterface' );
-verify( $W . 'ProfessionRepository', 'ProfessionRepositoryInterface' );
-verify( $W . 'CronStatus', 'CronStatusInterface' );
-verify( $W . 'PerformanceMonitor', 'PerformanceMonitorInterface' );
-verify( $W . 'ContextCompression', 'ContextCompressionInterface' );
-verify( $W . 'TokenUsage', 'TokenUsageInterface' );
-verify( $W . 'TimeoutDetection', 'TimeoutDetectionInterface' );
-verify( $W . 'ToolExecution', 'ToolExecutionInterface' );
-verify( $W . 'AgentOrchestration', 'AgentOrchestrationInterface' );
-verify( $W . 'ChatContinuation', 'ChatContinuationInterface' );
-verify( $W . 'OrchestrationControl', 'OrchestrationControlInterface' );
-verify( $W . 'OcrService', 'OcrServiceInterface' );
-verify( $W . 'LanguageDetection', 'LanguageDetectionInterface' );
-verify( $W . 'EmailService', 'EmailServiceInterface' );
-verify( $W . 'ValidationService', 'ValidationServiceInterface' );
-verify( $W . 'CodeFormatting', 'CodeFormattingInterface' );
-verify( $W . 'MusicGeneration', 'MusicGenerationInterface' );
-verify( $W . 'FinancialData', 'FinancialDataInterface' );
-verify( $W . 'VisionInference', 'VisionInferenceInterface' );
+verify( $adapter_ns . 'SemanticCompressor', 'SemanticCompressorInterface' );
+verify( $adapter_ns . 'DataBudgetTracker', 'DataBudgetTrackerInterface' );
+verify( $adapter_ns . 'ErrorTrackingService', 'ErrorTrackingServiceInterface' );
+verify( $adapter_ns . 'CostTrackingService', 'CostTrackingServiceInterface' );
+verify( $adapter_ns . 'ModelCatalog', 'ModelCatalogInterface' );
+verify( $adapter_ns . 'TokenBudgetService', 'TokenBudgetServiceInterface' );
+verify( $adapter_ns . 'FileValidationService', 'FileValidationServiceInterface' );
+verify( $adapter_ns . 'FileUploadService', 'FileUploadServiceInterface' );
+verify( $adapter_ns . 'FileOrchestration', 'FileOrchestrationInterface' );
+verify( $adapter_ns . 'RateLimiter', 'RateLimiterInterface' );
+verify( $adapter_ns . 'EmbeddingService', 'EmbeddingServiceInterface' );
+verify( $adapter_ns . 'MemoryStore', 'MemoryStoreInterface' );
+verify( $adapter_ns . 'AssistantService', 'AssistantServiceInterface' );
+verify( $adapter_ns . 'ProfessionRepository', 'ProfessionRepositoryInterface' );
+verify( $adapter_ns . 'CronStatus', 'CronStatusInterface' );
+verify( $adapter_ns . 'PerformanceMonitor', 'PerformanceMonitorInterface' );
+verify( $adapter_ns . 'ContextCompression', 'ContextCompressionInterface' );
+verify( $adapter_ns . 'TokenUsage', 'TokenUsageInterface' );
+verify( $adapter_ns . 'TimeoutDetection', 'TimeoutDetectionInterface' );
+verify( $adapter_ns . 'ToolExecution', 'ToolExecutionInterface' );
+verify( $adapter_ns . 'AgentOrchestration', 'AgentOrchestrationInterface' );
+verify( $adapter_ns . 'ChatContinuation', 'ChatContinuationInterface' );
+verify( $adapter_ns . 'OrchestrationControl', 'OrchestrationControlInterface' );
+verify( $adapter_ns . 'OcrService', 'OcrServiceInterface' );
+verify( $adapter_ns . 'LanguageDetection', 'LanguageDetectionInterface' );
+verify( $adapter_ns . 'EmailService', 'EmailServiceInterface' );
+verify( $adapter_ns . 'ValidationService', 'ValidationServiceInterface' );
+verify( $adapter_ns . 'CodeFormatting', 'CodeFormattingInterface' );
+verify( $adapter_ns . 'MusicGeneration', 'MusicGenerationInterface' );
+verify( $adapter_ns . 'FinancialData', 'FinancialDataInterface' );
+verify( $adapter_ns . 'VisionInference', 'VisionInferenceInterface' );
 
 printf( "\n%d passed, %d failed\n", $ok, $fail );
 exit( $fail > 0 ? 1 : 0 );
