@@ -17843,3 +17843,116 @@ three groups, and the next slice should take them in that order:
 Declaring is the honest answer for group 3 only when the enforcement genuinely
 belongs elsewhere — the same judgement §183.9 applied to guest access and 2FA, and
 the opposite of what it applied to the PII filter.
+
+---
+
+## 185. Failed-auth lockout and the SSE cap (2026-11-23)
+
+Four more of §183's operator controls, chosen because each has a real enforcement
+point rather than a plausible one.
+
+| Key | Mechanism |
+|---|---|
+| `enable_auth_rate_limiting` | `GuardFailedAuthentication` middleware |
+| `auth_rate_limit_threshold` | try count before a block |
+| `auth_rate_limit_window` | TTL of the failure counter |
+| `max_sse_connections_per_user` | `SseConnectionRegistry` + the stream controller |
+
+### 185.1 The lockout is not a throttle
+
+The field says these controls track "failed auth attempts per IP and temporarily
+blocks after exceeding the threshold". That is a **lockout**, and the runtime
+already had a different control that worked: the named `throttle:` limiters
+(`chat`, `console`, `tools`, `magic-login-*`). Wiring these three numbers into a
+throttle would have been the wrong mechanism wearing the right name — it would
+rate-limit *requests* rather than count *failures*, so an attacker could fail
+once per window forever.
+
+`GuardFailedAuthentication` therefore keeps a per-address counter in the cache
+with the window as its TTL, and answers `429` with `Retry-After` before the
+authenticator runs.
+
+**Only `401` counts.** Not `403` — that is authorisation, and counting it would
+let a user lock themselves out by opening a page they cannot see. Not `419` or
+`422` — a caller who never presented a credential must not be able to fill the
+counter, which is why the test drives five session-login attempts (they answer
+`419` without a first-party session) and then proves the address is still allowed
+one `401`.
+
+**The failure path is thrown, not returned.** `auth:sanctum` raises
+`AuthenticationException`, which Laravel renders in the exception handler —
+outside the middleware pipeline. A middleware that only inspected
+`$response->getStatusCode()` would never see a 401 and the counter would never
+move. The guard catches `AuthenticationException` and `HttpExceptionInterface`,
+counts, and rethrows so rendering is untouched.
+
+**A success clears the counter**, because a valid credential is evidence the
+caller is not the brute-forcer. The cost is stated rather than hidden: behind a
+shared NAT one legitimate success resets an attacker's count. The alternative —
+never clearing — locks out an office because one client kept retrying an expired
+token, which is worse and not obviously safer.
+
+Threshold and window are clamped to the field's own bounds (3–100, 60–3600). An
+unclamped `0` would block every request from every address, which is the
+opposite of a security control.
+
+### 185.2 The SSE cap is an approximation, and says so
+
+`POST /api/v1/chat/stream` holds a PHP worker for the life of the stream, so an
+uncapped user can exhaust the pool. Concurrency is not observable in PHP-FPM —
+no worker can see another's death — so the count is a cache counter with a TTL,
+released in a `finally`:
+
+| Situation | Result |
+|---|---|
+| Stream completes or the client disconnects | `finally` releases the slot |
+| Worker killed (OOM, deploy, SIGKILL) | the slot expires with the TTL |
+| No acquire or release for the TTL | the counter resets, even mid-stream |
+
+The third row is the cost, and it fails **open** — it under-counts — which is the
+safe direction for a control whose failure mode is locking a user out of chat.
+Renewal mid-stream is not available: the controller hands the whole stream to
+`handleChatStreaming()`, so there is no loop to touch; `TTL` is therefore
+generous (600s) rather than tight.
+
+The slot is acquired **before** `response()->stream()`, for the same reason the
+budget check is there: a refusal must be an HTTP `429`, not an error frame inside
+a `200` stream. Anonymous callers (`userId <= 0`) are never counted — the route
+requires authentication, and one shared bucket would let one client block all.
+
+### 185.3 Ordering
+
+The `api` group is now `[EnforceRequestLimits, GuardFailedAuthentication,
+EnsureFrontendRequestsAreStateful, SubstituteBindings, EnsurePrincipalScope]`.
+Both new entries are `prepend`ed, in that order, after `statefulApi()`; the
+§184.3 note explains why prepending before that call put CSRF ahead of the size
+limit. The lockout sits behind the limit so an oversized body is refused before
+it is counted, and ahead of the authenticator so a locked-out address never
+reaches it.
+
+### 185.4 Gates
+
+| Gate | Result |
+|---|---|
+| `AuthFailureLockoutTest` | **5 tests** — below threshold is 401; the threshold blocks with `Retry-After`; success clears; disabled never blocks; a non-401 does not count |
+| `SseConnectionLimitTest` | **5 tests** — cap refuses the third connection; release frees a slot; `0` is unlimited; anonymous uncounted; the endpoint answers `429` when full |
+| broad run (auth, middleware, security, coverage) | **306 tests / 2,033 assertions**, no regressions |
+| phpcs PSR-12 on six files | exit 0 |
+| `bin/settings-coverage/generate.py` | 601 rows · **67 enforced** · **14 operator-unenforced** |
+
+The local full-suite run exceeded its 30-minute window in this shared worktree;
+CI's `App suite (SQLite)` remains the full-suite gate for this slice.
+
+### 185.5 What is left: 14
+
+Four are the audit group (`enable_security_audit_log`, `log_successful_auth`,
+`log_file_access`, `audit_log_retention_days`) — a security-event stream beside
+`AdminAuditLogger`, plus the retention sweep the fourth key names.
+
+Ten are group 3 of §184.6, and each needs a decision rather than a mechanism:
+`enable_security_headers`, `enable_hsts`, `mcp_app_allowed_hosts`,
+`enable_root_security_key`, `root_security_key`, `enable_loopback_ssl_bypass`,
+`enable_loopback_private_network_requests`, `enable_oauth_token_rate_limit`,
+`api_error_verbosity`, `strip_asset_versions`. Declaring one is only honest when
+enforcement genuinely belongs elsewhere; the next slice must check each against
+the code before choosing.
