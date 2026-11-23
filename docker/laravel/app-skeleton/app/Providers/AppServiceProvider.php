@@ -90,14 +90,18 @@ class AppServiceProvider extends ServiceProvider
     {
         // ── The tool dispatcher must be shared (149 §176) ──────────
         //
-        // The package binds `EventDispatcherInterface` with `bind`, so every
-        // `make()` built a fresh dispatcher. `ToolRegistry` captures the instance
-        // it is constructed with, which means a listener registered anywhere else
-        // is silently dropped — it lands on an object nobody dispatches through.
+        // `ToolRegistry` captures the instance it is constructed with, so a
+        // dispatcher rebuilt per resolution means a listener registered anywhere
+        // else is silently dropped — it lands on an object nobody dispatches
+        // through. That is exactly what a `bind` on either side caused
+        // (149 §179.4).
         //
         // An event dispatcher is a shared hub, and one-instance-per-resolution
         // makes listener registration a lottery. Sharing it is what lets the
         // per-tool quota waterfall reach the registry's own `tools/pre_execute`.
+        //
+        // The package shares it now too; this is restated so the app never
+        // depends on the package's default.
         //
         // To hear the after hook, register on Laravel's dispatcher instead: this
         // class's `listen()` registers with both maps and `dispatch()` fires

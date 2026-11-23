@@ -38,7 +38,7 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EmailServiceInterface;
 use Nvoos\Core\Domain\Contract\ErlangCInterface;
-use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
@@ -61,6 +61,7 @@ use Nvoos\Core\Domain\Service\Harness\OutputGuardrail;
 use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
 use Nvoos\Core\Domain\Contract\TraceStoreInterface;
@@ -151,7 +152,12 @@ class NvoosServiceProvider extends ServiceProvider {
 			RetrievalHarness::class,
 			fn ( $app ) => new RetrievalHarness( $app->make( ToolInvokerInterface::class ) ),
 		);
-		$this->app->bind( EventDispatcherInterface::class, EventDispatcher::class );
+		// Shared, not per-resolution. The registry captures the dispatcher it is
+		// constructed with, so a host that resolves the interface again would get a
+		// second instance and any listener registered there would land on an object
+		// nobody dispatches through. `bind` here was exactly that bug (149 §179.4).
+		// A dispatcher is a shared hub, so it is a singleton.
+		$this->app->singleton( EventDispatcherInterface::class, EventDispatcher::class );
 
 		// The readiness manifest is shared with the WordPress runtime, so a tool
 		// marked servable must be constructible here: send_group_email needs this
