@@ -73,24 +73,19 @@ final class AdminNavigationTest extends TestCase
     }
 
     /**
-     * A group of one is a label over a single link — noise. Settings is the
-     * documented exception, because filing it under Activity or Connections
-     * would mis-describe it.
+     * A group of one is a label over a single link — noise.
+     *
+     * Settings used to be the documented exception, because filing a lone
+     * Settings link under Activity or Connections would mis-describe it;
+     * `orchestration.presets` (§181) is the second item that removes the
+     * exception, and the rule is stronger for having none.
      */
-    public function test_every_group_holds_at_least_two_items_except_settings(): void
+    public function test_every_group_holds_at_least_two_items(): void
     {
         foreach (AdminNavigationGroup::cases() as $group) {
-            $count = count($group->items());
-
-            if (AdminNavigationGroup::Settings === $group) {
-                $this->assertSame(1, $count, 'Settings is the single-item exception; anything else needs a second item.');
-
-                continue;
-            }
-
             $this->assertGreaterThanOrEqual(
                 2,
-                $count,
+                count($group->items()),
                 sprintf('Group "%s" has one item; fold it into a neighbour.', $group->getLabel())
             );
         }
