@@ -1511,3 +1511,139 @@ but is not published and therefore invisible). `lib/core` 2149 / 16,414; adapter
 348 / 1,857; skeleton links + vision + text + readiness + registration +
 diagnostics 31 / 382. Auditor 241 rows / 222 servable, no violations, G6 empty.
 phpcs clean on all four files.
+
+## 24. Addendum: content_recommendation_engine, and the AI that was not there (2026-11-24)
+
+### The slice
+
+`content_recommendation_engine` was recorded in §23 as sharing the retrieval half of
+`suggest_internal_links` and being "the same machinery with a different prompt". That
+was wrong, and reading the WordPress implementation is what showed it. There is no
+prompt to write, because there is no model to call.
+
+### What the WordPress tool actually does
+
+The tool advertises "AI-powered related content recommendations with personalization,
+collaborative filtering, semantic similarity, and user behavior tracking". Read line by
+line:
+
+- `use_semantic_search` is accepted and passed to `calculate_similarity_score()`, whose
+  parameter carries `phpcs:ignore ... UnusedFunctionParameter.Found -- Parameter
+  reserved for semantic search`. It is never read. `use_collaborative` is the same in
+  `calculate_personalized_score()`.
+- `category_based` runs a `WP_Query` for same-category posts in random order and scores
+  every one of them with `format_recommendation( $post, 0.8, 'category' )` — a literal.
+- `train_model` calls `train_recommendation_model()`, which returns
+  `array( 'features' => n, 'accuracy' => 0.85, 'algorithm' => 'collaborative_filtering' )`
+  with the comment "Simplified training - in production would use actual ML". The
+  hardcoded **accuracy is written to an option** and the action answers `success: true`
+  with the next step "Model is now active for personalized recommendations".
+- `trending` scores `engagement × (1 − w) + recency × w`, where engagement is a post
+  meta value only `track_interaction` ever writes. On a store with no tracked
+  interactions the engagement term is zero and the ranking is recency over a seven-day
+  window.
+- `personalized` with an empty history returns `get_trending_content( ..., 0.5 )`.
+
+So three of the four actions and one of the four recommendation types depend on an
+interaction store, and the "model" was a constant. What is actually computed from
+content is: a similarity score, a category filter, and recency.
+
+### The port ranks; it does not generate
+
+A recommendation is a ranking over rows that exist. Ranking by signals the caller can
+inspect — shared terms, shared words, age — is auditable, and every id in the answer is
+a row that was retrieved. Asking a model to rank without embeddings would produce
+relevance numbers it cannot compute, which is the failure §23 exists to prevent, one
+layer up. So this tool computes the score, returns it, and returns its components.
+
+Its capability profile follows: `read` rather than the WordPress `edit_posts`, and
+flags `idempotent`, `local-only`, `read-only`, `requires-capability` — no
+`consumes-tokens`, no `external-api`, no `requires-credentials`. A host with a database
+and no API key can serve it.
+
+### Three corrections, named
+
+For an item that carries taxonomy terms the published weights are kept —
+`0.4 · taxonomy + 0.3 · tag + 0.3 · title` — so the score means what it meant there.
+Three things change, each for a stated reason:
+
+1. **Title similarity is token overlap, not `similar_text()`.** WordPress divides the
+   matching-character count by the longer title length, which scores two unrelated
+   English titles of equal length highly because they share most of the alphabet. A
+   test pins two unrelated titles at `0.0`.
+2. **`category_based` returns the real score.** The filter is the same — the candidate
+   must share a category or tag with the source — but the number is computed, not
+   assigned. A test asserts the score is *not* `0.8`.
+3. **An item with no terms falls back to text overlap** (`0.7 · text + 0.3 · title`).
+   WordPress's formula would score every candidate zero on both term components and
+   leave the order to the store. A post with no categories and no tags has nothing for
+   that formula to weigh; text is the signal that remains. The payload shows which
+   components were used, so a caller can see which formula ran.
+
+### What is refused, and what is served as a fallback
+
+`train_model`, `track_interaction` and `analyze_performance` return
+`unsupported_action` with a message naming the missing dependency — no model to fit, no
+interaction store, no history to analyse. They do not write an option and report
+success. A test asserts each refusal's message, in the app, against the real error
+factory.
+
+`personalized` is served as the recency fallback, which is what WordPress itself does
+when a user has no history — and on a host with no interaction store, every user has no
+history. The payload says so: `fallback: trending` plus a
+`fallback_reason`. `trending` reports `strategy: recency`, so nobody reads popularity
+into it.
+
+### Three WordPress parameters not offered
+
+`use_semantic_search` and `use_collaborative` did nothing in WordPress. `recency_weight`
+is only meaningful against engagement data that does not exist here; with the engagement
+term at zero it is a monotone rescaling of recency and cannot change the order. A
+parameter with no reader is the rendered-control failure this proposal keeps naming, so
+none of the three appears in the schema.
+
+### `TopicTerms`, extracted
+
+Both retrieval tools need the same search terms. Rather than grow a second copy of the
+stopword list and the frequency ranking, `suggest_internal_links` now takes
+`Nvoos\Core\Domain\Service\Text\TopicTerms` — one class, one rule, two callers. The
+move is not cosmetic: two copies of a ranking rule drift, and the same page would yield
+different candidates depending on which tool asked. The existing eleven tests still pin
+the behaviour; ten new ones pin what the move made explicit — the tie order is stable
+between runs, a limit below one still returns a term rather than an empty query, and
+accented words survive the split.
+
+### One default widened
+
+WordPress defaults `include_post_types` to `array( 'post' )`. Here it defaults to
+`array( 'post', 'page' )`, matching `suggest_internal_links`, because the Laravel
+content model holds pages in the same table and a page that recommends only posts is the
+less useful half of the same store. A caller who wants the WordPress behaviour passes
+the type explicitly.
+
+### Validation
+
+`ContentRecommendationEngineToolTest` (core, 24 tests: slug/capability/flags without
+`consumes-tokens` or `external-api`; the missing store; a required source; a
+non-resolving `post_id`; **the three action refusals naming what is missing**; the
+published-only statuses reaching the query; the source excluded from its own results;
+caller exclusions reaching the query; ranked-by-shared-terms with the components
+reported; the published `0.4/0.3/0.3` weights producing `1.0` on a perfect match;
+unrelated titles scoring `0.0`; the no-terms text fallback; reproducible tie order;
+the limit; category mode keeping only sharers and **not** returning `0.8`; category mode
+without terms as a finding; `trending` ranking the seven-day window and excluding a
+30-day-old row; an empty window as a finding; the personalized fallback reported; empty
+retrieval naming its terms; a source with no words; an unknown recommendation type).
+`TopicTermsTest` (core, 10 tests). Feature test
+`docker/laravel/app-skeleton/tests/Feature/ContentRecommendationEngineToolTest.php`
+(7 tests against the real store and real taxonomy rows: registration, a real row ranked
+above an unrelated one with the source excluded, a draft never recommended, category
+mode filtering on the `nvoos_post_term` rows the database actually holds, a source
+without categories reported as a finding, trending returning recent rows, and the three
+refusals surfaced through the real error factory).
+
+`lib/core` 2,185 / 16,509; adapter 348 / 1,858; skeleton full 2,232 / 22,339 with five
+environment-only errors in a one-off runner (three need
+`examples/nvoos-astro-velocity/src/tokens/core.json` outside the mounted tree, two data
+providers yield no datasets for the same reason — none in a changed area). Auditor 242
+rows / 223 servable, no violations. phpcs clean on all three files at the CI severities.

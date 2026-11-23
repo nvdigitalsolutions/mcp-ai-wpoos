@@ -243,6 +243,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'content_recommendation_engine' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ContentRecommendationEngineRankingTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentRecommendationEngineToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'content_recommendation_engine_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ContentRecommendationEngineTool',
 			'readiness' => 'quarantined',
