@@ -554,3 +554,82 @@ skeleton tool + registration 9. phpcs clean on all eight files.
 
 `mcp_server_info` remains the only member of the original four with no manifest
 row; it still needs the runtime identity contract described in §11.
+
+---
+
+## 14. Addendum: runtime identity for `mcp_server_info` (2026-11-23)
+
+### The gap
+
+The last of the four preset-named introspection tools with no manifest row. The
+app already described itself in `DiagnosticsController` —
+`rest_context: { backend: laravel, contract: mcp-ai/v1 }` — but an agent could
+not ask. An agent with several connections uses this tool to tell one backend
+from another before it acts.
+
+### What is reported, and the two WordPress fields that are not
+
+`RuntimeIdentityInterface` carries `name`, `version`, `runtime`, `contract`,
+`site_name`, `site_url`, `api_base`.
+
+Two fields from the WordPress payload are deliberately absent:
+
+- **`mode`** (`base` vs `complete`) is a WordPress distribution concept with no
+  equivalent here.
+- **`mcp_endpoint`** names a JSON-RPC mount this runtime does not serve.
+  `api_base` + `contract` answer the same question — where the API lives and
+  what it speaks — without pointing a caller at a route that 404s. The contract
+  value is the one `DiagnosticsController` already declares, so the two surfaces
+  cannot disagree.
+
+`bridge_name` is also absent: the WordPress tool reads it from an
+`X-MCP-Bridge-Name` header on the MCP surface, which this runtime has no
+equivalent of.
+
+### The version key that was never declared
+
+Four readers already did `config('app.version', '1.2.0')` — the diagnostics page,
+the diagnostics controller (twice) and assistant portability — but
+`config/app.php` had **no `version` key**, so every one of them silently used the
+fallback. §14 declares it:
+
+```php
+'version' => env('APP_VERSION', '1.2.0'),
+```
+
+The default is the value those readers already assumed, so nothing changes for a
+deployment that does not set `APP_VERSION`; it simply becomes configurable, and
+the identity tool reads the same key rather than inventing a constant.
+
+### Shape and secrecy
+
+- **The schema is guaranteed.** The tool casts every field and fills absent ones
+  with `''`, so a host that returns a partial array still produces the seven keys
+  its schema promises.
+- **No secrets, no redaction pass.** Every field is a public identifier, and the
+  contract makes "no secrets" a rule rather than an implementation detail. The
+  feature test walks the payload and asserts no credential-shaped key
+  (`token`, `secret`, `password`, `api_key`, `authorization`, `email`) appears —
+  a guard against a future host adding one.
+- **Capability `read`**, matching the WordPress tool. Unlike the audit trail,
+  identity is not operator-only: it is the same information a login page already
+  discloses.
+- **Nullable collaborator**, the §13 seam: the package has no deployment, so it
+  registers the tool with `null` and the tool says so; `AppServiceProvider` binds
+  `App\Support\Identity\RuntimeIdentity`.
+
+### Validation
+
+`McpServerInfoToolTest` (core, 5 tests: full identity, no host identity, partial
+identity still shaped, no-argument schema, capability/flags) and
+`docker/laravel/app-skeleton/tests/Feature/McpServerInfoToolTest.php` (3 tests:
+the container builds it, the values match this deployment — including
+`contract: mcp-ai/v1` and an `api_base` ending `/api/v1` — and no
+credential-shaped keys). `lib/core` 2032 / 15,894; adapter 348 / 1,829;
+skeleton identity + registration + diagnostics 17. phpcs clean on all eight
+files.
+
+This closes the original four. `list_mcp_tools`, `get_site_health`,
+`get_system_logs` and `mcp_server_info` all have manifest rows and evidence; the
+next gap in the queue is the assistant / research lifecycle tools, then memory
+extras and WP-shaped media naming.

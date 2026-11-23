@@ -1297,6 +1297,14 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'mcp_server_info' => array(
+			'class' => 'Nvoos\\Core\\Tool\\McpServerInfoTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/McpServerInfoToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'merge_arrays' => array(
 			'class' => 'Nvoos\\Core\\Tool\\MergeArraysTool',
 			'readiness' => 'pure',
