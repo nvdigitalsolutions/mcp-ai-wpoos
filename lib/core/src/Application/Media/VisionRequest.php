@@ -48,33 +48,6 @@ final class VisionRequest
     public const DEFAULT_PROMPT = 'Describe this image in detail, including objects, people, text, colors, and composition.';
 
     /**
-     * The conversation a vision model is asked to answer.
-     *
-     * Prompt first, image second: the instruction frames what to look for, and
-     * every provider reads the segments in order.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public static function messages(string $prompt, string $dataUri): array
-    {
-        return array(
-            array(
-                'role'    => 'user',
-                'content' => array(
-                    array(
-                        'type' => 'text',
-                        'text' => $prompt,
-                    ),
-                    array(
-                        'type'      => 'image_url',
-                        'image_url' => array( 'url' => $dataUri ),
-                    ),
-                ),
-            ),
-        );
-    }
-
-    /**
      * Encode bytes as the data URI every client understands.
      */
     public static function dataUri(string $bytes, string $mimeType): string

@@ -38,12 +38,28 @@ declare(strict_types=1);
 return array(
 	'version' => 1,
 	'tools'   => array(
+		'analyze_code_sequence' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AnalyzeCodeSequenceCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/TextCompletionToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'analyze_code_sequence_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AnalyzeCodeSequenceTool',
 			'readiness' => 'quarantined',
 			'reason' => 'Prompt-builder stand-in: returns a prompt and performs no work. The WordPress tool with this slug is canonical.',
 			'replaced_by' => 'analyze_code_sequence',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
+		),
+		'analyze_comment_content' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AnalyzeCommentContentCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/TextCompletionToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'analyze_comment_content_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AnalyzeCommentContentTool',
@@ -782,6 +798,14 @@ return array(
 			'reason' => 'Extends GenerateOpenAISpeechTool, so it shares the same request path and evidence.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoAndAudioToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
+		),
+		'generate_post_excerpt' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GeneratePostExcerptCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/TextCompletionToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'generate_post_excerpt_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GeneratePostExcerptTool',
@@ -1624,6 +1648,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SendGroupEmailToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
+		'seo_meta_optimizer' => array(
+			'class' => 'Nvoos\\Core\\Tool\\SeoMetaOptimizerCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/TextCompletionToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'seo_meta_optimizer_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SEOMetaOptimizerTool',
 			'readiness' => 'quarantined',
@@ -1761,6 +1793,14 @@ return array(
 			'readiness' => 'pure',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'validate_reasoning_chain' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ValidateReasoningChainCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/TextCompletionToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'validate_reasoning_chain_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ValidateReasoningChainTool',
