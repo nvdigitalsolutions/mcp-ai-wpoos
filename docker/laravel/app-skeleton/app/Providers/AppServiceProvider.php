@@ -34,6 +34,7 @@ use App\Support\RemoteSites\RemoteSiteStore;
 use App\Support\Security\SecuritySnapshotStore;
 use App\Support\Settings\SettingsService;
 use App\Support\Token\TiktokenService;
+use App\Support\ToolFlags\ToolFlagOverrideStore;
 use App\Support\ToolQuota\ToolQuotaExceededException;
 use App\Support\ToolQuota\ToolQuotaGuard;
 use App\Support\ToolQuota\ToolQuotaRecorder;
@@ -57,6 +58,7 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
+use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
@@ -105,6 +107,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(EventDispatcherInterface::class, EventDispatcher::class);
 
         $this->registerToolQuotaListeners();
+
+        // ── Per-tool capability-flag overrides (149 §177) ─────────
+        //
+        // The guards take this as an optional core port (addition-only), so a
+        // host that never binds it keeps the behaviour it had before the port.
+        // Binding here is what makes the estate's overrides reach the read-only
+        // profile, the chat profile and the necessity gate at once.
+        $this->app->bind(CapabilityFlagOverridesInterface::class, ToolFlagOverrideStore::class);
 
         // The assistant and team contracts are host-specific (Eloquent
         // models), so they are bound here rather than in the package provider.

@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Tool;
 
+use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
 use Nvoos\Core\Domain\Contract\ToolGuardInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
@@ -57,6 +58,7 @@ final class ChatProfileGuard implements ToolGuardInterface
         private readonly ToolResolverInterface $tools,
         private readonly ChatProfileResolverInterface $profiles,
         private readonly bool $blockUndeclared = true,
+        private readonly ?CapabilityFlagOverridesInterface $overrides = null,
     ) {
     }
 
@@ -76,6 +78,7 @@ final class ChatProfileGuard implements ToolGuardInterface
             $profile->gatedFlags(),
             $profile->allowedSlugs(),
             $this->blockUndeclared,
+            $this->overrides,
         );
 
         return $delegate->evaluate($slug, $arguments, $context);

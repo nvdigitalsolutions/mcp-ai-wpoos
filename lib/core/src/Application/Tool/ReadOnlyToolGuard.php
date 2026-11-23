@@ -28,11 +28,11 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Tool;
 
-use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ToolGuardInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagResolution;
 use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
-use Nvoos\Core\Domain\Service\Safety\ToolCapabilityFlagCatalogue;
 
 /**
  * Blocks state-changing tools while a read-only profile is active.
@@ -66,6 +66,7 @@ final class ReadOnlyToolGuard implements ToolGuardInterface
         private readonly array $gatedFlags = self::DEFAULT_GATED_FLAGS,
         private readonly array $allowedSlugs = array(),
         private readonly bool $blockUndeclared = true,
+        private readonly ?CapabilityFlagOverridesInterface $overrides = null,
     ) {
     }
 
@@ -112,28 +113,19 @@ final class ReadOnlyToolGuard implements ToolGuardInterface
     }
 
     /**
-     * Flags for a tool: its own declaration, else the corpus catalogue.
+     * Flags for a tool: its own declaration, else the corpus catalogue, plus any
+     * administrator additions.
      *
-     * The core tool classes were ported without `getCapabilityFlags()` — zero of
-     * them implement the interface — so the values WordPress declared are
-     * supplied from {@see ToolCapabilityFlagCatalogue}. A slug the catalogue
-     * does not know returns null, which leaves `blockUndeclared` as the
-     * backstop rather than inventing a verdict.
+     * The three-step lookup lives in {@see CapabilityFlagResolution} so this
+     * guard, `NecessityGuard` and the chat-profile delegate cannot disagree
+     * about the order. Additions are unioned in last and cannot remove a flag;
+     * an undeclared tool stays undeclared, because otherwise an override could
+     * turn "we could not tell" into "we checked and it is fine".
      *
      * @return list<string>|null Null when nothing is declared anywhere.
      */
     private function declaredFlags(string $slug, object $tool): ?array
     {
-        if ($tool instanceof ToolCapabilityFlagsInterface) {
-            $declared = CapabilityFlagVocabulary::normalise($tool->getCapabilityFlags());
-
-            if (array() !== $declared) {
-                return $declared;
-            }
-        }
-
-        $catalogue = CapabilityFlagVocabulary::normalise(ToolCapabilityFlagCatalogue::for($slug));
-
-        return array() === $catalogue ? null : $catalogue;
+        return CapabilityFlagResolution::resolve($slug, $tool, $this->overrides);
     }
 }
