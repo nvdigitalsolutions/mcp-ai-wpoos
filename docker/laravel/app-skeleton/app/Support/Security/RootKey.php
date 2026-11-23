@@ -51,6 +51,8 @@ use Throwable;
  * The field says the key "cannot be recovered if lost", and that is true: only a
  * hash is stored. `nvoos:root-key --set` is the break-glass path, and it is the
  * reason enabling this control cannot brick a deployment — see `RootKeyCommand`.
+ * It prompts for the secret rather than accepting it as an argument, so the key
+ * itself never reaches shell history or a process listing.
  */
 final class RootKey
 {
@@ -121,12 +123,31 @@ final class RootKey
     }
 
     /**
-     * Forget the key. The enable flag is left alone; `enabled()` alone no longer
-     * gates anything because `configured()` is false.
+     * Forget the key. The enable flag is left alone.
+     *
+     * That is deliberate and it is why this is not the disable path: the gate
+     * fails closed, so a flag left on with no key refuses every operator write.
+     * Use `disable()` to switch the control off.
      */
     public function clear(): void
     {
         $this->platform->set('root_security_key', '');
+    }
+
+    /**
+     * Switch the control off and forget the key.
+     *
+     * Both, in that order, because either one alone is a trap. Clearing only the
+     * key leaves the flag on, and the gate deliberately fails closed — so
+     * "disabled" would mean "every operator write refused, permanently". Turning
+     * only the flag off leaves a hash nobody can use and nobody can remember. An
+     * operator reaches for this path having already lost the key, so it must leave
+     * the panel usable and re-arming requires a fresh key.
+     */
+    public function disable(): void
+    {
+        $this->platform->set('enable_root_security_key', false);
+        $this->clear();
     }
 
     /**

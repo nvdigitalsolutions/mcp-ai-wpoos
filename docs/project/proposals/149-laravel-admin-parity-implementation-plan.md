@@ -18214,6 +18214,23 @@ that payload with `{root_security_key, enable_root_security_key}` before the
 writer runs, and `test_the_bootstrap_exemption_writes_only_the_credential` pins
 it. A first key is a credential, not a hall pass.
 
+### 188.6.1 Arming requires a key, because the alternative is a lock with no handle
+
+Review found a second hole, in the opposite direction. The flag alone arms the
+gate — deliberately, so a deleted secret cannot silently disarm a control. But the
+panel let an operator tick `enable_root_security_key` with no key stored, and the
+next save refused every write. The field is a checkbox; a checkbox must not be
+able to make the panel unusable until someone reaches a shell.
+
+Arming is now refused unless a key is stored or the same save supplies one.
+The check has to know the form's two ways of saying "no new key": an untouched
+password field submits empty, and an existing one submits the mask. Both are
+treated as absent, which is the same rule `write()` already applies when it skips
+a sensitive field.
+
+The failure is `RootKeyInvalid` (422), not `RootKeyRequired` (423): the payload is
+wrong, and it is wrong before anything is gated.
+
 ### 188.7 Console is the break-glass path, and saying so is part of the design
 
 `nvoos:root-key --set|--disable|--status` manages the key from the CLI and is
@@ -18222,7 +18239,16 @@ recovery path that needs the thing it recovers is not a recovery path. The gate'
 `required()` therefore returns false for console requests — except under PHPUnit,
 so the tests still exercise the gate they are testing. This is the one deliberate
 hole in the mechanism, and it is a hole into the shell, which is already the
-trusted boundary.
+trusted boundary. `--set` prompts for the secret rather than taking it as an
+argument, so the key itself never reaches shell history or a process listing.
+
+`--disable` was wrong on the first pass, in a way only the failure mode would have
+shown: it cleared the key and left the flag on. The gate fails closed, so that
+combination refuses **every** operator write — "disabled" meant "locked out".
+`RootKey::clear()` is retained as "forget the key", and `disable()` now clears the
+key *and* switches the flag off, which is what the option name promises and what
+someone who has lost the key needs. Re-arming requires a fresh key, so the
+stale-hash trap does not come back.
 
 ### 188.8 Every attempt is recorded, accepted or rejected
 
@@ -18279,7 +18305,13 @@ Two consequences worth recording:
 
 | Gate | Result |
 |---|---|
-| `RootKeyGateTest` | **14 tests** — off means pass-through; armed with no key blocks; first key may be stored; armed requires proof; header proof; session grant and expiry; hash at rest; minimum length; legacy plaintext upgrade; empty candidate; denied attempt audited; unlock endpoint accept; unlock endpoint reject; bootstrap writes only the credential |
-| combined run (root key, catalogue, coverage, security, projection, navigation, auth) | **108 tests / 11,346 assertions**, green apart from the two known PM-provider `No tests found` errors |
+| `RootKeyGateTest` | **17 tests / 39 assertions** — off means pass-through; arming without a key refused; arming with an empty password field refused; first key may be stored; bootstrap writes only the credential; armed requires proof; header proof; session grant and expiry; hash at rest; minimum length; legacy plaintext upgrade; empty candidate; denied attempt audited; disable clears both halves; command reports and disables; unlock endpoint accept; unlock endpoint reject |
+| combined run (root key, catalogue, coverage, security, projection, navigation, auth) | **110 tests / 11,352 assertions**, green apart from the two known PM-provider `No tests found` errors |
 | phpcs PSR-12 on fifteen files | exit 0 |
 | `bin/settings-coverage/generate.py` | 601 rows · **74 enforced** · **0 operator-unenforced** |
+
+One process note worth keeping: a `docker exec` against the *running* app
+container reported `nvoos:root-key` as undefined. It was not — the container
+serves a different worktree. A CLI check is only evidence about the tree it runs
+from, so it belongs in a snapshot container, not in whichever process happens to
+be up.

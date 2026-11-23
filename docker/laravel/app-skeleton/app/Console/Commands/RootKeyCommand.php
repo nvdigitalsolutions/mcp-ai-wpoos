@@ -24,7 +24,7 @@ class RootKeyCommand extends Command
 {
     protected $signature = 'nvoos:root-key
         {--set : Prompt for and store a new root security key}
-        {--disable : Remove the stored key, turning the gate off}
+        {--disable : Remove the stored key and switch the gate off}
         {--status : Report whether the key is configured and whether the gate is on}';
 
     protected $description = 'Manage the root security key that gates operator writes (break-glass path).';
@@ -36,8 +36,8 @@ class RootKeyCommand extends Command
         }
 
         if ($this->option('disable')) {
-            $key->clear();
-            $this->info('Root security key cleared. Operator writes are no longer gated.');
+            $key->disable();
+            $this->info('Root security key cleared and the gate switched off. Operator writes are no longer refused.');
 
             return self::SUCCESS;
         }
