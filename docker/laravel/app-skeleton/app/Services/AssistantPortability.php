@@ -148,6 +148,25 @@ final class AssistantPortability
             return $entry;
         }
 
+        $entry['meta'] = $this->redactMeta($meta);
+
+        return $entry;
+    }
+
+    /**
+     * The denylist itself, applied to a `meta` map.
+     *
+     * Shared by both directions on purpose. Export redaction alone would leave
+     * the key in the database, where every read path that is not the export
+     * engine still sees it; import redaction alone would let a stored row leave
+     * by a route nobody remembered. One implementation, both gates.
+     *
+     * @param array<mixed> $meta
+     *
+     * @return array<mixed>
+     */
+    private function redactMeta(array $meta): array
+    {
         foreach (self::META_DENYLIST as $key) {
             unset($meta[$key]);
         }
@@ -156,9 +175,7 @@ final class AssistantPortability
             $meta['_wp_mcp_ai_mcp_apps'] = $this->redactApps($meta['_wp_mcp_ai_mcp_apps']);
         }
 
-        $entry['meta'] = $meta;
-
-        return $entry;
+        return $meta;
     }
 
     /**
@@ -361,11 +378,17 @@ final class AssistantPortability
     /**
      * Map a bundle entry onto the assistant columns and `meta`.
      *
-     * `meta` is carried through verbatim: it holds the WordPress `_wp_mcp_ai_*`
-     * keys an export from either runtime writes, and rewriting it here would
-     * break the round trip. The promoted keys are also left inside `meta`, which
-     * is what the previous controller did and what an export from this runtime
-     * produces, so a re-import is stable.
+     * `meta` is otherwise carried through verbatim: it holds the WordPress
+     * `_wp_mcp_ai_*` keys an export from either runtime writes, and rewriting it
+     * here would break the round trip. The promoted keys are also left inside
+     * `meta`, which is what the previous controller did and what an export from
+     * this runtime produces, so a re-import is stable.
+     *
+     * **The credential denylist is the one exception**, and it is applied before
+     * the promoted keys are read because it must also run for a bundle an
+     * operator pasted in by hand — the case WordPress's own export redaction
+     * never saw. Removing two named keys does not damage the round trip; keeping
+     * them would store a live credential because a JSON file asked it to.
      *
      * @param array<string, mixed> $entry
      *
@@ -374,6 +397,7 @@ final class AssistantPortability
     private function entryToData(array $entry, string $slug, ?string $statusOverride): array
     {
         $meta = is_array($entry['meta'] ?? null) ? $entry['meta'] : array();
+        $meta = $this->redactMeta($meta);
         $status = $statusOverride ?? (string) ($entry['status'] ?? 'draft');
 
         if (! in_array($status, array('draft', 'publish', 'private'), true)) {
