@@ -391,6 +391,7 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 	private function create_async_tool_with_flags( $flags ) {
 		return new class( $flags ) implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Capability flags for the mock tool.
 			 *
@@ -476,6 +477,7 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 	private function create_mock_executable_tool() {
 		return new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -546,6 +548,7 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 	private function create_provider_specific_tool( $provider ) {
 		return new class( $provider ) implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Provider name for the mock tool.
 			 *

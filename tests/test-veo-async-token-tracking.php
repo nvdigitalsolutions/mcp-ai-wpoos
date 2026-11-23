@@ -54,6 +54,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		// Create a mock tool.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -343,6 +344,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		// Create a mock tool.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *

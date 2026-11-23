@@ -15,6 +15,7 @@
  */
 class WP_MCP_AI_Mock_Broken_Schema_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Get the tool slug.
 	 *
@@ -68,6 +69,7 @@ class WP_MCP_AI_Mock_Broken_Schema_Tool implements WP_MCP_AI_Tool_Interface {
  */
 class WP_MCP_AI_Mock_Invalid_Schema_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Get the tool slug.
 	 *
@@ -122,6 +124,7 @@ class WP_MCP_AI_Mock_Invalid_Schema_Tool implements WP_MCP_AI_Tool_Interface {
  */
 class WP_MCP_AI_Mock_Working_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Get the tool slug.
 	 *

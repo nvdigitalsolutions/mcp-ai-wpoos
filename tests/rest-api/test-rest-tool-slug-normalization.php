@@ -127,6 +127,7 @@ class WP_MCP_AI_REST_Tool_Slug_Normalization_Test extends WP_Test_REST_TestCase 
  */
 class WP_MCP_AI_REST_Tool_Slug_Normalization_Test_Stub_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Captured arguments from the last execute call.
 	 *
