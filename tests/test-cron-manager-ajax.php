@@ -114,7 +114,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - wp_send_json_success calls wp_die.
 		}
 		$response = ob_get_clean();
@@ -138,7 +138,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -170,7 +170,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -200,7 +200,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -238,7 +238,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -280,7 +280,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -303,7 +303,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -322,7 +322,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -344,7 +344,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 			ob_start();
 			try {
 				$this->manager->ajax_get_stats();
-			} catch ( WPAjaxDieContinueException $e ) {
+			} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 				// Expected.
 			}
 			$response = ob_get_clean();
@@ -364,7 +364,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -418,7 +418,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
@@ -446,7 +446,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$response = ob_get_clean();
