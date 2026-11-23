@@ -198,12 +198,13 @@
       "title": "Orchestration presets",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "subset" },
       "console": null,
-      "writer": "none",
+      "writer": "admin",
       "plan_gate": null,
-      "files": [],
-      "notes": "Recorded 2026-11-23 (§176). WordPress ships named bundles that write the `settings` and `thresholds` groups at once, with a recommendation engine (`WP_MCP_AI_Tool_Recommendations`) that reports which tools differ from the chosen preset. A preset over fields that do not exist yet would be a button that writes nothing, so this surface is ordered after `orchestration.thresholds` and `orchestration.tool-overrides` — the same dependency the WordPress page has, where the preset is a projection over those two groups."
+      "projection": "Four named postures over the three Turn budget keys: the per-call ceiling, the per-turn ceiling and the warn band. All three are read by Nvoos\\Core\\Domain\\ValueObject\\TurnBudget through SettingsService, and the page writes them through the same service and the same admin-surface filter as /admin/settings, so the projection cannot drift from the section it sets. The active posture is derived from the stored values rather than kept in an option - no exact match reads as Custom. The WordPress bundle settings (agent teams, reasoning mode, speculative execution) are not rendered because this runtime reads none of their fields, and the tool-override half of the recorded dependency is declined: CapabilityFlagOverridesInterface is addition-only, so a preset could tighten but never loosen, and read_only is meaningful only for tools that can already write.",
+      "files": ["app/Filament/Admin/Pages/OrchestrationPresets.php"],
+      "notes": "Recorded 2026-11-23 (§176). WordPress ships named bundles that write the `settings` and `thresholds` groups at once, with a recommendation engine (`WP_MCP_AI_Tool_Recommendations`) that reports which tools differ from the chosen preset. A preset over fields that do not exist yet would be a button that writes nothing, so this surface is ordered after `orchestration.thresholds` and `orchestration.tool-overrides` — the same dependency the WordPress page has, where the preset is a projection over those two groups. Proposal 149 \u00a7181 ported the surface as a turn-budget macro: four postures, applied through SettingsService with a confirmation step and an audit row keyed by the preset. Declined: a stored active-preset option (a second truth that drifts on the first manual edit), custom presets (the settings page is the custom editor for the same three fields), and the tool-override bundle (addition-only by type, so a looser preset would silently leave restrictions in place)."
     },
     {
       "id": "orchestration.settings",

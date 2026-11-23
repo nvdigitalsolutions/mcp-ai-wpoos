@@ -17264,3 +17264,78 @@ service, so there is exactly one code path that decides what is stored.
 
 The page needed no new migration: the row, the estate column, the alt field and
 the derivative table already existed for the read-only version.
+
+## 181. Orchestration presets, as a turn-budget macro (2026-11-23)
+
+The WordPress `orchestration` → `presets` view ships eleven named bundles over a
+bag of orchestrator flags: agent teams, reasoning mode, load balancing, PSO,
+speculative execution. This runtime reads none of those fields. Three keys in the
+whole bag have a reader — the turn-budget trio §179 added. So the port is a
+projection over those three, and the page says so: §178.1's rule, applied to the
+surface where it bites hardest.
+
+### 181.1 What the research settled
+
+- **Confirm before overwriting.** Preset UIs converge on an explicit confirmation
+  when applying would replace values somebody tuned, and several settings editors
+  keep a "modified" indicator. Both are here: the row expands into a from → to
+  sentence before anything is written, and the `Now` card names the active
+  posture or `Custom`.
+- **Do not store an active preset.** WordPress keeps `wp_mcp_ai_active_preset`
+  beside the values; the two drift on the first manual edit. The posture is
+  derived from the stored values instead — exact match, else `Custom`.
+- **A preset should show its numbers.** Every row prints the three values it
+  writes, so applying one is never a surprise.
+
+### 181.2 What shipped
+
+| Layer | Piece |
+|---|---|
+| `App\Support\Orchestration\TurnBudgetPresets` | four postures (`frugal`, `balanced`, `generous`, `off`), typed current values, exact-match detection, one `apply()` through `SettingsService` |
+| `OrchestrationPresets` page | `/admin/presets`, Settings group: a Now card, a table of postures with values and rationale, inline confirmation |
+| audit | `orchestration-presets` / `<preset>` / `applied`, with the before and after sets |
+| navigation | Settings gains its second item, so `AdminNavigationTest`'s "single-item exception" is retired rather than kept for ever |
+
+The postures are quarters and halves of a 128k provider window multiplied by the
+number of calls a turn of that shape makes (16k/64k, 32k/160k, 64k/512k), plus
+`Off` — 0/0, the behaviour every estate had before §179.
+
+**The audit redacts both token ceilings.** `AdminAuditLogger` replaces any key
+containing `token` before writing the row, so `turn_max_call_tokens` and
+`turn_max_turn_tokens` read as `[redacted]` while `turn_warn_at` keeps its value.
+That is the logger's deliberate trade ("an over-redacted log is an inconvenience,
+an under-redacted one is an incident") and it is not overridden here. The preset
+key is the durable record anyway: the values it writes are code-owned, so
+"frugal applied" identifies them exactly.
+
+### 181.3 What is deliberately not here
+
+- **The tool-override half of §178.1's note.** It does not survive §177's type:
+  `CapabilityFlagOverridesInterface` is addition-only, so a preset could tighten
+  restrictions but never loosen them — "apply Balanced" would silently leave a
+  previous preset's `read_only` flags in place. And `read_only` is meaningful
+  only for tools that can already write, so mapping WordPress's
+  `tool_preferences` (a routing hint) onto it would invent semantics.
+- **Custom presets.** WordPress stores them in an option. Here the settings page
+  is the custom editor for the same three fields; a saved table of integer
+  triples would be a second place to maintain.
+- **Model defaults as preset fields.** `default_model`, `temperature` and
+  `max_tokens` exist in `SettingsSchema` but no runtime path reads them — the
+  chat pipeline reads the assistant's own values — so a preset writing them would
+  be the inert button §178.1 warned about. Recorded rather than fixed: that is a
+  settings-surface question, not a preset one.
+- **The remaining WordPress bundles** (research, code generation, multi-agent,
+  supervisor, pipeline, swarm, PSO, DSpark): every field they set is unread here.
+
+### 181.4 Gates
+
+| Gate | Result |
+|---|---|
+| `AdminOrchestrationPresetsTest` | **8 tests / 618 assertions** — an unconfigured estate reads as Off; unmatched values read as Custom; apply writes all three keys and audits; the values reach `TurnBudget`; other settings are untouched; an unknown key writes and audits nothing; apply with no pending preset does nothing; the page requires the tenant panel |
+| surface / navigation / blade filter | **23 tests / 1,233 assertions** |
+| phpcs PSR-12 on five changed PHP files | exit 0 |
+| `bin/audit-surface-ownership.php` | 59 rows · **48 built** · 3 planned · 4 absent · 0 inert |
+
+`orchestration.presets` moved `planned` → `subset`: the page is rendered and
+writes, but over three fields rather than the WordPress bag, which is exactly
+what `subset` means in this contract.
