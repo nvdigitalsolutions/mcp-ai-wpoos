@@ -45,7 +45,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	// ── schema & structure tests ───────────────────────────────────────────────
 
 	/**
-	 * search_vitals_embeddings must be private (invoked via execute), not public.
+	 * Search_vitals_embeddings must be private (invoked via execute), not public.
 	 */
 	public function test_search_vitals_embeddings_is_private() {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Semantic_Content_Search' );
@@ -55,7 +55,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * generate_query_embedding must be private.
+	 * Generate_query_embedding must be private.
 	 */
 	public function test_generate_query_embedding_is_private() {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Semantic_Content_Search' );
@@ -86,7 +86,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * search_vitals_embeddings skips entries that have no embedding stored.
+	 * Search_vitals_embeddings skips entries that have no embedding stored.
 	 */
 	public function test_search_vitals_skips_entries_without_embedding() {
 		update_option(
@@ -96,7 +96,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 					'member_id' => 1,
 					'date'      => '2024-01-01',
 					'text'      => 'Vital signs for member 1.',
-					// deliberately missing 'embedding' key
+					// deliberately missing 'embedding' key.
 				),
 			)
 		);
@@ -113,7 +113,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * search_vitals_embeddings returns a matching entry and sets source = 'vitals'.
+	 * Search_vitals_embeddings returns a matching entry and sets source = 'vitals'.
 	 */
 	public function test_search_vitals_returns_matching_entry() {
 		// Unit vector pointing in the same direction as the query.
@@ -150,7 +150,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * search_vitals_embeddings filters entries below the threshold.
+	 * Search_vitals_embeddings filters entries below the threshold.
 	 */
 	public function test_search_vitals_filters_below_threshold() {
 		// Orthogonal vectors → cosine similarity = 0.
@@ -161,7 +161,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 					'member_id' => 1,
 					'date'      => '2024-01-01',
 					'text'      => 'Vital signs.',
-					'embedding' => array( 0.0, 1.0, 0.0, 0.0 ), // perpendicular
+					'embedding' => array( 0.0, 1.0, 0.0, 0.0 ), // perpendicular.
 					'model'     => 'text-embedding-3-small',
 					'stored_at' => '2024-01-01 00:00:00',
 				),
@@ -180,7 +180,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * search_vitals_embeddings sorts results by similarity descending.
+	 * Search_vitals_embeddings sorts results by similarity descending.
 	 */
 	public function test_search_vitals_sorts_by_similarity_desc() {
 		update_option(
@@ -218,7 +218,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * search_vitals_embeddings respects the limit parameter.
+	 * Search_vitals_embeddings respects the limit parameter.
 	 */
 	public function test_search_vitals_respects_limit() {
 		$index = array();
@@ -247,7 +247,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	// ── generate_query_embedding provider routing tests ────────────────────────
 
 	/**
-	 * generate_query_embedding falls back to OpenAI when provider is unrecognized.
+	 * Generate_query_embedding falls back to OpenAI when provider is unrecognized.
 	 * Without a valid OpenAI key, it returns a WP_Error (not a PHP fatal).
 	 */
 	public function test_generate_query_embedding_returns_error_without_api_key() {
@@ -270,7 +270,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * generate_query_embedding: when provider is 'gemini' and Gemini API key is
+	 * Generate_query_embedding: when provider is 'gemini' and Gemini API key is
 	 * absent, it falls through to OpenAI; if OpenAI key is also absent the result
 	 * is a WP_Error (not a fatal or unexpected type).
 	 */
@@ -295,7 +295,7 @@ class Test_Semantic_Search_Vitals_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * execute() returns WP_Error with correct code when query is missing.
+	 * Execute() returns WP_Error with correct code when query is missing.
 	 * (Regression guard – must still work after the vitals-search integration.)
 	 */
 	public function test_execute_still_requires_query_after_vitals_integration() {

@@ -41,6 +41,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
+	 * Sanitising allows alphanumerics, dashes and underscores.
+	 *
 	 * @test
 	 */
 	public function test_sanitize_session_id_allows_alphanumeric_dash_underscore() {
@@ -48,6 +50,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Sanitising strips special characters.
+	 *
 	 * @test
 	 */
 	public function test_sanitize_session_id_strips_special_chars() {
@@ -55,6 +59,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Sanitising truncates to 64 characters.
+	 *
 	 * @test
 	 */
 	public function test_sanitize_session_id_truncates_to_64_chars() {
@@ -63,6 +69,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Sanitising returns an empty string for a non-string.
+	 *
 	 * @test
 	 */
 	public function test_sanitize_session_id_returns_empty_on_non_string() {
@@ -75,6 +83,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
+	 * Pushing returns monotonically increasing ids.
+	 *
 	 * @test
 	 */
 	public function test_push_returns_monotonic_ids() {
@@ -86,6 +96,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Reading since zero returns every frame.
+	 *
 	 * @test
 	 */
 	public function test_get_frames_since_returns_all_when_since_zero() {
@@ -98,6 +110,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Reading since an id filters out older frames.
+	 *
 	 * @test
 	 */
 	public function test_get_frames_since_filters_by_id() {
@@ -114,6 +128,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An unknown session returns no frames.
+	 *
 	 * @test
 	 */
 	public function test_get_frames_since_returns_empty_for_unknown_session() {
@@ -123,6 +139,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A stored frame has the expected structure.
+	 *
 	 * @test
 	 */
 	public function test_frame_structure_is_correct() {
@@ -144,6 +162,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
+	 * The ring buffer enforces its cap.
+	 *
 	 * @test
 	 */
 	public function test_ring_buffer_cap_is_enforced() {
@@ -175,6 +195,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
+	 * An empty session reports a latest id of zero.
+	 *
 	 * @test
 	 */
 	public function test_latest_id_returns_zero_for_empty_session() {
@@ -182,6 +204,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The latest id matches the last pushed frame.
+	 *
 	 * @test
 	 */
 	public function test_latest_id_matches_last_pushed_id() {
@@ -196,6 +220,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
+	 * Flushing clears every frame.
+	 *
 	 * @test
 	 */
 	public function test_flush_clears_all_frames() {
@@ -215,6 +241,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
+	 * Pushing with an empty session id returns zero.
+	 *
 	 * @test
 	 */
 	public function test_push_returns_zero_for_empty_session_id() {
@@ -223,6 +251,8 @@ class Test_Chat_Session_Frame_Buffer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Pushing sanitises invalid session id characters.
+	 *
 	 * @test
 	 */
 	public function test_push_strips_invalid_chars_from_session_id() {
