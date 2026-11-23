@@ -19,6 +19,13 @@ import SectionTitle from './SectionTitle.astro';
 // omit the block — read it through an explicit shape.
 const manifest = manifestJson as {
 	forms?: { endpoint?: string; searchForms?: string[]; delivery?: 'bridge' | 'direct'; turnstile?: { siteKey?: string; action?: string } };
+	contact?: {
+		heading?: string;
+		blurb?: string;
+		email?: string;
+		people?: Array< { label?: string; role?: string; email?: string } >;
+		links?: Array< { label?: string; href?: string } >;
+	};
 };
 
 interface Props {
@@ -29,6 +36,13 @@ interface Props {
 const { section, theme } = Astro.props;
 const { title, body, links } = section.slots;
 const form = section.form;
+// The contact band's people (issue #7549 + the ECA preset). A degraded band is
+// a form this build cannot post: rather than shipping the shell of one, name
+// the people who answer instead. Derived by the scaffold from `eca.contacts`,
+// so the home band and `/help/` cannot disagree about an address.
+const contact = manifest.contact;
+const people = ( contact?.people ?? [] ).filter( ( person ) => person.label || person.email || person.role );
+const contactLinks = contact?.links ?? [];
 
 const configuredEndpoint = (
 	import.meta.env.NVOOS_FORGE_FORMS_ENDPOINT ||
@@ -151,7 +165,41 @@ const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
 				<p class="ds-form-status" role="status" aria-live="polite" hidden></p>
 			</form>
 		)}
-		{degradeToCta && links && links.length > 0 && (
+		{degradeToCta && ( people.length > 0 || Boolean( contact?.email ) ) && (
+			<div class="ds-contact-direct">
+				{people.length > 0 ? (
+					<ul class="ds-contact-people" role="list">
+						{people.map((person) => (
+							<li class="ds-contact-person">
+								{person.email ? (
+									<a class="ds-contact-mail" href={`mailto:${person.email}`}>
+										{person.label || person.email}
+									</a>
+								) : (
+									<span class="ds-contact-name">{person.label}</span>
+								)}
+								{person.role && <span class="ds-contact-role">{person.role}</span>}
+								{person.email && person.label && <span class="ds-contact-email">{person.email}</span>}
+							</li>
+						))}
+					</ul>
+				) : (
+					<p class="ds-contact-single">
+						<a class="ds-contact-mail" href={`mailto:${contact?.email}`}>{contact?.email}</a>
+					</p>
+				)}
+				{contactLinks.length > 0 && (
+					<div class="ds-links">
+						{contactLinks.map((link) => (
+							<a class="ds-button" href={link.href || '/'}>
+								{link.label || 'Learn more'}
+							</a>
+						))}
+					</div>
+				)}
+			</div>
+		)}
+		{degradeToCta && people.length === 0 && !contact?.email && links && links.length > 0 && (
 			<div class="ds-links">
 				{links.map((link) => (
 					<a class="ds-button" href={link.href ?? '#'}>

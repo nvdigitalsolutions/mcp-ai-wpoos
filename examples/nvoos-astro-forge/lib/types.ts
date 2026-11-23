@@ -1508,6 +1508,22 @@ export interface ForgeContact {
 	blurb?: string;
 	/** Shown as a mailto link when no form transport is configured. */
 	email?: string;
+	/**
+	 * Named people rendered as mailto cards when no form transport is
+	 * configured — the honest fallback for a site whose enquiry form cannot
+	 * post anywhere (eca.directory has no forge bridge installed, so a rebuilt
+	 * form would be dead on submit). Same shape as `profile.eca.contacts`, which
+	 * the scaffold derives this from when the profile declares no `contact`.
+	 */
+	people?: Array< {
+		/** Who they are ("ECA Coordinator"). The mailto link's accessible name. */
+		label?: string;
+		/** What they handle ("Senior School ECA programme"). */
+		role?: string;
+		email?: string;
+	} >;
+	/** Further actions shown beside the contacts (a help page, a booking system). */
+	links?: Array< { label: string; href: string } >;
 }
 
 /** One band's normalised visible text from the source (`lib/text-parity.ts`). */

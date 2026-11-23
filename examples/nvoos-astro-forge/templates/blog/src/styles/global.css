@@ -3824,6 +3824,62 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	color: var(--forge-muted);
 }
 
+/*
+ * A degraded enquiry band (a form this build cannot post) names the people who
+ * answer instead. The list is a card grid so four contacts read as a team, not
+ * as a paragraph of email addresses, and it collapses to one column on a
+ * phone without a media query.
+ */
+.ds-contact-direct {
+	display: grid;
+	gap: var(--forge-space);
+}
+
+.ds-contact-people {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+	gap: var(--forge-space);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ds-contact-person {
+	display: grid;
+	gap: 0.15em;
+	padding: var(--forge-space);
+	background: var(--forge-surface);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius-sm);
+}
+
+.ds-contact-mail {
+	font-weight: 600;
+	color: var(--forge-ink);
+	text-decoration-color: var(--forge-accent);
+	text-underline-offset: 0.2em;
+}
+
+.ds-contact-mail:hover {
+	color: var(--forge-accent);
+}
+
+.ds-contact-mail:focus-visible {
+	outline: 2px solid var(--forge-accent);
+	outline-offset: 2px;
+}
+
+.ds-contact-role,
+.ds-contact-email {
+	font-size: var(--forge-scale-small);
+	color: var(--forge-muted);
+}
+
+/* A long school address must wrap inside its card, not overflow it. */
+.ds-contact-email {
+	overflow-wrap: anywhere;
+}
+
 /* The honeypot: invisible to humans, an inviting trap for bots. */
 .ds-honeypot {
 	position: absolute;

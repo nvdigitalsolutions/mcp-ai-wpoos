@@ -61,7 +61,11 @@ describe( 'contact band (issue #7549)', () => {
 
 		const index = await readFile( path.join( target, 'src', 'pages', 'index.astro' ), 'utf8' );
 		expect( index ).toContain( "import Contact from '../components/design/Contact.astro'" );
-		expect( index ).toContain( '{contactBlock && <Contact />}' );
+		expect( index ).toContain( '{contactBlock && !bodyHasContactBand && <Contact />}' );
+		// The guard exists because the body's own enquiry band already renders the
+		// contacts when it degrades (a form this build cannot post) — appending
+		// `#contact` as well asked the same question twice on one page.
+		expect( index ).toContain( "homeBands.some((band) => band.kind === 'form')" );
 
 		const component = await readFile(
 			path.join( target, 'src', 'components', 'design', 'Contact.astro' ),

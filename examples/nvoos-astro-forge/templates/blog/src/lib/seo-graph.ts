@@ -27,6 +27,20 @@ export function buildGraph(
 			// domain move (Proposal 139 §repair).
 			logo: repairMediaUrl( chrome?.logo?.src ),
 			searchUrl: astroSite && manifest.surfaces?.search !== false ? new URL('/search/', astroSite).href : undefined,
+			// The contact band's people, as data (schema.org ContactPoint). Derived
+			// by the scaffold from `eca.contacts`, so `/help/`, the home band and
+			// the JSON-LD all name the same addresses.
+			contactPoints: ( ( manifest.contact?.people ?? [] ) as Array< {
+				label?: string;
+				role?: string;
+				email?: string;
+			} > )
+				.filter( ( person ) => Boolean( person.email ) )
+				.map( ( person ) => ( {
+					...( person.label ? { contactType: person.label } : {} ),
+					...( person.role ? { name: person.role } : {} ),
+					...( person.email ? { email: person.email } : {} ),
+				} ) ),
 		},
 		page,
 		breadcrumbs,
