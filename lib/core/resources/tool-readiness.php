@@ -974,6 +974,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_site_health' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GetSiteHealthTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/GetSiteHealthToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_site_summary' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetSiteSummaryTool',
 			'readiness' => 'ready',

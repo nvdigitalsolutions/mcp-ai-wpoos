@@ -24,6 +24,7 @@ use App\Support\Auth\JitProvisioner;
 use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
 use App\Support\Diagnostics\RoutingMetricStore;
+use App\Support\Health\SiteHealthReport;
 use App\Support\Models\ModelCatalogueLookup;
 use App\Support\Orchestration\AssistantAgentRunner;
 use App\Support\Orchestration\TenantContextResolver;
@@ -61,6 +62,7 @@ use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HealthReportInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
@@ -175,6 +177,12 @@ class AppServiceProvider extends ServiceProvider
         // Model-fallback counters (Proposal 149 §71). One row per attempt;
         // the diagnostics page aggregates it.
         $this->app->bind(RoutingMetricsInterface::class, RoutingMetricStore::class);
+
+        // Health probes for `get_site_health` (Proposal 090-M §12). The package
+        // binds a two-probe report; this app knows its database, cache, queue and
+        // scheduler, so it replaces the binding with the same probe set the
+        // `/ops/site-health` page renders.
+        $this->app->singleton(HealthReportInterface::class, SiteHealthReport::class);
 
         // Approval tickets (Proposal 149 §157). The necessity gate records a
         // ticket when a call needs a human and spends it on the retry. Kept out
