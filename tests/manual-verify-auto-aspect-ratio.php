@@ -13,7 +13,12 @@
 echo "Manual Verification of Auto Aspect Ratio Functionality\n";
 echo "======================================================\n\n";
 
-// Simulate the normalise_aspect_ratio method.
+/**
+ * Exercise normalise_aspect_ratio().
+ *
+ * @param string $aspect_ratio Aspect ratio to normalise.
+ * @return string
+ */
 function test_normalise_aspect_ratio( $aspect_ratio ) {
 	$aspect_ratio = strtolower( (string) $aspect_ratio );
 	$aspect_ratio = str_replace( ' ', '', $aspect_ratio );
@@ -84,6 +89,12 @@ echo "\n";
 echo "Testing API payload generation:\n";
 echo "-------------------------------\n";
 
+/**
+ * Whether the aspect ratio should be included.
+ *
+ * @param string $aspect_ratio Aspect ratio.
+ * @return bool
+ */
 function test_should_include_aspect_ratio( $aspect_ratio ) {
 	// This simulates: if ( '' !== $aspect_ratio && 'auto' !== $aspect_ratio ).
 	return ( '' !== $aspect_ratio && 'auto' !== $aspect_ratio );

@@ -248,7 +248,7 @@ class Test_Admin_Scripts extends WP_UnitTestCase {
 	}
 
 	/**
-	 * td_wp_admin also patches wp.media.view.Attachment.Library from the same
+	 * Td_wp_admin also patches wp.media.view.Attachment.Library from the same
 	 * ready handler, so pages carrying it must receive the media script chain
 	 * as direct head tags even when the queue looks healthy.
 	 */

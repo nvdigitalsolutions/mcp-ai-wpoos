@@ -177,7 +177,7 @@ class Test_Service_Memory_Capture extends WP_UnitTestCase {
 			'wing'     => 'patient/test',
 			'room'     => 'vitals',
 			'content'  => 'Test capture.',
-			'tier'     => WP_MCP_AI_Memory_Capture_Service::TIER_CORE, // should be capped
+			'tier'     => WP_MCP_AI_Memory_Capture_Service::TIER_CORE, // should be capped.
 		) );
 
 		$this->assertTrue( $result['success'] );

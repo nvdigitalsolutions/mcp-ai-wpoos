@@ -12,6 +12,8 @@
  */
 
 /**
+ * Tool envelope trait tests.
+ *
  * @group unix-theory
  * @group tools
  */
@@ -26,6 +28,13 @@ class Test_Tool_Envelope_Trait extends WP_UnitTestCase {
 		return new class() {
 			use WP_MCP_AI_Tool_Envelope;
 
+			/**
+			 * Build a success envelope.
+			 *
+			 * @param string $message Message.
+			 * @param mixed  $data    Optional payload.
+			 * @return array
+			 */
 			public function call_success( $message, $data = null ) {
 				return $this->format_success_response( $message, $data );
 			}
@@ -93,6 +102,13 @@ class Test_Tool_Envelope_Trait extends WP_UnitTestCase {
 		$tool = new class() {
 			use WP_MCP_AI_Tool_Chat_Response;
 
+			/**
+			 * Build a success envelope.
+			 *
+			 * @param string $message Message.
+			 * @param mixed  $data    Optional payload.
+			 * @return array
+			 */
 			public function call_success( $message, $data = null ) {
 				return $this->format_success_response( $message, $data );
 			}

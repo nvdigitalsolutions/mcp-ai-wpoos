@@ -515,7 +515,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Get the MAX_HISTORY_ENTRIES constant from the dashboard class.
-		$max_entries       = 100; // WP_MCP_AI_Admin_Slash_Commands_Dashboard::MAX_HISTORY_ENTRIES
+		$max_entries       = 100; // WP_MCP_AI_Admin_Slash_Commands_Dashboard::MAX_HISTORY_ENTRIES.
 		$entries_to_create = $max_entries + 5;
 
 		// Log more than MAX_HISTORY_ENTRIES.

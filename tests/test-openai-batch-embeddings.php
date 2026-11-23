@@ -31,7 +31,7 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_batch_embeddings() must exist.
+	 * Create_batch_embeddings() must exist.
 	 */
 	public function test_method_exists() {
 		$client = new WP_MCP_AI_OpenAI_Client();
@@ -80,7 +80,7 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_batch_embeddings() must upload a JSONL file and create a batch job.
+	 * Create_batch_embeddings() must upload a JSONL file and create a batch job.
 	 *
 	 * Mocks both the file-upload endpoint and the batches endpoint, and asserts
 	 * that the batch was created targeting /v1/embeddings.

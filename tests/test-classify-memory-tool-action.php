@@ -35,6 +35,8 @@ class Test_Classify_Memory_Tool_Action extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Retrieve tool providers.
+	 *
 	 * @dataProvider provide_retrieve_tools
 	 *
 	 * @param string $tool_name Tool function name.
@@ -58,6 +60,8 @@ class Test_Classify_Memory_Tool_Action extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Store tool providers.
+	 *
 	 * @dataProvider provide_store_tools
 	 *
 	 * @param string $tool_name Tool function name.

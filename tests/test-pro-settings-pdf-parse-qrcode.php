@@ -219,7 +219,7 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 			// Priority 1: lib/pdf-parse.js
 			// Priority 2: package.json
 			// Priority 3: node_modules/pdf-parse
-			// Priority 4: WP_MCP_AI_PRO_VERSION constant
+			// Priority 4: WP_MCP_AI_PRO_VERSION constant.
 
 			// If Pro version constant is defined, package should be detected.
 			if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {

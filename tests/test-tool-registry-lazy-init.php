@@ -70,6 +70,8 @@ class WP_MCP_AI_Mock_Pro_Tool implements WP_MCP_AI_Tool_Interface {
 }
 
 /**
+ * Tool registry lazy-init tests.
+ *
  * @group tool-registry
  * @group lazy-init
  */

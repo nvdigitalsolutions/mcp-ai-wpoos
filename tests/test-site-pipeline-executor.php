@@ -178,7 +178,7 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_missing_slug_returns_error() {
 		$graph = array(
 			'nodes' => array(
-				'bad_node' => array( 'inputs' => array() ), // no 'slug' key
+				'bad_node' => array( 'inputs' => array() ), // no 'slug' key.
 			),
 			'edges' => array(),
 		);

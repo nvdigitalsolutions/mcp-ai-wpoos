@@ -33,6 +33,9 @@ class WP_MCP_AI_Elementor_Tool_Availability_Test extends WP_UnitTestCase {
 }
 
 class WP_MCP_AI_Elementor_Tool_Execution_Test extends WP_UnitTestCase {
+	/**
+	 * Create shared fixtures once for the class.
+	 */
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 

@@ -265,6 +265,11 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array( 'success' => true );
 			}
+			/**
+			 * Return the declared capability flags.
+			 *
+			 * @return array
+			 */
 			public function get_capability_flags() {
 				return array( 'async' );
 			}
@@ -454,6 +459,11 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array( 'success' => true );
 			}
+			/**
+			 * Return the declared capability flags.
+			 *
+			 * @return array
+			 */
 			public function get_capability_flags() {
 				return array( 'async', 'write' );
 			}
@@ -518,6 +528,11 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array( 'success' => true );
 			}
+			/**
+			 * Return the declared capability flags.
+			 *
+			 * @return array
+			 */
 			public function get_capability_flags() {
 				return array( 'background-only', 'long-running' );
 			}

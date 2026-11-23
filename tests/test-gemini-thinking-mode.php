@@ -80,7 +80,7 @@ class WP_MCP_AI_Gemini_Thinking_Mode_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * thinking_budget_tokens must be capped at 24576.
+	 * Thinking_budget_tokens must be capped at 24576.
 	 */
 	public function test_sanitize_options_caps_thinking_budget() {
 		$validator       = new WP_MCP_AI_REST_Validator();
@@ -161,7 +161,7 @@ class WP_MCP_AI_Gemini_Thinking_Mode_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * sanitize_settings() must clamp gemini_thinking_budget_tokens to 0–24576.
+	 * Sanitize_settings() must clamp gemini_thinking_budget_tokens to 0–24576.
 	 */
 	public function test_admin_settings_sanitizes_thinking_budget() {
 		$admin    = new WP_MCP_AI_Admin_Settings();

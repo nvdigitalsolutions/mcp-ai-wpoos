@@ -143,7 +143,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		}
 
 		$end_time   = microtime( true );
-		$total_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
+		$total_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds.
 		$avg_per_op = $total_time / 10;
 
 		// Average time per operation should be reasonable.

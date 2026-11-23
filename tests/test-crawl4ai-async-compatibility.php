@@ -90,7 +90,7 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $result );
 
-		// Simulate JavaScript check: result.async === true && result.status === 'pending' && result.job_id
+		// Simulate JavaScript check: result.async === true && result.status === 'pending' && result.job_id.
 		$js_check = (
 			isset( $sanitized['async'] ) &&
 			$sanitized['async'] === true &&

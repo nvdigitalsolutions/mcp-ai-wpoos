@@ -21,6 +21,9 @@ class Test_Slash_Command_Compact extends WP_UnitTestCase {
 	 */
 	private $command;
 
+	/**
+	 * Reset the orchestrator between tests.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-compact.php';
@@ -100,7 +103,7 @@ class Test_Slash_Command_Compact extends WP_UnitTestCase {
 	}
 
 	/**
-	 * keep-recent drops everything but the most recent N.
+	 * Keep-recent drops everything but the most recent N.
 	 */
 	public function test_keep_recent_drops_older_messages() {
 		$messages = $this->build_conversation( 5 ); // 15 messages total.
@@ -123,7 +126,7 @@ class Test_Slash_Command_Compact extends WP_UnitTestCase {
 	}
 
 	/**
-	 * trim-tools removes role=tool messages and strips tool_calls from older
+	 * Trim-tools removes role=tool messages and strips tool_calls from older
 	 * assistant messages while preserving the kept tail.
 	 */
 	public function test_trim_tools_removes_tool_messages_from_older_history() {
@@ -173,7 +176,7 @@ class Test_Slash_Command_Compact extends WP_UnitTestCase {
 	}
 
 	/**
-	 * full strategy runs without error and returns a structured result.
+	 * Full strategy runs without error and returns a structured result.
 	 */
 	public function test_full_strategy_runs_without_error() {
 		$messages = $this->build_conversation( 4 );

@@ -12,21 +12,29 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 
 	/**
 	 * Mock tool that requires manage_options capability.
+	 *
+	 * @var object
 	 */
 	private $admin_tool;
 
 	/**
 	 * Mock tool that requires no specific capability.
+	 *
+	 * @var object
 	 */
 	private $public_tool;
 
 	/**
 	 * Tool registry instance.
+	 *
+	 * @var WP_MCP_AI_Tool_Registry
 	 */
 	private $registry;
 
 	/**
 	 * REST controller instance.
+	 *
+	 * @var WP_MCP_AI_REST
 	 */
 	private $rest_controller;
 
