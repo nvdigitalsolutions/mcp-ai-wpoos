@@ -38,7 +38,8 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EmailServiceInterface;
 use Nvoos\Core\Domain\Contract\ErlangCInterface;
-use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
+use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
@@ -418,6 +419,15 @@ class NvoosServiceProvider extends ServiceProvider {
 			// is the control — but without it the model discovers the boundary by
 			// having a write refused, and spends iterations retrying.
 			$orchestrator->setChatProfileResolver( $app->make( ChatProfileResolverInterface::class ) );
+
+			// The turn's token ceilings (149 §179). Optional: a host that binds
+			// nothing runs with both dimensions off, which is the behaviour every
+			// deployment had before the ceilings existed. The check runs before
+			// each provider call, so a spent ceiling stops the loop rather than
+			// reporting after the bill.
+			if ( $app->bound( TurnBudget::class ) ) {
+				$orchestrator->setTurnBudget( $app->make( TurnBudget::class ) );
+			}
 
 			// Trace capture is a master kill switch on top of the per-assistant
 			// profile: off here means nothing is written, whatever a profile says.

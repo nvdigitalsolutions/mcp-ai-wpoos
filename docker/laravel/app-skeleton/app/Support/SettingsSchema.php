@@ -242,6 +242,69 @@ final class SettingsSchema
                 'sensitive' => false,
                 'default' => '',
             ],
+            // ── Turn budget (149 §179) ──────────────────────────────
+            //
+            // The two ceilings that bound one agentic turn. Zero means off in
+            // both dimensions, so an estate that never opens this section behaves
+            // exactly as it did before the ceilings existed.
+            //
+            // Tenant scope: how much a turn may spend is the estate's own cost
+            // policy, the same judgement that puts the tool quotas on /admin.
+            // The deployment-wide cap is the operator's `budgets` surface.
+            [
+                'key' => 'turn_max_call_tokens',
+                'storage' => 'turn_max_call_tokens',
+                'scope' => 'tenant',
+                'console' => 'hidden',
+                'type' => 'number',
+                'section_id' => 'turn_budget',
+                'section' => 'Turn budget',
+                'tab' => 'advanced',
+                'label' => 'Per-call token ceiling',
+                'description' => 'Largest request this estate will send: prompt plus requested completion. '
+                    .'A call over it is refused before it leaves. 0 disables the ceiling.',
+                'sensitive' => false,
+                'default' => 0,
+                'min' => 0,
+                'max' => 2000000,
+                'step' => 500,
+            ],
+            [
+                'key' => 'turn_max_turn_tokens',
+                'storage' => 'turn_max_turn_tokens',
+                'scope' => 'tenant',
+                'console' => 'hidden',
+                'type' => 'number',
+                'section_id' => 'turn_budget',
+                'section' => 'Turn budget',
+                'tab' => 'advanced',
+                'label' => 'Per-turn token ceiling',
+                'description' => 'Total tokens one turn may spend across all of its tool round-trips. '
+                    .'The loop stops before the call that would cross it. 0 disables the ceiling.',
+                'sensitive' => false,
+                'default' => 0,
+                'min' => 0,
+                'max' => 100000000,
+                'step' => 1000,
+            ],
+            [
+                'key' => 'turn_warn_at',
+                'storage' => 'turn_warn_at',
+                'scope' => 'tenant',
+                'console' => 'hidden',
+                'type' => 'number',
+                'section_id' => 'turn_budget',
+                'section' => 'Turn budget',
+                'tab' => 'advanced',
+                'label' => 'Warn at',
+                'description' => 'Fraction of a ceiling at which the turn records a warning in its transcript. '
+                    .'0.8 warns at 80%%. The turn is not stopped.',
+                'sensitive' => false,
+                'default' => 0.8,
+                'min' => 0,
+                'max' => 1,
+                'step' => 0.05,
+            ],
         ];
     }
 
