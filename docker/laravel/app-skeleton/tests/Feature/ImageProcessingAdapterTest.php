@@ -4,7 +4,11 @@ namespace Tests\Feature;
 
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\Http;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
+use Nvoos\Core\Domain\Entity\StoredFile;
+use Nvoos\Core\Domain\Error\ValidationException;
 use Nvoos\Core\Tool\ConvertImageFormatTool;
 use Nvoos\Core\Tool\CropImageTool;
 use Nvoos\Core\Tool\ResizeImageTool;
@@ -51,6 +55,11 @@ final class ImageProcessingAdapterTest extends TestCase
             'oos.media_worker.url' => 'http://worker.test',
             'oos.media_worker.output_dir' => $this->workDir.'/out',
         ]);
+
+        // The transforms persist by default now (Proposal 162 §162.9.2), so the
+        // probes are given recording stores rather than the real registry —
+        // otherwise each one would write an object into the media disk.
+        $this->fakeMediaStores();
     }
 
     protected function tearDown(): void
@@ -73,6 +82,181 @@ final class ImageProcessingAdapterTest extends TestCase
             $this->app->make(ImageProcessingInterface::class)
         );
         $this->assertTrue($this->app->make(ImageProcessingInterface::class)->isAvailable());
+    }
+
+    public function test_a_transform_stores_its_output_and_reports_the_media_entry(): void
+    {
+        $store = $this->fakeMediaStores();
+        $this->fakeTransform($body, 40, 20);
+
+        $result = $this->app->make(ResizeImageTool::class)->execute(array(
+            'image_url' => $this->source(),
+            'width' => 40,
+            'height' => 20,
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertCount(1, $store->writes);
+
+        // The adapter already wrote the bytes; the registry must have been
+        // handed a real path rather than a re-encoded copy.
+        $this->assertTrue($store->writes[0]['existed']);
+        $this->assertStringStartsWith('resized-image-', $store->writes[0]['name']);
+        $this->assertSame('image/png', $store->writes[0]['mime']);
+        $this->assertSame(501, $result['data']['media'][0]['attachment_id']);
+    }
+
+    public function test_a_transform_can_take_a_stored_file_id(): void
+    {
+        $store = $this->fakeMediaStores();
+        $this->fakeTransform($body, 40, 20);
+
+        // The chain primitive: a generation stores a file, a transform takes the
+        // id. No re-upload and no provider URL in between.
+        $result = $this->app->make(ResizeImageTool::class)->execute(array(
+            'file_id' => 5,
+            'width' => 40,
+            'height' => 20,
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(40, $result['data']['width']);
+        $this->assertCount(1, $store->writes);
+        $this->assertStringContainsString('resized-image-', (string) $store->writes[0]['name']);
+    }
+
+    public function test_a_store_refusal_does_not_fail_the_transform(): void
+    {
+        $store = $this->fakeMediaStores();
+        $store->refuse = 'File type is not accepted: image/png.';
+        $this->fakeTransform($body, 40, 20);
+
+        $result = $this->app->make(ResizeImageTool::class)->execute(array(
+            'image_url' => $this->source(),
+            'width' => 40,
+            'height' => 20,
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(40, $result['data']['width']);
+        $this->assertSame('File type is not accepted: image/png.', $result['data']['media_failed'][0]);
+    }
+
+    /**
+     * Recording file stores, so a probe never reaches the real registry.
+     *
+     * `getPath()` answers with the test's own source file, which is what a
+     * stored upload would resolve to.
+     */
+    private function fakeMediaStores(): object
+    {
+        $visibility = new class implements FileVisibilityStoreInterface {
+            /** @var list<array<string, mixed>> */
+            public array $writes = array();
+
+            public ?string $refuse = null;
+
+            public function storeWithVisibility(
+                string $localPath,
+                string $filename,
+                string $mimeType,
+                int $userId,
+                string $visibility,
+                ?string $tenantId = null,
+            ): StoredFile {
+                if (null !== $this->refuse) {
+                    throw new ValidationException($this->refuse);
+                }
+
+                $existed = is_file($localPath);
+                $bytes   = $existed ? (string) file_get_contents($localPath) : '';
+
+                $this->writes[] = array(
+                    'name' => $filename,
+                    'mime' => $mimeType,
+                    'bytes' => $bytes,
+                    'existed' => $existed,
+                    'visibility' => $visibility,
+                    'tenant' => $tenantId,
+                );
+
+                return new StoredFile(
+                    id: 500 + count($this->writes),
+                    filename: $filename.'.png',
+                    mimeType: 'image/png',
+                    sizeBytes: strlen($bytes),
+                    localPath: $localPath,
+                    ownerId: $userId,
+                    createdAt: new \DateTimeImmutable('2026-01-01T00:00:00+00:00'),
+                    publicUrl: '/storage/default/public/out.png',
+                    visibility: $visibility,
+                    slug: $filename,
+                );
+            }
+
+            public function supportsVisibility(string $visibility): bool
+            {
+                return in_array($visibility, array('public', 'private'), true);
+            }
+        };
+
+        $path = $this->source();
+
+        $files = new class($path) implements FileStoreInterface {
+            public function __construct(private readonly string $path)
+            {
+            }
+
+            public function store(string $localPath, string $filename, string $mimeType, int $userId): StoredFile
+            {
+                return new StoredFile(
+                    id: 1,
+                    filename: $filename,
+                    mimeType: $mimeType,
+                    sizeBytes: 1,
+                    localPath: $localPath,
+                    ownerId: $userId,
+                    createdAt: new \DateTimeImmutable('2026-01-01T00:00:00+00:00'),
+                );
+            }
+
+            public function getPath(int $fileId): ?string
+            {
+                return $this->path;
+            }
+
+            public function getMetadata(int $fileId): ?StoredFile
+            {
+                return new StoredFile(
+                    id: $fileId,
+                    filename: 'stored.png',
+                    mimeType: 'image/png',
+                    sizeBytes: 1,
+                    localPath: $this->path,
+                    ownerId: 7,
+                    createdAt: new \DateTimeImmutable('2026-01-01T00:00:00+00:00'),
+                );
+            }
+
+            public function userCanAccess(int $fileId, int $userId): bool
+            {
+                return true;
+            }
+
+            public function delete(int $fileId): void
+            {
+            }
+
+            public function findByMetadata(array $criteria, int $limit = 50): array
+            {
+                return array();
+            }
+        };
+
+        $this->app->instance(FileVisibilityStoreInterface::class, $visibility);
+        $this->app->instance(FileStoreInterface::class, $files);
+
+        return $visibility;
     }
 
     public function test_resize_maps_to_a_cover_fit_and_publishes_the_output(): void

@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
+use Nvoos\Core\Application\Media\FeaturedImage;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
@@ -30,6 +31,7 @@ class SavePostValidatedTool extends AbstractTool
     public function __construct(
         ErrorFactoryInterface $errors,
         private readonly ContentStoreInterface $content,
+        private readonly ?FileStoreInterface $files = null,
     ) {
         parent::__construct($errors);
     }
@@ -78,6 +80,11 @@ class SavePostValidatedTool extends AbstractTool
                     'enum'        => array( 'publish', 'draft', 'private', 'pending' ),
                     'default'     => 'draft',
                 ),
+                'featured_image_id' => array(
+                    'type'        => 'integer',
+                    'description' => 'Stored file id to use as the featured image. Pass 0 to clear it. Mirrors the WordPress featured_image_id argument.',
+                    'minimum'     => 0,
+                ),
                 'excerpt'   => array(
                     'type'        => 'string',
                     'description' => 'Optional excerpt or summary.',
@@ -119,6 +126,12 @@ class SavePostValidatedTool extends AbstractTool
         }
 
         try {
+            // Proposal 162 §162.9.2 — the validated variant is a separate
+            // implementation, so it uses the same resolver rather than a second
+            // copy of the rule.
+            $featured = FeaturedImage::metaFor($arguments, $this->files);
+            $meta     = null !== $featured ? $featured : array();
+
             if ($postId > 0) {
                 $existing = $this->content->find($postId, $userId);
 
@@ -132,7 +145,7 @@ class SavePostValidatedTool extends AbstractTool
                     content: $body,
                     status: $status,
                     excerpt: $this->stringParam($arguments, 'excerpt') ?: null,
-                    meta: array(),
+                    meta: $meta,
                     taxonomyInput: array(),
                 );
 
@@ -156,6 +169,7 @@ class SavePostValidatedTool extends AbstractTool
                 status: $status,
                 content: $body,
                 excerpt: $this->stringParam($arguments, 'excerpt') ?: null,
+                meta: $meta,
             );
 
             $item = $this->content->create($command);

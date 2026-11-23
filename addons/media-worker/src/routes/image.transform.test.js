@@ -104,3 +104,33 @@ test('a rotate grows the canvas', async () => {
 	assert.equal(info.width, 10);
 	assert.equal(info.height, 20);
 });
+
+test('an EXIF-rotated source is auto-oriented before it is resized', async () => {
+	// Orientation 6 means "the stored pixels are landscape but they display
+	// portrait" — exactly what a phone writes when it is held upright. Without
+	// an auto-orient step the resize is computed against the stored 4x2 grid,
+	// and the tag that would explain the mismatch is dropped on re-encode.
+	const source = await sharp({
+		create: { width: 4, height: 2, channels: 3, background: '#336699' },
+	})
+		.png()
+		.withMetadata({ orientation: 6 })
+		.toBuffer();
+
+	const stored = await sharp(source).metadata();
+	assert.equal(stored.width, 4);
+	assert.equal(stored.height, 2);
+	assert.equal(stored.orientation, 6);
+
+	const [operation] = parseTransformOperations(
+		'[{"type":"resize","width":2,"height":4,"fit":"inside"}]',
+	);
+
+	const { info } = await applyTransformOperations(sharp(source), [operation])
+		.png()
+		.toBuffer({ resolveWithObject: true });
+
+	// Displayed geometry first: 4x2 rotated 90° is 2x4, which fits inside 2x4.
+	assert.equal(info.width, 2);
+	assert.equal(info.height, 4);
+});
