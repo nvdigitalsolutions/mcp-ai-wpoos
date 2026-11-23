@@ -346,9 +346,10 @@ MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins
 MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php vendor/bin/phpcs --standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist --error-severity=1 --report=summary <cg-pro paths>'
 ```
 
-- **Never blind-`phpcbf`** the array/signature sniffs: in this tree they
-  re-emit space-indented, trailing-whitespace blocks. Read `--report=diff`
-  first; full recipe in
+- **Never blind-`phpcbf`** the array/signature sniffs. The restricted
+  `--sniffs=` form re-emits space-indented, trailing-whitespace blocks;
+  the full standard converges if you verify the per-source delta. Read
+  `--report=diff` first; full recipe in
   `.agents/skills/mcp-ai-wpoos-test-suite/reference/wpcs-sweep.md`.
 - **Mirror discipline**: every production fix lands byte-identically in
   `plugins/nvoos-content-graph-pro/src/…` (its own text domain) — see the
