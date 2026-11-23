@@ -244,7 +244,21 @@ export interface ForgeEca {
 		window?: ForgeEcaBookingWindow;
 	};
 	/** Rename a venue without editing content (`'SS 18'` → `'Senior School, Room 18'`). */
-	venueAliases?: Record<string, string>;
+	venueAliases?: Record< string, string >;
+	/**
+	 * Who to contact, rendered on `/help/`. A school's real answer is a named
+	 * person and an address, not a contact form, so the config carries both.
+	 */
+	contacts?: Array< {
+		label: string;
+		role?: string;
+		email?: string;
+	} >;
+	/** Questions answered on `/help/` — booking, fees, absences. */
+	faqs?: Array< {
+		question: string;
+		answer: string;
+	} >;
 }
 
 /** A category term as the site serves it — id, display name, slug. */
