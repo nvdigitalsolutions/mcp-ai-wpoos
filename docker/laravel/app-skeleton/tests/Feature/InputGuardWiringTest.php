@@ -21,7 +21,7 @@ use Tests\TestCase;
  * Both controls are on by default, but neither changes what the model sees: the
  * detector runs in `log` mode, and the PII filter redacts the session log only.
  * Turning both off must still build no guard at all — that is the contract
- * `inputGuardFromConfig()` documents, and the reason an unconfigured install
+ * `inputGuardFromSettings()` documents, and the reason an unconfigured install
  * pays nothing.
  *
  * The non-blocking path is covered by the InputGuard unit tests: a safe message
@@ -42,7 +42,7 @@ class InputGuardWiringTest extends TestCase
         // Log mode never blocks, so defaulting these on is not a behaviour
         // change for anyone chatting.
         $this->assertSame('log', config('oos.security.prompt_injection_mode'));
-        $this->assertNotNull($this->guardFromConfig());
+        $this->assertNotNull($this->guardFromSettings());
     }
 
     public function test_both_controls_off_builds_no_guard(): void
@@ -52,7 +52,7 @@ class InputGuardWiringTest extends TestCase
             'oos.security.pii_filter' => false,
         ]);
 
-        $this->assertNull($this->guardFromConfig());
+        $this->assertNull($this->guardFromSettings());
     }
 
     public function test_an_enabled_guard_blocks_a_jailbreak_before_the_provider(): void
@@ -77,15 +77,17 @@ class InputGuardWiringTest extends TestCase
     }
 
     /**
-     * The provider builds the guard lazily from config and there is no accessor
-     * on the orchestrator, so reflection is the only way to observe the wiring
-     * contract itself rather than just the flags it reads. PHP 8.1 ignores
-     * visibility for reflection invocation, so no `setAccessible()` call.
+     * The provider builds the guard lazily from the settings (falling back to
+     * config) and there is no accessor on the orchestrator, so reflection is the
+     * only way to observe the wiring contract itself rather than just the flags
+     * it reads. The method takes the container because §183.9 made it read the
+     * estate's stored rows; `InputGuardSettingsTest` covers that precedence, and
+     * this helper covers the config path it falls back to.
      */
-    private function guardFromConfig(): ?InputGuard
+    private function guardFromSettings(): ?InputGuard
     {
-        $method = new ReflectionMethod(NvoosServiceProvider::class, 'inputGuardFromConfig');
+        $method = new ReflectionMethod(NvoosServiceProvider::class, 'inputGuardFromSettings');
 
-        return $method->invoke(null);
+        return $method->invoke(null, $this->app);
     }
 }
