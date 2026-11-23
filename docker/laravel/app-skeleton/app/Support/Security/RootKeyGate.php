@@ -51,6 +51,14 @@ final class RootKeyGate
     /** Header a stateless client may send instead of a grant. */
     public const HEADER = 'X-Root-Key';
 
+    /**
+     * Form field name for an inline challenge — Proposal 149 §189.
+     *
+     * A Livewire action cannot set a header, so the destructive-action guard asks
+     * for the key in the action's own modal and reads it from here.
+     */
+    public const ENTRY_FIELD = 'root_key';
+
     /** How long a grant lasts. Short enough to be step-up, long enough to work. */
     public const TTL_MINUTES = 15;
 

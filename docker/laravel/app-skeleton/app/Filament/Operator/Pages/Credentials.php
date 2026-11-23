@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Filament\Operator\Navigation\OperatorNavigationGroup;
+use App\Filament\Support\RootKeyAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -130,32 +131,26 @@ class Credentials extends Page implements HasTable
                     ->placeholder('—'),
             ])
             ->recordActions([
-                Action::make('rotate')
-                    ->label('Rotate')
-                    ->icon(Heroicon::OutlinedArrowPath)
-                    ->modalHeading(fn (Assistant $record): string => 'Rotate credential: '.$record->title)
-                    ->modalDescription('Issues a replacement and revokes every existing credential for this assistant. The new value is shown once.')
-                    ->schema([
-                        Select::make('days')
-                            ->label('Valid for')
-                            ->options(array(
-                                30 => '30 days',
-                                90 => '90 days',
-                                180 => '180 days',
-                                365 => '365 days',
-                            ))
-                            ->default(90)
-                            ->required(),
-                    ])
-                    ->action(fn (Assistant $record, array $data) => $this->rotate($record, (int) $data['days'])),
-                Action::make('revoke')
-                    ->label('Revoke')
-                    ->color('danger')
-                    ->icon(Heroicon::OutlinedTrash)
-                    ->requiresConfirmation()
-                    ->modalDescription('Deletes every credential for this assistant. Anyone using one loses access immediately.')
-                    ->visible(fn (Assistant $record): bool => $this->statsFor((int) $record->getKey())['total'] > 0)
-                    ->action(fn (Assistant $record) => $this->revoke($record)),
+                RootKeyAction::guard(
+                    Action::make('rotate')
+                        ->label('Rotate')
+                        ->icon(Heroicon::OutlinedArrowPath)
+                        ->modalHeading(fn (Assistant $record): string => 'Rotate credential: '.$record->title)
+                        ->modalDescription('Issues a replacement and revokes every existing credential for this assistant. The new value is shown once.')
+                        ->schema($this->rotationFields())
+                        ->action(fn (Assistant $record, array $data) => $this->rotate($record, (int) $data['days'])),
+                    $this->rotationFields(),
+                ),
+                RootKeyAction::guard(
+                    Action::make('revoke')
+                        ->label('Revoke')
+                        ->color('danger')
+                        ->icon(Heroicon::OutlinedTrash)
+                        ->requiresConfirmation()
+                        ->modalDescription('Deletes every credential for this assistant. Anyone using one loses access immediately.')
+                        ->visible(fn (Assistant $record): bool => $this->statsFor((int) $record->getKey())['total'] > 0)
+                        ->action(fn (Assistant $record) => $this->revoke($record)),
+                ),
             ])
             ->emptyStateHeading('No assistants')
             ->emptyStateDescription('A credential is issued for an assistant; create one first.');
@@ -177,6 +172,33 @@ class Credentials extends Page implements HasTable
      * Reversing the order would leave the assistant with no credential whenever
      * issuance throws, which is the failure mode that matters.
      */
+    /**
+     * The rotation modal's own field, shared by the action and its guard.
+     *
+     * `RootKeyAction::guard()` replaces an action's modal schema when the gate is
+     * armed, so the field list has to be the same array in both places. Two
+     * copies would drift, and the failure would only appear on deployments that
+     * turned the gate on — the rotation modal would lose its "Valid for" and
+     * quietly fall back to whatever the store did with a missing key.
+     *
+     * @return array<int, Select>
+     */
+    private function rotationFields(): array
+    {
+        return array(
+            Select::make('days')
+                ->label('Valid for')
+                ->options(array(
+                    30 => '30 days',
+                    90 => '90 days',
+                    180 => '180 days',
+                    365 => '365 days',
+                ))
+                ->default(90)
+                ->required(),
+        );
+    }
+
     private function rotate(Assistant $assistant, int $days): void
     {
         $assistantId = (int) $assistant->getKey();

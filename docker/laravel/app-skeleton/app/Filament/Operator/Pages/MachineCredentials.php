@@ -3,11 +3,13 @@
 namespace App\Filament\Operator\Pages;
 
 use App\Filament\Operator\Navigation\OperatorNavigationGroup;
+use App\Filament\Support\RootKeyAction;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\ActivityRecorder;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\MachineTokens;
+use App\Support\Security\RootKeyGate;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -177,14 +179,16 @@ final class MachineCredentials extends Page implements HasTable
                     ->color(fn (string $state): string => 'expired' === $state ? 'danger' : 'success'),
             ))
             ->recordActions(array(
-                Action::make('revoke')
-                    ->label('Revoke')
-                    ->color('danger')
-                    ->icon(Heroicon::OutlinedTrash)
-                    ->requiresConfirmation()
-                    ->modalDescription('Deletes the credential. A machine using it stops '
-                        .'authenticating immediately, and the token cannot be recovered.')
-                    ->action(fn (array $record) => $this->revoke((int) $record['id'])),
+                RootKeyAction::guard(
+                    Action::make('revoke')
+                        ->label('Revoke')
+                        ->color('danger')
+                        ->icon(Heroicon::OutlinedTrash)
+                        ->requiresConfirmation()
+                        ->modalDescription('Deletes the credential. A machine using it stops '
+                            .'authenticating immediately, and the token cannot be recovered.')
+                        ->action(fn (array $record) => $this->revoke((int) $record['id'])),
+                ),
             ))
             ->paginated(false)
             ->emptyStateHeading('No machine credentials')
@@ -201,6 +205,8 @@ final class MachineCredentials extends Page implements HasTable
      */
     public function revoke(int $id): void
     {
+        app(RootKeyGate::class)->assertUnlocked();
+
         $revoked = MachineTokens::revoke($id);
 
         if (null === $revoked) {
