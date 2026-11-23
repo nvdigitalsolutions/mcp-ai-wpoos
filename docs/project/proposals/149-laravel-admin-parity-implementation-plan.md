@@ -17105,13 +17105,47 @@ schedule.
 The fix is the registry's own mechanism — **`addGuard()`**, which is held by the
 registry object and therefore has no instance to match and no ordering to get
 wrong. The denial now surfaces as `tool_guarded` instead of `tool_denied`; the
-message is unchanged. `ToolRegistrationTest` also stopped reporting
-`dispatch_event` as unconstructible, which was the same ordering showing up from
-the other side.
+message is unchanged.
 
 This is the general lesson, and it is worth stating once: **a listener that must
 be correct is a guard, and a listener that must merely observe is an event
 listener.** The dispatcher's identity is not part of its contract.
+
+### 179.6 The lost import, and two more of the same shape
+
+The package suite failed on this branch with a shape that looked like ordering
+and was not: `dispatch_event` was reported unconstructible, and every tool after
+it alphabetically was missing from the registry.
+
+The provider gained the turn-budget block and lost its `EventDispatcherInterface`
+import in the same edit. PHP resolves an unimported `Foo::class` to
+`<current namespace>\Foo` without an error, so the binding landed on
+`Nvoos\Laravel\ServiceProvider\EventDispatcherInterface` — a name no tool asks
+for. `ToolRegistry` was still built, because its own `make()` went through the
+same wrong name; registration then proceeded until the first tool whose
+constructor *declares* the real contract, which is `dispatch_event`. Everything
+after it never registered, which is why the missing list ran from `d` to `w`.
+
+The app suite could not catch it: the app binds the contract itself under the
+real name, so the package's broken binding was shadowed. A shadowed binding is
+how a broken default survives a green host suite, and it is worth naming.
+
+Reproducing it needs the package suite, which has no `vendor` in the repo.
+`composer update` in a scratch copy of `lib/{core,laravel-adapter}` restores
+Testbench, and the run then fails exactly as CI reported — `dispatch_event`
+alone in `nvoos.tools.skipped`, 47 of the servable set registered.
+
+**Two more instances of the same defect**, found by sweeping the three source
+trees for class names that resolve to nothing:
+
+| Site | Resolved to | Effect |
+|---|---|---|
+| `TenantResolverInterface` in the provider | `Nvoos\Laravel\ServiceProvider\TenantResolverInterface` | `bound()` was always false, so `AgentOrchestration` always used the `default` tenant namespace — every estate shared one cache key |
+| `Domain\Exception\AccessDeniedException` / `NotFoundException` in the workflow controller and the records helper | names that do not exist (`Domain\Error\*` is the real one) | a refused write answered 500 instead of 403 |
+
+The dispatcher is now a **singleton in the package as well as the app**. The
+app's binding is kept, and restated rather than inherited, so a change to the
+package default cannot silently reintroduce §179.4.
 
 ### 179.5 Gates
 
@@ -17122,6 +17156,7 @@ listener.** The dispatcher's identity is not part of its contract.
 | `TurnBudgetSettingsTest` | 4 tests — defaults off, round-trip through the settings surface, warn band reaches the verdict, the section renders |
 | `ToolQuotaTest` + `ToolRegistrationTest` + `TurnBudgetSettingsTest` | 19 tests / 52 assertions |
 | tool/chat/machine/security/budget/settings/surface blast radius | **678 tests / 14,724 assertions** |
+| `lib/laravel-adapter` package suite | **348 tests / 1,825 assertions** (§179.6) |
 | phpcs PSR-12 on 10 changed files | exit 0 |
 | `bin/audit-surface-ownership.php` | 59 rows · 47 built · 4 planned · 4 absent · 0 inert |
 
