@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Nvoos\Core\Application\Tool\ToolReadiness;
 use Tests\TestCase;
 
 /**
@@ -62,13 +63,27 @@ class ToolsReadinessTest extends TestCase
 
     public function test_quarantined_tools_are_absent(): void
     {
-        $slugs = array_column(
+        $served = array_column(
             $this->getJson('/api/v1/tools')->json('data.tools'),
             'slug'
         );
 
-        foreach (array('analyze_image', 'analyze_image_prompt', 'batch_embed_content', 'validate_reasoning_chain') as $slug) {
-            $this->assertNotContains($slug, $slugs, "Quarantined tool '{$slug}' leaked into the served set.");
+        // Derived from the manifest rather than hardcoded. The set of tools that
+        // must not be served shrinks every time a quarantined stand-in is
+        // replaced by the real tool — §20 did that for `analyze_image` — and a
+        // hardcoded list turns each of those wins into a failing build.
+        $notServable = array();
+
+        foreach ($this->app->make(ToolReadiness::class)->all() as $slug => $row) {
+            if (! ToolReadiness::isServableClass((string) ($row['readiness'] ?? ''))) {
+                $notServable[] = (string) $slug;
+            }
+        }
+
+        $this->assertNotEmpty($notServable, 'The manifest should still contain quarantined stand-ins.');
+
+        foreach ($notServable as $slug) {
+            $this->assertNotContains($slug, $served, "Non-servable tool '{$slug}' leaked into the served set.");
         }
     }
 
