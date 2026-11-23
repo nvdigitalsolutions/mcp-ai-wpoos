@@ -125,7 +125,7 @@ enum OperatorNavigationGroup: string implements HasIcon, HasLabel
                 'Machine credentials',
                 'Security',
             ),
-            self::Platform => array('Estates', 'Models', 'Conversation import'),
+            self::Platform => array('Skills', 'Estates', 'Models', 'Conversation import'),
             self::Settings => array('Settings'),
         };
     }
