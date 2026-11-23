@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Filament\Operator\Navigation\OperatorNavigationGroup;
+use App\Filament\Support\RootKeyAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -97,13 +98,15 @@ class QueueMonitor extends Page implements HasTable
                     ->requiresConfirmation()
                     ->modalDescription('Push this job back onto its queue.')
                     ->action(fn (FailedJob $record) => $this->retryOne($record)),
-                Action::make('forget')
-                    ->label('Forget')
-                    ->color('danger')
-                    ->icon(Heroicon::OutlinedTrash)
-                    ->requiresConfirmation()
-                    ->modalDescription('Delete this failed job without retrying it. This cannot be undone.')
-                    ->action(fn (FailedJob $record) => $this->forgetOne($record)),
+                RootKeyAction::guard(
+                    Action::make('forget')
+                        ->label('Forget')
+                        ->color('danger')
+                        ->icon(Heroicon::OutlinedTrash)
+                        ->requiresConfirmation()
+                        ->modalDescription('Delete this failed job without retrying it. This cannot be undone.')
+                        ->action(fn (FailedJob $record) => $this->forgetOne($record)),
+                ),
             ])
             ->emptyStateHeading('No failed jobs')
             ->emptyStateDescription('A job lands here only when a worker exhausts its retries.');
@@ -120,12 +123,14 @@ class QueueMonitor extends Page implements HasTable
                 ->requiresConfirmation()
                 ->modalDescription('Push every failed job back onto its queue.')
                 ->action(fn () => $this->retryAll()),
-            Action::make('flush')
-                ->label('Flush all')
-                ->color('danger')
-                ->requiresConfirmation()
-                ->modalDescription('Delete every failed job without retrying it. This cannot be undone.')
-                ->action(fn () => $this->flushAll()),
+            RootKeyAction::guard(
+                Action::make('flush')
+                    ->label('Flush all')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription('Delete every failed job without retrying it. This cannot be undone.')
+                    ->action(fn () => $this->flushAll()),
+            ),
         );
     }
 

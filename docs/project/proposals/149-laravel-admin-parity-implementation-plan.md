@@ -18315,3 +18315,103 @@ container reported `nvoos:root-key` as undefined. It was not — the container
 serves a different worktree. A CLI check is only evidence about the tree it runs
 from, so it belongs in a snapshot container, not in whichever process happens to
 be up.
+
+## 189. The root key on destructive operator actions (2026-11-23)
+
+§188 built the mechanism and stated its own limit: it gated operator *settings*
+writes, at one chokepoint. The field the control comes from describes something
+broader —
+
+> Adds an extra layer of security for administrative operations like deleting
+> assistants, changing critical settings, or accessing sensitive data.
+
+— and the panel had eight actions that destroy or downgrade something without
+going anywhere near `SettingsService`. They were exactly the actions the
+description names. This section closes that gap.
+
+### 189.1 The eight, and why each is in
+
+| Surface | Action | What it destroys |
+|---|---|---|
+| `Budgets` | Delete | the estate's spend ceiling |
+| `Credentials` | Rotate | every existing credential for an assistant |
+| `Credentials` | Revoke | every existing credential for an assistant |
+| `MachineCredentials` | Revoke | a machine token, immediately |
+| `MachineTools` | Remove | a machine principal's tool grant |
+| `QueueMonitor` | Forget | one dead letter, without retrying it |
+| `QueueMonitor` | Flush all | every dead letter |
+| `Models` | Delete | a model configuration |
+
+Retry and "retry all" are deliberately **not** gated. A retry re-queues work that
+already happened; it can be wrong, but it cannot destroy a credential or a record.
+Gating it would train operators to type the key reflexively, which is the failure
+mode step-up authentication is supposed to avoid.
+
+### 189.2 One guard per entry point, not two stacked
+
+The first draft guarded both the action's modal **and** the page method behind it.
+That reads as defence in depth and is not: the modal exchanges a correct key for a
+session grant, and a request with no session can never satisfy the second check. An
+operator would answer the key, watch it be accepted, and still be refused.
+
+A guard belongs where the entry point is, once:
+
+| Entry point | Guard | Why |
+|---|---|---|
+| the action's modal | `RootKeyAction::guard()` | the work lives in a `private` method that only the action can call |
+| a `public` page method | `RootKeyGate::assertUnlocked()` | `$wire.revoke(id)` reaches it without mounting anything, so there is no modal to guard |
+
+`MachineCredentials::revoke()` and `MachineTools::denyTool()` are public and take
+the method guard. The other six sit behind a modal and take the action guard. No
+method carries both.
+
+### 189.3 The key is asked for where the action happens
+
+A guard that only refuses makes the operator hunt for an unlock control and then
+repeat the click. OWASP ASVS 6.4 asks for re-authentication *at the point of* the
+sensitive operation, and an action's confirmation modal is that point. So
+`guard()` adds a password field to the modal the operator was already going to see:
+click, key, done. The whole key is verified — NIST SP 800-63B-4 — and every attempt
+is audited through §188's `attempt()`.
+
+Filament evaluates `before()` after the modal validates and before the action's own
+closure, and `halt()` aborts without running it. That is what makes the guard hold
+against a crafted Livewire call as well as a real click: the closure holding the
+delete is never reached.
+
+### 189.4 `schema()` replaces, so the fields are passed twice
+
+`RootKeyAction::guard()` calls `$action->schema(...)` to add the key field. That
+**replaces** whatever the action had. `Credentials` has a rotation modal with a
+"Valid for" selector, so that scenario would have lost its selector exactly on the
+deployments that armed the gate — a quieter bug than the one being fixed.
+`rotationFields()` now returns the component array and is passed to both the action
+and its guard, so the two cannot drift.
+
+This is the one sharp edge in the helper, and it is documented on the class rather
+than left to be rediscovered.
+
+### 189.5 What the harness taught, and what it did not
+
+The Livewire testing harness calls `withoutMiddleware()`, so its requests carry no
+session. That is a harness property, not a product one — panel routes run under
+`StartSession` and the grant works there — but it is worth recording because it
+explains the shape of `RootKeyDestructiveActionsTest`:
+
+- the modal path is proven end to end (wrong key halts and the row survives; right
+  key deletes it and records `rootkey.granted`);
+- the direct-call path is proven to **refuse** when locked;
+- `attempt()` → `unlocked()` and the expiry are pinned by `RootKeyGateTest`, and
+  composing the two is what makes a proven direct call succeed.
+
+The tests say this in a docblock rather than leaving a reader to wonder why one
+path looks less exercised.
+
+### 189.6 Gates
+
+| Gate | Result |
+|---|---|
+| `RootKeyDestructiveActionsTest` | **5 tests / 19 assertions** — no key needed with the gate off; wrong key halts and keeps the row; right key performs it and audits the grant; toolbar action asks too; a direct Livewire call cannot skip the gate |
+| regression run (root key, queue, machine credentials, machine tools, budgets, estate credentials, model config, settings catalogue, coverage, surface ownership) | **188 tests / 10,401 assertions**, green apart from the two known PM-provider `No tests found` errors |
+| phpcs PSR-12 on nine files | exit 0 |
+| `coverage.json` | unchanged — this section adds no settings |

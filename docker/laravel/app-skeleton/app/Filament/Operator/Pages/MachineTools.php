@@ -3,9 +3,11 @@
 namespace App\Filament\Operator\Pages;
 
 use App\Filament\Operator\Navigation\OperatorNavigationGroup;
+use App\Filament\Support\RootKeyAction;
 use App\Models\User;
 use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
+use App\Support\Security\RootKeyGate;
 use App\Support\Settings\SettingsService;
 use App\Support\ToolCatalogue;
 use App\Support\Tools\MachineToolAllowlist;
@@ -98,14 +100,16 @@ final class MachineTools extends Page implements HasTable
                     ->icon(Heroicon::OutlinedPlus)
                     ->visible(fn (array $record): bool => ! $record['allowlisted'])
                     ->action(fn (array $record) => $this->allowTool((string) $record['slug'])),
-                Action::make('deny')
-                    ->label('Remove')
-                    ->color('danger')
-                    ->icon(Heroicon::OutlinedMinus)
-                    ->requiresConfirmation()
-                    ->modalDescription('Removes the panel entry. A tool named in config/oos.php is not removable here.')
-                    ->visible(fn (array $record): bool => 'setting' === $record['source'])
-                    ->action(fn (array $record) => $this->denyTool((string) $record['slug'])),
+                RootKeyAction::guard(
+                    Action::make('deny')
+                        ->label('Remove')
+                        ->color('danger')
+                        ->icon(Heroicon::OutlinedMinus)
+                        ->requiresConfirmation()
+                        ->modalDescription('Removes the panel entry. A tool named in config/oos.php is not removable here.')
+                        ->visible(fn (array $record): bool => 'setting' === $record['source'])
+                        ->action(fn (array $record) => $this->denyTool((string) $record['slug'])),
+                ),
             ))
             ->paginated(array(25, 50, 100))
             ->emptyStateHeading('No servable tools')
@@ -169,6 +173,8 @@ final class MachineTools extends Page implements HasTable
 
     public function denyTool(string $slug): void
     {
+        app(RootKeyGate::class)->assertUnlocked();
+
         $slugs = array_values(array_filter(
             $this->storedSlugs(),
             static fn (string $candidate): bool => $candidate !== $slug,

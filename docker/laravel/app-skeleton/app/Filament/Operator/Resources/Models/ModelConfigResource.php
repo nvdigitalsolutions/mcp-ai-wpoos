@@ -7,6 +7,7 @@ use App\Models\ModelConfig;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Models\ModelConfigCatalogue;
 use App\Filament\Operator\Navigation\OperatorNavigationGroup;
+use App\Filament\Support\RootKeyAction;
 use BackedEnum;
 use Closure;
 use Filament\Actions\Action;
@@ -254,7 +255,7 @@ class ModelConfigResource extends Resource
             ])
             ->recordActions([
                 EditAction::make()->iconButton(),
-                DeleteAction::make()->iconButton(),
+                RootKeyAction::guard(DeleteAction::make())->iconButton(),
             ])
             ->toolbarActions([
                 CreateAction::make(),

@@ -10,6 +10,7 @@ use App\Policies\AdminAccessPolicy;
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Budgets\BudgetStore;
 use App\Filament\Operator\Navigation\OperatorNavigationGroup;
+use App\Filament\Support\RootKeyAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -172,13 +173,15 @@ class Budgets extends Page implements HasTable
                     ))
                     ->schema($this->limitSchema(withIdentity: false))
                     ->action(fn (Budget $record, array $data) => $this->save($record, $data)),
-                Action::make('delete')
-                    ->label('Delete')
-                    ->color('danger')
-                    ->icon(Heroicon::OutlinedTrash)
-                    ->requiresConfirmation()
-                    ->modalDescription('Removes the limit entirely; the estate is no longer refused, and the spend history stays readable on the cost pages.')
-                    ->action(fn (Budget $record) => $this->destroy($record)),
+                RootKeyAction::guard(
+                    Action::make('delete')
+                        ->label('Delete')
+                        ->color('danger')
+                        ->icon(Heroicon::OutlinedTrash)
+                        ->requiresConfirmation()
+                        ->modalDescription('Removes the limit entirely; the estate is no longer refused, and the spend history stays readable on the cost pages.')
+                        ->action(fn (Budget $record) => $this->destroy($record)),
+                ),
             ])
             ->emptyStateHeading('No budgets')
             ->emptyStateDescription('A budget refuses chat turns and workflow agents once an estate\'s recorded spend reaches the limit. Set one to give an estate a ceiling.')
