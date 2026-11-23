@@ -343,9 +343,17 @@ final class OkfWriter
     private function directoryPath(string $path): string
     {
         $directory = $this->root->root();
+        $relative  = \trim($path, '/');
 
-        if ('' !== \trim($path, '/')) {
-            $directory .= '/' . \trim($path, '/');
+        if ('' !== $relative) {
+            $directory .= '/' . $relative;
+
+            // A concept id is checked against `..` and `contains()` above; a
+            // directory passed to `regenerateIndex()` needs the same check, or
+            // `path: ../outside` writes an index outside the bundle.
+            if (! $this->root->contains($directory)) {
+                throw new OkfWriteException('okf_path_traversal', 'The index path escapes the bundle root.');
+            }
         }
 
         if (! \is_dir($directory)) {

@@ -563,3 +563,137 @@ ranged read is its transport's job, not this controller's.
 
 Authorization is unchanged: ranges are answered only after the same estate lookup,
 owner check and `oos-file.access` gate, so a `206` is not a way around the check.
+
+## 162.10 The OKF writer, and the routes that reach it
+
+The contract said `writer: none` and meant it. `lib/core/src/Domain/Okf/` held
+`OkfParser`, `OkfReader` and `OkfDocument` — a reader with no counterpart — so the
+admin page was honestly read-only and the console drawer's five routes were all
+`GET`s. Knowledge a runtime can read but never produce is a one-way door: the only
+way to add a concept was to edit the deployment's filesystem by hand.
+
+The writer now exists, and the runtime exposes it. The split matters: the format
+rules live in the package (so WordPress and Laravel share one answer), and the
+authority question lives in the host (because that is where roles live).
+
+### The writer
+
+| Call | Refusals it owns |
+|---|---|
+| `writeConcept($id, $frontmatter, $body)` | `okf_missing_type`, `okf_missing_id`, `okf_path_traversal`, `okf_reserved_name`, `okf_unsupported_shape` |
+| `deleteConcept($id): bool` | the same path checks; retires, never unlinks |
+| `regenerateIndex($path = '')` | `okf_not_found`, `okf_path_traversal`, `okf_write_error` |
+| `appendLog($path, $entry, $action)` | `okf_empty_entry` |
+
+**`type` is the only mandatory field**, because it is the only one the OKF spec
+makes mandatory — conformance is "frontmatter with a `type`". A writer that
+validated more would refuse documents the reader accepts, which is how two halves
+of one format start disagreeing.
+
+**`index.md` and `log.md` are reserved** (§3.1) at every level: a concept that
+took one of those names would corrupt the directory's own listing.
+
+**A concept id cannot escape the bundle.** `..` is refused outright and the final
+path must satisfy `BundleRootInterface::contains()`.
+
+**The index keeps its frontmatter.** v0.3 §8.1 says a producer regenerating the
+root index must preserve `okf_version`, `title`, `description` and `license`; the
+block is copied through verbatim rather than rebuilt from parsed values, so a key
+this runtime does not model still survives.
+
+**Frontmatter serialisation is one-directional and refuses what it cannot
+represent** — scalars, lists of scalars, nested maps, and lists of flat maps (the
+`sources:` / `verified:` shape). Anything deeper raises `okf_unsupported_shape`
+instead of emitting YAML the reader would silently mis-parse. Quoting follows the
+YAML 1.2 core schema: a numeric- or boolean-looking value is quoted, because
+`title: 2026` otherwise reads back as an int and breaks round-tripping. `\`, `"`
+and newline are escaped on write, and `OkfParser::castScalar()` unescapes the same
+three on read — that pair is what makes a description containing a quote come back
+unchanged rather than backslashed.
+
+**Every write is atomic.** It lands on a sibling temp file and is published with
+`rename()`, so a concurrent reader sees the old document or the new one, never a
+half-written frontmatter block.
+
+**Deletion is retirement.** `deleteConcept()` renames `name.md` to
+`name.md.deleted` and returns whether anything moved; a second delete returns
+`false` rather than an error, because a bundle is versioned data and a mistaken
+delete should be recoverable without git.
+
+### The routes, and why they are `ops`
+
+| Route | Success |
+|---|---|
+| `POST /api/v1/pro/okf/bundles/{bundle}/concepts` | `201` with `concept_id` and `path` |
+| `DELETE /api/v1/pro/okf/bundles/{bundle}/concepts/{concept}` | `200` with `retired` |
+| `POST /api/v1/pro/okf/bundles/{bundle}/index` | `200` with the `path` written |
+
+They sit in the `throttle:console` + `can:manage_options` group, on the same
+`api/v1/pro/okf` base as the reads so the console's endpoint fragment still
+resolves. That is a deliberate asymmetry with the drawer: reading a bundle is
+`edit_posts`, writing one is `manage_options`.
+
+The reason is the same one that kept `console` read-only: a bundle is
+deployment-global knowledge, one directory at `config('oos.okf.path')` shared by
+every estate. An estate admin editing it would be editing another tenant's data,
+so the capability cannot belong to the tenant-scoped surface. The contract row
+therefore moved `writer` from `none` to **`ops`**, not to `console`, and
+`console` stays `read-only`. No surface renders an editor yet, so
+`AdminOkfTest::test_the_page_accepts_no_payload` still holds by construction: the
+capability exists and the UI does not pretend to have it.
+
+**The status follows the code.** A caller can fix `okf_missing_type`,
+`okf_missing_id`, `okf_path_traversal`, `okf_reserved_name`, `okf_empty_entry`
+and `okf_unsupported_shape`, so those are `422` carrying the `okf_*` code (not a
+prose message to match on). `okf_not_found` is a `404`. A filesystem failure is a
+`500`, because a `422` for a disk error is a lie and a `500` for a payload the
+caller can fix is a support ticket.
+
+### Two holes found while wiring it
+
+**`regenerateIndex()` did not check containment for its subdirectory.** Concept
+ids were checked against `..` and `contains()`, but the `path` argument was only
+`is_dir()`-tested — so `path: ../outside` would write `index.md` outside the
+bundle. The route hands that argument straight from the request, which is how a
+latent API bug becomes reachable. `directoryPath()` now calls `contains()` before
+`is_dir()`, and a feature test creates a real sibling directory and proves both
+the `422` and the absence of the written file.
+
+**Two frontmatter refusals had no code.** `OkfWriteException`'s first constructor
+argument is `errorCode`, and the `emitList()` refusals passed prose as that
+argument. Locally that was invisible; once the controller echoes `errorCode` to
+HTTP it would have sent a sentence where a caller switches on `okf_*`. Both now
+raise `okf_unsupported_shape` with the sentence as the message, pinned by a test.
+
+### The trap Laravel sets for this shape of endpoint
+
+`$request->validate()` returns **only the keys its rules name**. A rule for
+`frontmatter.type` therefore returns `frontmatter` containing `type` alone — the
+first version of this route wrote `title` and `description` into nothing and
+returned `201`. The symptom surfaced one layer away, in the index: a concept with
+a title was listed as `* [orders](orders.md)` with no label and no description,
+because the file genuinely had neither.
+
+The fix is to validate the map's *shape* (`frontmatter` is required, an array,
+bounded) and read `$request->input('frontmatter')` for the map itself. OKF
+frontmatter is an open map, so a child rule is the wrong instrument twice over:
+it drops keys, and it pre-empts the writer's `okf_missing_type` with a generic
+validation envelope. The writer stays the authority on what OKF requires.
+
+### Not done, named
+
+- **No bundle create, replace or delete route.** The writer is per-bundle; the
+  catalogue resolves an existing directory. Creating a bundle is a deployment
+  decision with a path and a `name` pattern, not a payload.
+- **No `log.md` route.** `appendLog()` exists and is tested; nothing calls it over
+  HTTP yet, so an audited write is not yet automatic.
+- **No editor UI.** `writer: ops` records where the capability lives. The admin
+  page and the console drawer remain read-only until a surface renders a form,
+  and that surface has to move its own contract row first.
+
+*Validation:* `OkfWriteTest` (6 tests: operator write, reader `403`, missing type
+`422` with `okf_missing_type`, index round-trip with label and description,
+traversal `422`, unknown bundle `404`), `OkfWriterTest` (9, including the shape
+code and the read-back round-trip through the package's own reader),
+`AdminOkfTest`, `SurfaceOwnership` and `EndpointCapabilities`; `lib/core` 1994
+tests / 15,770 assertions; phpcs clean on all seven touched files.
