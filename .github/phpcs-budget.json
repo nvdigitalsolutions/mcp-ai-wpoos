@@ -2,7 +2,7 @@
     "_doc": "docs/developer/phpcs-ratchet.md",
     "_policy": "Budgets only shrink. --update refuses to raise one without --allow-increase, and --check fails when a scope comes in more than `tolerance` under budget without recording the improvement. `noise` is the allowance for run-to-run measurement variation on the over-budget side.",
     "measured_at": "2026-11-23",
-    "measured_on": "chore/phpcs-tests-valid-varname (tests re-measured at 380/1607; the valid-variable-name class is now closed tree-wide; other scopes carry their 2e6537ffb6 values)",
+    "measured_on": "chore/phpcs-tests-string-concat (tests re-measured at 357/1607; the unnecessary-concat class is now closed tree-wide; other scopes carry their 2e6537ffb6 values)",
     "ruleset": "phpcs.xml.dist",
     "tolerance": 25,
     "scopes": [
@@ -35,7 +35,7 @@
             "paths": [
                 "tests/"
             ],
-            "errors": 380,
+            "errors": 357,
             "warnings": 1607
         },
         {
