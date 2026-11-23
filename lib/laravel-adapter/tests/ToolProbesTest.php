@@ -114,6 +114,11 @@ final class ToolProbesTest extends TestCase {
 			array( 'scope_memory', array( 'assistant_id' => 7, 'task_class' => 'math', 'wing' => 'test-wing' ), 'success', array( 'tags' ) ),
 			array( 'validate_tool_schema', array( 'schema' => array( 'type' => 'object', 'properties' => array() ) ), 'success', array( '*' ) ),
 			array( 'verify_information', array( 'claim' => 'The sky is blue.', 'sources' => array( array( 'content' => 'The sky is blue during the day.', 'url' => 'https://example.com', 'credibility' => 'high' ) ) ), 'success', array( 'sources_checked' ) ),
+
+			// 090-M §24-§25 — the content ranking and the local file check. Both read
+			// real tables, so they are probed here rather than faked.
+			array( 'content_recommendation_engine', array( 'content' => 'Widget installation guide.' ), 'success', array( 'recommendations', 'count' ) ),
+			array( 'analyze_file_suitability', array( 'file_id' => 999999 ), 'error', array() ),
 		);
 	}
 
