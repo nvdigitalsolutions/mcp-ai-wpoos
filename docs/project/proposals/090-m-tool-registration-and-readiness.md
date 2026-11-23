@@ -2015,3 +2015,90 @@ stored text document refused with no completion spent).
 
 `lib/core` 2,262 / 16,769; adapter 350 / 1,875; auditor 247 rows / 228 servable, no
 violations. phpcs clean on all five files at the CI severities.
+
+## 30. Addendum: vision_object_localization, and a credential that may not fit (2026-11-24)
+
+### A port, not a stub
+
+Unlike several of the promises in this document, the WordPress tool is real: it posts to
+`https://vision.googleapis.com/v1/images:annotate`. Only the transport was missing on
+this host, so this is a straight port of a working call.
+
+### Why not ask the chat model for boxes
+
+Localisation has a fixed output contract. A chat model asked for bounding boxes returns
+coordinates that look plausible and cannot be checked; Vision returns
+`localizedObjectAnnotations` with normalised vertices that can. So the tool spends no
+tokens and makes one HTTP request per image — which is also why it declares
+`read-only` + `external-api` rather than `consumes-tokens`.
+
+### The credential, and the failure it implies
+
+The WordPress client reads its key from `gemini_api_key`. This port asks the settings
+store for the `gemini` key for the same reason. That key is a Google API key, and Cloud
+Vision answers it only when the **Vision API is enabled on the same Google Cloud
+project**. The port does not pretend otherwise: a `403` is returned with Vision's own
+message, because that message is the one sentence that tells an operator what to enable.
+Rewriting it as "vision failed" would cost them the fix.
+
+### Two traps in the response shape
+
+1. **`200 OK` with a per-image error.** Vision's batch shape can answer 200 and put a
+   failure in `responses[0].error`. Treating that as success returns an empty object
+   list, which reads as "nothing in the picture" — a different and wrong answer. It is
+   checked and reported as a provider error.
+2. **A missing polygon.** Collapsing vertices to a box with `min`/`max` is only correct
+   when there are vertices. When there are none the box is `null`, not `0,0,0,0`, which
+   would put every such object in the top-left corner.
+
+### Reusing ImageInput, and the constructor lesson
+
+Image resolution is `ImageInput` from §22 — `file_id` or a data URI, image-only, capped
+at 6 MB — rather than a second implementation of the same rules.
+
+The first version injected `ImageInput` as a constructor argument, and
+`ToolRegistryIntegrationTest` failed: its reflector refuses to build a `final` class with
+required constructor arguments. §22 builds `new ImageInput( $this->errors, $this->files )`
+inline for exactly this reason, so this does the same. The tool's constructor is back to
+interface-typed collaborators only, which is the shape every other tool in the registry
+has.
+
+### The class name collided with the stub, and the auditor did not notice
+
+The quarantined prompt-builder is `VisionObjectLocalizationTool` — no `Detect` or
+`Prompt` suffix, unlike the other stand-ins — so the first version of this slice wrote
+the implementation **over that file**. The manifest's `_prompt` row then pointed at a
+class declaring `vision_object_localization`, and `bin/audit-tool-readiness.php` still
+reported no violations.
+
+The reason is worth recording. The scanner only reads files matching
+`/^class\s+(\w+)/m`, so a `final class` is skipped entirely — and every tool added in
+this loop is `final`. The `dangling` check still works, because it uses `class_exists()`,
+but `slug_mismatch` cannot fire for those 25 classes, and a shared FQCN between two rows
+is exactly what that check exists to catch.
+
+The implementation now lives in `VisionObjectLocalizationDetectTool`, the stub is
+restored byte-identical, and the scanner gap is filed as its own issue rather than
+widened into this PR.
+
+### The gate is kept at edit_posts
+
+The tool is read-only, so `read` would be defensible — but a Vision call is **billed per
+image**, and the original gates it on `edit_posts`. Parity wins here because the gate is
+about cost as much as about access.
+
+### Validation
+
+`VisionObjectLocalizationToolTest` (core, 8 tests: slug/capability/flags; the missing
+HTTP client or settings; a missing key naming the Vision-API requirement; **a provider
+refusal carrying its status and body**; **a 200 with a per-image error treated as
+failure**; malformed JSON; objects returned with scores and a min/max box while a
+polygon-less object gets `null`, with the request shape asserted; `max_results` clamped).
+Feature test
+`docker/laravel/app-skeleton/tests/Feature/VisionObjectLocalizationToolTest.php` (3 tests
+against the real file store with `Http::fake()`: registration, a real stored image
+localised with the request asserted as `POST … images:annotate?key=…` and
+`OBJECT_LOCALIZATION`, and a missing key sending no request at all).
+
+`lib/core` 2,270 / 16,802; adapter 350 / 1,876; auditor 248 rows / 229 servable, no
+violations. phpcs clean on all three files at the CI severities.
