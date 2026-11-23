@@ -702,3 +702,81 @@ and the committed manifest audits clean (223 / 227 / 208, no violations).
 begins with a contract rather than a tool: an `AssistantWriteInterface` with
 create/update semantics, estate scoping, and the same confirm-then-apply shape as
 the root-key-gated operator writes. That is the decision §16 should open with.
+
+---
+
+## 16. Addendum: create_assistant, on the one writer (2026-11-23)
+
+### The slice
+
+`create_assistant` was named by two presets and had no row. The app already had
+one write path — `App\Services\AssistantWriter`, created because the REST
+controller and the `/admin` resource would otherwise have been two
+implementations of the same five invariants — so this is the **third transport
+onto that path**, not a second writer:
+
+```
+tool ──► AssistantWriteInterface ──► LaravelAssistantWriter ──► AssistantWriter ──► Assistant
+REST ──────────────────────────────────────────────────────────► AssistantWriter
+/admin ────────────────────────────────────────────────────────► AssistantWriter
+```
+
+`AssistantWriteInterface` carries `title`, `description`, `system_prompt`,
+`provider`, `model`, `temperature`, `max_tokens`, `tools` and returns
+`{success, assistant_id, slug, status}`. The writer keeps what a transport cannot
+be trusted with: **estate from `TenantContext`, never the payload**; slug derived
+and de-duplicated per estate (`(tenant_id, slug)` is the index); `status` defaults
+to draft; `is_default` exclusivity; profession and `advanced` flattening.
+
+### What the tool withholds, and why
+
+| Field | WordPress allows it | Here | Why |
+|---|---|---|---|
+| `status` | yes | **no** | Publishing is an operator action. A model that can mint a live assistant can grant itself a capability in one call. |
+| `is_default` | via the REST form | **no** | Promoting one assistant clears the flag on every other in the estate — wide blast radius for a tool argument. |
+| `slug` | yes | **no** | Derived from the title and made unique per estate; exposing it would let a caller choose a collision. |
+| `professions` / `regions` | yes (enums) | **no** | WordPress taxonomy. The REST transport validates `primary_role_slugs` against the profession catalogue; the tool defers that until it has the catalogue dependency. |
+| knowledge-base attachments, `async` | yes | **no** | No equivalent feature, and no cron path for assistant creation. |
+
+### Provider and model resolution
+
+- Omitted provider → the site default.
+- Omitted model → the site default **only when the provider is also the default
+  one**. Pairing `gpt-4o` with `gemini` is how a broken assistant gets created
+  quietly.
+- A supplied provider is checked against `ProviderRouter::getRegisteredSlugs()`
+  **when the router knows any**. An empty registry means provider registration has
+  not run yet; rejecting every slug then would make a fresh install unable to
+  create an assistant at all. An unknown provider is refused at create time
+  rather than failing at the assistant's first turn.
+
+### Capability and failure shape
+
+`edit_posts`, which is what `AssistantPolicy::create`
+(`hasNonViewerMembership()`) already requires and what the WordPress tool
+declares. Flags: `write`, `state-changing`, `local-only`,
+`requires-capability`.
+
+A writer exception becomes `assistant_create_failed` with a generic sentence:
+the adapter calls `report()` and never passes a driver message — column names,
+SQL fragments or paths — into a transcript.
+
+### Not done, named
+
+`create_assistant_validated` (schema-strict variant), `duplicate_assistant`,
+`export_assistant` and `import_assistant`. Import already exists as the
+portability REST surface; the others are separate tools with their own argument
+contracts, not aliases of this one.
+
+### Validation
+
+`CreateAssistantToolTest` (core, 11 tests: title gate, draft creation and
+reported fields, never-sends `status`/`is_default`/`slug`, provider/model
+defaults, non-default provider does not borrow the default model, unknown
+provider refused, empty registry tolerated, invalid tool slugs refused,
+deduplication, no-writer host, writer failure). Feature test
+`docker/laravel/app-skeleton/tests/Feature/CreateAssistantToolTest.php` (3 tests
+on the real writer: the container builds it, the row lands as a draft in the
+current estate with the supplied tools, a repeated title gets `-2`).
+`lib/core` 2045 / 15,931; adapter 348 / 1,830; skeleton creation + registration +
+diagnostics 17. phpcs clean on all six files.

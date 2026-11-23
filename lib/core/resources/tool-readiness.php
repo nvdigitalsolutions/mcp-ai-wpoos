@@ -266,6 +266,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AgentOrchestrationTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => false ),
 		),
+		'create_assistant' => array(
+			'class' => 'Nvoos\\Core\\Tool\\CreateAssistantTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CreateAssistantToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => false ),
+		),
 		'create_batch' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateBatchTool',
 			'readiness' => 'ready',
