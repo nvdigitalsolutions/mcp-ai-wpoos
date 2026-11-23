@@ -10,8 +10,10 @@ use App\Support\Import\ConversationImport;
 use App\Support\TenantContext;
 use App\Filament\Operator\Navigation\OperatorNavigationGroup;
 use BackedEnum;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Livewire\WithFileUploads;
 use UnitEnum;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 
@@ -37,9 +39,20 @@ use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
  * MIME gate and a size check before the bytes are even readable. A paste is one
  * code path with no filesystem surface, which is the right trade for a
  * deliberately narrow first version.
+ *
+ * §191 adds the upload that §37 deferred, and adds it as a **source**, not a
+ * second importer: the file is validated, sniffed and read into `$body`, and the
+ * preview/import path below is untouched. One parser, one set of caps, one
+ * write — the upload cannot drift from the paste.
+ *
+ * The bytes are not retained. The audit row records the file's name, size and
+ * `sha256`, which proves *which* export was imported without storing its
+ * contents — the same stance the row already took by never recording content.
  */
 class ConversationImportPage extends Page
 {
+    use WithFileUploads;
+
     protected static ?string $slug = 'conversation-import';
 
     protected static ?string $navigationLabel = 'Conversation import';
@@ -56,6 +69,24 @@ class ConversationImportPage extends Page
 
     /** The pasted export body. */
     public string $body = '';
+
+    /** The uploaded file, while Livewire still holds its temporary copy. */
+    public mixed $upload = null;
+
+    /** Display name of the file the body came from, if it came from one. */
+    public string $sourceName = '';
+
+    /** `sha256` of the imported bytes — provenance without retaining content. */
+    public string $sourceChecksum = '';
+
+    /**
+     * The upload gate's message, when it refused a file.
+     *
+     * A property rather than `addError()`: Filament's page view has no
+     * `ViewErrorBag` (the `@error` directive calls `getBag()` on an array), so an
+     * error bag that cannot be rendered is an error nobody sees.
+     */
+    public string $uploadError = '';
 
     /**
      * Target estate id for the import.
@@ -85,6 +116,86 @@ class ConversationImportPage extends Page
 
         return $user instanceof User
             && app(AdminAccessPolicy::class)->accessOperatorPanel($user);
+    }
+
+    /**
+     * Read an uploaded export into `$body` — Proposal 149 §191.
+     *
+     * Validation happens before the bytes are readable, which is what §37 said
+     * an upload path needed: a size check (Livewire's `max`, in kilobytes), a
+     * MIME gate on the **sniffed** type rather than the client's, and the same
+     * `MAX_BYTES` the parser enforces on a paste.
+     *
+     * Nothing is written to storage. The file is a source for the textarea, so a
+     * rejected or unread import leaves no orphan behind.
+     */
+    public function loadUpload(): void
+    {
+        $this->uploadError = '';
+
+        if (! $this->upload instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+            $this->uploadError = 'Choose a file first.';
+
+            return;
+        }
+
+        if ($this->upload->getSize() > ConversationImport::MAX_BYTES) {
+            $this->uploadError = sprintf(
+                'The export is larger than %s bytes.',
+                number_format(ConversationImport::MAX_BYTES)
+            );
+
+            return;
+        }
+
+        $path = $this->upload->getRealPath();
+
+        if (! is_string($path) || '' === $path || ! is_file($path)) {
+            $this->uploadError = 'The file could not be read. Choose it again.';
+
+            return;
+        }
+
+        $mime = ConversationImport::sniff($path);
+
+        if (! in_array($mime, ConversationImport::ACCEPTED_MIME_TYPES, true)) {
+            $this->uploadError = sprintf(
+                'That is a %s. A conversation export is JSON or plain text.',
+                $mime ?? 'file this runtime cannot identify'
+            );
+
+            return;
+        }
+
+        $contents = file_get_contents($path);
+
+        if (! is_string($contents)) {
+            $this->uploadError = 'The file could not be read. Choose it again.';
+
+            return;
+        }
+
+        if (strlen($contents) > ConversationImport::MAX_BYTES) {
+            $this->uploadError = sprintf(
+                'The export is larger than %s bytes.',
+                number_format(ConversationImport::MAX_BYTES)
+            );
+
+            return;
+        }
+
+        $this->body = $contents;
+        $this->sourceName = mb_substr(basename((string) $this->upload->getClientOriginalName()), 0, 160);
+        $this->sourceChecksum = hash('sha256', $contents);
+        $this->upload = null;
+        $this->mode = '';
+        $this->report = array();
+
+        Notification::make()
+            ->success()
+            ->title('Export loaded')
+            ->body(sprintf('%s is in the body field. Preview it before importing.', $this->sourceName))
+            ->send();
     }
 
     /**
@@ -190,12 +301,26 @@ class ConversationImportPage extends Page
                     'messages' => (int) $report['messages'],
                     'failed' => (int) $report['failed'],
                     'truncated' => (int) $report['truncated'],
+                    // §191 — provenance for an uploaded export. A name and a
+                    // hash identify *which* file was imported without keeping
+                    // the conversations it contained.
+                    'source' => '' === $this->sourceChecksum
+                        ? null
+                        : array(
+                            'name' => $this->sourceName,
+                            'sha256' => $this->sourceChecksum,
+                            'bytes' => isset($report['bytes'])
+                                ? (int) $report['bytes']
+                                : strlen($this->body),
+                        ),
                 )
             );
 
             // The body has been consumed; clearing it stops an accidental
             // double-submit from re-running the same import.
             $this->body = '';
+            $this->sourceName = '';
+            $this->sourceChecksum = '';
         }
     }
 

@@ -59,6 +59,40 @@
     </div>
 
     <div style="margin-bottom: 1rem;">
+        <label for="import-file" style="display: block; font-size: 0.8rem; margin-bottom: 0.25rem;">Or load an export file</label>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <input
+                id="import-file"
+                type="file"
+                wire:model="upload"
+                accept=".json,.txt,application/json,text/plain"
+                style="font-size: 0.8rem;"
+            />
+            <x-filament::button
+                type="button"
+                color="gray"
+                size="sm"
+                wire:click="loadUpload"
+                wire:loading.attr="disabled"
+            >
+                Load file
+            </x-filament::button>
+        </div>
+
+        @if ( '' !== $this->uploadError )
+            <p style="font-size: 0.8rem; margin: 0.35rem 0 0; color: #991b1b;">{{ $this->uploadError }}</p>
+        @endif
+
+        <p style="font-size: 0.75rem; margin: 0.3rem 0 0; opacity: 0.75;">
+            JSON or plain text, up to {{ number_format( $limits['bytes'] ) }} bytes. The file only fills
+            the body field — nothing is written to storage, and you can still edit the text before previewing.
+            @if ( '' !== $this->sourceName )
+                Loaded <strong>{{ $this->sourceName }}</strong>.
+            @endif
+        </p>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
         <label for="import-body" style="display: block; font-size: 0.8rem; margin-bottom: 0.25rem;">Export body</label>
         <textarea
             id="import-body"

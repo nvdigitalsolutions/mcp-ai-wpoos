@@ -18504,3 +18504,87 @@ rather than an unfinished control, and the contract says so.
 | regression run (skills, agent skills, surface ownership, panel blade, root key, settings catalogue, coverage) | **84 tests / 9,931 assertions**, green apart from the two known PM-provider `No tests found` errors |
 | phpcs PSR-12 on five files | exit 0 |
 | `coverage.json` | unchanged — this section adds no settings |
+
+## 191. Conversation import accepts a file (2026-11-23)
+
+§37 shipped this surface with a stated limit:
+
+> Paste rather than upload on purpose: an upload path needs a temporary file
+> store, a MIME gate and a size check before the bytes are even readable, and
+> this runtime has not configured one for imports.
+
+§162 configured one. This closes the condition rather than working around it.
+
+### 191.1 The file is a source, not a second importer
+
+The tempting shape is `importFile()` beside `import()`. It would duplicate the
+parser, the caps, the estate pinning and the audit row — four things that would
+then be able to disagree. Instead the upload **fills `$body`**, and the existing
+preview/import path is untouched:
+
+```
+file ──► size gate ──► MIME gate (sniffed) ──► read ──► $body ──► preview/import
+```
+
+One parser. One set of caps. One write. The upload cannot drift from the paste
+because there is nothing to drift from.
+
+### 191.2 The three gates, in the order §37 named them
+
+| Gate | Rule |
+|---|---|
+| size | `ConversationImport::MAX_BYTES` (2,097,152) — checked on the temp file and again on the decoded string |
+| type | `ConversationImport::sniff()` — `finfo` on the bytes; `application/json` and `text/plain` only |
+| identity | the client's filename is used for **display only**, `basename()`-ed and capped at 160 characters |
+
+The type gate is on the sniffed bytes, not the extension or the client's
+`Content-Type`: a `.json` whose bytes are a PNG is refused, and a test asserts
+exactly that. `MAX_BYTES` is checked twice because the two checks answer different
+questions — the first before the file is read into memory, the second after
+decoding, where a multi-byte body can be longer than its source.
+
+### 191.3 Nothing is stored
+
+The upload leaves no file behind. There is no `FileStore` call here at all, which
+is the opposite of what the §162 work makes easy: an import source is a stream of
+someone's conversations, and retaining it would create a second copy of exactly
+the content this surface is careful never to log.
+
+Provenance is kept without the content. When a body came from a file, the audit
+row gains:
+
+```json
+"source": { "name": "export.json", "sha256": "…", "bytes": 1234 }
+```
+
+That answers "which file was imported" — the question an operator actually asks
+after a bad import — without storing the conversations it contained. A test
+asserts the checksum is present **and** that a message from the file is absent
+from the row.
+
+### 191.4 An error a page can actually render
+
+The first version reported refusals with `addError()`. Filament's page view has no
+`ViewErrorBag` — `@error` compiles to `$errors->getBag(…)` and `$errors` is an
+array there — so every render of the page threw. A `$uploadError` property is
+plainer and it is visible: the gate writes a message, the blade prints it.
+
+This is the same class of defect §51 records for `@js()` inside a Filament
+attribute: a construct that is correct in Blade and wrong in this view context,
+which no PHP test catches until the page is rendered. The tests here render.
+
+### 191.5 What did not change
+
+The caps, the two accepted shapes, the estate selector, the idempotent upsert and
+the "preview writes nothing" rule are all §37's. The contract row stays `subset`,
+because the WordPress importer's other adapters (Claude / Gemini / OpenAI-JSONL),
+zip archives and the async queue are still not ported — upload was one of the
+missing pieces, not the last one.
+
+### 191.6 Gates
+
+| Gate | Result |
+|---|---|
+| `ConversationImportUploadTest` | **4 tests** — a JSON file fills the body and records name + sha256; an over-cap file is refused before the body changes; a `.json` holding a PNG is refused by the sniff; an uploaded export imports, and the audit row carries the checksum but not the content |
+| regression run (conversation import, surface ownership, operator navigation) | **34 tests / 704 assertions**, green apart from the two known PM-provider `No tests found` errors |
+| phpcs PSR-12 on three files | exit 0 |
