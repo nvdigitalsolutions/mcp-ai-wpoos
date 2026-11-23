@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Nvoos\Core\Domain\Okf\OkfReadException;
 use Nvoos\Core\Domain\Okf\OkfReader;
+use Nvoos\Core\Domain\Okf\OkfWriter;
 use Nvoos\Core\Infrastructure\Okf\FilesystemBundleRoot;
 
 /**
@@ -192,6 +193,19 @@ final class OkfCatalogue
     public function readerFor(string $name): OkfReader
     {
         return new OkfReader(new FilesystemBundleRoot($this->pathFor($name)));
+    }
+
+    /**
+     * Resolve a bundle name to a writer, or fail.
+     *
+     * The writer shares the reader's root abstraction, so a bundle that can be
+     * read can be written with the same path rules and the same traversal guard.
+     *
+     * @throws OkfReadException When the bundle is not configured.
+     */
+    public function writerFor(string $name): OkfWriter
+    {
+        return new OkfWriter(new FilesystemBundleRoot($this->pathFor($name)));
     }
 
     /**

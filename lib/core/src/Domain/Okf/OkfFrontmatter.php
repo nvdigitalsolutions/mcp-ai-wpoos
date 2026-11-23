@@ -119,7 +119,8 @@ final class OkfFrontmatter
 
             if (array() === $item || ! self::isMap($item)) {
                 throw new OkfWriteException(
-                    'Nested lists are not supported in frontmatter; use a flat list or a map.'
+                    'okf_unsupported_shape',
+                    'Nested lists are not supported in frontmatter; use a flat list or a map.',
                 );
             }
 
@@ -128,7 +129,8 @@ final class OkfFrontmatter
             foreach ($item as $key => $value) {
                 if (\is_array($value)) {
                     throw new OkfWriteException(
-                        'A list item may contain scalars only; nest it as a map instead.'
+                        'okf_unsupported_shape',
+                        'A list item may contain scalars only; nest it as a map instead.',
                     );
                 }
 

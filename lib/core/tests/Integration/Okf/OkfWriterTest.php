@@ -167,6 +167,27 @@ final class OkfWriterTest extends TestCase
         $this->assertStringContainsString('* [Orders](orders.md)', $index);
     }
 
+    public function test_an_unsupported_frontmatter_shape_is_refused_with_a_code(): void
+    {
+        $shapes = array(
+            'a list of lists'   => array('type' => 'Note', 'matrix' => array(array(array('a' => 1)))),
+            'a nested map item' => array('type' => 'Note', 'verified' => array(array('by' => array('x' => 1)))),
+        );
+
+        foreach ($shapes as $label => $frontmatter) {
+            try {
+                $this->writer->writeConcept('notes/bad', $frontmatter);
+                $this->fail('Expected a refusal for ' . $label . '.');
+            } catch (OkfWriteException $error) {
+                // The code is how an HTTP caller distinguishes "fix your
+                // payload" from "the server failed"; prose is not branchable.
+                $this->assertSame('okf_unsupported_shape', $error->errorCode, $label);
+            }
+        }
+
+        $this->assertFileDoesNotExist($this->directory . '/notes/bad.md');
+    }
+
     private function remove(string $path): void
     {
         if (! \is_dir($path)) {

@@ -16,6 +16,7 @@ use App\Http\Controllers\MagicLoginController;
 use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\OkfController;
+use App\Http\Controllers\OkfWriteController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
 use App\Http\Controllers\OrchestrationStatsController;
@@ -265,6 +266,17 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/settings/schema', [SettingsController::class, 'schema']);
             Route::get('/settings/values', [SettingsController::class, 'values']);
             Route::post('/settings/values', [SettingsController::class, 'updateValues']);
+
+            // Proposal 162 §162.10 — the OKF write side. A bundle is
+            // deployment-global knowledge, so writes are operator-scoped even
+            // though they live on the console's `pro/okf` base: `manage_options`
+            // is the authority, and no surface renders an editor yet.
+            Route::post('/pro/okf/bundles/{bundle}/concepts', [OkfWriteController::class, 'writeConcept'])
+                ->where('bundle', '[a-z0-9][a-z0-9_-]{0,99}');
+            Route::delete('/pro/okf/bundles/{bundle}/concepts/{concept}', [OkfWriteController::class, 'deleteConcept'])
+                ->where(['bundle' => '[a-z0-9][a-z0-9_-]{0,99}', 'concept' => '.+']);
+            Route::post('/pro/okf/bundles/{bundle}/index', [OkfWriteController::class, 'regenerateIndex'])
+                ->where('bundle', '[a-z0-9][a-z0-9_-]{0,99}');
 
             // 149 §188 — step-up verification for operator writes. The limiter is
             // tighter than the console default because this endpoint verifies a
