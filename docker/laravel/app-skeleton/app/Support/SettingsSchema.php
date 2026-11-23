@@ -344,24 +344,31 @@ final class SettingsSchema
      */
     public static function forSurface(string $surface = 'admin'): array
     {
+        // A key declared inapplicable configures software that is not here, so it
+        // must not render on ANY surface. Applying the rule only to the default
+        // branch let it leak onto /ops, where `SettingsProjectionTest` asserts the
+        // rendered set and the writable set are the same set — and it left a
+        // hidden key writable by a crafted payload. One filter, every surface.
+        $renderable = array_values(array_filter(
+            self::fields(),
+            static fn (array $field): bool => ! InapplicableSettings::isInapplicable((string) $field['key']),
+        ));
+
         if ('console' === $surface) {
             return array_values(array_filter(
-                self::fields(),
+                $renderable,
                 static fn (array $field): bool => 'hidden' !== ($field['console'] ?? 'visible'),
             ));
         }
 
         if ('ops' === $surface) {
             return array_values(array_filter(
-                self::fields(),
+                $renderable,
                 static fn (array $field): bool => 'operator' === ($field['scope'] ?? 'tenant'),
             ));
         }
 
-        return array_values(array_filter(
-            self::fields(),
-            static fn (array $field): bool => ! InapplicableSettings::isInapplicable((string) $field['key']),
-        ));
+        return $renderable;
     }
 
     /**
@@ -415,6 +422,8 @@ final class SettingsSchema
         }
 
         if ('ops' === $surface) {
+            // Rendered and writable are the same set on /ops, which is why the
+            // inapplicable exclusion lives in `forSurface()` rather than here.
             return self::forSurface('ops');
         }
 

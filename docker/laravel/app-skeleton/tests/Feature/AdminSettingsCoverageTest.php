@@ -119,29 +119,23 @@ class AdminSettingsCoverageTest extends TestCase
 
     public function test_a_writable_security_control_is_never_left_unenforced(): void
     {
-        $writable = array_column(SettingsSchema::writableFor('admin'), 'key');
+        // The admin-writable unenforced bucket must be empty: that is the goal of
+        // §183–§187, and asserting it is the only way the milestone stays true.
+        $this->assertSame(
+            array(),
+            SettingsCoverage::byBucket('unenforced'),
+            'An admin-writable security control is enforced nowhere again — wire it or declare it.'
+        );
 
-        // The admin-writable unenforced bucket may be empty — that is the goal. When
-        // it is not, every member must really be writable here, or the page names a
-        // risk the tenant panel cannot create.
-        foreach (SettingsCoverage::byBucket('unenforced') as $row) {
-            $this->assertContains(
-                $row['key'],
-                $writable,
-                sprintf('Unenforced key "%s" is not writable on the admin surface; reclassify it.', $row['key'])
-            );
-        }
-
-        // The operator sibling is a different claim: those keys must stay OUT of
-        // the admin surface, or the page understates the risk by filing them
-        // under a scope whose administrator cannot see them.
-        foreach (SettingsCoverage::byBucket('unenforced-operator') as $row) {
-            $this->assertNotContains(
-                $row['key'],
-                $writable,
-                sprintf('Operator-scope key "%s" is writable from the tenant panel; it belongs in the admin-writable bucket.', $row['key'])
-            );
-        }
+        // The operator bucket is a closed list, not an empty one. The root-key pair
+        // stays unenforced because §66 renders operator infrastructure and a secrets
+        // test pins that the key is writable from /ops and masked (§187.3). Any
+        // other key appearing here is a regression.
+        $this->assertSame(
+            array('enable_root_security_key', 'root_security_key'),
+            array_column(SettingsCoverage::byBucket('unenforced-operator'), 'key'),
+            'The operator-unenforced bucket gained a key — wire it, declare it, or record the decision.'
+        );
     }
 
     /**
