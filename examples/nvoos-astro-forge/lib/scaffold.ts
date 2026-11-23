@@ -41,6 +41,12 @@ export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 /** Files vendored into every generated project under `src/forge/`. */
 export const FORGE_LIB_FILES = [
+	// `types.ts` imports `ForgeEca` from here (the profile's `eca` block), so the
+	// module must exist in EVERY project even when the profile is not an ECA site
+	// — otherwise `astro check` fails ts(2307) in every generated site. The file
+	// is self-contained with no runtime imports, so vendoring it costs 40 KB of
+	// unused TypeScript in a blog rebuild and nothing at runtime.
+	'eca.ts',
 	'types.ts',
 	// `types.ts` imports `ForgeVerify` from here, so the module must exist in the
 	// customer repo even though only the CLI reads the policy at runtime —
@@ -4146,11 +4152,8 @@ async function scaffoldProject(
 	for (const file of FORGE_LIB_FILES) {
 		await copyFile(path.join(FORGE_ROOT, 'lib', file), path.join(forgeDir, file));
 	}
-	// The ECA normaliser is vendored ONLY for an ECA profile: a blog rebuild has
-	// no use for it, and every always-vendored lib costs the customer repo.
-	if (profile.eca) {
-		await copyFile(path.join(FORGE_ROOT, 'lib', 'eca.ts'), path.join(forgeDir, 'eca.ts'));
-	}
+	// The ECA normaliser is already vendored above (FORGE_LIB_FILES) because
+	// `types.ts` imports its config type in every project.
 
 	// 2b. Ship the NOTICE — MIT attribution for the vendored libs plus the
 	//     generated-output rule (the customer owns the site).
