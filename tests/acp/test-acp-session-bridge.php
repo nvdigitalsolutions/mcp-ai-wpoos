@@ -26,19 +26,19 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
 		require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
 
-		$this->bridge       = new WP_MCP_AI_ACP_Session_Bridge();
-		
+		$this->bridge = new WP_MCP_AI_ACP_Session_Bridge();
+
 		// Create a basic mock for the chat service.
 		$this->chat_service = $this->getMockBuilder( 'WP_MCP_AI_Chat_Service' )
 			->disableOriginalConstructor()
 			->getMock();
 
 		$this->bridge->set_chat_service( $this->chat_service );
-		
+
 		wp_set_current_user( $this->factory->user->create() );
 	}
 
@@ -53,9 +53,11 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 		// Mock a successful chat service response.
 		$this->chat_service->expects( $this->once() )
 			->method( 'process_chat_request' )
-			->willReturn( array(
-				'response' => 'This is a mock LLM response.',
-			) );
+			->willReturn(
+				array(
+					'response' => 'This is a mock LLM response.',
+				)
+			);
 
 		$params = array(
 			'sessionId' => $session_id,

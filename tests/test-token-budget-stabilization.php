@@ -205,7 +205,7 @@ class Test_WP_MCP_AI_Token_Budget_Manager_Stabilization extends WP_UnitTestCase 
 		// both the chars/4 heuristic and tiktoken-backed counting.
 		for ( $i = 0; $i < 50; $i++ ) {
 			$messages[] = array(
-				'role'    => $i % 2 === 0 ? 'user' : 'assistant',
+				'role'    => 0 === $i % 2 ? 'user' : 'assistant',
 				'content' => str_repeat( 'This is message content. ', 4 ),
 			);
 		}

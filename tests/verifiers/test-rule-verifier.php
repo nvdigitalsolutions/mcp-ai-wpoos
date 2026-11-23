@@ -110,7 +110,7 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 					'type'     => 'callback',
 					'path'     => 'value',
 					'callback' => static function ( $v ) {
-						return is_int( $v ) && ( $v % 2 === 0 );
+						return is_int( $v ) && ( 0 === $v % 2 );
 					},
 				),
 			)

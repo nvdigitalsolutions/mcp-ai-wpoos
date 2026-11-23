@@ -37,11 +37,13 @@ class WP_MCP_AI_Credentials_Expiry_Tests extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->assistant_id = $this->factory->post->create( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Expiry Test Assistant',
-			'post_status' => 'publish',
-		) );
+		$this->assistant_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Expiry Test Assistant',
+				'post_status' => 'publish',
+			)
+		);
 
 		$this->user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
@@ -103,7 +105,7 @@ class WP_MCP_AI_Credentials_Expiry_Tests extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Credentials::issue_credential( $this->assistant_id, $this->user_id );
 
 		// Manually set expires_at to the past by updating post meta directly.
-		$credentials   = get_post_meta( $this->assistant_id, WP_MCP_AI_Credentials::META_KEY, true );
+		$credentials                  = get_post_meta( $this->assistant_id, WP_MCP_AI_Credentials::META_KEY, true );
 		$credentials[0]['expires_at'] = '2020-01-01 00:00:00';
 		update_post_meta( $this->assistant_id, WP_MCP_AI_Credentials::META_KEY, $credentials );
 
@@ -136,7 +138,7 @@ class WP_MCP_AI_Credentials_Expiry_Tests extends WP_UnitTestCase {
 	 * Test that revoked credentials are rejected regardless of expiry.
 	 */
 	public function test_validate_token_revoked() {
-		$result       = WP_MCP_AI_Credentials::issue_credential( $this->assistant_id, $this->user_id );
+		$result        = WP_MCP_AI_Credentials::issue_credential( $this->assistant_id, $this->user_id );
 		$credential_id = $result['credential']['id'];
 
 		WP_MCP_AI_Credentials::revoke_credential( $this->assistant_id, $credential_id, $this->user_id );

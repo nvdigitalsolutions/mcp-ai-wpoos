@@ -136,7 +136,7 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 
 		// If filters existed before, they should be the same after
 		// If they didn't exist before, they should not exist after.
-		if ( $filters_before === null ) {
+		if ( null === $filters_before ) {
 			$this->assertNull( $filters_after, 'Filters should be cleaned up after request' );
 		}
 	}

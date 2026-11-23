@@ -45,7 +45,7 @@ class Test_Remote_Sites_Menu_Registration extends WP_UnitTestCase {
 		$remote_sites_found = false;
 		if ( isset( $submenu['nvoos-pro-dashboard'] ) ) {
 			foreach ( $submenu['nvoos-pro-dashboard'] as $item ) {
-				if ( $item[2] === 'wp-mcp-ai-remote-sites' ) {
+				if ( 'wp-mcp-ai-remote-sites' === $item[2] ) {
 					$remote_sites_found = true;
 					// Verify menu title.
 					$this->assertEquals( 'Remote Sites', $item[0] );
@@ -96,7 +96,7 @@ class Test_Remote_Sites_Menu_Registration extends WP_UnitTestCase {
 				}
 				if ( isset( $callback['function'][0] ) &&
 					$callback['function'][0] instanceof WP_MCP_AI_Pro_Remote_Sites_Admin &&
-					$callback['function'][1] === 'add_admin_menu' ) {
+					'add_admin_menu' === $callback['function'][1] ) {
 					$found_priority = $priority;
 					break 2;
 				}

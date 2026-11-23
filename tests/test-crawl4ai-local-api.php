@@ -263,7 +263,7 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 			$task_id = 'test-task-' . $i;
 			$result  = array(
 				'task_id'   => $task_id,
-				'status'    => $i % 2 === 0 ? 'completed' : 'failed',
+				'status'    => 0 === $i % 2 ? 'completed' : 'failed',
 				'results'   => array(
 					array(
 						'url'     => 'https://example.com/page' . $i,

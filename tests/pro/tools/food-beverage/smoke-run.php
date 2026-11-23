@@ -345,5 +345,5 @@ $eng       = WP_MCP_AI_Fnb_Metrics::menu_engineering( '2026-09' );
 $quadrants = array_count_values( array_column( $eng['rows'], 'quadrant' ) );
 echo 'Menu-engineering quadrants (Sep): ' . wp_json_encode( $quadrants ) . "\n";
 
-echo $failures === 0 ? "=== ALL CHECKS PASSED ===\n" : "=== $failures CHECK(S) FAILED ===\n";
-exit( $failures === 0 ? 0 : 1 );
+echo 0 === $failures ? "=== ALL CHECKS PASSED ===\n" : "=== $failures CHECK(S) FAILED ===\n";
+exit( 0 === $failures ? 0 : 1 );

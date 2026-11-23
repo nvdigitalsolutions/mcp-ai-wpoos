@@ -51,7 +51,7 @@ class Test_Site_Creator_Menu_Registration extends WP_UnitTestCase {
 		// Check that Site Creator menu exists.
 		$site_creator_found = false;
 		foreach ( $menu as $item ) {
-			if ( isset( $item[2] ) && $item[2] === 'nvoos-site-creator' ) {
+			if ( isset( $item[2] ) && 'nvoos-site-creator' === $item[2] ) {
 				$site_creator_found = true;
 				// Verify menu title.
 				$this->assertEquals( 'Site Creator', $item[0] );
@@ -141,7 +141,7 @@ class Test_Site_Creator_Menu_Registration extends WP_UnitTestCase {
 				}
 				if ( isset( $callback['function'][0] ) &&
 					$callback['function'][0] instanceof WP_MCP_AI_Site_Creator_Toolkit_Settings_Page &&
-					$callback['function'][1] === 'add_settings_page' ) {
+					'add_settings_page' === $callback['function'][1] ) {
 					$found_priority = $priority;
 					break 2;
 				}

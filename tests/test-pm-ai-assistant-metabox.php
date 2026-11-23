@@ -415,6 +415,6 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		$this->assertContains( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, $script->deps, 'Script should include chat bundle dependency' );
 
 		// Verify script is loaded in footer for proper initialization.
-		$this->assertTrue( $script->extra['group'] === 1, 'Script should be loaded in footer' );
+		$this->assertTrue( 1 === $script->extra['group'], 'Script should be loaded in footer' );
 	}
 }

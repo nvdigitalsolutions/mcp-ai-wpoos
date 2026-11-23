@@ -95,7 +95,12 @@ class Test_Job_Source_Adapters extends WP_UnitTestCase {
 			new WP_MCP_AI_Job_Source_Crawl4AI(),
 			new WP_MCP_AI_Job_Source_Hitl_Approvals(),
 		);
-		$slugs = array_map( static function ( $a ) { return $a->get_slug(); }, $adapters );
+		$slugs    = array_map(
+			static function ( $a ) {
+				return $a->get_slug();
+			},
+			$adapters
+		);
 
 		foreach ( $slugs as $slug ) {
 			$this->assertIsString( $slug );
@@ -371,14 +376,16 @@ class Test_Job_Source_Adapters extends WP_UnitTestCase {
 		$queue = WP_MCP_AI_Approval_Queue::get_instance();
 		wp_set_current_user( $this->user_id );
 
-		$post_id = $queue->enqueue( array(
-			'tool'         => 'delete_post',
-			'arguments'    => array( 'id' => 1 ),
-			'assistant_id' => 77,
-			'requester_id' => $this->user_id,
-			'session_id'   => 'test_session',
-			'reason'       => 'Needs human review',
-		) );
+		$post_id = $queue->enqueue(
+			array(
+				'tool'         => 'delete_post',
+				'arguments'    => array( 'id' => 1 ),
+				'assistant_id' => 77,
+				'requester_id' => $this->user_id,
+				'session_id'   => 'test_session',
+				'reason'       => 'Needs human review',
+			)
+		);
 
 		$this->assertIsInt( $post_id );
 
@@ -406,13 +413,15 @@ class Test_Job_Source_Adapters extends WP_UnitTestCase {
 		$queue      = WP_MCP_AI_Approval_Queue::get_instance();
 		wp_set_current_user( $other_user );
 
-		$post_id = $queue->enqueue( array(
-			'tool'         => 'publish_post',
-			'arguments'    => array(),
-			'assistant_id' => 0,
-			'requester_id' => $other_user,
-			'session_id'   => 'other_session',
-		) );
+		$post_id = $queue->enqueue(
+			array(
+				'tool'         => 'publish_post',
+				'arguments'    => array(),
+				'assistant_id' => 0,
+				'requester_id' => $other_user,
+				'session_id'   => 'other_session',
+			)
+		);
 
 		$this->assertIsInt( $post_id );
 
@@ -429,13 +438,15 @@ class Test_Job_Source_Adapters extends WP_UnitTestCase {
 		$queue = WP_MCP_AI_Approval_Queue::get_instance();
 		wp_set_current_user( $this->user_id );
 
-		$post_id = $queue->enqueue( array(
-			'tool'         => 'send_email',
-			'arguments'    => array(),
-			'assistant_id' => 0,
-			'requester_id' => $this->user_id,
-			'session_id'   => 'admin_test_session',
-		) );
+		$post_id = $queue->enqueue(
+			array(
+				'tool'         => 'send_email',
+				'arguments'    => array(),
+				'assistant_id' => 0,
+				'requester_id' => $this->user_id,
+				'session_id'   => 'admin_test_session',
+			)
+		);
 
 		$this->assertIsInt( $post_id );
 
@@ -453,13 +464,15 @@ class Test_Job_Source_Adapters extends WP_UnitTestCase {
 		$queue = WP_MCP_AI_Approval_Queue::get_instance();
 		wp_set_current_user( $this->admin_id );
 
-		$post_id = $queue->enqueue( array(
-			'tool'         => 'delete_user',
-			'arguments'    => array(),
-			'assistant_id' => 0,
-			'requester_id' => $this->admin_id,
-			'session_id'   => 'resolved_test',
-		) );
+		$post_id = $queue->enqueue(
+			array(
+				'tool'         => 'delete_user',
+				'arguments'    => array(),
+				'assistant_id' => 0,
+				'requester_id' => $this->admin_id,
+				'session_id'   => 'resolved_test',
+			)
+		);
 
 		$this->assertIsInt( $post_id );
 

@@ -42,15 +42,18 @@ class Test_Shopify_Sync_Tools extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Create test users.
-		$this->admin_user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$this->admin_user_id      = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		$this->subscriber_user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		// Set up toolkit settings.
-		update_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array(
-			'sync_connections' => array( $this->connection_id ),
-			'sync_interval'    => 15,
-			'sync_direction'   => 'shopify_to_woo',
-		) );
+		update_option(
+			'wp_mcp_ai_shopify_sync_toolkit_settings',
+			array(
+				'sync_connections' => array( $this->connection_id ),
+				'sync_interval'    => 15,
+				'sync_direction'   => 'shopify_to_woo',
+			)
+		);
 	}
 
 	/**

@@ -28,14 +28,17 @@ class Test_Shopify_Sync_Engine extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-sync-engine.php';
 		}
 
-		update_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array(
-			'sync_interval'       => 15,
-			'sync_direction'      => 'shopify_to_woo',
-			'enable_wc_sync'      => false,
-			'enable_webhooks'     => true,
-			'sync_connections'    => array( $this->connection_id ),
-			'low_stock_threshold' => 5,
-		) );
+		update_option(
+			'wp_mcp_ai_shopify_sync_toolkit_settings',
+			array(
+				'sync_interval'       => 15,
+				'sync_direction'      => 'shopify_to_woo',
+				'enable_wc_sync'      => false,
+				'enable_webhooks'     => true,
+				'sync_connections'    => array( $this->connection_id ),
+				'low_stock_threshold' => 5,
+			)
+		);
 	}
 
 	/**
@@ -90,8 +93,8 @@ class Test_Shopify_Sync_Engine extends WP_UnitTestCase {
 	 * Test that get_daily_cost_data returns default structure.
 	 */
 	public function test_get_daily_cost_data_defaults() {
-		$engine  = new WP_MCP_AI_Shopify_Sync_Engine( $this->connection_id );
-		$cost    = $engine->get_daily_cost_data();
+		$engine = new WP_MCP_AI_Shopify_Sync_Engine( $this->connection_id );
+		$cost   = $engine->get_daily_cost_data();
 
 		$this->assertIsArray( $cost );
 		$this->assertEquals( gmdate( 'Y-m-d' ), $cost['date'] );
@@ -134,12 +137,15 @@ class Test_Shopify_Sync_Engine extends WP_UnitTestCase {
 	public function test_daily_cost_resets_on_new_day() {
 		$old_date = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
 
-		update_option( 'wp_mcp_ai_shopify_daily_cost_' . $this->connection_id, array(
-			'date'    => $old_date,
-			'used'    => 500,
-			'limit'   => 1000,
-			'history' => array(),
-		) );
+		update_option(
+			'wp_mcp_ai_shopify_daily_cost_' . $this->connection_id,
+			array(
+				'date'    => $old_date,
+				'used'    => 500,
+				'limit'   => 1000,
+				'history' => array(),
+			)
+		);
 
 		$engine = new WP_MCP_AI_Shopify_Sync_Engine( $this->connection_id );
 		$cost   = $engine->get_daily_cost_data();
@@ -218,7 +224,7 @@ class Test_Shopify_Sync_Engine extends WP_UnitTestCase {
 	 */
 	public function test_wc_sync_gated_by_setting() {
 		// WC sync enabled = false in setUp.
-		$engine    = new WP_MCP_AI_Shopify_Sync_Engine( $this->connection_id );
+		$engine     = new WP_MCP_AI_Shopify_Sync_Engine( $this->connection_id );
 		$reflection = new ReflectionMethod( $engine, 'sync_shopify_to_woocommerce' );
 		$reflection->setAccessible( true );
 

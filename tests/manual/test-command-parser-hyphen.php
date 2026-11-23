@@ -74,7 +74,7 @@ echo "Passed: $passed\n";
 echo "Failed: $failed\n";
 echo 'Total:  ' . ( $passed + $failed ) . "\n";
 
-if ( $failed === 0 ) {
+if ( 0 === $failed ) {
 	echo "\n✅ All tests passed!\n";
 	exit( 0 );
 } else {

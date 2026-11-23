@@ -2,7 +2,7 @@
     "_doc": "docs/developer/phpcs-ratchet.md",
     "_policy": "Budgets only shrink. --update refuses to raise one without --allow-increase, and --check fails when a scope comes in more than `tolerance` under budget without recording the improvement. `noise` is the allowance for run-to-run measurement variation on the over-budget side.",
     "measured_at": "2026-11-23",
-    "measured_on": "chore/phpcs-tests-psr12-traits (tests re-measured at 515/1617; the PSR12 trait-import class is now closed tree-wide; other scopes carry their 2e6537ffb6 values)",
+    "measured_on": "chore/phpcs-tests-yoda-signature (tests re-measured at 415/1607; the Yoda and PEAR signature classes are now closed tree-wide; other scopes carry their 2e6537ffb6 values)",
     "ruleset": "phpcs.xml.dist",
     "tolerance": 25,
     "scopes": [
@@ -35,8 +35,8 @@
             "paths": [
                 "tests/"
             ],
-            "errors": 515,
-            "warnings": 1617
+            "errors": 415,
+            "warnings": 1607
         },
         {
             "name": "plugins",
