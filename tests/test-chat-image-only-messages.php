@@ -167,7 +167,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'message_has_image_content' );
 		$method->setAccessible( true );
 
-		// Test 1: Message with image_url type should be detected
+		// Test 1: Message with image_url type should be detected.
 		$message_with_image_url = array(
 			'role'    => 'assistant',
 			'content' => array(
@@ -184,7 +184,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should detect message with image_url type'
 		);
 
-		// Test 2: Message with image_file type should be detected
+		// Test 2: Message with image_file type should be detected.
 		$message_with_image_file = array(
 			'role'    => 'assistant',
 			'content' => array(
@@ -201,7 +201,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should detect message with image_file type'
 		);
 
-		// Test 3: Message with mixed text and image should be detected
+		// Test 3: Message with mixed text and image should be detected.
 		$message_with_mixed_content = array(
 			'role'    => 'assistant',
 			'content' => array(
@@ -222,7 +222,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should detect message with mixed text and image content'
 		);
 
-		// Test 4: Text-only message should not be detected as having image content
+		// Test 4: Text-only message should not be detected as having image content.
 		$message_text_only = array(
 			'role'    => 'assistant',
 			'content' => array(
@@ -237,7 +237,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should not detect text-only message as having image content'
 		);
 
-		// Test 5: String content should not be detected as having image content
+		// Test 5: String content should not be detected as having image content.
 		$message_string_content = array(
 			'role'    => 'assistant',
 			'content' => 'This is a plain string',
@@ -247,7 +247,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should not detect string content as having image content'
 		);
 
-		// Test 6: Empty message should not be detected as having image content
+		// Test 6: Empty message should not be detected as having image content.
 		$empty_message = array(
 			'role' => 'assistant',
 		);

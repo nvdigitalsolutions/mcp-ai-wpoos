@@ -123,7 +123,7 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 	}
 
 	/**
-	 * init() and render_page() must share the same instance (singleton).
+	 * Init() and render_page() must share the same instance (singleton).
 	 *
 	 * If render_page() creates a second instance its constructor registers
 	 * duplicate wp_ajax_* hooks and a second admin_init callback for
@@ -291,7 +291,7 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 	}
 
 	/**
-	 * project-management-init.php must initialize the event consolidate page.
+	 * Project-management-init.php must initialize the event consolidate page.
 	 */
 	public function test_project_management_init_registers_event_consolidate_page() {
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
@@ -372,7 +372,7 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 	}
 
 	/**
-	 * media-toolkit-init.php must initialize the media consolidate page.
+	 * Media-toolkit-init.php must initialize the media consolidate page.
 	 */
 	public function test_media_toolkit_init_registers_media_consolidate_page() {
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
@@ -435,7 +435,7 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 	// ── Health Records Consolidate Page — vitals write path ─────────────────────
 
 	/**
-	 * sanitize_vitals_post_data must delegate to the CCT class for the numeric
+	 * Sanitize_vitals_post_data must delegate to the CCT class for the numeric
 	 * field list so that adding a new field in one place propagates everywhere.
 	 */
 	public function test_health_consolidate_sanitize_delegates_to_cct_class() {
@@ -459,7 +459,7 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_import_vitals_to_cct must call upsert() not insert().
+	 * Handle_import_vitals_to_cct must call upsert() not insert().
 	 *
 	 * PR #4197 changed all three vitals write paths to use upsert() for
 	 * same-day consolidation and near-duplicate suppression.
@@ -484,9 +484,9 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_import_vitals_to_cct must set the audit trail fields.
+	 * Handle_import_vitals_to_cct must set the audit trail fields.
 	 *
-	 * logged_at, logged_by, and entry_id must always be stamped server-side.
+	 * Logged_at, logged_by, and entry_id must always be stamped server-side.
 	 */
 	public function test_health_consolidate_stamps_audit_fields() {
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
