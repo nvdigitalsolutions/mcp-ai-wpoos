@@ -40,7 +40,7 @@ class Test_Pro_Workflow_Builder_Menu extends WP_UnitTestCase {
 		$workflow_builder_found = false;
 		if ( isset( $submenu['nvoos-pro-dashboard'] ) ) {
 			foreach ( $submenu['nvoos-pro-dashboard'] as $item ) {
-				if ( $item[2] === 'nvoos-pro-workflow-builder' ) {
+				if ( 'nvoos-pro-workflow-builder' === $item[2] ) {
 					$workflow_builder_found = true;
 					// Verify menu title.
 					$this->assertEquals( 'Pro Workflows', $item[0] );

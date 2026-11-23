@@ -101,50 +101,57 @@ class Test_Site_Node_Registry extends WP_UnitTestCase {
 	public function test_custom_node_registration_via_action() {
 		$this->registry->init();
 
-		$custom = new class implements WP_MCP_AI_Site_Node_Interface {
+		$custom = new class() implements WP_MCP_AI_Site_Node_Interface {
 			/**
 			 * Return the node slug.
 			 *
 			 * @return string
 			 */
-			public function get_slug(): string        { return 'custom_test_node'; }
+			public function get_slug(): string {
+				return 'custom_test_node'; }
 			/**
 			 * Return the node name.
 			 *
 			 * @return string
 			 */
-			public function get_name(): string        { return 'Custom Test'; }
+			public function get_name(): string {
+				return 'Custom Test'; }
 			/**
 			 * Return the node description.
 			 *
 			 * @return string
 			 */
-			public function get_description(): string { return 'Custom test node.'; }
+			public function get_description(): string {
+				return 'Custom test node.'; }
 			/**
 			 * Return the node category.
 			 *
 			 * @return string
 			 */
-			public function get_category(): string    { return 'integration'; }
+			public function get_category(): string {
+				return 'integration'; }
 			/**
 			 * Return the node inputs.
 			 *
 			 * @return array
 			 */
-			public function get_inputs(): array       { return array(); }
+			public function get_inputs(): array {
+				return array(); }
 			/**
 			 * Return the node outputs.
 			 *
 			 * @return array
 			 */
-			public function get_outputs(): array      { return array(); }
+			public function get_outputs(): array {
+				return array(); }
 			/**
 			 * Execute the node.
 			 *
 			 * @param array $inputs Node inputs.
 			 * @return array
 			 */
-			public function execute( array $inputs )  { return array( 'ok' => true ); }
+			public function execute( array $inputs ) {
+				return array( 'ok' => true ); }
 		};
 
 		do_action( 'wp_mcp_ai_register_site_nodes', $this->registry );
@@ -178,9 +185,12 @@ class Test_Site_Node_Registry extends WP_UnitTestCase {
 		}
 
 		// Verify stable ordering: source before layout, alphabetically within.
-		$categories = array_map( function ( $e ) {
-			return $e['category'];
-		}, $data );
+		$categories = array_map(
+			function ( $e ) {
+				return $e['category'];
+			},
+			$data
+		);
 
 		$sorted = $categories;
 		sort( $sorted );

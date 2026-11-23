@@ -75,10 +75,12 @@ class Test_Service_Assistant extends WP_UnitTestCase {
 	 * Test that validate_assistant_access returns WP_Error for a non-assistant post type.
 	 */
 	public function test_validate_assistant_access_returns_error_for_wrong_post_type() {
-		$post_id = $this->factory->post->create( array(
-			'post_type'   => 'post',
-			'post_status' => 'publish',
-		) );
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'post',
+				'post_status' => 'publish',
+			)
+		);
 
 		$result = $this->service->validate_assistant_access( $post_id );
 
@@ -90,10 +92,12 @@ class Test_Service_Assistant extends WP_UnitTestCase {
 	 * Test that validate_assistant_access returns WP_Error for an unpublished assistant.
 	 */
 	public function test_validate_assistant_access_returns_error_for_draft_assistant() {
-		$post_id = $this->factory->post->create( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_status' => 'draft',
-		) );
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'draft',
+			)
+		);
 
 		$result = $this->service->validate_assistant_access( $post_id );
 
@@ -105,11 +109,13 @@ class Test_Service_Assistant extends WP_UnitTestCase {
 	 * Test that validate_assistant_access returns the WP_Post for a valid published assistant.
 	 */
 	public function test_validate_assistant_access_returns_post_for_valid_assistant() {
-		$post_id = $this->factory->post->create( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_status' => 'publish',
-			'post_title'  => 'Test Assistant',
-		) );
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Assistant',
+			)
+		);
 
 		$result = $this->service->validate_assistant_access( $post_id );
 
@@ -146,11 +152,13 @@ class Test_Service_Assistant extends WP_UnitTestCase {
 	 * Test that get_assistants_list includes a created assistant.
 	 */
 	public function test_get_assistants_list_includes_published_assistant() {
-		$post_id = $this->factory->post->create( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_status' => 'publish',
-			'post_title'  => 'Listed Assistant',
-		) );
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Listed Assistant',
+			)
+		);
 
 		$list = $this->service->get_assistants_list();
 
@@ -162,10 +170,12 @@ class Test_Service_Assistant extends WP_UnitTestCase {
 	 * Test that a guest user (ID 0) is denied access to a capability-gated assistant.
 	 */
 	public function test_validate_assistant_access_denies_guest_for_capability_gated_assistant() {
-		$post_id = $this->factory->post->create( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_status' => 'publish',
-		) );
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+			)
+		);
 
 		// Use a custom capability that only contains [a-z_] so it passes
 		// sanitize_required_capability_meta() and is actually stored.

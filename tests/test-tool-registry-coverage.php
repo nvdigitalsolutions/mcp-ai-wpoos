@@ -390,13 +390,13 @@ class Test_Tool_Registry_Coverage extends WP_UnitTestCase {
 			$types = (array) $node['type'];
 			foreach ( $types as $type_value ) {
 				if ( 'mixed' === $type_value ) {
-					$violations[] = sprintf( '  - %s: %s declares forbidden type "mixed"', $tool, $path === '' ? '(root)' : $path );
+					$violations[] = sprintf( '  - %s: %s declares forbidden type "mixed"', $tool, '' === $path ? '(root)' : $path );
 				}
 			}
 
 			// Every 'type:array' MUST declare items.
 			if ( in_array( 'array', $types, true ) && ! isset( $node['items'] ) ) {
-				$violations[] = sprintf( '  - %s: %s is type:array but missing "items"', $tool, $path === '' ? '(root)' : $path );
+				$violations[] = sprintf( '  - %s: %s is type:array but missing "items"', $tool, '' === $path ? '(root)' : $path );
 			}
 		}
 

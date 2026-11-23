@@ -33,11 +33,14 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		$this->admin_user_id      = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		$this->subscriber_user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
-		update_option( 'wp_mcp_ai_flowhub_toolkit_settings', array(
-			'client_id'    => 'test_client',
-			'api_key'      => 'test_key',
-			'sync_interval' => 15,
-		) );
+		update_option(
+			'wp_mcp_ai_flowhub_toolkit_settings',
+			array(
+				'client_id'     => 'test_client',
+				'api_key'       => 'test_key',
+				'sync_interval' => 15,
+			)
+		);
 	}
 
 	/**

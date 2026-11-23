@@ -284,7 +284,7 @@ class Test_Chat_Transcript_Latency_Fix extends WP_UnitTestCase {
 				function () use ( $first_response, $final_response, &$call_count ) {
 					$call_count++;
 					usleep( 100000 ); // 100ms delay.
-					return $call_count === 1 ? $first_response : $final_response;
+					return 1 === $call_count ? $first_response : $final_response;
 				}
 			);
 

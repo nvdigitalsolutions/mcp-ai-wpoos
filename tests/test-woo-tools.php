@@ -334,7 +334,7 @@ class WP_MCP_AI_Woo_Tool_Execution_Test extends WP_UnitTestCase {
 		// Find variations and check their stock quantities.
 		$variation_stocks = array();
 		foreach ( $products as $product ) {
-			if ( isset( $product['parent_id'] ) && $product['parent_id'] === 503 ) {
+			if ( isset( $product['parent_id'] ) && 503 === $product['parent_id'] ) {
 				$variation_stocks[ $product['id'] ] = $product['stock_quantity'];
 			}
 		}

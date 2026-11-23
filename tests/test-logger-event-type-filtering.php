@@ -88,7 +88,7 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 
 		$found = false;
 		foreach ( $recent as $entry ) {
-			if ( isset( $entry['type'] ) && $entry['type'] === 'agentic_tool_execution' ) {
+			if ( isset( $entry['type'] ) && 'agentic_tool_execution' === $entry['type'] ) {
 				$found = true;
 				break;
 			}
@@ -317,10 +317,10 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 
 		foreach ( $recent as $entry ) {
 			if ( isset( $entry['type'] ) ) {
-				if ( $entry['type'] === 'agentic_tool_execution' ) {
+				if ( 'agentic_tool_execution' === $entry['type'] ) {
 					$has_agentic = true;
 				}
-				if ( $entry['type'] === 'anthropic_request' ) {
+				if ( 'anthropic_request' === $entry['type'] ) {
 					$has_anthropic = true;
 				}
 			}
@@ -382,7 +382,7 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		// Verify the event is actually in the list.
 		$found = false;
 		foreach ( $recent as $entry ) {
-			if ( isset( $entry['type'] ) && $entry['type'] === 'anthropic_request' ) {
+			if ( isset( $entry['type'] ) && 'anthropic_request' === $entry['type'] ) {
 				$found = true;
 				break;
 			}
@@ -414,7 +414,7 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		// Verify the event is actually in the list.
 		$found = false;
 		foreach ( $recent as $entry ) {
-			if ( isset( $entry['type'] ) && $entry['type'] === 'lm_studio_completion_request' ) {
+			if ( isset( $entry['type'] ) && 'lm_studio_completion_request' === $entry['type'] ) {
 				$found = true;
 				break;
 			}
