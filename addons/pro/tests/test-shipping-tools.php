@@ -676,9 +676,9 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertSame( 'shipengine', $result['carrier'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_config_error', $result->get_error_code() );
+		$this->assertSame( 'shipengine', $result->get_error_data()['carrier'] );
 	}
 
 	/**
@@ -694,9 +694,9 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertSame( 'shipstation', $result['carrier'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_config_error', $result->get_error_code() );
+		$this->assertSame( 'shipstation', $result->get_error_data()['carrier'] );
 	}
 
 	// ----------------------------------------------------------------

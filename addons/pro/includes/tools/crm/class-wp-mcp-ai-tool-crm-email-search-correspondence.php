@@ -409,11 +409,13 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 		$cached    = $this->cache_get( $cache_key );
 
 		if ( false === $cached ) {
-			return array(
-				'success'  => false,
-				'message'  => __( 'No cached results found. Run action=search first to populate the cache.', 'mcp-ai-wpoos-pro' ),
-				'contacts' => array(),
-				'total'    => 0,
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'No cached results found. Run action=search first to populate the cache.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'contacts' => array(),
+					'total'    => 0,
+				)
 			);
 		}
 
