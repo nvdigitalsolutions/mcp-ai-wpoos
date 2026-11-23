@@ -17170,3 +17170,98 @@ this and §177), `memory-health` (read-only over the memory store), `settings`
 (a toggle-by-toggle map) and `dspark` (a decision, not a build) — plus the
 multiplier plan in §178.2, whose only prerequisite was a shared base and is now
 unblocked.
+
+## 180. The media library becomes writeable (2026-11-23)
+
+`/admin/{estate}/media` shipped read-only in §109 because a Livewire write
+carries an audit obligation the page did not meet, and the console was said to
+own CRUD. On this profile that reason expired: the console's Media Studio is a
+**WordPress product** — `EndpointCapabilities` classifies `mediaStudio` as
+`EXTERNAL_PRODUCT` and `runtime-config.ts` blanks the endpoint unless the backend
+is WordPress — so an estate admin had no way to add or correct an image here at
+all.
+
+### 180.1 What the research settled
+
+- **One writer, and it is the service.** OWASP's file-upload guidance is an
+  allow-list, content sniffing and a size ceiling — with re-encoding where a
+  decoder exists. `FileUploadService` already does the first three and derives
+  the stored extension from the sniff, so the panel calls it instead of touching
+  `Storage`. Re-encoding is **not** done: this runtime has no GD/Imagick (§160's
+  media worker is the image pipeline), and pretending otherwise would be worse
+  than the honest gap.
+- **SVG stays out of the allow-list.** An SVG is an XML document with script and
+  external-entity surface; the service never allowed it, and this does not
+  change that.
+- **The shape WordPress users expect**: search, type filter, pagination, a
+  per-row detail action, and bulk operations. This slice ships the first four
+  plus per-row delete. Bulk edit is not here: one alt field at a time is what the
+  coverage metric is about, and a bulk action without an undo is how a library
+  loses images.
+- **Alt text is not an optional detail.** WCAG wants a description for
+  informative images and an empty string for decorative ones. The panel keeps
+  WordPress's "missing" badge, and says beside the field that empty is a
+  statement, not a gap. A separate `decorative` column was declined: it would be
+  a second truth for a value that is already representable.
+
+### 180.2 What shipped
+
+| Layer | Piece |
+|---|---|
+| `MediaLibrary` | `find($tenant, $id)` — the scoped read every write resolves through |
+| `MediaLibraryPage` | `upload()` (multi-file, per-file refusal), `startEdit()` / `saveAlt()` / `cancelEdit()`, `confirmDelete()` / `delete()` / `cancelDelete()` |
+| view | upload card, per-row Edit/Delete, inline alt editor with a 500-character counter and guidance, inline delete confirmation |
+| contract | `media.admin.state` `read-only` → `full`; projection and notes rewritten |
+
+**Every mutating action audits itself.** `AdminAuditLogger::recordResource()`
+runs inside the action, because Livewire traffic never passes the request
+middleware that audits the API (plan §25). The upload records the client's
+filename, the stored path and the size; the alt edit records both values; the
+delete records the row before it goes.
+
+**Delete order is the object first**, then the row. An orphaned object is a
+storage leak; an orphaned row is a broken entry the library keeps offering. If
+the disk refuses, the row stays and the notification says so, so the action can
+be retried rather than a failure being recorded as success.
+
+**Tenant isolation by absence.** `MediaLibrary::find()` returns `null` for a
+foreign id, and the action notifies and returns — the same reading the REST
+controller takes (§109): a foreign file is absent, not forbidden, because its
+existence is not this estate's business.
+
+**A refusal names the file.** A batch with one bad file stores the rest and
+lists the refused name with the reason; one bad file does not discard four good
+ones.
+
+### 180.3 What is deliberately not here
+
+- **Thumbnails.** `media_details.sizes` is empty by design (`MediaController`),
+  so the table links each file instead of rendering twenty-five full-size images.
+  A thumbnail pipeline belongs with the media worker, not with a page that would
+  have to invent one.
+- **Bulk delete / bulk alt.** Confirmation and audit are per record; batching
+  them would make one audit row stand for N deletions.
+- **A decorative flag.** See §180.1.
+- **Re-encoding and EXIF stripping.** Needs a decoder this runtime does not
+  have; the worker's compression sweep is where that already lives.
+
+### 180.4 Why not a Filament `FileUpload` component
+
+The panel's other write pages use `InteractsWithForms`, and a `FileUpload` field
+would bring drag-and-drop and previews for free. It also writes the file itself,
+under the client's name, on its own disk — which would bypass the sniff, the
+allow-list and the naming rule, and make this page a second, weaker gate. The
+page uses Livewire's `WithFileUploads` and hands each temporary file to the
+service, so there is exactly one code path that decides what is stored.
+
+### 180.5 Gates
+
+| Gate | Result |
+|---|---|
+| `AdminMediaLibraryTest` | **14 tests / 54 assertions** — upload lands in the estate and audits; a refused type is named and stores nothing; alt edits audit before/after; a foreign id cannot be edited or deleted; delete removes row + object + derivatives; a contributor without `upload_files` is refused |
+| media / surface / command-centre / blade filter | **47 tests / 736 assertions** |
+| phpcs PSR-12 on the three changed PHP files | exit 0 |
+| `bin/audit-surface-ownership.php` | 59 rows · 47 built · 4 planned · 4 absent · 0 inert |
+
+The page needed no new migration: the row, the estate column, the alt field and
+the derivative table already existed for the read-only version.

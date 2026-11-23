@@ -144,12 +144,14 @@ final class MediaLibrary
         $rows = $query->orderByDesc('id')
             ->offset(($page - 1) * self::PER_PAGE)
             ->limit(self::PER_PAGE)
-            ->get(array('id', 'filename', 'mime_type', 'size_bytes', 'alt_text', 'created_at'));
+            ->get(array('id', 'path', 'disk', 'filename', 'mime_type', 'size_bytes', 'alt_text', 'created_at'));
 
         return array(
             'rows' => array_map(
                 static fn (object $row): array => array(
                     'id' => (int) $row->id,
+                    'path' => (string) ($row->path ?? ''),
+                    'disk' => (string) ($row->disk ?? 'public'),
                     'filename' => (string) $row->filename,
                     'mime_type' => (string) ($row->mime_type ?? ''),
                     'size_bytes' => (int) ($row->size_bytes ?? 0),
@@ -163,6 +165,35 @@ final class MediaLibrary
             'pages' => (int) ceil($total / self::PER_PAGE),
             'per_page' => self::PER_PAGE,
         );
+    }
+
+    /**
+     * One file, scoped to its estate.
+     *
+     * Writes resolve through this rather than through a query in the page: the
+     * panel, the API and the sweep must agree about what "this estate's file"
+     * means, and a foreign id has to read as *absent*, not merely unauthorised.
+     *
+     * @return object|null Row with id, path, disk, filename, mime_type,
+     *                     size_bytes, alt_text, owner_id and created_at.
+     */
+    public function find(string $tenantId, int $id): ?object
+    {
+        if ($id < 1 || ! Schema::hasTable('nvoos_files')) {
+            return null;
+        }
+
+        return $this->files($tenantId)->where('id', $id)->first(array(
+            'id',
+            'path',
+            'disk',
+            'filename',
+            'mime_type',
+            'size_bytes',
+            'alt_text',
+            'owner_id',
+            'created_at',
+        ));
     }
 
     /**
