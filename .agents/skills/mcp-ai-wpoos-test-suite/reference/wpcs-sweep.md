@@ -21,11 +21,12 @@ Applies to any tree-wide phpcs cleanup gated by the budget ratchet.
 
 ```bash
 php -d memory_limit=2048M vendor/bin/phpcs --standard=phpcs.xml.dist \
-  --report=summary -q tests/        # ~8–13 min for the tests/ scope
+  --report=json --report-file=.tmp-tests.json -q tests/
 ```
 
-The tail line is authoritative:
-`A TOTAL OF <E> ERRORS AND <W> WARNINGS WERE FOUND IN <F> FILES`.
+Read `totals.errors` / `totals.warnings` from the JSON. The summary
+report's `A TOTAL OF …` line scrolls past in a long log — piping `tail`
+over it loses the only number the arithmetic needs.
 
 **The contract**: `previous_measured − slice_size == new_measured`. If it is
 not, you introduced or missed something — and the delta is the only signal
@@ -77,6 +78,24 @@ phpcs --standard=phpcs.xml.dist --sniffs=<codes> --report=diff <paths>
 
 `PSR12.Traits.UseDeclaration` was safe (a single blank line). Treat every
 other "auto-fixable" sniff as suspect until its diff has been read.
+
+### The restricted form is the trap, not `phpcbf`
+
+`--sniffs=WordPress.Arrays.ArrayDeclarationSpacing` is the failing
+combination, not the fixer itself. It expands the array but cannot indent
+it, because `ArrayIndentation` and `MultipleStatementAlignment` are
+excluded from the run: contents land at column 0 with no trailing comma.
+
+Splitting the colliding closers afterwards by hand trades one error for
+two classes — on the twelve-file slice, 173
+`NormalizedArrays.CommaAfterLast.MissingMultiLine` and 101
+`PEAR.Functions.FunctionCallSignature` appeared, a net **+100**.
+
+The **full standard** converges in one pass: it adds the commas and reflows
+the enclosing call so the PEAR signature rules stay satisfied. Verify with
+`git diff --check` (clean), `php -l`, and a per-source delta that shows no
+source count rising. Restricting `--sniffs` is right for measuring; wrong
+for fixing.
 
 ## 4. Split deterministic from manual
 
