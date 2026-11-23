@@ -1716,6 +1716,14 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'suggest_internal_links' => array(
+			'class' => 'Nvoos\\Core\\Tool\\SuggestInternalLinksCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SuggestInternalLinksToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'suggest_internal_links_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SuggestInternalLinksTool',
 			'readiness' => 'quarantined',
