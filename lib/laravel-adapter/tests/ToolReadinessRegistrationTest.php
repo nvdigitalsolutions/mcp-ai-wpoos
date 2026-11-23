@@ -99,21 +99,32 @@ final class ToolReadinessRegistrationTest extends TestCase {
 	/**
 	 * A renamed prompt-builder must not answer to the WordPress slug.
 	 *
-	 * The list is the WordPress slugs that still have **only** a prompt-builder
-	 * stand-in, so it shrinks as the real tool lands. `analyze_image` left it when
-	 * AnalyzeImageVisionTool shipped (Proposal 090-M §20); the rest are still
-	 * unimplemented and must not be reachable by their canonical name.
+	 * Derived from the manifest rather than hardcoded. This list has now been
+	 * edited twice for the same reason — `analyze_image` left it in §20 and
+	 * `validate_reasoning_chain` in §21 — and every remaining `replaced_by`
+	 * promise would break the build the same way. The invariant is what matters:
+	 * a class the manifest does not call servable is never registered, whatever
+	 * slug it declares.
 	 */
 	public function testPromptBuildersAreNotReachableUnderTheWordPressSlug(): void {
 		$registry = $this->app->make( ToolRegistry::class );
+		$manifest = $this->app->make( ToolReadiness::class );
 
-		foreach ( array( 'analyze_video', 'extract_image_text', 'batch_embed_content', 'validate_reasoning_chain' ) as $slug ) {
-			$this->assertFalse(
-				$registry->has( $slug ),
-				"Prompt-builder still answers to the WordPress slug '{$slug}'."
-			);
+		$notServable = array();
+
+		foreach ( $manifest->all() as $slug => $row ) {
+			if ( ! ToolReadiness::isServableClass( (string) ( $row['readiness'] ?? '' ) ) ) {
+				$notServable[] = (string) $slug;
+			}
 		}
 
-		$this->assertTrue( $registry->has( 'analyze_image_prompt' ) === false, 'Quarantined prompt builders stay unregistered.' );
+		$this->assertNotEmpty( $notServable, 'The manifest should still contain quarantined stand-ins.' );
+
+		foreach ( $notServable as $slug ) {
+			$this->assertFalse(
+				$registry->has( $slug ),
+				"A non-servable tool answers to '{$slug}'."
+			);
+		}
 	}
 }

@@ -1196,3 +1196,137 @@ URL refused **before** any provider call).
 `lib/core` 2098 / 16,154; adapter 348 / 1,833; skeleton analyze + registration +
 diagnostics + file store 37 / 131. Auditor 232 rows / 213 servable, no violations,
 G6 empty. phpcs clean on all seven files.
+
+## 21. Addendum: the completion seam, and five tools on it (2026-11-23)
+
+### The seam, as promised in §20
+
+§20 closed one promise and left eighteen. Those split into groups by what they
+actually need, and the largest group — every tool that asks a model a question
+without needing a post store — needs the same four things:
+
+- resolve a provider (and name the registered alternatives when it cannot),
+- bound the answer so a call cannot ask for an unbounded completion,
+- call it,
+- turn three distinct failures into something a model can relay.
+
+That is now `AbstractCompletionTool`. `analyze_image` was **folded onto it** in the
+same change rather than left as a second copy: its 16 unit and 4 feature tests are
+the proof the refactor preserved behaviour, and one of them caught a real
+regression while doing it — the base had collapsed "no provider router" and "no
+default provider configured" into one code, and the merged tool had distinguished
+them. `noDefaultProviderCode()` exists because a test refused to let that slide.
+
+Two small collaborators came with it:
+
+| Class | Job |
+|---|---|
+| `CompletionRequest` | build the conversation — text, optionally with an image segment. The only difference between a text tool and a vision tool is whether a data URI is passed. |
+| `JsonPayload` | read an object out of a model answer, fences and preamble included, and coerce closed sets (`oneOf`, `stringList`, `confidence`) |
+
+`VisionRequest` keeps only the image ↔ bytes conversions; the message building
+moved to `CompletionRequest` so there is one description of "a conversation" in the
+runtime.
+
+### The five tools
+
+`generate_post_excerpt`, `seo_meta_optimizer`, `analyze_code_sequence`,
+`analyze_comment_content`, `validate_reasoning_chain`. All five take the text the
+caller supplies and return the result; none of them reads or writes a post.
+
+Two decisions are shared, and stated once so they do not drift:
+
+- **No `post_id`.** WordPress reads the post by id. That is a content-store
+  dependency, and a tool that accepted an id it then ignored would be worse than
+  one that never took it.
+- **No `auto_save`.** The value comes back; saving it is `update_post`, which owns
+  the capability check and the revision history. Same rule as §16's `status` and
+  §19's `status_override`: a generator that also commits is a second write path.
+
+### Prose is sanitised; code is not
+
+`stringParam()` runs `strip_tags()`. For an excerpt or a meta description that is
+right — the word count would otherwise be wrong and the result should not carry
+markup. For code it is destructive: `strip_tags('<?php echo 1;')` returns an empty
+string, and `if ($a < $b)` loses everything from the `<` onward. A code reviewer
+that mangles what it reviews is worse than no reviewer, because the model then
+reports confidently on something the caller never wrote.
+
+So `AbstractCompletionTool` has `documentParam()` and `documentListParam()` beside
+`stringParam()`, and `analyze_code_sequence` and `validate_reasoning_chain` use
+them. A unit test and a feature test both pin `<?php` and `if ($a < $b)` arriving
+verbatim.
+
+### What is withheld: commenter PII
+
+WordPress's `analyze_comment_content` also accepts `comment_email`, `comment_url`
+and `user_ip`. None are accepted here. They are personal data, the model needs none
+of them to judge whether text is abusive, and passing them to a third-party
+provider turns a content decision into a data-disclosure one. The author's display
+name stays, because impersonation and naming are part of what the text is doing.
+
+The verdict shape is WordPress's field for field, including
+`sensitivity_applied`. Unknown `sensitivity` values are **refused**, not
+defaulted: silently becoming `medium` would mean a caller who asked for strict
+moderation got balanced and was never told.
+
+### Two bugs the tests found before CI did
+
+- `strictChoice()` treated an **absent** value as invalid, so every call that
+  relied on the documented `sensitivity` default was refused. It now takes a
+  default and only returns null for a value that was supplied and is not in the
+  set.
+- The excerpt tidier stripped quotes before fences, so the common
+  ``"```text … ```"`` shape survived intact. It now strips quotes, fences, then
+  quotes again.
+
+### The class-name collision, and a restored mistake
+
+Every one of these five already had a `_prompt` stand-in class named
+`<Name>Tool` — `GeneratePostExcerptTool`, `AnalyzeCodeSequenceTool`,
+`AnalyzeCommentContentTool`, `ValidateReasoningChainTool`,
+`SEOMetaOptimizerTool`. Writing the real tool under the obvious name overwrote
+four **tracked** files before the pattern was obvious; they were restored from git
+immediately and verified by slug. The real tools therefore carry a
+`…CompletionTool` suffix, as `AnalyzeImageVisionTool` carries `Vision`.
+
+The lesson for the remaining promises: check for an existing `<Name>Tool` before
+writing a tool class, because the stand-in owns that name.
+
+### The stale list, third time
+
+`ToolReadinessRegistrationTest` in the adapter listed `validate_reasoning_chain`
+among slugs that must not be registered — and this change registers it. Rather
+than shrink the list a third time, it now derives the non-servable set from the
+manifest exactly as `ToolsReadinessTest` does since #8179. Both suites now express
+the invariant ("nothing outside the servable classes is registered") instead of a
+snapshot of which tools happened to be missing, so the remaining thirteen
+promises cannot break the build this way.
+
+### Not done, named
+
+Thirteen promises remain. Seven vision tools (`analyze_video`,
+`extract_image_text`, `generate_image_alt_text`, `generate_image_caption`,
+`generate_video_caption`, `vision_object_localization`, `vision_product_search`)
+are now mostly wiring onto `VisionRequest`. Three need a content index
+(`suggest_internal_links`, `content_recommendation_engine`,
+`auto_categorize_content`), one needs the file registry plus a purpose taxonomy
+(`analyze_file_suitability`), one needs an embedding call
+(`batch_embed_content`), and `run_openai_external_action` is OpenAI-only dispatch
+with no cross-provider meaning.
+
+### Validation
+
+`TextCompletionToolsTest` (core, 12 tests: slug/capability/flags for all five, the
+no-router error for all five, wrapper cleanup, **code reaching the model
+unmodified**, verdict normalisation including unknown-enum coercion and confidence
+clamping, unknown sensitivity refused, unreadable verdict refused, the missing
+`valid` field refused, a broken-step verdict, SEO lengths reported instead of
+truncated, a provider refusal surfaced, and content validated before any call).
+Feature test `docker/laravel/app-skeleton/tests/Feature/TextCompletionToolsTest.php`
+(5 tests on the real singleton router: all five register, an excerpt end to end
+with HTML stripped from prose, a code review receiving `<?php` and `<` verbatim,
+the WordPress verdict shape surviving the round trip, and an unknown provider
+refused at 422). `lib/core` 2120 / 16,292; adapter 348 / 1,853; skeleton text tools
++ readiness + analyze + registration + diagnostics 26 / 358. Auditor 237 rows /
+218 servable, no violations, G6 empty. phpcs clean on all thirteen files.

@@ -13,9 +13,10 @@
  * The provider clients already accept OpenAI's `image_url` content segment and
  * convert it to their own dialect — `GeminiClient` to Gemini's own inline image
  * part, `AnthropicClient` to an image block — so no new provider surface was
- * needed. `VisionRequest` builds that message, and `ProviderRouter` decides which
- * client answers. This tool is therefore argument handling, one source check, and
- * response extraction.
+ * needed. `CompletionRequest` builds the message, `ProviderRouter` decides which
+ * client answers, and `AbstractCompletionTool` owns the call and its failures.
+ * What is left here is argument handling, the two image sources, and the answer
+ * shape.
  *
  * ## Where the bytes come from
  *
@@ -44,8 +45,7 @@
  * This is the first tool in the assistant family that spends provider credit per
  * call by design. The flags say so (`consumes-tokens`, `rate-limited`,
  * `external-api`), which is what the necessity gate and the read-only profile
- * read. `max_tokens` is bounded so a single call cannot be asked for an
- * unbounded completion.
+ * read.
  *
  * @package Nvoos\Core
  * @since   2.1.0
@@ -62,9 +62,8 @@ use Nvoos\Core\Application\Media\VisionRequest;
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
-use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 
-final class AnalyzeImageVisionTool extends AbstractTool implements ToolCapabilityFlagsInterface
+final class AnalyzeImageVisionTool extends AbstractCompletionTool
 {
     /**
      * The largest image sent to a provider.
@@ -80,14 +79,12 @@ final class AnalyzeImageVisionTool extends AbstractTool implements ToolCapabilit
      */
     private const MAX_DATA_URI_CHARS = 8400000;
 
-    private const MAX_COMPLETION_TOKENS = 8192;
-
     public function __construct(
         ErrorFactoryInterface $errors,
-        private readonly ?ProviderRouter $providers = null,
+        ?ProviderRouter $providers = null,
         private readonly ?FileStoreInterface $files = null,
     ) {
-        parent::__construct($errors);
+        parent::__construct($errors, $providers);
     }
 
     public function getSlug(): string
@@ -126,23 +123,8 @@ final class AnalyzeImageVisionTool extends AbstractTool implements ToolCapabilit
                     'default'     => VisionRequest::DEFAULT_PROMPT,
                     'maxLength'   => 4000,
                 ),
-                'provider'   => array(
-                    'type'        => 'string',
-                    'description' => 'Provider slug (openai, gemini, anthropic, …). Defaults to the site default.',
-                    'maxLength'   => 40,
-                ),
-                'model'      => array(
-                    'type'        => 'string',
-                    'description' => 'Vision-capable model id. Defaults to the provider\'s default, which may not accept images.',
-                    'maxLength'   => 120,
-                ),
-                'max_tokens' => array(
-                    'type'        => 'integer',
-                    'description' => 'Cap on the answer length.',
-                    'minimum'     => 1,
-                    'maximum'     => self::MAX_COMPLETION_TOKENS,
-                    'default'     => 1024,
-                ),
+            ) + $this->providerParameters() + array(
+                'max_tokens' => $this->maxTokensParameter('Cap on the answer length.'),
             ),
             'additionalProperties' => false,
         );
@@ -179,75 +161,63 @@ final class AnalyzeImageVisionTool extends AbstractTool implements ToolCapabilit
 
     public function execute(array $arguments = array(), array $context = array()): mixed
     {
-        if (null === $this->providers) {
-            return $this->errors->create(
-                'vision_unavailable',
-                'This host has no provider router, so it cannot analyse images.'
-            );
-        }
-
         $image = $this->image($arguments, $context);
 
         if ($this->errors->isError($image)) {
             return $image;
         }
 
-        $client = $this->client($arguments);
-
-        if ($this->errors->isError($client)) {
-            return $client;
-        }
-
         $prompt = $this->stringParam($arguments, 'prompt');
+
         if ('' === $prompt) {
             $prompt = VisionRequest::DEFAULT_PROMPT;
         }
 
-        $options = array(
-            'max_tokens' => \max(1, \min(self::MAX_COMPLETION_TOKENS, $this->intParam($arguments, 'max_tokens', 1024))),
+        $answer = $this->completeTool(
+            $arguments,
+            $prompt,
+            VisionRequest::dataUri($image['bytes'], $image['mime'])
         );
 
-        $model = \mb_substr($this->stringParam($arguments, 'model'), 0, 120);
-        if ('' !== $model) {
-            $options['model'] = $model;
-        }
-
-        $response = $client->chat(
-            VisionRequest::messages($prompt, VisionRequest::dataUri($image['bytes'], $image['mime'])),
-            $options
-        );
-
-        if ($this->errors->isError($response)) {
-            // A provider message is the API's own 4xx/5xx text — "this model does
-            // not support images" is the single most useful thing a caller can be
-            // told — but it is truncated so a verbose upstream body cannot become
-            // the transcript.
-            return $this->errors->create(
-                'vision_provider_error',
-                \mb_substr($this->errors->normalize($response)['message'] ?? 'The vision provider refused the request.', 0, 500)
-            );
-        }
-
-        $text = is_array($response) ? ($response['choices'][0]['message']['content'] ?? null) : null;
-
-        if (! is_string($text) || '' === \trim($text)) {
-            return $this->errors->create(
-                'vision_empty_response',
-                'The provider returned no text for this image.'
-            );
+        if ($this->errors->isError($answer)) {
+            return $answer;
         }
 
         return $this->success(
-            \sprintf('Analysed the image with %s.', $client->getProviderSlug()),
+            \sprintf('Analysed the image with %s.', $answer['provider']),
             array(
-                'text'     => $text,
-                'provider' => $client->getProviderSlug(),
-                'model'    => is_array($response) ? ($response['model'] ?? ($options['model'] ?? '')) : '',
-                'usage'    => is_array($response) ? ($response['usage'] ?? array()) : array(),
+                'text'     => $answer['text'],
+                'provider' => $answer['provider'],
+                'model'    => $answer['model'],
+                'usage'    => $answer['usage'],
                 'mime'     => $image['mime'],
                 'bytes'    => $image['size'],
             )
         );
+    }
+
+    /**
+     * These refusals shipped before the shared base existed; renaming a live
+     * error code breaks callers for no gain.
+     */
+    protected function unavailableCode(): string
+    {
+        return 'vision_unavailable';
+    }
+
+    protected function noDefaultProviderCode(): string
+    {
+        return 'vision_provider_unavailable';
+    }
+
+    protected function providerErrorCode(): string
+    {
+        return 'vision_provider_error';
+    }
+
+    protected function emptyResponseCode(): string
+    {
+        return 'vision_empty_response';
     }
 
     /**
@@ -373,44 +343,6 @@ final class AnalyzeImageVisionTool extends AbstractTool implements ToolCapabilit
             'mime'  => $parsed['mime'],
             'bytes' => $parsed['bytes'],
             'size'  => \strlen($parsed['bytes']),
-        );
-    }
-
-    /**
-     * The client that will answer.
-     *
-     * An unregistered slug is distinguished from "no default configured" and the
-     * registered list is named, because "provider not available" without the
-     * alternatives is a dead end for a model.
-     */
-    private function client(array $arguments): mixed
-    {
-        $requested = \mb_substr($this->stringParam($arguments, 'provider'), 0, 40);
-
-        $client = $this->providers->resolveForChat('' === $requested ? array() : array( 'provider' => $requested ));
-
-        if (null !== $client) {
-            return $client;
-        }
-
-        $registered = $this->providers->getRegisteredSlugs();
-
-        if ('' === $requested) {
-            return $this->errors->create(
-                'vision_provider_unavailable',
-                array() === $registered
-                    ? 'No AI provider is registered, so images cannot be analysed.'
-                    : 'No default AI provider is configured. Registered providers: ' . \implode(', ', $registered) . '.'
-            );
-        }
-
-        return $this->errors->validationFailed(
-            \sprintf(
-                'No provider answers to "%s". Registered providers: %s.',
-                $requested,
-                array() === $registered ? '(none)' : \implode(', ', $registered)
-            ),
-            array( 'provider' => 'Unknown or unregistered provider.' )
         );
     }
 }
