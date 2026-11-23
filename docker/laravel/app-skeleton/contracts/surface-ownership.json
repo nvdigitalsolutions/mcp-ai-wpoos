@@ -223,12 +223,13 @@
       "title": "Memory health",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "read-only" },
       "console": null,
       "writer": "none",
       "plan_gate": null,
-      "files": [],
-      "notes": "Recorded 2026-11-23 (§176). The WordPress view reports memory-specific health signals and links back to the thresholds that drive its warn/critical bands. It is NOT `/admin/memory`: that page browses what an assistant has stored, while this is a read-only health summary over the same store (count, growth, dormancy against `memory_dormancy_days`). Ordering follows `orchestration.thresholds`, because the bands it renders are the fields that surface writes."
+      "projection": "A read-only grade of one estate's agent-memory store from App\\Support\\Memory\\MemoryHealth: totals, live, dormant, expired and expiring counts, content bytes, a 30-day growth comparison and the five busiest agents. Every figure is scoped by nvoos_memories.tenant_id. The dormant and expired band percentages are constants in that class; the dormancy window is the tenant setting memory_dormancy_days (default 30), which the page reads. There is no write path: the page classifies, it does not sweep. The WordPress view's headline is PHP process memory against memory_limit thresholds, which an FPM request cannot observe across requests - section 182 records the swap to the portable half, the Pro retention stats.",
+      "files": ["app/Filament/Admin/Pages/MemoryHealthPage.php"],
+      "notes": "Recorded 2026-11-23 (§176). The WordPress view reports memory-specific health signals and links back to the thresholds that drive its warn/critical bands. It is NOT `/admin/memory`: that page browses what an assistant has stored, while this is a read-only health summary over the same store (count, growth, dormancy against `memory_dormancy_days`). Ordering follows `orchestration.thresholds`, because the bands it renders are the fields that surface writes. Proposal 149 \u00a7182 ported the portable half - the Pro get_memory_health_stats() figures - rather than the rendered view, whose memory_get_usage() number would measure the page itself on this runtime. A new tenant setting, memory_dormancy_days (default 30, the WordPress default), gives the window a reader. Expired rows are excluded from every retrieval path by MemoryStore::applyExpiry but nothing sweeps them, so the count is reported as hygiene rather than ignored. Declined: memory_retention_days and memory_per_user_max (nothing here enforces either) and operator-widened bands (a band tuned until it is green is not a band)."
     },
     {
       "id": "orchestration.dspark",

@@ -17339,3 +17339,87 @@ key is the durable record anyway: the values it writes are code-owned, so
 `orchestration.presets` moved `planned` → `subset`: the page is rendered and
 writes, but over three fields rather than the WordPress bag, which is exactly
 what `subset` means in this contract.
+
+## 182. Memory health, and the page that would have measured itself (2026-11-23)
+
+§176 recorded this surface as "count, growth, dormancy against
+`memory_dormancy_days`", ordered after `thresholds` because it "renders the
+warn/critical bands that surface 1 owns". Reading the WordPress source dissolved
+both halves of that note:
+
+- The **rendered** view reports **PHP process memory**: `memory_get_usage()` as a
+  percentage of `memory_limit`, banded by `memory_warning_threshold` (70) and
+  `memory_critical_threshold` (85). On a request that loads a plugin stack on
+  every hit that is a real number. Here an FPM request would be measuring the page
+  that reports it — nothing in this app calls `memory_get_usage()` — and Octane,
+  the one deployment shape where it would mean something, is not the shape this
+  runtime ships.
+- The note's figures come from **Pro**:
+  `WP_MCP_AI_Memory_Retention::get_memory_health_stats()` returns total, active,
+  dormant, oldest, `retention_days`, `dormancy_days` and `per_user_max`. A service
+  API, not the view.
+
+So the port is the Pro half, and the page says which half it is.
+`memory_dormancy_days` was already in the §62 catalogue (tab `orchestration`,
+default 30, range 7–90); this slice gives it its first reader rather than adding a
+setting.
+
+### 182.1 What the store can answer
+
+- **Live vs expired.** `MemoryStore::applyExpiry()` hides `expires_at <= now()`
+  from every read path, so an expired row is invisible garbage — and nothing
+  sweeps it. The count is therefore hygiene, not noise.
+- **Dormant.** Live rows whose `updated_at` is older than the window. WordPress's
+  CCT carries a `status` column; `nvoos_memories` does not, so dormancy is
+  derived from the timestamp rather than read from a field nobody maintains.
+- **Growth.** Created in the last 30 days against the 30 before.
+- **Content bytes, oldest memory, and the five busiest agents.**
+
+### 182.2 The bands are judgements, not SLOs
+
+| Condition | Verdict |
+|---|---|
+| no rows | `empty` — its own verdict, **not** `ok` |
+| any expired row | `warn` |
+| expired share ≥ 50% | `critical` |
+| dormant share ≥ 50% | `warn` |
+| dormant share ≥ 75% | `critical` |
+
+The percentages are constants in `MemoryHealth`; the window is the setting above.
+That split is deliberate: the window is policy ("how long is long enough"), while
+a band an operator can widen until it is green is not a band. The research on
+health dashboards is blunt about the same rule — thresholds belong to observed
+behaviour or an SLO, and "no data" is flying blind rather than healthy.
+
+### 182.3 What shipped
+
+| Layer | Piece |
+|---|---|
+| `App\Support\Memory\MemoryHealth` | `summary()` and `verdict()`; every figure scoped by `tenant_id` |
+| `MemoryHealthPage` | `/admin/memory-health`, Knowledge group, read-only |
+| navigation | Knowledge gains "Memory health", beside Memory |
+| contract | `orchestration.memory-health`: `planned` → `read-only`, with its projection |
+
+### 182.4 What is deliberately not here
+
+- **PHP process memory.** The paragraph above is the reason, recorded rather than
+  quietly dropped: a faithful port would render a number that measures itself.
+- **A retention sweep.** The page names expired rows; deleting them is a job, not
+  a report, and `memory_retention_days` is the window it would use. Hand-off, not
+  scope.
+- **The other two memory settings render without a reader.**
+  `memory_retention_days` and `memory_per_user_max` are in the catalogue, writable,
+  and nothing in this runtime sweeps or caps. Their description — "dormant
+  memories are deleted first when per-user caps are exceeded" — describes
+  behaviour that does not exist here. That is precisely the defect
+  `orchestration.settings` exists to sweep, so it is named there rather than
+  silently changed in this slice.
+
+### 182.5 Gates
+
+| Gate | Result |
+|---|---|
+| `AdminMemoryHealthTest` | **8 tests / 24 assertions** — estate scoping; expired counted apart from live; dormant counts live rows only and follows the window; the window comes from the setting; an empty store reads "No data", never "Healthy"; growth compares the two 30-day windows; the five band transitions; the page requires the tenant panel |
+| memory / surface / navigation / blade / settings filter | **111 tests / 11,309 assertions** |
+| phpcs PSR-12 on four changed PHP files | exit 0 |
+| `bin/audit-surface-ownership.php` | 59 rows · **49 built** · 2 planned · 4 absent · 0 inert |
