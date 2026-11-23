@@ -240,8 +240,19 @@ final class AdminMediaLibraryTest extends TestCase
         $this->assertSame('public', $row->disk);
         // The service names the stored file from the sniffed type, so the
         // client's filename cannot decide the extension.
+        //
+        // §162.7 delegates the write to `FileStore`, which changed two things:
+        // the operator's name is now kept as the **display** name (the media
+        // library reads better for it), and the object key is a ULID under
+        // `{tenant}/public/…` rather than a slug of the upload. What the old
+        // assertion was protecting — the client cannot choose the path or the
+        // extension — is asserted directly below and is now stronger.
         $this->assertStringEndsWith('.png', $row->filename);
-        $this->assertNotSame('Pixel.png', $row->filename);
+        $this->assertStringEndsWith('.png', $row->path);
+        $this->assertStringNotContainsString('Pixel', (string) $row->path);
+        $this->assertStringStartsWith(Tenant::DEFAULT_ID.'/public/', (string) $row->path);
+        $this->assertSame('public', $row->visibility);
+        $this->assertNotNull($row->checksum, 'The registry records a checksum.');
         Storage::disk('public')->assertExists($row->path);
 
         $this->assertDatabaseHas('nvoos_admin_audit', [

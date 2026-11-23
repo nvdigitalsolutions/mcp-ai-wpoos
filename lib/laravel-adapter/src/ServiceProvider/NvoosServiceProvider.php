@@ -210,6 +210,10 @@ class NvoosServiceProvider extends ServiceProvider {
 			return new FileUploadService(
 				disk: (string) $app['config']->get( 'oos.media_disk', 'public' ),
 				maxBytes: (int) $app['config']->get( 'oos.upload_max_bytes', FileUploadServiceInterface::DEFAULT_MAX_FILE_SIZE ),
+				// Proposal 162 §162.7 — the media library's writer delegates to the one
+				// file registry, so an upload and a toolkit artifact share an id scheme,
+				// a path convention and a checksum.
+				store: $app->make( FileVisibilityStoreInterface::class ),
 			);
 		} );
 		$this->app->bind( QueueClientInterface::class, QueueClient::class );

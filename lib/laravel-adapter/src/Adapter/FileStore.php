@@ -474,19 +474,28 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 		return '' !== $tenant ? \substr( $tenant, 0, 64 ) : 'default';
 	}
 
-	/**
-	 * The display name, capped and stripped of any path component.
-	 *
-	 * The extension is forced to the sniffed one, so a stored name cannot claim a
-	 * type the bytes do not have.
-	 */
-	private function displayName( string $filename, string $extension ): string {
-		$base = \pathinfo( \basename( $filename ), PATHINFO_FILENAME );
-		$base = \trim( (string) \preg_replace( '/[^A-Za-z0-9._-]+/', '-', $base ), '-.' );
-		$base = \substr( '' !== $base ? $base : 'file', 0, 120 );
+	    /**
+	     * The display name, sanitised the way WordPress sanitises an upload.
+	     *
+	     * `sanitize_file_name()` is the parity reference: lowercase, runs of
+	     * whitespace and punctuation collapsed to a single dash, dots kept so the
+	     * name still reads as a filename. The extension is then forced to the
+	     * sniffed one, so the stored name cannot claim a type the bytes do not have.
+	     *
+	     * Lowercasing is not cosmetic. The `wp/v2/media` surface derives `slug` from
+	     * this name, and a slug of `Pixel` where WordPress emits `pixel` is a parity
+	     * difference a client can see.
+	     */
+	    private function displayName( string $filename, string $extension ): string {
+	        $base = \pathinfo( \basename( $filename ), PATHINFO_FILENAME );
+	        $base = \strtolower( $base );
+	        $base = (string) \preg_replace( '/[^a-z0-9._-]+/', '-', $base );
+	        $base = (string) \preg_replace( '/-{2,}/', '-', $base );
+	        $base = \trim( $base, '-.' );
+	        $base = \substr( '' !== $base ? $base : 'file', 0, 120 );
 
-		return $base.'.'.$extension;
-	}
+	        return \rtrim( $base, '-.' ).'.'.$extension;
+	    }
 
 	/**
 	 * Sniffed MIME type, or null when the bytes are unreadable.

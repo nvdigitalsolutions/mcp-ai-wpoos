@@ -67,10 +67,19 @@ class Phase3dTest extends TestCase
                 'author',
             ]);
 
-        $this->assertStringStartsWith('/storage/media/', (string) $response->json('source_url'));
+        // `media/` used to prefix the object key and a random suffix used to keep
+        // names unique. §162.7 moved the write to `FileStore`, which keys objects
+        // by ULID under `{tenant}/{visibility}/{Y}/{m}` — so uniqueness no longer
+        // needs to be part of the display name, and the slug is the sanitised stem
+        // WordPress would emit rather than `pixel-<random>`.
+        $url = (string) $response->json('source_url');
+
+        $this->assertStringStartsWith('/storage/', $url);
+        $this->assertStringEndsWith('.png', $url);
+        $this->assertStringContainsString('/public/', $url);
         $this->assertSame(1, $response->json('media_details.width'));
         $this->assertSame(1, $response->json('media_details.height'));
-        $this->assertMatchesRegularExpression('/^pixel-[a-z0-9]{10}\.png$/', (string) $response->json('slug').'.png');
+        $this->assertSame('pixel', $response->json('slug'));
     }
 
     public function test_upload_rejects_a_disallowed_mime_type(): void
