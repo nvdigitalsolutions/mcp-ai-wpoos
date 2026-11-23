@@ -16,15 +16,19 @@
  *
  * Three rules make it safe to put in front of a paid API call:
  *
- *  - **Bytes only.** It stores `b64_json`. Fetching the provider's temporary URL
- *    would mean a second network hop to a link the caller does not control; the
- *    tools ask for bytes instead when they intend to keep them.
+ *  - **Bytes only.** It stores base64 payload data. Fetching the provider's
+ *    temporary URL would mean a second network hop to a link the caller does not
+ *    control; the tools ask for bytes instead when they intend to keep them.
  *  - **Never throw.** A generation that succeeded must not be reported as failed
  *    because a disk was full. Every refusal and every storage error is collected
  *    per item and returned alongside the successes.
  *  - **The store decides the type.** The MIME hint is only a hint; the registry
  *    sniffs the bytes and refuses what it cannot serve (§162.7). This class does
  *    not repeat that policy.
+ *
+ * Two provider dialects are understood, because normalising them here is what
+ * keeps the tools thin: OpenAI's images API returns `b64_json`, and Google's
+ * Imagen (via `:predict`) returns `bytesBase64Encoded`.
  *
  * @package Nvoos\Core
  * @since   2.1.0
@@ -41,14 +45,110 @@ use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 
 final class GeneratedMediaPersister
 {
+    /** Payload keys that carry base64 bytes, newest dialect first. */
+    private const BYTE_KEYS = array('b64_json', 'bytesBase64Encoded');
+
     public function __construct(private readonly FileVisibilityStoreInterface $files)
     {
     }
 
     /**
+     * The three parameters every generation tool shares.
+     *
+     * They live here rather than in each tool so five tools cannot drift on what
+     * `save_to_media` promises. A tool merges them into its own properties.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function parameters(): array
+    {
+        return array(
+            'save_to_media' => array(
+                'type' => 'boolean',
+                'description' => 'Store the generated image(s) in the media library and return their ids, slugs and stable URLs. Defaults to true when the host has a file registry.',
+                'default' => true,
+            ),
+            'file_name' => array(
+                'type' => 'string',
+                'description' => 'Optional base file name for the saved image.',
+            ),
+            'visibility' => array(
+                'type' => 'string',
+                'description' => 'Visibility of the stored image. "private" is an extension over the WordPress tools: the bytes are given no public URL.',
+                'enum' => array(
+                    FileVisibilityStoreInterface::VISIBILITY_PUBLIC,
+                    FileVisibilityStoreInterface::VISIBILITY_PRIVATE,
+                ),
+                'default' => FileVisibilityStoreInterface::VISIBILITY_PUBLIC,
+            ),
+        );
+    }
+
+    /**
+     * The saved image's base name, mirroring the WordPress tools.
+     *
+     * WordPress names the attachment `{prefix}-{job_id}` when the caller supplies
+     * a job, and `{file_name|prefix}-{Ymd-His}` otherwise. The extension is left
+     * to the store, because the bytes decide the type.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     * @param array<string, mixed> $context   Execution context.
+     * @param string               $prefix    Per-tool fallback stem.
+     */
+    public static function displayName(array $arguments, array $context, string $prefix): string
+    {
+        $job = \trim((string) ($context['parent_job_id'] ?? ''));
+
+        if ('' !== $job) {
+            return $prefix . '-' . self::stem($job, $prefix);
+        }
+
+        $requested = \trim((string) ($arguments['file_name'] ?? ''));
+
+        return self::stem($requested, $prefix) . '-' . \gmdate('Ymd-His');
+    }
+
+    /**
+     * Persist the items and merge the result into a tool payload.
+     *
+     * @param array<string, mixed>            $payload    The tool's success payload.
+     * @param array<int, array<string, mixed>> $items     Provider entries.
+     * @param array<string, mixed>            $context    Execution context.
+     * @param string                          $baseName   Display name; the store makes it unique.
+     * @param string                          $visibility One of the VISIBILITY_* constants.
+     * @param string                          $mimeHint   Declared type, verified against the bytes.
+     *
+     * @return array<string, mixed> The payload, with `media` and `media_failed` when relevant.
+     */
+    public function attach(
+        array $payload,
+        array $items,
+        array $context,
+        string $baseName,
+        string $visibility,
+        string $mimeHint = 'image/png',
+    ): array {
+        if (array() === $items) {
+            return $payload;
+        }
+
+        $persisted = $this->persist($items, $context, $visibility, $baseName, $mimeHint);
+
+        $payload['media'] = $persisted['stored'];
+
+        if (array() !== $persisted['failed']) {
+            // The generation succeeded; the storage did not. Both facts are
+            // reported so a caller does not lose paid work silently.
+            $payload['media_failed'] = $persisted['failed'];
+        }
+
+        return $payload;
+    }
+
+    /**
      * Store each generated item, collecting per-item failures instead of throwing.
      *
-     * @param array<int, array<string, mixed>> $items      Provider entries; `b64_json` is read.
+     * @param array<int, array<string, mixed>> $items      Provider entries.
      * @param array<string, mixed>             $context    Execution context (`user_id`, `tenant_id`).
      * @param string                           $visibility One of the VISIBILITY_* constants.
      * @param string                           $baseName   Display name; the store makes it unique.
@@ -69,7 +169,7 @@ final class GeneratedMediaPersister
         $failed = array();
 
         foreach (array_values($items) as $index => $item) {
-            $data = (string) ($item['b64_json'] ?? '');
+            $data = $this->bytesOf($item);
 
             if ('' === $data) {
                 $failed[$index] = 'The provider returned no base64 bytes to store.';
@@ -125,6 +225,22 @@ final class GeneratedMediaPersister
     }
 
     /**
+     * Read the base64 payload from either dialect.
+     *
+     * @param array<string, mixed> $item Provider entry.
+     */
+    private function bytesOf(array $item): string
+    {
+        foreach (self::BYTE_KEYS as $key) {
+            if (isset($item[$key]) && \is_string($item[$key]) && '' !== $item[$key]) {
+                return $item[$key];
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * Write the bytes somewhere the store can read them from.
      *
      * The store's contract takes a local path, so decoding straight into storage
@@ -146,6 +262,18 @@ final class GeneratedMediaPersister
         }
 
         return $path;
+    }
+
+    /**
+     * A lowercase, hyphenated stem safe to hand to the store as a display name.
+     */
+    private static function stem(string $value, string $fallback): string
+    {
+        $stem = \pathinfo(\basename($value), PATHINFO_FILENAME);
+        $stem = (string) \preg_replace('/[^a-z0-9]+/', '-', \strtolower($stem));
+        $stem = \trim($stem, '-');
+
+        return '' !== $stem ? $stem : $fallback;
     }
 
     /**

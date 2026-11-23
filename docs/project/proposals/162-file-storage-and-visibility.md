@@ -349,3 +349,62 @@ private route that answers `Range` with `206 Partial Content` (RFC 9110
 §15.3.7); serving whole bodies makes browser playback re-download from byte
 zero on every seek. That is the §162.7 deferral and it is now on the critical
 path for video toolkits rather than a nicety.
+
+### 162.9.1 Slice 2: the other image generators
+
+Five tools now persist through the same collaborator, and the two `_validated`
+subclasses (`generate_gemini_image_validated`, `edit_gemini_image_validated`)
+inherit it because they only override slugs and labels:
+
+| Tool | Payload shape | Fallback stem |
+|---|---|---|
+| `create_image_variation` | `data[].b64_json` | `openai-variation` |
+| `edit_openai_image` | `data[].b64_json` | `openai-edited-image` |
+| `generate_gemini_image` | `predictions[].bytesBase64Encoded` | `gemini-image` |
+| `edit_gemini_image` | `predictions[].bytesBase64Encoded` | `gemini-edited-image` |
+| `generate_cloudflareai_image` | `result.image` (one string) | `cloudflare-image` |
+
+Three things were factored out rather than copied five times:
+
+- **Two dialects, one reader.** `GeneratedMediaPersister` reads `b64_json`
+  (OpenAI's images API) or `bytesBase64Encoded` (Imagen via `:predict`). Putting
+  the normalisation in the collaborator keeps every tool's `execute()` free of
+  a translation step, and there is exactly one place to teach a third dialect.
+- **One parameter descriptor.** `parameters()` returns the `save_to_media`,
+  `file_name` and `visibility` schema fragments, and each tool merges them with
+  `+`. Five hand-written copies would have drifted on what `save_to_media`
+  promises within a release.
+- **One naming rule.** `displayName()` implements the WordPress rule once:
+  `{prefix}-{job_id}` from `context['parent_job_id']`, else
+  `{file_name|prefix}-{Ymd-His}`.
+
+Cloudflare needed one call-site adaptation rather than a persister change: it
+answers with a single base64 string, so the tool wraps it as
+`array(array('b64_json' => $image))` — the same shape every other provider
+produces — instead of the persister growing a special case for a list that is
+sometimes not a list.
+
+**Deferred, with the reason recorded.** `generate_higgsfield_image` and
+`generate_higgsfield_video` submit an asynchronous job and return
+`request_id`/`status_url`; there are no bytes at that point. Persisting belongs
+to `check_higgsfield_request`, which learns whether the job produced an output
+and where it is — a different slice, and one that must decide what to do when a
+completed job's bytes are already gone. Recording it here so its absence from
+the table above reads as a decision rather than an oversight.
+
+**Test seam.** `ImageAndFileToolsTest::setUp()` now binds a recording
+`FileVisibilityStoreInterface`. Without it, every existing provider probe would
+write a real object into the media disk through the newly defaulted
+`save_to_media`; with it, the probes stay hermetic and the five new tests assert
+on what the store was handed.
+
+### 162.9.2 What this does not yet unlock
+
+Storing generated media is necessary but not sufficient. The gap that remains is
+the **link from a stored file into content**: `save_post` takes `post_id`,
+`post_type`, `title`, `content` and taxonomy fields, and has no featured-image or
+inline-attachment parameter. So an agent can now generate an image, find it with
+`search_attachments`, and cite it by id — but cannot set it as a post's thumbnail
+or insert it into a post body. On WordPress that link is
+`set_post_thumbnail()`; here it is the next slice, and it is what makes the
+library useful rather than merely populated.
