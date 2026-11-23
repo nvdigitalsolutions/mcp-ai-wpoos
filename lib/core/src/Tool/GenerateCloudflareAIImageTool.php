@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
+use Nvoos\Core\Application\Media\GeneratedMediaPersister;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
@@ -19,8 +21,16 @@ use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
 class GenerateCloudflareAIImageTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
-    public function __construct(ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h)
-    {
+    /**
+     * `$files` is optional: a host with no registry keeps the payload-only
+     * behaviour rather than failing to construct the tool.
+     */
+    public function __construct(
+        ErrorFactoryInterface $e,
+        private readonly SettingsStoreInterface $s,
+        private readonly HttpClientInterface $h,
+        private readonly ?FileVisibilityStoreInterface $files = null,
+    ) {
         parent::__construct($e);
     }
     public function getSlug(): string
@@ -46,7 +56,7 @@ class GenerateCloudflareAIImageTool extends AbstractTool implements ToolCapabili
             'guidance' => array('type' => 'number','description' => 'Guidance scale (0-20).','minimum' => 0,'maximum' => 20,'default' => 7.5),
             'seed' => array('type' => 'integer','description' => 'Optional seed for reproducibility.'),
             'negative_prompt' => array('type' => 'string','description' => 'What to avoid.'),
-        ),'required' => array('prompt'),'additionalProperties' => false);
+        ) + GeneratedMediaPersister::parameters(),'required' => array('prompt'),'additionalProperties' => false);
     }
     public function getRequiredCapability(): string
     {
@@ -73,6 +83,7 @@ class GenerateCloudflareAIImageTool extends AbstractTool implements ToolCapabili
         $guidance = (float)($arguments['guidance'] ?? 7.5);
         $neg     = $this->stringParam($arguments, 'negative_prompt');
         $seed    = $arguments['seed'] ?? null;
+        $save    = $this->boolParam($arguments, 'save_to_media', true) && null !== $this->files;
 
         $body = array( 'prompt' => $prompt, 'width' => $width, 'height' => $height, 'num_steps' => $steps, 'guidance' => $guidance );
         if ('' !== $neg) {
@@ -91,7 +102,23 @@ class GenerateCloudflareAIImageTool extends AbstractTool implements ToolCapabili
             }
 
             $image = $d['result']['image'] ?? null;
-            return $this->success('Image generated successfully.', array( 'prompt' => $prompt, 'model' => $model, 'image_base64' => $image, 'width' => $width, 'height' => $height ));
+
+            $payload = array( 'prompt' => $prompt, 'model' => $model, 'image_base64' => $image, 'width' => $width, 'height' => $height );
+
+            if ($save) {
+                // Workers AI answers with one base64 string rather than a list;
+                // wrap it so the persister sees the same shape as every other
+                // provider.
+                $payload = (new GeneratedMediaPersister($this->files))->attach(
+                    $payload,
+                    array(array('b64_json' => $image)),
+                    $context,
+                    GeneratedMediaPersister::displayName($arguments, $context, 'cloudflare-image'),
+                    $this->stringParam($arguments, 'visibility', FileVisibilityStoreInterface::VISIBILITY_PUBLIC),
+                );
+            }
+
+            return $this->success('Image generated successfully.', $payload);
         } catch (\Throwable $e) {
             return $this->errors->create('request_failed', $e->getMessage());
         }

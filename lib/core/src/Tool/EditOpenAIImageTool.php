@@ -11,14 +11,24 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
+use Nvoos\Core\Application\Media\GeneratedMediaPersister;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class EditOpenAIImageTool extends AbstractTool
 {
-    public function __construct(ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h)
-    {
+    /**
+     * `$files` is optional: a host with no registry keeps the payload-only
+     * behaviour rather than failing to construct the tool.
+     */
+    public function __construct(
+        ErrorFactoryInterface $e,
+        private readonly SettingsStoreInterface $s,
+        private readonly HttpClientInterface $h,
+        private readonly ?FileVisibilityStoreInterface $files = null,
+    ) {
         parent::__construct($e);
     }
     public function getSlug(): string
@@ -41,7 +51,7 @@ class EditOpenAIImageTool extends AbstractTool
             'model' => array('type' => 'string','enum' => array('dall-e-2'),'default' => 'dall-e-2'),
             'n' => array('type' => 'integer','description' => 'Number of edited images (1-10).','minimum' => 1,'maximum' => 10,'default' => 1),
             'size' => array('type' => 'string','enum' => array('256x256','512x512','1024x1024'),'default' => '1024x1024'),
-        ),'required' => array('image_url','prompt'),'additionalProperties' => false);
+        ) + GeneratedMediaPersister::parameters(),'required' => array('image_url','prompt'),'additionalProperties' => false);
     }
     public function getRequiredCapability(): string
     {
@@ -63,6 +73,7 @@ class EditOpenAIImageTool extends AbstractTool
 
         $n    = $this->intParam($arguments, 'n', 1);
         $size = $this->stringParam($arguments, 'size', '1024x1024');
+        $save = $this->boolParam($arguments, 'save_to_media', true) && null !== $this->files;
 
         try {
             $r = $this->h->send('POST', 'https://api.openai.com/v1/images/edits', array( 'Authorization' => "Bearer {$key}", 'Content-Type' => 'application/json' ), $this->jsonBody(array( 'image' => $imageUrl, 'prompt' => $prompt, 'n' => $n, 'size' => $size, 'response_format' => 'b64_json' )));
@@ -76,7 +87,20 @@ class EditOpenAIImageTool extends AbstractTool
             foreach ($d['data'] ?? array() as $img) {
                 $images[] = array( 'b64_json' => $img['b64_json'] ?? null );
             }
-            return $this->success('Image(s) edited successfully.', array( 'prompt' => $prompt, 'images' => $images, 'count' => \count($images) ));
+
+            $payload = array( 'prompt' => $prompt, 'images' => $images, 'count' => \count($images) );
+
+            if ($save) {
+                $payload = (new GeneratedMediaPersister($this->files))->attach(
+                    $payload,
+                    $images,
+                    $context,
+                    GeneratedMediaPersister::displayName($arguments, $context, 'openai-edited-image'),
+                    $this->stringParam($arguments, 'visibility', FileVisibilityStoreInterface::VISIBILITY_PUBLIC),
+                );
+            }
+
+            return $this->success('Image(s) edited successfully.', $payload);
         } catch (\Throwable $e) {
             return $this->errors->create('request_failed', $e->getMessage());
         }

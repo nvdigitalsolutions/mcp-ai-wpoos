@@ -56,6 +56,11 @@ class ImageAndFileToolsTest extends TestCase
             'oos.cloudflare_account_id' => 'acct-1',
             'services.higgsfield.key' => 'key-id:key-secret',
         ));
+
+        // Every generation tool now persists by default, so a probe would
+        // otherwise write real objects into the media disk. Bind the recording
+        // store once here; a test that inspects the writes takes a fresh one.
+        $this->fakeVisibilityStore();
     }
 
     /**
@@ -314,6 +319,120 @@ class ImageAndFileToolsTest extends TestCase
         $this->assertSame(array(), $result['data']['media']);
         $this->assertSame('File type is not accepted: image/png.', $result['data']['media_failed'][0]);
         $this->assertSame(base64_encode('PNGDATA'), $result['data']['images'][0]['b64_json']);
+    }
+
+    public function test_create_image_variation_stores_the_bytes(): void
+    {
+        $store = $this->fakeVisibilityStore();
+
+        Http::fake(array(
+            'api.openai.com/v1/images/variations' => Http::response(array(
+                'data' => array(array('b64_json' => base64_encode('VAR'))),
+            )),
+        ));
+
+        $result = $this->execute(CreateImageVariationTool::class, array(
+            'image_url' => 'https://example.com/a.png',
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertCount(1, $store->writes);
+        $this->assertSame('VAR', $store->writes[0]['bytes']);
+        $this->assertStringStartsWith('openai-variation-', $store->writes[0]['name']);
+        $this->assertSame(101, $result['data']['media'][0]['attachment_id']);
+    }
+
+    public function test_edit_openai_image_stores_the_bytes(): void
+    {
+        $store = $this->fakeVisibilityStore();
+
+        Http::fake(array(
+            'api.openai.com/v1/images/edits' => Http::response(array(
+                'data' => array(array('b64_json' => base64_encode('EDIT'))),
+            )),
+        ));
+
+        $result = $this->execute(EditOpenAIImageTool::class, array(
+            'image_url' => 'https://example.com/a.png',
+            'prompt' => 'make it blue',
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertCount(1, $store->writes);
+        $this->assertSame('EDIT', $store->writes[0]['bytes']);
+        $this->assertStringStartsWith('openai-edited-image-', $store->writes[0]['name']);
+        $this->assertSame(101, $result['data']['media'][0]['attachment_id']);
+    }
+
+    public function test_generate_gemini_image_stores_the_bytes(): void
+    {
+        $store = $this->fakeVisibilityStore();
+
+        Http::fake(array(
+            'generativelanguage.googleapis.com/*' => Http::response(array(
+                'predictions' => array(
+                    array('bytesBase64Encoded' => base64_encode('GEM')),
+                ),
+            )),
+        ));
+
+        $result = $this->execute(GenerateGeminiImageTool::class, array('prompt' => 'a dog'));
+
+        $this->assertTrue($result['success']);
+
+        // Imagen's `bytesBase64Encoded` is understood by the persister, so the
+        // tool does not have to translate the dialect itself.
+        $this->assertCount(1, $store->writes);
+        $this->assertSame('GEM', $store->writes[0]['bytes']);
+        $this->assertStringStartsWith('gemini-image-', $store->writes[0]['name']);
+        $this->assertSame(101, $result['data']['media'][0]['attachment_id']);
+    }
+
+    public function test_edit_gemini_image_stores_the_bytes(): void
+    {
+        $store = $this->fakeVisibilityStore();
+
+        Http::fake(array(
+            'generativelanguage.googleapis.com/*' => Http::response(array(
+                'predictions' => array(
+                    array('bytesBase64Encoded' => base64_encode('GEDIT')),
+                ),
+            )),
+        ));
+
+        $result = $this->execute(EditGeminiImageTool::class, array(
+            'image_url' => 'https://example.com/a.png',
+            'prompt' => 'make it blue',
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertCount(1, $store->writes);
+        $this->assertSame('GEDIT', $store->writes[0]['bytes']);
+        $this->assertStringStartsWith('gemini-edited-image-', $store->writes[0]['name']);
+    }
+
+    public function test_generate_cloudflare_image_stores_the_bytes(): void
+    {
+        $store = $this->fakeVisibilityStore();
+
+        Http::fake(array(
+            'api.cloudflare.com/*' => Http::response(array(
+                'result' => array('image' => base64_encode('CF')),
+            )),
+        ));
+
+        $result = $this->execute(GenerateCloudflareAiImageTool::class, array(
+            'prompt' => 'a lighthouse',
+        ));
+
+        $this->assertTrue($result['success']);
+
+        // Workers AI answers with one base64 string; the tool wraps it so the
+        // persister sees the same shape as every other provider.
+        $this->assertCount(1, $store->writes);
+        $this->assertSame('CF', $store->writes[0]['bytes']);
+        $this->assertStringStartsWith('cloudflare-image-', $store->writes[0]['name']);
+        $this->assertStringStartsWith('/storage/', (string) $result['data']['media'][0]['source_url']);
     }
 
     public function test_create_image_variation_returns_images(): void
