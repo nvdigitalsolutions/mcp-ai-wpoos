@@ -302,6 +302,9 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 
+	/**
+	 * Webhook verification fails with an incorrect token.
+	 */
 	public function test_webhook_verification_fails_with_incorrect_token() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$this->markTestSkipped( 'Pro addon not available' );
@@ -1988,7 +1991,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_content_to_string: plain string input (OpenAI/Anthropic format).
+	 * Resolve_content_to_string: plain string input (OpenAI/Anthropic format).
 	 */
 	public function test_whatsapp_resolve_content_plain_string() {
 		$pair = $this->get_whatsapp_resolve_content_method();
@@ -2005,7 +2008,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_content_to_string: Gemini/Ollama array segment format.
+	 * Resolve_content_to_string: Gemini/Ollama array segment format.
 	 */
 	public function test_whatsapp_resolve_content_array_segments() {
 		$pair = $this->get_whatsapp_resolve_content_method();
@@ -2052,7 +2055,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_content_to_string: invalid inputs return empty string.
+	 * Resolve_content_to_string: invalid inputs return empty string.
 	 */
 	public function test_whatsapp_resolve_content_invalid_inputs() {
 		$pair = $this->get_whatsapp_resolve_content_method();
@@ -2098,7 +2101,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_conversation_history_for_chat: plain string content passes through unchanged.
+	 * Normalize_conversation_history_for_chat: plain string content passes through unchanged.
 	 */
 	public function test_whatsapp_normalize_history_string_content() {
 		$pair = $this->get_whatsapp_normalize_history_method();
@@ -2128,7 +2131,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_conversation_history_for_chat: Gemini/Ollama array content is flattened.
+	 * Normalize_conversation_history_for_chat: Gemini/Ollama array content is flattened.
 	 *
 	 * Tool result messages (role: tool) from the agentic loop are stored as JSON
 	 * strings. Assistant messages may have Gemini/Ollama array-format content.
@@ -2167,7 +2170,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_conversation_history_for_chat: entries with empty/null content are dropped.
+	 * Normalize_conversation_history_for_chat: entries with empty/null content are dropped.
 	 */
 	public function test_whatsapp_normalize_history_drops_empty_content() {
 		$pair = $this->get_whatsapp_normalize_history_method();
@@ -2205,7 +2208,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_content_from_chat_response: Gemini-style array content in choices.
+	 * Extract_content_from_chat_response: Gemini-style array content in choices.
 	 */
 	public function test_whatsapp_extract_content_gemini_array_format() {
 		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
@@ -2252,7 +2255,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_content_from_chat_response: Ollama-style array content with tool result fallback.
+	 * Extract_content_from_chat_response: Ollama-style array content with tool result fallback.
 	 */
 	public function test_whatsapp_extract_content_ollama_agentic_fallback() {
 		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {

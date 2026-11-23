@@ -25,6 +25,9 @@ class Test_Harness_Prompt_Injector extends WP_UnitTestCase {
 	 */
 	private $assistant_id = 0;
 
+	/**
+	 * Reset the injector state.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -46,17 +49,26 @@ class Test_Harness_Prompt_Injector extends WP_UnitTestCase {
 		WP_MCP_AI_Prompt_Cue_Library::get_instance()->all(); // triggers seed.
 	}
 
+	/**
+	 * Reset the injector state after each test.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Prompt_Cue_Library::get_instance()->reset();
 		parent::tearDown();
 	}
 
+	/**
+	 * The filter is a no-op when the profile is disabled.
+	 */
 	public function test_filter_is_noop_when_profile_disabled() {
 		$prompt = 'You are a helpful assistant.';
 		$out    = WP_MCP_AI_Harness_Prompt_Injector::filter( $prompt, $this->assistant_id );
 		$this->assertSame( $prompt, $out );
 	}
 
+	/**
+	 * The filter is a no-op when enabled but no cues match.
+	 */
 	public function test_filter_is_noop_when_enabled_but_no_cues() {
 		$user = self::factory()->user->create_and_get( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user->ID );
@@ -73,6 +85,9 @@ class Test_Harness_Prompt_Injector extends WP_UnitTestCase {
 		$this->assertSame( 'base prompt', $out );
 	}
 
+	/**
+	 * The filter prepends cues when the profile is enabled.
+	 */
 	public function test_filter_prepends_cues_when_profile_enabled() {
 		$user = self::factory()->user->create_and_get( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user->ID );
@@ -95,6 +110,9 @@ class Test_Harness_Prompt_Injector extends WP_UnitTestCase {
 		$this->assertLessThan( $prompt_pos, $cue_pos );
 	}
 
+	/**
+	 * The filter skips unknown cue slugs.
+	 */
 	public function test_filter_skips_unknown_cue_slugs() {
 		$user = self::factory()->user->create_and_get( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user->ID );
@@ -111,6 +129,9 @@ class Test_Harness_Prompt_Injector extends WP_UnitTestCase {
 		$this->assertSame( 'base prompt', $out );
 	}
 
+	/**
+	 * The cue slug filter can substitute slugs.
+	 */
 	public function test_inject_cue_slugs_filter_can_substitute() {
 		$user = self::factory()->user->create_and_get( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user->ID );
@@ -140,6 +161,9 @@ class Test_Harness_Prompt_Injector extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_harness_inject_cue_slugs' );
 	}
 
+	/**
+	 * The filter is registered on init.
+	 */
 	public function test_filter_is_registered_via_init() {
 		// The init file calls register(); this verifies the filter handler
 		// is reachable through the WordPress filter system.

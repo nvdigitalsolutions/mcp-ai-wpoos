@@ -178,6 +178,12 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 			'wp_mcp_ai_chat_transcript_handler',
 			function () {
 				return new class() {
+					/**
+					 * Update a stored transcript row.
+					 *
+					 * @param array $record Transcript record.
+					 * @return bool
+					 */
 					public function update_item( $record ) {
 						return true;
 					}
@@ -259,14 +265,31 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 	public function test_delete_transcript_logging() {
 		// Create a mock repository.
 		$mock_repository = new class() {
+			/**
+			 * Return the table name.
+			 *
+			 * @return string
+			 */
 			public function get_table_name() {
 				return 'wp_test_transcripts';
 			}
 
+			/**
+			 * Whether the table exists.
+			 *
+			 * @return bool
+			 */
 			public function table_exists() {
 				return true;
 			}
 
+			/**
+			 * Delete a transcript by session key and user.
+			 *
+			 * @param string $session_key Session key.
+			 * @param int    $user_id     User id.
+			 * @return bool
+			 */
 			public function delete_transcript( $session_key, $user_id ) {
 				return 3; // Simulate 3 rows deleted.
 			}
@@ -328,14 +351,31 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 	public function test_delete_transcript_failure_logging() {
 		// Create a mock repository that fails.
 		$mock_repository = new class() {
+			/**
+			 * Return the table name.
+			 *
+			 * @return string
+			 */
 			public function get_table_name() {
 				return 'wp_test_transcripts';
 			}
 
+			/**
+			 * Whether the table exists.
+			 *
+			 * @return bool
+			 */
 			public function table_exists() {
 				return true;
 			}
 
+			/**
+			 * Delete a transcript by session key and user.
+			 *
+			 * @param string $session_key Session key.
+			 * @param int    $user_id     User id.
+			 * @return bool
+			 */
 			public function delete_transcript( $session_key, $user_id ) {
 				return false; // Simulate deletion failure.
 			}
@@ -387,6 +427,12 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 			'wp_mcp_ai_chat_transcript_handler',
 			function () {
 				return new class() {
+					/**
+					 * Update a stored transcript row.
+					 *
+					 * @param array $record Transcript record.
+					 * @return bool
+					 */
 					public function update_item( $record ) {
 						return true;
 					}
