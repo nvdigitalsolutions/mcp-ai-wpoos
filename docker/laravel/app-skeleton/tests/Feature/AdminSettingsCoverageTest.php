@@ -127,14 +127,15 @@ class AdminSettingsCoverageTest extends TestCase
             'An admin-writable security control is enforced nowhere again — wire it or declare it.'
         );
 
-        // The operator bucket is a closed list, not an empty one. The root-key pair
-        // stays unenforced because §66 renders operator infrastructure and a secrets
-        // test pins that the key is writable from /ops and masked (§187.3). Any
-        // other key appearing here is a regression.
+        // §188 closed the remaining two. §187.3 recorded the root-key pair as an
+        // open decision: a control that gates operator action, rendered and writable
+        // but read by nothing. RootKeyGate now reads both keys on every /ops write,
+        // so the operator bucket is empty too. A key reappearing here means a
+        // reader was removed from an operator-scope security control.
         $this->assertSame(
-            array('enable_root_security_key', 'root_security_key'),
+            array(),
             array_column(SettingsCoverage::byBucket('unenforced-operator'), 'key'),
-            'The operator-unenforced bucket gained a key — wire it, declare it, or record the decision.'
+            'An operator-scope security control is enforced nowhere again — wire it or declare it.'
         );
     }
 
@@ -182,10 +183,14 @@ class AdminSettingsCoverageTest extends TestCase
             ->assertOk()
             ->assertSee('Settings coverage')
             ->assertSee('change behaviour here')
-            // The two buckets an operator has to understand before the rest of
-            // the page makes sense: the operator-scope controls that enforce
-            // nothing, and the ported WordPress surface, which is not a defect.
-            ->assertSee('Operator control, enforced nowhere')
+            // One bucket an operator has to understand before the rest of the page
+            // makes sense — a control that is graded but enforced nowhere — and the
+            // ported WordPress surface, which is not a defect.
+            //
+            // The operator bucket used to be asserted here. §188 closed it, and an
+            // empty bucket is not rendered: there is nothing to decide about a
+            // category with no members. Asserting it would pin the bug, not the fix.
+            ->assertSee('Graded, not enforced')
             ->assertSee('WordPress settings');
     }
 

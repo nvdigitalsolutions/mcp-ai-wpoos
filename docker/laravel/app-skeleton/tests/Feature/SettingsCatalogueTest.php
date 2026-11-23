@@ -594,11 +594,16 @@ class SettingsCatalogueTest extends TestCase
 
     /**
      * 149 §66 — the root key is writable on /ops and never returned in plaintext.
+     *
+     * §188 added the field's documented 32-character minimum (and hashing at rest),
+     * so the value here must clear it. The masking contract is unchanged.
      */
     public function test_the_root_security_key_is_masked_on_the_ops_surface(): void
     {
+        $secret = 'deployment-root-key-with-at-least-thirty-two-characters';
+
         $applied = app(SettingsService::class)->write(
-            array('root_security_key' => 'deployment-root-key'),
+            array('root_security_key' => $secret),
             SettingsService::SURFACE_OPS
         );
 
@@ -607,7 +612,7 @@ class SettingsCatalogueTest extends TestCase
         $values = app(SettingsService::class)->values(SettingsService::SURFACE_OPS);
 
         $this->assertSame(SettingsSchema::MASKED_PLACEHOLDER, $values['root_security_key']);
-        $this->assertNotContains('deployment-root-key', $values);
+        $this->assertNotContains($secret, $values);
     }
 
     /**

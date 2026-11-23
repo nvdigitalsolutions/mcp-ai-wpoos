@@ -9,6 +9,8 @@ use App\Http\Middleware\EnsurePrincipalScope;
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
 use App\Support\Auth\Auth0TokenException;
+use App\Support\Security\RootKeyInvalid;
+use App\Support\Security\RootKeyRequired;
 use Cron\CronExpression;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Auth\Middleware\Authenticate;
@@ -260,6 +262,37 @@ return Application::configure(basePath: dirname(__DIR__))
         // an alert. The JWKS outage is the exception — that one is reported
         // where it happens, inside the verifier.
         $exceptions->dontReport(array(Auth0TokenException::class));
+
+        // 149 §188 — the root-key gate answers 423, not 403: the caller is
+        // authenticated and authorised, and the request is refused only until a
+        // second credential is presented. A rejected key at the point of setting it
+        // is a 422. Both are JSON for anything expecting it, and a redirect back
+        // with an error otherwise, so the Filament form shows the reason.
+        $exceptions->render(
+            static function (RootKeyRequired $exception, Request $request): mixed {
+                if ($request->expectsJson() || $request->is('api/*')) {
+                    return response()->json(array(
+                        'code' => RootKeyRequired::CODE,
+                        'message' => $exception->getMessage(),
+                    ), 423);
+                }
+
+                return back()->withErrors(array('root_key' => $exception->getMessage()));
+            }
+        );
+
+        $exceptions->render(
+            static function (RootKeyInvalid $exception, Request $request): mixed {
+                if ($request->expectsJson() || $request->is('api/*')) {
+                    return response()->json(array(
+                        'code' => RootKeyInvalid::CODE,
+                        'message' => $exception->getMessage(),
+                    ), 422);
+                }
+
+                return back()->withErrors(array('root_key' => $exception->getMessage()));
+            }
+        );
 
         $exceptions->render(
             static fn (Auth0TokenException $exception): mixed => response()->json(

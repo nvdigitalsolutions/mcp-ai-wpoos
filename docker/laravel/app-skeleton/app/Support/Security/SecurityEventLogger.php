@@ -48,6 +48,11 @@ final class SecurityEventLogger
 
     public const AUTH_LOCKOUT = 'auth.lockout';
 
+    /** 149 §188 — step-up attempts against the root security key. */
+    public const ROOT_KEY_GRANTED = 'rootkey.granted';
+
+    public const ROOT_KEY_DENIED = 'rootkey.denied';
+
     /** Longest context string stored; the column is 255. */
     private const MAX_CONTEXT = 255;
 

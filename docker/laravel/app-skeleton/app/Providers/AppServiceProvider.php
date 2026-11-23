@@ -31,6 +31,7 @@ use App\Support\Pro\ToolkitEngine;
 use App\Support\Professions\ProfessionOverlayStore;
 use App\Support\Pro\ToolkitManifestLoader;
 use App\Support\RemoteSites\RemoteSiteStore;
+use App\Support\Security\RootKey;
 use App\Support\Security\SecuritySnapshotStore;
 use App\Support\Settings\SettingsService;
 use App\Support\Token\TiktokenService;
@@ -248,6 +249,15 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(SettingsStoreInterface::class),
                 $app->make('nvoos.settings.platform')
             )
+        );
+
+        // 149 §188 — the root security key lives in the operator layer, so it must
+        // be built against the platform store explicitly. Letting the container
+        // auto-resolve `SettingsStoreInterface` would hand it the estate layer and
+        // the key would be read from, and written to, the wrong table.
+        $this->app->bind(
+            RootKey::class,
+            static fn ($app): RootKey => new RootKey($app->make('nvoos.settings.platform'))
         );
 
         // Remote sites are estate data (149 §27). The resolver mirrors the
