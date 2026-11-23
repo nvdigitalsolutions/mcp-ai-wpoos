@@ -17111,6 +17111,29 @@ This is the general lesson, and it is worth stating once: **a listener that must
 be correct is a guard, and a listener that must merely observe is an event
 listener.** The dispatcher's identity is not part of its contract.
 
+### 179.5 Gates
+
+| Gate | Result |
+|---|---|
+| `TurnBudgetTest` (core) | 11 tests — off, both dimensions, ordering, spend counts, warn band, tighter dimension, band fallbacks |
+| `ChatOrchestratorTest` (core) | 59 tests / 181 assertions — including "the refused call never reaches the provider" and "the loop stops before the second call" |
+| `TurnBudgetSettingsTest` | 4 tests — defaults off, round-trip through the settings surface, warn band reaches the verdict, the section renders |
+| `ToolQuotaTest` + `ToolRegistrationTest` + `TurnBudgetSettingsTest` | 19 tests / 52 assertions |
+| tool/chat/machine/security/budget/settings/surface blast radius | **678 tests / 14,724 assertions** |
+| `lib/laravel-adapter` package suite | **348 tests / 1,825 assertions** (§179.6) |
+| phpcs PSR-12 on 10 changed files | exit 0 |
+| `bin/audit-surface-ownership.php` | 59 rows · 47 built · 4 planned · 4 absent · 0 inert |
+
+`orchestration.thresholds` moved `planned` → `subset`: the loop-bound half is a
+`SettingsSchema` section with one reader and one writer, and the other twenty-one
+fields are recorded in the row's notes rather than rendered as controls that
+change nothing.
+
+With that, the only surfaces left from §176.5 are `presets` (a projection over
+this and §177), `memory-health` (read-only over the memory store), `settings`
+(a toggle-by-toggle map) and `dspark` (a decision, not a build) — plus the
+multiplier plan in §178.2, whose only prerequisite was a shared base and is now
+unblocked.
 ### 179.6 The lost import, and two more of the same shape
 
 The package suite failed on this branch with a shape that looked like ordering
@@ -17146,30 +17169,6 @@ trees for class names that resolve to nothing:
 The dispatcher is now a **singleton in the package as well as the app**. The
 app's binding is kept, and restated rather than inherited, so a change to the
 package default cannot silently reintroduce §179.4.
-
-### 179.5 Gates
-
-| Gate | Result |
-|---|---|
-| `TurnBudgetTest` (core) | 11 tests — off, both dimensions, ordering, spend counts, warn band, tighter dimension, band fallbacks |
-| `ChatOrchestratorTest` (core) | 59 tests / 181 assertions — including "the refused call never reaches the provider" and "the loop stops before the second call" |
-| `TurnBudgetSettingsTest` | 4 tests — defaults off, round-trip through the settings surface, warn band reaches the verdict, the section renders |
-| `ToolQuotaTest` + `ToolRegistrationTest` + `TurnBudgetSettingsTest` | 19 tests / 52 assertions |
-| tool/chat/machine/security/budget/settings/surface blast radius | **678 tests / 14,724 assertions** |
-| `lib/laravel-adapter` package suite | **348 tests / 1,825 assertions** (§179.6) |
-| phpcs PSR-12 on 10 changed files | exit 0 |
-| `bin/audit-surface-ownership.php` | 59 rows · 47 built · 4 planned · 4 absent · 0 inert |
-
-`orchestration.thresholds` moved `planned` → `subset`: the loop-bound half is a
-`SettingsSchema` section with one reader and one writer, and the other twenty-one
-fields are recorded in the row's notes rather than rendered as controls that
-change nothing.
-
-With that, the only surfaces left from §176.5 are `presets` (a projection over
-this and §177), `memory-health` (read-only over the memory store), `settings`
-(a toggle-by-toggle map) and `dspark` (a decision, not a build) — plus the
-multiplier plan in §178.2, whose only prerequisite was a shared base and is now
-unblocked.
 
 ## 180. The media library becomes writeable (2026-11-23)
 
