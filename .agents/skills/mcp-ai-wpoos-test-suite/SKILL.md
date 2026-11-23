@@ -1493,6 +1493,8 @@ Moved to `reference/cluster-state-board.md` (the merged-cluster PR ledger).
 - Remaining-fixes tracker: `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`
 - Plugin operational guide: `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md`
 - Per-toolkit hardening audit loop: `.agents/skills/mcp-ai-wpoos-toolkit-audit/SKILL.md`
+- **WPCS/phpcs sweep playbook** (budget arithmetic, the `phpcbf` trap,
+  structural edit recipes, Windows/MSYS notes): `reference/wpcs-sweep.md`
 - **ID-handoff contract suites (permanent CI infrastructure):**
   `tests/test-tool-id-handoff-contract.php` (L1 honesty — checks
   `tests/fixtures/tool-contract-manifest.php` against the live registry in
