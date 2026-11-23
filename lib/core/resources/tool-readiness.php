@@ -475,6 +475,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/MemorySettingsAndEventToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'duplicate_assistant' => array(
+			'class' => 'Nvoos\\Core\\Tool\\DuplicateAssistantTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/DuplicateAssistantToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => false ),
+		),
 		'edit_gemini_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\EditGeminiImageTool',
 			'readiness' => 'ready',

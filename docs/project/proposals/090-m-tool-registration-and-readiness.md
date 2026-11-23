@@ -780,3 +780,87 @@ on the real writer: the container builds it, the row lands as a draft in the
 current estate with the supplied tools, a repeated title gets `-2`).
 `lib/core` 2045 / 15,931; adapter 348 / 1,830; skeleton creation + registration +
 diagnostics 17. phpcs clean on all six files.
+
+## 17. Addendum: duplicate_assistant, a copy that is not a migration (2026-11-23)
+
+### The slice
+
+`duplicate_assistant` was named by two presets and had no row. WordPress
+implements duplication as **export the bundle, import the bundle** — the right
+shape for crossing a site boundary, and heavy for a copy: the bundle exists to
+survive a transport this operation never touches.
+
+This is a read-then-create **inside one estate**, on the same writer §16 put in
+place:
+
+```
+tool ──► AssistantWriteInterface::duplicate() ──► LaravelAssistantWriter ──► AssistantWriter::create()
+```
+
+`duplicate()` was added to `AssistantWriteInterface` rather than the tool reading
+`Assistant` itself. A tool that queried the model would have been the second
+place that knows an assistant's tenancy rule, and the first place to forget it.
+
+The adapter reads with `Assistant::query()->find()`, so the model's tenant global
+scope supplies the estate boundary — the tool passes an id and nothing else.
+
+### What is not copied, and why
+
+| Field | Copied | Why |
+|---|---|---|
+| `description`, `system_prompt`, `provider`, `model`, `temperature`, `max_tokens`, `tools`, `meta` | **yes** | This is the assistant. |
+| `status` | **no** | WordPress lets a duplicate be published in the same call. A duplicate here is a draft; publishing stays the separate operator action it is on `create_assistant`. |
+| `is_default` | **no** | Copying it would either create a second default or silently un-default the source. Either way the result is not a copy. |
+| `slug` | **no** | Derived from the new title and de-duplicated per estate, so `support-bot` copies to `support-bot-copy`. |
+| ids, timestamps | **no** | Properties of the source, not of a new record. |
+| credentials | **no** | Nothing to copy by design: issuance is a separate service, and the writer's `advanced` whitelist excludes them. |
+
+The draft is an **explicit allowlist**, not `$source->getAttributes()`. A column
+added to `assistants` next quarter is not silently copied by this tool because
+nobody decided it should be.
+
+An omitted title lets the host name the copy (`"<original> (Copy)"`), which keeps
+the naming rule on the side that also owns slug derivation.
+
+### A source in another estate is *not found*
+
+`404`, not `403`. A forbidden would confirm that an assistant with that id exists
+somewhere — which is precisely the fact a cross-tenant probe is asking for. The
+global scope makes the foreign id indistinguishable from a missing one, and the
+tool maps `assistant_not_found` to `errors->notFound()`.
+
+### Capability and failure shape
+
+`edit_posts`, matching `create_assistant` and `AssistantPolicy::create`. Flags:
+`write`, `state-changing`, `local-only`, `requires-capability`; annotations
+`readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: false` — a draft
+appears in the estate, nothing is overwritten or removed.
+
+A write exception becomes `assistant_duplicate_failed` with a generic sentence;
+the adapter calls `report()` and never puts a driver message in a transcript. The
+nullable `?AssistantWriteInterface $assistants = null` collaborator is the same
+"this host has no such service" seam as §13/§14/§16 — a host without assistant
+writes says so instead of erroring on an unbound interface.
+
+### Validation
+
+`DuplicateAssistantToolTest` (core, 8 tests: id required, not-found mapping,
+host failure mapping, title passed through and copy returned, omitted title
+passed empty, no-writer host, capability declaration). Feature test
+`docker/laravel/app-skeleton/tests/Feature/DuplicateAssistantToolTest.php`
+(5 tests on the real writer: the container builds it, the copy lands as a draft
+with prompt/provider/tools/meta intact and a distinct id, a supplied title wins,
+duplicating the estate default leaves the flag on the source, a foreign id is
+404 **and creates nothing** in the current estate).
+`lib/core` 2054 / 15,966; adapter 348 / 1,831; skeleton duplicate + registration +
+diagnostics 19. Auditor 229 rows / 210 servable, no violations. phpcs clean on
+all six files.
+
+### Still queued after this
+
+`export_assistant` and `import_assistant` (the portability REST surface exists;
+import needs a duplicate-vs-merge decision), `create_assistant_validated` (what
+it checks that `create_assistant` does not is undecided), and the memory trio
+(`trace_memory_provenance`, `memory_audit_trail`, `batch_manage_memory`) which
+need version history, a write-audit store and a destructive-bulk safety design
+respectively.
