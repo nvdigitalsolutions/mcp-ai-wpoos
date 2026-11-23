@@ -1435,3 +1435,79 @@ one needs an embedding call (`batch_embed_content`), one needs a product catalog
 (`vision_product_search`), one needs the cloud-vision transport
 (`vision_object_localization`), and `run_openai_external_action` is OpenAI-only
 dispatch with no cross-provider meaning.
+
+## 23. Addendum: suggest_internal_links, and retrieval before generation (2026-11-23)
+
+### The slice
+
+`suggest_internal_links` is the first of the three tools that need a content
+index. Two of those three turn out to need something subtler than an index: they
+need **retrieval the model cannot fake**, which is a different design question and
+the reason this one is worth documenting at length.
+
+### The model does not choose what exists
+
+A model asked "what should this page link to?" invents plausible titles. So it is
+never asked that. The candidates come from `ContentStoreInterface::query()` — real
+rows, real ids, scoped to what the calling user may read — and the model's only job
+is to pick from the list, write the anchor text and say why.
+
+The check that makes the output safe to act on:
+
+> **An id the model returns that is not in the candidate list is dropped, and the
+> count is reported** (`dropped`, and named in the message).
+
+Without it a hallucinated id becomes a link to a page that does not exist, and the
+caller has no way to tell it apart from a real one. The unit suite and the feature
+test both pin it; the feature test does it against the real store, with one real id
+and one invented id in the same answer.
+
+### Terms, derived locally
+
+The search needs terms. Spending a second model call to guess them would double the
+cost to answer a question the text already answers: words of four characters or
+more, stopwords removed, ranked by frequency, top three. `query` overrides the
+derivation for a page whose body does not name the thing it is about — the escape
+hatch, not the default.
+
+### Published only, and scoped to the reader
+
+`ContentQuery` is built with `statuses: ['publish']` and the calling user's id, so
+an unpublished draft cannot be suggested as a link target and a caller cannot be
+shown content it could not open. The feature test asserts the draft is invisible
+even though it matches the term.
+
+### Empty is a finding
+
+Two different empties, both reported as results rather than errors:
+
+- **No terms derivable** — a page of one-letter words has no topic to link on.
+- **No candidates** — nothing in the store matches, and the message names the terms
+  that were tried.
+
+Only two things are failures: the host has no content store, and the model's answer
+is unreadable.
+
+### What the remaining two need
+
+`content_recommendation_engine` and `auto_categorize_content` share the retrieval
+half of this tool. The recommendation engine is the same machinery with a different
+prompt and no anchor text. `auto_categorize_content` needs one more dependency: the
+category list. `ContentStoreInterface` exposes `ContentQuery.taxQuery` for
+*searching* by term, not for *listing* the terms, so the tool would need a taxonomy
+read that does not exist yet — which is the honest reason it is not in this slice.
+
+### Validation
+
+`SuggestInternalLinksToolTest` (core, 11 tests: slug/capability/flags, content
+required, missing content store, no derivable topic, nothing matching, a successful
+retrieval with derived terms, **an invented id dropped and counted**, a below-floor
+relevance discarded, `max_suggestions` honoured, the `query` override, and an
+unreadable answer). Feature test
+`docker/laravel/app-skeleton/tests/Feature/SuggestInternalLinksToolTest.php`
+(4 tests against the real store: registration, a real page suggested while an
+invented id is dropped, a topic nothing covers, and a draft that matches the term
+but is not published and therefore invisible). `lib/core` 2149 / 16,414; adapter
+348 / 1,857; skeleton links + vision + text + readiness + registration +
+diagnostics 31 / 382. Auditor 241 rows / 222 servable, no violations, G6 empty.
+phpcs clean on all four files.
