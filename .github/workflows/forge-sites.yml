@@ -113,9 +113,16 @@ jobs:
           FORCE_UNLOCK: ${{ github.event.inputs.force_unlock }}
           FORGE_WORK: ${{ runner.temp }}/forge-work
           DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
-          # Build identity (2026-11-15): stamped into every page and deploy.json
-          # so the post-push check can prove the live site is THIS run's build.
-          FORGE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}
+        		  # Build identity (2026-11-15): stamped into every page and deploy.json
+        		  # so the post-push check can prove the live site is THIS run's build.
+        		  FORGE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}
+        		  # Transport cap for the CMS build. A profile can declare its own
+        		  # (`fetch.timeoutMs`, baked in as the fallback); this is the fleet-wide
+        		  # default for sources that never said. eca.directory's 1.23 MB pages
+        		  # response takes ~26s to serialise and aborted at the client's 15s
+        		  # default (run 2026-11-24). Same `vars.X || default` caveat as
+        		  # MIRROR_REPO: the default lives in the shell below, not here.
+        		  WP_FETCH_TIMEOUT_MS: ${{ vars.NVOOS_FORGE_FETCH_TIMEOUT_MS }}
         run: |
           set -euo pipefail
           MIRROR_REPO="${MIRROR_REPO:-nvdigitalsolutions/nvoos-forge-sites}"
@@ -184,7 +191,7 @@ jobs:
             node scripts/forge.mjs "sites/$name.json" --target "$target"
             node scripts/forge.mjs deploy-config "sites/$name.json" --target "$target" \
               --to velocity --mirror-repo "$MIRROR_REPO" --site-branch "$SITE_BRANCH" --runtime "$RUNTIME" --site-url "$PUBLIC_ORIGIN"
-            ( cd "$target" && npm install && ASTRO_SITE="$PUBLIC_ORIGIN" npm run build )
+        		    ( cd "$target" && npm install && WP_FETCH_TIMEOUT_MS="${WP_FETCH_TIMEOUT_MS:-60000}" ASTRO_SITE="$PUBLIC_ORIGIN" npm run build )
 
             # The per-site gates, BEFORE anything is published. Until now they
             # only ran when a human typed `forge.mjs verify`, which is exactly

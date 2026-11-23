@@ -203,6 +203,18 @@ function assertProfile( profile ) {
 		console.error( `site.json verify block: ${ verifyProblems.join( '; ' ) }` );
 		process.exit( 1 );
 	}
+	// The transport cap is baked into the generated content.config as a fallback,
+	// so a typo here would silently ship the 15s default to a source that needs
+	// 26s — the exact failure this field exists to prevent.
+	if ( profile.fetch !== undefined ) {
+		const timeoutMs = profile.fetch?.timeoutMs;
+		if ( timeoutMs !== undefined ) {
+			if ( ! Number.isFinite( timeoutMs ) || timeoutMs <= 0 || timeoutMs > 600000 ) {
+				console.error( 'site.json fetch.timeoutMs must be a positive number of milliseconds (max 600000)' );
+				process.exit( 1 );
+			}
+		}
+	}
 }
 
 // -- modes -------------------------------------------------------------------

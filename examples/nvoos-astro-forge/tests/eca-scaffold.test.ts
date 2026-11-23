@@ -8,6 +8,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
+import { readFile } from 'node:fs/promises';
 
 import {
 	ECA_COLLECTION,
@@ -255,5 +256,33 @@ describe( 'ecaScaffoldWarnings', () => {
 	it( 'warns when the stage list is emptied on purpose', () => {
 		const warnings = ecaScaffoldWarnings( profile( { eca: { stages: [] } } ) );
 		expect( warnings.some( ( line ) => line.includes( 'eca.stages' ) ) ).toBe( true );
+	} );
+} );
+
+describe( 'the committed ECA profile', () => {
+	// The fleet builds `sites/eca.json` with no env overrides. A regression here
+	// is silent — the build just spends 15s aborting — so the artifact is pinned.
+	const load = async (): Promise< SiteProfile > =>
+		JSON.parse(
+			await readFile( new URL( '../sites/eca.json', import.meta.url ), 'utf8' )
+		) as SiteProfile;
+
+	it( 'declares a transport cap the source actually needs', async () => {
+		const profile = await load();
+		// eca.directory serialises 19 Elementor pages into one 1.23 MB response
+		// that takes ~26s; the client's 15s default is the failure being prevented.
+		expect( profile.fetch?.timeoutMs ).toBeGreaterThanOrEqual( 30_000 );
+	} );
+
+	it( 'declares its stages instead of relying on the fallback', async () => {
+		const profile = await load();
+		const stages = profile.eca?.stages ?? [];
+		expect( stages.map( ( stage ) => stage.id ) ).toEqual( [
+			'junior-school',
+			'senior-school',
+		] );
+		// The warning path exists for a profile that says nothing; this one must
+		// never reach it.
+		expect( ecaScaffoldWarnings( profile ) ).toEqual( [] );
 	} );
 } );

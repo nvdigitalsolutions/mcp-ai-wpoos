@@ -1316,6 +1316,20 @@ describe( 'scaffold — hybrid local content (Proposal 106 P2)', () => {
 		// page tree is megabytes in one REST response and 15s is not enough.
 		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth, userAgent: import.meta.env.WP_USER_AGENT, timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined }) })');
 	} );
+
+	it( 'bakes the profile fetch cap as the loader fallback, env still winning', () => {
+		const out = renderContentConfig( { ...PROFILE, fetch: { timeoutMs: 60_000 } } );
+		// eca.directory needs >26s; a host that knows nothing about the source must
+		// still get a cap that fits it, so the profile value ships as the fallback.
+		expect( out ).toContain('timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || 60000');
+
+		// An unusable value is ignored rather than baked in as `|| NaN` or a
+		// negative number AbortSignal.timeout would throw on.
+		for ( const timeoutMs of [ -1, 0, Number.NaN ] ) {
+			const bad = renderContentConfig( { ...PROFILE, fetch: { timeoutMs } } );
+			expect( bad ).toContain('timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined');
+		}
+	} );
 } );
 
 describe( 'scaffold — design rebuild (Proposal 114)', () => {
