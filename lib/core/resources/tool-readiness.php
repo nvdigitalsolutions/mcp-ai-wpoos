@@ -20,6 +20,12 @@
  * unknown slug is `unverified`, so failing to classify a tool cannot make it
  * callable.
  *
+ * `replaced_by` names the canonical slug on the **WordPress** host; it is not a
+ * row in this file, because the WordPress tool with that slug is the
+ * implementation. `bin/audit-tool-readiness.php` checks the target exists in the
+ * WordPress corpus — a pointer to a slug no host serves is a 404 for the reader
+ * who follows it.
+ *
  * @package Nvoos\Core
  * @since   2.0.0
  * @license MIT
