@@ -34,6 +34,7 @@ use Nvoos\Core\Domain\Decision\AgentRequestDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestErrorDecision;
 use Nvoos\Core\Domain\Security\ChatProfile;
 use Nvoos\Core\Domain\ValueObject\CancellationToken;
+use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
@@ -1447,6 +1448,75 @@ final class ChatOrchestratorTest extends TestCase
             'Read-only mode',
             $dispatcher->router->receivedMessages[0][0]['content']
         );
+    }
+
+    // ── Turn budget (149 §179) ──────────────────────────────────
+
+    /**
+     * The ceiling has to act **before** the request leaves: a limit applied
+     * afterwards is a report, and the call that overspent is already billed.
+     */
+    public function test_a_call_over_the_per_call_ceiling_never_reaches_the_provider(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setTurnBudget(new TurnBudget(perCallTokens: 10));
+
+        $result = $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => \str_repeat('word ', 200) ) ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o', 'max_tokens' => 100 ),
+        );
+
+        $this->assertIsArray($result['response']);
+        $this->assertSame('turn_budget_exceeded', $result['response']['error']['code']);
+        $this->assertSame('call', $result['response']['error']['data']['dimension']);
+        $this->assertStringContainsString('per-call ceiling', $result['response']['error']['message']);
+        $this->assertSame('budget_limit', $result['cancel_reason']);
+        $this->assertSame(
+            array(),
+            $dispatcher->router->receivedMessages,
+            'A refused call must not reach the provider at all.'
+        );
+    }
+
+    /**
+     * The runaway case: a loop that has spent its allowance must not buy one
+     * more round-trip, however cheap that round-trip looks on its own.
+     */
+    public function test_the_loop_stops_before_a_call_that_would_cross_the_turn_ceiling(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator(
+            $this->echoTool()[0],
+            array( $this->toolCallResponse(), $this->finalResponse() )
+        );
+
+        // The first response reports 110 tokens of usage, so any ceiling at or
+        // below that is already spent when the loop reaches its second call.
+        $orchestrator->setTurnBudget(new TurnBudget(perTurnTokens: 105));
+
+        $result = $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+        );
+
+        $this->assertIsArray($result['response'], 'The loop stops with the first answer rather than an error.');
+        $this->assertSame(
+            1,
+            \count($dispatcher->router->receivedMessages),
+            'The second provider call must not be made.'
+        );
+    }
+
+    public function test_no_ceiling_configured_changes_nothing(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setTurnBudget(new TurnBudget());
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+        );
+
+        $this->assertCount(1, $dispatcher->router->receivedMessages);
     }
 
     // ── Scored tool routing ───────────────────────────────────────

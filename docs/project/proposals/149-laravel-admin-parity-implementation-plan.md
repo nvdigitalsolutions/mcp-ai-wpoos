@@ -16751,10 +16751,17 @@ Six decisions are load-bearing:
 5. **A dedicated counter, not a query over the trace.** Trace capture is opt-in
    per assistant, so a quota derived from traces would silently stop applying
    when an operator turned capture off — a fail-open in a control.
-6. **The listener is a waterfall entry, not a monotonic guard.** `tools/pre_execute`
-   is the registry's allow/deny seam, so the refusal surfaces as `tool_denied`
-   carrying the quota's own message. A guard would produce the same refusal with
-   a generic reason, which is less useful to a model deciding what to do next.
+6. **The listener is a monotonic guard**, registered by the host through
+   `afterResolving(ToolRegistry::class)`. The first attempt was a
+   `tools/pre_execute` waterfall entry, which reads better on paper — the
+   refusal would surface as `tool_denied` carrying the quota's own message — but
+   a waterfall listener has to be registered on the **exact** `EventDispatcher`
+   instance the registry captured. When that race is lost the listener never
+   fires and the quota silently never refuses, which is what happened here: the
+   unit suite passed because it constructed the orchestrator directly, and the
+   app suite failed because its container resolved the registry first. A guard is
+   held by the registry itself, so there is no instance to match and no ordering
+   to get wrong. The denial surfaces as `tool_guarded` with the same message.
 
 Two wiring traps were found and are now recorded in the code:
 
@@ -16986,3 +16993,145 @@ decision.
   surface.
 - **A preset that writes a page's fields without those fields existing.** The
   ordering in §178.1 exists to prevent exactly that.
+
+## 179. The turn's token ceilings (2026-11-23)
+
+§178.1 put `orchestration.thresholds` first among the remaining surfaces, for
+one reason: it is the **only remaining loop bound**. Iterations were capped
+(`max_agentic_iterations`), spend was capped per estate (`budgets`) and per tool
+(`tool-quotas`), but nothing capped what one *turn* could cost. A model that
+keeps calling tools was bounded only by `maxIterations × prompt size`.
+
+### 179.1 What the WordPress view is, and what of it is portable
+
+Twenty-four fields. Three of them are a loop bound; the rest configure things
+this runtime does not have.
+
+| WordPress field | Here |
+|---|---|
+| `per_call_token_limit` + `enable_per_call_limits` | **ported** — `turn_max_call_tokens` |
+| `per_session_token_limit` + `enable_per_session_limits` | **ported as per turn** — `turn_max_turn_tokens` |
+| (no equivalent) | **added** — `turn_warn_at` |
+| `memory_warning_threshold`, `memory_critical_threshold`, `error_rate_*` | not ported — they describe a health-monitoring loop that does not exist |
+| `high/medium/low_priority_budget`, `critical/warning_health_reduction` | not ported — `budgets` already enforces USD pre-flight |
+| `low/medium/high_tier_max_tokens` | not ported — needs per-user claim tiers (the multiplier reason, §176.4) |
+| `depth_capacity_*`, `speculative_block_size`, `prediction_confidence_threshold` | not ported — a DSPy/predictive pipeline that is absent (§178.1) |
+| `enable_restriction_admin_notices` | not ported — a WordPress admin-notice idiom |
+| semantic-compression trio | already enforced by `lib/core` config, not by a stored setting |
+
+**"Per session" became "per turn", deliberately.** WordPress's session spans
+requests, and it can because it has a session store bound to a user. Here the
+unit the loop owns is the **turn** — one `handleChat` invocation including every
+iteration and tool round-trip — and cross-request spend already has two homes:
+`budgets` (estate, USD) and `tool-quotas` (per tool, per day). Adding a third
+cross-request counter would be a third truth about the same money.
+
+### 179.2 What the research settled
+
+The five-layer model that recurs across gateway vendors is *per-request
+ceilings, per-session budgets, per-key monthly caps, model-tier routing, and a
+circuit breaker on spend rate*. Two of those are this surface; two already exist
+(`budgets`, the model catalogue); the breaker needs a velocity window and is not
+here.
+
+Three specifics shaped the implementation:
+
+- **A budget is not a rate limit.** *"A token budget is the maximum number of
+  input plus output tokens an agent is allowed to consume across a session or
+  time window; it is distinct from a rate limit, which caps requests per
+  minute."* So this is `TurnBudget`, not a `RateLimiter` setting.
+- **Enforce before the request goes out.** *"token counters, cost ceilings and
+  loop detectors that terminate or pause an agent when it reaches a defined
+  threshold, **before the next API call goes out**."* A ceiling applied
+  afterwards is a report, and the call that overspent is already billed.
+- **The step limit is a separate gate.** *"orchestration loop iteration limits
+  (e.g. max 5–10 steps)"* — already present as `max_agentic_iterations`, which
+  is why this surface adds tokens and not steps.
+
+### 179.3 What shipped
+
+| Layer | Piece |
+|---|---|
+| core | `Domain\ValueObject\TurnBudget` — `assess(spent, prompt, output)` returns `ok` / `warn` / `exhausted` with the deciding dimension |
+| core | `ChatOrchestrator::setTurnBudget()` + `turnBudgetVerdict()` / `turnBudgetError()` / `estimatePromptTokens()` |
+| core | `SessionLog::TYPE_BUDGET_WARNING` — the warn band's reader |
+| adapter | resolves `TurnBudget` when the host binds it; both dimensions off otherwise |
+| app | three `SettingsSchema` keys under a **Turn budget** section, tenant scope |
+| app | `TurnBudget` bound **scoped**, read from `SettingsService` |
+| app | `ToolQuotaGuard` is now a monotonic guard (§179.4) |
+
+**Two dimensions, because they fail differently.** Per-call names the specific
+cause — a single oversized prompt means too much history or too many tools — and
+per-turn is the runaway bound. The call cap is reported first, the same ordering
+`BudgetGuard` uses for an assistant limit before an estate one.
+
+**Zero means off in both dimensions**, so an estate that never opens the section
+behaves exactly as it did before. That is the same floor `tool-quotas` and
+`budgets` use.
+
+**Four enforcement points**, two per entry point: before the first provider call
+and before each continuation call, on both `handleChat` and
+`handleChatStreaming`. The check is `spent + estimate(prompt) + max_tokens`
+against each ceiling, so a loop that has spent its allowance stops rather than
+buying one more round-trip.
+
+**The warn band is not decoration.** Crossing it records
+`SessionLog::TYPE_BUDGET_WARNING` with the dimension, the limit and the
+percentage, so an operator reading a transcript can see a turn that came close
+before the one that was stopped. A band with no reader would be an inert field.
+
+The turn's exit reason is `budget_limit` on `SessionLog::TYPE_TURN_ENDED`, and
+the streaming path emits a `budget_limit` status event so the client can say why
+it stopped.
+
+### 179.4 The wiring bug this surfaced
+
+The per-tool quota check shipped in §176 as a **`tools/pre_execute` waterfall
+listener**. It passed its own suite and its CI job. Running the app suite against
+this branch, four of its assertions failed: the refused call was going through.
+
+The cause: a waterfall listener must be registered on the **exact**
+`EventDispatcher` instance the registry captured. This host binds that interface
+as a singleton (§176), which is enough for the registry and the listener to agree
+*when the registry is resolved after the binding* — but not guaranteed. When the
+registry is resolved first, the listener lands on an instance nobody dispatches
+through, `waterfall()` finds no listeners and returns the fallthrough `allow`,
+and the quota silently never refuses.
+
+The unit suite could not catch it: it constructs the orchestrator directly. The
+app suite caught it because its container resolves the registry on its own
+schedule.
+
+The fix is the registry's own mechanism — **`addGuard()`**, which is held by the
+registry object and therefore has no instance to match and no ordering to get
+wrong. The denial now surfaces as `tool_guarded` instead of `tool_denied`; the
+message is unchanged. `ToolRegistrationTest` also stopped reporting
+`dispatch_event` as unconstructible, which was the same ordering showing up from
+the other side.
+
+This is the general lesson, and it is worth stating once: **a listener that must
+be correct is a guard, and a listener that must merely observe is an event
+listener.** The dispatcher's identity is not part of its contract.
+
+### 179.5 Gates
+
+| Gate | Result |
+|---|---|
+| `TurnBudgetTest` (core) | 11 tests — off, both dimensions, ordering, spend counts, warn band, tighter dimension, band fallbacks |
+| `ChatOrchestratorTest` (core) | 59 tests / 181 assertions — including "the refused call never reaches the provider" and "the loop stops before the second call" |
+| `TurnBudgetSettingsTest` | 4 tests — defaults off, round-trip through the settings surface, warn band reaches the verdict, the section renders |
+| `ToolQuotaTest` + `ToolRegistrationTest` + `TurnBudgetSettingsTest` | 19 tests / 52 assertions |
+| tool/chat/machine/security/budget/settings/surface blast radius | **678 tests / 14,724 assertions** |
+| phpcs PSR-12 on 10 changed files | exit 0 |
+| `bin/audit-surface-ownership.php` | 59 rows · 47 built · 4 planned · 4 absent · 0 inert |
+
+`orchestration.thresholds` moved `planned` → `subset`: the loop-bound half is a
+`SettingsSchema` section with one reader and one writer, and the other twenty-one
+fields are recorded in the row's notes rather than rendered as controls that
+change nothing.
+
+With that, the only surfaces left from §176.5 are `presets` (a projection over
+this and §177), `memory-health` (read-only over the memory store), `settings`
+(a toggle-by-toggle map) and `dspark` (a decision, not a build) — plus the
+multiplier plan in §178.2, whose only prerequisite was a shared base and is now
+unblocked.
