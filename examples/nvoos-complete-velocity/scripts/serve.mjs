@@ -19,8 +19,17 @@
  * WordPress host and the app origin would never see the session.
  *
  * Backend profile: NVOOS_BACKEND=wordpress|laravel|hybrid selects the proxy
- * prefixes. The console build must use the matching VITE_NVOOS_BACKEND;
- * runtime-config.ts asserts the contract at boot (Proposal 090-B, ADR-6).
+ * prefixes AND stamps the client-side profile at runtime — the served
+ * index.html gets a same-origin `<script src="/app-config.js">` and that
+ * route answers `window.__NVOOS_BACKEND__=<profile>` from this env var. One
+ * prebuilt bundle therefore serves every runtime: a build-time
+ * VITE_NVOOS_BACKEND in the artifact is only the fallback when the stamp is
+ * absent (an older server, or `vite dev` / `vite preview`). runtime-config.ts
+ * reads the global first and asserts the contract at boot (090-B, ADR-6).
+ *
+ * The stamp is an external script, never inline: a future CSP can stay strict
+ * (`script-src 'self'`) without a nonce or hash exception (OWASP CSP cheat
+ * sheet).
  *
  * Connected-app proxy (Proposal 090-p W6): /connected/<key>/* mounts a remote
  * product same-origin so its island needs no CORS. The upstream origin comes
@@ -114,6 +123,30 @@ const BACKEND_PREFIXES = {
   ],
 };
 const PROXY_PREFIXES = BACKEND_PREFIXES[BACKEND] || BACKEND_PREFIXES.wordpress;
+
+/**
+ * Client profile stamped into the SPA at runtime.
+ *
+ * Unknown values fall back to wordpress exactly like the proxy prefixes, so a
+ * typo can never point the client at a /api surface the server will not proxy.
+ */
+const PROFILE = Object.prototype.hasOwnProperty.call(BACKEND_PREFIXES, BACKEND)
+  ? BACKEND
+  : 'wordpress';
+
+/**
+ * Runtime-config endpoint (same-origin, no cookies, no CORS).
+ *
+ * Kept as a file rather than an inline script so a strict `script-src 'self'`
+ * policy needs no nonce/hash. `no-cache` + ETag: the body only changes when a
+ * deploy restarts the process, and a 304 keeps boots cheap.
+ */
+const APP_CONFIG_PATHNAME = '/app-config.js';
+const APP_CONFIG_BODY =
+  PROFILE === 'wordpress'
+    ? '/* NV oOS console: no backend-stamped profile (wordpress default) */\n'
+    : `window.__NVOOS_BACKEND__=${JSON.stringify(PROFILE)};\n`;
+const APP_CONFIG_TAG = `<script src="${APP_CONFIG_PATHNAME}"></script>`;
 
 // Connected-app proxy (Proposal 090-p W6): a same-origin mount for remote
 // products that cannot send credentialed CORS. Off unless the operator
@@ -239,15 +272,22 @@ function pickContentEncoding(req, entry) {
   return null;
 }
 
-async function loadStaticFile(file) {
-  const cached = staticCache.get(file);
+async function loadStaticFile(file, transform) {
+  // One transform per file today (the SPA entry), so a distinct cache key is
+  // enough to keep stamped and raw variants from colliding.
+  const cacheKey = transform ? `${file}#stamped` : file;
+  const cached = staticCache.get(cacheKey);
   const st = await stat(file);
-  if (cached && cached.size === st.size && cached.mtimeMs === st.mtimeMs) {
+  // Invalidate on the SOURCE file's size/mtime: `size` below is the served
+  // (possibly stamped) length, which the source length cannot be compared to.
+  if (cached && cached.sourceSize === st.size && cached.mtimeMs === st.mtimeMs) {
     return cached;
   }
-  const identity = await readFile(file);
+  const raw = await readFile(file);
+  const identity = transform ? Buffer.from(transform(raw.toString('utf8')), 'utf8') : raw;
   const entry = {
     size: identity.length,
+    sourceSize: st.size,
     mtimeMs: st.mtimeMs,
     // Weak ETag: the body varies with Accept-Encoding (see Vary below).
     etag: `W/"${identity.length.toString(16)}-${Math.floor(st.mtimeMs).toString(16)}"`,
@@ -256,8 +296,52 @@ async function loadStaticFile(file) {
     gzip: null,
     br: null,
   };
-  if (identity.length <= STATIC_CACHE_MAX_BYTES) staticCache.set(file, entry);
+  if (identity.length <= STATIC_CACHE_MAX_BYTES) staticCache.set(cacheKey, entry);
   return entry;
+}
+
+/**
+ * Add the runtime-config script to the SPA entry HTML.
+ *
+ * Idempotent: a future build that already carries the tag (or a dist built
+ * from a template that does) is served untouched, so the script can never run
+ * twice. Module scripts are deferred, so a classic script in <head> sets the
+ * global before the bundle evaluates — no `defer`/`async` needed.
+ *
+ * @param {string} html Entry document.
+ * @returns {string}
+ */
+function stampBackendProfile(html) {
+  if (html.includes(APP_CONFIG_PATHNAME)) return html;
+  const headEnd = html.search(/<\/head\s*>/i);
+  if (headEnd === -1) return APP_CONFIG_TAG + html;
+  return html.slice(0, headEnd) + APP_CONFIG_TAG + html.slice(headEnd);
+}
+
+/**
+ * Answer the runtime-config request.
+ *
+ * @param {import('node:http').IncomingMessage}  req Request.
+ * @param {import('node:http').ServerResponse}   res Response.
+ */
+function serveAppConfig(req, res) {
+  const body = Buffer.from(APP_CONFIG_BODY, 'utf8');
+  const etag = `W/"${body.length.toString(16)}-${PROFILE}"`;
+  const headers = {
+    'Content-Type': 'text/javascript; charset=utf-8',
+    // Never let a CDN or browser pin a profile across a redeploy.
+    'Cache-Control': 'no-cache',
+    ETag: etag,
+    'Content-Length': body.length,
+    ...SECURITY_HEADERS,
+  };
+  if (etagMatches(req.headers['if-none-match'], etag)) {
+    res.writeHead(304, headers);
+    res.end();
+    return;
+  }
+  res.writeHead(200, headers);
+  res.end(String(req.method ?? 'GET').toUpperCase() === 'HEAD' ? undefined : body);
 }
 
 // --- Proxy response micro-cache ----------------------------------------
@@ -750,6 +834,11 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (url.pathname === APP_CONFIG_PATHNAME) {
+      serveAppConfig(req, res);
+      return;
+    }
+
     if (PROXY_TARGET && isProxyPath(url.pathname)) {
       proxyRequest(req, res);
       return;
@@ -784,7 +873,10 @@ const server = createServer(async (req, res) => {
       file = join(ROOT, 'index.html');
     }
 
-    const entry = await loadStaticFile(file);
+    const entry = await loadStaticFile(
+      file,
+      file.endsWith('index.html') ? stampBackendProfile : undefined,
+    );
 
     // Industry SPA caching contract: the entry HTML is never cached
     // (revalidated via ETag → 304); hashed bundle assets are immutable for
@@ -850,9 +942,12 @@ server.on('error', (error) => {
 
 server.listen(PORT, () => {
   console.log(`[nvoos-complete-console] serving ${DIST_DIR} on :${PORT}`);
+  console.log(
+    `[nvoos-complete-console] client profile=${PROFILE} (stamped via ${APP_CONFIG_PATHNAME})`,
+  );
   if (PROXY_TARGET) {
     console.log(
-      `[nvoos-complete-console] backend=${BACKEND} · proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,
+      `[nvoos-complete-console] backend=${PROFILE} · proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,
     );
     console.log(
       `[nvoos-complete-console] proxy micro-cache ${PROXY_CACHE_ENABLED ? `on (TTL cap ${PROXY_CACHE_TTL_CAP}s)` : 'off (NVOOS_PROXY_CACHE=0)'}`,

@@ -217,4 +217,22 @@ test.describe('T0 console smoke — Laravel runtime', () => {
       await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
     }
   });
+
+  test('serves the backend profile as a runtime stamp, not a build artifact', async ({
+    request,
+  }) => {
+    // One prebuilt bundle serves both runtimes: the proxy adds a same-origin
+    // external script to index.html and answers it from NVOOS_BACKEND, so the
+    // client profile can change with an env var instead of a rebuild. External
+    // (not inline) keeps a future strict `script-src 'self'` CSP workable.
+    const html = await (await request.get('/')).text();
+    expect(html).toContain('/app-config.js');
+
+    const config = await request.get('/app-config.js');
+    expect(config.status()).toBe(200);
+    expect(config.headers()['content-type']).toContain('text/javascript');
+    expect(config.headers()['cache-control']).toContain('no-cache');
+    // The e2e proxy runs with NVOOS_BACKEND=laravel (playwright.config.ts).
+    expect(await config.text()).toContain('window.__NVOOS_BACKEND__="laravel"');
+  });
 });
