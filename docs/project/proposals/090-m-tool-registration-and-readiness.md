@@ -462,3 +462,95 @@ downgrades, out-of-vocabulary status, missing status, empty report) and
 the container builds it, and the app probe set — not the package default — is
 what answers). `lib/core` 2014 tests / 15,832 assertions; adapter suite 348 /
 1,827; skeleton health + registration 14. phpcs clean on all nine files.
+
+---
+
+## 13. Addendum: system logs from stores, not files (2026-11-23)
+
+### The gap
+
+`get_system_logs` was named by presets and carried flags, with no readiness row.
+The app had the evidence all along — `/ops/audit-log` reads the append-only
+`nvoos_admin_audit` trail and the observability page reads
+`nvoos_harness_trace_records` — but an agent debugging a failed call could read
+neither.
+
+### Why this is not a `debug.log` port
+
+The WordPress tool's arguments describe a filesystem: `include_debug_log`,
+`debug_log_bytes`, `plugin_log_directories`, `plugin_log_depth`,
+`plugin_log_bytes`. Those are not ported. A log tail is unstructured, the path is
+host-specific, and pasting it into a model's context leaks absolute paths and
+hostnames. The two structured stores answer the same questions with fields.
+
+The portable arguments are kept, including the WordPress name `activity_limit`,
+because an agent that has read the WordPress schema will send it. The
+file-scanning arguments are omitted rather than accepted and ignored: a parameter
+that silently does nothing is worse than a parameter that is not offered.
+
+**Capability is `manage_options`**, not the WordPress tool's declared
+`edit_posts`. The trail is operator-only here (the page is operator-gated and
+cross-estate), and the WordPress tool enforces `manage_options` inside
+`execute()` anyway — the declaration now matches the effective rule.
+
+### The contract
+
+`Nvoos\Core\Domain\Contract\SystemLogInterface` carries entries, not lines:
+
+| Field | Meaning |
+|---|---|
+| `id` | stable, namespaced (`audit:41`, `run:01H…`) |
+| `at` | ISO 8601 UTC |
+| `source` | which store answered (`audit`, `traces`) |
+| `type` | `audit.record`, `audit.request`, `run.incomplete`, `run.aborted` |
+| `level` | `critical`, `error`, `warning`, `notice`, `deprecated` |
+| `summary`, `actor`, `detail` | what a reader needs without a second query |
+
+`levels` reuses the WordPress vocabulary so a caller's existing filter works.
+`sources()` is the answer, not a hint: a host with no queryable log returns an
+empty list and the tool says "this host keeps no queryable system log" — an empty
+list that reads as "nothing happened" is the failure mode this avoids.
+
+The tool re-applies `types`, `levels`, `since` and `search` after the host
+returns, because a host implementation is not the place to discover that a filter
+was advisory. The stores are read bounded (the tool caps at 100, the audit reader
+at 200) and sorted newest-first across sources.
+
+### The two sources, and the level mapping
+
+- **audit** — `AuditTrail::rows()`, the reader the `/ops/audit-log` page already
+  uses. Both row kinds are included: record rows ("what changed") and request
+  rows ("who tried and was refused"). `5xx` → `error`, `4xx` → `warning`, `2xx`
+  → `notice`, and a record row → `notice`.
+- **traces** — `TraceRuns::recent()`. Only `incomplete` (no `end` record) and
+  `aborted` runs become entries: `error` and `warning` respectively. A completed
+  run is not a log event, and fifty healthy turns would bury the two that failed.
+
+`AuditTrail` gained a `since` filter (`created_at >= ?`). The page does not pass
+it, so its behaviour is unchanged; the tool needs the predicate *before* the
+limit, because filtering after a bounded read under-returns silently.
+
+### The nullable collaborator, on purpose
+
+`GetSystemLogsTool` takes `?SystemLogInterface $log = null`. That is the
+registrar's documented "this host has no such service" seam: `class_exists()` is
+false for an interface, so an unbound optional collaborator receives its default
+instead of failing the build. The adapter suite therefore constructs the tool
+with `null` and registers it; `AppServiceProvider` binds the app implementation,
+so the same tool answers with two sources here. Verified in the skeleton test,
+which asserts `sources === ['audit','traces']`.
+
+### Validation
+
+`GetSystemLogsToolTest` (core, 9 tests: ordering and cap, limit clamp, type/level
+re-filtering against a host that ignores them, search over summary/actor/detail,
+`2h` and bare-number windows captured from the host query, unparseable `since`,
+null service, empty source list) and
+`docker/laravel/app-skeleton/tests/Feature/GetSystemLogsToolTest.php` (3 tests
+against real rows: the container builds it, a 403 request row becomes a `warning`
+with `(system)` as actor, a change row becomes a `notice` with `has_diff`, and
+type/level filters apply). `lib/core` 2025 / 15,865; adapter 348 / 1,828;
+skeleton tool + registration 9. phpcs clean on all eight files.
+
+`mcp_server_info` remains the only member of the original four with no manifest
+row; it still needs the runtime identity contract described in §11.

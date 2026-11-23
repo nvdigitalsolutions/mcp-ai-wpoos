@@ -41,7 +41,7 @@ final class AuditTrail
      * because a compliance export that silently stops at 200 rows would look
      * complete. The default keeps the page honest about its window.
      *
-     * @param array{panel?: string, estate?: string, kind?: string, status?: string, search?: string} $filters
+     * @param array{panel?: string, estate?: string, kind?: string, status?: string, search?: string, since?: string} $filters
      * @return list<array<string, mixed>>
      */
     public static function rows(array $filters = array(), int $limit = self::LIMIT): array
@@ -182,7 +182,7 @@ final class AuditTrail
     }
 
     /**
-     * @param array{panel?: string, estate?: string, kind?: string, status?: string, search?: string} $filters
+     * @param array{panel?: string, estate?: string, kind?: string, status?: string, search?: string, since?: string} $filters
      */
     private static function applyFilters(Builder $query, array $filters): void
     {
@@ -191,6 +191,13 @@ final class AuditTrail
         $kind = trim((string) ($filters['kind'] ?? ''));
         $status = trim((string) ($filters['status'] ?? ''));
         $search = strtolower(trim((string) ($filters['search'] ?? '')));
+        // Already-UTC `Y-m-d H:i:s`; the caller converts an ISO timestamp so the
+        // comparison does not depend on MySQL parsing a `T`/`Z` form.
+        $since = trim((string) ($filters['since'] ?? ''));
+
+        if ('' !== $since) {
+            $query->where('created_at', '>=', $since);
+        }
 
         if ('' !== $panel) {
             $query->where('panel', $panel);

@@ -997,6 +997,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/GetStudentToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_system_logs' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GetSystemLogsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/GetSystemLogsToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_task_dependencies' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetTaskDependenciesTool',
 			'readiness' => 'ready',

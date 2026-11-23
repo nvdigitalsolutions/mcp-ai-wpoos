@@ -25,6 +25,7 @@ use App\Support\CapabilityMap;
 use App\Support\CredentialStore;
 use App\Support\Diagnostics\RoutingMetricStore;
 use App\Support\Health\SiteHealthReport;
+use App\Support\Logs\SystemLog;
 use App\Support\Models\ModelCatalogueLookup;
 use App\Support\Orchestration\AssistantAgentRunner;
 use App\Support\Orchestration\TenantContextResolver;
@@ -72,6 +73,7 @@ use Nvoos\Core\Domain\Contract\ProfessionOverlayInterface;
 use Nvoos\Core\Domain\Contract\ProfessionWriteInterface;
 use Nvoos\Core\Domain\Contract\RoutingMetricsInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\SystemLogInterface;
 use Nvoos\Core\Domain\Contract\TeamServiceInterface;
 use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
@@ -183,6 +185,12 @@ class AppServiceProvider extends ServiceProvider
         // scheduler, so it replaces the binding with the same probe set the
         // `/ops/site-health` page renders.
         $this->app->singleton(HealthReportInterface::class, SiteHealthReport::class);
+
+        // System logs for `get_system_logs` (Proposal 090-M §13). The package has
+        // no log store, so the tool's collaborator is optional there; this
+        // binding is what makes it answer here — the audit trail the `/ops/audit-log`
+        // page reads, plus failed and aborted harness runs.
+        $this->app->singleton(SystemLogInterface::class, SystemLog::class);
 
         // Approval tickets (Proposal 149 §157). The necessity gate records a
         // ticket when a call needs a human and spends it on the retry. Kept out
