@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool readiness manifest — Proposal 090-M.
  *
@@ -1160,6 +1161,14 @@ return array(
 			'readiness' => 'ready',
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'list_mcp_tools' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ListMcpToolsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ListMcpToolsToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_openai_files' => array(
