@@ -32,6 +32,7 @@ use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
+use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
@@ -59,7 +60,6 @@ use Nvoos\Core\Domain\Service\Harness\OutputGuardrail;
 use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
 use Nvoos\Core\Domain\Contract\TraceStoreInterface;
@@ -305,6 +305,7 @@ class NvoosServiceProvider extends ServiceProvider {
 					$registry,
 					$app->make( ChatProfileResolverInterface::class ),
 					(bool) ( $profiles['block_undeclared'] ?? true ),
+					$this->flagOverrides( $app ),
 				)
 			);
 		} );
@@ -325,6 +326,7 @@ class NvoosServiceProvider extends ServiceProvider {
 					(array) ( $readOnly['gated_flags'] ?? ReadOnlyToolGuard::DEFAULT_GATED_FLAGS ),
 					(array) ( $readOnly['allowed_slugs'] ?? array() ),
 					(bool) ( $readOnly['block_undeclared'] ?? true ),
+					$this->flagOverrides( $app ),
 				)
 			);
 		} );
@@ -350,7 +352,7 @@ class NvoosServiceProvider extends ServiceProvider {
 				? \array_values( \array_map( 'strval', $gate['pre_approved'] ) )
 				: null;
 
-			$registry->addGuard( new NecessityGuard( $registry, true, $approvals, $preApproved ) );
+			$registry->addGuard( new NecessityGuard( $registry, true, $approvals, $preApproved, $this->flagOverrides( $app ) ) );
 		} );
 
 		// Provider router — configured once; holds mutable health/fallback
@@ -567,5 +569,27 @@ class NvoosServiceProvider extends ServiceProvider {
 		}
 
 		$registry->notifyRegistered();
+	}
+
+	/**
+	 * The host's per-tool capability-flag additions, when a host binds them.
+	 *
+	 * The three flag-reading guards (read-only, chat profile, necessity) take this
+	 * as an optional dependency. Absent binding means "no overrides", which is the
+	 * same behaviour every runtime had before the port, so a host that does not
+	 * implement the contract is unaffected.
+	 *
+	 * The contract is **addition-only** (see
+	 * {@see CapabilityFlagOverridesInterface}): a host can make a tool stricter,
+	 * never looser, and an undeclared tool stays undeclared. That is what keeps a
+	 * stored override from becoming an authority grant.
+	 *
+	 * @param \Illuminate\Contracts\Foundation\Application $app Container.
+	 * @return CapabilityFlagOverridesInterface|null
+	 */
+	private function flagOverrides( $app ): ?CapabilityFlagOverridesInterface {
+		return $app->bound( CapabilityFlagOverridesInterface::class )
+			? $app->make( CapabilityFlagOverridesInterface::class )
+			: null;
 	}
 }

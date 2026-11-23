@@ -170,15 +170,15 @@
     },
     {
       "id": "orchestration.tool-overrides",
-      "title": "Tool orchestration settings (per-tool flags and force-sync)",
+      "title": "Tool capability-flag overrides",
       "audience": "tenant-admin",
       "ops": null,
-      "admin": { "state": "planned" },
+      "admin": { "state": "full" },
       "console": null,
-      "writer": "none",
+      "writer": "admin",
       "plan_gate": null,
-      "files": [],
-      "notes": "Recorded 2026-11-23 (§176). The WordPress `orchestration` -> `tools` view writes per-tool capability-flag overrides (`wp_mcp_ai_tool_capability_flags`) and a force-synchronous set (`wp_mcp_ai_tool_force_sync`). It was invisible here because §167's inventory was never re-derived from the WordPress menu. NOT the same surface as `tools`: that row is the read-only catalogue and stays `writer: none`. The prerequisite is a seam, not a page — guards read flags through `ToolResolverInterface`, so the override belongs in a resolver decorator, and it must be NARROW-ONLY (a flag may be added to the gated set, never removed): an estate-level control that could clear `read-only` or `destructive` would be an authority grant dressed as a setting. MCP's own position is that annotations are untrusted hints and the contract lives in the runtime, which is what makes widen-only-overrides indefensible."
+      "files": ["app/Filament/Admin/Pages/ToolFlagOverrides.php"],
+      "notes": "Shipped 2026-11-23 (§177) as `/admin/tool-overrides`, ADDITION-ONLY. The WordPress view also writes `wp_mcp_ai_tool_force_sync`; that half is NOT ported because this runtime has no asynchronous tool path, so the toggle would render and change nothing (`inert`). The seam is a core port (`CapabilityFlagOverridesInterface`) consulted by `ReadOnlyToolGuard`, `ChatProfileGuard` and `NecessityGuard` through one resolver (`CapabilityFlagResolution`), because most core tools declare no flags at all and the guards fall back to `ToolCapabilityFlagCatalogue` — a decorator around the tool object would have missed the majority. The port has no remove method: a stored removal would let an estate clear the very flag its own read-only profile refuses on, so widen is unrepresentable rather than merely rejected. Only `CapabilityFlagVocabulary::READ_ONLY_GATED` may be added, and an undeclared tool cannot be overridden at all (it is already refused, and adding a flag would turn unknown into known-and-safe). Original record follows. The WordPress `orchestration` -> `tools` view writes per-tool capability-flag overrides (`wp_mcp_ai_tool_capability_flags`). It was invisible here because §167's inventory was never re-derived from the WordPress menu. NOT the same surface as `tools`: that row is the read-only catalogue and stays `writer: none`."
     },
     {
       "id": "orchestration.thresholds",

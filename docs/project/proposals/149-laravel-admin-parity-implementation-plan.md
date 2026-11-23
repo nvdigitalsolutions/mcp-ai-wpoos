@@ -16801,3 +16801,188 @@ the decision, and the contract now says so where a reader will look.
 | phpcs PSR-12 on the 12 gated files | exit 0 |
 | `bin/check-license-boundary.sh` | intact |
 | `bin/audit-surface-ownership.php` | 59 rows, 45 filament-built, 6 planned, 4 absent, 0 inert |
+
+## 177. Tool capability-flag overrides, addition-only (2026-11-23)
+
+§176.5 ordered six remaining views and named this one first, with the seam it
+needed: *"a narrow-only decorator over `ToolResolverInterface` — guards already
+read flags through it."* Implementing it changed the seam, and the reason is the
+one thing worth reading in this section.
+
+### 177.1 The decorator would not have worked
+
+Only the tools ported *late* implement `ToolCapabilityFlagsInterface`. The bulk
+of the corpus declares nothing on the object, and both flag-reading guards fall
+back to the code-owned `ToolCapabilityFlagCatalogue`:
+
+```php
+$declared = $tool instanceof ToolCapabilityFlagsInterface
+    ? CapabilityFlagVocabulary::normalise( $tool->getCapabilityFlags() )
+    : array();
+
+if ( array() === $declared ) {
+    $declared = CapabilityFlagVocabulary::normalise( ToolCapabilityFlagCatalogue::for( $slug ) );
+}
+```
+
+A decorator around the resolved tool is therefore seen only by the minority of
+tools that would never need an override. Worse, it would *look* correct: the
+wrapped object answers flags, the guard asks the wrapped object, the tests over a
+modern tool pass. The gap would show up only on the ported classes — which is
+where the under-declarations actually are.
+
+Three readers had this same three-step lookup: `ReadOnlyToolGuard`,
+`NecessityGuard` and (via the `ReadOnlyToolGuard` it builds) `ChatProfileGuard`.
+Adding overrides to three copies would have been three chances to disagree about
+the order, which is the bug class `CapabilityFlagVocabulary` exists to end.
+
+So the override landed as:
+
+| Layer | Piece |
+|---|---|
+| core port | `CapabilityFlagOverridesInterface::addedFlags(string $slug): array` |
+| core resolver | `CapabilityFlagResolution::resolve($slug, $tool, $overrides)` — one lookup, `null` when nothing declares |
+| core guards | `ReadOnlyToolGuard`, `NecessityGuard` and `ChatProfileGuard` take the port as an optional fifth/fourth argument |
+| adapter | `NvoosServiceProvider::flagOverrides()` — resolves the port when a host binds it, `null` otherwise |
+| app | `ToolFlagOverrideStore` implements the port over `nvoos_tool_flag_overrides` |
+| app | `/admin/tool-overrides`, writable, in `Knowledge` beside the catalogue and the quotas |
+
+`ToolRouterHarness` is deliberately **not** wired to the port. Its `flagsOf()`
+reads only the tool object and never consults the catalogue, so it is a routing
+heuristic rather than a safety control; adding an override there would change the
+order tools are offered in, which is not what the estate asked for.
+
+### 177.2 Addition-only is a type, not a validation
+
+The contract has `addedFlags()` and no `removedFlags()`. There is no column, no
+form control and no store method for removal either.
+
+This is stronger than validating input at the door. A stored removal of
+`destructive` or `write` would let an estate clear the exact flag its own
+read-only profile refuses on — an authority grant wearing a settings page's
+clothes. MCP's position is that annotations are untrusted hints and the contract
+belongs in the authorization layer, *"or the runtime"*; leaving removal
+unrepresentable keeps the runtime the authority and lets it only become
+stricter.
+
+Two supporting rules make the guarantee total:
+
+1. **Only the gate set may be added.** `allowedFlags()` is
+   `CapabilityFlagVocabulary::READ_ONLY_GATED` — the eight flags the runtime
+   already refuses on. A flag outside it (`cacheable`, `read-only`, …) could
+   relax a verdict if added, so it is not offerable at all.
+2. **Undeclared stays undeclared.** `CapabilityFlagResolution` returns `null`
+   before it looks at overrides, because adding a non-gated flag to a tool that
+   declares nothing would flip it from "unknown" to "known and safe" — a widen
+   dressed as a narrowing. The page refuses the save and says why.
+
+The page also computes its "effective" column through the same resolver the
+guards call, so the page cannot claim an override applies where the guard would
+ignore it.
+
+### 177.3 `force_sync` is not ported
+
+The WordPress view writes a second thing: `wp_mcp_ai_tool_force_sync`, which
+pins a tool to synchronous execution. This runtime has no asynchronous tool path
+— `ToolRegistry::execute()` runs the body inline and the `async`,
+`background-only` and `deferred-result` flags are declarations that nothing in
+the execution path reads. A `force_sync` toggle here would render, save, and
+change no behaviour: `inert`, which this contract refuses to count as parity.
+
+It is recorded in the row's notes rather than built. If an asynchronous executor
+ever lands, the toggle becomes meaningful at that moment and not before.
+
+### 177.4 Gates
+
+| Gate | Result |
+|---|---|
+| core guards (`ReadOnlyToolGuardTest`, `ChatProfileGuardTest`, `NecessityGuardTest`) | 35 tests / 47 assertions |
+| `ToolFlagOverrideTest` | **10 tests / 24 assertions** — restrict, no-profile, write-user, non-gated filtered, mixed save, undeclared, union, estate scoping, page, viewer refusal |
+| with `SurfaceOwnershipTest` + `AdminNavigationTest` + `ToolQuotaTest` | 33 tests / 659 assertions |
+| tool/chat/machine/security blast radius | **561 tests / 3,358 assertions** |
+| phpcs PSR-12 on 13 changed files | exit 0 |
+| `bin/check-license-boundary.sh` | intact |
+| `bin/audit-surface-ownership.php` | 59 rows · 46 filament-built · 5 planned · 4 absent · 0 inert |
+
+The contract row `orchestration.tool-overrides` moved from `planned` to `full`,
+and its note now records why the seam is a port and why `force_sync` is absent.
+
+## 178. The rest of the two tabs, and the multiplier question (2026-11-23)
+
+Four surfaces remain from §176.5, one is a decision rather than a build, and the
+multiplier that §176.4 declined now has a condition under which it earns its
+place.
+
+### 178.1 Order and prerequisites
+
+| Order | Surface | Prerequisite | Why it is ordered here |
+|---|---|---|---|
+| 1 | `orchestration.thresholds` | a `lib/core` contract for per-call and per-session ceilings | the only remaining **loop bound**: `tokenBudget` is one deployment value, so a page over it would be a second truth or a no-op |
+| 2 | `orchestration.presets` | 1 + §177 | a preset is a projection over the threshold group and the flag overrides; before those exist it is a button that writes nothing |
+| 3 | `orchestration.memory-health` | 1 (for its bands) | read-only summary over the memory store; it renders the warn/critical bands that surface 1 owns |
+| 4 | `orchestration.dspark` | a decision, not code | the WordPress page configures a Python DSPy pipeline that is absent here; a page would describe software this runtime does not run |
+| — | `orchestration.settings` | a toggle-by-toggle reader map | 35 toggles, most configuring absent software (RabbitMQ, SSE duration, cron orchestration). §104's rule applies: hide the ones with no reader rather than disable them |
+
+`orchestration.settings` is last on purpose. Building it first would produce the
+largest page with the smallest honest content — the failure §104 already spent a
+slice undoing on the authentication tab.
+
+### 178.2 The multiplier: what it is in WordPress, and when it is needed here
+
+WordPress resolves a limit as **`tier_base × tool_multiplier`**:
+
+```php
+$base_limit = self::$tier_limits[ $tier ];          // free 50k / pro 200k / enterprise 1M
+$multiplier = self::get_tool_multiplier( $tool );   // run_crawl4ai_job 2.0, web_browser 2.5
+$limit      = (int) ( $base_limit * $multiplier );
+```
+
+The multiplier is **> 1 for verbose tools**, not for dangerous ones: a crawler
+gets *more* allowance because its result is large. It is a **normaliser** for
+output size, not a risk weight.
+
+Two facts decide whether it earns a place here:
+
+- **§176 metered the actual size.** The counter is `strlen(result) / 4`, so the
+  verbosity the multiplier compensates for is already in the number. With a
+  per-tool limit set explicitly, an operator can simply give a crawler a bigger
+  number. A multiplier over an explicit limit would be arithmetic the operator
+  already did.
+- **There is no tier base.** This runtime has no claim tiers, so there is
+  nothing to multiply. That is why §176.4 declined it — correctly, at the time.
+
+So the multiplier becomes meaningful **only when there is one number to
+configure all tools**. That is a real product need once an estate has more than a
+handful of quotas: setting 200 rows by hand is how a control gets abandoned.
+
+**Recommended design — the estate default replaces the tier:**
+
+| Piece | Value |
+|---|---|
+| config | `oos.tool_quotas.default_daily_tokens` (0 = no default, today's behaviour) |
+| column | `nvoos_tool_quotas.multiplier` decimal(6,3), default 1.000 |
+| column | `nvoos_tool_quotas.daily_tokens` becomes **nullable** |
+| resolve | `daily_tokens IS NOT NULL` → explicit; `NULL` → `round(default × multiplier)`; both null/0 → unlimited |
+
+`NULL` for "inherit" and `0` for "unlimited" keeps the two states
+distinguishable. Reusing `0` for both would give one value two meanings
+depending on configuration, which is the footgun §176.3 decision 2 was written
+to avoid.
+
+**Effort:** one alter migration, one store method, one column on the page, and a
+handful of tests — small, because the counter and the guard do not change. The
+guard already asks `limitFor($slug)`; only that function learns a fallback.
+
+**Recommendation:** build it **after** `orchestration.thresholds`, and only if
+the estate-default is wanted. Without a default, a multiplier is inert by the
+same argument §176.4 used, and this section would be re-litigating its own
+decision.
+
+### 178.3 What is deliberately not in this plan
+
+- **Per-site token reporting.** The unit is the estate; a "per site" page would
+  be the estate rows under a misleading label (§176.4).
+- **RabbitMQ.** Queues run on the database/Redis driver; `/ops/queue` is that
+  surface.
+- **A preset that writes a page's fields without those fields existing.** The
+  ordering in §178.1 exists to prevent exactly that.

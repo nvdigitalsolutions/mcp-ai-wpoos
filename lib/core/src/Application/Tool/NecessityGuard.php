@@ -38,12 +38,12 @@ declare(strict_types=1);
 namespace Nvoos\Core\Application\Tool;
 
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
-use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ToolGuardInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagResolution;
 use Nvoos\Core\Domain\Service\Safety\NecessityGate;
-use Nvoos\Core\Domain\Service\Safety\ToolCapabilityFlagCatalogue;
 use Nvoos\Core\Domain\ValueObject\ApprovalRequest;
 
 final class NecessityGuard implements ToolGuardInterface
@@ -53,6 +53,7 @@ final class NecessityGuard implements ToolGuardInterface
         private readonly bool $enabled = true,
         private readonly ?ApprovalTicketInterface $approvals = null,
         private readonly ?array $preApproved = null,
+        private readonly ?CapabilityFlagOverridesInterface $overrides = null,
     ) {
     }
 
@@ -73,16 +74,12 @@ final class NecessityGuard implements ToolGuardInterface
             return null;
         }
 
-        $flags = $tool instanceof ToolCapabilityFlagsInterface
-            ? $tool->getCapabilityFlags()
-            : array();
-
-        if (array() === $flags) {
-            // The core tool classes carry no flags of their own, so the corpus
-            // catalogue supplies what WordPress declared. Absence stays empty,
-            // and the gate's own "undeclared is not safe" rule takes over.
-            $flags = ToolCapabilityFlagCatalogue::for($slug);
-        }
+        // The core tool classes carry no flags of their own, so the corpus
+        // catalogue supplies what WordPress declared. `CapabilityFlagResolution`
+        // owns that lookup plus the administrator's additions, so this gate and
+        // the read-only guard cannot disagree about a tool's flags. Absence stays
+        // null, and the gate's own "undeclared is not safe" rule takes over.
+        $flags = CapabilityFlagResolution::resolve($slug, $tool, $this->overrides) ?? array();
 
         $decision = NecessityGate::decide($flags, $slug, $arguments, null, null, $this->preApproved);
 
