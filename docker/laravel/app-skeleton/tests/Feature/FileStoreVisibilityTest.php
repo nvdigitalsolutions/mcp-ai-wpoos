@@ -123,7 +123,62 @@ final class FileStoreVisibilityTest extends TestCase
         $this->assertSame($file->id, $meta->id);
         $this->assertSame('round-trip.txt', $meta->filename);
         $this->assertSame('private', $meta->visibility);
+        $this->assertSame('round-trip', $meta->slug);
         $this->assertTrue($meta->isPrivate());
+    }
+
+    public function test_a_duplicate_name_gets_the_next_slug_and_keeps_its_case(): void
+    {
+        // WordPress appends -2, -3 (wp_unique_post_slug) and keeps the title's
+        // case while lowercasing the slug. §162.8 does the same.
+        $store = $this->store();
+
+        $first = $store->storeWithVisibility(
+            $this->source('first notes', 'txt'),
+            'Notes.txt',
+            'text/plain',
+            7,
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE
+        );
+
+        $second = $store->storeWithVisibility(
+            $this->source('second notes', 'txt'),
+            'Notes.txt',
+            'text/plain',
+            7,
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE
+        );
+
+        $this->assertSame('notes', $first->slug);
+        $this->assertSame('notes-2', $second->slug);
+        $this->assertSame('Notes.txt', $first->filename, 'The display name keeps its case.');
+        $this->assertSame('notes', DB::table('nvoos_files')->where('id', $first->id)->value('slug'));
+    }
+
+    public function test_the_slug_is_unique_per_estate_not_globally(): void
+    {
+        $store = $this->store();
+
+        $a = $store->storeWithVisibility(
+            $this->source('estate a notes', 'txt'),
+            'Notes.txt',
+            'text/plain',
+            7,
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE,
+            'default'
+        );
+
+        $b = $store->storeWithVisibility(
+            $this->source('estate b notes', 'txt'),
+            'Notes.txt',
+            'text/plain',
+            7,
+            FileVisibilityStoreInterface::VISIBILITY_PRIVATE,
+            'estate-b'
+        );
+
+        $this->assertSame('notes', $a->slug);
+        $this->assertSame('notes', $b->slug, 'A second estate may use the same slug.');
     }
 
     public function test_delete_removes_the_row_and_the_bytes(): void

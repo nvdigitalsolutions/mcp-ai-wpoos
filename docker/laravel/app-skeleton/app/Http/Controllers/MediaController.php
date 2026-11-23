@@ -165,6 +165,28 @@ class MediaController
     }
 
     /**
+     * The media slug — Proposal 162 §162.8.
+     *
+     * A column, not a derivation. WordPress keeps `post_name` separate from
+     * `post_title` and makes it unique per site; deriving it here meant a change
+     * to how the file registry sanitises a *display* name silently moved every
+     * slug, which is how `slug: Pixel` reached this endpoint.
+     *
+     * Rows written before the column existed have no slug and fall back to the
+     * filename stem — what this endpoint used to do for every row. They are not
+     * backfilled: a backfill would have to invent uniqueness across rows that
+     * never had any, and guessing is worse than a documented fallback.
+     */
+    private function slugOf(object $row): string
+    {
+        $slug = trim((string) ($row->slug ?? ''));
+
+        return '' !== $slug
+            ? $slug
+            : pathinfo((string) ($row->filename ?? ''), PATHINFO_FILENAME);
+    }
+
+    /**
      * Map an `nvoos_files` row onto the wp/v2 media shape.
      *
      * @return array<string, mixed>
@@ -179,7 +201,7 @@ class MediaController
         return [
             'id' => (int) $row->id,
             'date' => $created?->format('Y-m-d\TH:i:s'),
-            'slug' => pathinfo($filename, PATHINFO_FILENAME),
+            'slug' => $this->slugOf($row),
             'type' => 'attachment',
             'title' => ['rendered' => $filename],
             'caption' => ['rendered' => ''],

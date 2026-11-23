@@ -242,13 +242,14 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 		$displayName = $this->displayName( $filename, $extension );
 		$checksum    = (string) \hash_file( 'sha256', $localPath );
 		$now         = \now();
+		$tenant      = $this->tenantSlug( $tenantId );
 
-		$id = (int) DB::table( 'nvoos_files' )->insertGetId(
+		[$id, $slug] = $this->insertRow(
 			array(
 				'path'       => $path,
 				'disk'       => $diskName,
 				'filename'   => $displayName,
-				'tenant_id'  => $this->tenantSlug( $tenantId ),
+				'tenant_id'  => $tenant,
 				'mime_type'  => $sniffed,
 				'size_bytes' => (int) $size,
 				'visibility' => $visibility,
@@ -258,6 +259,8 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 				'created_at' => $now,
 				'updated_at' => $now,
 			),
+			$tenant,
+			$filename,
 		);
 
 		return new StoredFile(
@@ -273,10 +276,12 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 				'disk'       => $diskName,
 				'path'       => $path,
 				'checksum'   => $checksum,
-				'tenant_id'  => $this->tenantSlug( $tenantId ),
+				'tenant_id'  => $tenant,
 				'visibility' => $visibility,
+				'slug'       => $slug,
 			),
 			visibility: $visibility,
+			slug: $slug,
 		);
 	}
 
@@ -337,6 +342,7 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 			publicUrl: $url,
 			metadata: $this->decodeMetadata( $row->metadata ?? null ),
 			visibility: $visibility,
+			slug: (string) ( $row->slug ?? '' ),
 		);
 	}
 
@@ -464,6 +470,50 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 	}
 
 	/**
+	 * Insert the row, retrying when two uploads race for one slug.
+	 *
+	 * The unique index on `(tenant_id, slug)` is the authority; the computed slug
+	 * is only a guess that is usually right. On a collision the recompute sees the
+	 * winner's row and picks the next suffix, which is why the retry is bounded
+	 * rather than absent — and why a collision is not surfaced as an upload
+	 * failure.
+	 *
+	 * @param array<string, mixed> $row
+	 * @return array{0: int, 1: string} The new id and the slug it took.
+	 */
+	private function insertRow( array $row, string $tenant, string $originalName ): array {
+		$stem = $this->slugStem( $originalName );
+
+		for ( $attempt = 1; ; $attempt++ ) {
+			$row['slug'] = $this->uniqueSlug( $tenant, $stem );
+
+			try {
+				$id = (int) DB::table( 'nvoos_files' )->insertGetId( $row );
+
+				return array( $id, (string) $row['slug'] );
+			} catch ( \Illuminate\Database\QueryException $exception ) {
+				// The index is the authority, not the guess. Three losses in a row
+				// means this is not a race, so surface the driver's error instead of
+				// spinning.
+				if ( $attempt >= 3 || ! $this->isUniqueViolation( $exception ) ) {
+					throw $exception;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Did this insert lose to the unique index?
+	 */
+	private function isUniqueViolation( \Illuminate\Database\QueryException $exception ): bool {
+		$message = \strtolower( $exception->getMessage() );
+
+		return '23000' === (string) $exception->getCode()
+			|| \str_contains( $message, 'unique' )
+			|| \str_contains( $message, 'duplicate entry' );
+	}
+
+	/**
 	 * A filesystem-safe estate segment.
 	 */
 	private function tenantSlug( ?string $tenantId ): string {
@@ -474,28 +524,79 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 		return '' !== $tenant ? \substr( $tenant, 0, 64 ) : 'default';
 	}
 
-	    /**
-	     * The display name, sanitised the way WordPress sanitises an upload.
-	     *
-	     * `sanitize_file_name()` is the parity reference: lowercase, runs of
-	     * whitespace and punctuation collapsed to a single dash, dots kept so the
-	     * name still reads as a filename. The extension is then forced to the
-	     * sniffed one, so the stored name cannot claim a type the bytes do not have.
-	     *
-	     * Lowercasing is not cosmetic. The `wp/v2/media` surface derives `slug` from
-	     * this name, and a slug of `Pixel` where WordPress emits `pixel` is a parity
-	     * difference a client can see.
-	     */
-	    private function displayName( string $filename, string $extension ): string {
-	        $base = \pathinfo( \basename( $filename ), PATHINFO_FILENAME );
-	        $base = \strtolower( $base );
-	        $base = (string) \preg_replace( '/[^a-z0-9._-]+/', '-', $base );
-	        $base = (string) \preg_replace( '/-{2,}/', '-', $base );
-	        $base = \trim( $base, '-.' );
-	        $base = \substr( '' !== $base ? $base : 'file', 0, 120 );
+	/**
+	 * The display name — the library's title.
+	 *
+	 * Sanitised the way `sanitize_file_name()` does *except* for case: WordPress
+	 * keeps the title's case and lowercases only the slug, and §162.8 splits the
+	 * two the same way. The extension is forced to the sniffed one, so a stored
+	 * title cannot claim a type the bytes do not have.
+	 */
+	private function displayName( string $filename, string $extension ): string {
+		$base = \pathinfo( \basename( $filename ), PATHINFO_FILENAME );
+		$base = (string) \preg_replace( '/[^A-Za-z0-9._-]+/', '-', $base );
+		$base = (string) \preg_replace( '/-{2,}/', '-', $base );
+		$base = \trim( $base, '-.' );
+		$base = \substr( '' !== $base ? $base : 'file', 0, 120 );
 
-	        return \rtrim( $base, '-.' ).'.'.$extension;
-	    }
+		return \rtrim( $base, '-.' ).'.'.$extension;
+	}
+
+	/**
+	 * The slug stem: lowercase, hyphenated, no extension.
+	 *
+	 * `wp_unique_post_slug()` is the reference for everything after this — the
+	 * stem is the input, uniqueness is applied by `uniqueSlug()`.
+	 */
+	private function slugStem( string $filename ): string {
+		$stem = \pathinfo( \basename( $filename ), PATHINFO_FILENAME );
+		$stem = \strtolower( $stem );
+		$stem = (string) \preg_replace( '/[^a-z0-9]+/', '-', $stem );
+		$stem = \trim( $stem, '-' );
+
+		return \substr( '' !== $stem ? $stem : 'file', 0, 120 );
+	}
+
+	/**
+	 * The first free slug for this estate — `pixel`, `pixel-2`, `pixel-3` …
+	 *
+	 * WordPress starts its suffix at 2, and so does this. The search is bounded:
+	 * after 99 collisions a short random tail is appended rather than walking an
+	 * unbounded loop on a hostile name.
+	 */
+	private function uniqueSlug( string $tenant, string $stem ): string {
+		if ( ! $this->slugTaken( $tenant, $stem ) ) {
+			return $stem;
+		}
+
+		for ( $suffix = 2; $suffix <= 99; $suffix++ ) {
+			$candidate = $stem.'-'.$suffix;
+
+			if ( ! $this->slugTaken( $tenant, $candidate ) ) {
+				return $candidate;
+			}
+		}
+
+		return $stem.'-'.\substr( \strtolower( (string) Str::ulid() ), -6 );
+	}
+
+	/**
+	 * Is this slug already used in this estate?
+	 *
+	 * Legacy rows carry a null slug and therefore never collide — they have no
+	 * slug to route on, and pretending otherwise would refuse new uploads because
+	 * of rows that predate the column.
+	 */
+	private function slugTaken( string $tenant, string $slug ): bool {
+		if ( ! Schema::hasTable( 'nvoos_files' ) || ! Schema::hasColumn( 'nvoos_files', 'slug' ) ) {
+			return false;
+		}
+
+		return DB::table( 'nvoos_files' )
+			->where( 'tenant_id', $tenant )
+			->where( 'slug', $slug )
+			->exists();
+	}
 
 	/**
 	 * Sniffed MIME type, or null when the bytes are unreadable.
