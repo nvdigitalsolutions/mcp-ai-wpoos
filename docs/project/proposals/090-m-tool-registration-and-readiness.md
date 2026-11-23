@@ -1817,3 +1817,60 @@ nothing, and a term-free taxonomy returning a finding without a completion).
 `lib/core` 2,225 / 16,639; adapter 350 / 1,872; auditor 244 rows / 225 servable, no
 violations. phpcs clean under both the PSR-12 ruleset (core, Laravel adapter, skeleton)
 and the WordPress ruleset (the WordPress adapter).
+
+## 27. Two promises declined with evidence (2026-11-24)
+
+Both of the remaining "just port it" items turned out to need a decision rather than a
+port. Recording the evidence so the next session does not rediscover it.
+
+### `run_openai_external_action` posts a payload no OpenAI endpoint accepts
+
+The WordPress tool sends `POST https://api.openai.com/v1/responses` with:
+
+- `action_type = workflow`: `metadata`, `workflow_id`, `inputs`, `input`.
+- `action_type = assistant`: `metadata`, `assistant_id`, `input` (a messages array).
+
+The Responses API's create method takes `model`, `input`, `instructions`, `tools`,
+`previous_response_id`, `store`, `background` and friends. It has no `workflow_id` and no
+`assistant_id`.
+
+- `assistant_id` is an **Assistants API** identifier. Assistants is superseded by
+  Responses, and migrating means threads/runs or a real Responses call — not posting the
+  id to `/v1/responses`.
+- `workflow_id` is assigned by **Agent Builder** and invoked through **ChatKit**, which
+  uses a server-side session endpoint with a per-user token. OpenAI's own community
+  threads ask whether a workflow can be called through the API and report that it cannot
+  be called through the Agents SDK.
+
+So the tool, as written, makes a call the API rejects. Porting it faithfully would ship a
+tool that always fails — the exact opposite of this proposal's purpose — so it is not
+ported.
+
+What would make it portable:
+
+1. `workflow` via the ChatKit session flow. Needs a server-side session endpoint and a
+   user token, which is a different tool shape (and a different secret).
+2. `assistant` via the Assistants threads/runs endpoints, or a real Responses call with
+   `model` and `input`.
+
+Whichever is chosen, the WordPress tool also gates on `manage_options`; a port needs an
+equivalent gate rather than the usual `edit_posts`.
+
+### `analyze_video` and `generate_video_caption` need a frame-extraction decision
+
+`lib/core` has no frame extraction, and the Laravel runtime image has no `ffmpeg`
+binary — verified inside `oos-laravel-app`. Without frames there is nothing to send to a
+vision model, so both tools are blocked on the same prerequisite.
+
+Three shapes are viable, and the choice belongs to whoever owns the deployment:
+
+1. **Bundle `ffmpeg`** into the image and add a `FrameExtractorInterface` with a process
+   adapter. Self-contained host; larger image; needs sandboxing and timeouts.
+2. **Delegate to the design-stack media worker**, which already has `ffmpeg` and a
+   transform endpoint. Cheapest to build, but couples the runtime to a second service.
+3. **A hosted service.** No local binary, but adds cost, a network hop and a data
+   egress question for customer video.
+
+That is an architecture choice, not a coding task, so it is left as the next slice
+rather than guessed at here. The two tools are otherwise conventional vision tools of
+the same shape as §22's image readers.
