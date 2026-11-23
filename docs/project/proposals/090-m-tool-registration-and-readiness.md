@@ -1874,3 +1874,76 @@ Three shapes are viable, and the choice belongs to whoever owns the deployment:
 That is an architecture choice, not a coding task, so it is left as the next slice
 rather than guessed at here. The two tools are otherwise conventional vision tools of
 the same shape as §22's image readers.
+
+## 28. Addendum: batch_embed_content, and a blocker that was not one (2026-11-24)
+
+### The record was wrong about the blocker
+
+§23 and §24 both recorded `batch_embed_content` as blocked on
+`EmbeddingServiceInterface` having no implementation. That was the wrong dependency.
+The WordPress tool does not use the interface at all: it calls a provider, then stores
+the vectors in **post meta** under `_wp_mcp_ai_embeddings`. Nothing about the promise
+required a vector service, and the slice was smaller than the record claimed.
+
+An implementation of that interface does exist on the WordPress side
+(`lib/wordpress-adapter/src/Adapter/EmbeddingService.php`), delegating to
+`WP_MCP_AI_Content_Embedding_Service`. It is unrelated to the tool.
+
+### Where the vectors go
+
+The direct analogue of WordPress post meta on this contract is the item's own meta,
+written through `UpdateContentCommand::$meta`. So the port needs **no migration, no
+vector database and no second store**, and it behaves identically on both hosts. The
+stored record carries the provider, model, dimensions, embedded timestamp, a SHA-1 of
+the embedded text, and the vector.
+
+That is a stated limit, not an oversight: this is an index for a bounded corpus. A
+caller with millions of rows needs a real index, and the docblock says so instead of
+implying otherwise. It also explains why the tool does **not** implement
+`EmbeddingServiceInterface`: its `search()` would be a linear scan over meta, which is
+not a search engine, and calling it one would be the kind of claim this proposal keeps
+removing.
+
+### Two limits, because tokens bind before counts
+
+A chunk is capped by input count **and** total characters. A request of a hundred
+32,000-character documents is rejected upstream for token count long before the input
+count matters, so a count-only cap would look correct and fail in production.
+
+Chunks are sent in order and each is stored before the next is requested, so a provider
+failure leaves the earlier work durable and the error message reports how much was
+done. An item with no text is skipped with a reason rather than sent as an empty string.
+
+### Re-running is cheap
+
+`update_existing` defaults to false, so an item that already carries an embedding is
+skipped rather than paid for twice. The stored `text_hash` is what a future freshness
+check needs to tell a stale vector from a current one — it is written now so that slice
+does not need a migration later.
+
+### Two WordPress parameters not offered, and one provider
+
+- **`store_in_meta`** is not a parameter: the tool always stores. Computing an embedding
+  and discarding it spends tokens for nothing, and returning a hundred 1,536-float
+  vectors would be unusable in a transcript. `dry_run` is the preview.
+- **`provider: gemini`** is refused by name. WordPress advertises Gemini with a
+  separate batching path; an endpoint shape that has not been exercised here is a guess,
+  and attributing a vector to a provider that was never called is worse than refusing.
+
+### Validation
+
+`BatchEmbedContentToolTest` (core, 16 tests: slug/capability/flags; the missing store;
+the missing HTTP client or settings; **an unimplemented provider refused by name**; a
+missing caller; a missing API key; **a provider refusal reported with its status and
+body**; a response with no embeddings treated as invalid; **dry run calling no provider
+and writing nothing**; the vector stored with provider, model, dimensions and
+`text_hash`; the request carrying bearer auth and the right body; **an already-embedded
+item skipped**; `update_existing` re-embedding; an empty-text item skipped; the limit
+reaching the query; **65 items split across two requests**). Feature test
+`docker/laravel/app-skeleton/tests/Feature/BatchEmbedContentToolTest.php` (4 tests
+against the real store with `Http::fake()`: registration, a vector landing in the real
+meta and reading back, a second run skipping with `Http::assertSentCount(1)` proving it
+cost nothing, and a missing key writing nothing).
+
+`lib/core` 2,243 / 16,701; adapter 350 / 1,873; auditor 245 rows / 226 servable, no
+violations. phpcs clean on all three files at the CI severities.

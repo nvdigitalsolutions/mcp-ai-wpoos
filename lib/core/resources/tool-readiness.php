@@ -126,6 +126,14 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'batch_embed_content' => array(
+			'class' => 'Nvoos\\Core\\Tool\\BatchEmbedContentIndexTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/BatchEmbedContentToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'batch_embed_content_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\BatchEmbedContentTool',
 			'readiness' => 'quarantined',
