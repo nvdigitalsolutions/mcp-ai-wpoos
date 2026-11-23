@@ -87,7 +87,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * get() returns the stored value.
+	 * Get() returns the stored value.
 	 */
 	public function test_get_returns_stored_value() {
 		$key = $this->key( 'get_basic' );
@@ -97,7 +97,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get() returns an array value unchanged.
+	 * Get() returns an array value unchanged.
 	 */
 	public function test_get_returns_array_value() {
 		$key  = $this->key( 'get_array' );
@@ -108,7 +108,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get() returns null when the option does not exist and no default is given.
+	 * Get() returns null when the option does not exist and no default is given.
 	 */
 	public function test_get_returns_null_for_missing_option_no_default() {
 		$key = $this->key( 'get_missing' );
@@ -117,7 +117,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get() returns the caller-supplied default when the option does not exist.
+	 * Get() returns the caller-supplied default when the option does not exist.
 	 */
 	public function test_get_returns_caller_default_for_missing_option() {
 		$key = $this->key( 'get_missing_default' );
@@ -126,7 +126,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get() returns a false default without treating it as "no default".
+	 * Get() returns a false default without treating it as "no default".
 	 */
 	public function test_get_returns_false_default() {
 		$key = $this->key( 'get_false_default' );
@@ -135,7 +135,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get() returns a 0 (integer) default correctly.
+	 * Get() returns a 0 (integer) default correctly.
 	 */
 	public function test_get_returns_zero_default() {
 		$key = $this->key( 'get_zero_default' );
@@ -144,7 +144,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get() returns the actual stored value even when a default is supplied.
+	 * Get() returns the actual stored value even when a default is supplied.
 	 */
 	public function test_get_prefers_stored_value_over_default() {
 		$key = $this->key( 'get_prefer_stored' );
@@ -158,7 +158,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * update() persists the value so that a subsequent get() retrieves it.
+	 * Update() persists the value so that a subsequent get() retrieves it.
 	 */
 	public function test_update_persists_value() {
 		$key = $this->key( 'update_persist' );
@@ -169,7 +169,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update() returns true when the value is newly created.
+	 * Update() returns true when the value is newly created.
 	 */
 	public function test_update_returns_true_on_create() {
 		$key    = $this->key( 'update_create' );
@@ -179,7 +179,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update() can overwrite an existing option.
+	 * Update() can overwrite an existing option.
 	 */
 	public function test_update_overwrites_existing_value() {
 		$key = $this->key( 'update_overwrite' );
@@ -191,7 +191,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update() handles array values.
+	 * Update() handles array values.
 	 */
 	public function test_update_handles_array_value() {
 		$key  = $this->key( 'update_array' );
@@ -203,7 +203,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update() handles integer zero without treating it as empty/false.
+	 * Update() handles integer zero without treating it as empty/false.
 	 */
 	public function test_update_handles_zero() {
 		$key = $this->key( 'update_zero' );
@@ -214,7 +214,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update() chain: multiple calls store each value correctly.
+	 * Update() chain: multiple calls store each value correctly.
 	 */
 	public function test_update_chain() {
 		$key = $this->key( 'update_chain' );
@@ -231,7 +231,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * delete() removes the option so that get_option returns false afterwards.
+	 * Delete() removes the option so that get_option returns false afterwards.
 	 */
 	public function test_delete_removes_option() {
 		$key = $this->key( 'delete_basic' );
@@ -243,7 +243,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * delete() returns true on success.
+	 * Delete() returns true on success.
 	 */
 	public function test_delete_returns_true_on_success() {
 		$key = $this->key( 'delete_return_true' );
@@ -255,7 +255,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * delete() on a non-existent key returns false.
+	 * Delete() on a non-existent key returns false.
 	 */
 	public function test_delete_returns_false_for_missing_key() {
 		$key    = $this->key( 'delete_missing' );
@@ -280,7 +280,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * update() → get() round-trip returns the same value.
+	 * Update() → get() round-trip returns the same value.
 	 */
 	public function test_update_get_roundtrip_string() {
 		$key = $this->key( 'roundtrip_str' );
@@ -291,7 +291,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update() → get() round-trip for arrays.
+	 * Update() → get() round-trip for arrays.
 	 */
 	public function test_update_get_roundtrip_array() {
 		$key  = $this->key( 'roundtrip_arr' );
@@ -303,7 +303,7 @@ class Test_WP_MCP_AI_WP_Options_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update() → delete() → get() sequence behaves correctly.
+	 * Update() → delete() → get() sequence behaves correctly.
 	 */
 	public function test_update_delete_get_sequence() {
 		$key = $this->key( 'sequence' );

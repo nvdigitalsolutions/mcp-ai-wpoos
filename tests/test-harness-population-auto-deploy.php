@@ -16,8 +16,16 @@
  */
 class Test_Harness_Population extends WP_UnitTestCase {
 
+	/**
+	 * Assistant post ID.
+	 *
+	 * @var int
+	 */
 	private $assistant_id;
 
+	/**
+	 * Create the assistant fixture and sign in as an administrator.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->assistant_id = $this->factory->post->create(
@@ -29,6 +37,9 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		wp_set_current_user( 1 );
 	}
 
+	/**
+	 * Clear the current user and the global population option.
+	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		// Clean up global population.
@@ -36,6 +47,9 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * Archiving stores the profile.
+	 */
 	public function test_archive_stores_profile() {
 		$profile                   = WP_MCP_AI_Harness_Profile::defaults();
 		$profile['enabled']        = true;
@@ -67,6 +81,9 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		$this->assertTrue( $found );
 	}
 
+	/**
+	 * Archiving a duplicate increments the shared count.
+	 */
 	public function test_archive_increments_shared_count_on_duplicate() {
 		$profile            = WP_MCP_AI_Harness_Profile::defaults();
 		$profile['enabled'] = true;
@@ -88,6 +105,9 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		$this->fail( 'Archived profile not found in population.' );
 	}
 
+	/**
+	 * Transferring requires edit_posts.
+	 */
 	public function test_transfer_requires_edit_capability() {
 		$profile            = WP_MCP_AI_Harness_Profile::defaults();
 		$profile['enabled'] = true;
@@ -102,6 +122,9 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		$this->assertFalse( $result );
 	}
 
+	/**
+	 * Population reads filter by source.
+	 */
 	public function test_get_population_filters_by_source() {
 		$profile            = WP_MCP_AI_Harness_Profile::defaults();
 		$profile['enabled'] = true;
@@ -121,6 +144,9 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		$this->assertEmpty( $empty );
 	}
 
+	/**
+	 * Population reads filter by minimum score.
+	 */
 	public function test_get_population_filters_by_min_score() {
 		$profile_high                   = WP_MCP_AI_Harness_Profile::defaults();
 		$profile_high['enabled']        = true;
@@ -145,6 +171,9 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		$this->assertSame( 0.9, $filtered[0]['eval']['aggregate']['score'] );
 	}
 
+	/**
+	 * Count returns the population size.
+	 */
 	public function test_count_returns_population_size() {
 		$count_before = WP_MCP_AI_Harness_Population::count();
 
@@ -159,6 +188,9 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		$this->assertSame( $count_before + 1, WP_MCP_AI_Harness_Population::count() );
 	}
 
+	/**
+	 * Suggestions exclude the assistant's own profiles.
+	 */
 	public function test_suggest_for_assistant_excludes_own_profiles() {
 		$profile                         = WP_MCP_AI_Harness_Profile::defaults();
 		$profile['enabled']              = true;
@@ -179,11 +211,17 @@ class Test_Harness_Population extends WP_UnitTestCase {
 		$this->assertEmpty( $suggestions );
 	}
 
+	/**
+	 * Lineage returns null for an unknown hash.
+	 */
 	public function test_lineage_returns_null_for_unknown_hash() {
 		$lineage = WP_MCP_AI_Harness_Population::get_lineage( 'nonexistent_hash' );
 		$this->assertNull( $lineage );
 	}
 
+	/**
+	 * Deleting removes the profile.
+	 */
 	public function test_delete_removes_profile() {
 		$profile            = WP_MCP_AI_Harness_Profile::defaults();
 		$profile['enabled'] = true;
@@ -210,8 +248,16 @@ class Test_Harness_Population extends WP_UnitTestCase {
  */
 class Test_Harness_Auto_Deploy extends WP_UnitTestCase {
 
+	/**
+	 * Assistant post ID.
+	 *
+	 * @var int
+	 */
 	private $assistant_id;
 
+	/**
+	 * Create the assistant fixture and sign in as an administrator.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->assistant_id = $this->factory->post->create(
@@ -223,11 +269,17 @@ class Test_Harness_Auto_Deploy extends WP_UnitTestCase {
 		wp_set_current_user( 1 );
 	}
 
+	/**
+	 * Clear the current user after each test.
+	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
 
+	/**
+	 * Evaluation approves when the candidate improves.
+	 */
 	public function test_evaluate_approves_with_improvement() {
 		$candidate            = WP_MCP_AI_Harness_Profile::defaults();
 		$candidate['enabled'] = true;
@@ -254,6 +306,9 @@ class Test_Harness_Auto_Deploy extends WP_UnitTestCase {
 		$this->assertSame( 'All safety gates passed.', $result['reason'] );
 	}
 
+	/**
+	 * Evaluation rejects without improvement.
+	 */
 	public function test_evaluate_rejects_without_improvement() {
 		$candidate            = WP_MCP_AI_Harness_Profile::defaults();
 		$candidate['enabled'] = true;
@@ -279,6 +334,9 @@ class Test_Harness_Auto_Deploy extends WP_UnitTestCase {
 		$this->assertFalse( $result['approved'] );
 	}
 
+	/**
+	 * Evaluation rejects below the minimum improvement.
+	 */
 	public function test_evaluate_rejects_below_min_improvement() {
 		$candidate            = WP_MCP_AI_Harness_Profile::defaults();
 		$candidate['enabled'] = true;
@@ -305,6 +363,9 @@ class Test_Harness_Auto_Deploy extends WP_UnitTestCase {
 		$this->assertFalse( $result['approved'] );
 	}
 
+	/**
+	 * Applying with rollback saves the previous version.
+	 */
 	public function test_apply_with_rollback_saves_previous() {
 		$new_profile                   = WP_MCP_AI_Harness_Profile::defaults();
 		$new_profile['enabled']        = true;
@@ -325,6 +386,9 @@ class Test_Harness_Auto_Deploy extends WP_UnitTestCase {
 		$this->assertSame( 15, $active['retrieval']['k'] );
 	}
 
+	/**
+	 * Rollback restores the previous version.
+	 */
 	public function test_rollback_restores_previous() {
 		// Apply first profile.
 		$profile_a                   = WP_MCP_AI_Harness_Profile::defaults();
@@ -350,6 +414,9 @@ class Test_Harness_Auto_Deploy extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_Harness_Auto_Deploy::can_rollback( $this->assistant_id ) );
 	}
 
+	/**
+	 * Deploy history records the deployment events.
+	 */
 	public function test_get_deploy_history_records_events() {
 		$profile            = WP_MCP_AI_Harness_Profile::defaults();
 		$profile['enabled'] = true;

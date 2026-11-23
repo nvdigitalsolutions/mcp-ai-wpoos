@@ -75,6 +75,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 	// Constants & accessors.
 	// -------------------------------------------------------------------------
 
+	/**
+	 * The client exposes the expected constants.
+	 */
 	public function test_constants() {
 		$this->assertEquals( 'https://inference.do-ai.run/v1', WP_MCP_AI_DigitalOcean_Client::DEFAULT_BASE_URL );
 		$this->assertEquals( '/chat/completions', WP_MCP_AI_DigitalOcean_Client::API_ENDPOINT );
@@ -83,19 +86,31 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'llama3.3-70b-instruct', WP_MCP_AI_DigitalOcean_Client::DEFAULT_MODEL );
 	}
 
+	/**
+	 * The API key is empty when unconfigured.
+	 */
 	public function test_get_api_key_returns_empty_when_unconfigured() {
 		$this->assertSame( '', $this->client->get_api_key() );
 	}
 
+	/**
+	 * The API key returns the configured value.
+	 */
 	public function test_get_api_key_returns_configured_value() {
 		update_option( 'wp_mcp_ai_settings', array( 'digitalocean_api_key' => 'do-test-key' ) );
 		$this->assertEquals( 'do-test-key', $this->client->get_api_key() );
 	}
 
+	/**
+	 * The base URL falls back to the default.
+	 */
 	public function test_get_base_url_falls_back_to_default() {
 		$this->assertEquals( WP_MCP_AI_DigitalOcean_Client::DEFAULT_BASE_URL, $this->client->get_base_url() );
 	}
 
+	/**
+	 * The base URL honours a configured override.
+	 */
 	public function test_get_base_url_respects_override() {
 		update_option(
 			'wp_mcp_ai_settings',
@@ -108,12 +123,18 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 	// Chat completion.
 	// -------------------------------------------------------------------------
 
+	/**
+	 * A chat completion without a key returns WP_Error.
+	 */
 	public function test_chat_completion_returns_error_without_key() {
 		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'Hi' ) ) );
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_missing_digitalocean_api_key', $result->get_error_code() );
 	}
 
+	/**
+	 * A successful chat completion returns the parsed payload.
+	 */
 	public function test_chat_completion_success() {
 		update_option(
 			'wp_mcp_ai_settings',
@@ -165,6 +186,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'llama3.3-70b-instruct', $body['model'] );
 	}
 
+	/**
+	 * Tool definitions are included in the request.
+	 */
 	public function test_chat_completion_includes_tools() {
 		update_option(
 			'wp_mcp_ai_settings',
@@ -230,6 +254,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'lookup', $body['tools'][0]['function']['name'] );
 	}
 
+	/**
+	 * A 401 surfaces as an auth error.
+	 */
 	public function test_chat_completion_propagates_401_as_auth_error() {
 		update_option( 'wp_mcp_ai_settings', array( 'digitalocean_api_key' => 'bad-key' ) );
 
@@ -245,6 +272,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'wp_mcp_ai_digitalocean_auth_error', $result->get_error_code() );
 	}
 
+	/**
+	 * A 429 surfaces with its retry-after value.
+	 */
 	public function test_chat_completion_propagates_429_with_retry_after() {
 		update_option( 'wp_mcp_ai_settings', array( 'digitalocean_api_key' => 'do-key' ) );
 
@@ -263,6 +293,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertEquals( 12, $data['retry_after'] );
 	}
 
+	/**
+	 * Invalid JSON is handled without a fatal.
+	 */
 	public function test_chat_completion_handles_invalid_json() {
 		update_option( 'wp_mcp_ai_settings', array( 'digitalocean_api_key' => 'do-key' ) );
 
@@ -278,6 +311,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'wp_mcp_ai_digitalocean_invalid_response', $result->get_error_code() );
 	}
 
+	/**
+	 * Reasoning content passes through unchanged.
+	 */
 	public function test_chat_completion_passes_through_reasoning_content() {
 		update_option( 'wp_mcp_ai_settings', array( 'digitalocean_api_key' => 'do-key' ) );
 
@@ -309,6 +345,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 	// list_models().
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Listing models normalises the response.
+	 */
 	public function test_list_models_normalises_response() {
 		update_option( 'wp_mcp_ai_settings', array( 'digitalocean_api_key' => 'do-key' ) );
 
@@ -338,6 +377,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertEquals( 131072, $models[0]['context_length'] );
 	}
 
+	/**
+	 * Listing models requires an API key.
+	 */
 	public function test_list_models_requires_key() {
 		$result = $this->client->list_models();
 		$this->assertWPError( $result );
@@ -347,6 +389,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 	// Embeddings.
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Creating an embedding returns a vector.
+	 */
 	public function test_create_embedding_returns_vector() {
 		update_option( 'wp_mcp_ai_settings', array( 'digitalocean_api_key' => 'do-key' ) );
 
@@ -371,6 +416,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertSame( 'https://inference.do-ai.run/v1/embeddings', $this->captured_requests[0]['url'] );
 	}
 
+	/**
+	 * Creating an embedding requires input.
+	 */
 	public function test_create_embedding_requires_input() {
 		update_option( 'wp_mcp_ai_settings', array( 'digitalocean_api_key' => 'do-key' ) );
 		$result = $this->client->create_embedding( array() );
@@ -382,6 +430,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 	// Misc.
 	// -------------------------------------------------------------------------
 
+	/**
+	 * A custom base URL is used in the request.
+	 */
 	public function test_custom_base_url_used_in_request() {
 		update_option(
 			'wp_mcp_ai_settings',
@@ -402,6 +453,9 @@ class Test_DigitalOcean_Client extends WP_UnitTestCase {
 		$this->assertSame( 'https://proxy.example.com/v1/chat/completions', $this->captured_requests[0]['url'] );
 	}
 
+	/**
+	 * Token counting uses the client heuristic.
+	 */
 	public function test_count_tokens_heuristic() {
 		$count = $this->client->count_tokens(
 			array(

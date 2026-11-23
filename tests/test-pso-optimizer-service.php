@@ -21,6 +21,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	 */
 	private $assistant_id;
 
+	/**
+	 * Reset the optimiser service state between tests.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -47,6 +50,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Reset the optimiser service state after each test.
+	 */
 	public function tearDown(): void {
 		// Clean up PSO state.
 		$meta_keys = array( 'position', 'velocity', 'pbest', 'pbest_fit', 'samples' );
@@ -62,6 +68,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Dimensions.
 	// ------------------------------------------------------------------
 
+	/**
+	 * The reported dimensions are valid and positive.
+	 */
 	public function test_dimensions_are_valid() {
 		$dims = WP_MCP_AI_PSO_Optimizer_Service::get_dimensions();
 
@@ -82,21 +91,33 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Inertia calculation.
 	// ------------------------------------------------------------------
 
+	/**
+	 * Inertia starts at its configured maximum.
+	 */
 	public function test_inertia_starts_high() {
 		$inertia = $this->service->calculate_inertia( 0 );
 		$this->assertEqualsWithDelta( 0.9, $inertia, 0.001 );
 	}
 
+	/**
+	 * Inertia reaches its configured minimum at the end.
+	 */
 	public function test_inertia_ends_low() {
 		$inertia = $this->service->calculate_inertia( 100 );
 		$this->assertEqualsWithDelta( 0.4, $inertia, 0.001 );
 	}
 
+	/**
+	 * Inertia decays linearly across iterations.
+	 */
 	public function test_inertia_decays_linearly() {
 		$at_50 = $this->service->calculate_inertia( 50 );
 		$this->assertEqualsWithDelta( 0.65, $at_50, 0.001 );
 	}
 
+	/**
+	 * Inertia never falls below the end value.
+	 */
 	public function test_inertia_does_not_go_below_end() {
 		$inertia = $this->service->calculate_inertia( 500 );
 		$this->assertEqualsWithDelta( 0.4, $inertia, 0.001 );
@@ -106,6 +127,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Fitness evaluation.
 	// ------------------------------------------------------------------
 
+	/**
+	 * Zero duration scores zero fitness.
+	 */
 	public function test_fitness_returns_zero_for_zero_duration() {
 		$fitness = $this->service->evaluate_fitness(
 			array(
@@ -119,6 +143,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertSame( 0.0, $fitness );
 	}
 
+	/**
+	 * Valid metrics produce positive fitness.
+	 */
 	public function test_fitness_positive_for_valid_metrics() {
 		$fitness = $this->service->evaluate_fitness(
 			array(
@@ -132,6 +159,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertGreaterThan( 0.0, $fitness );
 	}
 
+	/**
+	 * Faster execution scores higher fitness.
+	 */
 	public function test_faster_execution_has_higher_fitness() {
 		$fast = $this->service->evaluate_fitness(
 			array(
@@ -154,6 +184,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertGreaterThan( $slow, $fast );
 	}
 
+	/**
+	 * Empty metrics score zero fitness.
+	 */
 	public function test_fitness_returns_zero_for_empty_metrics() {
 		$this->assertSame( 0.0, $this->service->evaluate_fitness( array() ) );
 	}
@@ -162,6 +195,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Particle update (core PSO equation).
 	// ------------------------------------------------------------------
 
+	/**
+	 * A particle update preserves its dimension count.
+	 */
 	public function test_particle_update_returns_same_dimension_count() {
 		$dims = WP_MCP_AI_PSO_Optimizer_Service::get_dimensions();
 		$n    = count( $dims );
@@ -177,6 +213,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertCount( $n, $result['velocity'] );
 	}
 
+	/**
+	 * Particle positions stay within the configured bounds.
+	 */
 	public function test_particle_position_stays_in_bounds() {
 		$dims = WP_MCP_AI_PSO_Optimizer_Service::get_dimensions();
 		$n    = count( $dims );
@@ -202,6 +241,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Zero inertia drops the previous velocity.
+	 */
 	public function test_zero_inertia_ignores_previous_velocity() {
 		$dims = WP_MCP_AI_PSO_Optimizer_Service::get_dimensions();
 		$n    = count( $dims );
@@ -222,6 +264,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Particle state management.
 	// ------------------------------------------------------------------
 
+	/**
+	 * Initialising a particle creates its default state.
+	 */
 	public function test_init_particle_creates_default_state() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -236,6 +281,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertEquals( $position, $pbest );
 	}
 
+	/**
+	 * Initialising a particle twice is idempotent.
+	 */
 	public function test_init_particle_idempotent() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -250,6 +298,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertEquals( $custom, $position );
 	}
 
+	/**
+	 * The particle state exposes every expected field.
+	 */
 	public function test_get_particle_state_returns_all_fields() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 		$state = $this->service->get_particle_state( $this->assistant_id );
@@ -265,6 +316,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Parameter accessors.
 	// ------------------------------------------------------------------
 
+	/**
+	 * A parameter is readable by key.
+	 */
 	public function test_get_parameter_by_key() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -272,6 +326,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 0.5, $value, 0.001 );
 	}
 
+	/**
+	 * An unknown parameter key returns null.
+	 */
 	public function test_get_parameter_unknown_key_returns_null() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -279,6 +336,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertNull( $value );
 	}
 
+	/**
+	 * All parameters are returned keyed by name.
+	 */
 	public function test_get_all_parameters_returns_keyed_array() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -296,6 +356,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Global best.
 	// ------------------------------------------------------------------
 
+	/**
+	 * The global best starts at zero fitness.
+	 */
 	public function test_global_best_defaults_to_zero_fitness() {
 		$global = $this->service->get_global_best();
 		$this->assertEqualsWithDelta( 0.0, $global['fitness'], 0.001 );
@@ -306,6 +369,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Iteration filter.
 	// ------------------------------------------------------------------
 
+	/**
+	 * The max-iterations filter applies the default factor.
+	 */
 	public function test_filter_max_iterations_default_factor() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -318,6 +384,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertEquals( 15, $result );
 	}
 
+	/**
+	 * The max-iterations filter honours a custom factor.
+	 */
 	public function test_filter_max_iterations_with_custom_factor() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -335,6 +404,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertEquals( 15, $result );
 	}
 
+	/**
+	 * The max-iterations filter keeps the result in bounds.
+	 */
 	public function test_filter_max_iterations_enforces_bounds() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -352,6 +424,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertLessThanOrEqual( 50, $result );
 	}
 
+	/**
+	 * The filter passes iterations through when unconfigured.
+	 */
 	public function test_filter_max_iterations_no_config_passthrough() {
 		$result = $this->service->filter_max_iterations( 15, null );
 		$this->assertEquals( 15, $result );
@@ -361,6 +436,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Reset.
 	// ------------------------------------------------------------------
 
+	/**
+	 * Resetting a particle clears its state.
+	 */
 	public function test_reset_particle_clears_state() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -370,6 +448,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertEmpty( $position );
 	}
 
+	/**
+	 * Resetting the swarm clears all particles and bests.
+	 */
 	public function test_reset_swarm_clears_everything() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -407,12 +488,18 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Enabled / disabled.
 	// ------------------------------------------------------------------
 
+	/**
+	 * The optimiser is disabled when the setting is off.
+	 */
 	public function test_disabled_when_setting_off() {
 		update_option( 'wp_mcp_ai_settings', array( 'enable_pso_optimizer' => false ) );
 		$svc = new WP_MCP_AI_PSO_Optimizer_Service();
 		$this->assertFalse( $svc->is_enabled() );
 	}
 
+	/**
+	 * The optimiser is enabled when the setting is on.
+	 */
 	public function test_enabled_when_setting_on() {
 		$this->assertTrue( $this->service->is_enabled() );
 	}
@@ -421,6 +508,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Swarm summary.
 	// ------------------------------------------------------------------
 
+	/**
+	 * The swarm summary exposes the expected keys.
+	 */
 	public function test_swarm_summary_structure() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -437,6 +527,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Full PSO update cycle.
 	// ------------------------------------------------------------------
 
+	/**
+	 * A PSO update moves the particle.
+	 */
 	public function test_run_pso_update_changes_position() {
 		$this->service->maybe_init_particle( $this->assistant_id );
 
@@ -470,6 +563,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 	// Orchestration Preset integration.
 	// ------------------------------------------------------------------
 
+	/**
+	 * The PSO adaptive preset is registered.
+	 */
 	public function test_pso_adaptive_preset_exists() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
 
@@ -482,6 +578,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertEquals( 'optimization', $preset['category'] );
 	}
 
+	/**
+	 * The PSO preset enables the optimiser.
+	 */
 	public function test_pso_adaptive_preset_enables_optimizer() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
 
@@ -495,6 +594,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'pso_update_frequency', $preset['settings'] );
 	}
 
+	/**
+	 * The PSO preset carries the expected defaults.
+	 */
 	public function test_pso_adaptive_preset_has_expected_defaults() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
 
@@ -509,6 +611,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertEquals( 10, $settings['pso_update_frequency'] );
 	}
 
+	/**
+	 * Preset recommendations match PSO keywords.
+	 */
 	public function test_recommend_preset_matches_pso_keywords() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
 
@@ -522,6 +627,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Unrelated prompts do not match the PSO preset.
+	 */
 	public function test_recommend_preset_does_not_match_unrelated() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
 
@@ -531,6 +639,9 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'pso_adaptive', $result['recommendations'] );
 	}
 
+	/**
+	 * The PSO preset can be applied to settings.
+	 */
 	public function test_pso_adaptive_preset_can_be_applied() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
 

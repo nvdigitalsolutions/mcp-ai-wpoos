@@ -20,10 +20,10 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 	public function test_chat_client_returns_503_when_main_controller_is_null() {
 		$assistant_id = $this->create_assistant_post();
 
-		// Create chat controller without main controller (null)
+		// Create chat controller without main controller (null).
 		$chat_controller = new WP_MCP_AI_REST_Chat_Controller( null );
 
-		// Register the chat controller routes
+		// Register the chat controller routes.
 		add_action(
 			'rest_api_init',
 			function () use ( $chat_controller ) {
@@ -31,11 +31,11 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 			}
 		);
 
-		// Reinitialize REST server
+		// Reinitialize REST server.
 		rest_get_server();
 		do_action( 'rest_api_init' );
 
-		// Create a request to the chat-client endpoint
+		// Create a request to the chat-client endpoint.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_param(
@@ -48,21 +48,21 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Add authentication (nonce)
+		// Add authentication (nonce).
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-		// Dispatch the request
+		// Dispatch the request.
 		$response = rest_get_server()->dispatch( $request );
 
-		// Verify response
+		// Verify response.
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 
-		// Should return 503 Service Unavailable, not 500 Internal Server Error
+		// Should return 503 Service Unavailable, not 500 Internal Server Error.
 		$this->assertSame( 503, $response->get_status(), 'Expected 503 Service Unavailable status' );
 
-		// Check error data
+		// Check error data.
 		$data = $response->get_data();
 		$this->assertIsArray( $data );
 		$this->assertArrayHasKey( 'code', $data );
@@ -77,7 +77,7 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 	public function test_chat_client_cleans_up_filters_on_normal_operation() {
 		$assistant_id = $this->create_assistant_post();
 
-		// Create a mock client
+		// Create a mock client.
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'create_chat_completion' ) )
@@ -102,7 +102,7 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// Create a request to the chat-client endpoint
+		// Create a request to the chat-client endpoint.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_param(
@@ -115,27 +115,27 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Add authentication (nonce)
+		// Add authentication (nonce).
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-		// Count filters before request
+		// Count filters before request.
 		$filters_before = $GLOBALS['wp_filter']['wp_mcp_ai_max_agentic_iterations'] ?? null;
 
-		// Dispatch the request
+		// Dispatch the request.
 		$response = rest_get_server()->dispatch( $request );
 
-		// Verify response
+		// Verify response.
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
 
 		// Verify filters were properly removed after request
-		// The filters should have been added and then removed
+		// The filters should have been added and then removed.
 		$filters_after = $GLOBALS['wp_filter']['wp_mcp_ai_max_agentic_iterations'] ?? null;
 
 		// If filters existed before, they should be the same after
-		// If they didn't exist before, they should not exist after
+		// If they didn't exist before, they should not exist after.
 		if ( $filters_before === null ) {
 			$this->assertNull( $filters_after, 'Filters should be cleaned up after request' );
 		}
@@ -147,24 +147,24 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 	public function test_set_chat_client_tool_choice_default_handles_non_array_options() {
 		$chat_controller = new WP_MCP_AI_REST_Chat_Controller( null );
 
-		// Test with null options
+		// Test with null options.
 		$result = $chat_controller->set_chat_client_tool_choice_default( null, array(), array() );
 		$this->assertNull( $result );
 
-		// Test with string options
+		// Test with string options.
 		$result = $chat_controller->set_chat_client_tool_choice_default( 'string', array(), array() );
 		$this->assertSame( 'string', $result );
 
-		// Test with integer options
+		// Test with integer options.
 		$result = $chat_controller->set_chat_client_tool_choice_default( 123, array(), array() );
 		$this->assertSame( 123, $result );
 
-		// Test with valid array options
+		// Test with valid array options.
 		$options          = array( 'tools' => array( 'tool1', 'tool2' ) );
 		$assistant_config = array( 'provider' => 'cloudflare' );
 		$result           = $chat_controller->set_chat_client_tool_choice_default( $options, $assistant_config, array() );
 
-		// For cloudflare provider with tools, tool_choice should be set to 'auto'
+		// For cloudflare provider with tools, tool_choice should be set to 'auto'.
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'tool_choice', $result );
 		$this->assertSame( 'auto', $result['tool_choice'] );

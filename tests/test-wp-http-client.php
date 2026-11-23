@@ -50,7 +50,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * get() with empty string returns WP_Error.
+	 * Get() with empty string returns WP_Error.
 	 */
 	public function test_get_empty_url_returns_wp_error() {
 		$result = $this->client->get( '' );
@@ -60,7 +60,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * post() with empty string returns WP_Error.
+	 * Post() with empty string returns WP_Error.
 	 */
 	public function test_post_empty_url_returns_wp_error() {
 		$result = $this->client->post( '' );
@@ -70,7 +70,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * stream() with empty string returns WP_Error.
+	 * Stream() with empty string returns WP_Error.
 	 */
 	public function test_stream_empty_url_returns_wp_error() {
 		$result = $this->client->stream( '' );
@@ -84,7 +84,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * get() applies the default timeout to outbound requests.
+	 * Get() applies the default timeout to outbound requests.
 	 */
 	public function test_get_applies_default_timeout() {
 		$captured = null;
@@ -109,7 +109,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * post() applies the default timeout to outbound requests.
+	 * Post() applies the default timeout to outbound requests.
 	 */
 	public function test_post_applies_default_timeout() {
 		$captured = null;
@@ -161,7 +161,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * get() sends a request to the expected URL and returns the response body.
+	 * Get() sends a request to the expected URL and returns the response body.
 	 */
 	public function test_get_sends_request_and_returns_response() {
 		$called = false;
@@ -186,7 +186,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get() returns a WP_Error when the transport fails.
+	 * Get() returns a WP_Error when the transport fails.
 	 */
 	public function test_get_returns_wp_error_on_transport_failure() {
 		$filter = function ( $preempt, $args, $url ) {
@@ -205,7 +205,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * post() sends the request body to the expected URL.
+	 * Post() sends the request body to the expected URL.
 	 */
 	public function test_post_sends_body_to_url() {
 		$captured = null;
@@ -233,7 +233,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * post() returns a WP_Error when the transport fails.
+	 * Post() returns a WP_Error when the transport fails.
 	 */
 	public function test_post_returns_wp_error_on_transport_failure() {
 		$filter = function ( $preempt, $args, $url ) {
@@ -252,7 +252,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * stream() sets stream=true and blocking=true on the outbound request.
+	 * Stream() sets stream=true and blocking=true on the outbound request.
 	 */
 	public function test_stream_sets_stream_and_blocking_flags() {
 		$captured = null;
@@ -277,7 +277,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * stream() invokes the callback for each non-empty line of the response body.
+	 * Stream() invokes the callback for each non-empty line of the response body.
 	 */
 	public function test_stream_invokes_callback_per_line() {
 		$filter = function ( $preempt, $args, $url ) {
@@ -311,7 +311,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * stream() marks the last non-empty line as done=true even without [DONE] sentinel.
+	 * Stream() marks the last non-empty line as done=true even without [DONE] sentinel.
 	 */
 	public function test_stream_marks_last_line_as_done() {
 		$filter = function ( $preempt, $args, $url ) {
@@ -342,7 +342,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * stream() handles CRLF line endings as well as LF.
+	 * Stream() handles CRLF line endings as well as LF.
 	 */
 	public function test_stream_handles_crlf_line_endings() {
 		$filter = function ( $preempt, $args, $url ) {
@@ -373,7 +373,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * stream() skips empty lines and doesn't deliver them to the callback.
+	 * Stream() skips empty lines and doesn't deliver them to the callback.
 	 */
 	public function test_stream_skips_empty_lines() {
 		$filter = function ( $preempt, $args, $url ) {
@@ -403,7 +403,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * stream() without a callback still returns a summary array.
+	 * Stream() without a callback still returns a summary array.
 	 */
 	public function test_stream_without_callback_returns_summary() {
 		$filter = function ( $preempt, $args, $url ) {
@@ -425,7 +425,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * stream() returns a WP_Error when the transport fails.
+	 * Stream() returns a WP_Error when the transport fails.
 	 */
 	public function test_stream_returns_wp_error_on_transport_failure() {
 		$filter = function ( $preempt, $args, $url ) {
@@ -444,7 +444,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * get() fires the wp_mcp_ai_http_client_get_args filter.
+	 * Get() fires the wp_mcp_ai_http_client_get_args filter.
 	 */
 	public function test_get_fires_args_filter() {
 		$filter_fired = false;
@@ -468,7 +468,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * post() fires the wp_mcp_ai_http_client_post_args filter.
+	 * Post() fires the wp_mcp_ai_http_client_post_args filter.
 	 */
 	public function test_post_fires_args_filter() {
 		$filter_fired = false;
@@ -492,7 +492,7 @@ class Test_WP_MCP_AI_WP_HTTP_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * stream() fires the wp_mcp_ai_http_client_stream_args filter.
+	 * Stream() fires the wp_mcp_ai_http_client_stream_args filter.
 	 */
 	public function test_stream_fires_args_filter() {
 		$filter_fired = false;
