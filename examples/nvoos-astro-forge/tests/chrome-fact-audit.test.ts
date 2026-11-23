@@ -39,6 +39,19 @@ describe( 'auditChromeFacts', () => {
 		expect( auditChromeFacts( chrome, html( '<a class="header-icon"></a>' ) ) ).toEqual( [] );
 	} );
 
+	it( 'accepts a labelled pill as the same fact (header-cta)', () => {
+		// A TEXT header action renders `.header-cta`; an icon action renders
+		// `.header-icon`. Demanding the icon class reported a rendered pill as a
+		// missing fact (eca.directory).
+		const chrome = {
+			headerActions: [ { label: 'Try Demo', text: 'Try Demo', href: '#', fill: '#8764a0' } ],
+		} as ForgeChrome;
+		expect( auditChromeFacts( chrome, html( '<a class="header-cta">Try Demo</a>' ) ) ).toEqual( [] );
+		expect( auditChromeFacts( chrome, html( '<header></header>' ) ) ).toEqual( [
+			{ fact: 'headerActions', marker: 'header-icon' },
+		] );
+	} );
+
 	it( 'flags the brand mark when the template kept its default', () => {
 		expect( auditChromeFacts( { logo: { src: '/logo.svg' } } as ForgeChrome, html( '<header></header>' ) ) ).toEqual( [
 			{ fact: 'logo', marker: 'brand-logo' },

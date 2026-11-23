@@ -26,6 +26,7 @@ describe( 'presets.json', () => {
 			'portfolio',
 			'landing',
 			'docs',
+			'eca',
 			'minimal',
 		] );
 	} );

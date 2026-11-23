@@ -210,6 +210,11 @@ const sectionHasContent = ( section: SemanticSection ): boolean => {
 			( body && body.length > 0 ) ||
 			( items && items.length > 0 ) ||
 			( media && media.length > 0 ) ||
+			// A RAW slice is content: the fidelity guard demotes a band whose
+			// classified slots would drop its words (`kind: 'text'` + `html`
+			// with empty slots), and treating that as empty skipped the band's
+			// measured min-height and padding.
+			section.html ||
 			// Proposal 136 structured slots — a kind is content too.
 			( section.pricing?.plans.length ?? 0 ) > 0 ||
 			( section.stats?.items.length ?? 0 ) > 0 ||

@@ -17,8 +17,10 @@
 
 import type { DiscoveryReport } from './discovery.ts';
 import type { SiteProfile, WpCollection } from './types.ts';
+import { ECA_DAY_ORDER, ECA_DEFAULTS, ECA_DEFAULT_STAGES } from './eca.ts';
+import type { ForgeEca } from './eca.ts';
 
-export const PRESET_NAMES = ['blog', 'storefront', 'portfolio', 'landing', 'docs', 'minimal'] as const;
+export const PRESET_NAMES = ['blog', 'storefront', 'portfolio', 'landing', 'docs', 'eca', 'minimal'] as const;
 export type PresetName = (typeof PRESET_NAMES)[number];
 
 export const RENDER_MODES = ['static', 'ssr'] as const;
@@ -114,6 +116,12 @@ const PRESET_GUIDANCE: Record< PresetName, { bestFor: string; detect: string[]; 
 		detect: [ 'many nested pages', 'no products', 'no dated posts' ],
 		// Reading-order kinds: prose, ordered procedure, collapsible reference.
 		kinds: [ 'hero', 'text', 'steps', 'accordion', 'comparison', 'content' ],
+	},
+	eca: {
+		bestFor: 'Schools and clubs: an extra-curricular activities catalogue.',
+		detect: [ 'mcp_ai_eca post type advertised', 'activity/course records with a schedule', 'no wc/v3 namespace required' ],
+		// The activity set: what is on, when, who runs it, what it costs.
+		kinds: [ 'hero', 'feature-grid', 'stats', 'testimonial', 'steps', 'cta', 'content' ],
 	},
 	minimal: {
 		bestFor: 'The smallest useful site: posts and pages, no search surface.',
@@ -212,6 +220,16 @@ export const PRESETS: Record<PresetName, ForgePreset> = {
 		variants: [],
 		description: 'Docs: a page hierarchy read in order, searchable, no feed.',
 	},
+	eca: {
+		name: 'eca',
+		template: 'blog',
+		render: 'static',
+		// An activities catalogue is browsed by facet and by term — never
+		// subscribed to. Search stays on (3-layer search, 163 §P5).
+		surfaces: { search: true, feed: false, sitemap: true, ogImages: false },
+		variants: [],
+		description: 'ECA: extra-curricular activities catalogue — facets, calendar, timetable, ICS.',
+	},
 	minimal: {
 		name: 'minimal',
 		template: 'blog',
@@ -238,6 +256,15 @@ const PORTFOLIO_SLUG = /portfolio|projects?|case-stud|case_stud|\bwork\b/i;
  * reading order are operator INTENT, and the probe cannot see intent.
  */
 export function suggestPreset(report: Pick<DiscoveryReport, 'woocommerce' | 'collections'>): PresetName {
+	// An ECA catalogue outranks commerce: a school that also runs a shop is
+	// still an ECA site, and `eca` is the only preset that renders a timetable.
+	if (
+		report.collections.some(
+			(collection) => /(?:^|\/)mcp_ai_eca$/.test(collection.restBase) || /^(?:mcp_ai_)?eca$/.test(collection.slug),
+		)
+	) {
+		return 'eca';
+	}
 	const hasProducts =
 		report.woocommerce === true || report.collections.some((collection) => collection.kind === 'product');
 	if (hasProducts) {
@@ -300,6 +327,90 @@ const PORTFOLIO_PROJECTS: WpCollection = {
 	optional: true,
 };
 
+/**
+ * REST keys an ECA collection needs verbatim.
+ *
+ * `createWpLoader` projects a fixed field set, so `meta` never reaches a page
+ * unless the collection asks for it. Without it the whole activity record
+ * collapses to a title and a paragraph.
+ */
+export const ECA_PASSTHROUGH_FIELDS = [ 'meta', 'mcp_ai_eca_category', 'content' ];
+
+/**
+ * The `eca` preset's collection — the toolkit's activity CPT.
+ *
+ * `meta` is load-bearing: all 18 `_eca_*` fields arrive through it. A `_fields`
+ * list that omits it drops the entire schedule and price silently, which is
+ * exactly the trap the first research pass fell into.
+ */
+export const ECA_COLLECTION: WpCollection = {
+	slug: 'activities',
+	// The source publishes activities under `/eca/<slug>/`; the rebuilt site owns
+	// the new IA and 301s `/eca/*` onto `/activities/*`.
+	basePath: '/activities',
+	restBase: 'wp/v2/mcp_ai_eca',
+	// The ECA preset emits its own detail route at `/activities/<slug>/`, so the
+	// redirect map must target that — not the generic `/activities/<id>/<slug>/`.
+	canonicalPath: 'slug',
+	fields: [
+		'id',
+		'slug',
+		'link',
+		'date_gmt',
+		'modified_gmt',
+		'title',
+		'content',
+		'excerpt',
+		'featured_media',
+		'meta',
+		'mcp_ai_eca_category',
+	],
+	perPage: 100,
+	maxPages: 10,
+	passthrough: [ ...ECA_PASSTHROUGH_FIELDS ],
+};
+
+/**
+ * Fields an ECA collection cannot function without.
+ *
+ * `meta` and `mcp_ai_eca_category` are the whole record; `content`/`link`/
+ * `featured_media` feed the detail page. A discovered collection usually omits
+ * `meta`, so the preset MERGES these in rather than trusting the profile.
+ */
+export const ECA_REQUIRED_FIELDS = [
+	'meta',
+	'mcp_ai_eca_category',
+	'title',
+	'slug',
+	'link',
+	'content',
+	'featured_media',
+];
+
+/** Append the required fields a collection is missing, preserving operator order. */
+export function withRequiredFields( existing: string[], required: string[] ): string[] {
+	const out = [ ...existing ];
+	for ( const field of required ) {
+		if ( ! out.includes( field ) ) out.push( field );
+	}
+	return out;
+}
+
+/**
+ * What the `eca` preset writes into `profile.eca` when the operator has not.
+ *
+ * Deliberately structural only — path, stages, day order, time bands, hand-off
+ * mode. Terms, timezone and currency are SITE facts the forge cannot infer, so
+ * a missing one warns at scaffold time rather than being guessed.
+ */
+export const ECA_PROFILE_DEFAULTS: ForgeEca = {
+	basePath: '/activities',
+	stages: [ ...ECA_DEFAULT_STAGES ],
+	days: [ ...ECA_DAY_ORDER ],
+	timeBands: [ ...ECA_DEFAULTS.timeBands ],
+	booking: { mode: 'external' },
+};
+
 /** Commerce is the ONE thing a content preset prunes — a CPT is content. */
 function withoutCommerce(profile: SiteProfile): SiteProfile {
 	return {
@@ -344,6 +455,39 @@ export function applyPresetToProfile(profile: SiteProfile, preset: PresetName): 
 			// Shape is PINNED multi-page: a docs source that happens to look like a
 			// one-pager would otherwise lose its hierarchy navigation.
 			return { ...withoutCommerce(profile), shape: 'multi-page' };
+		case 'eca': {
+			// Commerce is pruned for the same reason `portfolio` prunes it: the
+			// catalogue is the site, and a school selling paid activities routes
+			// that through the register CTA (D1), not a cart.
+			const content = withoutCommerce( profile );
+			const eca = { ...ECA_PROFILE_DEFAULTS, ...( content.eca ?? {} ) };
+			const index = content.collections.findIndex(
+				( collection ) =>
+					collection.slug === ECA_COLLECTION.slug || /^wp\/v2\/mcp_ai_eca$/.test( collection.restBase ),
+			);
+
+			if ( index < 0 ) {
+				return { ...content, collections: [ ...content.collections, { ...ECA_COLLECTION } ], eca };
+			}
+
+			// A discovered collection is named after the CPT (`eca`) and its
+			// `_fields` list does NOT include `meta` — the whole schedule and price
+			// would vanish silently. Repair both here instead of trusting the profile.
+			const existing = content.collections[ index ];
+			const repaired: WpCollection = {
+				...existing,
+				// The rebuilt IA owns the path; the source's /eca/* URLs 301 onto it.
+				basePath: eca.basePath ?? ECA_COLLECTION.basePath,
+				// The ECA routes are slug-only, so 301s must say so.
+				canonicalPath: 'slug',
+				fields: withRequiredFields( existing.fields, ECA_REQUIRED_FIELDS ),
+				// `meta`/`content` must survive the loader's projection.
+				passthrough: [ ...new Set( [ ...( existing.passthrough ?? [] ), ...ECA_PASSTHROUGH_FIELDS ] ) ],
+			};
+			const collections = [ ...content.collections ];
+			collections[ index ] = repaired;
+			return { ...content, collections, eca };
+		}
 		case 'blog':
 		default:
 			return profile;

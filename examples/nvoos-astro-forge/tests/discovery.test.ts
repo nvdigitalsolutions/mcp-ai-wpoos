@@ -202,6 +202,27 @@ describe( 'mergeProfileDraft (Proposal 118 §3)', () => {
 		expect( merged.name ).toBe( 'JAYAINC' );
 	} );
 
+	it( 'carries a measured chrome geometry across a design-only refresh', () => {
+		const existing = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		existing.design = {
+			...( existing.design ?? {} ),
+			mode: 'rebuild',
+			chrome: {
+				navStyle: { size: '16px', weight: '500', transform: 'capitalize' },
+				geometry: {
+					wide: { padX: 30, logoHeight: '49px', logoAlign: 'start' },
+					navStyle: { size: '16px', weight: '500', transform: 'capitalize' },
+				},
+			},
+		} as never;
+		// A --design-only draft re-harvests the chrome and carries no geometry.
+		const designOnly = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		designOnly.design = { mode: 'rebuild', chrome: { navStyle: { size: 'var( --e-global-typography-x-font-size )' } } } as never;
+		const merged = mergeProfileDraft( existing, designOnly );
+		// The measurement survives, so reconcileHeader can re-derive the styles.
+		expect( merged.design?.chrome?.geometry?.wide?.padX ).toBe( 30 );
+	} );
+
 	it( 'refreshes the animation inventory only when the draft measured one', () => {
 		const existing = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
 		existing.animations = { facts: [ { kind: 'css-keyframes', name: 'stored' } ] };

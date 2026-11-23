@@ -609,6 +609,57 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	opacity: 0.9;
 }
 
+/*
+ * A labelled header CTA. Every value that makes it the SOURCE's pill is a
+ * measured chrome fact (fill / ink / padding / radius / size / weight) and
+ * arrives inline; this rule only supplies the layout floor and a cascade
+ * placeholder so an unmeasured pill still reads as a button.
+ */
+.header-cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.6rem 1.25rem;
+	border-radius: 999px;
+	background: var(--forge-cta);
+	color: var(--forge-cta-ink);
+	font: inherit;
+	font-weight: 600;
+	line-height: 1.15;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: filter 0.2s ease, transform 0.12s ease;
+}
+
+.header-cta:hover {
+	filter: brightness(0.94);
+}
+
+.header-cta:active {
+	transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.header-cta {
+		transition: none;
+	}
+}
+
+/* Phones: the pill keeps its tap target but stops competing with the nav. */
+@media (max-width: 767px) {
+	.header-cta {
+		padding: 0.5rem 0.9rem;
+		font-size: 0.9rem;
+	}
+
+	/* The source HIDES this pill on phones (`elementor-hidden-mobile`): a
+	 * measured fact, not a guess — showing it pushed the header row past the
+	 * viewport (eca.directory's “Try De…”). */
+	.header-cta--hide-mobile {
+		display: none;
+	}
+}
+
 .header-icon:hover {
 	opacity: 1;
 }
@@ -1919,6 +1970,22 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  */
 .ds-section-wrap--centered .post-body :is(div, section):has(> :only-child):not(.col-inner):not(.col-inner *):not(.row):not(.vc_row):not(.owl-carousel):not(.owl-stage):not([class*='brando-inner-row']):not([class*='brando_inner_row']) {
 	min-height: var(--ds-col-min-h, 0);
+}
+
+/* ---------------------------------------------------------------------------
+ * Builder layout shim — Elementor flexbox containers (≥3.16)
+ *
+ * Only what the markup ALONE can state. Elementor keeps a container's
+ * direction and lane widths in its own generated CSS (per-element `--width`,
+ * `flex-direction`), which the sanitizer drops, so a shim that guessed would
+ * re-arrange the source's bands rather than restore them (tried: an equal-share
+ * row turned a full-width intro beside a full-width card stack and made the
+ * band 100px TALLER). What IS safe is the box rule the vendor sheet carried:
+ * an image never outgrows its lane.
+ * ------------------------------------------------------------------------- */
+.ds-section-wrap .post-body .e-con img {
+	max-width: 100%;
+	height: auto;
 }
 
 /* ---------------------------------------------------------------------------

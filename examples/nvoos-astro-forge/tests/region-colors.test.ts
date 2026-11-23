@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
 	applyBandSurfaces,
+	applyChromeSurfaces,
 	colorDeltaE,
 	compareRegionColorModes,
 	compareRegionColors,
@@ -365,12 +366,37 @@ describe( 'band surfaces (gradient / photo / flat)', () => {
 		expect( sections[ 0 ].bgColor ).toBe( '#000000' );
 	} );
 
-	it( 'never overwrites a pinned surface', () => {
+	it( 'never overwrites an operator-pinned surface', () => {
 		const pinned: ForgeSection = { id: 'a1', bgColor: '#dd3333' };
-		applyBandSurfaces( [ pinned ], () => ( { background: '#000000', text: '#ffffff', image: gradient } ) );
+		applyBandSurfaces(
+			[ pinned ],
+			() => ( { background: '#000000', text: '#ffffff', image: gradient } ),
+			undefined,
+			{ preserve: () => true }
+		);
 
 		expect( pinned.bgColor ).toBe( '#dd3333' );
-		expect( pinned.bgGradient ).toBe( gradient );
+		expect( pinned.bgGradient ).toBeUndefined();
+	} );
+
+	// The harvest reads DECLARATIONS and can read a rule for a child layer or a
+	// variant the page never renders (eca.directory's magenta header, 2026-11-23).
+	it( 'a measured surface beats a harvested one', () => {
+		const section: ForgeSection = { id: 'a1', bgColor: '#d30c5c' };
+		applyBandSurfaces( [ section ], () => ( { background: 'transparent', text: '#1a1e1d' } ) );
+		expect( section.bgColor ).toBeUndefined();
+	} );
+
+	it( 'clears a harvested photo when the browser paints no image', () => {
+		const section: ForgeSection = { id: 'a1', bgImage: 'https://example.com/bg-01.png' };
+		applyBandSurfaces( [ section ], () => ( { background: 'transparent', text: '#1a1e1d' } ) );
+		expect( section.bgImage ).toBeUndefined();
+	} );
+
+	it( 'leaves a band the pass could not measure untouched', () => {
+		const section: ForgeSection = { id: 'a1', bgColor: '#dd3333' };
+		applyBandSurfaces( [ section ], () => undefined );
+		expect( section.bgColor ).toBe( '#dd3333' );
 	} );
 
 	it( 'skips a transparency reading (the body surface showing through)', () => {
@@ -389,6 +415,111 @@ describe( 'band surfaces (gradient / photo / flat)', () => {
 		const sections: ForgeSection[] = [ { id: 'a1' } ];
 		applyBandSurfaces( sections, () => undefined );
 		expect( sections[ 0 ] ).toEqual( { id: 'a1' } );
+	} );
+} );
+
+describe( 'chrome surfaces (measurement beats the stylesheet harvest)', () => {
+	const measured = ( header: RegionColors, footer: RegionColors, body?: RegionColors ) => ( {
+		light: {
+			...( body ? { body } : {} ),
+			header,
+			footer,
+		},
+	} );
+
+	it( 'replaces a harvested header/footer surface and ink with the measured ones', () => {
+		// eca.directory: the harvest read `#d30c5c` for both bars (a customizer
+		// colour nothing paints) and the link accent for the footer ink.
+		const chrome = {
+			headerBg: '#d30c5c',
+			headerInk: '#8764a0',
+			footerBarBg: '#d30c5c',
+			footerInk: '#27104a',
+			footerBarInk: '#8764a0',
+		};
+		const applied = applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a', inks: [ { color: '#27104a', share: 0.59 }, { color: '#ffffff', share: 0.41 } ] },
+				{ background: '#f7f7f7', text: '#747474', inks: [ { color: '#747474', share: 0.62 }, { color: '#27104a', share: 0.38 } ] }
+			)
+		);
+
+		expect( chrome ).toEqual( {
+			headerBg: '#f7f7f7',
+			headerInk: '#27104a',
+			footerBarBg: '#f7f7f7',
+			footerInk: '#747474',
+			footerBarInk: '#747474',
+		} );
+		expect( applied ).toContain( 'chrome.headerBg' );
+		expect( applied ).toContain( 'chrome.footerBarInk' );
+	} );
+
+	it( 'gives a transparent header the BODY surface (the strip shows the page)', () => {
+		const chrome: Record< string, string > = { headerBg: '#d30c5c' };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: 'transparent', text: '#1a1e1d' },
+				{ background: 'transparent', text: '#1a1e1d' },
+				{ background: '#f7fafc', text: '#1a1e1d' }
+			)
+		);
+
+		expect( chrome.headerBg ).toBe( '#f7fafc' );
+		expect( chrome.footerBarBg ).toBe( '#f7fafc' );
+	} );
+
+	it( 'keeps an operator-pinned fact', () => {
+		const chrome: Record< string, string > = { headerBg: '#d30c5c', footerInk: '#27104a' };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a' },
+				{ background: '#f7f7f7', text: '#747474', inks: [ { color: '#747474', share: 0.62 } ] }
+			),
+			{ preserve: ( path ) => path === 'chrome.headerBg' }
+		);
+
+		expect( chrome.headerBg ).toBe( '#d30c5c' );
+		expect( chrome.footerInk ).toBe( '#747474' );
+	} );
+
+	it( 'leaves the harvest alone when a region could not be measured', () => {
+		const chrome: Record< string, string > = { headerBg: '#04132b' };
+		const applied = applyChromeSurfaces( chrome, { light: {} } );
+
+		expect( chrome.headerBg ).toBe( '#04132b' );
+		expect( applied ).toEqual( [] );
+	} );
+
+	it( 'takes the nav ink from the header palette when the harvest disagrees', () => {
+		// A `--design`-only refresh re-reads the stylesheet and can land on
+		// `#000000` while the painted nav is the header's dominant ink.
+		const chrome: Record< string, string > = { navInk: '#000000' };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a', inks: [ { color: '#27104a', share: 0.59 }, { color: '#ffffff', share: 0.41 } ] },
+				{ background: '#f7f7f7', text: '#747474' }
+			)
+		);
+
+		expect( chrome.navInk ).toBe( '#27104a' );
+	} );
+
+	it( 'leaves a nav ink that the palette already carries', () => {
+		const chrome: Record< string, string > = { navInk: '#27104a' };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a', inks: [ { color: '#27104a', share: 0.59 } ] },
+				{ background: '#f7f7f7', text: '#747474' }
+			)
+		);
+
+		expect( chrome.navInk ).toBe( '#27104a' );
 	} );
 } );
 

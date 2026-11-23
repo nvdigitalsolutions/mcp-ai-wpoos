@@ -1311,8 +1311,10 @@ describe( 'scaffold — hybrid local content (Proposal 106 P2)', () => {
 	it( 'keeps non-hybrid collections on the plain WP loader', () => {
 		const out = renderContentConfig(PROFILE);
 		expect(out).toContain('collection: postsCollection, auth: applicationAuth, local: { pattern:');
-		// The products collection (no local source) stays plain.
-		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth, userAgent: import.meta.env.WP_USER_AGENT }) })');
+		// The products collection (no local source) stays plain. Every loader
+		// carries the transport knob (`WP_FETCH_TIMEOUT_MS`): a big Elementor
+		// page tree is megabytes in one REST response and 15s is not enough.
+		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth, userAgent: import.meta.env.WP_USER_AGENT, timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined }) })');
 	} );
 } );
 

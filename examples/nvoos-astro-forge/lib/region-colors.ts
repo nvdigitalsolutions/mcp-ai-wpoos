@@ -41,7 +41,8 @@
 
 import { hexToRgb, rgbToHex } from './color.ts';
 import { gateContextOptions } from './gate.ts';
-import type { ForgeColorModes, ForgeSection, InkShare, RegionColors } from './types.ts';
+import { settle } from './page-settle.ts';
+import type { ForgeChrome, ForgeColorModes, ForgeSection, InkShare, RegionColors } from './types.ts';
 
 export type { InkShare } from './types.ts';
 
@@ -59,9 +60,14 @@ export interface ColorRegion {
 	 * Resolve the surface from the region's OWN fill layer as well as its
 	 * ancestors. A builder paints a band's background on a child (`.section-bg`,
 	 * `.banner`), never on the band element, so the ancestor walk reads the page
-	 * body and every band looks transparent (Flatsome, 2026-11-11). Only set this
-	 * for BANDS — a header's child topbar would otherwise lend it the topbar's
-	 * colour.
+	 * body and every band looks transparent (Flatsome, 2026-11-11).
+	 *
+	 * Set this where a CHILD layer really is the region's paint: bands, and the
+	 * header/footer ELEMENTS — Elementor's `header.elementor-location-header`
+	 * is transparent with its inner container painting the strip
+	 * (eca.directory, 2026-11-23). The 50%-of-area floor in `readBackground`
+	 * keeps a small child (a topbar, a button, a form field) from lending its
+	 * colour to the region.
 	 */
 	descendantFill?: boolean;
 }
@@ -75,6 +81,13 @@ export const DEFAULT_COLOR_REGIONS: ColorRegion[] = [
 	{ name: 'body', selectors: [ 'body' ] },
 	{
 		name: 'header',
+		// Chrome is painted on a CHILD layer as often as on the element itself:
+		// Elementor's `header.elementor-location-header` is transparent and its
+		// inner `.e-con.e-parent` band paints the strip (eca.directory, 2026-11-23).
+		// Without the descendant scan the header measured `transparent`, the
+		// colour gate SKIPPED it, and the rebuild themed the header from a
+		// stylesheet guess.
+		descendantFill: true,
 		selectors: [
 			'header',
 			'[role="banner"]',
@@ -90,6 +103,9 @@ export const DEFAULT_COLOR_REGIONS: ColorRegion[] = [
 	},
 	{
 		name: 'footer',
+		// Same CHILD-layer rule as the header: the footer element is transparent
+		// and its inner band paints the bar.
+		descendantFill: true,
 		selectors: [
 			'[role="contentinfo"]',
 			'.site-footer',
@@ -200,44 +216,212 @@ export function normalizeCssValue( input: string ): string {
 export const GRADIENT_SURFACE_RE = /(?:repeating-)?(?:linear|radial|conic)-gradient\(/i;
 
 /**
+ * The selector a SOURCE band can be addressed by.
+ *
+ * A nav anchor (`#about`) is the friendliest handle, but most builder bands
+ * have none — an Elementor container is a plain div whose only handle is its
+ * `elementor-element-<id>` class. Without it the colour/geometry passes resolve
+ * nothing and the harvest's guess ships unopposed (eca.directory: 2 of 9 bands
+ * addressable, and the unaddressed ones kept invented backgrounds).
+ */
+export function bandRegionSelector( section: ForgeSection ): string | undefined {
+	if ( section.anchor ) {
+		return `#${ section.anchor }`;
+	}
+	if ( section.vendorId ) {
+		return `.elementor-element-${ section.vendorId }`;
+	}
+	return undefined;
+}
+
+/**
+ * The colour-region name for a source band. Anchored bands keep `band:<anchor>`
+ * so baselines recorded before `vendorId` existed still compare; everything else
+ * is keyed by the band id.
+ */
+export function bandRegionName( section: ForgeSection ): string | undefined {
+	if ( ! bandRegionSelector( section ) ) {
+		return undefined;
+	}
+	return section.anchor ? `band:${ section.anchor }` : `band:${ section.id }`;
+}
+
+export interface ApplyBandSurfaceOptions {
+	/**
+	 * Bands whose surface facts are OPERATOR-OWNED: skip them entirely.
+	 *
+	 * The analysis builds this from `profile.pins` (`sections.<id>.bgColor` …), so
+	 * a pin beats a measurement while a harvested guess does not. Without it a
+	 * pin could only survive by re-application later — and a caller that runs the
+	 * measurement AFTER the pins (the per-page pass) would lose them.
+	 */
+	preserve?: ( section: ForgeSection ) => boolean;
+}
+
+/**
  * Copy a measured BAND surface onto the section facts.
  *
  * A builder paints a band's surface on a child layer and declares it in a
  * `<style>` block the sanitizer drops, so the browser measurement is the only
- * exact source. Gradients go to the existing `bgGradient` field (the renderer
- * emits it as the `background` shorthand; `resolveSectionTheme` classifies from
- * the stop its content sits on). Flat fills go to `bgColor`, unless the
- * composited value is
- * the page body's own — that is "transparent", not a band fact.
+ * exact source. MEASUREMENT WINS over the stylesheet harvest: the harvest reads
+ * declarations, and a declaration can belong to a child layer or a variant the
+ * page never renders — eca.directory's header was painted magenta from a
+ * `#d30c5c` rule while the browser computed `transparent`, and five content
+ * bands carried backgrounds from rules for layers inside them.
  *
- * `pinned` facts win: an existing `bgColor`/`bgGradient`/`bgImage` is never
- * overwritten, so an operator pin survives a re-analysis.
+ * A band whose composited surface equals the page body paints NOTHING: its
+ * harvested `bgColor`/`bgGradient` are cleared rather than kept ("transparent"
+ * is a fact, and a colour inherited from the body is not the band's). Operator
+ * pins are the exception — see `ApplyBandSurfaceOptions.preserve`.
+ *
+ * A photo `url()` is captured on the region but never wired to `bgImage`:
+ * `resolveSectionTheme` would read it as a hero band.
  */
 export function applyBandSurfaces(
 	sections: ForgeSection[],
 	lookup: ( section: ForgeSection ) => RegionColors | undefined,
-	bodyBackground?: string
+	bodyBackground?: string,
+	options: ApplyBandSurfaceOptions = {}
 ): void {
 	for ( const section of sections ) {
+		if ( options.preserve?.( section ) ) {
+			continue;
+		}
 		const surface = lookup( section );
+		// Not measured (no selector, or the region did not resolve) — the harvest
+		// stands. Clearing on an absent measurement would erase real facts.
 		if ( ! surface ) {
 			continue;
 		}
-		if ( surface.image && ! section.bgGradient && ! section.bgImage && GRADIENT_SURFACE_RE.test( surface.image ) ) {
-			section.bgGradient = surface.image;
+		const image = surface.image;
+		if ( image && GRADIENT_SURFACE_RE.test( image ) ) {
+			section.bgGradient = image;
+			delete section.bgColor;
+			continue;
 		}
-		const background = surface.background;
-		if (
-			background &&
-			background !== TRANSPARENT &&
-			background !== bodyBackground &&
-			! section.bgColor &&
-			! section.bgGradient
-		) {
-			section.bgColor = background;
+		const flat = surface.background;
+		if ( ! flat || flat === TRANSPARENT || flat === bodyBackground ) {
+			// The band paints nothing of its own — inherit the page surface.
+			delete section.bgColor;
+			delete section.bgGradient;
+		} else {
+			section.bgColor = flat;
+			delete section.bgGradient;
+		}
+		// Only a band with NO background image whatsoever loses a harvested one.
+		// A photo is left unwired (see above), so it must not be deleted either.
+		if ( ! image ) {
+			delete section.bgImage;
 		}
 	}
 }
+
+export interface ApplyChromeSurfacesOptions {
+		/** Operator-owned chrome facts (`chrome.<field>` pins): skip them. */
+		preserve?: ( path: string ) => boolean;
+	}
+
+	/**
+	 * Copy the MEASURED chrome surface and ink onto the design's chrome facts.
+	 *
+	 * `analyzeChrome` reads DECLARATIONS out of the stylesheets, and a
+	 * declaration can belong to a layer or a variant the page never paints.
+	 * eca.directory measured worse on every chrome surface than the browser does:
+	 * header and footer bar background `#d30c5c` (a Kadence customizer colour
+	 * nothing renders), footer ink = the link accent, and the header pills'
+	 * fill = Elementor's translucent hover shade. The browser disagrees on all of
+	 * them, so measurement WINS; an operator pin survives through `preserve`
+	 * (and `applyDesignPins` re-applies it on the merge).
+	 *
+	 * A region that could not be measured leaves the harvest alone — absence is
+	 * not evidence. A header that honestly paints nothing takes the BODY surface:
+	 * the strip shows the page behind it, and painting the harvest's guess over
+	 * that is the bug this function exists to stop.
+	 *
+	 * @return The `chrome.<field>` paths that were applied (for logging).
+	 */
+export function applyChromeSurfaces(
+		chrome: ForgeChrome | undefined,
+		measured: ForgeColorModes | undefined,
+		options: ApplyChromeSurfacesOptions = {}
+	): string[] {
+		if ( ! chrome ) {
+			return [];
+		}
+		const light = normalizeColorModes( measured ).light ?? {};
+		const body = light.body?.background;
+		const applied: string[] = [];
+		const write = (
+			field: 'headerBg' | 'headerInk' | 'navInk' | 'footerBarBg' | 'footerInk' | 'footerBarInk',
+			value: string
+		): void => {
+			if ( options.preserve?.( `chrome.${ field }` ) ) {
+				return;
+			}
+			// The profile stores colours as `#rrggbb` (the token/contrast passes parse
+			// hex only); the browser hands back `rgb()`.
+			const normalized = normalizeCssColor( value );
+			chrome[ field ] = normalized === TRANSPARENT ? value : normalized;
+			applied.push( `chrome.${ field }` );
+		};
+		const dominantInk = ( region: RegionColors | undefined ): string | undefined => {
+			const ink = region?.inks?.[ 0 ]?.color;
+			return ink && ink !== TRANSPARENT ? ink : undefined;
+		};
+
+		const header = light.header;
+		if ( header ) {
+			const surface = header.background;
+			if ( surface && surface !== TRANSPARENT ) {
+				write( 'headerBg', surface );
+			} else if ( body && body !== TRANSPARENT ) {
+				write( 'headerBg', body );
+			}
+			const ink = dominantInk( header );
+			if ( ink ) {
+				write( 'headerInk', ink );
+			}
+			// The nav ink is a measured palette entry too. A `--design`-only refresh
+			// re-reads the stylesheet and can land on `#000000` while the painted nav
+			// is the header's dominant ink (eca.directory: #27104a). When the
+			// harvested value is absent from the header's OWN palette, the palette
+			// wins.
+			const inks: Array< { color: string } > = ( header.inks ?? [] ).map( ( entry ) => ( { color: entry.color } ) );
+			const firstInk = inks.length > 0 ? inks[ 0 ].color : undefined;
+			const navInk = chrome.navInk;
+			if ( navInk && firstInk ) {
+				let present = false;
+				for ( const entry of inks ) {
+					// `colorDeltaE` is undefined when either side does not parse — an
+					// unresolved builder var is NOT a palette entry, so it never matches.
+					const delta = colorDeltaE( entry.color, String( navInk ) );
+					if ( delta !== undefined && delta <= 3 ) {
+						present = true;
+						break;
+					}
+				}
+				if ( ! present ) {
+					write( 'navInk', firstInk );
+				}
+			}
+		}
+
+		const footer = light.footer;
+		if ( footer ) {
+			const surface = footer.background;
+			if ( surface && surface !== TRANSPARENT ) {
+				write( 'footerBarBg', surface );
+			} else if ( body && body !== TRANSPARENT ) {
+				write( 'footerBarBg', body );
+			}
+			const ink = dominantInk( footer );
+			if ( ink ) {
+				write( 'footerInk', ink );
+				write( 'footerBarInk', ink );
+			}
+		}
+		return applied;
+	}
 
 /** sRGB → CIE Lab (D65 white point), the space CIEDE2000 works in. */
 export function srgbToLab( r: number, g: number, b: number ): [ number, number, number ] {
@@ -796,6 +980,11 @@ export interface MeasureColorOptions {
 			try {
 				const page = await context.newPage();
 				await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+				// Fonts/lazy images/animations move boxes AND surfaces. Without this the
+				// read raced the builder's own stylesheet: eca.directory's form fields
+				// and accent button still spanned the full 1440px band row, and the
+				// descendant-fill scan took the 53px button for the band surface.
+				await settle( page );
 				const colors = await page.evaluate(
 					( args ) => {
 						// Alpha is the FOURTH colour component — never the blue channel. A
@@ -899,7 +1088,8 @@ export interface MeasureColorOptions {
 								// transparent background-colour (Flatsome).
 								const bandRect = element.getBoundingClientRect();
 								const width = bandRect.width;
-								const candidates: Array< { bg: string; image?: string; area: number; w: number } > = [];
+								const bandArea = Math.max( 1, width * bandRect.height );
+								const candidates: Array< { bg: string; image?: string; area: number; w: number; h: number } > = [];
 								for ( const node of element.querySelectorAll( '*' ) ) {
 									const style = getComputedStyle( node );
 									const background = style.backgroundColor;
@@ -930,6 +1120,7 @@ export interface MeasureColorOptions {
 										...( nodePseudo?.image || hasImage ? { image: nodePseudo?.image ?? backgroundImage } : {} ),
 										area: rect.width * rect.height,
 										w: rect.width,
+										h: rect.height,
 									} );
 								}
 								let best: ( typeof candidates )[ number ] | undefined;
@@ -938,15 +1129,19 @@ export interface MeasureColorOptions {
 										best = candidate;
 									}
 								}
-								// Two half-width columns paint the band between them without any
-								// SINGLE layer reaching 60% of its width (Flatsome's 2-col banner
-								// row, monicarajiv.com). Accept the winning colour when same-coloured
-								// siblings TILE at least 90% of the band width.
-								if ( best && best.w < width * 0.6 ) {
+								// A painted CHILD is the band's SURFACE only when it BANDS the
+								// region. A full-width CONTROL is not: eca.directory's
+								// "Explore Our Activities" band read #8764a0 because its accent
+								// button spanned the row (53px of 250px), and the contact band read
+								// #ffffff off a full-width form field — both before the builder's
+								// own layout CSS applied. Require half the band's AREA, or
+								// same-coloured siblings tiling the width AND the height (a
+								// two-column banner).
+								if ( best && best.area < bandArea * 0.5 ) {
 									const tiled = candidates
 										.filter( ( candidate ) => candidate.bg === best!.bg && candidate.image === best!.image )
 										.reduce( ( sum, candidate ) => sum + candidate.w, 0 );
-									if ( tiled < width * 0.9 ) {
+									if ( tiled < width * 0.9 || best.h < bandRect.height * 0.5 ) {
 										best = undefined;
 									}
 								}

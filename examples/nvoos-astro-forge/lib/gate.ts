@@ -33,6 +33,7 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 
 import { assertSafeHttpUrl } from './ssrf.ts';
+import { visitorMarkup } from './admin-chrome.ts';
 import type { SiteProfile } from './types.ts';
 import { Vault } from './vault.ts';
 
@@ -142,6 +143,13 @@ const DEFAULT_USER_AGENT =
 /**
  * Holding-page markers. Deliberately specific — a live site may legitimately
  * contain the WORDS "coming soon", but not a plugin's structural markers.
+ *
+ * The Elementor marker is the GATE TEMPLATE's body class
+ * (`elementor-maintenance-mode`), never the bare `elementor-maintenance`
+ * prefix: Elementor also names its admin-bar toggle
+ * `wp-admin-bar-elementor-maintenance-on`, and WooCommerce names its store
+ * badge `woocommerce-site-status-badge-store-coming-soon`. Matching the prefix
+ * made a site that had just been unlocked read as gated.
  */
 const REJECT_MARKERS: Array<{ marker: string; fingerprint: GateFingerprint }> = [
 	{ marker: 'wpmm-', fingerprint: 'wp-maintenance-mode' },
@@ -151,7 +159,7 @@ const REJECT_MARKERS: Array<{ marker: string; fingerprint: GateFingerprint }> = 
 	{ marker: 'under-construction', fingerprint: 'under-construction' },
 	{ marker: 'underconstruction', fingerprint: 'under-construction' },
 	{ marker: 'upc-bar', fingerprint: 'under-construction' },
-	{ marker: 'elementor-maintenance', fingerprint: 'elementor-maintenance' },
+	{ marker: 'elementor-maintenance-mode', fingerprint: 'elementor-maintenance' },
 	{ marker: 'elementor-coming-soon', fingerprint: 'elementor-maintenance' },
 	{ marker: 'briefly unavailable for scheduled maintenance', fingerprint: 'core-maintenance' },
 ];
@@ -502,15 +510,67 @@ export function setActiveGateCookies( cookies: ForgeGateCookie[] ): void {
 }
 
 /**
- * Merge the active gate cookies into `browser.newContext()` options. Cookies
- * carry their own `domain`/`path`, so Chromium applies them per origin — a
- * stale cookie from another site in the same process cannot leak.
+ * The subset of Playwright's `storageState` a gate session needs. Typed
+ * structurally so `lib/gate.ts` stays Playwright-free while call sites can pass
+ * the result straight to `browser.newContext()`.
  */
-export function gateContextOptions< const T extends object >( overrides: T ): T & { cookies?: ForgeGateCookie[] } {
+export interface GateStorageState {
+	cookies: Array< {
+		name: string;
+		value: string;
+		domain: string;
+		path: string;
+		expires: number;
+		httpOnly: boolean;
+		secure: boolean;
+		sameSite: 'Strict' | 'Lax' | 'None';
+	} >;
+	origins: Array< { origin: string; localStorage: Array< { name: string; value: string } > } >;
+}
+
+/**
+ * Merge the active gate cookies into `browser.newContext()` options.
+ *
+ * Cookies travel as a `storageState` — that is Playwright's ONLY supported
+ * channel. `newContext({ cookies })` is not a `BrowserContextOptions` field and
+ * is IGNORED silently (verified on Playwright 1.65: `context.cookies()` comes
+ * back empty), and because the extra property is attached to a variable rather
+ * than a literal, TypeScript does not flag it. Every browser pass — geometry,
+ * interaction states, colours, animations, screenshots — therefore navigated
+ * the holding page while the fetch plane was authenticated (eca.directory,
+ * 2026-11-23). `storageState.cookies` carries their own `domain`/`path`, so
+ * Chromium applies them per origin and a stale cookie cannot leak.
+ */
+export function gateContextOptions< const T extends object >(
+	overrides: T
+): T & { storageState?: GateStorageState } {
 	if ( activeCookies.length === 0 ) {
 		return overrides;
 	}
-	return { ...overrides, cookies: [ ...activeCookies ] };
+	const existing = ( overrides as { storageState?: GateStorageState | string } ).storageState;
+	if ( typeof existing === 'string' ) {
+		// An explicit storage-state PATH already carries its own session; the
+		// caller chose it, so it wins.
+		return overrides;
+	}
+	const cookies = activeCookies.map( ( cookie ) => ( {
+		name: cookie.name,
+		value: cookie.value,
+		domain: cookie.domain,
+		path: cookie.path || '/',
+		secure: cookie.secure ?? false,
+		httpOnly: cookie.httpOnly ?? false,
+		sameSite: cookie.sameSite ?? 'Lax',
+		// Playwright's `Cookie.expires` is required: -1 is a session cookie.
+		expires: typeof cookie.expires === 'number' ? cookie.expires : -1,
+	} ) );
+	return {
+		...overrides,
+		storageState: {
+			origins: existing?.origins ?? [],
+			cookies: [ ...( existing?.cookies ?? [] ), ...cookies ],
+		},
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -928,11 +988,15 @@ export function visibleTextLength( html: string ): number {
 	return text.length;
 }
 
+/**
+ * The marker scan reads the PAGE, not the document head or the CMS's admin
+ * chrome — see `lib/admin-chrome.ts` for why both matter.
+ */
 function htmlMarker(
 	html: string,
 	extra: string[] | undefined
 ): { marker: string; fingerprint: GateFingerprint } | undefined {
-	const lower = html.toLowerCase();
+	const lower = visitorMarkup( html ).toLowerCase();
 	const configured = ( extra ?? [] ).map( ( marker ) => ( { marker, fingerprint: 'generic-holding-page' as GateFingerprint } ) );
 	for ( const entry of [ ...configured, ...REJECT_MARKERS ] ) {
 		if ( lower.includes( entry.marker.toLowerCase() ) ) {

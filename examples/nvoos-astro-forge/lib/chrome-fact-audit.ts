@@ -32,6 +32,13 @@ interface ChromeMarker {
 	key: string;
 	/** The class, custom property or text the build must carry. */
 	marker: string;
+	/**
+	 * Alternative markers: any ONE of them satisfies the fact. A fact can have
+	 * more than one faithful rendering (a header action is an icon link OR a
+	 * labelled pill), and demanding the one the source did not use reported a
+	 * rendered fact as missing (eca.directory, 2026-11-23).
+	 */
+	anyOf?: string[];
 	/** Only audit when the fact is actually declared (and non-empty). */
 	when: ( chrome: ForgeChrome ) => boolean;
 }
@@ -52,6 +59,9 @@ const MARKERS: ChromeMarker[] = [
 	{
 		key: 'headerActions',
 		marker: 'header-icon',
+		// A labelled pill renders `.header-cta` (Proposal 120 §2b); a glyph-only
+		// action renders `.header-icon`. Either is the fact rendered.
+		anyOf: [ 'header-cta' ],
 		when: ( c ) => ( c.headerActions ?? [] ).length > 0,
 	},
 	{
@@ -96,7 +106,8 @@ export function auditChromeFacts(
 		if ( ! marker.when( chrome ) ) {
 			continue;
 		}
-		if ( ! html.includes( marker.marker ) ) {
+		const candidates = [ marker.marker, ...( marker.anyOf ?? [] ) ];
+		if ( ! candidates.some( ( candidate ) => html.includes( candidate ) ) ) {
 			missing.push( { fact: marker.key, marker: marker.marker } );
 		}
 	}

@@ -43,6 +43,14 @@ export interface WpLoaderOptions {
 	 */
 	userAgent?: string;
 	/**
+	 * Per-request transport cap in ms. Defaults to `WpClient`'s 15s. Raise it
+	 * for a source whose REST payload is large: eca.directory serves 19
+	 * Elementor pages as a single 1.2 MB response that takes ~30s to
+	 * serialise, so a 15s cap aborted the whole build. The scaffolded
+	 * `content.config.ts` reads `WP_FETCH_TIMEOUT_MS`.
+	 */
+	timeoutMs?: number;
+	/**
 	 * Hybrid local content (Proposal 106 P2): a local MDX glob merged under
 	 * the WP entries. Local fills the gaps; WP wins on store-id collision. A
 	 * network-level WP failure (no connection at all) degrades to local-only
@@ -218,7 +226,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 		name: 'nvoos-wp',
 		schema: contentSchema,
 		load: async (context: LoaderContext) => {
-			const client = WpClient.fromProfile(site, { auth, userAgent: options.userAgent });
+			const client = WpClient.fromProfile(site, { auth, userAgent: options.userAgent, timeoutMs: options.timeoutMs });
 
 			if (collection.source === 'payload' || collection.source === 'local') {
 				await loadPayloadEntries(context, client, collection, internalOrigins);
@@ -296,6 +304,9 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 				context.store.set({
 					id,
 					data: {
+						// Declared extra keys first, so a collection cannot silently
+						// overwrite a projected field (`title`, `slug`, `id`).
+						...passthroughFields( entry, collection ),
 						id: Number(entry.id),
 						title: raw.title,
 						slug: raw.slug,
@@ -743,6 +754,22 @@ interface RawEntry {
 	sku?: string;
 	categories?: string[];
 	images?: string[];
+}
+
+/**
+ * Copy a collection's declared extra REST keys into the entry's `data`.
+ *
+ * The projected field set below is deliberate — an unbounded content store is
+ * a memory and cache problem. A collection that genuinely needs more (the ECA
+ * toolkit's `meta`, its taxonomy term ids, the raw body) names those keys on
+ * `WpCollection.passthrough`; anything undeclared stays out.
+ */
+function passthroughFields( entry: Record< string, unknown >, collection: WpCollection ): Record< string, unknown > {
+	const out: Record< string, unknown > = {};
+	for ( const key of collection.passthrough ?? [] ) {
+		if ( entry[ key ] !== undefined ) out[ key ] = entry[ key ];
+	}
+	return out;
 }
 
 /** Normalize one raw document into the stable entry shape. */

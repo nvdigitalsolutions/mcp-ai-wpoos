@@ -42,6 +42,8 @@ describe( 'PRESETS registry', () => {
 			'portfolio',
 			'landing',
 			'docs',
+			// Proposal 163 — the first preset that carries an IA, not just a layout.
+			'eca',
 			'minimal',
 		] );
 		expect( RENDER_MODES ).toEqual( [ 'static', 'ssr' ] );

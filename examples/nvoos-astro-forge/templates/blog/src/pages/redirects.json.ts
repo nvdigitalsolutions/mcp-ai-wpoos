@@ -91,6 +91,23 @@ export const GET: APIRoute = async () => {
 		}
 	}
 
+	// 2b. Extra (CPT) collections move as well: the scaffold builds them under
+	//     `basePath` (default `/<slug>`) as `/<base>/<id>/<slug>/`, so
+	//     `/eca/art-and-craft/` must 301 to `/eca/10784/art-and-craft/` — not
+	//     to `/posts/…`, which is what a posts-only map produced.
+	const CORE = new Set(['posts', 'pages', 'products']);
+	const loadCollection = getCollection as unknown as (name: string) => Promise<Array<any>>;
+	for (const declared of manifest.collections) {
+		if (CORE.has(declared.slug)) continue;
+		const base = ((declared as { basePath?: string }).basePath ?? `/${declared.slug}`).replace(/\/+$/, '');
+		const entries = await loadCollection(declared.slug);
+		for (const entry of entries) {
+			const source = pathnameOf(entry.data.link);
+			if (!source) continue;
+			push(source, `${base}/${entry.id}/${entry.data.slug ?? entry.id}/`);
+		}
+	}
+
 	// 3. Operator-declared redirects — LAST so they win on conflict. These are
 	//    the cutover leftovers the URL structure cannot see: a front page's own
 	//    slug, a retired landing page, a path the host still answers with 403.

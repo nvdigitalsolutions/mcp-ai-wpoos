@@ -310,6 +310,12 @@ function childrenOf( node: HNode ): HNode[] {
 // -- elementor + block signatures --------------------------------------------
 
 const ELEMENTOR_SECTION = /(^|\s)elementor-section(\s|$)/;
+// Elementor's flexbox containers (≥3.16, the default since 3.19) replaced top
+// sections: a TOP-LEVEL container is `.e-con.e-parent`, and the nested ones
+// are `.e-con.e-child`. Without this, every container-built page collapsed to
+// ONE band plus a form section (eca.directory, 2026-11-23: a 7-band home page
+// classified as a single `form`).
+const ELEMENTOR_CONTAINER_BAND = /(^|\s)e-parent(\s|$)/;
 const ELEMENTOR_WIDGET = /(^|\s)elementor-widget(\s|$)/;
 const WIDGET_NAME_RE = /elementor-widget-([\w-]+)/;
 const WP_BLOCK = /(^|\s)wp-block-([\w-]+)(\s|$)/;
@@ -416,6 +422,80 @@ function trimmed( value: string ): string {
 	return value.replace( /\s+/g, ' ' ).trim();
 }
 
+/** Words in a string (whitespace-separated runs). */
+function wordCount( text: string ): number {
+	const clean = text.trim();
+	return clean.length === 0 ? 0 : clean.split( /\s+/ ).length;
+}
+
+/**
+ * Which slots each RENDERED kind actually paints.
+ *
+ * Mirrors the template's design components (`templates/blog/src/components/design/`
+ * read `section.slots` directly). A kind that does not read a slot SILENTLY
+ * DROPS its words: eca.directory's “Explore Our Activities” band classified as a
+ * `cta`, which renders title + links only, so an icon-box's three paragraphs
+ * vanished. Kept as data so the fidelity guard in `classifyRegion` can measure
+ * what a component will actually put on the page. An unlisted kind (the
+ * structural six) renders its own payload and is never demoted.
+ */
+const RENDERED_SLOTS: Partial< Record< SectionKind, Array< 'title' | 'body' | 'items' | 'links' | 'media' > > > = {
+	hero: [ 'title', 'body', 'media', 'links' ],
+	cta: [ 'title', 'links' ],
+	'feature-grid': [ 'title', 'body', 'items', 'links' ],
+	'icon-list': [ 'title', 'body', 'items', 'media', 'links' ],
+	testimonial: [ 'title', 'body', 'items', 'links' ],
+	'logo-cloud': [ 'title', 'media', 'items', 'links' ],
+	gallery: [ 'title', 'media', 'links' ],
+	text: [ 'title', 'body', 'media', 'links' ],
+	accordion: [ 'title', 'body', 'media', 'items', 'links' ],
+};
+
+/**
+ * The words a section's SLOTS carry — optionally restricted to the slots its
+ * RENDERED kind will paint.
+ *
+ * Compared against the band's source text to catch a confident-but-wrong kind:
+ * the shape ladder can see a heading and a button, call the band a `cta`, and
+ * discard the paragraphs it was never shaped for (see the guard in
+ * `classifyRegion`).
+ */
+function slotWordCount(
+	slots: SemanticSection[ 'slots' ],
+	rendered: Array< 'title' | 'body' | 'items' | 'links' | 'media' > = [ 'title', 'body', 'items', 'links', 'media' ]
+): number {
+	const parts: string[] = [];
+	if ( rendered.includes( 'title' ) && slots.title ) {
+		parts.push( slots.title );
+	}
+	if ( rendered.includes( 'body' ) ) {
+		for ( const paragraph of slots.body ?? [] ) {
+			parts.push( paragraph );
+		}
+	}
+	if ( rendered.includes( 'items' ) ) {
+		for ( const item of slots.items ?? [] ) {
+			if ( item.title ) {
+				parts.push( item.title );
+			}
+			if ( item.body ) {
+				parts.push( item.body );
+			}
+			if ( item.author ) {
+				parts.push( item.author );
+			}
+		}
+	}
+	if ( rendered.includes( 'links' ) ) {
+		for ( const link of slots.links ?? [] ) {
+			if ( link.text ) {
+				parts.push( link.text );
+			}
+		}
+	}
+	return wordCount( parts.join( ' ' ) );
+}
+
 /** First descendant matching a predicate (depth-first). */
 function findDescendant( node: HNode, predicate: ( node: HNode ) => boolean ): HNode | undefined {
 	if ( predicate( node ) ) {
@@ -461,6 +541,27 @@ interface HeadingCandidate {
  * important LEVEL wins, and a same-level ALL-CAPS kicker yields to the line
  * under it.
  */
+/**
+ * A heading ELEMENT of the page.
+ *
+ * A real `<h1>`–`<h6>`, or a builder heading that renders as a `div`/`span`.
+ * Elementor lets the owner pick the HTML tag on a Heading widget ("div" is a
+ * common choice when the visual order differs from the document order), and
+ * its Icon Box always uses a div — so skimming `h*` alone dropped whole bands'
+ * copy (eca.directory's "Compare User Roles" grid and its 4.8 / +1k counters,
+ * 2026-11-23). The reported LEVEL is 7 for a div heading: a real heading still
+ * wins the band title, and a band made only of div headings still has one.
+ */
+const isHeadingLike = ( n: HNode ): boolean =>
+	n.type === 'tag' &&
+	( /^h[1-6]$/.test( n.name ?? '' ) ||
+		classList( n.attribs ).some( ( c ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( c ) ) );
+
+const headingLevelOf = ( n: HNode ): number => {
+	const tag = /^h([1-6])$/.exec( n.name ?? '' );
+	return tag ? Number( tag[ 1 ] ) : 7;
+};
+
 function pickHeadingTitle( headings: HeadingCandidate[] ): HeadingCandidate | undefined {
 	if ( headings.length === 0 ) {
 		return undefined;
@@ -490,12 +591,11 @@ function isKickerLine( text: string ): boolean {
 
 /** Every heading under a node, in document order. */
 function headingCandidatesIn( node: HNode ): HeadingCandidate[] {
-	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
 	const out: HeadingCandidate[] = [];
-	for ( const heading of allDescendants( node, isHeading ) ) {
+	for ( const heading of allDescendants( node, isHeadingLike ) ) {
 		const text = trimmed( textOf( heading ) );
 		if ( text ) {
-			out.push( { level: Number( ( heading.name ?? 'h6' ).slice( 1 ) ), text } );
+			out.push( { level: headingLevelOf( heading ), text } );
 		}
 	}
 	return out;
@@ -527,7 +627,7 @@ function collectSlots( node: HNode ): CollectedSlots {
 		}
 	}
 
-	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
+	const isHeading = isHeadingLike;
 	const headings = headingCandidatesIn( node );
 	const title = pickHeadingTitle( headings );
 	const titleText = title?.text ?? '';
@@ -650,7 +750,17 @@ function glyphClassesOf( node: HNode ): string | undefined {
 }
 
 function extractStructuredItem( node: HNode ): { title?: string; titleLevel?: number; body?: string; media?: MediaRef; icon: boolean; iconClass?: string; layout?: 'row' | 'stack' } | undefined {
-	const headings = allDescendants( node, ( n ) => n.type === 'tag' && /^h[3-6]$/.test( n.name ?? '' ) );
+	// h3–h6 or a DIV heading are CARD titles. An h1/h2 inside a widget is the
+	// band's own heading — treating it as a card title hid the band title from
+	// every caller that reads `slots.title`.
+	const headings = allDescendants(
+		node,
+		( n ) =>
+			n.type === 'tag' &&
+			( /^h[3-6]$/.test( n.name ?? '' ) ||
+				( ! /^h[1-6]$/.test( n.name ?? '' ) &&
+					classList( n.attribs ).some( ( c ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( c ) ) ) )
+	);
 	if ( headings.length === 0 ) {
 		return undefined;
 	}
@@ -692,7 +802,45 @@ function extractStructuredItem( node: HNode ): { title?: string; titleLevel?: nu
 		.map( ( p ) => trimmed( textOf( p ) ) )
 		.filter( ( value ) => value && value !== title );
 	const body = paragraphs.length > 0 ? paragraphs.join( ' ' ) : undefined;
-	return { title, titleLevel: Number( ( headings[ 0 ].name ?? 'h3' ).slice( 1 ) ) || undefined, body, media, icon, iconClass, layout };
+	return { title, titleLevel: headingLevelOf( headings[ 0 ] ) <= 6 ? headingLevelOf( headings[ 0 ] ) : undefined, body, media, icon, iconClass, layout };
+}
+
+/**
+ * One item per entry of a builder ICON LIST.
+ *
+ * `<ul class="elementor-icon-list-items"><li class="elementor-icon-list-item">
+ * <a><span class="elementor-icon-list-icon"><i …></i></span>
+ * <span class="elementor-icon-list-text">Branding &amp; SSO setup</span>
+ * </a></li>…`
+ *
+ * The flat slot merge saw the widget as an item widget with no heading, so
+ * every entry became an EMPTY item — the single largest text loss on
+ * eca.directory (the phased-delivery lists: 17 entries gone, 2026-11-23).
+ */
+function iconListItems( node: HNode ): SectionItem[] | undefined {
+	const entries = allDescendants(
+		node,
+		( n ) => n.type === 'tag' && n.name === 'li' && classList( n.attribs ).some( ( c ) => /icon-list-item/.test( c ) )
+	);
+	if ( entries.length === 0 ) {
+		return undefined;
+	}
+	const items: SectionItem[] = [];
+	for ( const entry of entries ) {
+		const label = trimmed( textOf( entry ) );
+		if ( ! label ) {
+			continue;
+		}
+		const glyph = findDescendant( entry, ( n ) => n.type === 'tag' && ( n.name === 'i' || n.name === 'svg' ) );
+		// The icon makes the KIND `icon-list` on a pure list; a mixed band stays a
+		// feature grid. The entry's own text is the copy either way.
+		items.push( {
+			title: label,
+			...( glyph ? { icon: true } : {} ),
+			...( glyph ? { iconClass: glyphClassesOf( glyph ) } : {} ),
+		} );
+	}
+	return items.length > 0 ? items : undefined;
 }
 
 /** The attribution line of a quote widget (aux-author / cite / byline). */
@@ -886,6 +1034,11 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		// Structured icon-text widgets (an icon/image header + a small heading)
 		// are single-column feature cards — extract them as items BEFORE the
 		// flat slot merge, which loses the captions and flattens the columns.
+		const iconList = iconListItems( widget.node );
+		if ( iconList ) {
+			items.push( ...iconList );
+			continue;
+		}
 		const structured =
 			widget.role.kind === 'body' || widget.role.kind === 'content' || widget.role.kind === 'feature'
 				? extractStructuredItem( widget.node )
@@ -945,7 +1098,13 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 			if ( widget.role.kind === 'quote' ) {
 				item.author = authorOf( widget.node );
 			}
-			items.push( item );
+			// An item with no title, copy or media is an empty CARD in the rebuild
+			// (a layout-only widget, a heading the extractor already claimed) — a
+			// third of eca.directory's phased-delivery grid rendered as blanks. The
+			// band's own text is unaffected; only the empty cell is dropped.
+			if ( item.title || item.body || item.media || item.author ) {
+				items.push( item );
+			}
 		}
 	}
 	if ( media.length > 0 ) {
@@ -1381,6 +1540,7 @@ function isSectionBoundary( node: HNode ): boolean {
 		( c ) =>
 			ELEMENTOR_SECTION.test( c ) ||
 			ELEMENTOR_SECTION.test( ` ${ c } ` ) ||
+			ELEMENTOR_CONTAINER_BAND.test( c ) ||
 			WPB_ROW.test( c ) ||
 			/(^|\s)wp-block-group(\s|$)/.test( c ) ||
 			/(^|\s)wp-block-cover(\s|$)/.test( c )
@@ -1924,6 +2084,26 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 			if ( sourceId ) {
 				out.push( { kind: 'text', confidence: 'low', slots: {}, id: sourceId, ...( anchor ? { anchor } : {} ) } );
 			}
+			continue;
+		}
+		// Words are the one thing a rebuild may never lose. A CONFIDENT kind can
+		// still drop the copy it was never shaped for: eca.directory's “Explore
+		// Our Activities” band (a heading, an icon-box and a button) classified as
+		// a `cta` and lost three paragraphs, and its team band took the first
+		// card's name for the band title and dropped the roster. When the slots
+		// carry under half the band's words, the band keeps its RAW slice instead
+		// — the measured band facts still theme it. This is Proposal 116's
+		// “never empty a document” ladder, applied per band.
+		const sourceWords = wordCount( textOf( section ) );
+		if ( sourceWords >= 12 && slotWordCount( built.slots, RENDERED_SLOTS[ built.kind ] ) < sourceWords * 0.5 ) {
+			out.push( {
+				kind: 'text',
+				confidence: 'low',
+				slots: {},
+				html: sliceHtml( html, section ) || fallbackHtml,
+				...( sourceId ? { id: sourceId } : {} ),
+				...( anchor ? { anchor } : {} ),
+			} );
 			continue;
 		}
 		if ( sourceId ) {
