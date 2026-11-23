@@ -147,7 +147,7 @@ final class GeneratePostExcerptCompletionTool extends AbstractCompletionTool
             return $answer;
         }
 
-        $excerpt = $this->tidy($answer['text']);
+        $excerpt = $this->tidyText($answer['text']);
 
         if ('' === $excerpt) {
             return $this->errors->create(
@@ -180,22 +180,5 @@ final class GeneratePostExcerptCompletionTool extends AbstractCompletionTool
             $cta,
             $content
         );
-    }
-
-    /**
-     * Remove the wrappers a model adds despite being told not to.
-     *
-     * Quotes are stripped before and after the fence, because models produce both
-     * orders — a fenced block inside quotes is the one that survives a single
-     * pass.
-     */
-    private function tidy(string $text): string
-    {
-        $text = \trim($text);
-        $text = \trim((string) \preg_replace('/^"(.*)"$/s', '$1', $text));
-        $text = \trim((string) \preg_replace('/^```[a-z]*\s*|\s*```$/i', '', $text));
-        $text = \trim((string) \preg_replace('/^"(.*)"$/s', '$1', $text));
-
-        return \trim((string) \preg_replace('/\s+/', ' ', $text));
     }
 }

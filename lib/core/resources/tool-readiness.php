@@ -611,6 +611,14 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'extract_image_text' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ExtractImageTextCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VisionImageToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'extract_image_text_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExtractImageTextTool',
 			'readiness' => 'quarantined',
@@ -702,6 +710,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoAndAudioToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
+		'generate_image_alt_text' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GenerateImageAltTextCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VisionImageToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'generate_image_alt_text_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateImageAltTextTool',
 			'readiness' => 'quarantined',
@@ -716,6 +732,14 @@ return array(
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'generate_image_caption' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GenerateImageCaptionCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VisionImageToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
 		'generate_image_caption_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateImageCaptionTool',

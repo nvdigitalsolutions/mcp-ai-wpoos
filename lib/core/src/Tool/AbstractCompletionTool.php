@@ -67,12 +67,18 @@ abstract class AbstractCompletionTool extends AbstractTool implements ToolCapabi
     /**
      * Ask the resolved provider, and return its answer or the error to return.
      *
-     * @param array<string, mixed> $arguments The tool arguments, for `provider`,
-     *                                        `model` and `max_tokens`.
-     * @param string               $prompt    What to ask.
-     * @param string|null          $dataUri   An image, when the model is being
-     *                                        asked about one.
-     * @param string               $system    An optional system prompt.
+     * @param array<string, mixed> $arguments  The tool arguments, for `provider`,
+     *                                         `model` and `max_tokens`.
+     * @param string               $prompt     What to ask.
+     * @param string|null          $dataUri    An image, when the model is being
+     *                                         asked about one.
+     * @param string               $system     An optional system prompt.
+     * @param bool                 $allowEmpty A tool whose empty answer is a
+     *                                         finding rather than a failure — OCR
+     *                                         of an image with no text. Every
+     *                                         other tool treats empty as an error,
+     *                                         because a blank success reads as
+     *                                         "nothing to report".
      *
      * @return array{text: string, provider: string, model: string, usage: array<string, mixed>}|mixed
      *                                                                                              The answer, or the error value to return unchanged.
@@ -82,6 +88,7 @@ abstract class AbstractCompletionTool extends AbstractTool implements ToolCapabi
         string $prompt,
         ?string $dataUri = null,
         string $system = '',
+        bool $allowEmpty = false,
     ): mixed {
         if (null === $this->providers) {
             return $this->errors->create(
@@ -122,7 +129,11 @@ abstract class AbstractCompletionTool extends AbstractTool implements ToolCapabi
 
         $text = is_array($response) ? ($response['choices'][0]['message']['content'] ?? null) : null;
 
-        if (! is_string($text) || '' === \trim($text)) {
+        if (! is_string($text)) {
+            $text = '';
+        }
+
+        if (! $allowEmpty && '' === \trim($text)) {
             return $this->errors->create(
                 $this->emptyResponseCode(),
                 'The provider returned no text.'
@@ -263,6 +274,35 @@ abstract class AbstractCompletionTool extends AbstractTool implements ToolCapabi
         }
 
         return \in_array($candidate, $allowed, true) ? $candidate : null;
+    }
+
+    /**
+     * Remove the framing a model adds, keeping the text's own structure.
+     *
+     * Quotes are stripped before and after the fence, because models produce both
+     * orders — a fenced block inside quotes is the one that survives a single pass.
+     */
+    protected function tidyBlock(string $text): string
+    {
+        $text = \trim($text);
+        $text = \trim((string) \preg_replace('/^"(.*)"$/s', '$1', $text));
+        $text = \trim((string) \preg_replace('/^```[a-z]*\s*|\s*```$/i', '', $text));
+        $text = \trim((string) \preg_replace('/^"(.*)"$/s', '$1', $text));
+
+        return $text;
+    }
+
+    /**
+     * Remove the framing **and** collapse to one line.
+     *
+     * An alt text, a caption and an excerpt are all rendered where a newline would
+     * show up as a stray gap, so they get this. A transcription asked to preserve
+     * layout gets {@see tidyBlock()} instead — collapsing its newlines would throw
+     * away the thing the caller asked for.
+     */
+    protected function tidyText(string $text): string
+    {
+        return \trim((string) \preg_replace('/\s+/', ' ', $this->tidyBlock($text)));
     }
 
     /**
