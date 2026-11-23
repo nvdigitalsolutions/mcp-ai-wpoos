@@ -322,9 +322,9 @@ class GeminiClient extends AbstractProviderClient
                     } elseif (isset($segment['image_url']['url'])) {
                         $parts[] = array(
                             'inlineData' => array(
-                                'mimeType' => 'image/jpeg',
+                                'mimeType' => self::mediaType($segment['image_url']['url']),
                                 'data'     => \preg_replace(
-                                    '#^data:image/\w+;base64,#',
+                                    '#^data:image/[a-z0-9.+-]+;base64,#i',
                                     '',
                                     $segment['image_url']['url'],
                                 ),
@@ -354,6 +354,22 @@ class GeminiClient extends AbstractProviderClient
         }
 
         return $contents;
+    }
+
+    /**
+     * The media type a data URI declares.
+     *
+     * `inlineData` carries bytes and nothing else, so the declared type is the
+     * only evidence of what they are. Answering `image/jpeg` unconditionally
+     * (which this did) mislabelled every PNG and WebP, and the previous pattern
+     * could not have matched `image/svg+xml` or `image/x-icon` even if it had
+     * looked — `\w+` stops at `+` and `.`.
+     */
+    private static function mediaType(string $url): string
+    {
+        $pattern = '#^data:(image/[a-z0-9.+-]+);base64,#i';
+
+        return 1 === \preg_match($pattern, $url, $matches) ? \strtolower($matches[1]) : 'image/jpeg';
     }
 
     /**

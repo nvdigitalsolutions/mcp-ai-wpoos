@@ -98,11 +98,16 @@ final class ToolReadinessRegistrationTest extends TestCase {
 
 	/**
 	 * A renamed prompt-builder must not answer to the WordPress slug.
+	 *
+	 * The list is the WordPress slugs that still have **only** a prompt-builder
+	 * stand-in, so it shrinks as the real tool lands. `analyze_image` left it when
+	 * AnalyzeImageVisionTool shipped (Proposal 090-M §20); the rest are still
+	 * unimplemented and must not be reachable by their canonical name.
 	 */
 	public function testPromptBuildersAreNotReachableUnderTheWordPressSlug(): void {
 		$registry = $this->app->make( ToolRegistry::class );
 
-		foreach ( array( 'analyze_image', 'analyze_video', 'extract_image_text', 'batch_embed_content', 'validate_reasoning_chain' ) as $slug ) {
+		foreach ( array( 'analyze_video', 'extract_image_text', 'batch_embed_content', 'validate_reasoning_chain' ) as $slug ) {
 			$this->assertFalse(
 				$registry->has( $slug ),
 				"Prompt-builder still answers to the WordPress slug '{$slug}'."
