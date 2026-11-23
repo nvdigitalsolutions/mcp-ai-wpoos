@@ -3,6 +3,8 @@
 namespace App\Support\Settings;
 
 use App\Support\SettingsSchema;
+use App\Support\Security\RootKey;
+use App\Support\Security\RootKeyGate;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 /**
@@ -104,6 +106,20 @@ final class SettingsService
             $writable[$field['key']] = $field;
         }
 
+        // 149 §188 — with no key stored the gate has no secret to verify, so the
+        // only writes it can honestly permit are the ones that establish the
+        // credential. Narrow the payload here, before the writer sees it: a field
+        // travelling alongside the first key is refused rather than written for
+        // free on the strength of the key it accompanies.
+        if ($this->isBootstrapWrite($changes, $surface)) {
+            $changes = array_intersect_key($changes, array_flip(array(
+                RootKey::STORAGE_KEY,
+                RootKey::ENABLE_KEY,
+            )));
+        }
+
+        $this->assertOperatorWriteAllowed($changes, $surface);
+
         $applied = [];
 
         foreach ($changes as $key => $value) {
@@ -118,11 +134,63 @@ final class SettingsService
                 continue;
             }
 
+            // 149 §188 — the root security key is a password, so it is stored as a
+            // hash by the service that owns it. Writing the plaintext through the
+            // store would leave a second password readable at rest.
+            if (RootKey::STORAGE_KEY === (string) $field['storage']) {
+                $this->rootKey()->set((string) $value);
+
+                $applied[] = $key;
+
+                continue;
+            }
+
             $this->store($field)->set((string) $field['storage'], $this->coerce($field, $value));
             $applied[] = $key;
         }
 
         return $applied;
+    }
+
+    /**
+     * Is this the write that establishes the first key?
+     *
+     * @param array<string, mixed> $changes
+     */
+    private function isBootstrapWrite(array $changes, string $surface): bool
+    {
+        return self::SURFACE_OPS === $surface
+            && ! $this->rootKey()->configured()
+            && array_key_exists(RootKey::STORAGE_KEY, $changes);
+    }
+
+    /**
+     * Gate operator writes on the root security key — Proposal 149 §188.
+     *
+     * One exemption, and only one: storing the **first** key. Without it the
+     * control could never be configured from the panel — enabling the flag with no
+     * key would refuse the write that sets the key, and the only way out would be
+     * the CLI. `write()` has already narrowed that payload to the key and its
+     * flag, so the exemption cannot carry other fields past the gate.
+     *
+     * @param array<string, mixed> $changes
+     */
+    private function assertOperatorWriteAllowed(array $changes, string $surface): void
+    {
+        if (self::SURFACE_OPS !== $surface) {
+            return;
+        }
+
+        if ($this->isBootstrapWrite($changes, $surface)) {
+            return;
+        }
+
+        app(RootKeyGate::class)->assertUnlocked();
+    }
+
+    private function rootKey(): RootKey
+    {
+        return app(RootKey::class);
     }
 
     /**

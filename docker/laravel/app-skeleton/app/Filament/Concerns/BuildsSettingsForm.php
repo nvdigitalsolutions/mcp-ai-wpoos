@@ -4,6 +4,8 @@ namespace App\Filament\Concerns;
 
 use App\Support\Admin\AdminAuditLogger;
 use App\Support\Models\ModelConfigCatalogue;
+use App\Support\Security\RootKeyInvalid;
+use App\Support\Security\RootKeyRequired;
 use App\Support\Settings\SettingsService;
 use App\Support\Settings\SettingsText;
 use App\Support\Settings\UnimplementedSettings;
@@ -93,10 +95,32 @@ trait BuildsSettingsForm
      */
     public function save(): void
     {
-        $applied = $this->settings()->write(
-            (array) $this->form->getState(),
-            $this->settingsSurface()
-        );
+        try {
+            $applied = $this->settings()->write(
+                (array) $this->form->getState(),
+                $this->settingsSurface()
+            );
+        } catch (RootKeyRequired $error) {
+            // 149 §188 — the gate refused. Livewire actions never pass through
+            // route middleware, so this catch is where the panel learns about it.
+            // Nothing was written: `write()` asserts before its first insert.
+            Notification::make()
+                ->danger()
+                ->title('Root key required')
+                ->body($error->getMessage().' Use “Unlock root key” at the top of this page.')
+                ->persistent()
+                ->send();
+
+            return;
+        } catch (RootKeyInvalid $error) {
+            Notification::make()
+                ->danger()
+                ->title('Root key rejected')
+                ->body($error->getMessage())
+                ->send();
+
+            return;
+        }
 
         $this->form->fill($this->settings()->values($this->settingsSurface()));
 

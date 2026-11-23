@@ -34,6 +34,7 @@ use App\Http\Controllers\PersonalTokenController;
 use App\Http\Controllers\ProfessionController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
+use App\Http\Controllers\RootKeyController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SkillController;
@@ -258,6 +259,14 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/settings/schema', [SettingsController::class, 'schema']);
             Route::get('/settings/values', [SettingsController::class, 'values']);
             Route::post('/settings/values', [SettingsController::class, 'updateValues']);
+
+            // 149 §188 — step-up verification for operator writes. The limiter is
+            // tighter than the console default because this endpoint verifies a
+            // password-like secret.
+            Route::get('/ops/root-key', [RootKeyController::class, 'status']);
+            Route::post('/ops/root-key/unlock', [RootKeyController::class, 'unlock'])
+                ->middleware('throttle:6,1');
+            Route::delete('/ops/root-key', [RootKeyController::class, 'lock']);
 
             Route::get('/diagnostics/overview', DiagnosticsController::class);
 

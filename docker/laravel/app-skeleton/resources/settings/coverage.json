@@ -3202,14 +3202,14 @@
     },
     {
       "key": "enable_root_security_key",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "enable_root_security_key"
     },
     {
       "key": "root_security_key",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "root_security_key"
     },
     {

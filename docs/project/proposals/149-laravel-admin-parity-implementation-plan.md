@@ -18117,3 +18117,169 @@ a genuine product decision.
 | combined run (catalogue, settings, security, coverage, navigation, auth) | **85 tests / 10,111 assertions** |
 | phpcs PSR-12 on fifteen files | exit 0 |
 | `bin/settings-coverage/generate.py` | 601 rows · **72 enforced** · **2 operator-unenforced** |
+
+## 188. The root security key: step-up verification for operator writes (2026-11-23)
+
+§187.3 left two controls open and named the choice rather than making it: build a
+root-key mechanism, or revisit §66 and drop the field. The answer was build. This
+section records what was built, and the parts that were decided by evidence rather
+than preference.
+
+### 188.1 The field's description is the specification
+
+WordPress renders this control and **does not enforce it**. `get_option` for
+`root_security_key` appears once, in a self-test heuristic; no capability check,
+no middleware, no destructive-operation gate reads it. There is therefore no
+behaviour to port, which is why §187.3 could not resolve the pair by copying
+upstream. The catalogue's own words become the contract:
+
+| Field text | Consequence here |
+|---|---|
+| "minimum 32 characters, recommended 64+" | `RootKey::MIN_LENGTH`; a shorter value is refused, not truncated |
+| "cannot be recovered if lost" | only a hash is stored, and a console command is the break-glass path |
+| "a second password for high-risk actions" | a step-up proof, asked for again after it expires |
+
+### 188.2 Stored as a hash, never as the secret
+
+The field is `sensitive`, so every read returns the mask. That hides the value
+from the UI and not from `nvoos_settings`. A "second password" sitting in
+plaintext in a settings row is a password in a database, and the credential
+storage rules apply to it exactly as they would to a user's password.
+
+`RootKey::set()` stores `Hash::make($plain)`; `verify()` uses `Hash::check`, which
+compares in constant time by construction. A value written before this class
+existed — or by an import — is plaintext. It verifies with `hash_equals` and is
+**re-hashed in place on the successful verification**, so an upgraded deployment
+does not lock its operator out and the secret stops being readable at rest from
+the next successful use onward. An empty candidate never matches anything, so an
+unset key cannot be satisfied by submitting nothing.
+
+### 188.3 One chokepoint, because middleware would not have been one
+
+The obvious placement is FormRequest validation or route middleware. Both are
+wrong here. Filament's settings page is Livewire: its actions are POSTed to the
+Livewire endpoint adapter, not to the page route, so route middleware never sees
+them. A gate that covers the API and not the panel is worse than no gate, because
+the panel is where the operator actually works.
+
+The gate is `SettingsService::write()` with the `ops` surface
+(`assertOperatorWriteAllowed()`). Every operator write — Filament form, REST API,
+and anything added later — passes through it, and nothing writes operator
+settings another way. The cost of that choice is that the gate is invoked from
+inside the model rather than around it; the benefit is that there is exactly one
+place to audit.
+
+### 188.4 Two proofs, and the reason the second one expires
+
+| Proof | Caller | Lifetime |
+|---|---|---|
+| `X-Root-Key: <key>` header | stateless API clients | per request |
+| session grant from `POST /api/v1/ops/root-key/unlock` | the `/ops` panel | `RootKeyGate::TTL_MINUTES` = 15 |
+
+A header is easy for an API client and not easy for a Livewire action, hence the
+grant; the grant is an exchange, not a bypass, and it is time-boxed because a
+permanent unlock is not step-up authentication. OWASP ASVS 6.4 asks for
+re-authentication before sensitive operations and NIST SP 800-63B-4 asks for the
+full secret rather than selected characters. Both are honoured: the whole key is
+verified, and the proof expires. `DELETE /api/v1/ops/root-key` ends a grant early,
+and `GET` reports `enabled`, `configured`, `unlocked` and the TTL so the UI can
+say "unlocked until …" instead of guessing.
+
+Both mutations sit behind `throttle:6,1` — a second password is still a password,
+and guessing is still guessing.
+
+### 188.5 `423`, not `403`
+
+`RootKeyRequired` renders as **423 Locked**, in JSON or as a form error depending
+on the request. The caller is authenticated and authorised; the request is refused
+until a second credential is presented. `403` would state "you may not", which is
+false and would send an operator to the wrong remedy. `RootKeyInvalid` — a value
+too short to be a key — renders as 422 and is a separate exception, because "that
+cannot be the key" and "prove it" are different answers.
+
+The unlock endpoint never distinguishes "wrong key" from "no key configured". The
+difference would tell an attacker which deployments have one.
+
+### 188.6 The bootstrap exemption is one write wide
+
+With no key stored the gate has no secret to verify, so refusing everything would
+make the control unconfigurable from the panel. Exactly one payload is exempt:
+the write that establishes the first key. Without the exemption, enabling the flag
+and saving the key are the same form submission and both would be refused.
+
+The exemption was narrowed after review. As first written, a payload containing
+`root_security_key` skipped the gate **for the whole payload**, so any field
+travelling beside the first key was written for free. `write()` now intersects
+that payload with `{root_security_key, enable_root_security_key}` before the
+writer runs, and `test_the_bootstrap_exemption_writes_only_the_credential` pins
+it. A first key is a credential, not a hall pass.
+
+### 188.7 Console is the break-glass path, and saying so is part of the design
+
+`nvoos:root-key --set|--disable|--status` manages the key from the CLI and is
+**not** gated by it. The field says the key cannot be recovered if lost; a
+recovery path that needs the thing it recovers is not a recovery path. The gate's
+`required()` therefore returns false for console requests — except under PHPUnit,
+so the tests still exercise the gate they are testing. This is the one deliberate
+hole in the mechanism, and it is a hole into the shell, which is already the
+trusted boundary.
+
+### 188.8 Every attempt is recorded, accepted or rejected
+
+`RootKeyGate::attempt()` writes `rootkey.granted` or `rootkey.denied` to the
+security-event stream (§186) before returning. A second password that records
+nothing is a second password nobody can investigate. The rejected path is the one
+that matters: it is how an operator finds out that something is guessing.
+
+### 188.9 The coverage scanner cannot see a class constant
+
+The gate reads `RootKey::STORAGE_KEY` and `RootKey::ENABLE_KEY` — good code, and
+invisible to the literal sweep that generates `coverage.json`. The first
+regeneration therefore still classified both keys as unenforced, and the sweep was
+right by its own rules: it matches literal key names, and those keys appeared only
+as constant *references* in the runtime.
+
+The fix was to spell the literals at the read sites in `RootKey`. That is uglier
+than the constants and it is the correct trade: the artefact is a claim about
+code, the sweep's visibility is the mechanism that keeps the claim honest, and a
+sweep that cannot see a reader reports a false negative. The constants remain for
+callers; the reads are literal so the evidence exists.
+
+### 188.10 Where the catalogue stands
+
+| Bucket | §187 | §188 |
+|---|---:|---:|
+| `enforced` | 72 | **74** |
+| `unenforced-operator` | **2** | **0** |
+| `unenforced` | 0 | 0 |
+| `wordpress` | 488 | 488 |
+| `inapplicable` | 17 | 17 |
+| `wordpress-dynamic` | 12 | 12 |
+| `reported` | 7 | 7 |
+| `inert` | 3 | 3 |
+| `stale` / `unclassified` | 0 / 0 | 0 / 0 |
+
+Every rendered security control now has a reader, in both scopes. The sweep that
+began at §183 with 480 apparent dead controls closes with no unenforced bucket at
+all, and `AdminSettingsCoverageTest` pins both buckets empty rather than pinning a
+closed list.
+
+Two consequences worth recording:
+
+- The coverage page dropped the "Operator control, enforced nowhere" section,
+  because `presentBuckets()` does not render a bucket with no members. The page
+  test that asserted the heading was asserting the bug; it now asserts a bucket
+  that still has rows.
+- The `SettingsService` gate applies to the `ops` surface only. Estate (`admin`)
+  writes are not gated. That is deliberate — this key protects operator
+  infrastructure, and gating tenant content would make it a content lock with a
+  different name.
+
+### 188.11 Gates
+
+| Gate | Result |
+|---|---|
+| `RootKeyGateTest` | **14 tests** — off means pass-through; armed with no key blocks; first key may be stored; armed requires proof; header proof; session grant and expiry; hash at rest; minimum length; legacy plaintext upgrade; empty candidate; denied attempt audited; unlock endpoint accept; unlock endpoint reject; bootstrap writes only the credential |
+| combined run (root key, catalogue, coverage, security, projection, navigation, auth) | **108 tests / 11,346 assertions**, green apart from the two known PM-provider `No tests found` errors |
+| phpcs PSR-12 on fifteen files | exit 0 |
+| `bin/settings-coverage/generate.py` | 601 rows · **74 enforced** · **0 operator-unenforced** |
