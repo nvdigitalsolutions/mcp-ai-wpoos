@@ -51,11 +51,19 @@ final class UnimplementedSettings
     /**
      * Every key that renders but does nothing, and why.
      *
-     * One situation remains, and the reason is per-key rather than a blanket
-     * sentence because the retired ones were not all the same shape:
+     * Three situations remain, and the reason is per-key rather than a blanket
+     * sentence because they are not the same shape:
      *
      *  - **absent capability** — guest access has no counterpart in this runtime,
-     *    so `guest_token_lifetime` has no behaviour to bound.
+     *    so `guest_token_lifetime` has no behaviour to bound and
+     *    `allow_guest_access` has no surface to open.
+     *  - **absent mechanism** — `enable_2fa_requirement` asks for a second factor
+     *    this runtime does not have. §183 added it after the coverage sweep found
+     *    it writable and read by nothing: OWASP ASVS 5.0 (V6.3.3) makes MFA a
+     *    requirement at L2, so a toggle that reports compliance while enforcing
+     *    nothing is worse than no toggle — it is the false assurance the class
+     *    exists to prevent. Where Auth0 is the identity provider, MFA is that
+     *    provider's policy and a local switch would be a second truth.
      *
      * Earlier slices retired the rest: Auth0 verification (I3), magic-link (I4),
      * the ten absent-software keys (149 §104), and — in Proposal 159 slice 2 —
@@ -68,6 +76,9 @@ final class UnimplementedSettings
         // Guest access has no counterpart here yet — the console is an
         // authenticated surface, so there is no anonymous chat to bound.
         'guest_token_lifetime'                 => 'No guest-token path exists in this runtime.',
+        'allow_guest_access'                   => 'No guest surface exists here; the console and its API are authenticated.',
+        // No second factor is enrolled or verified by this runtime.
+        'enable_2fa_requirement'               => 'No second factor exists to require; with Auth0, MFA is the provider\'s policy.',
     );
 
     /**

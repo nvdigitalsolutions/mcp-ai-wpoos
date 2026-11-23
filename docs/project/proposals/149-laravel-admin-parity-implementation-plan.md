@@ -17423,3 +17423,289 @@ behaviour or an SLO, and "no data" is flying blind rather than healthy.
 | memory / surface / navigation / blade / settings filter | **111 tests / 11,309 assertions** |
 | phpcs PSR-12 on four changed PHP files | exit 0 |
 | `bin/audit-surface-ownership.php` | 59 rows · **49 built** · 2 planned · 4 absent · 0 inert |
+
+---
+
+## 183. Settings coverage: the sweep, and the store boundary it found (2026-11-23)
+
+§176 recorded `orchestration.settings` as `planned` with an instruction: map each
+toggle to a reader first, and hide the ones with no reader. This is that sweep,
+and its first finding is that the planned page was the wrong shape.
+
+### 183.1 The 601 controls are two stores, not one surface
+
+`SettingsCatalogue` is **generated from the WordPress plugin's own section
+classes** — 585 fields across 12 tabs and 79 sections, plus nine core fields this
+runtime shipped with. So `/admin/settings` renders the WordPress settings
+surface, nearly whole.
+
+That is not the same as rendering WordPress's settings. The two runtimes write
+different tables:
+
+| Runtime | Store | Written by |
+|---|---|---|
+| WordPress | `wp_options` via `lib/wordpress-adapter/.../SettingsStore.php` | the plugin's section forms |
+| This runtime | `nvoos_tenant_settings` (+ `nvoos_settings` for operator scope) via `lib/laravel-adapter/.../SettingsStore.php` | `/admin/settings`, `/ops/settings` |
+
+Nothing reads both. A Laravel write of `chat_enable_copy_button` lands in
+`nvoos_tenant_settings`, and the WordPress plugin — which does read that key, from
+`wp_options` — never sees it. The control is therefore inert **in this admin**,
+and the reason is not a missing reader in the abstract: it is that the reader
+belongs to the other runtime and reads somewhere else.
+
+That distinction changes the remedy. Deleting 489 rows would delete the parity
+map, not a defect. §178.1's rule — never a rendered control with no reader — is
+satisfied here by *stating* the coverage, not by shrinking the form.
+
+### 183.2 What the sweep counts
+
+Generated from source by `bin/settings-coverage` (§183.5). The counts below are
+**after** the follow-up in §183.9; §183.2's first sweep produced four
+admin-writable unenforced security controls, which is what prompted it. 601 rows:
+
+| Bucket | Count | What it means |
+|---|---:|---|
+| `enforced` | 59 | Read by runtime code that changes behaviour |
+| `wordpress` | 488 | Prepared by the plugin from `wp_options`; this admin cannot affect it |
+| `wordpress-dynamic` | 12 | Same, for keys the plugin builds (`$slug . '_safety_buffer'`) |
+| `unenforced-operator` | 22 | Operator-scope security controls no enforcement point reads |
+| `inapplicable` | 10 | Declared: configures absent software (§104) |
+| `reported` | 7 | Read only by the security posture report: graded, not enforced |
+| `inert` | 3 | Declared: real upstream, not built here |
+| `unenforced` | 0 | **Admin-writable** security controls no enforcement point reads |
+| `stale` | 0 | Named by no source in the repository at all |
+| `unclassified` | 0 | Named somewhere, but no reader found — suspect, not dead |
+
+The last three are retained as buckets rather than deleted: a future slice can
+legitimately put a row in any of them, and the page and the test both read the
+artefact rather than a fixed list.
+
+Four read idioms had to be found before the numbers meant anything, and the
+earlier sweeps were wrong because they missed some:
+
+1. `SettingsService::value('key')` — the admin/service accessor.
+2. `SettingsStore::get('key')` — what `lib/core` tools and providers use. This is
+   why `default_model`, `temperature` and `max_tokens` are **not** the dead keys
+   §181 guessed: `getDefaultModel()` reads `default_model` through this path.
+3. **Map-valued reads** — `getApiBaseUrl()` resolves a provider to a key through
+   `$urlMap`, and `getApiKey()` through a key map, so 18 provider endpoints are
+   read without their names appearing in a call.
+4. **Array-index reads** — `inputGuardFromSettings()` reads `$stored['enable_pii_filter']`
+   and passes keys to a resolver helper. Without modelling that idiom the two
+   controls §183.9 wired read as unread.
+
+A fifth, negative result mattered as much: the plugin builds twelve commerce keys
+by interpolation (`$slug . '_safety_buffer'`), so a literal scan cannot see them.
+They were briefly reported as "defined by no source" — a false statement about
+code that plainly exists. `wordpress-dynamic` records the derivation instead.
+
+The first instrument also counted a key as read when it appeared only in a
+comment; `google_api_key` was one, and the honest treatment is the storage alias:
+the admin writes `google_api_key`, the adapter reads `gemini_api_key`, and the
+alias is what makes it enforced.
+
+`unclassified` is deliberately distinct from `stale`. `stale` means no source
+mentions the key — proof it is generator output with no field behind it.
+`unclassified` means the key appears but no reader was found, and a reader that
+resolves a key through a variable would leave no literal trace. Absence of
+evidence is not proof of death, and a bucket that conflated the two would repeat
+the error the sweep exists to remove.
+
+### 183.3 The finding that matters: four writable security controls do nothing
+
+`unenforced` is not a bookkeeping category. These four render on `/admin/settings`,
+save to the estate table, and are read by no middleware, policy or service:
+
+`allow_guest_access`, `enable_2fa_requirement`, `enable_prompt_injection_detector`,
+`enable_pii_filter`.
+
+The last two had a defect that was quiet rather than loud.
+`NvoosServiceProvider::inputGuardFromConfig()` built an `InputGuard` from
+`config('oos.security.prompt_injection_detector')` and
+`config('oos.security.pii_filter')` — **config** keys — while the admin writes
+`enable_prompt_injection_detector` and `enable_pii_filter` to the **database**,
+which the config is never overlaid from.
+
+The package config ships both controls **on** (`lib/laravel-adapter/config/nvoos.php`,
+`NVOOS_PROMPT_INJECTION_DETECTOR` / `NVOOS_PII_FILTER` default `true`), so the
+effect was not "no filter". It was that the four controls were inert in **both**
+directions: an operator who disabled the PII filter for a privacy reason still got
+redaction, and one who set the mode to `block` still got `log`. A control that
+saves and is ignored is the same false assurance as a control that saves and does
+nothing — it just fails safe, which is why nobody noticed.
+
+This is the same class of defect the adapter's own comment documents for the
+provider base URLs (`gemini_api_base_url` was read under a name nothing wrote).
+It is recorded in this section and fixed in §183.9, where the guard reads the
+stored row first and falls back to config.
+
+`prompt_injection_mode`, `prompt_injection_sensitivity` and `mesh_inbound_api_key`
+*are* enforced — the guard is constructed with them, and `RemoteSiteStore`
+authenticates inbound mesh calls with the key — so they are classified `enforced`
+despite sitting in the same WordPress section. The first two were config-only
+before §183.9 for the same reason as the enable flags.
+
+The 7 `reported` keys are a different problem, one level softer: the security
+posture report grades them, so they visibly change a score while changing no
+behaviour. `SecurityController` says so itself about CSP — the detail string
+reads "the console proxy does not enforce a CSP yet". A graded-but-unenforced
+control is quieter than a writable one, and it is still an assurance the runtime
+has not earned.
+
+### 183.4 The page reports; it does not edit
+
+`/admin/settings-coverage` is read-only. A second settings editor would have
+duplicated `/admin/settings` and carried the same fiction with a nicer layout.
+The page answers the question the form cannot — *which of these controls do
+anything?* — and leads with the four writable-unenforced controls, because
+burying them under 489 neutral rows would repeat the silent false assurance one
+level up.
+
+The summary cards count every bucket; the tables list only the buckets whose
+relationship to behaviour is unclear (`unenforced`, `unenforced-operator`,
+`unclassified`, `stale`, `reported`), key by key, each with its reason. The
+`wordpress` bucket is described in the footer rather than enumerated: 489 rows
+of a known, benign explanation is not a report, it is noise.
+
+### 183.5 Generated, never authored
+
+`resources/settings/coverage.json` is produced by `bin/settings-coverage/`:
+
+| File | Role |
+|---|---|
+| `dump-settings.php` | Boots the app and dumps `SettingsSchema::fields()` with the surface flags that decide writability |
+| `generate.py` | The three reader scans, the enforcement scan, and the bucket assignment |
+| `README.md` | The run order and the scan's stated limits |
+
+`AdminSettingsCoverageTest` pins four properties: the artefact classifies every
+catalogue key exactly once; every `enforced` claim can name a reader (or its
+storage alias) in the runtime source; the `unenforced` bucket stays admin-writable
+and its operator sibling stays out of the admin surface; and the page renders.
+The completeness assertion is the ratchet — a schema change without a
+regeneration fails the build at the one moment someone is looking at both files.
+
+### 183.6 DSpark: decided, not deferred
+
+`orchestration.dspark` moves `planned` → `absent`. Its §176 note already reached
+the conclusion and stopped short of recording it: the WordPress page configures a
+Python compile pipeline (`use_ts_build`, speculative block size, acceptance
+threshold) that this runtime does not run, so a port would render fields for
+absent software — the §104 judgement, not a backlog item. An efficiency view over
+`nvoos_routing_metrics` and the harness trace store would be a **new** proposal;
+keeping this row `planned` implied a port that will never be meaningful.
+
+### 183.7 Gates at the first commit
+
+Superseded by §183.9.4 once the four controls were closed; kept because a record
+that rewrites its own gate numbers is not a record. These are the numbers the page
+shipped with, when `unenforced` still had four rows.
+
+| Gate | Result |
+|---|---|
+| `AdminSettingsCoverageTest` | **6 tests / 44 assertions** — completeness, per-bucket reasons, enforced-claim verification, writability split, page render, count consistency |
+| neighbours (`AdminNavigationTest`, `UnimplementedSettingsTest`, `SettingsCatalogueTest`, `InapplicableSettingsTest`) | **39 tests / 9,325 assertions** |
+| phpcs PSR-12 on the three changed PHP files | exit 0 |
+| `bin/audit-surface-ownership.php` | 59 rows · **50 built** · **0 planned** · 5 absent · **0 inert** |
+
+### 183.8 Left open, deliberately
+
+- **`memory_retention_days` and `memory_per_user_max`**, handed over by §182, are
+  `wordpress` in this map — a reader exists, in the other runtime. The honest fix
+  is a Laravel sweep of the memory store, not a hide.
+- **The 22 `unenforced-operator` controls.** They are writable from `/ops` and
+  read by no enforcement point. Reporting them is not fixing them; each needs the
+  same decision §183.9 took for the four admin ones, and several of them (CORS,
+  HSTS, body-size limits) are genuine middleware that should be built rather than
+  declared.
+
+---
+
+## 183.9 The follow-up: wire, declare, and stop trusting a literal scan (2026-11-23)
+
+§183.3 named four admin-writable controls that enforced nothing. This closes them,
+and fixes two instrument defects the closing exposed.
+
+### 183.9.1 The guard reads the estate first
+
+`inputGuardFromSettings()` replaces `inputGuardFromConfig()` in `NvoosServiceProvider`.
+It reads `SettingsStoreInterface::all()` — not `get()`, because `get()` cannot tell
+"unset" from "set to the default" and `false` is a meaningful answer — and falls
+back to `config('oos.security')` so an existing deployment keeps working.
+
+| Control | Before | After |
+|---|---|---|
+| `enable_pii_filter` | config only; admin write ignored | stored row wins, else config |
+| `enable_prompt_injection_detector` | config only | stored row wins, else config |
+| `prompt_injection_mode` | config only | stored row wins, else config |
+| `prompt_injection_sensitivity` | config only | stored row wins, else config |
+
+Two details are load-bearing:
+
+- **`filter_var(…, FILTER_VALIDATE_BOOLEAN)`, not a cast.** The store holds `"0"`
+  and `"1"`; `(bool) 'false'` is `true`, so a cast would read a disabled control
+  as enabled in any deployment that stored the word.
+- **The mode is validated against the three the guard understands.**
+  `InputGuard::inspect()` treats anything that is not `log` as blocking-capable,
+  so a typo would silently escalate enforcement. Unknown means `log`. The settings
+  writer already rejects an invalid select (verified: writing `panic` throws
+  "Action on Detection is not a supported value"), but a row can arrive by import,
+  migration or direct write, so the guard normalises on its own.
+
+`ChatOrchestrator` is bound `scoped`, so reading the store at construction is safe:
+this runs per request and the tenant resolver is current. A `singleton` would have
+pinned the guard to whichever estate booted first.
+
+`InputGuardSettingsTest` — **5 tests / 9 assertions**: the config defaults still
+build a guard; a stored `false` beats a config `true`; a stored `true` beats a
+config `false`; a stored mode beats the config default; an unrecognised mode
+degrades to `log`.
+
+### 183.9.2 Two declared, not built
+
+The other two are real capabilities this runtime does not have, so they belong in
+`UnimplementedSettings` — visible, disabled, explained — not silently hidden:
+
+| Key | Reason |
+|---|---|
+| `allow_guest_access` | No guest surface exists; the console and its API are authenticated |
+| `enable_2fa_requirement` | No second factor is enrolled or verified; with Auth0, MFA is that provider's policy |
+
+2FA is the one worth a citation rather than a judgement call. OWASP ASVS 5.0
+(V6.3.3) makes MFA — or an equivalent mechanism — a requirement at L2, so a toggle
+that reports compliance while enforcing nothing is worse than no toggle. Declaring
+it unimplemented states the gap; a working toggle would have hidden it.
+
+### 183.9.3 The scan was wrong twice, in opposite directions
+
+Closing the finding exposed two flaws in the reader scan, both of which had
+produced confidently wrong rows:
+
+1. **False negative — unmodelled idioms.** `inputGuardFromSettings()` reads
+   `$stored['enable_pii_filter']` and passes keys to `self::flag()`. Neither is a
+   `->value()` call or a map entry, so both keys still classified as WordPress
+   settings after they had been wired. The scan now models four idioms: accessor
+   calls, map values, array-index reads, and resolver-helper arguments.
+2. **False positive — self-reference.** The residue scan looked for key names
+   across the repository and found them in `resources/settings/coverage.json`,
+   the artefact it was generating. Any key present in the previous artefact could
+   therefore never be reported `stale`. The scan now skips the catalogue and the
+   coverage map.
+3. **A genuinely invisible class.** Twelve commerce keys are built by the plugin
+   as `$slug . '_safety_buffer'`, so no literal scan can see them. They were
+   reported as "defined by no source" — false. The scan now collects the suffixes
+   the plugin actually interpolates and classifies such keys `wordpress-dynamic`.
+
+The lesson is the section's own thesis: a negative result from the wrong search is
+not evidence. Every bucket now states which idiom found it, and the reasons say
+what the scan cannot see.
+
+### 183.9.4 Gates
+
+| Gate | Result |
+|---|---|
+| `AdminSettingsCoverageTest` | **7 tests** — completeness, reasons, enforced-claim verification, writability split, the four controls stay accounted for, counts, page render |
+| `InputGuardSettingsTest` | **5 tests / 9 assertions** |
+| `UnimplementedSettingsTest`, `SurfaceOwnershipTest`, `SettingsCatalogueTest`, `InapplicableSettingsTest`, `AdminNavigationTest` | pass |
+| phpcs PSR-12 | exit 0 |
+| `bin/audit-surface-ownership.php` | 59 rows · 50 built · 0 planned · 5 absent · 0 inert |
+| `bin/settings-coverage/generate.py` | 601 rows · 59 enforced · 0 admin-writable unenforced |

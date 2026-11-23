@@ -19,6 +19,7 @@ use Illuminate\Support\ServiceProvider;
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Security\InputGuard;
 use Nvoos\Core\Application\Security\OutputGuard;
+use Nvoos\Core\Domain\Service\Harness\PromptInjectionDetector;
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ChatProfileGuard;
 use Nvoos\Core\Application\Tool\NecessityGuard;
@@ -417,7 +418,7 @@ class NvoosServiceProvider extends ServiceProvider {
 				sse: $app->make( SseHandler::class ),
 			);
 
-			$orchestrator->setInputGuard( self::inputGuardFromConfig() );
+			$orchestrator->setInputGuard( self::inputGuardFromSettings( $app ) );
 			$orchestrator->setOutputGuard( self::outputGuardFromConfig() );
 			$orchestrator->setHarnessProfileProvider( $app->make( HarnessProfileProviderInterface::class ) );
 
@@ -448,33 +449,91 @@ class NvoosServiceProvider extends ServiceProvider {
 	}
 
 	/**
-	 * Build the AI-safety input guard from config.
+	 * Build the AI-safety input guard from the estate's settings, falling back to
+	 * config.
 	 *
-	 * Returns null when both controls are off, so an unconfigured install pays
-	 * nothing for a guard that would never block anyway.
+	 * The four controls are writable on `/admin/settings`. Reading them from
+	 * `config( 'oos.security' )` alone — which this method used to do — meant an
+	 * operator could enable the PII filter in the admin and get no filter: the
+	 * admin writes `nvoos_tenant_settings`, and the config file is never overlaid
+	 * from that table. A security toggle that saves and enforces nothing is worse
+	 * than an absent one, because it reports a posture the runtime does not have
+	 * (the same reasoning §183 applies to the coverage report).
+	 *
+	 * Precedence is explicit, a stored row first: an estate that has set the key
+	 * wins over the deployment default, and an unset key falls through to
+	 * `config/oos.php` so an existing deployment keeps its behaviour. `all()` is
+	 * consulted rather than `get()` because `get()` cannot distinguish "unset"
+	 * from "set to the default" — and `false` is a meaningful answer here.
+	 *
+	 * Safe at construction because `ChatOrchestrator` is bound `scoped`, so this
+	 * runs per request and the store's tenant resolver is current. A `singleton`
+	 * binding would pin the guard to whichever estate booted first.
 	 */
-	private static function inputGuardFromConfig(): ?InputGuard {
-		$security = (array) config( 'oos.security', array() );
-		$injection = (bool) ( $security['prompt_injection_detector'] ?? false );
-		$pii = (bool) ( $security['pii_filter'] ?? false );
+	private static function inputGuardFromSettings( $app ): ?InputGuard {
+		$config = (array) config( 'oos.security', array() );
+		$stored = $app->bound( SettingsStoreInterface::class )
+			? (array) $app->make( SettingsStoreInterface::class )->all()
+			: array();
+
+		$injection = self::flag( $stored, $config, 'enable_prompt_injection_detector', 'prompt_injection_detector' );
+		$pii       = self::flag( $stored, $config, 'enable_pii_filter', 'pii_filter' );
 
 		if ( ! $injection && ! $pii ) {
 			return null;
 		}
 
+		$strictness = (string) ( $stored['prompt_injection_sensitivity'] ?? $config['prompt_injection_sensitivity'] ?? PromptInjectionDetector::STRICTNESS_MEDIUM );
+
 		return new InputGuard(
-			mode: (string) ( $security['prompt_injection_mode'] ?? InputGuard::MODE_LOG ),
-			strictness: (string) ( $security['prompt_injection_sensitivity'] ?? 'medium' ),
+			mode: self::mode( $stored, $config ),
+			strictness: in_array( $strictness, array( PromptInjectionDetector::STRICTNESS_LOW, PromptInjectionDetector::STRICTNESS_MEDIUM, PromptInjectionDetector::STRICTNESS_HIGH ), true )
+				? $strictness
+				: PromptInjectionDetector::STRICTNESS_MEDIUM,
 			piiEnabled: $pii,
 			injectionEnabled: $injection,
 		);
 	}
 
 	/**
-	 * Build the AI-safety output guard from config.
+	 * A stored flag, else the legacy config flag, else off.
 	 *
-	 * Returns null when the layer is off, so an unconfigured install pays
-	 * nothing — and, importantly, keeps live token streaming.
+	 * `filter_var` semantics rather than a cast: the settings table holds "0" and
+	 * "1" for booleans, and `(bool) 'false'` is `true` — a cast would read a
+	 * disabled control as enabled in any deployment that stored the word.
+	 *
+	 * @param array<string, mixed> $stored
+	 * @param array<string, mixed> $config
+	 */
+	private static function flag( array $stored, array $config, string $key, string $legacy ): bool {
+		if ( array_key_exists( $key, $stored ) ) {
+			return filter_var( $stored[ $key ], FILTER_VALIDATE_BOOLEAN );
+		}
+
+		return filter_var( $config[ $legacy ] ?? false, FILTER_VALIDATE_BOOLEAN );
+	}
+
+	/**
+	 * The guard mode, validated against the three the guard understands.
+	 *
+	 * An unrecognised mode must not fall through to the guard's own default in a
+	 * way that changes strength unpredictably: `InputGuard::inspect()` treats
+	 * anything that is not `log` as blocking-capable, so a typo in a stored value
+	 * would silently escalate. Unknown means `log`, which never blocks.
+	 *
+	 * @param array<string, mixed> $stored
+	 * @param array<string, mixed> $config
+	 */
+	private static function mode( array $stored, array $config ): string {
+		$mode = (string) ( $stored['prompt_injection_mode'] ?? $config['prompt_injection_mode'] ?? InputGuard::MODE_LOG );
+
+		return in_array( $mode, array( InputGuard::MODE_LOG, InputGuard::MODE_WARN, InputGuard::MODE_BLOCK ), true )
+			? $mode
+			: InputGuard::MODE_LOG;
+	}
+
+	/**
+	 * Build the AI-safety output guard from config.
 	 */
 	private static function outputGuardFromConfig(): ?OutputGuard {
 		$security = (array) config( 'oos.security', array() );

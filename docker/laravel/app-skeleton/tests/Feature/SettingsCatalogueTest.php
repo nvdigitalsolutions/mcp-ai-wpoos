@@ -80,9 +80,26 @@ class SettingsCatalogueTest extends TestCase
      *
      * @var list<string>
      */
+    /**
+     * 149 §183.9 — tenant-scope security fields that are declared inert.
+     *
+     * Still owned by the estate (they are that administrator's policy to see) but
+     * not writable: nothing here opens a guest surface or verifies a second factor,
+     * so a saved value would enforce nothing. They stay in the reviewed-owner map
+     * below because "every security field has an owner" must remain true.
+     */
+    private const SECURITY_INERT = array(
+        'allow_guest_access',
+        'enable_2fa_requirement',
+    );
+
     private const SECURITY_TENANT = array(
         'require_authentication_all',
-        'allow_guest_access',
+        // `allow_guest_access` and `enable_2fa_requirement` were here until §183.9
+        // declared them inert: nothing in this runtime opens a guest surface or
+        // verifies a second factor, and a writable control that enforces nothing is
+        // the false assurance UnimplementedSettings exists to prevent. Both stay
+        // tenant scope and both still render — disabled, with a reason.
         'bypass_auth_for_logged_in',
         'require_auth_chat_endpoints',
         'require_auth_tool_execution',
@@ -95,7 +112,6 @@ class SettingsCatalogueTest extends TestCase
         'allow_public_thumbnails',
         'protected_file_extensions',
         'minimum_capability',
-        'enable_2fa_requirement',
         'guest_token_ttl_hours',
         'enable_a2a_jwt_validation',
         'require_capability_on_delegate',
@@ -436,6 +452,18 @@ class SettingsCatalogueTest extends TestCase
             'A field cannot be both operator and tenant.'
         );
 
+        $this->assertSame(
+            array(),
+            array_intersect(self::SECURITY_INERT, self::SECURITY_OPERATOR),
+            'An inert field cannot also be an operator field.'
+        );
+
+        $this->assertSame(
+            array(),
+            array_intersect(self::SECURITY_INERT, self::SECURITY_TENANT),
+            'An inert field must be listed once: in SECURITY_INERT, not SECURITY_TENANT.'
+        );
+
         $actual = array();
 
         foreach (SettingsCatalogue::fields() as $field) {
@@ -445,7 +473,8 @@ class SettingsCatalogueTest extends TestCase
         }
 
         $expected = array_fill_keys(self::SECURITY_OPERATOR, 'operator')
-            + array_fill_keys(self::SECURITY_TENANT, 'tenant');
+            + array_fill_keys(self::SECURITY_TENANT, 'tenant')
+            + array_fill_keys(self::SECURITY_INERT, 'tenant');
 
         ksort($actual);
         ksort($expected);
@@ -493,6 +522,28 @@ class SettingsCatalogueTest extends TestCase
             $this->assertSame('tenant', $field['scope'], $key.' should stay tenant scope.');
             $this->assertContains($key, $writable, $key.' should be writable on /admin.');
             $this->assertNotContains($key, $ops, $key.' is not a platform setting.');
+        }
+    }
+
+    /**
+     * 149 §183.9 — a declared-inert security control is not writable.
+     *
+     * Kept separate from `test_security_estate_policy_is_tenant_writable` so the
+     * policy assertions above keep describing the estate policy, and this one
+     * describes the exception and why it exists.
+     */
+    public function test_declared_inert_security_controls_are_not_writable(): void
+    {
+        $writable = array_column(SettingsSchema::writableFor('admin'), 'key');
+
+        foreach (self::SECURITY_INERT as $key) {
+            $this->assertContains(
+                $key,
+                \App\Support\Settings\UnimplementedSettings::keys(),
+                $key.' must stay declared inert; otherwise it is a writable control that enforces nothing.'
+            );
+
+            $this->assertNotContains($key, $writable, $key.' must not be writable while it is inert.');
         }
     }
 
