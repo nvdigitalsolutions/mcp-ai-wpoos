@@ -394,3 +394,71 @@ mapping) and `docker/laravel/app-skeleton/tests/Feature/ListMcpToolsToolTest.php
 (3 tests: the container builds it, it lists this host's real surface, it fetches
 one definition). `lib/core` 2006 tests / 15,807 assertions, adapter suite 348 /
 1,826, skeleton registration and diagnostics 17 — all green. phpcs clean.
+
+---
+
+## 12. Addendum: host health as a tool (2026-11-23)
+
+### The gap, again the same shape
+
+`get_site_health` was named by four presets and carried flags in
+`ToolCapabilityFlagCatalogue`, but had no readiness row. The Laravel console had
+a `/ops/site-health` page — an operator could see the probes, an agent could not.
+
+### The contract, and why the split is where it is
+
+Health checks are **host facts**. The Laravel app knows its database, cache,
+queue, scheduler, providers and security flags; the package host knows only
+whether the manifest's tools registered and whether a default model is set.
+`Nvoos\Core\Domain\Contract\HealthReportInterface` is the seam:
+
+| Host | Binding | Probes |
+|---|---|---|
+| Package (`NvoosServiceProvider`) | `Nvoos\Laravel\Health\PackageHealthReport` | `tools`, `settings` |
+| App (`AppServiceProvider`) | `App\Support\Health\SiteHealthReport` | the six the page renders |
+
+The app adapter does nothing but call `SiteHealth::probes()`, so the page and the
+tool cannot drift: one producer, two readers. Reporting a probe a host cannot run
+would be worse than reporting fewer — a synthetic "database: good" on a host with
+no database is a lie an agent would act on.
+
+The app binding replaces the package binding because package discovery registers
+`NvoosServiceProvider` before `bootstrap/providers.php`; the same override pattern
+the app already uses for five other contracts.
+
+### Aggregation rules
+
+- **`critical` wins.** One critical probe makes the report critical.
+- **`recommended` downgrades but does not fail.** The vocabulary is WordPress's
+  (`good`, `recommended`, `critical`), so an operator who has seen Site Health
+  does not learn a second one.
+- **A status outside the vocabulary is not a pass.** It is counted as
+  `recommended` and passed through unchanged in the probe list — the same
+  "absence means unknown, not safe" rule the capability-flag catalogue states for
+  undeclared flags.
+- **A probe with no status is not a pass** for the same reason.
+- **An empty report is `good`**, not an error: a host with nothing to check has
+  nothing wrong.
+
+Capability is `edit_posts`, matching the WordPress tool. That is not a hole: the
+contract's docblock makes "never return a secret" a rule of the interface, and
+every probe reads configuration *flags* (is debug on, is a key set, which
+provider slug) rather than values.
+
+### Not done, named
+
+- **`get_system_logs`** — needs a log-source contract first, and a decision about
+  which store answers: Laravel's log channel, the observability trace store, or
+  both. The WordPress tool exposes `activity_limit`, `activity_types` and
+  `since`; picking a backend is the work, not shaping the payload.
+- **`mcp_server_info`** — still needs the runtime identity contract described in
+  §11.
+
+### Validation
+
+`GetSiteHealthToolTest` (6 unit tests: all-good, critical wins, recommendation
+downgrades, out-of-vocabulary status, missing status, empty report) and
+`docker/laravel/app-skeleton/tests/Feature/GetSiteHealthToolTest.php` (2 tests:
+the container builds it, and the app probe set — not the package default — is
+what answers). `lib/core` 2014 tests / 15,832 assertions; adapter suite 348 /
+1,827; skeleton health + registration 14. phpcs clean on all nine files.

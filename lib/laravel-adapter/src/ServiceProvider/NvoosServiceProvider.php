@@ -46,6 +46,8 @@ use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
+use Nvoos\Core\Domain\Contract\HealthReportInterface;
+use Nvoos\Laravel\Health\PackageHealthReport;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
@@ -301,6 +303,18 @@ class NvoosServiceProvider extends ServiceProvider {
 
 		// Readiness decisions — the manifest is the registration policy.
 		$this->app->singleton( ToolReadiness::class, static fn (): ToolReadiness => new ToolReadiness() );
+
+		// Health probes for `get_site_health`. Health checks are host facts, so
+		// the package answers the two questions it can and the app replaces this
+		// with its full Site Health probe set in `AppServiceProvider`.
+		$this->app->singleton(
+			HealthReportInterface::class,
+			static fn ( $app ): PackageHealthReport => new PackageHealthReport(
+				$app->make( ToolRegistry::class ),
+				$app->make( ToolReadiness::class ),
+				$app->make( SettingsStoreInterface::class ),
+			)
+		);
 
 		// Per-user chat profiles (Proposal 015 port). The resolver is the only
 		// thing that knows where a preference is stored; the guard asks it, and
