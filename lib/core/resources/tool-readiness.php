@@ -105,6 +105,14 @@ return array(
 			'replaced_by' => 'analyze_video',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'auto_categorize_content' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AutoCategorizeContentCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AutoCategorizeContentToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
+		),
 		'auto_categorize_content_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AutoCategorizeContentTool',
 			'readiness' => 'quarantined',

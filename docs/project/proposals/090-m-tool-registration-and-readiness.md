@@ -1733,3 +1733,87 @@ user's file answering as missing).
 (`content_recommendation_engine` on its success path and `analyze_file_suitability` on
 its not-found path). Auditor 243 rows / 224 servable, no violations. phpcs clean on all
 four files at the CI severities.
+
+## 26. Addendum: a taxonomy read, and auto_categorize_content (2026-11-24)
+
+### The slice
+
+§23 recorded `auto_categorize_content` as blocked on one dependency: the category list.
+`ContentQuery.taxQuery` *filters* by term names it is given; nothing enumerates them. A
+categorizer that cannot see the vocabulary cannot ask a model to choose from it, so the
+read came first.
+
+`ContentStoreInterface::listTaxonomyTerms( string $taxonomy, int $limit = 200 )` now
+returns `array{id, name, slug, count}` ordered by name. There are exactly two
+implementations — the Laravel and WordPress adapters — so the method went on the
+existing contract rather than into a second interface with an `instanceof` dance at
+every call site. The two adapters were loaded and reflected against the interface to
+prove both still satisfy it; lint alone would not have caught a missing method, because
+PHP only fatals at class load.
+
+An unused term is still listed. It is the *vocabulary* that matters to a categorizer,
+not the usage: a term nobody has used yet is a legitimate answer.
+
+### A closed list, and invented ids dropped
+
+The model is given the real ids and names and asked to pick. An id it returns that was
+never in the list is dropped and counted — the same rule as §23, for the same reason:
+assigning it would fail, or silently create a near-duplicate of a term that does exist,
+and the caller could not tell the difference.
+
+An empty vocabulary returns a finding **before** the model call. There is nothing to
+choose from, so nothing is spent saying so.
+
+### `create_new` is not offered
+
+WordPress accepts `create_new` and never reads it: `assign_categories()` calls
+`wp_set_object_terms()` with ids that already exist, and nothing creates a term. It is
+the same inert-parameter defect as §24's `use_semantic_search`, so the port does not
+declare it.
+
+### `auto_assign` adds here; WordPress replaces
+
+This is a real semantic split, not a preference. `wp_set_post_terms( ..., $append =
+false )` removes every term the model did not name. The Laravel store's update path
+merges (`syncWithoutDetaching`), so the same call would append. The two adapters have
+disagreed about `UpdateContentCommand::$taxonomyInput` since it was written.
+
+Rather than change either adapter — which would alter every existing `save_post` and
+`update_post` caller — the tool computes the union itself and passes the **full desired
+set**. WordPress replaces with that set, Laravel appends it, and both hosts converge on
+the same state without a suggestion deleting curation a human made. The payload reports
+`assigned` (newly added) and `already_present` separately, and nothing is written at all
+when every suggestion is already attached, so an idempotent call does not touch the row
+or fire update hooks.
+
+A follow-up worth its own issue: the adapters should agree on what `taxonomyInput`
+means before more tools write through it.
+
+### Dry run, and what confidence is
+
+`dry_run` with `auto_assign` reports what would be added and writes nothing — the safe
+way to look at a categorizer before trusting it.
+
+`min_confidence` filters on the number the model returned. That number is a claim, not a
+measurement, so every suggestion carries the confidence next to the term it refers to
+rather than being collapsed into one opaque relevance score.
+
+### Validation
+
+`AutoCategorizeContentToolTest` (core, 18 tests: slug/capability/flags with `write` and
+`state-changing` present and `read-only` absent; the missing store; a required source;
+an empty taxonomy; a non-resolving `post_id`; an unreadable answer; **an empty
+vocabulary as a finding that spends no completion**; **an invented id dropped and
+counted**; the confidence floor; `max_categories`; equal confidence ordered by name for
+reproducibility; no write without `auto_assign`; the term added; **an existing term kept
+through the union**; no write when everything is already present; dry run writing
+nothing; a missing caller refused with `user_required`; inline content only suggesting).
+Feature test `docker/laravel/app-skeleton/tests/Feature/AutoCategorizeContentToolTest.php`
+(6 tests against the real store and the real `nvoos_terms` rows: registration, the
+vocabulary read, a real term suggested while an invented id is dropped, `auto_assign`
+attaching a term while the existing one survives the round trip, dry run writing
+nothing, and a term-free taxonomy returning a finding without a completion).
+
+`lib/core` 2,225 / 16,639; adapter 350 / 1,872; auditor 244 rows / 225 servable, no
+violations. phpcs clean under both the PSR-12 ruleset (core, Laravel adapter, skeleton)
+and the WordPress ruleset (the WordPress adapter).
