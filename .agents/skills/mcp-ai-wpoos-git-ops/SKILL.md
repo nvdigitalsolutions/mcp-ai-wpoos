@@ -223,6 +223,14 @@ sync.
 Parallel agents share the same checkout and switch branches between tasks.
 Each rule below cost a recovery:
 
+- **Detect a concurrent agent from `git status`, not from assumption
+  (2026-11-23).** Two `git status` runs twenty minutes apart gained `M
+examples/…` and `M .agents/skills/…` paths nobody on the task had touched. That
+  is the signal to stop switching branches and to snapshot any tree a long test
+  run reads from. A blocked `git checkout` (`Please commit your changes or stash
+  them before you switch branches`) is the good outcome — forcing it is how other
+  agents' work is destroyed.
+
 - **Check the branch before committing.** `git branch --show-current` and
   `git log --oneline -1` before `git add`/`commit` — a commit lands on
   whatever branch is checked out, and the worktree may have been switched
@@ -257,6 +265,19 @@ Each rule below cost a recovery:
   checked out). `rm .git/tmp-index` afterwards. This touches nothing the other
   agent can see and needs no worktree state at all — the recovery of choice
   whenever a checkout is blocked by their dirty files.
+- **That index path is wrong in a linked worktree (2026-11-23).** `.git` is a
+  FILE there, so `GIT_INDEX_FILE=.git/tmp-index` fails with `Not a directory`.
+  Use an absolute path outside the tree, e.g.
+  `GIT_INDEX_FILE=<worktree>/.playwright-mcp/tmp-index` (gitignored), or
+  `"$(git rev-parse --git-dir)/tmp-index"`. Two refinements to the recipe: after
+  `read-tree`, `git add -- <paths>` is legal **when you have just diffed those
+  exact paths against the base branch and confirmed they carry only your hunks**
+  — the only practical way to carry *new* files, where `hash-object` +
+  `--cacheinfo` is fiddly; and prefer `git update-ref <ref> <new> <old>` over
+  `git branch -f`, because it refuses the move if the branch advanced under you.
+  Then verify with `git diff-tree -r --name-status <base> <new-tree>`: anything
+  beyond your own paths means the `read-tree` or the `add` was wrong. The flag is
+  `--no-renames`, not `--no-rename`.
 - **Recovering a stray commit:** cherry-pick it onto your branch, then
   restore the foreign branch with `git reset --mixed <its-old-head>` +
   `git restore --worktree -- <only-the-files-you-touched>`. **Never
