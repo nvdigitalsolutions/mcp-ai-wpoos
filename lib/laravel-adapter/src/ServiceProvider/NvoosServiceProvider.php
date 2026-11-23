@@ -44,6 +44,7 @@ use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
@@ -191,7 +192,20 @@ class NvoosServiceProvider extends ServiceProvider {
 				$app->bound( TenantResolverInterface::class ) ? $app->make( TenantResolverInterface::class ) : null,
 			);
 		} );
-		$this->app->bind( FileStoreInterface::class, FileStore::class );
+		$this->app->bind( FileStoreInterface::class, function ( $app ) {
+			return new FileStore(
+				publicDisk: (string) $app['config']->get( 'oos.files.disks.public', 'public' ),
+				privateDisk: (string) $app['config']->get( 'oos.files.disks.private', 'local' ),
+				limits: (array) $app['config']->get( 'oos.files.limits', array() ),
+			);
+		} );
+		// Proposal 162 — the same store, reached through the optional visibility
+		// capability. A second binding rather than a second class: the object model
+		// is one writer, and a host that only knows `FileStoreInterface` keeps working.
+		$this->app->bind(
+			FileVisibilityStoreInterface::class,
+			static fn ( $app ) => $app->make( FileStoreInterface::class ),
+		);
 		$this->app->bind( FileUploadServiceInterface::class, function ( $app ) {
 			return new FileUploadService(
 				disk: (string) $app['config']->get( 'oos.media_disk', 'public' ),

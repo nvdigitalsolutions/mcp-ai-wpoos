@@ -19,6 +19,7 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
@@ -72,6 +73,12 @@ class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterfac
                     'description' => 'MIME type of the file. Default: application/octet-stream.',
                     'default'     => 'application/octet-stream',
                 ),
+                'visibility' => array(
+                    'type'        => 'string',
+                    'enum'        => array( 'private', 'public' ),
+                    'description' => 'Who may read the stored file. "private" (the default) requires an authorised request to read it; "public" gives it a stable, unauthenticated URL. Choose public only for content the whole deployment may see.',
+                    'default'     => 'private',
+                ),
             ),
             'required'             => array(),
             'additionalProperties' => false,
@@ -110,13 +117,23 @@ class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterfac
 
         $filename = $this->stringParam($arguments, 'filename');
         $mimeType = $this->stringParam($arguments, 'mime_type', 'application/octet-stream');
+        $visibility = $this->stringParam($arguments, 'visibility', FileVisibilityStoreInterface::VISIBILITY_PRIVATE);
+
+        if ( ! in_array( $visibility, array( FileVisibilityStoreInterface::VISIBILITY_PUBLIC, FileVisibilityStoreInterface::VISIBILITY_PRIVATE ), true ) ) {
+            return $this->errors->validationFailed(
+                'visibility must be "private" or "public".',
+                array( 'visibility' => array( 'Use private unless the content is meant to be world-readable.' ) ),
+            );
+        }
+
+        $tenantId = isset( $context['tenant_id'] ) ? (string) $context['tenant_id'] : null;
 
         try {
             if ('' !== $filePath) {
                 if ('' === $filename) {
                     $filename = basename($filePath);
                 }
-                $file = $this->files->store($filePath, $filename, $mimeType, $userId);
+                $file = $this->storeFile($filePath, $filename, $mimeType, $userId, $visibility, $tenantId);
             } elseif ('' !== $base64) {
                 if ('' === $filename) {
                     return $this->errors->validationFailed(
@@ -125,7 +142,7 @@ class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterfac
                     );
                 }
                 $tmpFile = $this->saveBase64Temp($base64);
-                $file    = $this->files->store($tmpFile, $filename, $mimeType, $userId);
+                $file    = $this->storeFile($tmpFile, $filename, $mimeType, $userId, $visibility, $tenantId);
                 @unlink($tmpFile);
             } else {
                 if ('' === $filename) {
@@ -136,7 +153,7 @@ class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterfac
                     return $this->errors->create('download_failed', "Failed to download file from: $url");
                 }
                 $tmpFile = $this->saveTemp($content);
-                $file    = $this->files->store($tmpFile, $filename, $mimeType, $userId);
+                $file    = $this->storeFile($tmpFile, $filename, $mimeType, $userId, $visibility, $tenantId);
                 @unlink($tmpFile);
             }
         } catch (\Throwable $e) {
@@ -144,9 +161,40 @@ class UploadFileTool extends AbstractTool implements ToolCapabilityFlagsInterfac
         }
 
         return $this->success(
-            sprintf('File "%s" stored (ID: %d).', $filename, $file->id),
+            sprintf('File "%s" stored (ID: %d, %s).', $filename, $file->id, $visibility),
             $file->jsonSerialize(),
         );
+    }
+
+    /**
+     * Store through the visibility capability when the host offers it.
+     *
+     * `FileVisibilityStoreInterface` is an optional capability, not a second
+     * protocol (Proposal 162): a host that only implements `FileStoreInterface`
+     * keeps working, and the file lands at that host's default visibility. The
+     * probe is explicit so a missing capability is visible here rather than
+     * silently dropping the argument.
+     */
+    private function storeFile(
+        string $path,
+        string $filename,
+        string $mimeType,
+        int $userId,
+        string $visibility,
+        ?string $tenantId,
+    ): \Nvoos\Core\Domain\Entity\StoredFile {
+        if ( $this->files instanceof FileVisibilityStoreInterface ) {
+            return $this->files->storeWithVisibility(
+                $path,
+                $filename,
+                $mimeType,
+                $userId,
+                $visibility,
+                $tenantId,
+            );
+        }
+
+        return $this->files->store( $path, $filename, $mimeType, $userId );
     }
 
     private function saveBase64Temp(string $base64): string

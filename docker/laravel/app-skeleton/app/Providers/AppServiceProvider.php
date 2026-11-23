@@ -423,6 +423,26 @@ class AppServiceProvider extends ServiceProvider
                 : null
         );
 
+        // File-level access (Proposal 162). `FileStore` has always named this
+        // ability as its extension point, but nothing defined it, so
+        // `userCanAccess()` returned false for every caller and a file was
+        // reachable only by its owner. The store passes [userId, fileId] rather
+        // than trusting the session, because a tool may act for a different user
+        // than the request — the same reason the content abilities take an
+        // explicit user.
+        //
+        // Ownership is decided by the store before this runs. What is left is
+        // "somebody else's file", which needs an administrative capability: an
+        // estate admin reviewing an upload should not have to be its author.
+        Gate::define(
+            'oos-file.access',
+            static function ($user, $userId = null, $fileId = null): bool {
+                $target = self::contentUser($user, $userId);
+
+                return $target !== null && CapabilityMap::has($target, 'manage_options');
+            }
+        );
+
         // Content abilities: capability first, then ownership. The content
         // store passes [id, userId] instead of relying on the session, because
         // a tool may act for a different user than the request.
