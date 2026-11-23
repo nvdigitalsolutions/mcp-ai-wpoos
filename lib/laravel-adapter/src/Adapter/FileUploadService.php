@@ -19,7 +19,10 @@ namespace Nvoos\Laravel\Adapter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
+use Nvoos\Core\Domain\Error\ValidationException;
 
 class FileUploadService implements FileUploadServiceInterface {
 
@@ -45,11 +48,13 @@ class FileUploadService implements FileUploadServiceInterface {
 	 * @param string             $disk        Media disk (must be publicly served).
 	 * @param int                $maxBytes    Maximum accepted size in bytes.
 	 * @param array<int, string> $allowedTypes Allowed MIME types.
+	 * @param FileVisibilityStoreInterface|null $store The file registry, when the host binds one.
 	 */
 	public function __construct(
 		private readonly string $disk = 'public',
 		private readonly int $maxBytes = self::DEFAULT_MAX_FILE_SIZE,
 		private readonly array $allowedTypes = self::DEFAULT_ALLOWED_TYPES,
+		private readonly ?FileVisibilityStoreInterface $store = null,
 	) {}
 
 	/**
@@ -110,6 +115,37 @@ class FileUploadService implements FileUploadServiceInterface {
 		$mime     = (string) $check['file_info']['mime_type'];
 		$tmp      = (string) $file['tmp_name'];
 		$original = (string) $check['file_info']['name'];
+
+		// Proposal 162 §162.7 — one writer. When the host binds the file registry,
+		// the bytes and the row are written there: one id scheme, one path
+		// convention, one place that knows what a stored file is. The
+		// hand-written path below stays for a host that binds only this service
+		// (the package is consumed outside this repository).
+		if ( null !== $this->store ) {
+			try {
+				$stored = $this->store->storeWithVisibility(
+					$tmp,
+					$original,
+					$mime,
+					isset( $context['user_id'] ) ? (int) $context['user_id'] : 0,
+					FileVisibilityStoreInterface::VISIBILITY_PUBLIC,
+					$this->tenantFrom( $context ),
+				);
+			} catch ( ValidationException $exception ) {
+				return array(
+					'success' => false,
+					'error'   => $exception->getMessage(),
+				);
+			}
+
+			return array(
+				'success'       => true,
+				'attachment_id' => $stored->id,
+				'url'           => $stored->publicUrl,
+				'path'          => (string) ( $stored->metadata['path'] ?? '' ),
+			);
+		}
+
 		$base     = Str::slug( \pathinfo( $original, PATHINFO_FILENAME ) );
 
 		if ( '' === $base ) {
