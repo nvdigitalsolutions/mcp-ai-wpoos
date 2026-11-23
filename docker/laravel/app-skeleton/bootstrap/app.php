@@ -3,6 +3,7 @@
 use App\Http\Middleware\ApplyCorsPolicy;
 use App\Http\Middleware\EnsureAssistantRestEnabled;
 use App\Http\Middleware\EnforceRequestLimits;
+use App\Http\Middleware\GuardFailedAuthentication;
 use App\Http\Middleware\EnsurePrincipalScope;
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
@@ -170,6 +171,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // console requests authenticate with the session cookie; MCP/API
         // clients keep using bearer tokens.
         $middleware->statefulApi();
+
+        // 149 §185 — failed-authentication lockout per address. Registered
+        // *before* the limit below so the resulting order is
+        // [limits, lockout, …]: a body is measured before an unauthenticated
+        // attempt is counted, and the count is checked before the authenticator
+        // runs (route middleware), so a locked-out address never reaches it.
+        $middleware->prependToGroup('api', GuardFailedAuthentication::class);
 
         // 149 §184 — request-size and JSON-depth limits. Registered *after*
         // `statefulApi()` on purpose: that call prepends the Sanctum stateful

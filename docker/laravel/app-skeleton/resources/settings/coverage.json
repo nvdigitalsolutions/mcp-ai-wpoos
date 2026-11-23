@@ -3322,8 +3322,8 @@
     },
     {
       "key": "max_sse_connections_per_user",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "max_sse_connections_per_user"
     },
     {
@@ -3340,20 +3340,20 @@
     },
     {
       "key": "enable_auth_rate_limiting",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "enable_auth_rate_limiting"
     },
     {
       "key": "auth_rate_limit_threshold",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "auth_rate_limit_threshold"
     },
     {
       "key": "auth_rate_limit_window",
-      "bucket": "unenforced-operator",
-      "reason": "The same problem as unenforced, one scope up: an operator-scope security control that no enforcement point reads. It is writable from /ops, not from this panel, so the risk lands on whoever administers the deployment.",
+      "bucket": "enforced",
+      "reason": "Read by runtime code that changes behaviour.",
       "storage": "auth_rate_limit_window"
     },
     {

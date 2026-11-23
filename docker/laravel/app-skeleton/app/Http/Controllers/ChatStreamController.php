@@ -6,6 +6,7 @@ use App\Models\Assistant;
 use App\Support\Budgets\BudgetExceededException;
 use App\Support\Budgets\BudgetGuard;
 use App\Support\Budgets\BudgetUnverifiableException;
+use App\Support\Streaming\SseConnectionRegistry;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -98,7 +99,23 @@ class ChatStreamController
             'X-Accel-Buffering' => 'no',
         ];
 
-        return response()->stream(function () use ($messages, $assistantConfig, $userId, $assistantId, $options): void {
+        // 149 §185 — the per-user simultaneous-stream cap. Acquired before the
+        // stream opens for the same reason the budget is checked here: a refusal
+        // has to be an HTTP status, and `response()->stream()` has already
+        // committed to 200 by the time its callback runs. The slot is released
+        // in the callback's `finally`; `SseConnectionRegistry` documents what
+        // happens when a worker is killed before that runs.
+        $connections = app(SseConnectionRegistry::class);
+
+        if (! $connections->acquire($userId)) {
+            return response()->json(array(
+                'code' => 'sse_connection_limit',
+                'message' => 'Too many simultaneous chat streams for this user.',
+                'limit' => $connections->limit(),
+            ), 429)->header('Retry-After', '30');
+        }
+
+        return response()->stream(function () use ($messages, $assistantConfig, $userId, $assistantId, $options, $connections): void {
             /** @var SseHandler $sse */
             $sse = app(SseHandler::class);
             $sse->markHeadersSent();
@@ -122,6 +139,8 @@ class ChatStreamController
                     'message' => $e->getMessage(),
                 ]);
                 $sse->sendDone();
+            } finally {
+                $connections->release($userId);
             }
         }, 200, $headers);
     }
