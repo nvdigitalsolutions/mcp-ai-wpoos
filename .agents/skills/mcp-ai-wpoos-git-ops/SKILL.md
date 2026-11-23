@@ -266,7 +266,16 @@ examples/…` and `M .agents/skills/…` paths nobody on the task had touched. T
   just-merged PR, either re-verify the branch first or deliberately
   commit to a `fix/` branch + PR; a direct mainline hotfix (e.g. `cb9158501f`,
   the #7400 fixture-sync crash fix) should still be recorded by a small
-  follow-up PR for the audit trail.
+	  follow-up PR for the audit trail.
+- **Recovering work that landed on a foreign base (2026-11-24).** When your
+  uncommitted work sits on another agent's branch and their commit must not ride
+  along: `switch -c my-branch` (uncommitted changes carry over) → stage your
+  paths and commit → `GIT_EDITOR=true git rebase --onto origin/alpha-working <their-HEAD>`.
+  `--onto` replays only the commits AFTER their HEAD, so their commit is left
+  behind. Verify `git rev-list --count origin/alpha-working..HEAD` == 1 and
+  re-run the gates on the new base — upstream can move under you (18 commits in
+  the 2026-11-24 case, clean rebase, still re-ran 2137 tests). Do it before the
+  first push; afterwards it needs a force-push.
 - **`git checkout -b` inherits whatever branch is checked out — verify BEFORE
   creating, not only before committing (2026-11-11).** A `checkout -b feat/x`
   issued while the worktree sat on another agent's `feat/ezuite-…` produced a
