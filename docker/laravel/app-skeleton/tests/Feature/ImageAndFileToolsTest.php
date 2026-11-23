@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Http;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Entity\StoredFile;
+use Nvoos\Core\Domain\Error\ValidationException;
 use Nvoos\Core\Tool\CreateImageVariationTool;
 use Nvoos\Core\Tool\CreateVectorStoreTool;
 use Nvoos\Core\Tool\DeleteFileTool;
@@ -233,6 +235,87 @@ class ImageAndFileToolsTest extends TestCase
             && str_ends_with($request->url(), '/v1/images/generations'));
     }
 
+    public function test_generate_openai_image_stores_the_bytes_through_the_registry(): void
+    {
+        $store = $this->fakeVisibilityStore();
+
+        Http::fake(array(
+            'api.openai.com/v1/images/generations' => Http::response(array(
+                'data' => array(array('b64_json' => base64_encode('PNGDATA'), 'revised_prompt' => 'a cat')),
+            )),
+        ));
+
+        $result = $this->execute(
+            GenerateOpenAIImageTool::class,
+            array('prompt' => 'a cat', 'file_name' => 'Pixel'),
+            array('user_id' => 7, 'tenant_id' => 'estate-a')
+        );
+
+        $this->assertTrue($result['success']);
+
+        // The store received the decoded bytes, the estate, the owner and the
+        // visibility — not a URL and not the provider's claim about the type.
+        $this->assertCount(1, $store->writes);
+        $this->assertSame('PNGDATA', $store->writes[0]['bytes']);
+        $this->assertSame('image/png', $store->writes[0]['mime']);
+        $this->assertSame('public', $store->writes[0]['visibility']);
+        $this->assertSame(7, $store->writes[0]['owner']);
+        $this->assertSame('estate-a', $store->writes[0]['tenant']);
+        $this->assertStringStartsWith('pixel-', $store->writes[0]['name']);
+
+        $media = $result['data']['media'][0];
+        $this->assertSame(101, $media['attachment_id']);
+        $this->assertSame('/storage/default/public/x.png', $media['source_url']);
+        $this->assertSame('public', $media['visibility']);
+        $this->assertArrayNotHasKey('media_failed', $result['data']);
+
+        // Keeping the bytes is the point, so the provider is asked for them even
+        // though the caller did not name a format.
+        Http::assertSent(static fn ($request): bool => str_ends_with($request->url(), '/v1/images/generations')
+            && 'b64_json' === $request['response_format']);
+    }
+
+    public function test_generate_openai_image_can_skip_storage(): void
+    {
+        $store = $this->fakeVisibilityStore();
+
+        Http::fake(array(
+            'api.openai.com/v1/images/generations' => Http::response(array(
+                'data' => array(array('b64_json' => base64_encode('PNGDATA'))),
+            )),
+        ));
+
+        $result = $this->execute(GenerateOpenAIImageTool::class, array(
+            'prompt' => 'a cat',
+            'save_to_media' => false,
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(array(), $store->writes);
+        $this->assertArrayNotHasKey('media', $result['data']);
+    }
+
+    public function test_a_storage_refusal_is_reported_without_losing_the_image(): void
+    {
+        $store = $this->fakeVisibilityStore();
+        $store->refuse = 'File type is not accepted: image/png.';
+
+        Http::fake(array(
+            'api.openai.com/v1/images/generations' => Http::response(array(
+                'data' => array(array('b64_json' => base64_encode('PNGDATA'))),
+            )),
+        ));
+
+        $result = $this->execute(GenerateOpenAIImageTool::class, array('prompt' => 'a cat'));
+
+        // The generation is the expensive part; a refused store must not turn it
+        // into a failed call.
+        $this->assertTrue($result['success']);
+        $this->assertSame(array(), $result['data']['media']);
+        $this->assertSame('File type is not accepted: image/png.', $result['data']['media_failed'][0]);
+        $this->assertSame(base64_encode('PNGDATA'), $result['data']['images'][0]['b64_json']);
+    }
+
     public function test_create_image_variation_returns_images(): void
     {
         Http::fake(array(
@@ -349,6 +432,69 @@ class ImageAndFileToolsTest extends TestCase
         Http::assertSent(static fn ($request): bool => 'POST' === $request->method()
             && str_starts_with($request->url(), 'https://api.higgsfield.ai')
             && $request->hasHeader('Authorization', 'Key key-id:key-secret'));
+    }
+
+    /**
+     * A visibility store that records what it was handed.
+     *
+     * The tool's job is to hand decoded bytes to the registry; the registry's
+     * own behaviour is covered by `FileStoreVisibilityTest`. This fake separates
+     * the two so the probe does not need a database.
+     */
+    private function fakeVisibilityStore(): object
+    {
+        $fake = new class implements FileVisibilityStoreInterface {
+            /** @var array<int, array<string, mixed>> */
+            public array $writes = array();
+
+            public ?string $refuse = null;
+
+            public function storeWithVisibility(
+                string $localPath,
+                string $filename,
+                string $mimeType,
+                int $userId,
+                string $visibility,
+                ?string $tenantId = null,
+            ): StoredFile {
+                $bytes = (string) file_get_contents($localPath);
+
+                if (null !== $this->refuse) {
+                    throw new ValidationException($this->refuse);
+                }
+
+                $this->writes[] = array(
+                    'name' => $filename,
+                    'mime' => $mimeType,
+                    'bytes' => $bytes,
+                    'owner' => $userId,
+                    'visibility' => $visibility,
+                    'tenant' => $tenantId,
+                );
+
+                return new StoredFile(
+                    id: 100 + count($this->writes),
+                    filename: $filename . '.png',
+                    mimeType: 'image/png',
+                    sizeBytes: strlen($bytes),
+                    localPath: $localPath,
+                    ownerId: $userId,
+                    createdAt: new \DateTimeImmutable('2026-01-01T00:00:00+00:00'),
+                    publicUrl: 'public' === $visibility ? '/storage/default/public/x.png' : null,
+                    visibility: $visibility,
+                    slug: $filename,
+                );
+            }
+
+            public function supportsVisibility(string $visibility): bool
+            {
+                return in_array($visibility, array('public', 'private'), true);
+            }
+        };
+
+        $this->app->instance(FileVisibilityStoreInterface::class, $fake);
+
+        return $fake;
     }
 
     // ─── File store ──────────────────────────────────────────────────────
