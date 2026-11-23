@@ -11,9 +11,23 @@
  */
 class Test_FlowHub_Tools extends WP_UnitTestCase {
 
+	/**
+	 * Admin user ID.
+	 *
+	 * @var int
+	 */
 	protected $admin_user_id;
+
+	/**
+	 * Subscriber user ID.
+	 *
+	 * @var int
+	 */
 	protected $subscriber_user_id;
 
+	/**
+	 * Create the admin and subscriber fixtures.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->admin_user_id      = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -26,6 +40,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		) );
 	}
 
+	/**
+	 * Delete the fixtures.
+	 */
 	public function tearDown(): void {
 		delete_option( 'wp_mcp_ai_flowhub_toolkit_settings' );
 		parent::tearDown();
@@ -35,6 +52,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 	// Inventory Tool
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * The inventory tool exposes the expected slug.
+	 */
 	public function test_inventory_tool_slug() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -43,6 +63,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		$this->assertEquals( 'flowhub_inventory', $tool->get_slug() );
 	}
 
+	/**
+	 * The inventory tool requires edit_posts.
+	 */
 	public function test_inventory_tool_capability() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -51,6 +74,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		$this->assertEquals( 'manage_woocommerce', $tool->get_required_capability() );
 	}
 
+	/**
+	 * The inventory tool denies a subscriber.
+	 */
 	public function test_inventory_tool_denies_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -63,6 +89,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 	}
 
+	/**
+	 * The inventory tool rejects an invalid action.
+	 */
 	public function test_inventory_tool_invalid_action() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -79,6 +108,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 	// Products Tool
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * The products tool exposes the expected slug.
+	 */
 	public function test_products_tool_slug() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Products' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -87,6 +119,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		$this->assertEquals( 'flowhub_products', $tool->get_slug() );
 	}
 
+	/**
+	 * The products tool denies a subscriber.
+	 */
 	public function test_products_tool_denies_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Products' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -103,6 +138,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 	// Locations Tool
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * The locations tool exposes the expected slug.
+	 */
 	public function test_locations_tool_slug() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Locations' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -111,6 +149,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		$this->assertEquals( 'flowhub_locations', $tool->get_slug() );
 	}
 
+	/**
+	 * The locations tool denies a subscriber.
+	 */
 	public function test_locations_tool_denies_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Locations' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -127,6 +168,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 	// Sync Tool
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * The sync tool exposes the expected slug.
+	 */
 	public function test_sync_tool_slug() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Sync' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -135,6 +179,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		$this->assertEquals( 'flowhub_sync', $tool->get_slug() );
 	}
 
+	/**
+	 * The sync tool requires manage_options.
+	 */
 	public function test_sync_tool_requires_manage_options() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Sync' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -147,6 +194,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 	// Settings Tool
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * The settings tool exposes the expected slug.
+	 */
 	public function test_settings_tool_slug() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Settings' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -155,6 +205,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 		$this->assertEquals( 'flowhub_settings', $tool->get_slug() );
 	}
 
+	/**
+	 * The settings tool returns the canonical envelope.
+	 */
 	public function test_settings_tool_canonical_envelope() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Settings' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -174,6 +227,9 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 	// Two-Gate Sanitisation
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * Failures return WP_Error, not a success=false envelope.
+	 */
 	public function test_errors_return_wp_error_not_false_envelope() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_FlowHub_Sync' ) ) {
 			$this->markTestSkipped( 'Tool not loaded.' );
@@ -191,7 +247,7 @@ class Test_FlowHub_Tools extends WP_UnitTestCase {
 	// ------------------------------------------------------------------ //
 
 	/**
-	 * flowhub_get_inventory attaches the connection proxy during live requests.
+	 * Flowhub_get_inventory attaches the connection proxy during live requests.
 	 */
 	public function test_get_inventory_attaches_connection_proxy() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Flowhub_Get_Inventory' ) ) {

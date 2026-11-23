@@ -11,16 +11,52 @@
  */
 if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) ) {
 	interface WP_MCP_AI_Tool_Interface {
+		/**
+		 * Tool slug.
+		 *
+		 * @return string
+		 */
 		public function get_slug();
+
+		/**
+		 * Tool display name.
+		 *
+		 * @return string
+		 */
 		public function get_name();
+
+		/**
+		 * Tool description.
+		 *
+		 * @return string
+		 */
 		public function get_description();
+
+		/**
+		 * JSON schema for the tool parameters.
+		 *
+		 * @return array
+		 */
 		public function get_parameters_schema();
+
+		/**
+		 * Execute the tool.
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array
+		 */
 		public function execute( array $arguments, array $context );
 	}
 }
 
 if ( ! interface_exists( 'WP_MCP_AI_Tool_Capability_Flags_Interface' ) ) {
 	interface WP_MCP_AI_Tool_Capability_Flags_Interface {
+		/**
+		 * Capability flags declared by the tool.
+		 *
+		 * @return array
+		 */
 		public function get_capability_flags();
 	}
 }
@@ -587,12 +623,18 @@ class Test_MCP_App_Allowlist extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * An empty URL is rejected.
+	 */
 	public function test_rejects_empty_url() {
 		$result = WP_MCP_AI_MCP_App_Registry::is_url_allowed( '' );
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_mcp_app_url_empty', $result->get_error_code() );
 	}
 
+	/**
+	 * A non-HTTP scheme is rejected.
+	 */
 	public function test_rejects_non_http_scheme() {
 		foreach ( array( 'javascript:alert(1)', 'data:text/html,foo', 'file:///etc/passwd', 'ftp://example.com/' ) as $url ) {
 			$result = WP_MCP_AI_MCP_App_Registry::is_url_allowed( $url );
@@ -605,17 +647,26 @@ class Test_MCP_App_Allowlist extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * A malformed URL is rejected.
+	 */
 	public function test_rejects_malformed_url() {
 		$result = WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'not-a-url' );
 		$this->assertWPError( $result );
 	}
 
+	/**
+	 * An empty allowlist permits any host.
+	 */
 	public function test_permissive_when_allowlist_empty() {
 		// No filter, no constant: any well-formed http(s) URL is allowed.
 		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://example.com/mcp' ) );
 		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'http://localhost:3000/mcp' ) );
 	}
 
+	/**
+	 * An exact allowlist host matches.
+	 */
 	public function test_filter_allowlist_exact_match() {
 		add_filter(
 			'wp_mcp_ai_mcp_app_allowed_hosts',
@@ -627,6 +678,9 @@ class Test_MCP_App_Allowlist extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://mcp.example.com/path' ) );
 	}
 
+	/**
+	 * Other hosts are rejected by the allowlist.
+	 */
 	public function test_filter_allowlist_rejects_other_hosts() {
 		add_filter(
 			'wp_mcp_ai_mcp_app_allowed_hosts',
@@ -640,6 +694,9 @@ class Test_MCP_App_Allowlist extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_mcp_app_url_not_allowed', $result->get_error_code() );
 	}
 
+	/**
+	 * Allowlist matching ignores case.
+	 */
 	public function test_filter_allowlist_case_insensitive() {
 		add_filter(
 			'wp_mcp_ai_mcp_app_allowed_hosts',
@@ -651,6 +708,9 @@ class Test_MCP_App_Allowlist extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://mcp.example.com/path' ) );
 	}
 
+	/**
+	 * A wildcard entry matches subdomains.
+	 */
 	public function test_wildcard_matches_subdomain() {
 		add_filter(
 			'wp_mcp_ai_mcp_app_allowed_hosts',
@@ -663,6 +723,9 @@ class Test_MCP_App_Allowlist extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://mcp.example.com/' ) );
 	}
 
+	/**
+	 * A wildcard does not match the apex or other domains.
+	 */
 	public function test_wildcard_does_not_match_apex_or_other_domain() {
 		add_filter(
 			'wp_mcp_ai_mcp_app_allowed_hosts',
@@ -678,6 +741,9 @@ class Test_MCP_App_Allowlist extends WP_UnitTestCase {
 		$this->assertWPError( $other );
 	}
 
+	/**
+	 * Sanitising drops a disallowed URL.
+	 */
 	public function test_sanitize_app_config_drops_disallowed_url() {
 		add_filter(
 			'wp_mcp_ai_mcp_app_allowed_hosts',
@@ -696,6 +762,9 @@ class Test_MCP_App_Allowlist extends WP_UnitTestCase {
 		$this->assertSame( '', $cfg['server_url'], 'Disallowed URLs must be cleared at sanitize time' );
 	}
 
+	/**
+	 * Sanitising keeps an allowed URL.
+	 */
 	public function test_sanitize_app_config_keeps_allowed_url() {
 		add_filter(
 			'wp_mcp_ai_mcp_app_allowed_hosts',
