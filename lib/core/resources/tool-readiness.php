@@ -573,6 +573,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AgentOrchestrationTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
+		'export_assistant' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ExportAssistantTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ExportAssistantToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'extract_domain' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExtractDomainTool',
 			'readiness' => 'pure',

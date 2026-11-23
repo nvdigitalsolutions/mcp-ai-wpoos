@@ -33,12 +33,44 @@ use Illuminate\Support\Str;
  * (that is what makes a WordPress export importable here and vice versa), but
  * `tenant_id` is never read from a bundle: a bundle is a document an operator
  * pastes in, so it can claim anything. The estate comes from the runtime.
+ *
+ * **What a bundle never carries.** Round-tripping verbatim is also why the
+ * export applies a credential denylist rather than trusting the stored shape: an
+ * assistant created by importing a hand-edited bundle can hold a key that
+ * WordPress's own export would have stripped. `redact()` removes those keys and
+ * the MCP App tokens on the way out, so every surface — panel, REST, tool —
+ * produces the same bundle.
  */
 final class AssistantPortability
 {
     public const FORMAT = 'nvoos-assistant';
 
     public const FORMAT_VERSION = 1;
+
+    /**
+     * Meta keys that never leave the estate in a bundle.
+     *
+     * The same denylist the WordPress engine applies. It is not theoretical
+     * here: `meta` round-trips verbatim — that is what makes a bundle portable
+     * — so an assistant created by importing a hand-edited bundle can hold a
+     * credential key that WordPress's own export would have removed. Applying
+     * the denylist on the way out is what keeps this engine's bundle equal to
+     * that one, whichever way the record arrived.
+     *
+     * @var list<string>
+     */
+    private const META_DENYLIST = array( '_wp_mcp_ai_credentials' );
+
+    /**
+     * Fields inside an MCP App entry that are credentials, not configuration.
+     *
+     * A `_wp_mcp_ai_mcp_apps` entry keeps its server URL and auth *type* so the
+     * connection can be re-established on the other side; the token and OAuth
+     * payload cannot cross, because the receiving runtime issues its own.
+     *
+     * @var list<string>
+     */
+    private const MCP_APP_SECRET_KEYS = array( 'token', 'oauth_data' );
 
     public function __construct(private readonly AssistantWriter $writer)
     {
@@ -90,9 +122,67 @@ final class AssistantPortability
             'plugin_version' => (string) config('app.version', '1.2.0'),
             'exported_at' => now()->toIso8601String(),
             'assistants' => $assistants
-                ->map(static fn (Assistant $assistant): array => $assistant->toBundleEntry())
+                ->map(fn (Assistant $assistant): array => $this->redact($assistant->toBundleEntry()))
                 ->all(),
         );
+    }
+
+    /**
+     * Remove the keys a bundle must never carry.
+     *
+     * Two layers, because they answer different questions. The denylist is a
+     * statement about whole keys — a credential record is never configuration
+     * and has no meaningful empty form. The MCP App redaction is narrower: the
+     * connection entry stays, its secret does not, so the receiving runtime can
+     * still show *what* was connected while issuing its own token.
+     *
+     * @param array<string, mixed> $entry
+     *
+     * @return array<string, mixed>
+     */
+    private function redact(array $entry): array
+    {
+        $meta = $entry['meta'] ?? null;
+
+        if (! is_array($meta)) {
+            return $entry;
+        }
+
+        foreach (self::META_DENYLIST as $key) {
+            unset($meta[$key]);
+        }
+
+        if (is_array($meta['_wp_mcp_ai_mcp_apps'] ?? null)) {
+            $meta['_wp_mcp_ai_mcp_apps'] = $this->redactApps($meta['_wp_mcp_ai_mcp_apps']);
+        }
+
+        $entry['meta'] = $meta;
+
+        return $entry;
+    }
+
+    /**
+     * Strip the credential fields from every MCP App entry.
+     *
+     * @param array<mixed> $apps
+     *
+     * @return array<mixed>
+     */
+    private function redactApps(array $apps): array
+    {
+        foreach ($apps as $index => $app) {
+            if (! is_array($app)) {
+                continue;
+            }
+
+            foreach (self::MCP_APP_SECRET_KEYS as $secret) {
+                unset($app[$secret]);
+            }
+
+            $apps[$index] = $app;
+        }
+
+        return $apps;
     }
 
     /**

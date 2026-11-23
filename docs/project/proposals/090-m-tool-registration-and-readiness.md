@@ -864,3 +864,110 @@ it checks that `create_assistant` does not is undecided), and the memory trio
 (`trace_memory_provenance`, `memory_audit_trail`, `batch_manage_memory`) which
 need version history, a write-audit store and a destructive-bulk safety design
 respectively.
+
+## 18. Addendum: export_assistant, and the denylist it exposed (2026-11-23)
+
+### The slice
+
+`export_assistant` was named by two presets and had no row. The app could
+already export the estate from `AssistantPortabilityController` and from the
+`/admin` portability page; an agent could not.
+
+The tool is a third transport onto the one engine, not a third bundle builder:
+
+```
+tool ──► AssistantExportInterface ──► LaravelAssistantExporter ──► AssistantPortability::export()
+REST  ────────────────────────────────────────────────────────────► AssistantPortability::export()
+/admin ───────────────────────────────────────────────────────────► AssistantPortability::export()
+```
+
+The reason is not tidiness. The `nvoos-assistant` v1 shape **and the credential
+denylist** live in that engine, and the portability skill's rule is explicit:
+every surface delegates, because a surface that builds its own meta loop drifts
+from the denylist the first time one of them changes. `export()` already reads
+through `estate()`, so the estate stays ambient and there is no tenant argument
+for a caller to get wrong.
+
+### The gap this slice found
+
+The Laravel engine had **no denylist at all**. `meta` round-trips verbatim —
+which is exactly what makes a WordPress bundle importable here — so an assistant
+created by importing a hand-edited bundle could hold `_wp_mcp_ai_credentials`
+and an `_wp_mcp_ai_mcp_apps` entry carrying a live `token` / `oauth_data`, and
+`export()` returned them to every surface.
+
+Export-side redaction now lives in the engine (`redact()`), so the panel, the
+REST route and the tool produce the same bundle:
+
+| Key | Treatment |
+|---|---|
+| `_wp_mcp_ai_credentials` | removed from `meta` |
+| `_wp_mcp_ai_mcp_apps[].token`, `.oauth_data` | removed per entry; the entry itself survives so the receiving runtime can still see *what* was connected and issue its own |
+
+**The import side is still open** and is recorded as a separate issue rather
+than fixed here: `import()` writes `meta` verbatim, so a hand-edited bundle can
+still plant a denylisted key. That is a change to import semantics with
+round-trip fidelity consequences, and it deserves its own tests rather than a
+line in this slice.
+
+### Formats: one, named
+
+WordPress offers `json`, `a2a` and `blueprint` and embeds A2A cards by default.
+This runtime has no A2A agent card and no Pro blueprint installer, so `json` is
+the only dialect that can be produced honestly. A caller asking for another is
+**refused with a sentence that names why** — returning a JSON bundle to someone
+who asked for an A2A card is a wrong answer delivered confidently.
+
+`include_a2a` is deliberately absent rather than accepted-and-ignored. A
+parameter that cannot change the output is a lying surface.
+
+### The inline ceiling
+
+A tool result is not a file download: it becomes part of the conversation, and
+every later turn pays for it. An estate of 32k-character system prompts exported
+in one call would exhaust the context window of the model that asked for it, and
+the bundle would arrive truncated by the transport rather than refused by us.
+Above **256 KB** of encoded bundle the call is refused with the batch size to use
+instead. The REST route and the panel page stream the same bundle with no such
+limit — the ceiling is a property of the chat surface, not of the export.
+
+### Cross-estate, again as *not found*
+
+`export()`'s only documented refusal is an id that is not in the estate, so a
+`BundleException` maps to `assistant_not_found` → `errors->notFound()` (404) —
+the same status §17 uses for a foreign duplicate source. Two tools that disagreed
+about whether an id exists elsewhere would be a cross-estate oracle built out of
+their difference. The feature test asserts a foreign id and a missing id return
+an identical status.
+
+### Flags: `idempotent`, not `cacheable`
+
+Two exports with no intervening write produce the same bundle, so the call is
+safe to retry. It is *not* cacheable in spirit: an assistant created a second ago
+must appear in the next export, and a cached export would hide exactly the change
+an operator is trying to confirm. WordPress declares `cacheable`; this is a
+considered deviation.
+
+### Not done, named
+
+`save_as_attachment` (WordPress's opt-in to write the bundle to the media
+library). The file registry (§162) can carry it, but it needs a bytes → temp file
+→ `FileVisibilityStoreInterface` collaborator, and the ceiling message already
+gives the batching route. `a2a` and `blueprint` dialects have no surface.
+`import_assistant` is next, and needs a duplicate-vs-merge decision plus the
+import-side denylist above.
+
+### Validation
+
+`ExportAssistantToolTest` (core, 10 tests: export-all passes `null`, an explicit
+id list is forwarded, an empty list means all, the dialect is case-insensitive,
+`a2a` is refused **without reaching the engine**, unknown id → 404, host failure
+→ its own code, host without an exporter, over-ceiling refused with a batch hint,
+capability flags). Feature test
+`docker/laravel/app-skeleton/tests/Feature/ExportAssistantToolTest.php` (6 tests
+on the real engine: container registration, the v1 bundle shape, id filtering,
+**credential and MCP-App tokens absent while the connection survives**, foreign
+and missing ids indistinguishable at 404 with nothing leaked, `blueprint` refused
+at 422). `lib/core` 2066 / 16,009; adapter 348 / 1,832; skeleton export +
+portability + registration + diagnostics + duplicate 45 / 171. Auditor 230 rows /
+211 servable, no violations. phpcs clean on all eight files.
