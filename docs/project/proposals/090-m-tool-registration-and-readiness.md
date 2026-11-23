@@ -320,3 +320,145 @@ The measurement above came from a throwaway scanner (deleted after use) that:
 Validation that the scanner was measuring the right thing: its parsed registered set is 55, which equals `ToolRegistry::all()` from the running container.
 
 Known blind spots, recorded so Phase 0 does not repeat them: inherited constructors, inherited `execute()` (`AbstractResultTool`), and property names that do not match a service type (`$this->p`).
+
+---
+
+## 11. Addendum: the discovery tool (2026-11-23)
+
+### The gap
+
+`ToolPresetCatalogue` listed `list_mcp_tools` and `mcp_server_info` in its
+discovery family, and `ToolCapabilityFlagCatalogue` carried flags for those
+slugs plus `get_site_health` and `get_system_logs`. None of the four had a
+readiness row, so none was served: a preset could advertise a discovery step
+that failed on its first call, and the capability catalogue described a tool the
+runtime could not build.
+
+That is the same failure mode §5.4 quarantined the prompt-builders for, one
+layer up — a slug in the data that is not a slug in the registry.
+
+### This slice: `list_mcp_tools`
+
+`Nvoos\Core\Tool\ListMcpToolsTool`, manifest row `ready`, one dependency: the
+`ToolRegistry` singleton. The registrar resolves it while the registry is being
+filled, which is safe because the tool reads it at execute time, not at
+construction.
+
+Decisions worth recording:
+
+- **It reads the live registry, not the manifest.** The manifest is policy —
+  which slugs *may* be served. The registry is the fact: what this host built.
+  A catalogue built from the manifest would list tools the container skipped for
+  an unbound service, which is precisely the drift `ToolReadiness::servable()`
+  exists to prevent.
+- **It never lists itself.** The model already knows the tool it just called,
+  and the self-row is the recursion hazard in visible form.
+- **Sorted by slug.** Registration order is a host implementation detail; a
+  catalogue that reshuffles between boots is hard to diff and hard to page.
+- **`total` is the pre-page total.** A paging client that reads `count` as the
+  total stops early.
+- **No `toolkit` filter and no `_meta` block.** WordPress derives a toolkit from
+  the declaring folder (`tools/<toolkit>/`), which core tools do not have, and
+  `_meta` carries WordPress identity this runtime has not yet defined. Both are
+  omitted rather than accepted and left empty.
+- **Risk levels** (`high`/`medium`/`low`/`info`) use the same four values as the
+  WordPress tool, from the tool's declared flags with
+  `ToolCapabilityFlagCatalogue::for()` as the fallback, so a client does not
+  need a per-runtime mapping.
+
+A docblock trap worth noting: the first draft of the class comment contained
+`*/tools/` inside backticks. `*/` closes a block comment regardless of context,
+so the file failed to parse. The phrase is now `tools/<toolkit>/`.
+
+### Not done, named
+
+- **`mcp_server_info`** — the WordPress payload is WordPress identity: plugin
+  version, distribution mode, site name and URL, `rest_url( 'mcp-ai/v1/mcp' )`.
+  This runtime has no MCP JSON-RPC endpoint and no identity contract, so the tool
+  needs a `RuntimeIdentityInterface` (name, version, runtime, base URL) and a
+  host implementation first. Implementing it from constants would be half an
+  answer to a question an agent asks specifically because it has several
+  connections.
+- **`get_site_health`** — the app has `App\Support\Health\*` and a
+  `SiteHealthPage`; a core tool would need a health-report contract so the tool
+  does not depend on `App\`.
+- **`get_system_logs`** — same shape: a log-source contract over Laravel's log
+  channel and the observability store.
+
+### Validation
+
+`ListMcpToolsToolTest` (10 unit tests: ordering and self-exclusion, pre-page
+total, limit clamping, search on slug and description, disabled tools absent,
+`include_schemas`, `tool_slug`, unknown slug, self-slug fall-through, risk
+mapping) and `docker/laravel/app-skeleton/tests/Feature/ListMcpToolsToolTest.php`
+(3 tests: the container builds it, it lists this host's real surface, it fetches
+one definition). `lib/core` 2006 tests / 15,807 assertions, adapter suite 348 /
+1,826, skeleton registration and diagnostics 17 — all green. phpcs clean.
+
+---
+
+## 12. Addendum: host health as a tool (2026-11-23)
+
+### The gap, again the same shape
+
+`get_site_health` was named by four presets and carried flags in
+`ToolCapabilityFlagCatalogue`, but had no readiness row. The Laravel console had
+a `/ops/site-health` page — an operator could see the probes, an agent could not.
+
+### The contract, and why the split is where it is
+
+Health checks are **host facts**. The Laravel app knows its database, cache,
+queue, scheduler, providers and security flags; the package host knows only
+whether the manifest's tools registered and whether a default model is set.
+`Nvoos\Core\Domain\Contract\HealthReportInterface` is the seam:
+
+| Host | Binding | Probes |
+|---|---|---|
+| Package (`NvoosServiceProvider`) | `Nvoos\Laravel\Health\PackageHealthReport` | `tools`, `settings` |
+| App (`AppServiceProvider`) | `App\Support\Health\SiteHealthReport` | the six the page renders |
+
+The app adapter does nothing but call `SiteHealth::probes()`, so the page and the
+tool cannot drift: one producer, two readers. Reporting a probe a host cannot run
+would be worse than reporting fewer — a synthetic "database: good" on a host with
+no database is a lie an agent would act on.
+
+The app binding replaces the package binding because package discovery registers
+`NvoosServiceProvider` before `bootstrap/providers.php`; the same override pattern
+the app already uses for five other contracts.
+
+### Aggregation rules
+
+- **`critical` wins.** One critical probe makes the report critical.
+- **`recommended` downgrades but does not fail.** The vocabulary is WordPress's
+  (`good`, `recommended`, `critical`), so an operator who has seen Site Health
+  does not learn a second one.
+- **A status outside the vocabulary is not a pass.** It is counted as
+  `recommended` and passed through unchanged in the probe list — the same
+  "absence means unknown, not safe" rule the capability-flag catalogue states for
+  undeclared flags.
+- **A probe with no status is not a pass** for the same reason.
+- **An empty report is `good`**, not an error: a host with nothing to check has
+  nothing wrong.
+
+Capability is `edit_posts`, matching the WordPress tool. That is not a hole: the
+contract's docblock makes "never return a secret" a rule of the interface, and
+every probe reads configuration *flags* (is debug on, is a key set, which
+provider slug) rather than values.
+
+### Not done, named
+
+- **`get_system_logs`** — needs a log-source contract first, and a decision about
+  which store answers: Laravel's log channel, the observability trace store, or
+  both. The WordPress tool exposes `activity_limit`, `activity_types` and
+  `since`; picking a backend is the work, not shaping the payload.
+- **`mcp_server_info`** — still needs the runtime identity contract described in
+  §11.
+
+### Validation
+
+`GetSiteHealthToolTest` (6 unit tests: all-good, critical wins, recommendation
+downgrades, out-of-vocabulary status, missing status, empty report) and
+`docker/laravel/app-skeleton/tests/Feature/GetSiteHealthToolTest.php` (2 tests:
+the container builds it, and the app probe set — not the package default — is
+what answers). `lib/core` 2014 tests / 15,832 assertions; adapter suite 348 /
+1,827; skeleton health + registration 14. phpcs clean on all nine files.
