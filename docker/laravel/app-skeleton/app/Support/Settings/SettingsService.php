@@ -5,6 +5,7 @@ namespace App\Support\Settings;
 use App\Support\SettingsSchema;
 use App\Support\Security\RootKey;
 use App\Support\Security\RootKeyGate;
+use App\Support\Security\RootKeyInvalid;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 /**
@@ -174,6 +175,7 @@ final class SettingsService
      * flag, so the exemption cannot carry other fields past the gate.
      *
      * @param array<string, mixed> $changes
+     * @throws RootKeyInvalid When the payload arms the gate with no usable key.
      */
     private function assertOperatorWriteAllowed(array $changes, string $surface): void
     {
@@ -181,11 +183,52 @@ final class SettingsService
             return;
         }
 
+        if ($this->armsWithoutKey($changes)) {
+            throw new RootKeyInvalid(
+                'Set a root security key in the same save before enabling the gate.'
+            );
+        }
+
         if ($this->isBootstrapWrite($changes, $surface)) {
             return;
         }
 
         app(RootKeyGate::class)->assertUnlocked();
+    }
+
+    /**
+     * Would this payload arm the gate with nothing to verify against?
+     *
+     * The flag alone arms the gate, deliberately: a control that quietly
+     * disarms when its secret vanishes is worse than one that refuses. But
+     * refusing *every* write the moment the flag is ticked, with no key stored
+     * and none in the same save, is a lock with no handle — the panel would be
+     * unusable until someone reached the CLI. So arming requires a key, and the
+     * check has to understand the form's two ways of saying "no new key": an
+     * untouched password field submits empty, and an existing one submits the
+     * mask.
+     *
+     * @param array<string, mixed> $changes
+     */
+    private function armsWithoutKey(array $changes): bool
+    {
+        if (! filter_var($changes[RootKey::ENABLE_KEY] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+
+        if ($this->rootKey()->configured()) {
+            return false;
+        }
+
+        $candidate = $changes[RootKey::STORAGE_KEY] ?? '';
+
+        if (! is_string($candidate)) {
+            return true;
+        }
+
+        $candidate = trim($candidate);
+
+        return '' === $candidate || SettingsSchema::MASKED_PLACEHOLDER === $candidate;
     }
 
     private function rootKey(): RootKey

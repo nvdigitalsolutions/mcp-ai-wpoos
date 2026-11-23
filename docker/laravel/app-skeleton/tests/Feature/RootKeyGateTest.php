@@ -49,13 +49,47 @@ final class RootKeyGateTest extends TestCase
         $this->assertSame(array('enable_logging'), $applied);
     }
 
-    public function test_enabling_without_a_stored_key_blocks_other_writes(): void
+    public function test_the_gate_cannot_be_armed_without_a_key(): void
     {
+        // Arming with no key would refuse every later write, with no way back
+        // except the CLI. The control protects the operator; it must not be a
+        // lock with no handle.
+        $this->expectException(RootKeyInvalid::class);
+
         $this->settings()->write(array('enable_root_security_key' => '1'), SettingsService::SURFACE_OPS);
+    }
 
-        $this->expectException(RootKeyRequired::class);
+    public function test_arming_is_refused_when_the_password_field_submits_empty(): void
+    {
+        // What the form actually sends when the operator ticks the box and leaves
+        // the key field untouched: empty means "unchanged", which is no key.
+        $this->expectException(RootKeyInvalid::class);
 
-        $this->settings()->write(array('enable_logging' => '1'), SettingsService::SURFACE_OPS);
+        $this->settings()->write(array(
+            'enable_root_security_key' => '1',
+            'root_security_key' => '',
+        ), SettingsService::SURFACE_OPS);
+    }
+
+    public function test_disabling_clears_the_key_and_turns_the_gate_off(): void
+    {
+        $this->install();
+
+        $key = $this->app->make(RootKey::class);
+        $this->assertTrue($key->enabled());
+        $this->assertTrue($key->configured());
+
+        $key->disable();
+
+        // Both halves, or "disabled" would mean "refuses every write": the gate
+        // fails closed, so a flag left on with no key is a lockout.
+        $this->assertFalse($key->enabled());
+        $this->assertFalse($key->configured());
+
+        $this->assertSame(
+            array('enable_logging'),
+            $this->settings()->write(array('enable_logging' => '1'), SettingsService::SURFACE_OPS)
+        );
     }
 
     public function test_the_first_key_may_be_stored_from_the_panel(): void
@@ -185,6 +219,24 @@ final class RootKeyGateTest extends TestCase
             1,
             DB::table('nvoos_security_events')->where('event', SecurityEventLogger::ROOT_KEY_DENIED)->count()
         );
+    }
+
+    public function test_the_command_reports_and_disables(): void
+    {
+        // The break-glass path is the safety argument for the whole mechanism:
+        // it has to be reachable and it has to leave the panel usable.
+        $this->install();
+
+        $this->artisan('nvoos:root-key', array('--status' => true))
+            ->expectsOutput('Configured: yes')
+            ->expectsOutput('Gate enabled: yes')
+            ->assertSuccessful();
+
+        $this->artisan('nvoos:root-key', array('--disable' => true))
+            ->assertSuccessful();
+
+        $this->assertFalse($this->app->make(RootKey::class)->enabled());
+        $this->assertFalse($this->app->make(RootKey::class)->configured());
     }
 
     public function test_the_unlock_endpoint_accepts_the_key_and_reports_state(): void
