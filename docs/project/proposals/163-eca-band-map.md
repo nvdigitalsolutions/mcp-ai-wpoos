@@ -258,6 +258,9 @@ at the component, not the bridge.
 
 ### What to check when a forged form dies
 
+0. `node scripts/forge.mjs forms check <profile> --target <dir>` — read-only, and it
+   names the blocker: the contract the build emits, the plugin version, a disabled
+   bridge, or an empty origin allowlist. Add `--send` for the dispatch answer.
 1. `GET /wp-json/nvoos-forge/v1/health` → `formsEnabled` + `formsConfigured`.
 2. The submitting origin is in Settings → Forge Bridge → Static origins.
 3. Submit the form **in a browser** from the forged origin and read the inline

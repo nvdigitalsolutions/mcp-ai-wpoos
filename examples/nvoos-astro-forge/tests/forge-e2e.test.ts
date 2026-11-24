@@ -1303,6 +1303,66 @@ it( 'emits the agent stubs, copy tables, seo builder and theme module', async ()
 	} );
 } );
 
+describe('forge e2e — eca preset scaffold (the flagship template gate)', () => {
+	// The ECA preset shipped 12 `astro check` errors because NO job ever
+	// scaffolded it: `test:e2e` checks the default scaffold only, and
+	// `eca-scaffold.test.ts` asserts generated strings without installing. The
+	// broken files were static generated components, so a scaffold + check is
+	// all this needs — no browser, no build.
+	const ECA_PROFILE: SiteProfile = {
+		...PROFILE,
+		url: 'https://fixture.test/',
+		name: 'Fixture School',
+		eca: {
+			basePath: '/activities',
+			schoolName: 'Fixture School',
+			timezone: 'UTC',
+			currency: 'GBP',
+			currencySymbol: '£',
+			stages: [
+				{
+					id: 'junior-school',
+					label: 'Junior School',
+					yearGroups: { from: 1, to: 6 },
+					match: ['junior'],
+					blurb: 'Activities for Years 1 to 6.',
+				},
+				{
+					id: 'senior-school',
+					label: 'Senior School',
+					yearGroups: { from: 7, to: 13 },
+					match: ['senior'],
+					blurb: 'Activities for Years 7 to 13.',
+				},
+			],
+			contacts: [ { label: 'ECA Coordinator', role: 'Programme', email: 'eca@example.com' } ],
+		},
+		forms: { delivery: 'bridge' },
+	};
+
+	it('scaffolds the eca preset and passes astro check', async () => {
+		const ecaDir = await mkdtemp(path.join(os.tmpdir(), 'forge-eca-preset-'));
+		try {
+			await scaffold({ profile: { ...ECA_PROFILE, url: origin }, targetDir: ecaDir, template: 'blog', preset: 'eca' });
+
+			// The preset's own surfaces and generated modules exist (the check below
+			// is what proves they COMPILE — this just fails fast when the preset
+			// silently degrades to the plain blog scaffold).
+			await expect(stat(path.join(ecaDir, 'src', 'lib', 'eca-site.ts'))).resolves.toBeTruthy();
+			await expect(stat(path.join(ecaDir, 'src', 'pages', 'activities', 'index.astro'))).resolves.toBeTruthy();
+			await expect(stat(path.join(ecaDir, 'src', 'pages', 'calendar', 'index.astro'))).resolves.toBeTruthy();
+			await expect(stat(path.join(ecaDir, 'src', 'pages', 'terms', 'index.astro'))).resolves.toBeTruthy();
+
+			const install = run(ecaDir, 'npm', ['install', '--no-audit', '--no-fund']);
+			expect(install.status, `npm install failed:\n${install.stderr}`).toBe(0);
+			const check = run(ecaDir, 'npm', ['run', 'check'], { WP_SITE_URL: origin });
+			expect(check.status, `astro check failed:\n${check.stdout}\n${check.stderr}`).toBe(0);
+		} finally {
+			await rmTemp(ecaDir);
+		}
+	}, 420_000);
+});
+
 describe('forge e2e — minimal preset scaffold (Proposal 104 §4.3)', () => {
 	it('scaffolds the minimal preset and passes astro check + build', async () => {
 		const minimalDir = await mkdtemp(path.join(os.tmpdir(), 'forge-minimal-'));

@@ -428,6 +428,70 @@ export function createWpFixtureData() {
 		media: {
 			501: { source_url: `${ORIGIN}/wp-content/uploads/media-501.png` },
 		},
+		/**
+		 * ECA records (`wp/v2/mcp_ai_eca`) — enough for the `eca` preset to
+		 * scaffold and TYPE-CHECK in CI. The preset's 12 `astro check` errors
+		 * (2026-11-24) were invisible because no job ever scaffolded it; two
+		 * records are all the generated components need to compile.
+		 */
+		mcpAiEca: [
+			{
+				id: 9001,
+				date_gmt: '2026-09-01T09:00:00',
+				modified_gmt: '2026-09-01T09:00:00',
+				title: { rendered: 'Chess Club' },
+				slug: 'chess-club',
+				link: `${ORIGIN}/eca/chess-club/`,
+				content: { rendered: '<p>Open to Years 3 to 6. All abilities welcome.</p>' },
+				excerpt: { rendered: '<p>Open to Years 3 to 6.</p>' },
+				meta: {
+					_eca_code: 'ECA-001',
+					_eca_type: 'society',
+					_eca_day: 'Tuesday',
+					_eca_start_time: '2:45 PM',
+					_eca_end_time: '3:30 PM',
+					_eca_venue: 'Room 23',
+					_eca_max_students: 20,
+					_eca_year_groups: '',
+					_eca_teachers: '',
+					_eca_is_paid: null,
+					_eca_cost: 0,
+					_eca_cost_period: '',
+					_eca_requires_audition: null,
+					_eca_booking_type: 'preference_based',
+					_eca_status: 'active',
+				},
+				mcp_ai_eca_category: [],
+			},
+			{
+				id: 9002,
+				date_gmt: '2026-09-01T09:00:00',
+				modified_gmt: '2026-09-01T09:00:00',
+				title: { rendered: 'Athletics Squad' },
+				slug: 'athletics-squad',
+				link: `${ORIGIN}/eca/athletics-squad/`,
+				content: { rendered: '<p>Track and field for Years 7 to 13. Trials in the first week.</p>' },
+				excerpt: { rendered: '<p>Track and field for Years 7 to 13.</p>' },
+				meta: {
+					_eca_code: 'ECA-002',
+					_eca_type: 'sport',
+					_eca_day: 'Thursday',
+					_eca_start_time: '3:45 PM',
+					_eca_end_time: '5:00 PM',
+					_eca_venue: 'Main Field',
+					_eca_max_students: 30,
+					_eca_year_groups: '7,8,9,10,11,12,13',
+					_eca_teachers: '',
+					_eca_is_paid: null,
+					_eca_cost: 0,
+					_eca_cost_period: '',
+					_eca_requires_audition: null,
+					_eca_booking_type: 'preference_based',
+					_eca_status: 'active',
+				},
+				mcp_ai_eca_category: [],
+			},
+		],
 	};
 }
 
@@ -629,6 +693,11 @@ export function createWpFixtureServer(port = PORT) {
 		}
 		if (path === '/wp-json/wp/v2/pages') {
 			const { slice, headers } = paginate(bySlug(data.pages));
+			json(res, slice, headers);
+			return;
+		}
+		if (path === '/wp-json/wp/v2/mcp_ai_eca') {
+			const { slice, headers } = paginate(bySlug(data.mcpAiEca));
 			json(res, slice, headers);
 			return;
 		}

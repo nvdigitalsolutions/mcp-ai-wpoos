@@ -202,3 +202,33 @@ produces from `form_fields[name]` keys — a JSON body never does, so
   form's rows land there and are worth trashing after verification. The bulk-action
   combobox is a React control — `select.value = …` does not register; use the real
   select or the row action.
+
+### The two commands that own this contract (2026-11-24)
+
+Both halves of the triangle are now checkable without a human clicking a form:
+
+- **`verify` → the `forms` gate** (on by default; runs inside `--minimal`, so it
+  is CI-blockable). Reads the BUILT pages and judges what a browser or a no-JS
+  visitor would actually use: does a `data-section="form"` band render a form,
+  does it have ≥1 fillable field (not just carriers), does the action sit at the
+  configured endpoint, and can an Elementor carrier resolve (`post_id` present and
+  non-zero). A band with no form is a FAIL when the profile declares `forms`, and
+  the documented degrade-to-contacts behaviour when it does not. Logic lives in
+  `lib/forms-gate.ts` (pure, unit-tested) so the policy is reviewable.
+- **`forge forms check <profile> --target <dir> [--send] [--origin <url>] [--json]`**
+  — the LIVE half. Default is read-only: resolves the endpoint from the profile,
+  re-runs the contract over `dist/`, then GETs `/health` and reports the plugin
+  version plus the two blockers that make every submission fail silently
+  (submissions disabled, empty origin allowlist). `--send` posts ONE probe with
+  `forge-probe@example.invalid` and reports the typed reply — the only way to
+  answer "does the native handler accept it". The probe prefers the front page's
+  form and is opt-in precisely because it creates a real record and may send real
+  mail. `lib/forms-check.ts` holds the fetch/envelope mapping (both the bridge
+  `{ok,message,errors}` and WP_Error shapes).
+
+**CI now type-checks the flagship preset.** `tests/forge-e2e.test.ts` →
+*forge e2e — eca preset scaffold* scaffolds `--preset eca` against the hermetic WP
+fixture (which serves `wp/v2/mcp_ai_eca`, added for this) and runs
+`npm run check`. The ECA preset shipped 12 `astro check` errors because no job had
+ever scaffolded it — `eca-scaffold.test.ts` only asserts generated strings and
+`test:e2e` only checked the default template. Any new preset needs the same gate.
