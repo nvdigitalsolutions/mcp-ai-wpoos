@@ -419,6 +419,10 @@ export function applyChromeSurfaces(
 			const ink = region?.inks?.[ 0 ]?.color;
 			return ink && ink !== TRANSPARENT ? ink : undefined;
 		};
+		const roleInk = ( region: RegionColors | undefined, role: 'heading' | 'body' ): string | undefined => {
+			const ink = region?.roles?.[ role ];
+			return ink && ink !== TRANSPARENT ? ink : undefined;
+		};
 
 		const header = light.header;
 		if ( header ) {
@@ -466,9 +470,42 @@ export function applyChromeSurfaces(
 				write( 'footerBarBg', body );
 			}
 			const ink = dominantInk( footer );
-			if ( ink ) {
-				write( 'footerInk', ink );
-				write( 'footerBarInk', ink );
+			// The HEADING slot. The template paints the rebuilt block titles (H3)
+			// from `footerInk` and the list copy from `footerBrand.text.ink`, but a
+			// region has ONE palette — and its winner is the ink that covers the most
+			// glyph AREA, which on a footer is the longer link lists, never the three
+			// titles. eca.directory measured 62% `#747474` link items over 38%
+			// `#27104a` block titles, so the dominant write recoloured every title
+			// grey; the colour gate then reported BOTH source inks as drift, because
+			// the rebuild carried only the one it had painted everywhere
+			// (2026-11-24). Roles when measured, the palette winner otherwise.
+			const headingInk = roleInk( footer, 'heading' ) ?? ink;
+			const bodyInk = roleInk( footer, 'body' ) ?? ink;
+			if ( headingInk ) {
+				write( 'footerInk', headingInk );
+			}
+			// The © bar is BODY copy, so it takes the body ink.
+			if ( bodyInk ) {
+				write( 'footerBarInk', bodyInk );
+			}
+			// A footer whose headings and copy paint DIFFERENT colours needs both
+			// slots filled; that is the only way the rebuild can reproduce a
+			// two-ink palette the gate compares ink by ink. On a single-ink footer
+			// the second slot would repeat the first — noise on every fleet site
+			// — so it is written only when the roles measurably differ.
+			if ( headingInk && bodyInk ) {
+				const delta = colorDeltaE( headingInk, bodyInk );
+				const bodyHex = normalizeCssColor( bodyInk );
+				if (
+					delta !== undefined &&
+					delta > 3 &&
+					bodyHex !== TRANSPARENT &&
+					! options.preserve?.( 'chrome.footerBrand.text.ink' )
+				) {
+					const brand = chrome.footerBrand ?? {};
+					chrome.footerBrand = { ...brand, text: { ...brand.text, ink: bodyHex } };
+					applied.push( 'chrome.footerBrand.text.ink' );
+				}
 			}
 		}
 		return applied;
@@ -1247,6 +1284,8 @@ export interface MeasureColorOptions {
 								background: string;
 								image?: string;
 								inks: Array< { color: string; mass: number } >;
+								heading: Array< { color: string; mass: number } >;
+								body: Array< { color: string; mass: number } >;
 								selector: string;
 								width: number;
 								height: number;
@@ -1260,8 +1299,37 @@ export interface MeasureColorOptions {
 						// and weighted by its RENDERED INK AREA (`inkMass`), so the palette is
 						// the share of the region's text each colour actually paints. Counting
 						// ELEMENTS instead is what made a lone caption outvote a paragraph.
-						const readInk = ( element: Element ): Array< { color: string; mass: number } > => {
+						const readInk = (
+							element: Element
+						): {
+							inks: Array< { color: string; mass: number } >;
+							heading: Array< { color: string; mass: number } >;
+							body: Array< { color: string; mass: number } >;
+						} => {
 							const masses = new Map< string, number >();
+							// The same mass, split by ROLE. A region's palette cannot say which of
+							// its inks is a heading, and the chrome slots need exactly that: the
+							// rebuilt footer paints H3s from `footerInk` and list copy from a
+							// separate text slot. eca.directory's footer is 62% `#747474` link
+							// lists over 38% `#27104a` block titles, so the palette winner put
+							// the LINK colour on the titles (2026-11-24).
+							const headingMasses = new Map< string, number >();
+							const bodyMasses = new Map< string, number >();
+							// A builder's heading is frequently NOT a heading element: Elementor
+							// publishes its block titles as `div.elementor-heading-title`. The tag
+							// alone misses them, so a heading/title class at semibold-or-heavier
+							// counts too. Per text-bearing element, never a container: the class
+							// sits on the widget and the text sits on its child.
+							const headingLike = ( node: Element, weight: string ): boolean => {
+								if ( /^h[1-6]$/i.test( node.tagName ) ) {
+									return true;
+								}
+								const className = node.getAttribute( 'class' ) ?? '';
+								if ( ! /heading|title/i.test( className ) ) {
+									return false;
+								}
+								return ( Number.parseInt( weight, 10 ) || 400 ) >= 600;
+							};
 							// The region's OWN painted box. A builder leaves legacy descendants
 							// in the DOM that render outside the element and are covered by the
 							// next band — jayainc's site-title link sits 23px under its hero, so
@@ -1299,6 +1367,8 @@ export interface MeasureColorOptions {
 								const fontPx = Number.parseFloat( style.fontSize ) || 16;
 								const mass = characters * fontPx * fontPx;
 								masses.set( style.color, ( masses.get( style.color ) ?? 0 ) + mass );
+								const role = headingLike( node, style.fontWeight ) ? headingMasses : bodyMasses;
+								role.set( style.color, ( role.get( style.color ) ?? 0 ) + mass );
 							};
 							consider( element );
 							for ( const node of element.querySelectorAll( '*' ) ) {
@@ -1308,7 +1378,9 @@ export interface MeasureColorOptions {
 							// colour reports a difference between two invisible values (the hero
 							// band is an image + a chevron). An empty palette makes the ink
 							// metric not apply, exactly like a transparent surface.
-							return [ ...masses.entries() ].map( ( [ color, mass ] ) => ( { color, mass } ) );
+							const toList = ( map: Map< string, number > ): Array< { color: string; mass: number } > =>
+								[ ...map.entries() ].map( ( [ color, mass ] ) => ( { color, mass } ) );
+							return { inks: toList( masses ), heading: toList( headingMasses ), body: toList( bodyMasses ) };
 						};
 						for ( const region of args.regions ) {
 							for ( const selector of region.selectors ) {
@@ -1330,10 +1402,12 @@ export interface MeasureColorOptions {
 										region.descendantFill === true
 									);
 									const box = element.getBoundingClientRect();
-									const inks = readInk( element );
+									const ink = readInk( element );
 									out[ region.name ] = {
 										background: surface.color,
-										inks,
+										inks: ink.inks,
+										heading: ink.heading,
+										body: ink.body,
 										selector,
 										width: box.width,
 										height: box.height,
@@ -1352,6 +1426,12 @@ export interface MeasureColorOptions {
 					// The palette is summarised in Node, not the page: it is pure maths
 					// (alpha collapse, ΔE merge, share rounding) and belongs in a unit test.
 					const inks = summarizeInk( values.inks );
+					// The role inks are the SAME maths over one bucket each: the single
+					// dominant colour of the heading text and of the body text. No share
+					// floor — a region whose headings are 4% of its glyphs still HAS a
+					// heading ink, and the chrome slots need it.
+					const headingInk = summarizeInk( values.heading, { limit: 1, minShare: 0 } )[ 0 ]?.color;
+					const bodyInk = summarizeInk( values.body, { limit: 1, minShare: 0 } )[ 0 ]?.color;
 					baseline[ region ] = {
 						background: normalizeCssColor( values.background ),
 						// `text` stays the DOMINANT ink so a baseline recorded before palettes
@@ -1359,6 +1439,14 @@ export interface MeasureColorOptions {
 						// colour per region. `inks` carries the whole measured palette.
 						text: inks[ 0 ]?.color ?? TRANSPARENT,
 						...( inks.length > 0 ? { inks } : {} ),
+						...( headingInk || bodyInk
+							? {
+									roles: {
+										...( headingInk ? { heading: headingInk } : {} ),
+										...( bodyInk ? { body: bodyInk } : {} ),
+									},
+							  }
+							: {} ),
 						// A gradient/URL is not a colour — pass it through verbatim rather
 						// than letting `normalizeCssColor` collapse it to `transparent`.
 						...( values.image ? { image: values.image } : {} ),

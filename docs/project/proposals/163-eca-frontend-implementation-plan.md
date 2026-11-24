@@ -394,3 +394,79 @@ every builder-sourced site needs them:
 | Category colour contrast | WCAG fail | colours paired with labels; contrast audited by the existing token gate |
 | Preset coupling to the blog template | template drift | ECA routes/components are additive files; blog e2e unchanged |
 | Large catalogues (2 000+) | build time | `maxPages` pagination + SSR tier for filtering |
+
+---
+
+## Pass — footer ink by ROLE, and the band-ink threshold (2026-11-24)
+
+### The finding
+
+The colour gate compares inks **one by one**: every source ink carrying ≥15 % of
+a region's glyph area is matched against the rebuild's palette, and a source ink
+the rebuild never paints is a failure. eca.directory's footer measures two:
+
+```
+rgb(116,116,116) #747474 — 62% — span.elementor-icon-list-text  (the link LISTS)
+rgb(39,16,74)    #27104a — 38% — div.elementor-heading-title     (the block TITLES)
+                                 a                              (the wordmark, 27.65px)
+```
+
+`applyChromeSurfaces` wrote the **palette winner** (`#747474`) into both
+`chrome.footerInk` and `chrome.footerBarInk`. But the template paints the
+rebuilt block titles (`.site-footer-block h3`) from `footerInk` and the list copy
+(`p` → `--forge-footer-text-ink`) from `chrome.footerBrand.text.ink`. So the
+rebuild painted every title grey, carried only ONE of the source's two inks, and
+the gate reported both as drift (7 drifts).
+
+The palette cannot answer "which of these is a heading" — it is a mass ranking,
+and on a footer the longer link lists always win.
+
+### The fix
+
+1. `RegionColors.roles` (measured in the browser): the same glyph-area mass,
+   split into heading-like and body text, summarised to one ink each.
+   *Heading-like* is `h1`–`h6` **or** a `heading`/`title` class at weight ≥ 600 —
+   Elementor publishes its block titles as `div.elementor-heading-title`, so the
+   tag alone misses them. Optional by design: an older profile without `roles`
+   behaves exactly as before.
+2. `applyChromeSurfaces` writes each slot from its role — `footerInk` ← heading,
+   `footerBarInk` ← body (the © line is body copy), and
+   `footerBrand.text.ink` ← body **only when the two roles differ** (ΔE00 > 3),
+   so a single-ink footer gains no redundant fact. Operator pins are preserved.
+3. `readableBandType` / the eyebrow guard keep the measured ink unless it is
+   *invisible* on its surface (contrast < 2.5), not merely below AA. A 4.5
+   threshold repainted the source's deliberate `#747474`-on-`#f7fafc` (4.24:1)
+   near-black and manufactured 29.5 ΔE of drift on five bands; a card-only ink
+   the rebuild never renders is ~1:1 and must still be replaced.
+
+### Result (build `gated15`, same profile otherwise)
+
+| Metric | before | after |
+|---|---|---|
+| colour system drift | 7 | **3** |
+| footer ink | `#27104a` → `#747474` (both slots) | `#27104a` titles / `#747474` lists — **clean** |
+| everything else | — | unchanged (18/27 gates, page bands 13 fail/11 warn) |
+
+### Known, still open — all three remaining colour findings
+
+1. `41b89b66` and `319dfe29`: source `#747474` (54 %/39 %), build `#69727d`
+   (ΔE 6.41). The band's `[data-section-id] p` rule *is* emitted with the right
+   colour; `.ds-section .ds-card p { color: var(--forge-muted) }` (added for
+   virtuallysrilanka, where a band ink harvested from a dark panel landed on a
+   white card) outranks it at (0,2,1), and `--forge-muted` is the profile's
+   `muted` token (`#69727d`). Fixing this properly means a **card-level** ink —
+   either a per-band `--ds-card-ink` emitted only when the measured body ink is
+   legible on the card surface, or a band surface the card can derive from. It
+   must not be a blanket removal of the card rule: that would re-open the
+   virtuallysrilanka bug.
+2. `77f4271d`: source `#27104a` (32 %), build `#1a1e1d` (ΔE 22.2). This is the
+   accordion/toggle band the rebuild does not reproduce (8.6 % text coverage —
+   the sanitizer drops the panel bodies), so its copy is not the source's copy at
+   all. It closes with the `items[].bullets` / accordion-content work, not with a
+   colour rule.
+
+The `sites/eca.json` diff also records `roles` on every band (harmless — only the
+chrome slots read them) and drops two `/author/…` entries from
+`inventory.missing` that discovery now resolves. The per-page band facts were
+kept from the previous run: a re-measure re-keys Elementor's per-render
+`elementor-dcss-…` class hashes with identical values, which is churn, not data.

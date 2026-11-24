@@ -569,6 +569,26 @@ export function bandSurface( section: ForgeSection, profile: SiteProfile ): stri
 	return flat ?? gradientTail( section.bgGradient ) ?? profile.pageBackground ?? '#ffffff';
 }
 
+/**
+ * Below this contrast the measured ink is not "low contrast", it is INVISIBLE —
+ * and therefore the wrong ink for this surface.
+ *
+ * The two cases are different and used to be conflated at 4.5:1:
+ *
+ *   - a band whose copy sits on a CARD the rebuild does not render records the
+ *     CARD's ink, so black-on-black or white-on-white comes through (ratio ≈ 1);
+ *     that colour must go, and the band/theme ink takes over.
+ *   - a source that simply paints its body copy a light grey (`#747474` on
+ *     `#f7fafc` is 4.24:1 — below AA, perfectly readable) is a DESIGN choice.
+ *     Dropping it repainted eca.directory's grey copy near-black and the colour
+ *     gate reported 29.5 ΔE of drift on five bands (2026-11-24).
+ *
+ * So the guard now only rescues the invisible case. A source that fails AA still
+ * fails it in the rebuild — which is parity — and `contrastAudit` reports it as
+ * a finding rather than the scaffold silently redesigning the band.
+ */
+const INVISIBLE_INK_RATIO = 2.5;
+
 export function readableBandType< T extends { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } >(
 	type: T,
 	section: ForgeSection,
@@ -580,7 +600,7 @@ export function readableBandType< T extends { headings?: Record< string, BandTyp
 			return fact;
 		}
 		const ratio = contrast( fact.color, surface );
-		if ( ratio === undefined || ratio >= 4.5 ) {
+		if ( ratio === undefined || ratio >= INVISIBLE_INK_RATIO ) {
 			return fact;
 		}
 		const next = { ...fact };
@@ -1842,7 +1862,7 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		const eyebrow = { ...bandFacts.eyebrow };
 		if ( eyebrow.color ) {
 			const ratio = contrast( eyebrow.color, bandSurface( section, profile ) );
-			if ( ratio !== undefined && ratio < 4.5 ) {
+			if ( ratio !== undefined && ratio < INVISIBLE_INK_RATIO ) {
 				delete eyebrow.color;
 			}
 		}
