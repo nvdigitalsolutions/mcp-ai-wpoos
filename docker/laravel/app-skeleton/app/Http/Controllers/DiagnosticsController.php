@@ -10,6 +10,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
 
 class DiagnosticsController
 {
@@ -20,6 +21,7 @@ class DiagnosticsController
         JobStatusStore $jobs,
         ProEntitlementInterface $entitlement,
         RoutingExportStore $routing,
+        MediaWorkerCapabilityProbe $mediaWorker,
     ): JsonResponse {
         $settings = $store->all();
         $registered = $providers->getRegisteredSlugs();
@@ -99,6 +101,12 @@ class DiagnosticsController
                 // §78 — the gauge a scraper reads. The page shows the same
                 // facts as a sentence; these are the fields behind it.
                 'routing_export' => $this->routingExport($routing),
+
+                // Proposal 164 §164.4.2 — what the processing tier can do, not
+                // just whether it is up. A managed Node host can answer
+                // `/api/health` and still have no `ffmpeg`; without this block
+                // the only way to learn that was a failed transcode.
+                'media_worker' => $mediaWorker->toArray(),
             ],
         ]);
     }
