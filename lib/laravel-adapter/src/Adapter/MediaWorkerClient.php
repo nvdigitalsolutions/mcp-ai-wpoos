@@ -235,6 +235,50 @@ final class MediaWorkerClient
     }
 
     /**
+     * POST a JSON body to a worker endpoint and decode the JSON envelope.
+     *
+     * The worker's own routes are JSON-in/JSON-out (`/api/pdf/generate`,
+     * `/api/document/*`, `/api/email/*`), so this is the counterpart to
+     * `postFile()`. It exists so the adapter for each domain does not need its
+     * own transport: one place raises `RuntimeException`, one place reads the
+     * worker's `error` field, and the not-configured message stays identical.
+     *
+     * Proposal 164 §164.4.2.
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     *
+     * @throws \RuntimeException When the worker is unconfigured, unreachable, or answers an error.
+     */
+    public function postJson(string $endpoint, array $body, int $timeout = 30): array
+    {
+        if (! $this->configured()) {
+            throw new \RuntimeException('The media worker is not configured.');
+        }
+
+        try {
+            $response = Http::timeout(max(1, $timeout))
+                ->acceptJson()
+                ->withHeaders($this->headers())
+                ->post($this->url().$endpoint, $body);
+        } catch (Throwable $e) {
+            throw new \RuntimeException('Media worker request failed: '.$e->getMessage(), 0, $e);
+        }
+
+        $decoded = $response->json();
+
+        if (! $response->ok() || ! is_array($decoded)) {
+            $reason = is_array($decoded) && isset($decoded['error'])
+                ? (string) $decoded['error']
+                : 'HTTP '.$response->status();
+
+            throw new \RuntimeException('Media worker error: '.$reason);
+        }
+
+        return $decoded;
+    }
+
+    /**
      * POST one file to a worker endpoint and decode the JSON envelope.
      *
      * `optimize()` predates this helper and is left untouched so its shipped
