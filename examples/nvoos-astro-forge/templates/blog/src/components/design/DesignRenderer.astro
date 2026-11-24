@@ -272,6 +272,28 @@ const pageBodySize = ( () => {
 	return [ ...counts.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ]?.[ 0 ];
 } )();
 
+/**
+ * The larger of a `padding` shorthand's two SIDE values, in px.
+ *
+ * Only px is read: every band-padding fact is emitted in px, and a `rem`/`%`
+ * value would otherwise be parsed as its bare number (1rem → 1).
+ */
+const bandSidePadding = ( shorthand: string | undefined ): number => {
+	if ( ! shorthand ) {
+		return 0;
+	}
+	const values = shorthand.trim().split( /\s+/ );
+	if ( ! values.every( ( value ) => /^-?\d+(?:\.\d+)?px$/.test( value ) ) ) {
+		return 0;
+	}
+	const numbers = values.map( ( value ) => Number.parseFloat( value ) );
+	// 1 → all sides; 2 → vertical/horizontal; 3 → top/horizontal/bottom;
+	// 4 → top/right/bottom/left.
+	const horizontal = numbers.length === 1 ? numbers[ 0 ] : numbers[ 1 ];
+	const left = numbers.length >= 4 ? numbers[ 3 ] : horizontal;
+	return Math.max( 0, horizontal ?? 0, left ?? 0 );
+};
+
 const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string, desktopCols?: number ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
@@ -297,6 +319,17 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		// would outrank its media queries); only a plain shorthand goes inline.
 		if ( typeof theme.padding === 'string' ) {
 			parts.push( `padding:${ theme.padding }` );
+		}
+		// The band's own side padding, as a number of its own. The mobile floor
+		// below tops the gutter up to `--forge-space` for a band whose source
+		// gutter is ZERO, but a band that already carries 30px of its own must
+		// not get a 46px gutter (eca.directory's day pages: build 298px of copy
+		// against the source's 330, 2026-11-24). Subtracting this from the floor
+		// keeps the phone fix and kills the double gutter.
+		const shorthand = typeof theme.padding === 'string' ? theme.padding : theme.padding.desktop;
+		const horizontal = bandSidePadding( shorthand );
+		if ( horizontal > 0 ) {
+			parts.push( `--ds-band-pad-x:${ horizontal }px` );
 		}
 		// The source declares the band's rhythm — suppress the template's
 		// default section padding so the bands meet their neighbors flush
@@ -1149,6 +1182,28 @@ const bandCarouselCss = sections
 	.join( '' );
 
 /**
+ * Mark every declaration in a STATE delta `!important`.
+ *
+ * The per-element positional facts (`[data-section-id="…"] .post-body > * >
+ * div:nth-child(1) > … > a:nth-child(1)`) re-state the box measured from the
+ * source, and three `:nth-child()` steps already outrank any class-level state
+ * rule — so the resting background won on every hover. A state delta means
+ * "the value WHILE hovered", which by definition beats the resting paint, so it
+ * is forced. The resting pass (`fact.base`) stays overrideable.
+ *
+ * eca.directory's rebuilt buttons kept `rgb(135, 100, 160)` on hover against the
+ * source's `rgb(39, 16, 74)` with the correct rule present in the sheet
+ * (2026-11-24) — specificity, not a missing declaration.
+ */
+const forceState = ( declarations: string ): string =>
+	declarations
+		.split( ';' )
+		.map( ( part ) => part.trim() )
+		.filter( Boolean )
+		.map( ( part ) => ( /!\s*important$/i.test( part ) ? part : `${ part } !important` ) )
+		.join( ';' );
+
+/**
  * The controls' measured interaction STATES (`analyze` interaction pass), scoped
  * to the band that owns them.
  *
@@ -1167,6 +1222,8 @@ const bandCarouselCss = sections
  *     changes, it just does not animate for a reader who asked it not to.
  *   - `:focus-visible` (not `:focus`) carries the keyboard ring; `:focus` is
  *     kept only for what the source really styles on any focus (fields).
+ *
+ * A state declaration is emitted `!important` — see `forceState`.
  */
 const bandInteractionCss = sections
 	.map( ( section, index ) => {
@@ -1187,16 +1244,16 @@ const bandInteractionCss = sections
 				rules.push( `@media (prefers-reduced-motion: no-preference){${ selector }{transition:${ fact.transition }}}` );
 			}
 			if ( fact.hover ) {
-				rules.push( `@media (hover: hover){${ selector }:hover{${ fact.hover }}}` );
+				rules.push( `@media (hover: hover){${ selector }:hover{${ forceState( fact.hover ) }}}` );
 			}
 			if ( fact.focus ) {
-				rules.push( `${ selector }:focus{${ fact.focus }}` );
+				rules.push( `${ selector }:focus{${ forceState( fact.focus ) }}` );
 			}
 			if ( fact.focusVisible ) {
-				rules.push( `${ selector }:focus-visible{${ fact.focusVisible }}` );
+				rules.push( `${ selector }:focus-visible{${ forceState( fact.focusVisible ) }}` );
 			}
 			if ( fact.active ) {
-				rules.push( `@media (hover: hover){${ selector }:active{${ fact.active }}}` );
+				rules.push( `@media (hover: hover){${ selector }:active{${ forceState( fact.active ) }}}` );
 			}
 			// A child that only repaints while the CONTROL is in a state (the overlay
 			// button): the selector is `<control>:hover > <child>`. The rest layout —
@@ -1213,16 +1270,16 @@ const bandInteractionCss = sections
 					rules.push( `@media (prefers-reduced-motion: no-preference){${ selector } > ${ child.selector }{transition:${ child.transition }}}` );
 				}
 				if ( child.hover ) {
-					rules.push( `@media (hover: hover){${ selector }:hover > ${ child.selector }{${ child.hover }}}` );
+					rules.push( `@media (hover: hover){${ selector }:hover > ${ child.selector }{${ forceState( child.hover ) }}}` );
 				}
 				if ( child.focus ) {
-					rules.push( `${ selector }:focus > ${ child.selector }{${ child.focus }}` );
+					rules.push( `${ selector }:focus > ${ child.selector }{${ forceState( child.focus ) }}` );
 				}
 				if ( child.focusVisible ) {
-					rules.push( `${ selector }:focus-visible > ${ child.selector }{${ child.focusVisible }}` );
+					rules.push( `${ selector }:focus-visible > ${ child.selector }{${ forceState( child.focusVisible ) }}` );
 				}
 				if ( child.active ) {
-					rules.push( `@media (hover: hover){${ selector }:active > ${ child.selector }{${ child.active }}}` );
+					rules.push( `@media (hover: hover){${ selector }:active > ${ child.selector }{${ forceState( child.active ) }}}` );
 				}
 			}
 		}
