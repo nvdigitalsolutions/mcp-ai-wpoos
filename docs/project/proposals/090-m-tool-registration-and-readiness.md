@@ -2279,3 +2279,88 @@ change when `categories` is absent) because that is the reachable path.
 `lib/core` 2,272 / 16,812. Adapter 359 / 1,889. Skeleton `ContentAndProjectToolsTest` +
 `AutoCategorizeContentToolTest` 30 / 188. phpcs clean on both rulesets — PSR-12 for
 core/adapter/skeleton, WPCS for the WordPress adapter.
+
+## 33. Addendum: the auditor can see final classes now, and what that exposed (2026-11-24)
+
+Issue #8201. The readiness gate matched declarations with `^class`, so every
+`final class` tool was invisible to it. `dangling` still worked, because it uses
+`class_exists()`, but `slug_mismatch` and `unclassified` both read the scan — so a
+manifest row pointing at a class that declares a different slug went unreported for
+precisely the newest tools. Twenty-five files were in that blind spot.
+
+### The scan moved out of the script
+
+The scan was `nvoos_audit_scan()` inside `bin/audit-tool-readiness.php`, which runs on
+include and therefore cannot be tested — which is how the pattern drifted unnoticed. It is
+now `Nvoos\Core\Application\Tool\ToolClassScanner`, with tests. The auditor keeps its
+violation logic and delegates the scan; `--tools=<dir>` was added so a tree other than
+`lib/core/src/Tool` can be scanned, which is what makes the fixture check below possible.
+
+`declaration()` matches the modifier run and reports `abstract` as a field rather than
+filtering it, so the caller decides and a test can pin both facts. That also retired the
+old whole-file `/abstract\s+class/` skip, which hid a concrete class whose *docblock*
+happened to mention an abstract one.
+
+### Result one: 25 classes appeared, and the manifest was already right
+
+| | before | after |
+|---|---|---|
+| scanned classes | 223 | **248** |
+| manifest rows | 248 | 248 |
+| servable | 229 | 229 |
+| violations | 0 | **0** |
+
+No new violation, so the manifest had been correct for those 25 all along — the gate just
+was not checking them. `248` scanned against `248` rows is now a real equality rather than
+an artefact of the blind spot.
+
+### Result two: the slug read was too loose, and the new coverage proved it
+
+The first run after the fix reported two violations against `ListMcpToolsTool`:
+`unclassified` plus `list_mcp_tools => class declares List MCP Tools`.
+
+The tool is correct — it returns `self::SLUG`. The scanner was wrong. Its pattern was
+`:\s*string\s*\{.*?return\s+(['"])…` with `/s`, so the lazy `.*?` ran past
+`return self::SLUG;` and matched the next quoted return in the file, which belongs to
+`getName()`. The scanner was reading a display label as a slug.
+
+That is a false positive produced by the *new* coverage, and a false positive in this gate
+is as costly as a false negative: it fails CI on a correct tool. The fix is to read the
+`getSlug()` body by balanced braces and resolve `return self::CONST;` against the file's
+`const` declaration. Other shapes yield `''`, which the audit already reports as
+`unclassified` rather than guessing.
+
+### Result three: an octal escape silently disabled the whole check
+
+While extracting the scan, `\1` was written inside a **double-quoted** PHP string. PHP
+reads that as the octal escape `chr(1)`, not as a regex backreference, so the slug pattern
+never matched and every slug came back `''`.
+
+The audit still exited `0`. Both the `unclassified` and `slug_mismatch` loops start with
+`if ('' === $entry['slug']) { continue; }`, so blank slugs mean *no slug-related findings at
+all* — a quieter version of the original bug. The new tests caught it on the first run
+(`'plain_tool'` expected, `''` actual). It is recorded here because the shell was green
+while the check was off, which is the failure mode this gate exists to prevent.
+
+### Validation
+
+`ToolClassScannerTest` — 12 tests: a final class is found; `final readonly` is found; a
+plain and a `readonly` class are found; abstract is skipped; a docblock that mentions an
+abstract class does not hide the declaration; no-class, no-tool and non-PHP files are
+ignored; a slug returned from a class constant is resolved and is *not* the display name;
+constructor parameter types are read.
+
+End-to-end, with a fixture manifest holding two rows on one final FQCN
+(`shadow_of_a_final_tool` sharing `AutoCategorizeContentCompletionTool`):
+
+```
+before the fix : no 'slug disagrees' finding at all
+                 (224 findings, all unclassified noise from the fixture manifest)
+after the fix  : G2 manifest slug disagrees with the class (1):
+                   shadow_of_a_final_tool => class declares auto_categorize_content
+```
+
+The real manifest audits clean: 248 rows, 229 servable, no violations.
+
+`lib/core` 2,284 / 16,831 (was 2,272 / 16,812). phpcs clean on the new class and test at
+the CI severities. `bin/` is outside both rulesets, as before.

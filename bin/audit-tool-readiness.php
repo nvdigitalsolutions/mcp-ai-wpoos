@@ -25,6 +25,7 @@
  *   php bin/audit-tool-readiness.php --write        # add missing rows as `unverified`
  *   php bin/audit-tool-readiness.php --classify=map.json  # apply readiness decisions
  *   php bin/audit-tool-readiness.php --manifest=/tmp/x.php  # audit another manifest
+ *   php bin/audit-tool-readiness.php --tools=/tmp/tools     # scan another tool tree
  *   php bin/audit-tool-readiness.php --report       # always exit 0 (CI report mode)
  *
  * `--write` never overwrites an existing decision: it only inserts rows for
@@ -37,6 +38,7 @@
  * @since   2.6.0
  */
 
+use Nvoos\Core\Application\Tool\ToolClassScanner;
 use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Domain\Contract\LlmSanitizerInterface;
 
@@ -48,6 +50,7 @@ $options = array(
 	'report'   => false,
 	'classify' => '',
 	'manifest' => '',
+	'tools'    => '',
 );
 
 foreach ( array_slice( $argv, 1 ) as $argument ) {
@@ -57,6 +60,8 @@ foreach ( array_slice( $argv, 1 ) as $argument ) {
 		$options['write'] = true;
 	} elseif ( 0 === strpos( $argument, '--manifest=' ) ) {
 		$options['manifest'] = substr( $argument, 11 );
+	} elseif ( 0 === strpos( $argument, '--tools=' ) ) {
+		$options['tools'] = substr( $argument, 8 );
 	} elseif ( 0 === strpos( $argument, '--classify=' ) ) {
 		$options['classify'] = substr( $argument, 11 );
 	} elseif ( '--report' === $argument ) {
@@ -101,128 +106,10 @@ if ( '' !== $options['manifest'] ) {
 	$manifest_path = $options['manifest'];
 }
 
-/**
- * Read the parameters of a method, by balanced parentheses.
- *
- * @param string $source Class source.
- * @param string $method Method name.
- * @return array<int, string> Short type names, in declaration order.
- */
-function nvoos_audit_params( string $source, string $method ): array {
-	if ( ! preg_match( '/function\s+' . preg_quote( $method, '/' ) . '\s*\(/', $source, $match, PREG_OFFSET_CAPTURE ) ) {
-		return array();
-	}
+$tools_path = $root . '/lib/core/src/Tool';
 
-	$open  = strpos( $source, '(', (int) $match[0][1] );
-	$depth = 0;
-	$end   = $open;
-	$length = strlen( $source );
-
-	for ( $i = $open; $i < $length; $i++ ) {
-		if ( '(' === $source[ $i ] ) {
-			$depth++;
-		} elseif ( ')' === $source[ $i ] ) {
-			$depth--;
-			if ( 0 === $depth ) {
-				$end = $i;
-				break;
-			}
-		}
-	}
-
-	$raw   = substr( $source, $open + 1, $end - $open - 1 );
-	$parts = array();
-	$buffer = '';
-	$depth = 0;
-
-	foreach ( str_split( $raw ) as $char ) {
-		if ( in_array( $char, array( '(', '[', '<' ), true ) ) {
-			$depth++;
-		} elseif ( in_array( $char, array( ')', ']', '>' ), true ) ) {
-			$depth--;
-		}
-
-		if ( ',' === $char && 0 === $depth ) {
-			$parts[] = $buffer;
-			$buffer  = '';
-			continue;
-		}
-
-		$buffer .= $char;
-	}
-
-	if ( '' !== trim( $buffer ) ) {
-		$parts[] = $buffer;
-	}
-
-	$types = array();
-	foreach ( $parts as $part ) {
-		if ( preg_match( '/([\\\\\w?]+)\s+&?\$\w+/', $part, $type ) ) {
-			$name    = ltrim( $type[1], '?' );
-			$types[] = substr( $name, (int) strrpos( '\\' . $name, '\\' ) );
-		}
-	}
-
-	return $types;
-}
-
-/**
- * Collect every class that declares a tool contract.
- *
- * @param string $directory Tool directory.
- * @return array<string, array{class: string, fqcn: string, file: string, slug: string, ctor: array<int, string>}>
- */
-function nvoos_audit_scan( string $directory ): array {
-	$classes = array();
-	$iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $directory ) );
-
-	foreach ( $iterator as $file ) {
-		if ( 'php' !== $file->getExtension() ) {
-			continue;
-		}
-
-		$source = file_get_contents( $file->getPathname() );
-
-		if ( preg_match( '/abstract\s+class/', $source ) ) {
-			continue;
-		}
-
-		if ( ! preg_match( '/^class\s+(\w+)/m', $source, $class_match ) ) {
-			continue;
-		}
-
-		$declares_tool = preg_match( '/extends\s+AbstractTool/', $source )
-			|| preg_match( '/implements\s+ToolInterface/', $source )
-			|| preg_match( '/function\s+getSlug\s*\(/', $source );
-
-		if ( ! $declares_tool ) {
-			continue;
-		}
-
-		$namespace = '';
-		if ( preg_match( '/^namespace\s+([^;]+);/m', $source, $ns_match ) ) {
-			$namespace = trim( $ns_match[1] );
-		}
-
-		$slug = '';
-		if ( preg_match( "/function\\s+getSlug\\s*\\([^)]*\\)\\s*:\\s*string\\s*\\{.*?return\\s+(['\"])([^'\"]+)\\1/s", $source, $slug_match ) ) {
-			$slug = $slug_match[2];
-		}
-
-		$class = $class_match[1];
-
-		$classes[ $file->getPathname() ] = array(
-			'class' => $class,
-			'fqcn'  => ( '' === $namespace ? '' : $namespace . '\\' ) . $class,
-			'file'  => $file->getPathname(),
-			'slug'  => $slug,
-			'ctor'  => nvoos_audit_params( $source, '__construct' ),
-		);
-	}
-
-	ksort( $classes );
-
-	return $classes;
+if ( '' !== $options['tools'] ) {
+	$tools_path = $options['tools'];
 }
 
 /**
@@ -353,7 +240,7 @@ PHP;
 
 // ─── Scan ────────────────────────────────────────────────────────────────
 
-$classes   = nvoos_audit_scan( $root . '/lib/core/src/Tool' );
+$classes   = ( new ToolClassScanner() )->scan( $tools_path );
 $wordpress = nvoos_audit_wordpress_slugs( $root );
 
 $existing = array();
