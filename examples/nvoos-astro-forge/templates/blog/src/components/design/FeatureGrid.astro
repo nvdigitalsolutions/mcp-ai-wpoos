@@ -96,6 +96,13 @@ const dividerStyle = theme?.titleDivider
 								{(item?.paragraphs ?? (item?.body ? [item.body] : [])).map((paragraph) => (
 									<p>{paragraph}</p>
 								))}
+								{(item?.bullets ?? []).length > 0 && (
+									<ul class="ds-card-bullets">
+										{(item?.bullets ?? []).map((bullet) => (
+											<li>{bullet}</li>
+										))}
+									</ul>
+								)}
 								{item?.links?.[0] && (
 									<a class="ds-button" href={item.links[0].href ?? '#'}>
 										{item.links[0].text ?? 'Learn more'}
@@ -113,6 +120,13 @@ const dividerStyle = theme?.titleDivider
 								{(item.paragraphs ?? (item.body ? [item.body] : [])).map((paragraph) => (
 							<p>{paragraph}</p>
 						))}
+								{(item.bullets ?? []).length > 0 && (
+									<ul class="ds-card-bullets">
+										{(item.bullets ?? []).map((bullet) => (
+											<li>{bullet}</li>
+										))}
+									</ul>
+								)}
 								{item.links?.[0] && (
 									<a class="ds-button" href={item.links[0].href ?? '#'}>
 										{item.links[0].text ?? 'Learn more'}

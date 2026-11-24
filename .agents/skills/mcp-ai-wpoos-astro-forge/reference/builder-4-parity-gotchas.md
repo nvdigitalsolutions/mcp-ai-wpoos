@@ -203,3 +203,47 @@ Three things to keep out of scope while doing it: a global `--ds-card-ink`, a
 token change to `muted`, and deleting the blanket rule. Each one moves every site
 in the fleet to fix one band. `:not(.ds-card--surface)` is required — a card that
 paints its own measured slab must keep the ink derived from that slab.
+
+## A flex-container band's cards are CONTAINERS, not columns
+
+Elementor 4.x publishes a card grid as nested flex containers, not
+`.elementor-column`s:
+
+```
+e-con-inner                 (the band)
+├─ e-con-boxed.e-child      (intro row)
+└─ e-con-full.e-child       (card row)
+    └─ e-con-full.e-child   (CARD: heading + icon-box + text-editor
+                             + icon-list + button)
+```
+
+`columnItems()` looks for `.elementor-container` + `.elementor-column`, so it
+finds nothing on these bands, and the flat widget merge sees only widgets: every
+h3 caption becomes a bare item and every icon-list `<li>` becomes an item of its
+own. eca.directory's phased-delivery band: **20 items for 6 cards**, then
+`FeatureGrid` resolved `items.find(columnIndex === lane)` against 3 measured lanes
+and drew **three empty cards**.
+
+Two traps found while trying to fix it:
+
+- **Top-down bucket collection takes the ROWS first.** A row of cards is itself a
+  repeated child of the band, so grouping "repeated sibling containers" yields
+  2 rows where there are 5 cards (and 8 where there are 6). Group bottom-up from
+  each widget to its nearest card container instead, so no widget is left
+  unassigned — a lost widget means the fidelity guard demotes the band to raw
+  text and the whole classification disappears.
+- **Rendering the flat items instead of empty lanes is not a fix.** It lifted
+  text coverage from 68.6 % to 80.9 %, but the band's copy is white on a
+  background PHOTO the rebuild does not paint, so white became dark-on-white:
+  colour drift went 1 → 2 and mobile height 2070 → 3102 px. Content appearing in
+  the wrong ink is still a parity regression — fix the photo first.
+
+## A measured band photo is captured but not wired
+
+`RegionColors.image` records `url(…)` for a band that paints a photo. Nothing
+emits it: `ForgeSection.bgImage` makes `resolveSectionTheme` return `hero`, which
+is wrong for a content band. The consequence is worse than a missing picture —
+`readableBandType` tests the measured ink against `bandSurface()`, which falls
+back to the PAGE background when the surface is a photo, so the source's white
+copy is dropped as "invisible on white" and the rebuild paints dark text on a
+bare panel. Wiring the photo and its ink must land together.

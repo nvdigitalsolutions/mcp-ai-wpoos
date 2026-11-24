@@ -1530,6 +1530,24 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	color: var(--forge-muted);
 }
 
+/* A card's BULLET LIST (`items[].bullets`). A builder publishes these as an
+ * icon list — `ul.elementor-icon-list-items > li.elementor-icon-list-item` —
+ * and the entries are the card's copy, not sibling cards. The rebuild keeps the
+ * entries in order and draws a disc marker rather than inventing the source's
+ * glyph (the vendor icon sheet never ships). */
+.ds-card-bullets {
+	margin: 0;
+	padding-inline-start: 1.15em;
+	display: grid;
+	gap: 0.2em;
+	color: inherit;
+	font-size: inherit;
+}
+
+.ds-card-bullets li::marker {
+	color: var(--forge-muted);
+}
+
 .ds-card img {
 	width: 100%;
 	/* SmartImage emits width/height attributes; without `height: auto` those

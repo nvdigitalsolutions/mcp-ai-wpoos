@@ -536,3 +536,72 @@ accordion panel bodies the sanitizer drops (8.6 % text coverage), so the rebuild
 is not painting the source's copy at all. This closes with `items[].bullets` /
 accordion content, not with a colour rule. After that, `verify --colors` reports
 zero drift on eca.directory.
+
+---
+
+## Pass — card bullets, and why `77f4271d` is still open (2026-11-24, third pass)
+
+### What shipped
+
+`SectionItem.bullets` — a list a CARD carries. `iconListItems()` already turned
+each `<li>` into an item, which is right when the list IS the band and wrong
+inside a card; `extractStructuredItem()` and `columnItems()` now collect the
+card's list as `bullets`, `FeatureGrid` renders it as `<ul class="ds-card-bullets">`,
+and the legacy columns fallback keeps the band's own lede (copy outside the
+container) instead of discarding it with `slots`.
+
+Tests: `tests/semantic.test.ts` (+2) — a plain `<ul>` inside an icon box becomes
+the card's bullets and not sibling cards; a `<nav>` list inside a card is never
+absorbed.
+
+### Why the band itself is not fixed yet
+
+`77f4271d` is a **flex-container card grid** (Elementor 4.x), measured on the
+live page:
+
+```
+e-con-inner                          (the band)
+├─ e-con-boxed.e-child               (intro row: h2 "Phased Delivery" + icon-box)
+├─ e-con-full.e-child                (phase row)
+│   ├─ e-con-full.e-child            (CARD: h3 "Phase 1" + icon-box "Pilot Setup"
+│   │                                 + p "Weeks 1–6" + icon-list ×4 + button)
+│   ├─ …                             (Phase 2, Phase 3)
+└─ e-con-full.e-child                (role row: "Compare User Roles" + 3 cards)
+```
+
+The flat merge sees only widgets, so it produces **20 bare items** for what are
+**6 cards** (each caption and each of the 16 icon-list entries becomes an item),
+and the rebuild resolves `items.find(columnIndex === i)` against 3 measured lanes
+→ three EMPTY cards. Text coverage 8.6%.
+
+Three attempted fixes, and what each measured:
+
+| Attempt | Result |
+|---|---|
+| Group repeated sibling containers into cards | 5 flat items → 4 "cards", 20 → 8: bucket collection found the ROWS before the cards, and the wrong card set dropped words, so the **fidelity guard demoted the band to raw text**. Reverted. |
+| Render the flat items when no item knows its lane (drop empty lanes) | Text coverage **68.6 % → 80.9 %** (band 8.6 % → 65.6 %), but the band's copy is WHITE on a background PHOTO the rebuild does not paint, so it rendered dark on a white panel: colour drift **1 → 2** (`#ffffff` vs `#1a1e1d`, ΔE 84) and mobile height 2070 → 3102. Reverted: it trades one broken band for two broken gates. |
+| Emit the measured band photo as a CSS background | Not done — `ForgeSection.bgImage` makes a band resolve as `hero`, and a band-level photo needs its own fact plus an ink decision. This is the blocker underneath most of the remaining gap. |
+
+### The two capabilities this band needs (in order)
+
+1. **Card grouping driven from the widgets, bottom-up.** Assign every widget to
+   its nearest card container and build one item per container — never drop a
+   widget, so the fidelity guard cannot demote the band. (The top-down container
+   scan above lost words; a bottom-up assignment cannot.)
+2. **A band BACKGROUND PHOTO fact.** `RegionColors.image` already measures
+   `url(bg-01.png)` for this band; nothing paints it. It needs an explicit
+   `bgPhoto` on `ForgeSection` (so the theme stays `alt`, not `hero`), a CSS
+   `background-size/position`, and an ink rule: when the measured surface is a
+   photo, the source's ink was measured against THAT surface, so
+   `readableBandType` must not drop it for "invisible on white".
+
+Until both land, the band stays as verified (`buildId cardink16`).
+
+### Verify numbers, cardink16 (unchanged by this pass)
+
+| Gate | Value |
+|---|---|
+| colour system | 24 surfaces, **1 drift** (`77f4271d`), 0 missing |
+| text parity | 68.6 % |
+| page bands | 13 fail / 11 warn |
+| scorecard | 18/27 |
