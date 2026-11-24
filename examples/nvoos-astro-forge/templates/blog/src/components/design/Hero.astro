@@ -18,10 +18,20 @@ import { bandParagraphs } from '../../lib/band-copy.ts';
 interface Props {
 	section: SemanticSection;
 	theme?: SectionTheme;
+	/**
+	 * Media the MEASURED element facts prove exists.
+	 *
+	 * A builder paints its hero photo as a `background-image` on a spacer div,
+	 * so `collectSlots` (which reads `<img src>`) finds no media and the split
+	 * rendered an empty collage column. The element pass recorded the painted
+	 * URLs and their heights; the renderer passes the tall one here.
+	 */
+	media?: Array< { src?: string; alt?: string } >;
 }
 
 const { section, theme } = Astro.props;
-const { title, body, media, links } = section.slots;
+const { title, body, links } = section.slots;
+const media = Astro.props.media ?? section.slots.media;
 
 /** The heading typography facts ride CSS vars — the .ds-title clamp keeps
  * its fluid floor so a 43px source heading never breaks a 360px viewport. */

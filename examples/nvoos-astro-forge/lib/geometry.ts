@@ -2043,7 +2043,7 @@ export function collectBandLayoutFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, { split?: number[]; centered?: boolean } > {
+} ): Record< string, { split?: number[]; centered?: boolean; rows?: Array< { id: string; widths: number[] } > } > {
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -2056,7 +2056,7 @@ export function collectBandLayoutFacts( input: {
 	// The SAME structural signature the template's hero rule uses, so a measured
 	// ratio always lands on the element the rule will lay out.
 	const TRACK = ':is(div, section):has(> div > h1):has(> div > img)';
-	const out: Record< string, { split?: number[]; centered?: boolean } > = {};
+	const out: Record< string, { split?: number[]; centered?: boolean; rows?: Array< { id: string; widths: number[] } > } > = {};
 	for ( const id of input.ids ) {
 		const candidates =
 			input.kind === 'built'
@@ -2089,7 +2089,7 @@ export function collectBandLayoutFacts( input: {
 		// renderer keeps its historical default for a profile that has no fact
 		// (older profiles, unmeasured pages) and only opts OUT on an explicit
 		// `false`.
-		const entry: { split?: number[]; centered?: boolean } = { centered: false };
+		const entry: { split?: number[]; centered?: boolean; rows?: Array< { id: string; widths: number[] } > } = { centered: false };
 		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
 			const style = getComputedStyle( node );
 			if ( style.display === 'table-cell' && style.verticalAlign === 'middle' ) {
@@ -2129,7 +2129,41 @@ export function collectBandLayoutFacts( input: {
 				entry.split = rects.map( ( rect ) => Math.round( ( rect.width / total ) * 1000 ) / 1000 );
 			}
 		}
-		if ( entry.split || entry.centered !== undefined ) {
+		// NESTED ROWS (see `ForgeBandRowFact`). A raw band loses the vendor's
+		// flex layout, so every container inside it stacks — but only the rows
+		// that carry their own element id can be addressed by a scoped rule. The
+		// band's own row is excluded: the column facts already carry it.
+		const rows: Array< { id: string; widths: number[] } > = [];
+		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
+			const id = /elementor-element-([0-9a-f]{4,})/i.exec( node.getAttribute( 'class' ) ?? '' )?.[ 1 ];
+			if ( ! id ) {
+				continue;
+			}
+			const lanes = Array.from( node.children ).filter( ( child ) => {
+				const box = child.getBoundingClientRect();
+				return box.width >= 40 && box.height >= 8 && getComputedStyle( child ).display !== 'none';
+			} );
+			if ( lanes.length < 2 ) {
+				continue;
+			}
+			const boxes = lanes.map( ( lane ) => lane.getBoundingClientRect() );
+			// Side by side, and together they TILE their container. Either test alone
+			// is fooled: equal tops describe a 2-row grid as one row, and a tiled
+			// sum describes a vertical stack whose children all span the width.
+			const sameTop = boxes.every(
+				( box ) => Math.abs( box.top - boxes[ 0 ].top ) <= Math.max( 8, box.height * 0.25 )
+			);
+			const tiled =
+				boxes.reduce( ( sum, box ) => sum + box.width, 0 ) >= node.getBoundingClientRect().width * 0.9;
+			if ( ! sameTop || ! tiled ) {
+				continue;
+			}
+			rows.push( { id, widths: boxes.map( ( box ) => Math.round( box.width ) ) } );
+		}
+		if ( rows.length > 0 ) {
+			entry.rows = rows;
+		}
+		if ( entry.split || entry.centered !== undefined || entry.rows ) {
 			out[ id ] = entry;
 		}
 	}
@@ -2697,6 +2731,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			}
 			if ( layout?.centered ) {
 				band.centeredContent = true;
+			}
+			// The rows NESTED inside the band, so a RAW band can get its row back
+			// (see `ForgeBandRowFact`).
+			if ( layout?.rows && layout.rows.length > 0 ) {
+				band.rows = layout.rows;
 			}
 			const box = mergeBoxFacts( desktopBox[ id ]?.boxes, tabletBox[ id ]?.boxes, mobileBox[ id ]?.boxes );
 			if ( box ) {
