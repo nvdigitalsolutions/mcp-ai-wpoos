@@ -38,6 +38,22 @@ const desktop = lanes ?? ( columns ? Math.min( columns.desktop ?? 4, Math.max( i
 const gridStyle = desktop
 	? `--ds-cols-desktop: ${ desktop }; --ds-cols-tablet: ${ Math.min( columns?.tablet ?? 2, desktop ) }; --ds-cols-mobile: ${ Math.min( columns?.mobile ?? 1, desktop ) };`
 	: undefined;
+// The cards the grid renders: the measured LANES first (a lane's own surface must
+// land on its card), then any item the classifier found OUTSIDE the lanes — the
+// comparison table that shares a band with a card row, for instance. Rendering
+// the extras keeps their copy on the page; the laned path alone silently dropped
+// it (eca.directory's 77f4271d, 2026-11-24).
+const cards = lanes
+	? [
+			...Array.from( { length: lanes }, ( _, index ) => ( {
+				item: ( items ?? [] ).find( ( entry ) => entry.columnIndex === index ),
+				surface: sourceColumns[ index ],
+			} ) ),
+			...( items ?? [] )
+				.filter( ( entry ) => entry.columnIndex === undefined )
+				.map( ( item ) => ( { item, surface: undefined } ) ),
+	  ]
+	: ( items ?? [] ).map( ( item ) => ( { item, surface: undefined } ) );
 
 const titleVars = [
 	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
@@ -74,67 +90,41 @@ const dividerStyle = theme?.titleDivider
 	)}
 	{items && items.length > 0 && (
 		<div class="ds-grid" style={gridStyle}>
-			{lanes
-				? Array.from( { length: lanes }, ( _, index ) => {
-						const item = items.find( ( entry ) => entry.columnIndex === index );
-						const surface = sourceColumns[ index ];
-						const surfaceStyle = [
-							surface?.bgColor && `background-color:${ surface.bgColor }`,
-							surface?.bgImage &&
-								`background-image:url('${ surface.bgImage }');background-size:cover;background-position:center`,
-							// The lane's copy takes the ink its own slab needs — the card default
-							// is a muted grey, unreadable on the source's red and black panels.
-							surface?.ink && `--ds-card-surface-ink:${ surface.ink }`,
-						]
-							.filter( Boolean )
-							.join( ';' );
-						const Heading = itemTitleTag( item?.titleLevel, 'h3' );
-						return (
-							<div class:list={[ 'ds-card', ( surface?.bgColor || surface?.bgImage ) && 'ds-card--surface', surface?.bgImage && 'ds-card--surface-media' ]} style={surfaceStyle || undefined}>
-								{item?.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
-								{item?.title && <Heading>{item.title}</Heading>}
-								{(item?.paragraphs ?? (item?.body ? [item.body] : [])).map((paragraph) => (
-									<p>{paragraph}</p>
-								))}
-								{(item?.bullets ?? []).length > 0 && (
-									<ul class="ds-card-bullets">
-										{(item?.bullets ?? []).map((bullet) => (
-											<li>{bullet}</li>
-										))}
-									</ul>
-								)}
-								{item?.links?.[0] && (
-									<a class="ds-button" href={item.links[0].href ?? '#'}>
-										{item.links[0].text ?? 'Learn more'}
-									</a>
-								)}
-							</div>
-						);
-				  } )
-				: items.map((item) => {
-						const Heading = itemTitleTag( item.titleLevel, 'h3' );
-						return (
-							<div class="ds-card">
-								{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
-								{item.title && <Heading>{item.title}</Heading>}
-								{(item.paragraphs ?? (item.body ? [item.body] : [])).map((paragraph) => (
+			{cards.map(({ item, surface }) => {
+				const surfaceStyle = [
+					surface?.bgColor && `background-color:${ surface.bgColor }`,
+					surface?.bgImage &&
+						`background-image:url('${ surface.bgImage }');background-size:cover;background-position:center`,
+					// The lane's copy takes the ink its own slab needs — the card default
+					// is a muted grey, unreadable on the source's red and black panels.
+					surface?.ink && `--ds-card-surface-ink:${ surface.ink }`,
+				]
+					.filter( Boolean )
+					.join( ';' );
+				const Heading = itemTitleTag( item?.titleLevel, 'h3' );
+				return (
+					<div class:list={[ 'ds-card', ( surface?.bgColor || surface?.bgImage ) && 'ds-card--surface', surface?.bgImage && 'ds-card--surface-media' ]} style={surfaceStyle || undefined}>
+						{item?.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
+						{item?.title && item?.kicker && <p class="ds-card-kicker">{item.kicker}</p>}
+						{item?.title && <Heading>{item.title}</Heading>}
+						{(item?.paragraphs ?? (item?.body ? [item.body] : [])).map((paragraph) => (
 							<p>{paragraph}</p>
 						))}
-								{(item.bullets ?? []).length > 0 && (
-									<ul class="ds-card-bullets">
-										{(item.bullets ?? []).map((bullet) => (
-											<li>{bullet}</li>
-										))}
-									</ul>
-								)}
-								{item.links?.[0] && (
-									<a class="ds-button" href={item.links[0].href ?? '#'}>
-										{item.links[0].text ?? 'Learn more'}
-									</a>
-								)}
-							</div>
-						);
-				  })}
+						{(item?.bullets ?? []).length > 0 && (
+							<ul class="ds-card-bullets">
+								{(item?.bullets ?? []).map((bullet) => (
+									<li>{bullet}</li>
+								))}
+							</ul>
+						)}
+						{item?.links?.[0] && (
+							<a class="ds-button" href={item.links[0].href ?? '#'}>
+								{item.links[0].text ?? 'Learn more'}
+							</a>
+						)}
+					</div>
+				);
+			})}
 		</div>
 	)}
 	<SectionLinks section={section} />

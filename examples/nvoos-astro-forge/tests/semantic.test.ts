@@ -980,3 +980,60 @@ describe( 'items[].bullets — a list INSIDE a card', () => {
 		expect( card?.bullets ).toBeUndefined();
 	} );
 } );
+
+describe( 'flex-container card rows (Elementor 4.x)', () => {
+	// eca.directory's phased-delivery band: an intro row, a row of three phase
+	// cards (kicker + title + weeks + icon list + button), and a comparison table
+	// whose cells are the same `e-con-full e-child` containers. The flat merge
+	// produced 20 bare items for those 6 cards and `FeatureGrid` drew empty lanes.
+	const CARD = ( label: string, title: string, weeks: string, bullets: string[], button: string ) => `
+		<div class="e-con-full e-child">
+			<div class="e-con-full e-child">
+				<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h3 class="elementor-heading-title">${ label }</h3></div></div>
+				<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h4 class="elementor-icon-box-title">${ title }</h4></div></div></div>
+				<div class="elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>${ weeks }</p></div></div>
+			</div>
+			<div class="elementor-widget elementor-widget-icon-list"><div class="elementor-widget-container"><ul class="elementor-icon-list-items">${ bullets
+				.map( ( b: string ) => `<li class="elementor-icon-list-item"><span class="elementor-icon-list-text">${ b }</span></li>` )
+				.join( '' ) }</ul></div></div>
+			<div class="elementor-widget elementor-widget-button"><div class="elementor-widget-container"><a class="elementor-button" href="/${ label }"><span class="elementor-button-text">${ button }</span></a></div></div>
+		</div>`;
+	const CELL = ( text: string ) => `
+		<div class="e-con-full e-child">
+			<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><div class="elementor-heading-title">${ text }</div></div></div>
+		</div>`;
+
+	const band = `
+		<div class="elementor-element elementor-element-77f4271d e-flex e-con-boxed e-con e-parent">
+			<div class="e-con-inner">
+				<div class="e-con-boxed e-child"><div class="e-con-inner">
+					<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h2 class="elementor-heading-title">Phased Delivery</h2></div></div>
+					<div class="elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>The pilot positions the school as a local leader.</p></div></div>
+				</div></div>
+				<div class="e-con-full e-child">
+					${ CARD( 'Phase 1', 'Pilot Setup', 'Weeks 1–6', [ 'Branding &amp; SSO setup', 'Staff training' ], 'Pilot Demo' ) }
+					${ CARD( 'Phase 2', 'Automation & AI', 'Weeks 7–10', [ 'AI Assistant', 'Analytics dashboards' ], 'Discuss' ) }
+					${ CARD( 'Phase 3', 'Optimization', 'Ongoing', [ 'Language packs', 'Extra integrations' ], 'View Roadmap' ) }
+				</div>
+				<div class="e-con-full e-child">
+					${ CELL( 'Compare User Roles' ) }${ CELL( 'Student' ) }${ CELL( 'Parent' ) }
+				</div>
+			</div>
+		</div>`;
+
+	it( 'rebuilds one item per card, keeps the kicker before the title, and keeps the table copy', () => {
+		const section = classifyHtml( band )[ 0 ];
+		const items = section.slots.items ?? [];
+		expect( section.kind ).toBe( 'feature-grid' );
+		expect( items ).toHaveLength( 3 );
+		expect( items.map( ( item ) => item.kicker ) ).toEqual( [ 'Phase 1', 'Phase 2', 'Phase 3' ] );
+		expect( items.map( ( item ) => item.title ) ).toEqual( [ 'Pilot Setup', 'Automation & AI', 'Optimization' ] );
+		expect( items.map( ( item ) => item.columnIndex ) ).toEqual( [ 0, 1, 2 ] );
+		expect( items[ 0 ].bullets ).toEqual( [ 'Branding & SSO setup', 'Staff training' ] );
+		expect( items[ 0 ].body ).toBe( 'Weeks 1–6' );
+		// The table's copy is not a card, and it is not lost.
+		expect( items.map( ( item ) => item.title ) ).not.toContain( 'Student' );
+		expect( section.slots.body ).toContain( 'The pilot positions the school as a local leader.' );
+		expect( section.slots.body ).toContain( 'Student' );
+	} );
+} );

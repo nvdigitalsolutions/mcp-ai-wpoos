@@ -1548,6 +1548,22 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	color: var(--forge-muted);
 }
 
+/* A card's KICKER (`items[].kicker`) — the small label the source prints ABOVE
+ * the title (“Phase 1” over “Pilot Setup”). It sits before the heading because
+ * word ORDER is copy: printed after it the band’s text shingles stopped
+ * matching the source. */
+.ds-card-kicker {
+	margin: 0;
+	font-size: var(--forge-scale-small);
+	font-weight: 500;
+	line-height: 1.4;
+	color: var(--forge-muted);
+}
+
+.ds-card-kicker + :is(h2, h3, h4, h5, h6) {
+	margin-top: 0.15em;
+}
+
 .ds-card img {
 	width: 100%;
 	/* SmartImage emits width/height attributes; without `height: auto` those

@@ -122,7 +122,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://eca.directory",
-			"analyzedAt": "2026-11-24T19:33:05.410Z"
+			"analyzedAt": "2026-11-24T21:14:19.001Z"
 		},
 		"concept": "cool accent over light neutrals, epilogue display / inter body, compact spacing rhythm.",
 		"palette": {
@@ -287,7 +287,8 @@
 					{
 						"width": 33.33
 					}
-				]
+				],
+				"bgGradient": "linear-gradient(rgb(39, 16, 74) 30%, rgb(255, 255, 255) 0%)"
 			},
 			{
 				"id": "3589820",
@@ -324,7 +325,8 @@
 					{
 						"width": 50
 					}
-				]
+				],
+				"bgColor": "#8764a0"
 			}
 		],
 		"bandSource": "outline",
@@ -644,7 +646,7 @@
 			"tablet_extra__width-initial"
 		],
 		"unknownBlocks": [],
-		"analyzedAt": "2026-11-24T19:33:34.017Z"
+		"analyzedAt": "2026-11-24T21:14:34.770Z"
 	},
 	"inventory": {
 		"shape": "multi-page",
@@ -802,7 +804,7 @@
 			"/{{ url }}/"
 		],
 		"danglingAnchors": [],
-		"analyzedAt": "2026-11-24T19:33:27.608Z"
+		"analyzedAt": "2026-11-24T21:14:28.578Z"
 	},
 	"geometry": {
 		"3589820": {
@@ -4560,7 +4562,7 @@
 		"sticky": false
 	},
 	"text": {
-		"capturedAt": "2026-11-24T19:44:40.619Z",
+		"capturedAt": "2026-11-24T21:16:15.678Z",
 		"url": "https://eca.directory",
 		"page": "skip to content home about us contact us try demo sign in eca management for british school in colombo real-time enrolment, instant parent updates, and role-based dashboards - purpose-built for bsc. request a demo parent ratings \"live waitlists and instant alerts have made eca days calmer for families.\" - eca coordinator 4.8 ratings +1k students +9 satisfied teachers courses list explore our activities browse a few of the most in-demand activities, updated in real time with capacity and waitlist info. see what students are joining this term - from sports and stem to arts and service. our platform makes it easy to explore ecas by category, day, or year group. view all activities our benefits why choose the bsc eca platform smarter enrolment, instant updates, and less admin - built to make extracurriculars stress-free for everyone. live eca catalogue browse by day, category, or year group - always up to date. instant notifications parents and students get sms/email alerts for last-minute changes. role-based dashboards clear views for students, parents, teachers, and coordinators. ai assistant answers common questions 24/7, guided by bsc policies. phased delivery operating model & implementation plan digital transformation in co-curricular management is accelerating; a bsc pilot positions the school as a local leader while directly improving family experience. phase 1 pilot setup weeks 1-6 branding & sso setup import student/parent data enrolment & waitlists staff training & go-live pilot demo phase 2 automation & ai weeks 7-10 ai assistant attendance exports mis/finance integrations analytics dashboards discuss integrations phase 3 optimization ongoing feature tweaks from feedback language packs extra integrations continuous support view roadmap compare user roles student parent teacher live eca catalogue enrolment & allocation instant notifications dashboards meet the project team our coordinators, teachers, and support staff working together to make the eca platform a success. contact the team lauren martinez python tutor aliquip eiusmod in voluptate do quis ipsum dolor facebook twitter youtube linkedin emma gonzalez cooking tutor veniam labore esse proident anim exercitation in facebook twitter youtube linkedin christopher brown meditation tutor incididunt mollit dolor enim nisi proident et amet facebook twitter youtube linkedin our updates news & insights follow along as we roll out live enrolment, real-time alerts, and new features at bsc. read more articles hello world! august 4, 2025 1 comment read more » questions? get a quick reply by sending your message your name your email message send my message related content saturday friday thursday wednesday eca directory about us who we are our mission team contact us navigation courses categories blog privacy policy resources faq help terms of use testimonials ©2026 eca directory by krish samtani facebook twitter youtube linkedin ✕",
 		"sections": [
@@ -4741,7 +4743,7 @@
 					"heading": "#1a1e1d",
 					"body": "#ffffff"
 				},
-				"image": "url(\"https://eca.directory/wp-content/uploads/2025/08/bg-01.png\")"
+				"image": "linear-gradient(rgb(39, 16, 74) 30%, rgb(255, 255, 255) 0%)"
 			},
 			"band:3589820": {
 				"background": "#f7f7f7",
@@ -4792,7 +4794,7 @@
 				}
 			},
 			"band:71dbef2b": {
-				"background": "transparent",
+				"background": "#8764a0",
 				"text": "#1a1e1d",
 				"inks": [
 					{
@@ -4807,8 +4809,7 @@
 				"roles": {
 					"heading": "#1a1e1d",
 					"body": "#ffffff"
-				},
-				"image": "url(\"https://eca.directory/wp-content/uploads/2025/08/bg-01.png\")"
+				}
 			}
 		},
 		"dark": {
@@ -4956,7 +4957,7 @@
 					"heading": "#1a1e1d",
 					"body": "#ffffff"
 				},
-				"image": "url(\"https://eca.directory/wp-content/uploads/2025/08/bg-01.png\")"
+				"image": "linear-gradient(rgb(39, 16, 74) 30%, rgb(255, 255, 255) 0%)"
 			},
 			"band:3589820": {
 				"background": "#f7f7f7",
@@ -5007,7 +5008,7 @@
 				}
 			},
 			"band:71dbef2b": {
-				"background": "transparent",
+				"background": "#8764a0",
 				"text": "#1a1e1d",
 				"inks": [
 					{
@@ -5022,8 +5023,7 @@
 				"roles": {
 					"heading": "#1a1e1d",
 					"body": "#ffffff"
-				},
-				"image": "url(\"https://eca.directory/wp-content/uploads/2025/08/bg-01.png\")"
+				}
 			}
 		}
 	},

@@ -605,3 +605,77 @@ Until both land, the band stays as verified (`buildId cardink16`).
 | text parity | 68.6 % |
 | page bands | 13 fail / 11 warn |
 | scorecard | 18/27 |
+
+---
+
+## Pass — the band's real surface, and its cards (2026-11-24, fourth pass)
+
+### Finding 1 — a 20%-opacity `::before` was shadowing the band's own gradient
+
+`77f4271d` paints `linear-gradient(#27104a 30%, #ffffff 0%)` on its own box and
+a decorative `url(bg-01.png)` on a positioned `::before` at **opacity 0.2**.
+`readBackground` read the pseudo FIRST (correct for an opaque overlay), so the
+band's surface was recorded as the PHOTO, the gradient was never emitted, the
+rebuild painted white — and `readableBandType` then dropped the source's white
+intro copy as "invisible on white".
+
+Fix: a positioned pseudo below 50 % opacity is a **veil**, not a surface; skip it
+and read the band's own paint. Measured effect on the profile — **twelve leaves,
+all of them the fix**:
+
+| Path | Before | After |
+|---|---|---|
+| `design.sections[3].bgGradient` (77f4271d) | — | `linear-gradient(#27104a 30%, #ffffff 0%)` |
+| `design.sections[6].bgColor` (71dbef2b) | — | `#8764a0` |
+| `colors.band:77f4271d.image` | `url(bg-01.png)` | the gradient |
+| `colors.band:71dbef2b` | `transparent` | `#8764a0` |
+
+Two bands were mis-surfaced, not one: the contact/form band (`71dbef2b`) had the
+same veil and is purple in the source.
+
+### Finding 2 — the band's cards are CONTAINERS
+
+Elementor 4.x publishes each card as `e-con-full.e-child`, so `columnItems`
+(which needs `.elementor-container`) cannot see the band: the flat merge produced
+**20 bare items for 6 cards**, and `FeatureGrid` resolved three measured lanes
+against items with no `columnIndex` → **three empty cards**.
+
+`cardContainerItems()` now groups repeated sibling containers where each is a
+**card** — a heading AND a list. That predicate is what separates the three phase
+cards from the comparison table's cells (a cell holds a heading and nothing else)
+and from the intro row (one child). Items carry `columnIndex`, so the laned grid
+renders exactly the source's cards.
+
+Two details the first attempts got wrong, kept in the code as comments:
+
+- **Word order is copy.** The card's label (`h3 "Phase 1"`) precedes its title
+  (`h4 "Pilot Setup"`); printed after it, the band's text shingles stopped
+  matching. Items now carry `kicker`, rendered above the heading.
+- **Never drop a word.** The comparison table shares the band. Its labels ride
+  the band's text (not the card grid), because dropping them made the fidelity
+  guard demote the whole band to raw text — twice.
+
+### Finding 3 — a measured heading ink must outrank the PANEL rule
+
+`.ds-section-wrap--panel .ds-grid .ds-card :is(h3,h4,h5)` (0,3,1) paints card
+headings in the panel's derived ink. On the white slab the source's card titles
+are `#27104a`; the panel made them all `#111111` (ΔE00 22.9). A card-scoped
+repeat of the measured heading ink (`[data-section-id].ds-section-wrap .ds-grid
+.ds-card h4`, 0,4,1) wins without `!important`, so hover/focus states still can.
+
+### Result (build `final22`)
+
+| Metric | before | after |
+|---|---|---|
+| band `77f4271d` text coverage | 8.6 % | **84.9 %** |
+| page text parity | 68.6 % | **85.1 %** (1 band failing: `319dfe29`, the hello-world post) |
+| colour system | 7 drifts (session start) | **0 fail, 1 warn** (ΔE00 4.62), 0 missing |
+| band cards | 3 empty | 3 cards: kicker, title, weeks, 4 bullets, link |
+
+### Still open on this band
+
+- The **comparison table** is rebuilt as a run of text, not a table: the rows
+  and role columns want `comparison` detection (Proposal 136) for a band that
+  also carries a card row — a compound section, which the model does not have.
+- The source's buttons are `href="#"`; the rebuild renders the links but they go
+  nowhere (the source's own do too).

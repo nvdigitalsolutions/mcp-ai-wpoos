@@ -820,6 +820,16 @@ const bandTypeCss = sections
 		};
 		for ( const [ tag, fact ] of Object.entries( type.headings ?? {} ) ) {
 			rules.push( ...withDevices( tag, fact ) );
+			// A MEASURED heading ink must outrank the template's PANEL rule
+			// (`.ds-section-wrap--panel .ds-grid .ds-card :is(h3,h4,h5)`, 0,3,1),
+			// which paints every card heading in the panel's derived ink. On a white
+			// slab the source's own card titles are purple — eca.directory measured
+			// `#27104a` on them and the panel repainted all of them `#111111`
+			// (ΔE00 22.9, 2026-11-24). Scoping through the wrap raises this to 0,4,1
+			// without `!important`, so a hover/focus state can still win.
+			if ( fact.color ) {
+				rules.push( `${ scoped }.ds-section-wrap .ds-grid .ds-card ${ tag }{color:${ fact.color }}` );
+			}
 		}
 		if ( type.body ) {
 			// Body copy keeps its size and rhythm; a weight on every paragraph would
