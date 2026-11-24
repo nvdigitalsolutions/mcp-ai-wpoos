@@ -131,6 +131,54 @@ class ContentAndProjectToolsTest extends TestCase
         $this->assertSame('Second body.', $this->store()->find((int) $created['data']['id'])->content);
     }
 
+    public function test_save_post_replaces_categories_rather_than_appending(): void
+    {
+        $created = $this->callTool('save_post', array(
+            'title'      => 'Categorised',
+            'content'    => 'Body.',
+            'categories' => array('News', 'Tech'),
+        ));
+
+        $id = (int) $created['data']['id'];
+
+        $this->callTool('save_post', array(
+            'post_id'    => $id,
+            'content'    => 'Body.',
+            'categories' => array('News'),
+        ));
+
+        // The command carries the complete set, so 'Tech' was dropped when it was
+        // not re-named. Before issue #8191 the Laravel adapter appended here and
+        // kept 'Tech', disagreeing with `wp_set_post_terms( $append = false )`.
+        $terms = $this->store()->getTaxonomyTerms($id)['category'] ?? array();
+        sort($terms);
+
+        $this->assertSame(array('News'), $terms);
+    }
+
+    public function test_save_post_leaves_categories_alone_when_none_are_given(): void
+    {
+        $created = $this->callTool('save_post', array(
+            'title'      => 'Categorised',
+            'content'    => 'Body.',
+            'categories' => array('News'),
+        ));
+
+        $id = (int) $created['data']['id'];
+
+        // No `categories` argument: the taxonomy key is absent from the command,
+        // which means "no change", not "clear".
+        $this->callTool('save_post', array(
+            'post_id' => $id,
+            'content' => 'Body, revised.',
+        ));
+
+        $terms = $this->store()->getTaxonomyTerms($id)['category'] ?? array();
+        sort($terms);
+
+        $this->assertSame(array('News'), $terms);
+    }
+
     public function test_count_posts_defaults_to_published_and_can_filter_status(): void
     {
         $this->callTool('create_post', array('title' => 'One', 'status' => 'publish'));
