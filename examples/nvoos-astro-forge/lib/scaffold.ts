@@ -627,6 +627,40 @@ export function readableBandType< T extends { headings?: Record< string, BandTyp
 }
 
 /**
+ * The ink a CARD's body copy inherits inside this band.
+ *
+ * `.ds-section .ds-card p { color: var(--forge-muted) }` exists because a
+ * band-level ink harvested from a DARK PANEL repainted a white card
+ * (virtuallysrilanka). But the blanket rule also breaks parity wherever the
+ * card sits on the surface its ink was measured against: eca.directory's cards
+ * are the page's own surface and the source paints their copy `#747474`, while
+ * the `muted` token is Elementor's `#69727d` — ΔE00 6.4 on two bands, both
+ * reported by the colour gate (2026-11-24).
+ *
+ * The test is a SURFACE test, not a contrast test: the measured ink is reused
+ * for the band's cards only when the band and the card paint the same surface
+ * (contrast < 1.15 — `#ffffff` against the template's `#f5f5f4` is 1.08). An
+ * ink measured over a dark panel therefore never reaches a white card, and no
+ * threshold has to judge what "readable" means twice.
+ *
+ * @return The card copy ink, or `undefined` when the template's `muted` token
+ *         is the honest answer.
+ */
+export function cardInkFor(
+	section: ForgeSection,
+	type: { body?: BandTypeFact },
+	profile: SiteProfile
+): string | undefined {
+	const ink = type.body?.color;
+	if ( ! ink ) {
+		return undefined;
+	}
+	const cardSurface = mergeTokens( profile.design, profile.tokens, profile.colors )[ 'surface-alt' ] ?? '#ffffff';
+	const delta = contrast( bandSurface( section, profile ), cardSurface );
+	return delta !== undefined && delta < 1.15 ? ink : undefined;
+}
+
+/**
  * Overlay an operator `section.type` pin on the MEASURED band type.
  *
  * A pin is an explicit correction, so it must not be re-judged by
@@ -1980,9 +2014,17 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// `design.sections[].type` then overlays them field by field (see
 	// `mergeBandType`) — an explicit ink choice is never silently dropped.
 	const measuredType = readableBandType( bandFacts ?? {}, section, profile );
-	const typeLiteral = tsBandType( mergeBandType( measuredType, section.type ) );
+	const bandType = mergeBandType( measuredType, section.type );
+	const typeLiteral = tsBandType( bandType );
 	if ( typeLiteral ) {
 		entry.push( `type: ${ typeLiteral }` );
+	}
+	// The ink the band's CARDS paint their copy in (see `cardInkFor`). Emitted
+	// only when the band and the card share a surface, so the template's blanket
+	// `.ds-card p` rule is corrected exactly where it is wrong and nowhere else.
+	const cardInk = cardInkFor( section, bandType, profile );
+	if ( cardInk ) {
+		entry.push( `cardInk: ${ tsString( cardInk ) }` );
 	}
 	// The subtrees the source hides at rest (see `signaturesHiddenAtBoth`).
 	const hidden = section.hidden ?? bandFacts?.hidden ?? [];
@@ -2563,6 +2605,12 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * on that slab; `width`/`align` place a slab that fills only PART of the',
 		'\t * band (the heading sits on it too). */',
 		"\tpanel?: { bg: string; ink: string; width?: string; align?: 'start' | 'center' | 'end' };",
+		'\t/** The ink a CARD\u2019s body copy inherits inside this band. Emitted only',
+		' * when the band paints the same surface the card does, i.e. when the',
+		' * measured body ink was measured ON the card: the template\u2019s blanket',
+		' * `.ds-section .ds-card p` rule would otherwise paint the band\u2019s cards',
+		' * with the `muted` token instead of the source\u2019s own ink. */',
+		'\tcardInk?: string;',
 		'\t/** The measured EYEBROW — the small label the source stacks above the\n\t * title. Rendered above the heading at its own measured size: a builder\n\t * publishes the kicker as a real heading (often the SAME tag at a fraction\n\t * of the size), which no tag-level heuristic can separate from the title. */',
 		'\teyebrow?: { text: string; level?: number; size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; maxWidth?: string; marginTop?: string; marginBottom?: string };',
 		'\t/** The measured TITLE text — the LARGEST heading the band renders. */',

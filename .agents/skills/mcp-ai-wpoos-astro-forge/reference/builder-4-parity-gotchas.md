@@ -170,3 +170,36 @@ Two traps found on the way:
   by `if ( profile.design )`, and a `--colors`-only run builds a fresh draft with
   no design block. Run `--design --geometry --text --colors …` together, or the
   measured chrome is recorded and never written.
+
+## A band's ink and its CARD's copy are two different facts
+
+A band-level body ink is measured over the whole band. A card inside the band
+paints its own surface, so the band ink is only valid for the card when the two
+surfaces are the same paint.
+
+The template carries a blanket rule for this:
+
+```css
+.ds-section .ds-card p { color: var(--forge-muted); }
+```
+
+It is (0,2,1) and therefore outranks the band's own `[data-section-id] p`
+(0,1,1). It exists because a band ink harvested from a **dark panel** repainted a
+**white card** (virtuallysrilanka). The cost is the mirror case: where the card
+IS the band surface, the source's measured ink loses to the `muted` token —
+eca.directory's cards were `#747474` in the source and `#69727d` (Elementor's
+global text colour) in the rebuild, ΔE00 6.4 on two bands.
+
+Do not fix this with contrast. `#747474` on the card is 4.34:1, and a source's
+deliberate low contrast is parity (see the invisible-ink rule above). Fix it with
+a **surface** test:
+
+- `contrast(bandSurface, cardSurface) < 1.15` → the ink was measured on the card
+  → emit `SectionTheme.cardInk` and scope it as
+  `[data-section-id="…"] .ds-card:not(.ds-card--surface) p{color:…}`;
+- otherwise → leave the template's `muted`.
+
+Three things to keep out of scope while doing it: a global `--ds-card-ink`, a
+token change to `muted`, and deleting the blanket rule. Each one moves every site
+in the fleet to fix one band. `:not(.ds-card--surface)` is required — a card that
+paints its own measured slab must keep the ink derived from that slab.

@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
 import { rmTemp } from './helpers/tmp.ts';
-import { auditTokenBlock, readableBandType, mergeBandType, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { auditTokenBlock, cardInkFor, readableBandType, mergeBandType, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -2253,5 +2253,72 @@ describe( 'scaffold — media snapshot (the CMS-less outage net)', () => {
 		await expect( stat( path.join( target, 'media-snapshot', 'media', 'abc-font.woff' ) ) ).resolves.toBeTruthy();
 		const manifest = JSON.parse( await readFile( path.join( target, 'media-snapshot', 'manifest.json' ), 'utf8' ) );
 		expect( manifest.entries[ 'https://cms.example.com/font.woff' ].file ).toBe( 'media/abc-font.woff' );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// The band's CARD ink.
+//
+// `.ds-section .ds-card p { color: var(--forge-muted) }` exists because a band
+// ink harvested from a DARK PANEL repainted a white card (virtuallysrilanka).
+// It also breaks parity wherever the card sits on the surface the ink was
+// measured against: eca.directory's benefit/update cards are the page's own
+// surface and the source paints their copy `#747474`, while `muted` is
+// Elementor's `#69727d` (ΔE00 6.4 on two bands, reported by `verify --colors`).
+//
+// The discriminator is the SURFACE, not contrast: reuse the measured ink for
+// cards only when the band and the card paint the same paint.
+// ---------------------------------------------------------------------------
+describe( 'card ink — the band\'s own cards', () => {
+	const cardProfile = ( section: Record< string, unknown > ): SiteProfile => ( {
+		url: 'https://eca.example/',
+		name: 'ECA',
+		collections: [],
+		pageBackground: '#ffffff',
+		bandFacts: {
+			aaa1111: { body: { color: 'rgb(116, 116, 116)' } },
+			bbb2222: { body: { color: 'rgb(255, 255, 255)' } },
+		},
+		design: {
+			mode: 'rebuild',
+			source: { url: 'https://eca.example', analyzedAt: '2026-11-24T00:00:00.000Z' },
+			concept: 'test',
+			palette: { roles: {}, unassigned: [], confidence: {} },
+			typography: { display: 'Epilogue', body: 'Inter', scalePx: [ 14, 16 ] },
+			spacing: { scalePx: [ 8, 16 ] },
+			radii: { valuesPx: [] },
+			shadows: { count: 0 },
+			components: {},
+			modes: { dark: 'auto', contrast: 'auto' },
+			adaptation: { keep: [], replace: [], remix: [], licensingNote: '', attribution: [] },
+			sections: [ section as never ],
+		},
+	} );
+
+	it( 'reuses the measured ink when the band and the card share a surface', () => {
+		const profile = cardProfile( { id: 'aaa1111' } );
+		expect( cardInkFor( profile.design!.sections![ 0 ], { body: { color: 'rgb(116, 116, 116)' } }, profile ) ).toBe(
+			'rgb(116, 116, 116)'
+		);
+	} );
+
+	it( 'leaves a card on a DARK band to the template (the ink came from the panel)', () => {
+		// virtuallysrilanka: the band's copy was measured over its own dark panel,
+		// and the rebuild paints a white card. That ink must not reach the card.
+		const profile = cardProfile( { id: 'bbb2222', bgColor: '#101010' } );
+		expect( cardInkFor( profile.design!.sections![ 0 ], { body: { color: 'rgb(255, 255, 255)' } }, profile ) ).toBeUndefined();
+	} );
+
+	it( 'emits nothing when the band measured no body ink', () => {
+		const profile = cardProfile( { id: 'aaa1111' } );
+		expect( cardInkFor( profile.design!.sections![ 0 ], { body: { size: '16px' } }, profile ) ).toBeUndefined();
+	} );
+
+	it( 'writes cardInk into sections.generated only for the same-surface band', () => {
+		const flat = renderSectionsGenerated( cardProfile( { id: 'aaa1111' } ) );
+		expect( flat ).toContain( "cardInk: 'rgb(116, 116, 116)'" );
+
+		const dark = renderSectionsGenerated( cardProfile( { id: 'bbb2222', bgColor: '#101010' } ) );
+		expect( dark ).not.toContain( 'cardInk:' );
 	} );
 } );
