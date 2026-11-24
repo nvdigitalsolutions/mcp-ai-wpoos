@@ -24,12 +24,34 @@ test('jpg is an alias for jpeg and unknown formats are refused', () => {
 	assert.equal(normaliseTransformFormat(undefined), '');
 });
 
-test('a resize is parsed with its fit', () => {
+test('a resize is parsed with its fit and a centred default position', () => {
 	const operations = parseTransformOperations(
 		JSON.stringify([{ type: 'resize', width: 100, height: 50, fit: 'cover' }]),
 	);
 
-	assert.deepEqual(operations, [{ type: 'resize', width: 100, height: 50, fit: 'cover' }]);
+	assert.deepEqual(operations, [
+		{ type: 'resize', width: 100, height: 50, fit: 'cover', position: 'centre' },
+	]);
+});
+
+test('a resize keeps an allowlisted position and refuses an arbitrary one', () => {
+	const [attention] = parseTransformOperations(
+		'[{"type":"resize","width":10,"height":10,"fit":"cover","position":"attention"}]',
+	);
+
+	assert.equal(attention.position, 'attention');
+
+	const [american] = parseTransformOperations(
+		'[{"type":"resize","width":10,"height":10,"fit":"cover","position":"center"}]',
+	);
+
+	assert.equal(american.position, 'centre');
+
+	const [injected] = parseTransformOperations(
+		'[{"type":"resize","width":10,"height":10,"fit":"cover","position":"; rm -rf /"}]',
+	);
+
+	assert.equal(injected.position, 'centre');
 });
 
 test('a resize with neither dimension is refused', () => {
@@ -131,6 +153,47 @@ test('an EXIF-rotated source is auto-oriented before it is resized', async () =>
 		.toBuffer({ resolveWithObject: true });
 
 	// Displayed geometry first: 4x2 rotated 90° is 2x4, which fits inside 2x4.
-	assert.equal(info.width, 2);
-	assert.equal(info.height, 4);
-});
+		assert.equal(info.width, 2);
+		assert.equal(info.height, 4);
+	});
+
+	test('a cover crop keeps the busy region when the position is attention', async () => {
+		// A 100x20 canvas with a bright 10x10 square hard against the left edge, on
+		// an otherwise black field. The left half is the only region with detail, so
+		// `attention` must keep it and `centre` must not.
+		const feature = await sharp({
+			create: { width: 10, height: 10, channels: 3, background: '#ffffff' },
+		})
+			.png()
+			.toBuffer();
+
+		const source = await sharp({
+			create: { width: 100, height: 20, channels: 3, background: '#000000' },
+		})
+			.composite([{ input: feature, left: 0, top: 5 }])
+			.png()
+			.toBuffer();
+
+		const cropFor = async (position) => {
+			const [operation] = parseTransformOperations(
+				JSON.stringify([{ type: 'resize', width: 20, height: 20, fit: 'cover', position }]),
+			);
+
+			return applyTransformOperations(sharp(source), [operation])
+				.removeAlpha()
+				.greyscale()
+				.raw()
+				.toBuffer({ resolveWithObject: true });
+		};
+
+		const attention = await cropFor('attention');
+		const centre = await cropFor('centre');
+
+		// Centre crops columns 40–60, which are wholly black. Attention has to reach
+		// the left edge to find the square, so it keeps at least one white pixel.
+		assert.equal(Math.max(...centre.data), 0);
+		assert.ok(
+			Math.max(...attention.data) > 200,
+			'attention should retain the bright left-edge feature',
+		);
+	});

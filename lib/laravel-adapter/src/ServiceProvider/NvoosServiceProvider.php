@@ -51,6 +51,7 @@ use Nvoos\Laravel\Health\PackageHealthReport;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
+use Nvoos\Core\Domain\Contract\ImageProductionInterface;
 use Nvoos\Core\Domain\Contract\MediaWorkerClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\OfficeWriterInterface;
@@ -127,6 +128,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
 use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
+use Nvoos\Laravel\Adapter\MediaWorkerImageProduction;
 use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfMutator;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfOcr;
@@ -195,6 +197,14 @@ class NvoosServiceProvider extends ServiceProvider {
 		// which is the same shape WordPress has without GD/Imagick
 		// (Proposal 149 §160).
 		$this->app->bind( ImageProcessingInterface::class, MediaWorkerImageProcessing::class );
+
+		// The pipeline half of the image family (Proposal 164 section 164.6
+		// phase 2). The port has no GD and no local Sharp, so re-encoding,
+		// sharpening, upscaling, batches and model-backed edits all ride the
+		// worker. Each tool asks `supports(operation)` first, which reads the
+		// capability matrix, so a worker older than the route answers a named
+		// refusal instead of a 404 mid-run.
+		$this->app->bind( ImageProductionInterface::class, MediaWorkerImageProduction::class );
 
 		// Documents follow the same ladder (Proposal 164 §164.4.2): the worker
 		// renders with a real browser at `/api/pdf/generate`, so `html_to_pdf`

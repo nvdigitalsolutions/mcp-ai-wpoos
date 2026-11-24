@@ -1029,6 +1029,31 @@ const TRANSFORM_MAX_OFFSET = 1_000_000;
 const TRANSFORM_MAX_OPERATIONS = 8;
 const TRANSFORM_FORMATS = ['png', 'jpeg', 'webp', 'gif'];
 const TRANSFORM_HEX = /^#[0-9a-fA-F]{6}$/;
+// Where a `cover` crop keeps its subject. `attention` and `entropy` are Sharp's
+// saliency heuristics; the rest are literal anchors. Spelled out rather than
+// forwarded, so an arbitrary string never reaches the image library.
+const TRANSFORM_POSITIONS = new Set([
+  'attention',
+  'entropy',
+  'centre',
+  'center',
+  'top',
+  'right top',
+  'right',
+  'right bottom',
+  'bottom',
+  'left bottom',
+  'left',
+  'left top',
+  'north',
+  'northeast',
+  'east',
+  'southeast',
+  'south',
+  'southwest',
+  'west',
+  'northwest',
+]);
 
 /**
  * Normalise a format slug to the encoder allowlist. `jpg` is accepted as an
@@ -1103,11 +1128,21 @@ function parseTransformOperations(raw) {
           throw new Error('resize needs a width, a height, or both.');
         }
 
-        const fit = ['cover', 'contain', 'inside', 'fill'].includes(operation.fit)
-          ? operation.fit
-          : 'inside';
+        		const fit = ['cover', 'contain', 'inside', 'fill'].includes(operation.fit)
+        		  ? operation.fit
+        		  : 'inside';
 
-        return { type, width, height, fit };
+        		// `position` decides where a `cover` crop keeps its subject. Earlier
+        		// callers never sent it and the crop was centred, so the default is the
+        		// centre and the field is additive.
+        		const requestedPosition = String(operation.position ?? '').toLowerCase();
+        		const position = TRANSFORM_POSITIONS.has(requestedPosition)
+        		  ? 'center' === requestedPosition
+        		    ? 'centre'
+        		    : requestedPosition
+        		  : 'centre';
+
+        		return { type, width, height, fit, position };
       }
 
       case 'crop':
@@ -1156,10 +1191,11 @@ function applyTransformOperations(pipeline, operations) {
   pipeline = pipeline.rotate();
 
   for (const operation of operations) {
-    if ('resize' === operation.type) {
-      pipeline = pipeline.resize(operation.width, operation.height, {
-        fit: operation.fit,
-      });
+    	if ('resize' === operation.type) {
+    		pipeline = pipeline.resize(operation.width, operation.height, {
+    			fit: operation.fit,
+    			position: operation.position,
+    		});
     } else if ('crop' === operation.type) {
       pipeline = pipeline.extract({
         left: operation.left,
@@ -1528,10 +1564,25 @@ router.post('/batch', upload.any(), async (req, res) => {
       return res.status( 400 ).json( { error: 'No files uploaded' } );
     }
 
-    const { format = 'webp', quality = 80, width } = req.body;
-    const qualityN = Math.max( 1, Math.min( 100, parseInt( quality, 10 ) || 80 ) );
-    const results = [];
-    const errors = [];
+      const { format = 'webp', quality = 80, width, lossless = false, progressive = true } = req.body;
+      const qualityN = Math.max( 1, Math.min( 100, parseInt( quality, 10 ) || 80 ) );
+      const losslessN = 'true' === String( lossless ).toLowerCase() || '1' === String( lossless );
+      const progressiveN = ! [ 'false', '0' ].includes( String( progressive ).toLowerCase() );
+      const formatSlug = String( format ).toLowerCase();
+
+      // JPEG has no lossless mode. Claiming one would hand back a file that is
+      // larger than the original and still not bit-identical, which is worse
+      // than saying so. `original` cannot be vouched for either, because the
+      // source encoding is only known after the file is read.
+      if ( losslessN && [ 'jpeg', 'jpg', 'original', '' ].includes( formatSlug ) ) {
+        return res.status( 400 ).json( {
+          error: 'Lossless encoding needs an explicit png, webp or avif target format.',
+          allowed_formats: [ 'png', 'webp', 'avif' ],
+        } );
+      }
+
+      const results = [];
+      const errors = [];
 
     for ( const file of uploaded ) {
       try {
@@ -1546,17 +1597,20 @@ router.post('/batch', upload.any(), async (req, res) => {
         let outputBuffer;
         switch ( format ) {
           case 'webp':
-            outputBuffer = await pipeline.webp( { quality: qualityN } ).toBuffer();
+            outputBuffer = await pipeline.webp( { quality: qualityN, lossless: losslessN } ).toBuffer();
             break;
           case 'avif':
-            outputBuffer = await pipeline.avif( { quality: qualityN } ).toBuffer();
+            outputBuffer = await pipeline.avif( { quality: qualityN, lossless: losslessN } ).toBuffer();
             break;
           case 'jpeg':
           case 'jpg':
-            outputBuffer = await pipeline.jpeg( { quality: qualityN } ).toBuffer();
+            // Progressive JPEG decodes top-down, so a slow connection paints the
+            // whole image early instead of filling it line by line.
+            outputBuffer = await pipeline.jpeg( { quality: qualityN, progressive: progressiveN } ).toBuffer();
             break;
           case 'png':
-            outputBuffer = await pipeline.png().toBuffer();
+            // PNG has no quality knob; `lossless` raises the deflate effort.
+            outputBuffer = await pipeline.png( { compressionLevel: losslessN ? 9 : 6 } ).toBuffer();
             break;
           case '':
           case 'original':
