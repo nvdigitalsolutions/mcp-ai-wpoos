@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
@@ -8,8 +8,92 @@ import axios from 'axios';
 import { detectCapabilities } from '../utils/capabilities.js';
 import { siteUploadDir, siteDirFor } from '../utils/site-paths.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify( execFile );
 const router = Router();
+
+// ── Bounds for the ffmpeg argument list ───────────────────
+// This route used to build one shell string from request fields, so a `start`
+// of `1; rm -rf /` was a command. Every argument is now an argv element handed
+// to execFile, which never involves a shell; the values are still bounded so a
+// malformed one is a 400 with a reason rather than an ffmpeg stack trace.
+const PROCESS_FORMATS = new Set( [ 'mp4', 'webm', 'mov', 'mkv', 'gif', 'mp3', 'm4a', 'aac', 'jpg', 'jpeg', 'png' ] );
+const MAX_DIMENSION = 8192;
+const MAX_SECONDS = 24 * 60 * 60;
+// Without `-movflags +faststart` the moov atom lands at the end of the file and
+// a browser must download the whole thing before the first frame paints.
+const FASTSTART_FORMATS = new Set( [ 'mp4', 'mov' ] );
+
+/**
+ * Parse an optional bounded number from a request field.
+ *
+ * @param {*}      value Raw field value.
+ * @param {number} min   Inclusive minimum.
+ * @param {number} max   Inclusive maximum.
+ * @param {string} label Field name for the message.
+ * @return {number|null} The number, or null when the field was absent.
+ * @throws {Error} When the value is present and out of range.
+ */
+function boundedNumber( value, min, max, label ) {
+	if ( undefined === value || null === value || '' === value ) {
+		return null;
+	}
+
+	const parsed = Number( value );
+
+	if ( ! Number.isFinite( parsed ) || parsed < min || parsed > max ) {
+		throw new Error( `${ label } must be a number between ${ min } and ${ max }.` );
+	}
+
+	return parsed;
+}
+
+/**
+ * @param {*}      value Raw field value.
+ * @param {string} label Field name.
+ * @return {number|null}
+ */
+function boundedDimension( value, label ) {
+	const parsed = boundedNumber( value, 1, MAX_DIMENSION, label );
+
+	return null === parsed ? null : Math.round( parsed );
+}
+
+/**
+ * Allowlist the output format.
+ *
+ * The value names the output file, so an unchecked one is a path traversal
+ * (`../../evil`) as well as an unknown encoder.
+ *
+ * @param {*} value Raw field value.
+ * @return {string|null} A known format, or null.
+ */
+function resolveFormat( value ) {
+	const slug = String( value || 'mp4' ).toLowerCase();
+
+	return PROCESS_FORMATS.has( slug ) ? slug : null;
+}
+
+/**
+ * Evaluate an ffprobe rational such as `30000/1001` without `eval`.
+ *
+ * The value comes from the uploaded file, so it is untrusted text: `eval` here
+ * was remote code execution reachable by any file whose `r_frame_rate` metadata
+ * contained JavaScript.
+ *
+ * @param {*} value Rational string from ffprobe.
+ * @return {number} Frames per second, or 0 when it cannot be read.
+ */
+function parseRational( value ) {
+	const parts = String( value || '' ).split( '/' );
+	const numerator = Number( parts[ 0 ] );
+	const denominator = undefined === parts[ 1 ] ? 1 : Number( parts[ 1 ] );
+
+	if ( ! Number.isFinite( numerator ) || ! Number.isFinite( denominator ) || 0 === denominator ) {
+		return 0;
+	}
+
+	return numerator / denominator;
+}
 
 // Uploads land in the caller's site namespace (multi-tenant) or the system
 // temp dir (single-tenant, legacy behavior).
@@ -243,9 +327,48 @@ router.post('/process', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const { operation = 'compress', width, height, format = 'mp4', fps, start, duration, timestamps, count } = req.body;
+    const {
+      operation = 'compress',
+      width: rawWidth,
+      height: rawHeight,
+      format: rawFormat,
+      fps: rawFps,
+      start: rawStart,
+      duration: rawDuration,
+      timestamps,
+      count,
+    } = req.body;
     const inputPath = req.file.path;
     const videoDir = siteDirFor(req.site, 'video');
+
+    let width;
+    let height;
+    let start;
+    let duration;
+    let fps;
+    let format;
+
+    try {
+      width = boundedDimension(rawWidth, 'width');
+      height = boundedDimension(rawHeight, 'height');
+      start = boundedNumber(rawStart, 0, MAX_SECONDS, 'start');
+      duration = boundedNumber(rawDuration, 0.01, MAX_SECONDS, 'duration');
+      fps = boundedNumber(rawFps, 0.1, 120, 'fps');
+      format = resolveFormat(rawFormat);
+    } catch (argErr) {
+      cleanupUpload();
+      return res.status(400).json({ error: argErr.message });
+    }
+
+    if (!format) {
+      cleanupUpload();
+      return res.status(400).json({
+        error: `Unknown output format: ${rawFormat}`,
+        allowed_formats: [...PROCESS_FORMATS],
+      });
+    }
+
+    const faststart = FASTSTART_FORMATS.has(format);
 
     // ── extract_frames (multi-output) — handled separately ──
     if ('extract_frames' === operation) {
@@ -263,15 +386,25 @@ router.post('/process', upload.single('file'), async (req, res) => {
         for (let i = 0; i < stamps.length; i++) {
           const name = `frame_${String(i).padStart(3, '0')}.jpg`;
           const out = path.join(frameDir, name);
-          const vf = scale ? ` -vf "${scale}"` : '';
-          await execAsync(`ffmpeg -ss ${stamps[i]} -i "${inputPath}" -frames:v 1 -q:v 2${vf} -y "${out}"`, { timeout: 300000 });
+          const args = ['-ss', String(stamps[i]), '-i', inputPath, '-frames:v', '1', '-q:v', '2'];
+
+          if (scale) {
+            args.push('-vf', scale);
+          }
+
+          args.push('-y', out);
+          await execFileAsync('ffmpeg', args, { timeout: 300000 });
           files.push(`${frameDirName}/${name}`);
         }
       } else {
         const frameCount = Math.max(1, Math.min(120, parseInt(count, 10) || 10));
         let fpsFilter = 'fps=1';
         try {
-          const { stdout } = await execAsync(`ffprobe -v quiet -print_format json -show_format "${inputPath}"`, { timeout: 30000 });
+          const { stdout } = await execFileAsync(
+            'ffprobe',
+            ['-v', 'quiet', '-print_format', 'json', '-show_format', inputPath],
+            { timeout: 30000 }
+          );
           const meta = JSON.parse(stdout);
           const videoDuration = parseFloat(meta?.format?.duration || 0);
           if (videoDuration > 0) {
@@ -280,9 +413,13 @@ router.post('/process', upload.single('file'), async (req, res) => {
         } catch {
           // Duration unknown — fall back to 1 fps.
         }
-        const vf = [fpsFilter, scale].filter(Boolean).join(',');
+        const filters = [fpsFilter, scale].filter(Boolean).join(',');
         const outPattern = path.join(frameDir, 'frame_%03d.jpg');
-        await execAsync(`ffmpeg -i "${inputPath}" -vf "${vf}" -q:v 2 -y "${outPattern}"`, { timeout: 300000 });
+        await execFileAsync(
+          'ffmpeg',
+          ['-i', inputPath, '-vf', filters, '-q:v', '2', '-y', outPattern],
+          { timeout: 300000 }
+        );
         for (let i = 1; i <= frameCount; i++) {
           files.push(`${frameDirName}/frame_${String(i).padStart(3, '0')}.jpg`);
         }
@@ -304,28 +441,41 @@ router.post('/process', upload.single('file'), async (req, res) => {
     const outputName = `processed_${Date.now()}.${format}`;
     const outputPath = path.join(videoDir, outputName);
 
-    let ffmpegCmd = `ffmpeg -i "${inputPath}"`;
+    const args = ['-i', inputPath];
 
     switch (operation) {
       case 'resize':
-        if (!width && !height) { cleanupUpload(); return res.status(400).json({ error: 'Width or height required for resize' }); }
+        if (!width && !height) {
+          cleanupUpload();
+          return res.status(400).json({ error: 'Width or height required for resize' });
+        }
         if (width && height) {
-          ffmpegCmd += ` -vf "scale=${width}:${height}"`;
+          args.push('-vf', `scale=${width}:${height}`);
         } else if (width) {
-          ffmpegCmd += ` -vf "scale=${width}:-1"`;
+          args.push('-vf', `scale=${width}:-1`);
         } else {
-          ffmpegCmd += ` -vf "scale=-1:${height}"`;
+          args.push('-vf', `scale=-1:${height}`);
         }
         break;
 
       case 'crop':
-        if (!width || !height) { cleanupUpload(); return res.status(400).json({ error: 'Width and height required for crop' }); }
-        ffmpegCmd += ` -vf "crop=${width}:${height}"`;
+        if (!width || !height) {
+          cleanupUpload();
+          return res.status(400).json({ error: 'Width and height required for crop' });
+        }
+        args.push('-vf', `crop=${width}:${height}`);
         break;
 
       case 'trim':
-        if (start) ffmpegCmd += ` -ss ${start}`;
-        if (duration) ffmpegCmd += ` -t ${duration}`;
+        // Output-side `-ss` is frame-accurate; input-side is faster but lands on
+        // the nearest keyframe. A trim that starts a second early is the more
+        // surprising failure.
+        if (start !== null) {
+          args.push('-ss', String(start));
+        }
+        if (duration !== null) {
+          args.push('-t', String(duration));
+        }
         break;
 
       case 'convert':
@@ -333,38 +483,43 @@ router.post('/process', upload.single('file'), async (req, res) => {
         break;
 
       case 'compress':
-        ffmpegCmd += ` -vcodec libx264 -crf 28 -preset fast`;
+        args.push('-vcodec', 'libx264', '-crf', '28', '-preset', 'fast');
         break;
 
       case 'gif':
-        if (fps) ffmpegCmd += ` -vf "fps=${fps},scale=${width || 480}:-1:flags=lanczos"`;
-        ffmpegCmd += ` -c:v gif -loop 0`;
+        args.push('-vf', `fps=${fps || 12},scale=${width || 480}:-1:flags=lanczos`, '-c:v', 'gif', '-loop', '0');
         break;
 
       case 'thumbnail':
-        // Extract frame at specific time
-        if (start) ffmpegCmd += ` -ss ${start}`;
-        ffmpegCmd += ` -vframes 1`;
-        if (width) ffmpegCmd += ` -vf "scale=${width}:-1"`;
-        break;
-
-      case 'extract_audio':
-        // Strip the video stream; codec follows the requested format.
-        {
-          const codec = 'mp3' === format ? 'libmp3lame' : ('m4a' === format || 'aac' === format ? 'aac' : 'copy');
-          ffmpegCmd += ` -vn -c:a ${codec}`;
+        // Extract frame at a specific time.
+        if (start !== null) {
+          args.push('-ss', String(start));
+        }
+        args.push('-vframes', '1');
+        if (width) {
+          args.push('-vf', `scale=${width}:-1`);
         }
         break;
+
+      case 'extract_audio': {
+        const codec = 'mp3' === format ? 'libmp3lame' : ('m4a' === format || 'aac' === format ? 'aac' : 'copy');
+        args.push('-vn', '-c:a', codec);
+        break;
+      }
 
       default:
         cleanupUpload();
         return res.status(400).json({ error: `Unknown operation: ${operation}` });
     }
 
-    ffmpegCmd += ` -y "${outputPath}"`;
+    if (faststart) {
+      args.push('-movflags', '+faststart');
+    }
 
-    console.log(`[FFmpeg] ${ffmpegCmd}`);
-    await execAsync(ffmpegCmd, { timeout: 300000 }); // 5 min timeout
+    args.push('-y', outputPath);
+
+    console.log(`[FFmpeg] ffmpeg ${args.join(' ')}`);
+    await execFileAsync('ffmpeg', args, { timeout: 300000 }); // 5 min timeout
 
     const stats = fs.statSync(outputPath);
     const originalStats = fs.statSync(inputPath);
@@ -432,8 +587,10 @@ router.post('/info', upload.single('file'), async (req, res) => {
 
     const inputPath = req.file.path;
 
-    const { stdout } = await execAsync(
-      `ffprobe -v quiet -print_format json -show_format -show_streams "${inputPath}"`
+    const { stdout } = await execFileAsync(
+      'ffprobe',
+      ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', inputPath],
+      { timeout: 30000 }
     );
     const info = JSON.parse(stdout);
 
@@ -451,7 +608,7 @@ router.post('/info', upload.single('file'), async (req, res) => {
             codec: videoStream.codec_name,
             width: videoStream.width,
             height: videoStream.height,
-            fps: eval?.(`(${videoStream.r_frame_rate || '0/1'})`) || 0,
+            fps: parseRational(videoStream.r_frame_rate),
             bitrate: parseInt(videoStream.bit_rate || 0),
             pixel_format: videoStream.pix_fmt,
           }
@@ -474,4 +631,11 @@ router.post('/info', upload.single('file'), async (req, res) => {
   }
 });
 
-export { router as videoRouter };
+export {
+	router as videoRouter,
+	boundedNumber,
+	boundedDimension,
+	resolveFormat,
+	parseRational,
+	PROCESS_FORMATS,
+};

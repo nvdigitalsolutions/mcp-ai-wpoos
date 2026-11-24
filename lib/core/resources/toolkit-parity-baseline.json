@@ -102,11 +102,19 @@
         "site-creator-toolkit": [],
         "social-media": [
             "generate_post_ideas",
-            "generate_social_captions"
+            "generate_social_captions",
+            "publish_to_social"
         ],
         "vault": [],
         "vector-storage": [],
-        "video-production": [],
+        "video-production": [
+            "compress_video",
+            "convert_video_format",
+            "generate_video_thumbnails",
+            "get_video_metadata",
+            "resize_video_resolution",
+            "trim_video"
+        ],
         "vision-analysis": [],
         "wp-all-import-export": []
     }
