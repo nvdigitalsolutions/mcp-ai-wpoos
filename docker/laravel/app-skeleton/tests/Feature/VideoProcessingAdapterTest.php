@@ -16,6 +16,7 @@ use Nvoos\Core\Tool\GenerateVideoThumbnailsTool;
 use Nvoos\Core\Tool\GetVideoMetadataTool;
 use Nvoos\Core\Tool\OptimizeForPlatformTool;
 use Nvoos\Core\Tool\ResizeVideoResolutionTool;
+use Nvoos\Core\Tool\TranscodeVideoTool;
 use Nvoos\Core\Tool\TrimVideoTool;
 use Nvoos\Laravel\Adapter\MediaWorkerVideo;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -376,6 +377,85 @@ final class VideoProcessingAdapterTest extends TestCase
         $this->assertSame(422, $result->getCode());
         $this->assertStringContainsString('Unknown platform: myspace', $result->getMessage());
         $this->assertStringContainsString('youtube, instagram, tiktok', $result->getMessage());
+    }
+
+    public function test_transcode_sends_the_encoder_and_bitrates(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $result = $this->app->make(TranscodeVideoTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'output_format' => 'mkv',
+            'video_codec' => 'libx265',
+            'video_bitrate' => '5M',
+            'audio_bitrate' => '192k',
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('transcode', $this->field($captured, 'operation'));
+        $this->assertSame('mkv', $this->field($captured, 'format'));
+        $this->assertSame('libx265', $this->field($captured, 'vcodec'));
+        $this->assertSame('5m', $this->field($captured, 'video_bitrate'), 'the bitrate is normalised');
+        $this->assertSame('192k', $this->field($captured, 'audio_bitrate'));
+    }
+
+    public function test_a_height_preset_is_sent_without_a_width(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $this->app->make(TranscodeVideoTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'resolution' => '1280x720',
+            'save_to_media' => false,
+        ));
+
+        $this->assertSame('720', $this->field($captured, 'height'));
+        $this->assertNull($this->field($captured, 'width'), 'the width is derived so the aspect ratio is kept');
+    }
+
+    public function test_a_codec_that_does_not_belong_in_the_container_is_refused(): void
+    {
+        $result = $this->app->make(TranscodeVideoTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'output_format' => 'webm',
+            'video_codec' => 'libx264',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('does not take libx264', $result->getMessage());
+        $this->assertStringContainsString('libvpx-vp9', $result->getMessage());
+    }
+
+    public function test_remove_audio_is_forwarded(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $this->app->make(TranscodeVideoTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'remove_audio' => true,
+            'save_to_media' => false,
+        ));
+
+        $this->assertSame('true', $this->field($captured, 'remove_audio'));
+    }
+
+    public function test_an_unknown_resolution_is_refused_with_the_supported_ones(): void
+    {
+        $result = $this->app->make(TranscodeVideoTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'resolution' => '4096x2160',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('Unknown resolution: 4096x2160', $result->getMessage());
+        $this->assertStringContainsString('1920x1080', $result->getMessage());
     }
 
     public function test_a_host_without_ffmpeg_refuses_by_name(): void

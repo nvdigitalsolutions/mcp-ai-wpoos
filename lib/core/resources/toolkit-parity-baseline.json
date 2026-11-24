@@ -115,6 +115,7 @@
             "get_video_metadata",
             "optimize_for_platform",
             "resize_video_resolution",
+            "transcode_video",
             "trim_video"
         ],
         "vision-analysis": [],

@@ -50,9 +50,17 @@ final class MediaWorkerVideo implements VideoProcessingInterface
         'thumbnail',
         'extract_audio',
         'speed',
+        'transcode',
     );
 
-    private const FORMATS = array('mp4', 'webm', 'mov', 'mkv', 'gif', 'mp3', 'm4a', 'aac', 'jpg', 'jpeg', 'png');
+    private const FORMATS = array('mp4', 'webm', 'mov', 'mkv', 'gif', 'mp3', 'm4a', 'aac', 'jpg', 'jpeg', 'png', 'avi', 'flv');
+
+    /**
+     * The encoders an agent may name. The route carries the same lists.
+     */
+    private const VIDEO_CODECS = array('libx264', 'libx265', 'libvpx', 'libvpx-vp9');
+
+    private const AUDIO_CODECS = array('aac', 'libmp3lame', 'libvorbis', 'libopus');
 
     public function __construct(
         private readonly MediaWorkerClient $worker,
@@ -163,6 +171,22 @@ final class MediaWorkerVideo implements VideoProcessingInterface
         if ('speed' === $operation) {
             $fields['speed'] = $this->speedFactor($options['speed'] ?? null);
             $fields['maintain_pitch'] = $this->boolean($options['maintain_pitch'] ?? true) ? 'true' : 'false';
+        }
+
+        if ('transcode' === $operation) {
+            $fields += \array_filter(
+                array(
+                    'vcodec' => $this->codec($options['video_codec'] ?? null, self::VIDEO_CODECS, 'video_codec'),
+                    'acodec' => $this->codec($options['audio_codec'] ?? null, self::AUDIO_CODECS, 'audio_codec'),
+                    'video_bitrate' => $this->bitrate($options['video_bitrate'] ?? null, 'video_bitrate'),
+                    'audio_bitrate' => $this->bitrate($options['audio_bitrate'] ?? null, 'audio_bitrate'),
+                ),
+                static fn (?string $value): bool => null !== $value,
+            );
+
+            if ($this->boolean($options['remove_audio'] ?? false)) {
+                $fields['remove_audio'] = 'true';
+            }
         }
 
         if ('resize' === $operation && null === $width && null === $height) {
@@ -295,6 +319,51 @@ final class MediaWorkerVideo implements VideoProcessingInterface
     }
 
     /**
+     * An encoder name from an allowlist.
+     *
+     * The value reaches `-c:v` or `-c:a`, so an unknown name is not a typo to
+     * relay. Absent is null, which keeps the source codec.
+     */
+    private function codec(mixed $value, array $allowed, string $label): ?string
+    {
+        if (null === $value || '' === $value) {
+            return null;
+        }
+
+        $slug = \strtolower(\trim((string) $value));
+
+        if (! \in_array($slug, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                'The '.$label.' must be one of: '.\implode(', ', $allowed).'.'
+            );
+        }
+
+        return $slug;
+    }
+
+    /**
+     * A bitrate in the shape ffmpeg expects, or a refusal.
+     *
+     * Permissive text here would be handed to ffmpeg as an argument value, so
+     * the shape is fixed: digits and an optional k/m suffix. A leading dash —
+     * the shape that could be read as another option — cannot match.
+     */
+    private function bitrate(mixed $value, string $label): ?string
+    {
+        if (null === $value || '' === $value) {
+            return null;
+        }
+
+        $slug = \strtolower(\trim((string) $value));
+
+        if (1 !== \preg_match('/^[0-9]{1,6}[km]?$/', $slug)) {
+            throw new \InvalidArgumentException('The '.$label.' must look like 2000k or 5m.');
+        }
+
+        return $slug;
+    }
+
+    /**
      * How a fitted frame is filled.
      *
      * `cover` crops the overflow so the frame is all picture; `contain` pads it
@@ -392,6 +461,8 @@ final class MediaWorkerVideo implements VideoProcessingInterface
             'mp3' => 'mp3',
             'm4a' => 'm4a',
             'aac' => 'aac',
+            'avi' => 'avi',
+            'flv' => 'flv',
             'jpg' => 'jpg',
             'jpeg' => 'jpg',
             'png' => 'png',

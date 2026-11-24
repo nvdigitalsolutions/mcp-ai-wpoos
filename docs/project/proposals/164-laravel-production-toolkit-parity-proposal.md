@@ -1048,3 +1048,93 @@ repeated in the message.
 `lib/core` 2,458 tests / 17,535 assertions; adapter 359 / 1,919; the app suite
 gains 4 tests in `VideoProcessingAdapterTest`; the worker gains 1 in
 `video.test.js` (13 total).
+
+## 164.19 Addendum — `transcode_video`, and where `video-production` stands (2026-11-25)
+
+### A real WordPress implementation this time
+
+Unlike §164.18's stub, `class-wp-mcp-ai-tool-transcode-video.php` is a real
+fluent-ffmpeg implementation, so this is a port. It carries one deliberate
+deviation (below) and one narrowing.
+
+### Allowlists on both sides of the wire
+
+Codec names reach `-c:v` / `-c:a` and bitrates reach `-b:v` / `-b:a`. Both are
+validated in the tool **and** in the route — not because one distrusts the
+other, but because a direct route caller exists too. Bitrates are shaped
+(`^[0-9]{1,6}[km]?$`), which is not cosmetic: a value beginning with a dash is
+the shape that could be read as another ffmpeg option, and that shape cannot
+match the pattern.
+
+### Container ↔ codec compatibility is checked, not discovered
+
+| container | encoders |
+| --- | --- |
+| mp4, mov | libx264, libx265 |
+| mkv | libx264, libx265, libvpx, libvpx-vp9 |
+| webm | libvpx, libvpx-vp9 |
+| avi | libx264, libx265 |
+| flv | libx264 |
+
+The two traps this closes: **VP8/VP9 in an MP4** (ffmpeg refuses late, and the
+message is about a stream rather than a container) and **H.264 in a WebM**
+(ffmpeg accepts, and writes a file no browser reads). An incompatible pair is
+refused with the encoders that container does take.
+
+### `resolution` is a height, not a pair of numbers
+
+The WordPress enum is six `WxH` strings. Applying both numbers to a 9:16 source
+stretches it, so the tool maps each pair to its height and sends only that; the
+route derives the width with `scale=-2:H`. `-2` rather than `-1` keeps the
+derived side **even**, which x264 and x265 require — an odd width is a hard
+encoder failure, not a soft quality loss.
+
+`avi` and `flv` joined the route's container allowlist so the WordPress enum is
+covered rather than trimmed, and `AbstractVideoTool::mime()` gained their types
+so a stored `.avi` is not filed as `application/octet-stream`.
+
+### `preset` is deliberately absent
+
+The WordPress tool accepts a platform preset that duplicates
+`optimize_for_platform`. Two tools with a preset table are two chances to
+disagree about a frame size, and the caller cannot tell which one won. Transcode
+is for encoder control; the platform frame belongs to the other tool.
+
+### Where `video-production` now stands — 9 of 21
+
+| status | slugs |
+| --- | --- |
+| ported | compress_video, convert_video_format, generate_video_thumbnails, get_video_metadata, resize_video_resolution, trim_video, adjust_video_speed, optimize_for_platform, transcode_video |
+| remaining | add_watermark_to_video, create_remotion_video, create_video_from_images, extract_video_frames, extract_video_metadata, generate_video_captions, get_queued_videos, get_videos_without_thumbnails, get_videos_without_transcripts, merge_videos, transcribe_video, upload_video_batch |
+
+The remaining twelve are not one backlog with one difficulty. Grouped by what
+actually blocks them:
+
+- **A second input.** `merge_videos` needs several uploads, `add_watermark_to_video`
+  needs an image, `create_video_from_images` needs a sequence. Each is a route
+  *contract* change — `upload.single` to `upload.array`, or a second field — not a
+  filter tweak. Doing one establishes the shape for the other two.
+- **Not video editing at all.** `create_remotion_video` is a React renderer.
+  `generate_video_captions` and `transcribe_video` are speech models: a provider
+  call, not ffmpeg. Note `generate_video_caption` (singular) already exists over
+  a provider and is catalogued separately.
+- **Audit and queue surfaces with nothing to read.** `get_queued_videos`,
+  `get_videos_without_thumbnails`, `get_videos_without_transcripts` and
+  `upload_video_batch` all read WordPress's attachment/queue tables. This runtime
+  has no equivalent table, and inventing one so a slug can return `[]` would be
+  parity theatre — the same objection §164.18 raised to porting a stub.
+- **Overlaps a tool already ported.** `extract_video_metadata` is the same
+  ffprobe payload as `get_video_metadata` behind different flags.
+- **The route has the operation and no slug asks for it.** `extract_video_frames`
+  is a many-file return shape, and `extract_audio` (which no WordPress slug
+  requests at all — see §164.17) is available as an additive tool.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **279 rows / 260 servable / 0 violations** (was
+278 / 259). `bin/toolkit-parity.php`: **58 of 854** (was 57);
+`video-production` is **9 of 21** (was 8) — from 0 when this arc began.
+
+`lib/core` 2,460 tests / 17,545 assertions; adapter 359 / 1,920; the app suite
+gains 5 tests in `VideoProcessingAdapterTest`; the worker gains 2 in
+`video.test.js` (15 total).
