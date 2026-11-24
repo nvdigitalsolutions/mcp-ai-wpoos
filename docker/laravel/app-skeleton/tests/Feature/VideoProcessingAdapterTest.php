@@ -14,6 +14,7 @@ use Nvoos\Core\Tool\CompressVideoTool;
 use Nvoos\Core\Tool\ConvertVideoFormatTool;
 use Nvoos\Core\Tool\GenerateVideoThumbnailsTool;
 use Nvoos\Core\Tool\GetVideoMetadataTool;
+use Nvoos\Core\Tool\OptimizeForPlatformTool;
 use Nvoos\Core\Tool\ResizeVideoResolutionTool;
 use Nvoos\Core\Tool\TrimVideoTool;
 use Nvoos\Laravel\Adapter\MediaWorkerVideo;
@@ -306,6 +307,75 @@ final class VideoProcessingAdapterTest extends TestCase
 
         $this->assertIsArray($result);
         $this->assertStringContainsString('black fade-in', (string) $result['data']['at_start_warning']);
+    }
+
+    public function test_a_platform_preset_fills_the_frame_it_names(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $result = $this->app->make(OptimizeForPlatformTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'platform' => 'instagram',
+            'content_type' => 'feed',
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('fit', $this->field($captured, 'operation'));
+        $this->assertSame('1080', $this->field($captured, 'width'));
+        $this->assertSame('1350', $this->field($captured, 'height'), 'a 4:5 feed frame, not a square');
+        $this->assertSame('cover', $this->field($captured, 'fit'));
+
+        // The preset is reported back, because `store()` keeps a fixed payload.
+        $this->assertSame(1080, $result['data']['width']);
+        $this->assertSame('4:5', $result['data']['aspect']);
+    }
+
+    public function test_a_vertical_placement_gets_a_vertical_frame(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $this->app->make(OptimizeForPlatformTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'platform' => 'tiktok',
+            'content_type' => 'reel',
+            'fit' => 'contain',
+            'save_to_media' => false,
+        ));
+
+        $this->assertSame('1080', $this->field($captured, 'width'));
+        $this->assertSame('1920', $this->field($captured, 'height'));
+        $this->assertSame('contain', $this->field($captured, 'fit'));
+    }
+
+    public function test_a_placement_the_platform_does_not_have_is_refused_with_the_ones_it_does(): void
+    {
+        $result = $this->app->make(OptimizeForPlatformTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'platform' => 'twitter',
+            'content_type' => 'story',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('no "story" placement', $result->getMessage());
+        $this->assertStringContainsString('Supported: feed', $result->getMessage());
+    }
+
+    public function test_an_unknown_platform_is_refused_with_the_supported_ones(): void
+    {
+        $result = $this->app->make(OptimizeForPlatformTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'platform' => 'myspace',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('Unknown platform: myspace', $result->getMessage());
+        $this->assertStringContainsString('youtube, instagram, tiktok', $result->getMessage());
     }
 
     public function test_a_host_without_ffmpeg_refuses_by_name(): void

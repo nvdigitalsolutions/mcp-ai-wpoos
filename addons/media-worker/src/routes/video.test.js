@@ -19,6 +19,7 @@ import {
 	boundedNumber,
 	boundedDimension,
 	resolveFormat,
+	resolveFit,
 	parseRational,
 	boolField,
 	atempoChain,
@@ -67,6 +68,19 @@ test( 'the format list is small and contains no traversal characters', () => {
 	for ( const format of PROCESS_FORMATS ) {
 		assert.match( format, /^[a-z0-9]+$/, `${ format } must be a bare extension` );
 	}
+} );
+
+test( 'a fit is an allowlist of two behaviours', () => {
+	assert.equal( resolveFit( 'cover' ), 'cover' );
+	assert.equal( resolveFit( 'CONTAIN' ), 'contain' );
+	assert.equal( resolveFit( undefined ), 'cover' );
+	assert.equal( resolveFit( '' ), 'cover' );
+
+	// The value becomes part of an ffmpeg filter argument, so an unknown one is
+	// refused rather than defaulted over.
+	assert.equal( resolveFit( 'blur' ), null );
+	assert.equal( resolveFit( 'cover; rm -rf /' ), null );
+	assert.equal( resolveFit( 'cover,pad=1:1' ), null );
 } );
 
 test( 'a rational is divided, never evaluated', () => {

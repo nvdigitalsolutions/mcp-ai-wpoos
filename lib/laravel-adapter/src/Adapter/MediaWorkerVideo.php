@@ -42,6 +42,7 @@ final class MediaWorkerVideo implements VideoProcessingInterface
     private const OPERATIONS = array(
         'resize',
         'crop',
+        'fit',
         'trim',
         'convert',
         'compress',
@@ -172,6 +173,16 @@ final class MediaWorkerVideo implements VideoProcessingInterface
             throw new \InvalidArgumentException('Crop needs both a width and a height.');
         }
 
+        // `fit` is the one operation whose whole point is an exact frame, so a
+        // missing side is a mistake rather than a "keep the aspect" request.
+        if ('fit' === $operation) {
+            if (null === $width || null === $height) {
+                throw new \InvalidArgumentException('Fit needs both a width and a height.');
+            }
+
+            $fields['fit'] = $this->fitMode($options['fit'] ?? 'cover');
+        }
+
         $body = $this->worker->uploadFile(
             '/api/video/process',
             $localPath,
@@ -281,6 +292,28 @@ final class MediaWorkerVideo implements VideoProcessingInterface
         }
 
         return $pixels;
+    }
+
+    /**
+     * How a fitted frame is filled.
+     *
+     * `cover` crops the overflow so the frame is all picture; `contain` pads it
+     * so nothing is cropped. Two behaviours, both named — anything else is
+     * refused rather than guessed, because the value becomes a filter argument.
+     */
+    private function fitMode(mixed $value): string
+    {
+        $mode = \strtolower(\trim((string) $value));
+
+        if ('' === $mode) {
+            return 'cover';
+        }
+
+        if (! \in_array($mode, array('cover', 'contain'), true)) {
+            throw new \InvalidArgumentException('A fit must be either cover or contain.');
+        }
+
+        return $mode;
     }
 
     /**
