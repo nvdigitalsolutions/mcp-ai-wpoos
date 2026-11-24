@@ -7,6 +7,7 @@
  *   POST /api/pdf/generate  — generate PDF from HTML/markdown (puppeteer)
  *   POST /api/pdf/merge     — merge multiple PDFs (pdf-lib)
  *   POST /api/pdf/watermark — add watermark to PDF (pdf-lib)
+ *   POST /api/pdf/ocr       — OCR a PDF page by page (pdfjs + tesseract.js)
  *
  * File sources: /extract and /render accept a multipart `file` upload
  * (required on managed hosts where WordPress cannot reach the worker's
@@ -22,6 +23,7 @@ import path from 'path';
 import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
 import { siteDirFor, siteUploadDir, pathGuard } from '../utils/site-paths.js';
+import { clampDpi, clampOpacity, clampPageBudget, watermarkPlacement } from '../utils/pdf-style.js';
 
 export const pdfRouter = Router();
 
@@ -277,12 +279,17 @@ pdfRouter.post( '/merge', upload.any(), async ( req, res ) => {
 // ── POST /watermark — add watermark to PDF ─────────────────
 // Accepts a multipart `file` upload (required on managed hosts) or a
 // legacy worker-side `source` path for shared-volume deployments.
+//
+// Style is optional and defaults to the original fixed mark, so a caller that
+// sends only `watermark` gets exactly the bytes it always did.
 pdfRouter.post( '/watermark', upload.single( 'file' ), async ( req, res ) => {
 	try {
-		const { watermark, outputPath } = req.body || {};
+		const { watermark, outputPath, position, fontSize } = req.body || {};
 		if ( ! watermark ) {
 			return res.status( 400 ).json( { success: false, error: 'Missing watermark text' } );
 		}
+
+		const opacity = clampOpacity( ( req.body || {} ).opacity );
 
 		let dataBuffer;
 		if ( req.file ) {
@@ -303,14 +310,22 @@ pdfRouter.post( '/watermark', upload.single( 'file' ), async ( req, res ) => {
 
 		for ( const page of pages ) {
 			const { width, height } = page.getSize();
+			const place = watermarkPlacement( {
+				position,
+				pageWidth: width,
+				pageHeight: height,
+				text: watermark,
+				fontSize,
+			} );
+
 			page.drawText( watermark, {
-				x: width / 2 - 150,
-				y: height / 2,
-				size: 48,
+				x: place.x,
+				y: place.y,
+				size: place.size,
 				font,
 				color: rgb( 0.75, 0.75, 0.75 ),
-				opacity: 0.3,
-				rotate: degrees( -45 ),
+				opacity,
+				rotate: degrees( place.rotate ),
 			} );
 		}
 
@@ -324,11 +339,122 @@ pdfRouter.post( '/watermark', upload.single( 'file' ), async ( req, res ) => {
 			output_path: outPath,
 			size: stats.size,
 			pages: pages.length,
+			opacity,
+			position: String( position || 'diagonal' ).toLowerCase(),
 			// data_base64 is the plugin contract: output_path points at the
 			// WORKER's filesystem and is unusable by the calling site.
 			data_base64: Buffer.from( outBytes ).toString( 'base64' ),
 		} );
 	} catch ( err ) {
 		sendError( res, err );
+	}
+} );
+
+// ── POST /ocr — OCR a PDF page by page ────────────────────
+//
+// Rasterize at `dpi` (default 300: the published working default for OCR;
+// below ~200 accuracy falls off sharply, above 600 engines hit pixel caps) and
+// recognise each page with tesseract.js, reusing one worker across pages.
+//
+// The page budget is explicit because OCR is seconds per page: a 200-page scan
+// behind one request is a timeout that reads like a crash. The response says
+// `truncated` so a caller can loop instead of guessing.
+pdfRouter.post( '/ocr', upload.single( 'file' ), async ( req, res ) => {
+	let ocrWorker = null;
+	try {
+		const source = resolveSource( req );
+		if ( ! source ) {
+			return res.status( 400 ).json( { success: false, error: 'Missing source path or file upload' } );
+		}
+		if ( ! fs.existsSync( source ) ) {
+			return res.status( 404 ).json( { success: false, error: `File not found: ${ source }` } );
+		}
+
+		const body = req.body || {};
+		const dpi = clampDpi( body.dpi );
+		const budget = clampPageBudget( body.maxPages );
+		const language = 'string' === typeof body.language && body.language ? body.language : 'eng';
+
+		let canvasModule;
+		try {
+			canvasModule = await import( 'canvas' );
+		} catch ( err ) {
+			if ( 'ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code ) {
+				return res.status( 503 ).json( {
+					error: 'capability_unavailable',
+					capability: 'pdf-ocr',
+					message: 'PDF OCR is unavailable: the native canvas module is not installed on this server.',
+				} );
+			}
+			throw err;
+		}
+
+		let Tesseract;
+		try {
+			Tesseract = ( await import( 'tesseract.js' ) ).default;
+		} catch ( err ) {
+			if ( 'ERR_MODULE_NOT_FOUND' === err.code ) {
+				return res.status( 503 ).json( {
+					error: 'capability_unavailable',
+					capability: 'pdf-ocr',
+					message: 'PDF OCR is unavailable: tesseract.js is not installed on this server.',
+				} );
+			}
+			throw err;
+		}
+
+		const pdfjsModule = await import( 'pdfjs-dist/legacy/build/pdf.mjs' );
+		const pdfjsLib = pdfjsModule.default || pdfjsModule;
+
+		const data = new Uint8Array( fs.readFileSync( source ) );
+		const doc = await pdfjsLib.getDocument( { data } ).promise;
+
+		const requested = Array.isArray( body.pages )
+			? body.pages
+				.map( ( n ) => Number( n ) )
+				.filter( ( n ) => Number.isInteger( n ) && n >= 1 && n <= doc.numPages )
+			: [];
+
+		const selected = ( requested.length ? requested : Array.from( { length: doc.numPages }, ( _, i ) => i + 1 ) )
+			.slice( 0, budget );
+
+		ocrWorker = await Tesseract.createWorker( language, 1, { workerBlob: false } );
+
+		const scale = dpi / 72;
+		const pages = [];
+
+		for ( const pageNum of selected ) {
+			const page = await doc.getPage( pageNum );
+			const viewport = page.getViewport( { scale } );
+			const canvas = canvasModule.createCanvas( viewport.width, viewport.height );
+			const ctx = canvas.getContext( '2d' );
+
+			await page.render( { canvasContext: ctx, viewport } ).promise;
+
+			const { data: recognised } = await ocrWorker.recognize( canvas.toBuffer( 'image/png' ) );
+
+			pages.push( {
+				page: pageNum,
+				text: recognised.text,
+				confidence: recognised.confidence,
+			} );
+		}
+
+		res.json( {
+			success: true,
+			text: pages.map( ( p ) => p.text ).join( '\n\n' ),
+			pages,
+			count: pages.length,
+			total_pages: doc.numPages,
+			truncated: selected.length < doc.numPages,
+			dpi,
+			language,
+		} );
+	} catch ( err ) {
+		sendError( res, err );
+	} finally {
+		if ( ocrWorker ) {
+			await ocrWorker.terminate().catch( () => {} );
+		}
 	}
 } );

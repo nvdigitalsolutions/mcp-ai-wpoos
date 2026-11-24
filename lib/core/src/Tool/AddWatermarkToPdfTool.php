@@ -3,14 +3,15 @@
 /**
  * Stamp a text watermark on every page of a stored PDF.
  *
- * Proposal 164 §164.4.3. The WordPress tool offers `opacity` and `position`
- * because its own `pdf-lib` path honours them. The media worker's
- * `/api/pdf/watermark` route draws one fixed mark — 48pt Helvetica, grey, 30%
- * opacity, centred, rotated −45° — and accepts no style arguments.
+ * Proposal 164 §164.4.3. The WordPress tool offers `opacity` and `position` and
+ * spends them in its own `pdf-lib` path. The media worker's
+ * `/api/pdf/watermark` route draws that same mark by default and honours the two
+ * options when it advertises `pdf_watermark_style`.
  *
- * So this tool accepts **text only**. Offering `opacity`/`position` and ignoring
- * them would render a different document than the caller asked for, which is
- * worse than not offering the knob; the description says so plainly instead.
+ * So the knobs are offered, and a caller who asks for a **non-default** style on
+ * an engine that cannot honour it gets a named `watermark_style_unavailable`
+ * error — not a silent default stamp reported as success. A caller who asks for
+ * nothing gets exactly the bytes it always did.
  *
  * @package Nvoos\Core
  * @since   2.4.0
@@ -59,7 +60,7 @@ class AddWatermarkToPdfTool extends AbstractTool implements ToolCapabilityFlagsI
 
     public function getDescription(): string
     {
-        return 'Stamp a text watermark on every page of a stored PDF. The bound engine draws one fixed mark — grey, 30% opacity, centred, rotated −45° — so no opacity or position is offered rather than accepting options that would be ignored.';
+        return 'Stamp a text watermark on every page of a stored PDF, with optional opacity and position. Defaults to the classic diagonal mark; a non-default style needs an engine that supports it and is refused otherwise rather than silently ignored.';
     }
 
     public function getParametersSchema(): array
@@ -75,6 +76,19 @@ class AddWatermarkToPdfTool extends AbstractTool implements ToolCapabilityFlagsI
                 'text' => array(
                     'type' => 'string',
                     'description' => 'Watermark text, e.g. "CONFIDENTIAL" or "DRAFT".',
+                ),
+                'opacity' => array(
+                    'type' => 'number',
+                    'description' => 'Mark opacity, 0.0–1.0. Default 0.3.',
+                    'minimum' => 0,
+                    'maximum' => 1,
+                    'default' => 0.3,
+                ),
+                'position' => array(
+                    'type' => 'string',
+                    'description' => 'Where to draw the mark. Default diagonal (rotated −45°); the others are horizontal.',
+                    'enum' => array('diagonal', 'center', 'top', 'bottom'),
+                    'default' => 'diagonal',
                 ),
                 'filename' => array(
                     'type' => 'string',
@@ -138,8 +152,20 @@ class AddWatermarkToPdfTool extends AbstractTool implements ToolCapabilityFlagsI
             );
         }
 
+        $options = $this->style($arguments);
+
+        // A non-default style on an engine that cannot honour it is refused:
+        // stamping the default mark and reporting success would hand back a
+        // different document than the one that was asked for.
+        if ($this->isStyled($options) && !$this->pdf->watermarkStyleSupported()) {
+            return $this->errors->create(
+                'watermark_style_unavailable',
+                'The bound PDF engine does not support watermark opacity or position. Omit them, or point this runtime at a media worker that advertises pdf_watermark_style.',
+            );
+        }
+
         try {
-            $result = $this->pdf->watermark($path, $text);
+            $result = $this->pdf->watermark($path, $text, $options);
 
             $payload = array(
                 'format' => 'pdf',
@@ -165,6 +191,49 @@ class AddWatermarkToPdfTool extends AbstractTool implements ToolCapabilityFlagsI
         } catch (\Throwable $e) {
             return $this->errors->create('pdf_watermark_failed', $e->getMessage());
         }
+    }
+
+    /**
+     * The style the caller asked for, as the engine's option keys.
+     *
+     * Only supplied values are returned, so a caller who asks for nothing sends
+     * nothing and the engine applies its historical default.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return array<string, mixed>
+     */
+    private function style(array $arguments): array
+    {
+        $options = array();
+
+        $opacity = $arguments['opacity'] ?? null;
+
+        if (\is_numeric($opacity)) {
+            $options['opacity'] = \max(0.0, \min(1.0, (float) $opacity));
+        }
+
+        $position = \strtolower($this->stringParam($arguments, 'position'));
+
+        if (\in_array($position, array('diagonal', 'center', 'top', 'bottom'), true)) {
+            $options['position'] = $position;
+        }
+
+        return $options;
+    }
+
+    /**
+     * Whether the request differs from the historical default mark.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function isStyled(array $options): bool
+    {
+        if (isset($options['opacity']) && \abs((float) $options['opacity'] - 0.3) > 0.0001) {
+            return true;
+        }
+
+        return isset($options['position']) && 'diagonal' !== $options['position'];
     }
 
     /**

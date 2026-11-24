@@ -13,14 +13,19 @@ use Nvoos\Core\Domain\Contract\PdfMutatorInterface;
  *    index, so the order is carried in the field name. That is why the merge
  *    goes through `uploadFiles()` rather than `uploadFile()`: a merge that
  *    reordered pages would be silent corruption, not a visible failure.
- *  - `POST /api/pdf/watermark` reads `file` plus a `watermark` field. The route
- *    draws one fixed mark (48pt Helvetica, grey, 30% opacity, centred, −45°);
- *    it takes no style arguments, which is why the contract does not offer any.
+ *  - `POST /api/pdf/watermark` reads `file` plus a `watermark` field. It draws
+ *    the mark centred and rotated −45° by default, and honours optional
+ *    `opacity` and `position` when the worker advertises `pdf_watermark_style`.
+ *    On a worker without that capability the style cannot be honoured, which
+ *    `watermarkStyleSupported()` reports rather than silently stamping the
+ *    default mark under a different name.
  */
 final class MediaWorkerPdfMutator implements PdfMutatorInterface
 {
-    public function __construct(private readonly MediaWorkerClient $worker)
-    {
+    public function __construct(
+        private readonly MediaWorkerClient $worker,
+        private readonly MediaWorkerCapabilityProbe $probe,
+    ) {
     }
 
     /**
@@ -67,29 +72,58 @@ final class MediaWorkerPdfMutator implements PdfMutatorInterface
     /**
      * {@inheritDoc}
      */
-    public function watermark(string $localPath, string $text): array
+    public function watermarkStyleSupported(): bool
     {
-        if ('' === trim($localPath)) {
-            throw new \InvalidArgumentException('A PDF path is required.');
+        if ( ! $this->worker->isConfigured() ) {
+            return false;
         }
 
-        if ('' === trim($text)) {
-            throw new \InvalidArgumentException('Watermark text is required.');
+        return $this->probe->report()->supports( 'pdf_watermark_style' );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function watermark(string $localPath, string $text, array $options = array()): array
+    {
+        if ( '' === trim( $localPath ) ) {
+            throw new \InvalidArgumentException( 'A PDF path is required.' );
         }
 
-        if (! is_file($localPath)) {
-            throw new \InvalidArgumentException('The PDF does not exist: '.$localPath);
+        if ( '' === trim( $text ) ) {
+            throw new \InvalidArgumentException( 'Watermark text is required.' );
+        }
+
+        if ( ! is_file( $localPath ) ) {
+            throw new \InvalidArgumentException( 'The PDF does not exist: '.$localPath );
+        }
+
+        $fields = array( 'watermark' => $text );
+
+        // Only send a style the caller actually asked for. Sending the defaults
+        // would change the bytes for every existing caller on a worker that
+        // treats an explicit `0.3` differently from an absent field.
+        $opacity = $options['opacity'] ?? null;
+
+        if ( is_numeric( $opacity ) ) {
+            $fields['opacity'] = (string) max( 0, min( 1, (float) $opacity ) );
+        }
+
+        $position = strtolower( trim( (string) ( $options['position'] ?? '' ) ) );
+
+        if ( in_array( $position, array( 'diagonal', 'center', 'top', 'bottom' ), true ) ) {
+            $fields['position'] = $position;
         }
 
         $body = $this->worker->uploadFile(
             '/api/pdf/watermark',
             $localPath,
-            basename($localPath),
-            ['watermark' => $text],
+            basename( $localPath ),
+            $fields,
             $this->timeout(),
         );
 
-        return $this->written($body, 'watermarked', 'watermarked'."\0".$localPath."\0".$text);
+        return $this->written( $body, 'watermarked', 'watermarked'."\0".$localPath."\0".$text.'\0'.implode( '\0', $fields ) );
     }
 
     /**
