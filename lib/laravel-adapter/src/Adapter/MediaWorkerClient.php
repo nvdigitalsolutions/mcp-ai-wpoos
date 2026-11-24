@@ -385,6 +385,49 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
     }
 
     /**
+     * GET a worker endpoint and return the raw body.
+     *
+     * `/api/video/process` writes its output on the **worker's** filesystem and
+     * answers a name; `/api/video/download/<name>` is how the calling host gets
+     * the bytes. That is a two-step contract, so the fetch lives here rather than
+     * in each adapter.
+     *
+     * @throws \RuntimeException When the worker is unconfigured, unreachable, refuses, or answers an error envelope.
+     */
+    public function download(string $path, int $timeout = 120): string
+    {
+        if (! $this->configured()) {
+            throw new \RuntimeException('The media worker is not configured.');
+        }
+
+        try {
+            $response = Http::timeout(max(1, $timeout))
+                ->withHeaders($this->headers())
+                ->get($this->url().$path);
+        } catch (Throwable $e) {
+            throw new \RuntimeException('Media worker request failed: '.$e->getMessage(), 0, $e);
+        }
+
+        if (! $response->ok()) {
+            $decoded = $response->json();
+
+            $reason = is_array($decoded) && isset($decoded['error'])
+                ? (string) $decoded['error']
+                : 'HTTP '.$response->status();
+
+            throw new \RuntimeException('Media worker error: '.$reason);
+        }
+
+        $body = $response->body();
+
+        if ('' === $body) {
+            throw new \RuntimeException('The media worker returned an empty file.');
+        }
+
+        return $body;
+    }
+
+    /**
      * POST one file to a worker endpoint and decode the JSON envelope.
      *
      * `optimize()` predates this helper and is left untouched so its shipped

@@ -752,3 +752,134 @@ convention in an adapter — which is now possible because the flags are honest.
 adapter 359 / 1,910; the app suite gains 10 tests in `SocialComposerToolsTest`;
 the worker suite is unchanged at 4 social route tests, with `index.js` gaining
 two capability keys.
+
+## 164.16 Addendum — the publisher, and video as a two-step contract (2026-11-24)
+
+§164.15 closed with "publishing is **not** in this contract". This addendum adds
+it, and with it the last family the worker already knew how to run: video.
+
+### The publisher costs a decision, not a keystroke
+
+`SocialPublisherInterface` (`publish()`, `supports()`, `isAvailable()`) is
+deliberately **not** part of `SocialComposerInterface`: composing copy and
+sending it to a platform are different privileges, and a runtime that binds the
+first should not thereby gain the second.
+
+`MediaWorkerSocialPublisher` posts to `/api/social/post` and spends most of its
+code refusing before it spends a request:
+
+- an **unknown platform** is refused naming the worker's own list, because the
+  caller has almost certainly typo'd it;
+- an **uncredentialed channel** is refused *before* the call, naming the
+  platform, rather than relaying a 500 afterwards;
+- **over-length copy** is refused with the limit the composer already knows;
+- **`schedule` is refused outright.** A scheduled post fires when no human is
+  present, which is the one thing an approval gate exists to prevent. The worker
+  still supports it; this runtime does not route to it.
+
+On a worker error the message appends *"the platform token may be expired or
+lack write scope; the worker log carries the provider response"* rather than
+inventing provider detail it cannot see.
+
+`PublishToSocialTool` declares `external-api`, `external-communication`,
+`irreversible`, `requires-capability`, `state-changing` and `write`, and requires
+`publish_posts`. It **defaults `dry_run` to true**, so the safe call is the one
+you get by accident. `InvalidArgumentException` becomes `validationFailed` (422)
+and any other throwable `publish_failed`, because a bad argument and a broken
+platform are different things to a caller.
+
+`link_url` is appended to the copy and reported as `link_appended: true` — the
+worker has no link field, and silently dropping a URL is worse than saying where
+it went.
+
+The proof is a store that can be approved once and then refuses
+(`TicketOnceStore`): a call with no ticket is refused and queues one; a retry
+with it runs; a third is refused and queues afresh. **An approval that can be
+replayed is not an approval.**
+
+### Video is two steps, so the contract is too
+
+`/api/video/process` writes to the **worker's** disk and answers a filename;
+`/api/video/download/<name>` is how a host gets the bytes.
+`VideoProcessingInterface` has one `process()` with an `operation` discriminator
+mirroring the route — and it performs *both* steps, so no intermediate filename
+ever reaches a caller.
+
+`extract_frames` is deliberately absent from `operations()`: it answers many
+files, which is a different return shape and a separate tool.
+
+Six tools: `get_video_metadata` (read-only), `trim_video`, `compress_video`,
+`convert_video_format`, `resize_video_resolution`, `generate_video_thumbnails`.
+Resolution presets (`480p`…`2160p`) map to a height and preserve aspect ratio; a
+preset **and** a dimension together are refused rather than silently preferring
+one. Thumbnails request `jpg` — ffmpeg picks the encoder from the output
+extension, and a "thumbnail" asked for as `mp4` comes back as a one-frame video.
+
+### Five worker defects found while making the route honest
+
+Reading the route in order to wrap it exposed problems that had nothing to do
+with this host:
+
+| Defect | Fix |
+| --- | --- |
+| **`eval?.()` on ffprobe's `r_frame_rate`** — a value read out of an uploaded file was executed; remote code execution reachable by uploading a video | `parseRational()` divides numerator by denominator |
+| **Shell-string ffmpeg commands** interpolating `start`, `width` and `format` | `execFile('ffmpeg', argv)` — no shell exists to interpret anything |
+| **`format` interpolated into the output filename** — path traversal from a request field | `PROCESS_FORMATS` allowlist; `jpg`/`jpeg`/`png` added so a thumbnail is an image |
+| **No `+faststart`** — a browser must download the whole file before frame one | `-movflags +faststart` for `mp4`/`mov` |
+| **`trim` used input-side `-ss`** — keyframe-approximate, so a cut landed seconds off | output-side `-ss`, frame-accurate |
+
+### The sixth defect was ours: a filename is not a path
+
+The route resolves `path.resolve(base, name)` and checks containment, so it was
+safe. This host built `'/api/video/download/'.$remote` and checked the name
+against `'#^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$#'` — which **`../../etc/passwd`
+passes**, because `.` is an allowed character. A compromised worker, or a future
+route echoing a caller-supplied value, could have made this host normalise the
+URL out of `/api/video/download/`.
+
+Every segment is now validated *by name* as well as by charset: empty, `.` and
+`..` are refused. The test pins eight hostile names — parent traversal, nested
+traversal, a dot segment, an absolute path, a doubled separator, a trailing
+separator, percent-encoding and an empty answer.
+
+The lesson worth writing down: a containment check that **resolves** a path and
+a charset check that **does not** are not interchangeable.
+
+### Deliberate deviations from WordPress
+
+- **`compress_video` has no `quality` argument.** The route encodes at a fixed
+  CRF 28; a knob whose only effect is a constant is a lie with a number on it.
+- **`tiktok` is absent from the publish enum.** The worker has no TikTok
+  publisher.
+- **`link_url` is appended to the copy**, per above.
+- **`extract_video_frames` is not ported.** It is not a rename of
+  `generate_video_thumbnails`: many files, a different envelope.
+- **The named presets (`web_1080p`, `social_vertical_9x16`) live above the
+  contract**, in the tool rather than the interface — they are a product
+  decision, not a capability of ffmpeg.
+
+### What is still open
+
+- **`merge_videos`, `add_watermark_to_video`, `adjust_video_speed`,
+  `create_video_from_images`** need ffmpeg filter work the route does not
+  implement (concat, drawtext, setpts/atempo, image sequence).
+- **`extract_audio` exists on the route and has no tool.** The cheapest
+  remaining win.
+- **`extract_video_frames`, `get_videos_without_thumbnails`,
+  `..._without_transcripts`** — the last two are audits and only become
+  meaningful now that someone can write a thumbnail; transcripts still have no
+  route.
+- **Scheduled social publishing** (`schedule_social_post`, `bulk_schedule_posts`)
+  still derives WARN. A schedule *becomes* an irreversible publish when it
+  fires, so the second gate belongs in the worker's scheduled-publish
+  processor, where no human is present.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **276 rows / 257 servable / 0 violations** (was
+269 / 250). `bin/toolkit-parity.php`: **55 of 854** (was 48);
+`video-production` is **6 of 21** (was 0) and `social-media` **3 of 32** (was 2).
+
+`lib/core` 2,454 tests / 17,515 assertions; adapter 359 / 1,917; the app suite
+gains 18 tests in `VideoProcessingAdapterTest` and 9 in `PublishToSocialToolTest`;
+the worker gains 7 in `video.test.js`.

@@ -73,10 +73,12 @@ use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\SocialComposerInterface;
+use Nvoos\Core\Domain\Contract\SocialPublisherInterface;
 use Nvoos\Core\Domain\Contract\TabularReaderInterface;
 use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
+use Nvoos\Core\Domain\Contract\VideoProcessingInterface;
 use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
@@ -135,7 +137,9 @@ use Nvoos\Laravel\Adapter\MediaWorkerPdfMutator;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfOcr;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfTextExtractor;
 use Nvoos\Laravel\Adapter\MediaWorkerSocialComposer;
+use Nvoos\Laravel\Adapter\MediaWorkerSocialPublisher;
 use Nvoos\Laravel\Adapter\MediaWorkerTabularReader;
+use Nvoos\Laravel\Adapter\MediaWorkerVideo;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
@@ -213,6 +217,19 @@ class NvoosServiceProvider extends ServiceProvider {
 		// because it is an irreversible send that belongs behind the necessity
 		// guard, not one method call away in an adapter.
 		$this->app->bind( SocialComposerInterface::class, MediaWorkerSocialComposer::class );
+
+		// Publishing is a separate contract from composing because it is the
+		// irreversible half: `publish_to_social` declares `irreversible` +
+		// `external-communication`, so the necessity guard refuses it without an
+		// approval ticket and spends an approved one exactly once.
+		$this->app->bind( SocialPublisherInterface::class, MediaWorkerSocialPublisher::class );
+
+		// Video (Proposal 164 section 164.4.5). The worker's `/process` writes to
+		// its own disk and answers a name, so the adapter performs the download as
+		// part of `process()` and returns a local path. `video_processing` needs
+		// ffmpeg and ffprobe, which a managed Node host often lacks — so each tool
+		// asks and refuses with `no_video_engine` rather than failing mid-upload.
+		$this->app->bind( VideoProcessingInterface::class, MediaWorkerVideo::class );
 
 		// Documents follow the same ladder (Proposal 164 §164.4.2): the worker
 		// renders with a real browser at `/api/pdf/generate`, so `html_to_pdf`
