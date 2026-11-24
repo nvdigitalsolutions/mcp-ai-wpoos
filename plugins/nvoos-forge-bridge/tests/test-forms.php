@@ -391,6 +391,42 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Elementor's handler only dispatches when `$_POST['action']` is the
+	 * action it was registered under. Sending the NONCE action
+	 * (`elementor_pro_forms`) instead answers "the form is invalid" and
+	 * records nothing — a silent dead form on every forged site.
+	 */
+	public function test_elementor_request_carries_the_registered_ajax_action(): void {
+		$request = \NvoosForgeBridge\Rest\Forms::elementor_request( 'widget-1', 42, array( 'name' => 'Jane' ) );
+
+		// Ajax_Handler::is_form_submitted() compares this exact string.
+		$this->assertSame( 'elementor_pro_forms_send_form', $request['action'] );
+		$this->assertSame( 'widget-1', $request['form_id'] );
+		$this->assertSame( 42, $request['post_id'] );
+		$this->assertSame( 42, $request['queried_id'] );
+		$this->assertSame( array( 'name' => 'Jane' ), $request['form_fields'] );
+		$this->assertNotSame( '', (string) $request['_nonce'] );
+	}
+
+	/**
+	 * JetFormBuilder reads `$_POST['form_fields']` — the nested map PHP's own
+	 * POST parsing produces from `form_fields[name]` keys. A flat JSON/urlencoded
+	 * payload never creates it, so the bridge rebuilds it.
+	 */
+	public function test_bracket_fields_rebuild_the_native_form_fields_map(): void {
+		$mapped = \NvoosForgeBridge\Rest\Forms::bracket_fields(
+			array(
+				'form_fields[name]'    => 'Jane',
+				'form_fields[message]' => 'Hello',
+				'consent'              => '1',
+			)
+		);
+
+		$this->assertSame( array( 'name' => 'Jane', 'message' => 'Hello' ), $mapped );
+		$this->assertSame( array(), \NvoosForgeBridge\Rest\Forms::bracket_fields( array( 'plain' => 'x' ) ) );
+	}
+
+	/**
 	 * Elementor path: form existence via _elementor_data, the form_fields
 	 * mapping, and the seam envelope.
 	 */

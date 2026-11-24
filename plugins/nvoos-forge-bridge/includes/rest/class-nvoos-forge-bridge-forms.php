@@ -703,6 +703,14 @@ class Forms extends \WP_REST_Controller {
 		foreach ( $fields as $name => $value ) {
 			$_POST[ $name ] = $value;
 		}
+		// PHP's own POST parsing turns `form_fields[name]` into a nested map, and
+		// JetFormBuilder's request reads `$_POST['form_fields']`. Our payload
+		// arrives flat (JSON body or urlencoded), so mirror the native shape —
+		// the flat keys stay for jet_fb_context()->update_request() below.
+		$nested = self::bracket_fields( $fields );
+		if ( ! empty( $nested ) ) {
+			$_POST['form_fields'] = $nested;
+		}
 		// Carriers last, so nothing above can overwrite them (defense in depth).
 		$_POST[ $form_key ]  = $form_id;
 		$_POST[ $refer_key ] = '' !== $page ? $page : home_url( '/' );
@@ -742,6 +750,51 @@ class Forms extends \WP_REST_Controller {
 	}
 
 	/**
+	 * Flatten `form_fields[name]` wire keys into a `name => value` map.
+	 *
+	 * Only bracket keys are returned; a plain key belongs to no field group.
+	 *
+	 * @param array $fields Fields.
+	 * @return array
+	 */
+	protected static function bracket_fields( array $fields ): array {
+		$out = array();
+		foreach ( $fields as $name => $value ) {
+			if ( preg_match( '/^form_fields\[(.+)\]$/', (string) $name, $matches ) ) {
+				$out[ $matches[1] ] = $value;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * The ajax request Elementor Pro's form handler expects.
+	 *
+	 * `Ajax_Handler::is_form_submitted()` gates every dispatch on
+	 * `wp_doing_ajax()` **and** `$_POST['action']` being the action the handler
+	 * is registered under — `wp_ajax_elementor_pro_forms_send_form`. The nonce
+	 * action (`elementor_pro_forms`) is a different string, and the handler
+	 * never verifies a nonce, so sending it makes every submission answer
+	 * "Your submission failed because the form is invalid" while recording
+	 * nothing.
+	 *
+	 * @param string $form_id     Elementor form id.
+	 * @param int    $post_id     Source post id.
+	 * @param array  $form_fields The form_fields map.
+	 * @return array
+	 */
+	public static function elementor_request( string $form_id, int $post_id, array $form_fields ): array {
+		return array(
+			'action'      => 'elementor_pro_forms_send_form',
+			'form_id'     => $form_id,
+			'post_id'     => $post_id,
+			'queried_id'  => $post_id,
+			'form_fields' => $form_fields,
+			'_nonce'      => wp_create_nonce( 'elementor_pro_forms' ),
+		);
+	}
+
+	/**
 	 * Dispatch through Elementor Pro's form ajax handler.
 	 *
 	 * The admin-ajax contract is emulated in-process (action, form id, post
@@ -778,15 +831,13 @@ class Forms extends \WP_REST_Controller {
 			return new \WP_Error( 'nvoos_forge_no_form_handler', __( 'The Elementor Pro form handler is not available.', 'nvoos-forge-bridge' ), array( 'status' => 501 ) );
 		}
 
+		$request  = self::elementor_request( $form_id, $post_id, $form_fields );
 		$captured = $this->capture_json(
-			function () use ( $class, $form_id, $post_id, $form_fields ) {
+			function () use ( $class, $request ) {
 				// phpcs:disable WordPress.Security.NonceVerification.Missing -- this IS the submission surface.
-				$_POST['action']      = 'elementor_pro_forms';
-				$_POST['form_id']     = $form_id;
-				$_POST['post_id']     = $post_id;
-				$_POST['queried_id']  = $post_id;
-				$_POST['form_fields'] = $form_fields;
-				$_POST['_nonce']      = wp_create_nonce( 'elementor_pro_forms' );
+				foreach ( $request as $key => $value ) {
+					$_POST[ $key ] = $value;
+				}
 				// phpcs:enable WordPress.Security.NonceVerification.Missing
 				( new $class() )->ajax_send_form();
 			}

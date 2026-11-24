@@ -14,6 +14,9 @@ band on every page must be classified as one of:
 
 **Captured** 2026-11-24 against `eca.directory` and the staging app
 `nodejs-1659781-6801643.cloudwaysnodeapps.com` (build `b4b438a8ee-manual2`).
+**Updated** 2026-11-24: the `<h1>` is restored (`46bd8e940f`), the enquiry bands
+submit through `nvoos-forge-bridge` 0.3.3, and the Elementor dispatch defect that
+made every submission fail is fixed (§6).
 
 > **Source caveat.** The rendered HTML of all three pages is the Elementor
 > maintenance screen for anonymous requests (74,808 bytes each — that is why the
@@ -28,25 +31,24 @@ band on every page must be classified as one of:
 
 | # | Elementor id | Source format (widgets) | Forged kind | Chars src → forged | Status | Class |
 |---|---|---|---|---|---|---|
-| 1 | `6daaaef9` | heading **h1**, text-editor, testimonial, rating, counter-ish, buttons | `feature-grid` | 310 → 395 | **diverged** | `freeze` |
+| 1 | `6daaaef9` | heading **h1**, text-editor, testimonial, rating, counter-ish, buttons | `feature-grid` | 310 → 395 | parity, **h1 restored** | `freeze` |
 | 2 | `4c649f2e` | heading, text-editor, button ("Explore Our Activities") | `text` | 316 → 316 | parity | `eca` (should be a grid) |
 | 3 | `41b89b66` | heading, 4 × icon-box | `feature-grid` | 475 → 465 | parity | `freeze` |
 | 4 | `77f4271d` | heading, text-editor, icon-list, icon, buttons ("Phased Delivery") | `feature-grid` | 728 → 694 | parity | `freeze` |
 | 5 | `3589820` | heading, text-editor, icon-box, social-icons ("Meet the Project Team") | `text` | 480 → 480 | parity, **social icons lost** | `cms` |
 | 6 | `319dfe29` | heading, text-editor, **posts** widget ("Our Updates") | `feature-grid` | 183 → 130 | **diverged** | `cms` |
-| 7 | `71dbef2b` | **form**, heading ("Questions?") | `form` | 97 → 2,121 | **replaced** | `form` |
+| 7 | `71dbef2b` | **form**, heading ("Questions?") | `form` | 97 → 2,121 | **live 2026-11-24** | `form` |
 
 ### What each divergence is
 
-**Band 1 — the `<h1>` disappeared.** The forged page contains **zero `<h1>`**
-elements. The hero's headline ("ECA Management for British School in Colombo") was
-captured as a grid item and renders as `<h3>`, while the band title became
-`<h2>Parent ratings</h2>` — a label from the rating widget. The lede is a run of
-loose `<p>` paragraphs (`+9`, `Satisfied teachers`, the hero copy, the
-testimonial). Cause: `pickHeadingTitle()` let a widget label outrank the band's own
-`h1`, and the `feature-grid` kind won because the band had ≥2 items. This is the
-single most consequential defect on the page (document outline, SEO, screen-reader
-landmark).
+**Band 1 — the `<h1>` disappeared — FIXED (`46bd8e940f`).** The forged page used
+to contain zero `<h1>` elements: the hero's headline ("ECA Management for British
+School in Colombo") was captured as a grid item and rendered as `<h3>`, while the
+band title became `<h2>Parent ratings</h2>` — a label from the rating widget.
+Cause: `pickHeadingTitle()` let a widget label outrank the band's own `h1`, and
+the `feature-grid` kind won because the band had ≥2 items. An `h1` inside an item
+widget is now the band title (`slots.titleLevel`, `title-tag.ts` `allowH1`,
+`DesignRenderer` `pageHeading`), so the home owns exactly one `<h1>` again.
 
 **Band 6 — the posts widget.** Source renders the Elementor posts widget: one
 entry ("Hello world!", the WordPress placeholder) plus "Read more articles". The
@@ -54,10 +56,18 @@ forged band now drops the placeholder card (by design) and keeps the
 `News & Insights` card. The "Read more articles" button renders `href="#"` — the
 source link target did not survive classification.
 
-**Band 7 — the form.** Source is a real form (`Your Name / Your Email / Message /
-Send my message`). `https://eca.directory/wp-json/nvoos-forge/v1` returns 404 (no
-bridge), so the band degrades to the four contacts + `/help/`. Correct until a
-bridge exists.
+**Band 7 — the form — LIVE.** Source is a real Elementor Pro form
+(`Your Name / Your Email / Message / Send my message`, widget id `329253bd`, carrier
+post 2) posting `admin-ajax.php?action=elementor_pro_forms_send_form`. The forged
+page rebuilds the same three fields, the same `form`/`post_id` carriers and a
+`Send my message` button, and posts JSON to
+`https://eca.directory/wp-json/nvoos-forge/v1/forms/submit`; the bridge dispatches
+into Elementor's own handler, so validation, the submission record and the mail
+action all run natively. Verified end to end 2026-11-24 (`{"ok":true}` and a row in
+Elementor → Submissions).
+
+When no bridge is configured the band still degrades honestly to the four
+`eca.contacts` addresses + `/help/` — never a form that cannot post.
 
 **Band 2 — static where the product wants data.** "Explore Our Activities" is
 copy in `4c649f2e`, and the ECA catalogue is a separate route (`/activities/`).
@@ -109,12 +119,12 @@ minutes`, `50% less / Routine ECA admin emails`, `1 Term / Pilot implementation`
 | # | Elementor id | Source format | Forged kind | Chars src → forged | Status | Class |
 |---|---|---|---|---|---|---|
 | 1 | `6f0d483` | icon-list (breadcrumb only) | `text` | 4 → 0 | empty in source too | `freeze` |
-| 2 | `9c2d1fa` | **form** (First/Last/Email/Message), heading | `form` | 74 → 2,081 | **replaced** | `form` |
+| 2 | `9c2d1fa` | **form** (First/Last/Email/Message), heading | `form` | 74 → 2,081 | **live 2026-11-24** | `form` |
 | 3 | `2f396e7` | heading, **accordion** (FAQ) | `accordion` | 786 → 709 | parity | `cms` |
 
-Band 2 degrades to the same four contacts as the home band — honest while no
-bridge exists, but it means **there is currently no enquiry form anywhere on the
-site**. That is the one connection that must be restored before launch.
+Band 2 posts through the same bridge as the home band — this is the enquiry path
+that must survive the design detach, and it now does. It degrades to the four
+`eca.contacts` addresses (never a dead form) when the bridge is unconfigured.
 
 Band 3 is the only real accordion on the site and it rebuilds cleanly — good
 evidence the FAQ copy can stay `cms`.
@@ -128,7 +138,7 @@ evidence the FAQ copy can stay `cms`.
 | `nvoos-eca/v1` record (105 records) | `wp/v2/mcp_ai_eca` → `lib/eca.ts` | `/activities/`, `/day/*`, `/stage/*`, `/category/*`, `/type/*`, `/calendar/`, `/timetable/*`, `.ics` | none on the three mapped pages — **catalogue lives in its own routes** |
 | Page body (`content.rendered`, Elementor) | `wp/v2/pages` → `sanitizeHtml` → `classifyBody` | `DesignRenderer` | every band above |
 | `manifest.contact` (`people[]`, `links[]`) | scaffold, derived from `eca.contacts` | degraded `form` bands, `#contact` block, `Organization.contactPoint` | home 7, contact 2 |
-| `manifest.forms` | profile `forms` + env | `Form` component when a bridge exists | home 7, contact 2 |
+| `manifest.forms` | profile `forms` + env | `Form` component (live bridge) | home 7, contact 2 |
 | `profile.design.sections[]` + `text.sections[]` | `analyze --design --text` | band audit (`verify`) | all 10 source bands, keyed by Elementor id |
 | `profile.pageBands` | `analyze --geometry` per page | sub-page band facts | about-us / contact-us (absent today → sub-pages reuse home surfaces) |
 | `wp/v2/posts` | loader | `/posts/`, home band 6 | home 6 |
@@ -157,16 +167,76 @@ intro copy in `3feed876`.
 the home; everything under `/activities/`.
 
 **Keep `form` (the connection the user wants to retain):** bands `71dbef2b` and
-`9c2d1fa`. Requires installing `nvoos-forge-bridge` on `eca.directory` (so
-`/wp-json/nvoos-forge/v1` stops returning 404) and setting `profile.forms`.
+`9c2d1fa`. **Done 2026-11-24** — `nvoos-forge-bridge` 0.3.3 is active on
+`eca.directory`, forms are enabled with the staging origin on the allowlist, and
+`profile.forms` (`{ "delivery": "bridge" }`) makes the manifest default the
+endpoint to `https://eca.directory/wp-json/nvoos-forge/v1`.
+
+**Cutover reminder.** The allowlist in Settings → Forge Bridge must gain the public
+origin on the day the domain moves; `apps/` submissions from an unlisted origin are
+rejected by design.
 
 ### Acceptance checks once the design is frozen
 
-1. Every forged page has exactly one `<h1>` (the source's band-1 headline). **Open.**
+1. Every forged page has exactly one `<h1>` (the source's band-1 headline). **Done** (`46bd8e940f`).
 2. The three counters print their `data-to-value` numbers with prefix/suffix. **Done.**
 3. 7 / 4 / 3 bands present with the same ids in the same order (`verify --minimal`
    now audits only `/`; the sub-pages need `pageBands` to be measured).
 4. The two enquiry bands submit to the bridge (and degrade loudly when it is
-   absent, as they do now).
+   absent, as they do now). **Done** — verified end to end 2026-11-24.
 5. No band's copy is silently re-derived from a page that is in maintenance mode —
    freeze from `text.sections`, which is captured copy.
+
+---
+
+## 6. The bridge defect this map surfaced (0.3.3, 2026-11-24)
+
+Wiring these two bands proved the form path end to end — and found a defect that
+would have made **every** Elementor form on **every** forged site answer
+`"Your submission failed because the form is invalid."` while recording nothing.
+
+### Symptom
+
+The bridge returned HTTP 200 with `{"ok":false,…}` for both bands. The source
+form submitted natively from a browser as the same post (`2`) with the same
+widget id (`329253bd`) and succeeded — anonymous or logged in. The payload shape
+was identical, so the fault had to be in the PHP context the bridge emulates.
+
+### Cause
+
+Elementor Pro gates every dispatch on its own action, not on a nonce:
+
+```php
+public static function is_form_submitted() {
+    // PHPCS - No nonce is required, all visitors may send the form.
+    return wp_doing_ajax() && isset( $_POST['action'] )
+        && 'elementor_pro_forms_send_form' === $_POST['action'];
+}
+```
+
+The bridge set `wp_doing_ajax()` true but sent
+`$_POST['action'] = 'elementor_pro_forms'` — the **nonce** action, which differs by
+`_send_form`. So `is_form_submitted()` was false on every submission.
+
+### Fix
+
+The request is now built by one documented, unit-tested method —
+`Forms::elementor_request()` — instead of five inline `$_POST` writes, so the
+contract cannot drift again. `test_elementor_request_carries_the_registered_ajax_action`
+asserts the exact action string.
+
+Same pass, defensive: `Forms::bracket_fields()` also rebuilds the nested
+`$_POST['form_fields']` map that PHP's own POST parsing would have produced from
+`form_fields[name]` keys, because a JSON/urlencoded payload never creates it and
+JetFormBuilder's request reads it. JetFormBuilder has **no** equivalent action
+guard (verified against `Jet_Form_Builder\Form_Handler::process_form()`).
+
+### What to check when a forged form dies
+
+1. `GET /wp-json/nvoos-forge/v1/health` → `formsEnabled` + `formsConfigured`.
+2. The submitting origin is in Settings → Forge Bridge → Static origins.
+3. `POST …/forms/submit` with the page's own body and an `Origin` header — a
+   `404 form_not_found` means neither handler resolved the identifier; a 200 with
+   `ok:false` means a native handler ran and rejected it (the class of bug above).
+4. Compare against the source: submit the real WP form and read the
+   `admin-ajax.php` response. If the source fails too, the site is the problem.

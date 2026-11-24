@@ -4,7 +4,7 @@ Tags: headless, rebuild, webhook, forms, redirects
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.3.2
+Stable tag: 0.3.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -88,6 +88,9 @@ The uncompiled source of this plugin lives in the public repository at https://g
 4. Optional revalidation for managed frontends — a revalidate endpoint and its write-only bearer token; the hop is disabled until both are saved.
 
 == Changelog ==
+
+= 0.3.3 =
+* Fix: every Elementor Pro form submission answered "Your submission failed because the form is invalid." and recorded nothing. The in-process ajax emulation sent `$_POST['action'] = 'elementor_pro_forms'` (the NONCE action), but `Ajax_Handler::is_form_submitted()` gates the dispatch on the action the handler is registered under — `elementor_pro_forms_send_form`. The request payload is now built by a single testable `elementor_request()` method so the contract cannot drift again.
 
 = 0.3.2 =
 * New: `GET /wp-json/nvoos-forge/v1/gate` — the front-end gate state (maintenance / coming soon) for the Astro Forge's page-session probe (Proposal 152). Detects WordPress core `.maintenance`, Elementor Maintenance Mode, and WP Maintenance Mode; `nvoos_forge_bridge_gate_state` lets any other gate plugin declare itself. Read-only: booleans, a mode keyword and a plugin slug.
