@@ -47,6 +47,8 @@ final class MediaWorkerCapabilityReportTest extends TestCase
             'chart_rendering' => true,
             'browser_automation' => true,
             'web_crawling' => true,
+            'social_accounts' => true,
+            'social_composition' => true,
             'social_publishing' => true,
         );
     }
@@ -186,7 +188,7 @@ final class MediaWorkerCapabilityReportTest extends TestCase
     public function test_the_domain_list_is_declared_data(): void
     {
         $this->assertSame(
-            array('documents', 'office', 'ocr', 'image', 'video', 'email', 'data', 'browser', 'crawl', 'social'),
+            array('documents', 'office', 'ocr', 'image', 'video', 'email', 'data', 'browser', 'crawl', 'social', 'social_publishing'),
             MediaWorkerCapabilityReport::knownDomains()
         );
     }

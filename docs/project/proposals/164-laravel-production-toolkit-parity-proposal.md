@@ -613,3 +613,142 @@ unreadable.
 `lib/core` 2,376 tests / 17,255 assertions; adapter 359 / 1,907; the app suite
 gains 25 tests in `ImageProductionToolsTest`; the worker suite gains 2 batch
 cases and 2 transform cases (`node --test`, run against the worker image).
+
+## 164.15 Addendum — social read-only capability and the approval registry (2026-11-24)
+
+This slice started as "port the read-only half of the social toolkit". It found a
+safety defect first, and the defect is the part worth recording.
+
+### The defect: four publishers declared themselves read-only
+
+`post_facebook_instagram`, `post_linkedin_update`, `post_tiktok_video` and
+`post_google_business_update` each call the platform's write API from
+`execute()`. Each declared:
+
+```php
+'read-only',            // Only reads data, does not modify state.
+'local-only',           // No external API calls.
+```
+
+Both comments are false. The consequence was not cosmetic:
+
+- `NecessityGate::isSafeTool()` returns true for any flag list containing
+  `read-only` and none of the dangerous ones, so `decide()` short-circuits to
+  `VERDICT_ALLOW` **before** classifying necessity. No approval, no warning.
+- MCP tool annotations are derived from the same flags, so every client was told
+  `readOnlyHint: true` — "safe to auto-call".
+
+`post_to_multiple_platforms` and `publish_to_social` were quieter and the same
+shape: `external-api` without a mutation flag derives `IRREVERSIBILITY_MODERATE`,
+which a helpful call treats as **WARN** — it runs.
+
+The flag blocks were copy-pasted from a read tool template. Nine declarations
+were corrected:
+
+| Tool | Was | Now adds |
+|---|---|---|
+| 4 × `post_*` posters | `read-only, local-only` | `social-media, external-api, external-communication, irreversible, state-changing, write` (removes `read-only`, `local-only`) |
+| `post_to_multiple_platforms` | `content-publishing, external-api` | `external-communication, irreversible, requires-capability, state-changing, write` |
+| `publish_to_social` | `database-write` | `external-communication, irreversible, state-changing, write` |
+| `generate_post_ideas`, `monitor_mentions_replies`, `social_listening_trends` | no `read-only` | `read-only` |
+
+`auto_respond_messages` and `moderate_comments` were **checked and left alone**:
+neither reaches a remote write API (no `wp_remote_post`), so `database-write` plus
+`external-api` is accurate and `WARN` is the right verdict for a queued draft.
+
+`SocialPublishingSafetyTest` pins the policy, not the file: it reads the generated
+catalogue and asks the gate. A future edit that re-adds `read-only` to a poster
+fails there rather than in production.
+
+### The second defect: the console printed the worker's answer under the host's label
+
+`DiagnosticsPage` rendered `Social → worker` whenever the worker declared
+`social_publishing`, which it does whenever a platform key is set. The runtime
+served **zero** social tools. An operator read "this host can publish".
+
+Two changes:
+
+- `social_publishing` is its own domain, separate from `social` (which now maps
+  to `social_accounts` + `social_composition`). Publishing is no longer
+  indistinguishable from composition.
+- `ToolCoverage` intersects the worker's matrix with the manifest's servable set
+  and adds two tiers: **`served`** (worker declares it *and* a tool reaches it)
+  and **`worker_only`** (worker declares it, nothing here does). The page now
+  reads `Social: served (1 tool)` and `Social publishing: worker available, no
+  tool here`.
+
+The domain→tool map is declared data, not a slug-prefix rule, because
+`send_group_email` is email, `generate_email_template` is a document, and
+`generate_music` is neither. Two domains map an **empty** list on purpose:
+`video` and `browser` are declared by the worker with no tool here driving them,
+which is the state an operator needs to see.
+
+### The read-only half
+
+`SocialComposerInterface` (`accounts()`, `compose()`) over
+`GET /api/social/accounts` and `POST /api/social/generate-content`.
+`MediaWorkerSocialComposer` implements it and asks the matrix per operation, so a
+worker older than the routes answers `social_unavailable` instead of a 404.
+
+Three tools, all read-only: `get_social_accounts`, `generate_social_captions`,
+`generate_post_ideas`. `social-media` parity moves **0 → 2 of 32** (plus one
+additive slug with no WordPress equivalent).
+
+Publishing is **not** in this contract. A `SocialPublisherInterface` will be its
+own contract, and it will be approval-gated in the registry rather than by
+convention in an adapter — which is now possible because the flags are honest.
+
+### Grounded in current guidance
+
+- **MCP tool annotations** reserve `destructiveHint: true` for "deletes,
+  overwrites, revocations, irreversible sends, financial actions". A social post
+  is an irreversible send, and a tool that publishes must not carry
+  `readOnlyHint: true`.
+- **Human-in-the-loop approval** is a pending ticket, a human decision, and a
+  single-use consume that fails closed — which is exactly what
+  `ApprovalTicketInterface` already specifies (bound to the payload hash,
+  single-use, expiring, fail-closed). The guard's message already tells the truth
+  when a ticket is pending rather than implying the action ran.
+- **OAuth scope separation** (`tweet.read` vs `tweet.write`,
+  `pages_read_engagement` vs `pages_manage_posts`) is the same principle one
+  layer down: the token that reads must not be able to publish. The capability
+  keys now mirror it — `social_accounts` and `social_composition` are separate
+  from `social_publishing`.
+
+### Deliberate deviations from WordPress
+
+- **`generate_social_captions` takes `topic`, not `post_id`.** This runtime has no
+  `wp_posts` to resolve.
+- **`generate_post_ideas` folds `industry`, `topics`, `target_audience` and
+  `content_types` into the single subject the composer accepts**, and echoes the
+  subject it sent. Dropping four of five inputs was the alternative; the caller
+  would have received ideas aimed at nobody and no way to tell.
+- **`pinterest`, `tiktok` and `youtube` are accepted for idea generation and
+  reported as non-composable.** An idea for Pinterest is still an idea; a
+  character limit for it does not exist here.
+- **The template fallback is surfaced as `prompts`, never as `posts`.** The
+  worker returns `prompt_templates` when no model key resolves. Rendering one as
+  a caption would be success reported for work not done.
+
+### What is still open
+
+- **`publish_to_social` port** — now a safe thing to build, because its flags
+  require approval. Next slice, with a test that a publish without a ticket is
+  refused and a second call with one succeeds exactly once.
+- **Scheduled publishing** (`schedule_social_post`, `bulk_schedule_posts`) —
+  marked `state-changing` + `write` + `reversible`, which derives `WARN`. A
+  schedule *becomes* an irreversible publish when it fires, so the worker's
+  scheduled-publish processor is where a second gate belongs.
+- The remaining 28 social slugs need provider read APIs (Meta Graph, LinkedIn,
+  TikTok, Google Business) that the worker does not proxy.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **269 rows / 250 servable / 0 violations** (was
+256 / 237). `bin/toolkit-parity.php`: **48 of 854** (was 46); `social-media` is
+**2 of 32** (was 0).
+
+`lib/core` 2,436 tests / 17,427 assertions (34 new: 26 policy, 8 coverage);
+adapter 359 / 1,910; the app suite gains 10 tests in `SocialComposerToolsTest`;
+the worker suite is unchanged at 4 social route tests, with `index.js` gaining
+two capability keys.

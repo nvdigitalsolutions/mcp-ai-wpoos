@@ -72,6 +72,7 @@ use Nvoos\Core\Domain\Service\Harness\OutputGuardrail;
 use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\SocialComposerInterface;
 use Nvoos\Core\Domain\Contract\TabularReaderInterface;
 use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
@@ -133,6 +134,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfMutator;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfOcr;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfTextExtractor;
+use Nvoos\Laravel\Adapter\MediaWorkerSocialComposer;
 use Nvoos\Laravel\Adapter\MediaWorkerTabularReader;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
@@ -205,6 +207,12 @@ class NvoosServiceProvider extends ServiceProvider {
 		// capability matrix, so a worker older than the route answers a named
 		// refusal instead of a 404 mid-run.
 		$this->app->bind( ImageProductionInterface::class, MediaWorkerImageProduction::class );
+
+		// Social read-only capability (Proposal 164 section 164.4.6). The worker
+		// lists channels and composes copy; publishing stays out of this contract
+		// because it is an irreversible send that belongs behind the necessity
+		// guard, not one method call away in an adapter.
+		$this->app->bind( SocialComposerInterface::class, MediaWorkerSocialComposer::class );
 
 		// Documents follow the same ladder (Proposal 164 §164.4.2): the worker
 		// renders with a real browser at `/api/pdf/generate`, so `html_to_pdf`

@@ -76,7 +76,12 @@ final class MediaWorkerCapabilityReport
         'data' => array('chart_rendering'),
         'browser' => array('browser_automation'),
         'crawl' => array('web_crawling'),
-        'social' => array('social_publishing'),
+        // Reading channels and composing copy is separate from publishing.
+        // Leaving one `social` domain mapped to `social_publishing` is what let
+        // the diagnostics page say "Social: worker" while the runtime served no
+        // social tool at all.
+        'social' => array('social_accounts', 'social_composition'),
+        'social_publishing' => array('social_publishing'),
     );
 
     /**
