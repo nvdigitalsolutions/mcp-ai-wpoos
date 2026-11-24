@@ -1912,6 +1912,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
+		'vision_object_localization' => array(
+			'class' => 'Nvoos\\Core\\Tool\\VisionObjectLocalizationDetectTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Calls Cloud Vision images:annotate with the gemini key, which only authorises it when the Vision API is enabled on the same Google Cloud project; a 403 is returned unchanged.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VisionObjectLocalizationToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'vision_object_localization_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\VisionObjectLocalizationTool',
 			'readiness' => 'quarantined',
