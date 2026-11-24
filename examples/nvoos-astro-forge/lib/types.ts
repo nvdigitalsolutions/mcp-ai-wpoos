@@ -1177,6 +1177,25 @@ export interface BandColumnFacts {
 }
 
 /**
+ * One ROW nested inside a band: a container that lays two or more lanes out
+ * side by side, with its own builder element id so the rebuild can address it.
+ *
+ * A band that stays RAW ships the source's markup but none of the builder's
+ * CSS, so every container stacked: eca.directory's team band rendered three
+ * 1180px cards down the page against the source's three ~318px cards across,
+ * and its copy column sat on top of them instead of beside (2026-11-24). The
+ * band's OWN row is covered by the column facts (`--ds-cols-template-desktop`);
+ * this fact covers the rows nested inside it, which nothing measures otherwise.
+ */
+export interface ForgeBandRowFact {
+	/** The container's `elementor-element-<id>` token — unique inside the band,
+	 * so the renderer can scope a rule to it. */
+	id: string;
+	/** The lane widths in DOM order (px) at the measured viewport. */
+	widths: number[];
+}
+
+/**
  * One PAGED carousel inside a band, measured per device
  * (`collectBandCarouselFacts`).
  *
@@ -1484,6 +1503,15 @@ export interface ForgeBandFacts {
 	 * the classes but the vendor sheet — and the inline min-height — is gone.
 	 */
 	columns?: BandColumnFacts;
+	/**
+	 * The rows NESTED inside the band (`collectBandLayoutFacts`).
+	 *
+	 * A raw band keeps the source's markup but none of the builder's CSS, so
+	 * every container stacked. The band's own row is the `columns` fact; this
+	 * covers the rows inside it — the 3-card team row, a phase row, a footer
+	 * mark row — so the rebuild can give each its own track sizes.
+	 */
+	rows?: ForgeBandRowFact[];
 	/**
 	 * The band's PAGED carousels per device (`collectBandCarouselFacts`): how
 	 * many slides the source shows at once and how it paginates them. The vendor

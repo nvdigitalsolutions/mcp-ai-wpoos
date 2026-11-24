@@ -2190,10 +2190,60 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		} );
 		entry.push( `columns: [${ columns.join( ', ' ) }]` );
 	}
+	// The rows NESTED inside the band (see `ForgeBandRowFact`). A raw band loses
+	// the builder's flex layout, so a 3-card team row stacked three full-width
+	// cards down the page; these widths give each row its tracks back.
+	const nestedRows = bandFacts?.rows;
+	if ( nestedRows && nestedRows.length > 0 ) {
+		entry.push(
+			`rows: [${ nestedRows
+				.map( ( row ) => `{ id: ${ tsString( row.id ) }, widths: [${ row.widths.join( ', ' ) }] }` )
+				.join( ', ' ) }]`
+		);
+	}
+	// WHERE the source stops splitting its own row.
+	//
+	// The measured lanes say it directly: at the device where their widths sum
+	// to more than the band's content column, they cannot be side by side, so
+	// the builder stacked them. eca.directory's team band is 286 / 954 on a
+	// desktop and 774 / 774 at 834px — two full-width lanes — while the rebuild
+	// kept a 179px copy column beside 595px of cards (2026-11-24).
+	const laneStacksAt = ( device: 'tablet' | 'mobile' ): boolean => {
+		const lanes = bandFacts?.columns?.[ device ] ?? [];
+		if ( lanes.length < 2 ) {
+			return false;
+		}
+		const total = lanes.reduce( ( sum, lane ) => sum + ( lane.width ?? 0 ), 0 );
+		const availableText =
+			typeof container.measure === 'string' ? container.measure : container.measure?.[ device ];
+		const available = availableText ? Number.parseFloat( availableText ) : NaN;
+		return Number.isFinite( available ) && available > 0 && total > available * 1.05;
+	};
+	if ( laneStacksAt( 'tablet' ) ) {
+		entry.push( `stackAt: 'tablet'` );
+	} else if ( laneStacksAt( 'mobile' ) ) {
+		entry.push( `stackAt: 'mobile'` );
+	}
 	// The split-hero + collage facts (125 §1) — layout, divider, heading
 	// type, backdrop shape, per-photo offsets, body columns.
 	if ( section.layout ) {
 		entry.push( `layout: ${ tsString( section.layout ) }` );
+	}
+	// The page HERO, derived from MEASURED facts rather than markup: the band
+	// that owns the h1 and splits into a copy column beside a media column.
+	//
+	// A builder paints the hero's photo as a `background-image` on a spacer
+	// div, so the semantic pass (which reads `<img src>`) sees an empty media
+	// slot and the band falls back to its kind's own component — eca.directory's
+	// hero rebuilt as an icon-list with no picture at all (2026-11-24). The
+	// measured columns carry the truth: which side is the media, and how wide
+	// each side is. The h1 gate is what keeps a two-column TEAM band (h2, three
+	// avatars in its wide lane) from becoming a hero collage.
+	if ( ! section.layout && ! section.bgImage && bandFacts?.headings?.h1 ) {
+		const lanes = bandFacts?.columns?.desktop ?? [];
+		if ( lanes.length === 2 && lanes.some( ( lane ) => lane.image ) ) {
+			entry.push( `layout: 'split'` );
+		}
 	}
 	if ( section.titleDivider ) {
 		const divider = section.titleDivider;
@@ -2511,6 +2561,16 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t\t/** The ink that lane\u2019s own surface needs (`inkForSurface`). */',
 		'\t\tink?: string;',
 		'\t}>;',
+		'\t/** The rows NESTED inside the band (`ForgeBandRowFact`): a container',
+		'\t * that lays two or more lanes out side by side, with the lane widths the',
+		'\t * source rendered. A raw band keeps the markup but never the vendor\u2019s',
+		'\t * flex CSS, so without these every nested row stacked. */',
+		'\trows?: Array<{ id: string; widths: number[] }>;',
+		'\t/** The breakpoint at which the SOURCE stops laying its own lanes side',
+		'\t * by side (`analyze --geometry`, measured): the rebuild stacks there',
+		'\t * instead of squeezing a copy column. Absent → the template\u2019s mobile',
+		'\t * breakpoint, which is where almost every builder stacks. */',
+		'\tstackAt?: \'tablet\' | \'mobile\';',
 		'\t/** The content rhythm (125 §1) — \'split\' = a copy column beside a',
 		'\t * media collage column (the source\'s two-column hero bands). */',
 		"\tlayout?: 'split';",

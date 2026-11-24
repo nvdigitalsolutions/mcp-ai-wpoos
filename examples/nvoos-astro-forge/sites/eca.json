@@ -122,7 +122,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://eca.directory",
-			"analyzedAt": "2026-11-24T08:48:20.702Z"
+			"analyzedAt": "2026-11-24T11:48:12.101Z"
 		},
 		"concept": "cool accent over light neutrals, epilogue display / inter body, compact spacing rhythm.",
 		"palette": {
@@ -641,7 +641,7 @@
 			"tablet_extra__width-initial"
 		],
 		"unknownBlocks": [],
-		"analyzedAt": "2026-11-24T08:48:51.690Z"
+		"analyzedAt": "2026-11-24T11:48:28.433Z"
 	},
 	"inventory": {
 		"shape": "multi-page",
@@ -801,7 +801,7 @@
 			"/{{ url }}/"
 		],
 		"danglingAnchors": [],
-		"analyzedAt": "2026-11-24T08:48:44.941Z"
+		"analyzedAt": "2026-11-24T11:48:21.767Z"
 	},
 	"geometry": {
 		"3589820": {
@@ -1322,6 +1322,16 @@
 				"marginBottom": "0px"
 			},
 			"titleText": "Meet the Project Team",
+			"rows": [
+				{
+					"id": "15b2f52a",
+					"widths": [
+						291,
+						291,
+						291
+					]
+				}
+			],
 			"box": {
 				"e-con-inner": {
 					"base": "padding:60px 0px 60px 0px;margin:0px 50px 0px 50px",
@@ -1758,6 +1768,15 @@
 				"marginBottom": "0px"
 			},
 			"titleText": "ECA Management for British School in Colombo",
+			"rows": [
+				{
+					"id": "1287d836",
+					"widths": [
+						285,
+						285
+					]
+				}
+			],
 			"box": {
 				"e-con-inner": {
 					"base": "padding:60px 0px 0px 0px;margin:0px 50px 0px 50px",
@@ -2507,6 +2526,22 @@
 				"text": "Our benefits",
 				"level": 2
 			},
+			"rows": [
+				{
+					"id": "64088279",
+					"widths": [
+						285,
+						285
+					]
+				},
+				{
+					"id": "db811cd",
+					"widths": [
+						285,
+						285
+					]
+				}
+			],
 			"box": {
 				"e-con-inner": {
 					"base": "padding:60px 0px 0px 0px;margin:0px 50px 0px 50px",
@@ -2981,6 +3016,60 @@
 				"text": "Phased Delivery",
 				"level": 2
 			},
+			"rows": [
+				{
+					"id": "5f76ef4d",
+					"widths": [
+						1200,
+						1200
+					]
+				},
+				{
+					"id": "28935d46",
+					"widths": [
+						300,
+						300,
+						300,
+						299
+					]
+				},
+				{
+					"id": "24402dbd",
+					"widths": [
+						300,
+						300,
+						300,
+						299
+					]
+				},
+				{
+					"id": "27f7821c",
+					"widths": [
+						300,
+						300,
+						300,
+						299
+					]
+				},
+				{
+					"id": "4221f992",
+					"widths": [
+						300,
+						300,
+						300,
+						299
+					]
+				},
+				{
+					"id": "17174359",
+					"widths": [
+						300,
+						300,
+						300,
+						299
+					]
+				}
+			],
 			"box": {
 				"elementor-element-1579a8a4": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -3734,6 +3823,15 @@
 				"text": "Our Updates",
 				"level": 2
 			},
+			"rows": [
+				{
+					"id": "516cf9da",
+					"widths": [
+						620,
+						620
+					]
+				}
+			],
 			"box": {
 				"e-con-inner": {
 					"base": "padding:60px 0px 60px 0px;margin:0px 50px 0px 50px",
@@ -4461,7 +4559,7 @@
 		"sticky": false
 	},
 	"text": {
-		"capturedAt": "2026-11-24T08:57:19.832Z",
+		"capturedAt": "2026-11-24T11:56:44.069Z",
 		"url": "https://eca.directory",
 		"page": "skip to content home about us contact us try demo sign in eca management for british school in colombo real-time enrolment, instant parent updates, and role-based dashboards - purpose-built for bsc. request a demo parent ratings \"live waitlists and instant alerts have made eca days calmer for families.\" - eca coordinator 4.8 ratings +1k students +9 satisfied teachers courses list explore our activities browse a few of the most in-demand activities, updated in real time with capacity and waitlist info. see what students are joining this term - from sports and stem to arts and service. our platform makes it easy to explore ecas by category, day, or year group. view all activities our benefits why choose the bsc eca platform smarter enrolment, instant updates, and less admin - built to make extracurriculars stress-free for everyone. live eca catalogue browse by day, category, or year group - always up to date. instant notifications parents and students get sms/email alerts for last-minute changes. role-based dashboards clear views for students, parents, teachers, and coordinators. ai assistant answers common questions 24/7, guided by bsc policies. phased delivery operating model & implementation plan digital transformation in co-curricular management is accelerating; a bsc pilot positions the school as a local leader while directly improving family experience. phase 1 pilot setup weeks 1-6 branding & sso setup import student/parent data enrolment & waitlists staff training & go-live pilot demo phase 2 automation & ai weeks 7-10 ai assistant attendance exports mis/finance integrations analytics dashboards discuss integrations phase 3 optimization ongoing feature tweaks from feedback language packs extra integrations continuous support view roadmap compare user roles student parent teacher live eca catalogue enrolment & allocation instant notifications dashboards meet the project team our coordinators, teachers, and support staff working together to make the eca platform a success. contact the team lauren martinez python tutor aliquip eiusmod in voluptate do quis ipsum dolor facebook twitter youtube linkedin emma gonzalez cooking tutor veniam labore esse proident anim exercitation in facebook twitter youtube linkedin christopher brown meditation tutor incididunt mollit dolor enim nisi proident et amet facebook twitter youtube linkedin our updates news & insights follow along as we roll out live enrolment, real-time alerts, and new features at bsc. read more articles hello world! august 4, 2025 1 comment read more » questions? get a quick reply by sending your message your name your email message send my message related content saturday friday thursday wednesday eca directory about us who we are our mission team contact us navigation courses categories blog privacy policy resources faq help terms of use testimonials ©2026 eca directory by krish samtani facebook twitter youtube linkedin ✕",
 		"sections": [
@@ -5083,8 +5181,8 @@
 	"pageBands": {
 		"saturday": {
 			"url": "https://eca.directory/saturday/",
-			"measuredAt": "2026-11-24T08:51:21.769Z",
-			"sourceHash": "b8d9e5972018de96",
+			"measuredAt": "2026-11-24T11:50:57.672Z",
+			"sourceHash": "a80bf4d37368667a",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -5242,7 +5340,7 @@
 						"jet-listing-dynamic-post-10928": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045659251378587": {
+						"elementor-dcss-6056435966720294": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor": {
@@ -5324,7 +5422,7 @@
 						"jet-listing-dynamic-post-10927": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045659378346619": {
+						"elementor-dcss-6056436030509024": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor-element-fabbb53": {
@@ -5623,8 +5721,8 @@
 						"elementor-button-icon",
 						"elementor-button-link",
 						"elementor-button-text",
-						"elementor-dcss-6045659251378587",
-						"elementor-dcss-6045659378346619",
+						"elementor-dcss-6056435966720294",
+						"elementor-dcss-6056436030509024",
 						"elementor-divider",
 						"elementor-divider-separator",
 						"elementor-element",
@@ -5748,8 +5846,8 @@
 		},
 		"friday": {
 			"url": "https://eca.directory/friday/",
-			"measuredAt": "2026-11-24T08:51:59.810Z",
-			"sourceHash": "50d49a16607af656",
+			"measuredAt": "2026-11-24T11:51:38.092Z",
+			"sourceHash": "1fa76fe0d5d85e5b",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -5908,7 +6006,7 @@
 						"jet-listing-dynamic-post-11112": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698380726023": {
+						"elementor-dcss-6056477076019593": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor": {
@@ -5990,55 +6088,55 @@
 						"jet-listing-dynamic-post-11107": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698450306200": {
+						"elementor-dcss-6056477152273103": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11106": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698482587485": {
+						"elementor-dcss-6056477192498975": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11103": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698517251746": {
+						"elementor-dcss-6056477222513452": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10896": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698548353097": {
+						"elementor-dcss-6056477251342461": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10895": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698581410553": {
+						"elementor-dcss-6056477279837039": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10875": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698613590570": {
+						"elementor-dcss-6056477310678374": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10872": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698644884946": {
+						"elementor-dcss-6056477344510651": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10866": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698679488814": {
+						"elementor-dcss-6056477377967155": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10863": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045698712591366": {
+						"elementor-dcss-6056477409499475": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor-element-7f20b7a": {
@@ -6337,16 +6435,16 @@
 						"elementor-button-icon",
 						"elementor-button-link",
 						"elementor-button-text",
-						"elementor-dcss-6045698380726023",
-						"elementor-dcss-6045698450306200",
-						"elementor-dcss-6045698482587485",
-						"elementor-dcss-6045698517251746",
-						"elementor-dcss-6045698548353097",
-						"elementor-dcss-6045698581410553",
-						"elementor-dcss-6045698613590570",
-						"elementor-dcss-6045698644884946",
-						"elementor-dcss-6045698679488814",
-						"elementor-dcss-6045698712591366",
+						"elementor-dcss-6056477076019593",
+						"elementor-dcss-6056477152273103",
+						"elementor-dcss-6056477192498975",
+						"elementor-dcss-6056477222513452",
+						"elementor-dcss-6056477251342461",
+						"elementor-dcss-6056477279837039",
+						"elementor-dcss-6056477310678374",
+						"elementor-dcss-6056477344510651",
+						"elementor-dcss-6056477377967155",
+						"elementor-dcss-6056477409499475",
 						"elementor-divider",
 						"elementor-divider-separator",
 						"elementor-element",
@@ -6478,8 +6576,8 @@
 		},
 		"thursday": {
 			"url": "https://eca.directory/thursday/",
-			"measuredAt": "2026-11-24T08:52:46.461Z",
-			"sourceHash": "3e420766812028db",
+			"measuredAt": "2026-11-24T11:52:19.274Z",
+			"sourceHash": "f1f7598f5eca079c",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -6638,7 +6736,7 @@
 						"jet-listing-dynamic-post-11154": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741659950399": {
+						"elementor-dcss-6056514040509638": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor": {
@@ -6720,55 +6818,55 @@
 						"jet-listing-dynamic-post-11148": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741722450786": {
+						"elementor-dcss-6056514117337379": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11113": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741752175410": {
+						"elementor-dcss-6056514147442303": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11108": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741780782298": {
+						"elementor-dcss-6056514177615219": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11104": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741809757571": {
+						"elementor-dcss-6056514209969609": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10894": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741839965783": {
+						"elementor-dcss-6056514243195130": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10885": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741870176255": {
+						"elementor-dcss-6056514291143817": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10882": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741899447969": {
+						"elementor-dcss-6056514330538660": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10877": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741928954888": {
+						"elementor-dcss-6056514360200329": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10874": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045741958549708": {
+						"elementor-dcss-6056514392613593": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor-element-f5e2b5f": {
@@ -7067,16 +7165,16 @@
 						"elementor-button-icon",
 						"elementor-button-link",
 						"elementor-button-text",
-						"elementor-dcss-6045741659950399",
-						"elementor-dcss-6045741722450786",
-						"elementor-dcss-6045741752175410",
-						"elementor-dcss-6045741780782298",
-						"elementor-dcss-6045741809757571",
-						"elementor-dcss-6045741839965783",
-						"elementor-dcss-6045741870176255",
-						"elementor-dcss-6045741899447969",
-						"elementor-dcss-6045741928954888",
-						"elementor-dcss-6045741958549708",
+						"elementor-dcss-6056514040509638",
+						"elementor-dcss-6056514117337379",
+						"elementor-dcss-6056514147442303",
+						"elementor-dcss-6056514177615219",
+						"elementor-dcss-6056514209969609",
+						"elementor-dcss-6056514243195130",
+						"elementor-dcss-6056514291143817",
+						"elementor-dcss-6056514330538660",
+						"elementor-dcss-6056514360200329",
+						"elementor-dcss-6056514392613593",
 						"elementor-divider",
 						"elementor-divider-separator",
 						"elementor-element",
@@ -7208,8 +7306,8 @@
 		},
 		"wednesday": {
 			"url": "https://eca.directory/wednesday/",
-			"measuredAt": "2026-11-24T08:53:28.424Z",
-			"sourceHash": "a7e300f7cbca87ac",
+			"measuredAt": "2026-11-24T11:53:02.381Z",
+			"sourceHash": "801f29d584b6851f",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -7368,7 +7466,7 @@
 						"jet-listing-dynamic-post-11182": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045784805522952": {
+						"elementor-dcss-6056557827398644": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor": {
@@ -7450,55 +7548,55 @@
 						"jet-listing-dynamic-post-11181": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045784889450839": {
+						"elementor-dcss-6056557892544293": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11116": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045784921998131": {
+						"elementor-dcss-6056557924500347": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11115": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045784964973558": {
+						"elementor-dcss-6056557984690329": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11105": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045785020066558": {
+						"elementor-dcss-6056558019433130": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10892": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045785066002971": {
+						"elementor-dcss-6056558055143822": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10868": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045785101407207": {
+						"elementor-dcss-6056558089306116": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10867": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045785134067141": {
+						"elementor-dcss-6056558121901674": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10861": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045785166056967": {
+						"elementor-dcss-6056558160940993": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10859": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045785198286819": {
+						"elementor-dcss-6056558196897728": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor-element-57f3ded": {
@@ -7797,16 +7895,16 @@
 						"elementor-button-icon",
 						"elementor-button-link",
 						"elementor-button-text",
-						"elementor-dcss-6045784805522952",
-						"elementor-dcss-6045784889450839",
-						"elementor-dcss-6045784921998131",
-						"elementor-dcss-6045784964973558",
-						"elementor-dcss-6045785020066558",
-						"elementor-dcss-6045785066002971",
-						"elementor-dcss-6045785101407207",
-						"elementor-dcss-6045785134067141",
-						"elementor-dcss-6045785166056967",
-						"elementor-dcss-6045785198286819",
+						"elementor-dcss-6056557827398644",
+						"elementor-dcss-6056557892544293",
+						"elementor-dcss-6056557924500347",
+						"elementor-dcss-6056557984690329",
+						"elementor-dcss-6056558019433130",
+						"elementor-dcss-6056558055143822",
+						"elementor-dcss-6056558089306116",
+						"elementor-dcss-6056558121901674",
+						"elementor-dcss-6056558160940993",
+						"elementor-dcss-6056558196897728",
 						"elementor-divider",
 						"elementor-divider-separator",
 						"elementor-element",
@@ -7938,8 +8036,8 @@
 		},
 		"tuesday": {
 			"url": "https://eca.directory/tuesday/",
-			"measuredAt": "2026-11-24T08:54:22.713Z",
-			"sourceHash": "dbf30fd9721b8ff0",
+			"measuredAt": "2026-11-24T11:53:57.264Z",
+			"sourceHash": "969123c0b33ac4a1",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -8098,7 +8196,7 @@
 						"jet-listing-dynamic-post-11183": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830385844291": {
+						"elementor-dcss-6056605370677560": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor": {
@@ -8180,181 +8278,181 @@
 						"jet-listing-dynamic-post-11151": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830514892766": {
+						"elementor-dcss-6056605444060185": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11150": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830573581146": {
+						"elementor-dcss-6056605477272491": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11149": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830632931034": {
+						"elementor-dcss-6056605516471682": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11145": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830691796477": {
+						"elementor-dcss-6056605551071334": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11117": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830751249018": {
+						"elementor-dcss-6056605583413159": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11114": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830808419071": {
+						"elementor-dcss-6056605619391815": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11111": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830865852226": {
+						"elementor-dcss-6056605651794226": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11110": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830921810331": {
+						"elementor-dcss-6056605682415779": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11109": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045830975306994": {
+						"elementor-dcss-6056605713992938": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10888": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831009415411": {
+						"elementor-dcss-6056605745033331": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10878": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831068435250": {
+						"elementor-dcss-6056605775628048": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10856": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831125989900": {
+						"elementor-dcss-6056605805108267": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10850": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831181844244": {
+						"elementor-dcss-6056605834756714": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10848": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831219966751": {
+						"elementor-dcss-6056605863619267": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10846": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831256654385": {
+						"elementor-dcss-6056605892465438": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10844": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831292304253": {
+						"elementor-dcss-6056605922041765": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10841": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831341791981": {
+						"elementor-dcss-6056605952096720": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10840": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831400836540": {
+						"elementor-dcss-6056605983165027": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10837": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831449464214": {
+						"elementor-dcss-6056606013281907": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10826": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831491692675": {
+						"elementor-dcss-6056606043343050": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10825": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831527712709": {
+						"elementor-dcss-6056606072645665": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10824": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831562065432": {
+						"elementor-dcss-6056606102992270": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10815": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831602524438": {
+						"elementor-dcss-6056606133113861": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10814": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831638818210": {
+						"elementor-dcss-6056606163782579": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10800": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831687168806": {
+						"elementor-dcss-6056606194559629": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10796": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831733522548": {
+						"elementor-dcss-6056606223822768": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10795": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831768615624": {
+						"elementor-dcss-6056606253740291": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10794": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831803341949": {
+						"elementor-dcss-6056606283389118": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10791": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831843582668": {
+						"elementor-dcss-6056606312166716": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10788": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045831887446173": {
+						"elementor-dcss-6056606343414386": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor-element-978f65f": {
@@ -8653,37 +8751,37 @@
 						"elementor-button-icon",
 						"elementor-button-link",
 						"elementor-button-text",
-						"elementor-dcss-6045830385844291",
-						"elementor-dcss-6045830514892766",
-						"elementor-dcss-6045830573581146",
-						"elementor-dcss-6045830632931034",
-						"elementor-dcss-6045830691796477",
-						"elementor-dcss-6045830751249018",
-						"elementor-dcss-6045830808419071",
-						"elementor-dcss-6045830865852226",
-						"elementor-dcss-6045830921810331",
-						"elementor-dcss-6045830975306994",
-						"elementor-dcss-6045831009415411",
-						"elementor-dcss-6045831068435250",
-						"elementor-dcss-6045831125989900",
-						"elementor-dcss-6045831181844244",
-						"elementor-dcss-6045831219966751",
-						"elementor-dcss-6045831256654385",
-						"elementor-dcss-6045831292304253",
-						"elementor-dcss-6045831341791981",
-						"elementor-dcss-6045831400836540",
-						"elementor-dcss-6045831449464214",
-						"elementor-dcss-6045831491692675",
-						"elementor-dcss-6045831527712709",
-						"elementor-dcss-6045831562065432",
-						"elementor-dcss-6045831602524438",
-						"elementor-dcss-6045831638818210",
-						"elementor-dcss-6045831687168806",
-						"elementor-dcss-6045831733522548",
-						"elementor-dcss-6045831768615624",
-						"elementor-dcss-6045831803341949",
-						"elementor-dcss-6045831843582668",
-						"elementor-dcss-6045831887446173",
+						"elementor-dcss-6056605370677560",
+						"elementor-dcss-6056605444060185",
+						"elementor-dcss-6056605477272491",
+						"elementor-dcss-6056605516471682",
+						"elementor-dcss-6056605551071334",
+						"elementor-dcss-6056605583413159",
+						"elementor-dcss-6056605619391815",
+						"elementor-dcss-6056605651794226",
+						"elementor-dcss-6056605682415779",
+						"elementor-dcss-6056605713992938",
+						"elementor-dcss-6056605745033331",
+						"elementor-dcss-6056605775628048",
+						"elementor-dcss-6056605805108267",
+						"elementor-dcss-6056605834756714",
+						"elementor-dcss-6056605863619267",
+						"elementor-dcss-6056605892465438",
+						"elementor-dcss-6056605922041765",
+						"elementor-dcss-6056605952096720",
+						"elementor-dcss-6056605983165027",
+						"elementor-dcss-6056606013281907",
+						"elementor-dcss-6056606043343050",
+						"elementor-dcss-6056606072645665",
+						"elementor-dcss-6056606102992270",
+						"elementor-dcss-6056606133113861",
+						"elementor-dcss-6056606163782579",
+						"elementor-dcss-6056606194559629",
+						"elementor-dcss-6056606223822768",
+						"elementor-dcss-6056606253740291",
+						"elementor-dcss-6056606283389118",
+						"elementor-dcss-6056606312166716",
+						"elementor-dcss-6056606343414386",
 						"elementor-divider",
 						"elementor-divider-separator",
 						"elementor-element",
@@ -8836,8 +8934,8 @@
 		},
 		"eca-days": {
 			"url": "https://eca.directory/eca-days/",
-			"measuredAt": "2026-11-24T08:55:06.127Z",
-			"sourceHash": "5a7dcbf1ea76dbf0",
+			"measuredAt": "2026-11-24T11:54:42.916Z",
+			"sourceHash": "ca854b054247b7e7",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -8996,7 +9094,7 @@
 						"jet-listing-dynamic-post-11152": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045881833399926": {
+						"elementor-dcss-6056658220640813": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor": {
@@ -9078,79 +9176,79 @@
 						"jet-listing-dynamic-post-11147": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045881918594240": {
+						"elementor-dcss-6056658337855848": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11146": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045881954448578": {
+						"elementor-dcss-6056658396507687": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11144": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045881992211976": {
+						"elementor-dcss-6056658452873627": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10870": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882027390837": {
+						"elementor-dcss-6056658507594428": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10858": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882061805608": {
+						"elementor-dcss-6056658544390916": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10855": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882093553796": {
+						"elementor-dcss-6056658575531869": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10853": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882125943239": {
+						"elementor-dcss-6056658605916894": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10847": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882156251914": {
+						"elementor-dcss-6056658636312728": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10820": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882186992267": {
+						"elementor-dcss-6056658666467587": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10797": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882219459194": {
+						"elementor-dcss-6056658698840841": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10793": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882251700997": {
+						"elementor-dcss-6056658730432702": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10792": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882283929160": {
+						"elementor-dcss-6056658763636634": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10784": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045882317235856": {
+						"elementor-dcss-6056658796543364": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor-element-b7f0d72": {
@@ -9449,20 +9547,20 @@
 						"elementor-button-icon",
 						"elementor-button-link",
 						"elementor-button-text",
-						"elementor-dcss-6045881833399926",
-						"elementor-dcss-6045881918594240",
-						"elementor-dcss-6045881954448578",
-						"elementor-dcss-6045881992211976",
-						"elementor-dcss-6045882027390837",
-						"elementor-dcss-6045882061805608",
-						"elementor-dcss-6045882093553796",
-						"elementor-dcss-6045882125943239",
-						"elementor-dcss-6045882156251914",
-						"elementor-dcss-6045882186992267",
-						"elementor-dcss-6045882219459194",
-						"elementor-dcss-6045882251700997",
-						"elementor-dcss-6045882283929160",
-						"elementor-dcss-6045882317235856",
+						"elementor-dcss-6056658220640813",
+						"elementor-dcss-6056658337855848",
+						"elementor-dcss-6056658396507687",
+						"elementor-dcss-6056658452873627",
+						"elementor-dcss-6056658507594428",
+						"elementor-dcss-6056658544390916",
+						"elementor-dcss-6056658575531869",
+						"elementor-dcss-6056658605916894",
+						"elementor-dcss-6056658636312728",
+						"elementor-dcss-6056658666467587",
+						"elementor-dcss-6056658698840841",
+						"elementor-dcss-6056658730432702",
+						"elementor-dcss-6056658763636634",
+						"elementor-dcss-6056658796543364",
 						"elementor-divider",
 						"elementor-divider-separator",
 						"elementor-element",
@@ -9598,8 +9696,8 @@
 		},
 		"junior-school-list": {
 			"url": "https://eca.directory/junior-school-list/",
-			"measuredAt": "2026-11-24T08:57:19.810Z",
-			"sourceHash": "7bbcfe2d662b91e0",
+			"measuredAt": "2026-11-24T11:56:44.043Z",
+			"sourceHash": "c351109bf2fff0f9",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -10547,7 +10645,7 @@
 						"jet-listing-dynamic-post-11183": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966197845726": {
+						"elementor-dcss-6056744383495561": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor": {
@@ -10639,625 +10737,625 @@
 						"jet-listing-dynamic-post-11182": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966290950719": {
+						"elementor-dcss-6056744474580318": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11181": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966325682298": {
+						"elementor-dcss-6056744513041746": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11155": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966366885320": {
+						"elementor-dcss-6056744548003662": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11154": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966410513256": {
+						"elementor-dcss-6056744586461446": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11153": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966453927985": {
+						"elementor-dcss-6056744626255970": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11152": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966490664724": {
+						"elementor-dcss-6056744662430682": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11151": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966530087093": {
+						"elementor-dcss-6056744699065282": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11150": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966569506634": {
+						"elementor-dcss-6056744738415067": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11149": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966608905337": {
+						"elementor-dcss-6056744781073574": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11148": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966648639717": {
+						"elementor-dcss-6056744828152321": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11147": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966688123646": {
+						"elementor-dcss-6056744880272386": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11146": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966725487672": {
+						"elementor-dcss-6056744922687422": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11145": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966764136853": {
+						"elementor-dcss-6056744967334225": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11144": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966803737091": {
+						"elementor-dcss-6056745021021833": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11117": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966852768409": {
+						"elementor-dcss-6056745056839347": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11116": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966913732824": {
+						"elementor-dcss-6056745091398193": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11115": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045966952341373": {
+						"elementor-dcss-6056745136861449": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11114": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967012396660": {
+						"elementor-dcss-6056745192238799": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11113": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967064197223": {
+						"elementor-dcss-6056745254978272": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11112": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967115971612": {
+						"elementor-dcss-6056745310447300": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11111": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967177982210": {
+						"elementor-dcss-6056745349800547": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11110": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967240436777": {
+						"elementor-dcss-6056745383530053": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11109": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967285057071": {
+						"elementor-dcss-6056745419566534": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11108": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967331603527": {
+						"elementor-dcss-6056745455568162": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11107": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967394626666": {
+						"elementor-dcss-6056745490873393": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11104": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967483151379": {
+						"elementor-dcss-6056745527032558": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11106": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967577656592": {
+						"elementor-dcss-6056745562270864": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11105": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967639976913": {
+						"elementor-dcss-6056745596611186": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-11103": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967688594672": {
+						"elementor-dcss-6056745631473340": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10929": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967736575511": {
+						"elementor-dcss-6056745667828671": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10928": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967790130204": {
+						"elementor-dcss-6056745704899546": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10927": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967837371144": {
+						"elementor-dcss-6056745741840138": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10896": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967872853689": {
+						"elementor-dcss-6056745778400446": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10895": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967907664146": {
+						"elementor-dcss-6056745812634402": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10894": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967943257954": {
+						"elementor-dcss-6056745846593822": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10892": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045967977371891": {
+						"elementor-dcss-6056745880659940": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10888": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968013309096": {
+						"elementor-dcss-6056745913547512": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10885": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968068195485": {
+						"elementor-dcss-6056745946295080": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10882": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968114473670": {
+						"elementor-dcss-6056745979213144": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10878": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968148035026": {
+						"elementor-dcss-6056746011782910": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10877": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968181167614": {
+						"elementor-dcss-6056746043509789": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10875": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968225562705": {
+						"elementor-dcss-6056746077585538": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10874": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968262452019": {
+						"elementor-dcss-6056746111051936": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10873": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968309895285": {
+						"elementor-dcss-6056746141890432": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10872": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968357998239": {
+						"elementor-dcss-6056746173719410": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10871": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968402239488": {
+						"elementor-dcss-6056746207251182": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10870": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968439793564": {
+						"elementor-dcss-6056746240317598": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10868": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968473979095": {
+						"elementor-dcss-6056746273332592": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10867": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968509120399": {
+						"elementor-dcss-6056746307930637": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10866": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968555320910": {
+						"elementor-dcss-6056746339277086": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10864": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968592389610": {
+						"elementor-dcss-6056746371079397": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10863": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968632647269": {
+						"elementor-dcss-6056746409217458": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10862": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968670964638": {
+						"elementor-dcss-6056746446828452": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10861": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968712912528": {
+						"elementor-dcss-6056746483686560": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10860": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968773390719": {
+						"elementor-dcss-6056746519852379": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10859": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968832041304": {
+						"elementor-dcss-6056746552319093": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10858": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968891910478": {
+						"elementor-dcss-6056746584526393": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10857": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968937896870": {
+						"elementor-dcss-6056746619026126": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10856": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045968974653807": {
+						"elementor-dcss-6056746653599398": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10855": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969011448722": {
+						"elementor-dcss-6056746688577665": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10854": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969046478062": {
+						"elementor-dcss-6056746724187839": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10853": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969080984607": {
+						"elementor-dcss-6056746757575381": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10852": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969115678865": {
+						"elementor-dcss-6056746791995794": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10851": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969150554201": {
+						"elementor-dcss-6056746832760523": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10850": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969186192110": {
+						"elementor-dcss-6056746867621479": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10849": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969224300158": {
+						"elementor-dcss-6056746906977114": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10848": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969273853351": {
+						"elementor-dcss-6056746940510783": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10847": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969330406690": {
+						"elementor-dcss-6056746976238526": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10846": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969391194820": {
+						"elementor-dcss-6056747011592672": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10844": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969451590829": {
+						"elementor-dcss-6056747054843827": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10843": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969508640661": {
+						"elementor-dcss-6056747097256835": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10841": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969547458997": {
+						"elementor-dcss-6056747138852025": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10840": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969579095252": {
+						"elementor-dcss-6056747173243277": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10838": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969611674182": {
+						"elementor-dcss-6056747205754121": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10837": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969643982226": {
+						"elementor-dcss-6056747240780437": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10833": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969675984232": {
+						"elementor-dcss-6056747275757833": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10832": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969709696884": {
+						"elementor-dcss-6056747308632104": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10830": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969741653950": {
+						"elementor-dcss-6056747344419562": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10829": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969774583528": {
+						"elementor-dcss-6056747379609570": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10827": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969806950663": {
+						"elementor-dcss-6056747413306618": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10826": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969855721677": {
+						"elementor-dcss-6056747455404447": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10825": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969912151324": {
+						"elementor-dcss-6056747488117752": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10824": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045969966796594": {
+						"elementor-dcss-6056747522945171": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10823": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970006369123": {
+						"elementor-dcss-6056747558840738": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10822": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970043084475": {
+						"elementor-dcss-6056747593985495": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10820": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970077851224": {
+						"elementor-dcss-6056747628456236": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10816": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970123319971": {
+						"elementor-dcss-6056747662534275": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10815": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970182388866": {
+						"elementor-dcss-6056747696433077": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10814": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970241475809": {
+						"elementor-dcss-6056747730430207": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10812": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970298843476": {
+						"elementor-dcss-6056747764123339": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10801": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970354572018": {
+						"elementor-dcss-6056747798080237": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10800": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970416244872": {
+						"elementor-dcss-6056747832688039": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10799": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970456291865": {
+						"elementor-dcss-6056747868571301": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10797": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970493379585": {
+						"elementor-dcss-6056747900848146": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10796": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970531033735": {
+						"elementor-dcss-6056747934058449": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10795": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970568675777": {
+						"elementor-dcss-6056747968598963": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10794": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970607212174": {
+						"elementor-dcss-6056748002740464": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10793": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970643234447": {
+						"elementor-dcss-6056748036301378": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10792": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970676027808": {
+						"elementor-dcss-6056748070090809": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10791": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970708753921": {
+						"elementor-dcss-6056748104560072": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10790": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970742484662": {
+						"elementor-dcss-6056748136677598": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10789": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970775598491": {
+						"elementor-dcss-6056748169732723": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10788": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970807996718": {
+						"elementor-dcss-6056748202884072": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"jet-listing-dynamic-post-10784": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
-						"elementor-dcss-6045970841722081": {
+						"elementor-dcss-6056748240739212": {
 							"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
 						},
 						"elementor-element-4b6138e9": {
@@ -11420,111 +11518,111 @@
 						"elementor-button-content-wrapper",
 						"elementor-button-link",
 						"elementor-button-text",
-						"elementor-dcss-6045966197845726",
-						"elementor-dcss-6045966290950719",
-						"elementor-dcss-6045966325682298",
-						"elementor-dcss-6045966366885320",
-						"elementor-dcss-6045966410513256",
-						"elementor-dcss-6045966453927985",
-						"elementor-dcss-6045966490664724",
-						"elementor-dcss-6045966530087093",
-						"elementor-dcss-6045966569506634",
-						"elementor-dcss-6045966608905337",
-						"elementor-dcss-6045966648639717",
-						"elementor-dcss-6045966688123646",
-						"elementor-dcss-6045966725487672",
-						"elementor-dcss-6045966764136853",
-						"elementor-dcss-6045966803737091",
-						"elementor-dcss-6045966852768409",
-						"elementor-dcss-6045966913732824",
-						"elementor-dcss-6045966952341373",
-						"elementor-dcss-6045967012396660",
-						"elementor-dcss-6045967064197223",
-						"elementor-dcss-6045967115971612",
-						"elementor-dcss-6045967177982210",
-						"elementor-dcss-6045967240436777",
-						"elementor-dcss-6045967285057071",
-						"elementor-dcss-6045967331603527",
-						"elementor-dcss-6045967394626666",
-						"elementor-dcss-6045967483151379",
-						"elementor-dcss-6045967577656592",
-						"elementor-dcss-6045967639976913",
-						"elementor-dcss-6045967688594672",
-						"elementor-dcss-6045967736575511",
-						"elementor-dcss-6045967790130204",
-						"elementor-dcss-6045967837371144",
-						"elementor-dcss-6045967872853689",
-						"elementor-dcss-6045967907664146",
-						"elementor-dcss-6045967943257954",
-						"elementor-dcss-6045967977371891",
-						"elementor-dcss-6045968013309096",
-						"elementor-dcss-6045968068195485",
-						"elementor-dcss-6045968114473670",
-						"elementor-dcss-6045968148035026",
-						"elementor-dcss-6045968181167614",
-						"elementor-dcss-6045968225562705",
-						"elementor-dcss-6045968262452019",
-						"elementor-dcss-6045968309895285",
-						"elementor-dcss-6045968357998239",
-						"elementor-dcss-6045968402239488",
-						"elementor-dcss-6045968439793564",
-						"elementor-dcss-6045968473979095",
-						"elementor-dcss-6045968509120399",
-						"elementor-dcss-6045968555320910",
-						"elementor-dcss-6045968592389610",
-						"elementor-dcss-6045968632647269",
-						"elementor-dcss-6045968670964638",
-						"elementor-dcss-6045968712912528",
-						"elementor-dcss-6045968773390719",
-						"elementor-dcss-6045968832041304",
-						"elementor-dcss-6045968891910478",
-						"elementor-dcss-6045968937896870",
-						"elementor-dcss-6045968974653807",
-						"elementor-dcss-6045969011448722",
-						"elementor-dcss-6045969046478062",
-						"elementor-dcss-6045969080984607",
-						"elementor-dcss-6045969115678865",
-						"elementor-dcss-6045969150554201",
-						"elementor-dcss-6045969186192110",
-						"elementor-dcss-6045969224300158",
-						"elementor-dcss-6045969273853351",
-						"elementor-dcss-6045969330406690",
-						"elementor-dcss-6045969391194820",
-						"elementor-dcss-6045969451590829",
-						"elementor-dcss-6045969508640661",
-						"elementor-dcss-6045969547458997",
-						"elementor-dcss-6045969579095252",
-						"elementor-dcss-6045969611674182",
-						"elementor-dcss-6045969643982226",
-						"elementor-dcss-6045969675984232",
-						"elementor-dcss-6045969709696884",
-						"elementor-dcss-6045969741653950",
-						"elementor-dcss-6045969774583528",
-						"elementor-dcss-6045969806950663",
-						"elementor-dcss-6045969855721677",
-						"elementor-dcss-6045969912151324",
-						"elementor-dcss-6045969966796594",
-						"elementor-dcss-6045970006369123",
-						"elementor-dcss-6045970043084475",
-						"elementor-dcss-6045970077851224",
-						"elementor-dcss-6045970123319971",
-						"elementor-dcss-6045970182388866",
-						"elementor-dcss-6045970241475809",
-						"elementor-dcss-6045970298843476",
-						"elementor-dcss-6045970354572018",
-						"elementor-dcss-6045970416244872",
-						"elementor-dcss-6045970456291865",
-						"elementor-dcss-6045970493379585",
-						"elementor-dcss-6045970531033735",
-						"elementor-dcss-6045970568675777",
-						"elementor-dcss-6045970607212174",
-						"elementor-dcss-6045970643234447",
-						"elementor-dcss-6045970676027808",
-						"elementor-dcss-6045970708753921",
-						"elementor-dcss-6045970742484662",
-						"elementor-dcss-6045970775598491",
-						"elementor-dcss-6045970807996718",
-						"elementor-dcss-6045970841722081",
+						"elementor-dcss-6056744383495561",
+						"elementor-dcss-6056744474580318",
+						"elementor-dcss-6056744513041746",
+						"elementor-dcss-6056744548003662",
+						"elementor-dcss-6056744586461446",
+						"elementor-dcss-6056744626255970",
+						"elementor-dcss-6056744662430682",
+						"elementor-dcss-6056744699065282",
+						"elementor-dcss-6056744738415067",
+						"elementor-dcss-6056744781073574",
+						"elementor-dcss-6056744828152321",
+						"elementor-dcss-6056744880272386",
+						"elementor-dcss-6056744922687422",
+						"elementor-dcss-6056744967334225",
+						"elementor-dcss-6056745021021833",
+						"elementor-dcss-6056745056839347",
+						"elementor-dcss-6056745091398193",
+						"elementor-dcss-6056745136861449",
+						"elementor-dcss-6056745192238799",
+						"elementor-dcss-6056745254978272",
+						"elementor-dcss-6056745310447300",
+						"elementor-dcss-6056745349800547",
+						"elementor-dcss-6056745383530053",
+						"elementor-dcss-6056745419566534",
+						"elementor-dcss-6056745455568162",
+						"elementor-dcss-6056745490873393",
+						"elementor-dcss-6056745527032558",
+						"elementor-dcss-6056745562270864",
+						"elementor-dcss-6056745596611186",
+						"elementor-dcss-6056745631473340",
+						"elementor-dcss-6056745667828671",
+						"elementor-dcss-6056745704899546",
+						"elementor-dcss-6056745741840138",
+						"elementor-dcss-6056745778400446",
+						"elementor-dcss-6056745812634402",
+						"elementor-dcss-6056745846593822",
+						"elementor-dcss-6056745880659940",
+						"elementor-dcss-6056745913547512",
+						"elementor-dcss-6056745946295080",
+						"elementor-dcss-6056745979213144",
+						"elementor-dcss-6056746011782910",
+						"elementor-dcss-6056746043509789",
+						"elementor-dcss-6056746077585538",
+						"elementor-dcss-6056746111051936",
+						"elementor-dcss-6056746141890432",
+						"elementor-dcss-6056746173719410",
+						"elementor-dcss-6056746207251182",
+						"elementor-dcss-6056746240317598",
+						"elementor-dcss-6056746273332592",
+						"elementor-dcss-6056746307930637",
+						"elementor-dcss-6056746339277086",
+						"elementor-dcss-6056746371079397",
+						"elementor-dcss-6056746409217458",
+						"elementor-dcss-6056746446828452",
+						"elementor-dcss-6056746483686560",
+						"elementor-dcss-6056746519852379",
+						"elementor-dcss-6056746552319093",
+						"elementor-dcss-6056746584526393",
+						"elementor-dcss-6056746619026126",
+						"elementor-dcss-6056746653599398",
+						"elementor-dcss-6056746688577665",
+						"elementor-dcss-6056746724187839",
+						"elementor-dcss-6056746757575381",
+						"elementor-dcss-6056746791995794",
+						"elementor-dcss-6056746832760523",
+						"elementor-dcss-6056746867621479",
+						"elementor-dcss-6056746906977114",
+						"elementor-dcss-6056746940510783",
+						"elementor-dcss-6056746976238526",
+						"elementor-dcss-6056747011592672",
+						"elementor-dcss-6056747054843827",
+						"elementor-dcss-6056747097256835",
+						"elementor-dcss-6056747138852025",
+						"elementor-dcss-6056747173243277",
+						"elementor-dcss-6056747205754121",
+						"elementor-dcss-6056747240780437",
+						"elementor-dcss-6056747275757833",
+						"elementor-dcss-6056747308632104",
+						"elementor-dcss-6056747344419562",
+						"elementor-dcss-6056747379609570",
+						"elementor-dcss-6056747413306618",
+						"elementor-dcss-6056747455404447",
+						"elementor-dcss-6056747488117752",
+						"elementor-dcss-6056747522945171",
+						"elementor-dcss-6056747558840738",
+						"elementor-dcss-6056747593985495",
+						"elementor-dcss-6056747628456236",
+						"elementor-dcss-6056747662534275",
+						"elementor-dcss-6056747696433077",
+						"elementor-dcss-6056747730430207",
+						"elementor-dcss-6056747764123339",
+						"elementor-dcss-6056747798080237",
+						"elementor-dcss-6056747832688039",
+						"elementor-dcss-6056747868571301",
+						"elementor-dcss-6056747900848146",
+						"elementor-dcss-6056747934058449",
+						"elementor-dcss-6056747968598963",
+						"elementor-dcss-6056748002740464",
+						"elementor-dcss-6056748036301378",
+						"elementor-dcss-6056748070090809",
+						"elementor-dcss-6056748104560072",
+						"elementor-dcss-6056748136677598",
+						"elementor-dcss-6056748169732723",
+						"elementor-dcss-6056748202884072",
+						"elementor-dcss-6056748240739212",
 						"elementor-element",
 						"elementor-element-08a2de3",
 						"elementor-element-1a9f99e",
