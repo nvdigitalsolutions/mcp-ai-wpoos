@@ -973,3 +973,78 @@ belongs in its own change with its own tests, not folded into a tool port.
 `lib/core` 2,456 tests / 17,525 assertions; adapter 359 / 1,918; the app suite
 gains 5 tests in `VideoProcessingAdapterTest`; the worker gains 5 in
 `video.test.js` (12 total).
+
+## 164.18 Addendum — `optimize_for_platform`, and a stub worth beating (2026-11-25)
+
+### The WordPress tool does nothing
+
+`class-wp-mcp-ai-tool-optimize-for-platform.php` ends with:
+
+```php
+// TODO: Implement optimize_for_platform logic.
+return array( 'success' => true, 'message' => __( 'Optimize for Platform executed successfully. Note: Video processing requires FFmpeg.' ) );
+```
+
+It reports success without reading the file, and it declares no frame sizes at
+all. Porting it faithfully would mean shipping a lie, so this one is
+implemented. That is the "on par or better" bar the toolkit ask set, and it is
+recorded here rather than passed off as a straight port.
+
+### `resize` cannot do this
+
+`resize_video_resolution` scales with `scale=W:-1`, which preserves the aspect
+ratio. A 16:9 source asked for 1080×1920 comes back **1080×607** — a
+letterbox-shaped speck in a vertical feed. A platform preset has to fill the
+frame, which is a different filter chain, so the route gains one operation.
+
+### The route's new `fit` operation
+
+| mode | filter |
+| --- | --- |
+| `cover` (default) | `scale=W:H:force_original_aspect_ratio=increase,crop=W:H` |
+| `contain` | `scale=W:H:force_original_aspect_ratio=decrease,pad=W:H:(ow-iw)/2:(oh-ih)/2` |
+
+`force_original_aspect_ratio` is the whole point: it scales to the covered (or
+contained) size and then lets `crop`/`pad` land exactly on the requested frame.
+Both `crop` and `pad` centre by default, so a wide source loses equal amounts
+left and right rather than everything on one side. `contain` pads with black.
+Neither mode is guessed: an unknown value is refused at the route, again because
+it becomes an ffmpeg argument.
+
+### The frames, and where they came from
+
+| platform | feed | story | reel | short |
+| --- | --- | --- | --- | --- |
+| youtube | 1920×1080 | — | — | 1080×1920 |
+| instagram | 1080×1350 (4:5) | 1080×1920 | 1080×1920 | — |
+| tiktok | 1080×1920 | 1080×1920 | 1080×1920 | 1080×1920 |
+| facebook | 1280×720 | 1080×1920 | 1080×1920 | — |
+| twitter | 1280×720 | — | — | — |
+
+Three sizes cover nearly every surface: 16:9 landscape, 9:16 vertical, and 4:5
+for a feed post. 4:5 is used for the Instagram feed because it is the tallest
+ratio the feed accepts — a square still works but fills less of the screen.
+
+**Only real pairs are listed.** Twitter has no story, YouTube has no story, and
+Instagram does not call anything a short; those pairs are refused with the
+placements the platform *does* have rather than substituted with something
+plausible. A silent substitution is how a vertical video ends up pillar-boxed
+in a feed nobody checked.
+
+### The supported list lives in the message, not only in the field errors
+
+The Laravel error factory keeps `$message` and drops the `$errors` array
+(`ErrorFactory::validationFailed()` builds a `RuntimeException` from the message
+alone). A refusal that listed the supported placements only in the field errors
+would therefore be invisible to every caller in this runtime, so the list is
+repeated in the message.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **278 rows / 259 servable / 0 violations** (was
+277 / 258). `bin/toolkit-parity.php`: **57 of 854** (was 56);
+`video-production` is **8 of 21** (was 7).
+
+`lib/core` 2,458 tests / 17,535 assertions; adapter 359 / 1,919; the app suite
+gains 4 tests in `VideoProcessingAdapterTest`; the worker gains 1 in
+`video.test.js` (13 total).

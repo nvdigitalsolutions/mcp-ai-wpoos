@@ -113,6 +113,7 @@
             "convert_video_format",
             "generate_video_thumbnails",
             "get_video_metadata",
+            "optimize_for_platform",
             "resize_video_resolution",
             "trim_video"
         ],

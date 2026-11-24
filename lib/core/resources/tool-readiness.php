@@ -1702,6 +1702,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProductionToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'optimize_for_platform' => array(
+			'class' => 'Nvoos\\Core\\Tool\\OptimizeForPlatformTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerVideo over `POST /api/video/process` (operation `fit`: scale with `force_original_aspect_ratio=increase` then centre-crop, or `=decrease` then pad) then `GET /api/video/download`. The WordPress tool with this slug is a stub that returns success without processing anything; this one names a frame per platform and placement and refuses a pair that has none.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoProcessingAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'optimize_for_web' => array(
 			'class' => 'Nvoos\\Core\\Tool\\OptimizeForWebTool',
 			'readiness' => 'ready',

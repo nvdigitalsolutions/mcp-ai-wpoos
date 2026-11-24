@@ -78,6 +78,24 @@ function resolveFormat( value ) {
 }
 
 /**
+ * Allowlist how a fitted frame is filled.
+ *
+ * `cover` scales until both sides are covered and then crops the overflow, so
+ * the whole frame is picture. `contain` scales until the video fits and pads
+ * the remainder, so nothing is cropped but there are bars. There is no third
+ * behaviour worth guessing at, so an unknown value is refused rather than
+ * defaulted.
+ *
+ * @param {*} value Raw field value.
+ * @return {string|null} `cover`, `contain`, or null when unknown.
+ */
+function resolveFit( value ) {
+	const slug = String( value || 'cover' ).toLowerCase();
+
+	return [ 'cover', 'contain' ].includes( slug ) ? slug : null;
+}
+
+/**
  * Evaluate an ffprobe rational such as `30000/1001` without `eval`.
  *
  * The value comes from the uploaded file, so it is untrusted text: `eval` here
@@ -424,6 +442,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
 	      count,
 	      speed: rawSpeed,
 	      maintain_pitch: rawMaintainPitch,
+	      fit: rawFit,
 	    } = req.body;
     const inputPath = req.file.path;
     const videoDir = siteDirFor(req.site, 'video');
@@ -435,6 +454,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
 	    let fps;
 	    let format;
 	    let speed;
+	    let fit;
 
     try {
       width = boundedDimension(rawWidth, 'width');
@@ -443,6 +463,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
       duration = boundedNumber(rawDuration, 0.01, MAX_SECONDS, 'duration');
 	      fps = boundedNumber(rawFps, 0.1, 120, 'fps');
 	      speed = boundedNumber(rawSpeed, MIN_SPEED, MAX_SPEED, 'speed');
+	      fit = resolveFit(rawFit);
 	      format = resolveFormat(rawFormat);
     } catch (argErr) {
       cleanupUpload();
@@ -547,13 +568,43 @@ router.post('/process', upload.single('file'), async (req, res) => {
         }
         break;
 
-      case 'crop':
-        if (!width || !height) {
-          cleanupUpload();
-          return res.status(400).json({ error: 'Width and height required for crop' });
-        }
-        args.push('-vf', `crop=${width}:${height}`);
-        break;
+	      case 'crop':
+	        if (!width || !height) {
+	          cleanupUpload();
+	          return res.status(400).json({ error: 'Width and height required for crop' });
+	        }
+	        args.push('-vf', `crop=${width}:${height}`);
+	        break;
+
+	      case 'fit': {
+	        if (!width || !height) {
+	          cleanupUpload();
+	          return res.status(400).json({ error: 'Width and height required for fit' });
+	        }
+
+	        if (!fit) {
+	          cleanupUpload();
+	          return res.status(400).json({ error: 'fit must be either cover or contain' });
+	        }
+
+	        // `force_original_aspect_ratio` is what makes this different from
+	        // `resize`: it scales to the *shorter* side for cover and the
+	        // *longer* side for contain, so the output is exactly the frame
+	        // asked for instead of one side being rounded to `-1`. `crop` and
+	        // `pad` both centre by default.
+	        if ('contain' === fit) {
+	          args.push(
+	            '-vf',
+	            `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2`
+	          );
+	        } else {
+	          args.push(
+	            '-vf',
+	            `scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height}`
+	          );
+	        }
+	        break;
+	      }
 
       case 'trim':
         // Output-side `-ss` is frame-accurate; input-side is faster but lands on
@@ -754,6 +805,7 @@ export {
 	boundedNumber,
 	boundedDimension,
 	resolveFormat,
+	resolveFit,
 	parseRational,
 	boolField,
 	atempoChain,
