@@ -357,6 +357,23 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
      */
     private function postFile(string $endpoint, string $localPath, string $filename, array $fields, int $timeout): array
     {
+        return $this->uploadFile($endpoint, $localPath, $filename, $fields, $timeout);
+    }
+
+    /**
+     * POST one file to a worker endpoint and decode the JSON envelope.
+     *
+     * The multipart endpoint family (`/api/pdf/extract`, `/api/pdf/watermark`,
+     * `/api/image/transform`, …) shares one error contract, so the domain
+     * adapters do not each invent one.
+     *
+     * @param array<string, scalar> $fields
+     * @return array<string, mixed>
+     *
+     * @throws \RuntimeException
+     */
+    public function uploadFile(string $endpoint, string $localPath, string $filename, array $fields = array(), int $timeout = 60): array
+    {
         if (! $this->configured()) {
             throw new \RuntimeException('The media worker is not configured.');
         }
@@ -368,7 +385,7 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
         }
 
         try {
-            $response = Http::timeout($timeout)
+            $response = Http::timeout(max(1, $timeout))
                 ->acceptJson()
                 ->withHeaders($this->headers())
                 ->attach('file', $stream, $filename)
@@ -381,6 +398,78 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
             }
         }
 
+        return $this->decodeFileResponse($response);
+    }
+
+    /**
+     * POST several files to one worker endpoint, in order.
+     *
+     * `/api/pdf/merge` reads `files` or `files[n]` parts and sorts them by
+     * index, so the order is carried in the field name rather than trusted to
+     * arrival order — a merge that reordered pages would be a silent corruption.
+     *
+     * @param array<int, string>    $localPaths Absolute paths, in the order to send.
+     * @param array<string, scalar> $fields
+     * @return array<string, mixed>
+     *
+     * @throws \RuntimeException
+     */
+    public function uploadFiles(string $endpoint, array $localPaths, array $fields = array(), int $timeout = 60): array
+    {
+        if (! $this->configured()) {
+            throw new \RuntimeException('The media worker is not configured.');
+        }
+
+        $request = Http::timeout(max(1, $timeout))
+            ->acceptJson()
+            ->withHeaders($this->headers());
+
+        $streams = array();
+
+        foreach (array_values($localPaths) as $index => $path) {
+            $stream = is_string($path) && is_file($path) ? fopen($path, 'rb') : false;
+
+            if (false === $stream) {
+                foreach ($streams as $open) {
+                    if (is_resource($open)) {
+                        fclose($open);
+                    }
+                }
+
+                throw new \RuntimeException(
+                    'Source file is not readable: '.(is_string($path) ? $path : '')
+                );
+            }
+
+            $streams[] = $stream;
+            $request   = $request->attach('files['.$index.']', $stream, basename($path));
+        }
+
+        try {
+            $response = $request->post($this->url().$endpoint, $fields);
+        } catch (Throwable $e) {
+            throw new \RuntimeException('Media worker request failed: '.$e->getMessage(), 0, $e);
+        } finally {
+            foreach ($streams as $open) {
+                if (is_resource($open)) {
+                    fclose($open);
+                }
+            }
+        }
+
+        return $this->decodeFileResponse($response);
+    }
+
+    /**
+     * Turn a worker response into a decoded body, or a named failure.
+     *
+     * @param \Illuminate\Http\Client\Response $response
+     * @return array<string, mixed>
+     *
+     * @throws \RuntimeException
+     */
+    private function decodeFileResponse($response): array
+    {
         $body = $response->json();
 
         if (! $response->ok() || ! is_array($body)) {

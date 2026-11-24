@@ -53,6 +53,10 @@ use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
 use Nvoos\Core\Domain\Contract\MediaWorkerClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
+use Nvoos\Core\Domain\Contract\OfficeWriterInterface;
+use Nvoos\Core\Domain\Contract\PdfMutatorInterface;
+use Nvoos\Core\Domain\Contract\PdfOcrInterface;
+use Nvoos\Core\Domain\Contract\PdfTextExtractorInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
@@ -67,6 +71,7 @@ use Nvoos\Core\Domain\Service\Harness\OutputGuardrail;
 use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\TabularReaderInterface;
 use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
@@ -122,6 +127,11 @@ use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
 use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
+use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
+use Nvoos\Laravel\Adapter\MediaWorkerPdfMutator;
+use Nvoos\Laravel\Adapter\MediaWorkerPdfOcr;
+use Nvoos\Laravel\Adapter\MediaWorkerPdfTextExtractor;
+use Nvoos\Laravel\Adapter\MediaWorkerTabularReader;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
@@ -192,6 +202,24 @@ class NvoosServiceProvider extends ServiceProvider {
 		// false when no worker is configured, and the tool then refuses with
 		// `no_pdf_engine` rather than producing an empty document.
 		$this->app->bind( HtmlToPdfInterface::class, MediaWorkerHtmlToPdf::class );
+
+		// The rest of the document family rides the same worker (Proposal 164
+		// section 164.4.3): extract, merge and watermark are `/api/pdf/*`
+		// multipart routes, Word and Excel are `/api/document/*` JSON routes.
+		// Each tool asks `isAvailable()` and refuses with a named capability
+		// error rather than discovering the absence mid-render.
+		$this->app->bind( PdfTextExtractorInterface::class, MediaWorkerPdfTextExtractor::class );
+		$this->app->bind( PdfMutatorInterface::class, MediaWorkerPdfMutator::class );
+		$this->app->bind( OfficeWriterInterface::class, MediaWorkerOfficeWriter::class );
+
+		// OCR is newer than the PDF family, so its adapter asks the capability
+		// matrix before claiming availability: a configured worker may predate
+		// the `/api/pdf/ocr` route, and a named refusal beats a 404 mid-run.
+		$this->app->bind( PdfOcrInterface::class, MediaWorkerPdfOcr::class );
+
+		// Spreadsheet reading: the worker already parses xlsx/csv/json with
+		// ExcelJS, so `excel_data_import` needs an adapter, not a PHP library.
+		$this->app->bind( TabularReaderInterface::class, MediaWorkerTabularReader::class );
 
 		// The capability matrix, probed once and cached (Proposal 164 section
 		// 164.4.2). Every later domain adapter and both diagnostic surfaces read

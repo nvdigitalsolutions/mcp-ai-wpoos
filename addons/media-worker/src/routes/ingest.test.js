@@ -127,6 +127,38 @@ test( 'xlsx sheet param selects a worksheet by name', async () => {
 	}
 } );
 
+test( 'maxRows bounds the response and reports the truncation', async () => {
+	const { server, url } = await startServer();
+	try {
+		const res = await fetch( `${ url }/parse`, {
+			method: 'POST',
+			body: multipart( await makeXlsx(), 'daily_sales.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', { maxRows: 1 } ),
+		} );
+		assert.equal( res.status, 200 );
+		const body = await res.json();
+		assert.equal( body.rows.length, 1 );
+		assert.equal( body.meta.source_total, 2, 'the original count survives' );
+		assert.equal( body.meta.truncated, true );
+	} finally {
+		server.close();
+	}
+} );
+
+test( 'an absent maxRows marks the matrix as not truncated', async () => {
+	const { server, url } = await startServer();
+	try {
+		const res = await fetch( `${ url }/parse`, {
+			method: 'POST',
+			body: multipart( await makeXlsx(), 'daily_sales.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ),
+		} );
+		const body = await res.json();
+		assert.equal( body.rows.length, 2 );
+		assert.equal( body.meta.truncated, false );
+	} finally {
+		server.close();
+	}
+} );
+
 test( 'csv upload sniffs the delimiter and returns the matrix', async () => {
 	const { server, url } = await startServer();
 	try {
