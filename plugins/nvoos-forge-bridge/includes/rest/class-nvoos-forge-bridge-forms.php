@@ -533,6 +533,15 @@ class Forms extends \WP_REST_Controller {
 			if ( ! self::elementor_has_form( $form, $post_id ) ) {
 				return new \WP_Error( 'nvoos_forge_form_not_found', __( 'The form does not exist on this site.', 'nvoos-forge-bridge' ), array( 'status' => 404 ) );
 			}
+			if ( $post_id <= 0 ) {
+				// Elementor resolves the widget INSIDE the carrier document, so a
+				// submission without the post id always makes the handler answer
+				// "Your submission failed because the form is invalid." — say why
+				// instead of forwarding a guaranteed rejection. (The existence
+				// check above searches every post, which is why the render is
+				// found even when the carrier is missing.)
+				return new \WP_Error( 'nvoos_forge_form_post_id_required', __( 'The Elementor form needs the post_id of the page that carries it.', 'nvoos-forge-bridge' ), array( 'status' => 400 ) );
+			}
 			return $this->dispatch_elementor( $form, $post_id, $fields );
 		}
 		if ( self::jfb_available() ) {

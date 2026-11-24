@@ -15,7 +15,7 @@ band on every page must be classified as one of:
 **Captured** 2026-11-24 against `eca.directory` and the staging app
 `nodejs-1659781-6801643.cloudwaysnodeapps.com` (build `b4b438a8ee-manual2`).
 **Updated** 2026-11-24: the `<h1>` is restored (`46bd8e940f`), the enquiry bands
-submit through `nvoos-forge-bridge` 0.3.3, and the Elementor dispatch defect that
+submit through `nvoos-forge-bridge` 0.3.4, and the Elementor dispatch defect that
 made every submission fail is fixed (§6).
 
 > **Source caveat.** The rendered HTML of all three pages is the Elementor
@@ -167,7 +167,7 @@ intro copy in `3feed876`.
 the home; everything under `/activities/`.
 
 **Keep `form` (the connection the user wants to retain):** bands `71dbef2b` and
-`9c2d1fa`. **Done 2026-11-24** — `nvoos-forge-bridge` 0.3.3 is active on
+`9c2d1fa`. **Done 2026-11-24** — `nvoos-forge-bridge` 0.3.4 is active on
 `eca.directory`, forms are enabled with the staging origin on the allowlist, and
 `profile.forms` (`{ "delivery": "bridge" }`) makes the manifest default the
 endpoint to `https://eca.directory/wp-json/nvoos-forge/v1`.
@@ -189,7 +189,7 @@ rejected by design.
 
 ---
 
-## 6. The bridge defect this map surfaced (0.3.3, 2026-11-24)
+## 6. The bridge defect this map surfaced (0.3.3–0.3.4, 2026-11-24)
 
 Wiring these two bands proved the form path end to end — and found a defect that
 would have made **every** Elementor form on **every** forged site answer
@@ -246,6 +246,10 @@ was handed post `0`, found no document, and answered "the form is invalid".
 Fix: `Form.astro` reads the hidden carrier into the payload
 (`test/forms.test.ts` → *the component payload*). The no-JS floor was already
 correct — a native POST sends the field, and `parse_payload()` reads it.
+
+0.3.4 makes the same mistake self-describing: an Elementor submission with
+`post_id` 0 is answered `400 nvoos_forge_form_post_id_required` instead of being
+forwarded to a guaranteed rejection.
 
 **Lesson.** A 200 with `ok:false` from the bridge means a *native handler ran and
 rejected the submission*. Check both halves of the contract: the bridge's request
