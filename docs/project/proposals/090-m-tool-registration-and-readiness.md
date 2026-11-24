@@ -2102,3 +2102,93 @@ localised with the request asserted as `POST … images:annotate?key=…` and
 
 `lib/core` 2,270 / 16,802; adapter 350 / 1,876; auditor 248 rows / 229 servable, no
 violations. phpcs clean on all three files at the CI severities.
+
+## 31. The last two promises, closed by declining (2026-11-24)
+
+Every section before this one closed a `replaced_by` promise by shipping the replacement.
+This one closes the last two by refusing to, and records why. No capability was added:
+under both WordPress slugs there is still nothing this runtime can do, and the manifest
+now says so in the row itself.
+
+### What changed in the manifest
+
+Both rows were `quarantined` and carried `replaced_by`. They are still `quarantined` — the
+readiness class did not move, and neither slug is servable before or after — but two keys
+changed:
+
+- `replaced_by` is **removed**. The promise is withdrawn, so the loop's target set is now
+  empty rather than pointing at a tool that will not be built.
+- `parity => 'declined'` is **added**, and the `reason` states the evidence.
+
+The marker exists because the alternative is inference. Nineteen quarantined rows had a
+`replaced_by` before this slice and zero did not, so "no `replaced_by`" would have been an
+unambiguous way to mean "declined" *today* — and a silent trap the next time somebody adds
+a stand-in whose replacement is not decided yet. This file's own premise is that readiness
+is declared rather than inferred; the same argument applies to a refusal.
+
+`parity` is not part of `ToolReadiness`'s closed vocabulary and is read in exactly one
+place — the `shadowed` rule, which only inspects **servable** rows. A declined row is never
+servable, so the new value cannot reach it. The auditor needed no change.
+
+Deleting the rows was the other option and it is worse: an unknown slug is `unverified`,
+which is also unservable, so the runtime behaves identically — but the record of *why* the
+slug has no implementation disappears with the row.
+
+### `run_openai_external_action`: §27 was right, and the fallback has since closed
+
+§27 already recorded the payload problem: the WordPress tool posts `workflow_id` or
+`assistant_id` to `/v1/responses`, and neither is a Responses parameter. Nothing there
+needs restating.
+
+What §27 offered as the second migration path has since closed. It described `assistant`
+as portable "via the Assistants threads/runs endpoints, or a real Responses call". The
+**Assistants API was sunset on 2026-08-26**, so threads and runs are no longer an option,
+and a real Responses call with `model` and `input` is a different tool that ignores both
+of the WordPress tool's inputs. That leaves the ChatKit session flow, which needs a
+server-side session endpoint and a per-user token — a new tool with a new secret, not a
+port of this one.
+
+### `vision_product_search`: a retired service, plus a catalogue that does not exist
+
+This one §27 did not cover. The WordPress tool calls the `PRODUCT_SEARCH` feature on
+`https://vision.googleapis.com/v1/images:annotate`, passing `imageContext.productSearchParams`
+to match an image against a product set.
+
+Three things stand between that and a working port:
+
+1. **Google documents Product Search as maintenance mode** and points to Vision Warehouse
+   as the successor. Porting would mean writing a client for a service its own vendor is
+   steering customers away from.
+2. **There is no product set to search.** A call needs a Google Cloud project with the
+   Vision API enabled *and* a Product Search product set populated with a product
+   catalogue. That is infrastructure the operator stands up, not a parameter this runtime
+   can supply.
+3. **The resource does not exist in this codebase.** Neither the WordPress side nor
+   `lib/core` has a product catalogue, so even a successful client would have nothing to
+   rank against.
+
+What would reopen it: a decision to target Vision Warehouse, plus a product catalogue in
+this runtime. Both are prerequisites, so this is `unavailable` in substance — but it is
+recorded as declined because the decision is not to pursue it, and `quarantined` is the
+honest class for a slug whose stand-in describes work it does not do.
+
+### The tally
+
+Seventeen promises closed by shipping the replacement. Two closed by declining with
+evidence. None open.
+
+The tally script needs to say that. Counted only by "is the target servable", the two
+declined rows drop out of the `open` list and the loop reads `17 closed / 0 open` — which
+happens to be true but reports the wrong thing if a future row is quarantined with no
+`replaced_by` for an unrelated reason. The script gains a third bucket keyed on
+`parity => 'declined'` so the three states are counted separately.
+
+### Validation
+
+`bin/audit-tool-readiness.php` — 248 rows, 229 servable (189 ready / 34 pure / 6
+delegated), 19 quarantined, **no violations**, and the `replacement` class stays empty with
+the two targets gone.
+
+`lib/core` 2,272 / 16,812. Adapter 350 / 1,876. The two skeleton feature tests that read
+this manifest — `ToolRegistrationTest` and `AdminDiagnosticsTest` — 14 / 50. No production
+code changed; the delta is two manifest rows and this section.

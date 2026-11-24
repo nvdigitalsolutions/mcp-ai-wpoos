@@ -1595,8 +1595,8 @@ return array(
 		'run_openai_external_action_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RunOpenAIExternalActionTool',
 			'readiness' => 'quarantined',
-			'reason' => 'Prompt-builder stand-in: returns a prompt and performs no work. The WordPress tool with this slug is canonical.',
-			'replaced_by' => 'run_openai_external_action',
+			'parity' => 'declined',
+			'reason' => 'Declined, not ported: the WordPress tool posts workflow_id or assistant_id to /v1/responses, and neither is a Responses parameter. assistant_id is an Assistants API identifier, and that API was sunset on 2026-08-26. workflow_id is an Agent Builder identifier ChatKit invokes through a server-side session endpoint, not this API. A faithful port would always fail. Proposal 090-M section 31.',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
 		'save_post' => array(
@@ -1931,8 +1931,8 @@ return array(
 		'vision_product_search_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\VisionProductSearchTool',
 			'readiness' => 'quarantined',
-			'reason' => 'Prompt-builder stand-in: returns a prompt and performs no work. The WordPress tool with this slug is canonical.',
-			'replaced_by' => 'vision_product_search',
+			'parity' => 'declined',
+			'reason' => 'Declined, not ported: the WordPress tool calls the PRODUCT_SEARCH feature on vision.googleapis.com/v1/images:annotate. Google documents Product Search as maintenance mode and points to Vision Warehouse instead, and the tool also needs a Product Search project, product sets and a product catalogue to exist before it can answer. Proposal 090-M section 31.',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
 		'wait_for_user' => array(
