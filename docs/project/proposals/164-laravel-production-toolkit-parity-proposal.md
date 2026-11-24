@@ -883,3 +883,93 @@ a charset check that **does not** are not interchangeable.
 `lib/core` 2,454 tests / 17,515 assertions; adapter 359 / 1,917; the app suite
 gains 18 tests in `VideoProcessingAdapterTest` and 9 in `PublishToSocialToolTest`;
 the worker gains 7 in `video.test.js`.
+
+## 164.17 Addendum — `adjust_video_speed` (2026-11-25)
+
+### Why this one first
+
+The 15 unported `video-production` slugs mostly need ffmpeg work the route does
+not implement: `merge_videos` is a concat across several uploads,
+`add_watermark_to_video` is an overlay, `create_video_from_images` is an image
+sequence. Speed is the smallest of that family, and it needs no multi-input
+upload — it reuses the single-file machinery the trim/compress tools already
+have.
+
+`extract_audio`, which §164.16 named as the cheapest win, turns out **not to be
+a parity item at all**: the WordPress `video-production` toolkit has no such
+tool. The route has the operation; no WordPress slug asks for it. It stays
+available as an additive tool, not as parity.
+
+### `setpts` inverts the factor; `atempo` does not
+
+Halving the timestamps doubles the speed, so the video filter is
+`setpts=PTS/<factor>` — a 2× request divides by two. Audio is the opposite
+problem: `atempo` takes the speed itself, so the same request sends
+`atempo=2`. Getting one of these inverted produces a file whose sound and
+picture run at different rates, which is why both are written from the same
+`$factor` in one place.
+
+### `atempo`'s range is a version question, not a constant
+
+Most published recipes still say `atempo` accepts 0.5–2.0 and that 4× needs
+"two stages". That upper bound was raised in ffmpeg 4.1; the worker image runs
+**8.1.2**, where `ffmpeg -h filter=atempo` reports **0.5 to 100**. The code
+chains by 0.5 downwards rather than assuming either, because that chain is
+valid on both: a 0.25× request becomes `atempo=0.5,atempo=0.5` and a 3× request
+stays a single stage. The tests assert both properties — every stage inside
+0.5–100, and the stages multiply back to the requested factor.
+
+### Pitch is a separate decision, not a side effect
+
+`maintain_pitch: true` (the default) routes audio through `atempo`, which
+preserves pitch by design. `false` uses `asetrate=<rate × factor>` followed by
+`aresample=<rate>`, which shifts the pitch with the speed — the "chipmunk"
+effect. That is the only reason to ask for it, so it is an explicit argument
+rather than a hidden default.
+
+### The file may have no audio at all
+
+`-af` fails outright when there is no audio stream. One `ffprobe` call answers
+both questions the operation needs — whether audio exists, and (only for the
+non-pitch-preserving branch) its sample rate — so `-vf` is always sent and
+`-af` only when there is something to filter.
+
+### Two deliberate deviations from WordPress
+
+- **`speed_factor` is required, and `1.0` is refused.** The WordPress tool
+defaults it to 1.0, which re-encodes the file without changing anything: a
+transcode spent and a new file stored for no effect. The refusal names
+`compress_video` and `convert_video_format`, which are the tools for those two
+intents.
+- **`maintain_pitch` is honoured rather than assumed.** Same default as
+WordPress, but the `false` branch is implemented rather than accepted and
+ignored.
+
+### A note on flags, for whoever touches this family next
+
+The video tools declare `getCapabilityFlags()` but do **not** implement
+`ToolCapabilityFlagsInterface`. Two consumers read the method differently:
+`ToolRouterHarness` falls back to `method_exists`, so routing sees the declared
+flags; `CapabilityFlagResolution` (the necessity gate) requires the interface,
+so it resolves these tools through `ToolCapabilityFlagCatalogue` instead. The
+catalogue entry for every video slug is `media, video_editing`, which derives
+**MODERATE** irreversibility and therefore `WARN` for a well-formed call.
+
+That is the current, verified behaviour — but it is an accident of two lookup
+paths disagreeing, not a decision. Making the family implement the interface
+would change the rung: the declared `external-api` puts these tools in
+`hasOutboundMutation`, which derives **HIGH** and would push a routine re-encode
+to `APPROVAL_REQUIRED`. A deliberate change would drop `external-api` (the media
+worker is estate-internal) and declare `reversible`, deriving **LOW** —
+`ALLOW` instead of `WARN`. That is a product decision about warnings, so it
+belongs in its own change with its own tests, not folded into a tool port.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **277 rows / 258 servable / 0 violations** (was
+276 / 257). `bin/toolkit-parity.php`: **56 of 854** (was 55);
+`video-production` is **7 of 21** (was 6).
+
+`lib/core` 2,456 tests / 17,525 assertions; adapter 359 / 1,918; the app suite
+gains 5 tests in `VideoProcessingAdapterTest`; the worker gains 5 in
+`video.test.js` (12 total).

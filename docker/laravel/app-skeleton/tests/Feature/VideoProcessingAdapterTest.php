@@ -9,6 +9,7 @@ use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\VideoProcessingInterface;
 use Nvoos\Core\Domain\Entity\StoredFile;
+use Nvoos\Core\Tool\AdjustVideoSpeedTool;
 use Nvoos\Core\Tool\CompressVideoTool;
 use Nvoos\Core\Tool\ConvertVideoFormatTool;
 use Nvoos\Core\Tool\GenerateVideoThumbnailsTool;
@@ -204,6 +205,75 @@ final class VideoProcessingAdapterTest extends TestCase
         $this->assertInstanceOf(RuntimeException::class, $result);
         $this->assertSame(422, $result->getCode());
         $this->assertStringContainsString('not both', $result->getMessage());
+    }
+
+    public function test_speed_sends_the_factor_and_keeps_the_pitch_by_default(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $result = $this->app->make(AdjustVideoSpeedTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'speed_factor' => 2.0,
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('speed', $this->field($captured, 'operation'));
+        $this->assertSame('2', $this->field($captured, 'speed'));
+        $this->assertSame('true', $this->field($captured, 'maintain_pitch'), 'pitch is kept unless asked otherwise');
+    }
+
+    public function test_speed_can_ask_for_the_pitch_to_move_with_it(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $this->app->make(AdjustVideoSpeedTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'speed_factor' => 0.5,
+            'maintain_pitch' => false,
+            'save_to_media' => false,
+        ));
+
+        $this->assertSame('0.5', $this->field($captured, 'speed'));
+        $this->assertSame('false', $this->field($captured, 'maintain_pitch'));
+    }
+
+    public function test_a_speed_factor_of_one_is_refused_as_a_no_op(): void
+    {
+        $result = $this->app->make(AdjustVideoSpeedTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'speed_factor' => 1.0,
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('without changing it', $result->getMessage());
+    }
+
+    public function test_a_speed_factor_outside_the_range_is_refused_with_the_bounds(): void
+    {
+        $result = $this->app->make(AdjustVideoSpeedTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'speed_factor' => 8,
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('between 0.25 and 4', $result->getMessage());
+    }
+
+    public function test_a_missing_speed_factor_is_refused_rather_than_defaulted(): void
+    {
+        $result = $this->app->make(AdjustVideoSpeedTool::class)->execute(array(
+            'video_url' => $this->source(),
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('speed_factor is required', $result->getMessage());
     }
 
     public function test_a_thumbnail_asks_for_a_jpeg_not_a_one_frame_video(): void

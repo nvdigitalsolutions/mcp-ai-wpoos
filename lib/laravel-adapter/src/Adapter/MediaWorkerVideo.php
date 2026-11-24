@@ -48,6 +48,7 @@ final class MediaWorkerVideo implements VideoProcessingInterface
         'gif',
         'thumbnail',
         'extract_audio',
+        'speed',
     );
 
     private const FORMATS = array('mp4', 'webm', 'mov', 'mkv', 'gif', 'mp3', 'm4a', 'aac', 'jpg', 'jpeg', 'png');
@@ -154,6 +155,13 @@ final class MediaWorkerVideo implements VideoProcessingInterface
 
         if (null !== $fps) {
             $fields['fps'] = $fps;
+        }
+
+        // `speed` is the reciprocal of the route's `setpts` multiplier, so the
+        // adapter sends the caller's factor and lets the route invert it.
+        if ('speed' === $operation) {
+            $fields['speed'] = $this->speedFactor($options['speed'] ?? null);
+            $fields['maintain_pitch'] = $this->boolean($options['maintain_pitch'] ?? true) ? 'true' : 'false';
         }
 
         if ('resize' === $operation && null === $width && null === $height) {
@@ -273,6 +281,42 @@ final class MediaWorkerVideo implements VideoProcessingInterface
         }
 
         return $pixels;
+    }
+
+    /**
+     * The multiplier for the `speed` operation.
+     *
+     * Bounded to the same 0.25–4 the tool offers, so an out-of-range factor is
+     * named here rather than relayed from an ffmpeg error.
+     */
+    private function speedFactor(mixed $value): float
+    {
+        if (null === $value || '' === $value) {
+            throw new \InvalidArgumentException('The speed operation needs a speed factor between 0.25 and 4.0.');
+        }
+
+        $factor = (float) $value;
+
+        if ($factor < 0.25 || $factor > 4.0) {
+            throw new \InvalidArgumentException('A speed factor must be between 0.25 and 4.0.');
+        }
+
+        return $factor;
+    }
+
+    /**
+     * A boolean option as a multipart field.
+     *
+     * Multipart bodies carry every field as text, so `false` has to be spelled
+     * out. The route reads the same four spellings.
+     */
+    private function boolean(mixed $value): bool
+    {
+        if (\is_bool($value)) {
+            return $value;
+        }
+
+        return ! \in_array(\strtolower(\trim((string) $value)), array('false', '0', 'no', 'off'), true);
     }
 
     /**
