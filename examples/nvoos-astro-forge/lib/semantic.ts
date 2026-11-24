@@ -1476,8 +1476,61 @@ function pricingFrom( node: HNode ): SemanticSection['pricing'] | undefined {
 	return plans.length >= 2 ? { plans } : undefined;
 }
 
+/**
+ * Elementor's counter widget ANIMATES from 0: the DOM text is the start value
+ * ("0") and the real number lives in `data-to-value`. Reading text alone is why
+ * about-us (`14c60321`) published "0 / %" and "0 / Term" while the titles
+ * ("Hour allocation time", "Pilot implementation") were dropped in favour of the
+ * suffix spans (2026-11-24). The live site shows the same `0` in its HTML and
+ * only reaches the real figure once its JS runs.
+ *
+ * The prefix carries the comparison ("≤", "+"); the suffix carries the unit
+ * ("%", "% less", "Term") and belongs in `unit`, which Stats renders inside the
+ * same node as the value.
+ */
+function elementorCounterStats( node: HNode ): StatItem[] | undefined {
+	const boxes = descendantTags( node ).filter( ( tag ) => ownsClass( tag, /^elementor-counter$/ ) );
+	if ( boxes.length < 2 ) {
+		return undefined;
+	}
+	const items: StatItem[] = [];
+	for ( const box of boxes ) {
+		const number = findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number$/ ) );
+		const target = trimmed( attrOf( number ?? box, 'data-to-value' ) ?? '' );
+		const digits = /^[\d.,]+$/.test( target ) ? target : trimmed( textOf( number ?? box ) );
+		if ( ! /^[\d.,]+$/.test( digits ) ) {
+			continue;
+		}
+		const prefix = trimmed( textOf( findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number-prefix$/ ) ) ?? box ) );
+		const suffixEl = findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number-suffix$/ ) );
+		const suffix = suffixEl ? trimmed( textOf( suffixEl ) ) : '';
+		const label = trimmed( textOf( findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-title$/ ) ) ?? box ) );
+		if ( ! label || label.length > 80 ) {
+			continue;
+		}
+		// A prefix that is only the widget's own text (no number element at all)
+		// would be the whole box — never prepend that.
+		const barePrefix = number && prefix && prefix !== trimmed( textOf( box ) ) ? prefix : '';
+		// A WORD suffix needs a space (`1Term` reads as a typo); a symbol does not
+		// (`50% less`, not `50 % less`).
+		const unit = suffix ? ( /^[a-z]/i.test( suffix ) ? ` ${ suffix }` : suffix ) : '';
+		items.push( {
+			value: `${ barePrefix }${ digits }`,
+			...( unit ? { unit } : {} ),
+			label,
+		} );
+	}
+	return items.length >= 2 ? items : undefined;
+}
+
 /** Value/label metrics. A label is required — a bare number is not a stat. */
 function statsFrom( node: HNode ): SemanticSection['stats'] | undefined {
+	// A counter widget first: its text is always "0", so the generic path below
+	// finds numbers that are animation artefacts and labels that are suffixes.
+	const counters = elementorCounterStats( node );
+	if ( counters ) {
+		return { items: counters };
+	}
 	const all = descendantTags( node );
 	let boxes = all.filter( ( tag ) => ownsClass( tag, STAT_INTENT ) && STAT_VALUE.test( trimmed( textOf( tag ) ) ) );
 	if ( boxes.length < 2 ) {

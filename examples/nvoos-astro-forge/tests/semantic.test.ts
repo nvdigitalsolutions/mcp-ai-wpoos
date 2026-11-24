@@ -14,6 +14,44 @@ const SECTION = ( inner: string ) =>
 const WIDGET = ( name: string, inner: string ) =>
 	`<div class="elementor-widget elementor-widget-${ name }"><div class="elementor-widget-container">${ inner }</div></div>`;
 
+describe( 'classifyHtml — Elementor counters', () => {
+	// The widget animates from 0, so its DOM text is always "0"; the real figure
+	// is in `data-to-value`. about-us (`14c60321`) published "0 / %" and
+	// "0 / Term" until this read the attribute (2026-11-24).
+	const COUNTER = ( title: string, to: string, prefix = '', suffix = '' ) =>
+		WIDGET(
+			'counter',
+			`<div class="elementor-counter"><div class="elementor-counter-title">${ title }</div><div class="elementor-counter-number-wrapper"><span class="elementor-counter-number-prefix">${ prefix }</span><span class="elementor-counter-number" data-to-value="${ to }" data-from-value="0">0</span><span class="elementor-counter-number-suffix">${ suffix }</span></div></div>`
+		);
+
+	it( 'reads data-to-value, the prefix and the suffix instead of the "0" text', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Why choose our platform</h2>' ) +
+				COUNTER( 'Hour allocation time', '48', '≤' ) +
+				COUNTER( 'Parents updated within 5 minutes', '100', '', '%' )
+		);
+		const stats = classifyHtml( html )[ 0 ].stats?.items ?? [];
+		expect( stats ).toEqual( [
+			{ value: '≤48', label: 'Hour allocation time' },
+			{ value: '100', unit: '%', label: 'Parents updated within 5 minutes' },
+		] );
+	} );
+
+	it( 'keeps a suffix phrase as the unit rather than the label', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Why choose our platform</h2>' ) +
+				COUNTER( 'Routine ECA admin emails', '80', '', '% less' ) +
+				COUNTER( 'Pilot implementation', '3', '', 'Term' )
+		);
+		const stats = classifyHtml( html )[ 0 ].stats?.items ?? [];
+		expect( stats.map( ( item ) => [ item.value, item.unit, item.label ] ) ).toEqual( [
+			[ '80', '% less', 'Routine ECA admin emails' ],
+			// A WORD suffix gets a space ("1Term" reads as a typo); a symbol does not.
+			[ '3', ' Term', 'Pilot implementation' ],
+		] );
+	} );
+} );
+
 describe( 'classifyHtml — WordPress placeholder content', () => {
 	// WordPress installs "Hello world!" (slug hello-world) and "Sample Page"
 	// on every site. A builder's posts widget renders them as a real card, so a
