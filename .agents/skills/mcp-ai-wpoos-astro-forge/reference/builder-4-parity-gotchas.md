@@ -133,3 +133,40 @@ Known content gaps left open: band `77f4271d` (an Elementor toggle/accordion
 band whose panel bodies the sanitizer drops, rebuilt as three empty cards — 8.6 %
 text coverage) and the band-ink drift where the rebuild's `--ds-ink` outranks the
 measured band ink (`#1a1e1d` against `#747474`).
+
+## A footer paints TWO inks — the palette winner is the WORDS, not the titles
+
+The colour gate compares a region ink by ink: every source ink with ≥15 % of the
+region's glyph area must exist in the rebuild's palette. A footer routinely has
+two, and the mass ranking picks the wrong one for the heading slot.
+
+eca.directory, measured on the live footer:
+
+| ink | share | carried by |
+|---|---|---|
+| `#747474` | 62 % | `span.elementor-icon-list-text` (the link lists) |
+| `#27104a` | 38 % | `div.elementor-heading-title` (block titles) + the wordmark |
+
+`chrome.footerInk` paints the rebuilt `<h3>`s; `chrome.footerBrand.text.ink`
+paints the list copy. Writing the palette winner into both greyed every title and
+left the rebuild carrying one of the source's two inks — so the gate failed
+*both*.
+
+Fix pattern (implemented 2026-11-24): measure `RegionColors.roles = { heading,
+body }` by splitting the same `chars × fontSize²` mass on heading-like elements,
+then fill each slot from its role. Heading-like is `h1`–`h6` **or** a
+`heading`/`title` class at weight ≥ 600 — builders publish headings as `div`s
+(Elementor's `elementor-heading-title`), so the tag alone is not enough. Only
+write the second slot when the roles differ (ΔE00 > 3), or every single-ink
+footer in the fleet gains a redundant fact.
+
+Two traps found on the way:
+
+- **`--force-device-scale-factor=1` is not enough to keep a builder stable.**
+  Elementor re-mints `elementor-dcss-…` class hashes per render. A re-analyze
+  re-keys `bandFacts.box`/`.classes` with identical values; diff the *values*
+  before treating the profile churn as drift.
+- **`--colors` alone does not reapply chrome.** `applyChromeSurfaces` is guarded
+  by `if ( profile.design )`, and a `--colors`-only run builds a fresh draft with
+  no design block. Run `--design --geometry --text --colors …` together, or the
+  measured chrome is recorded and never written.

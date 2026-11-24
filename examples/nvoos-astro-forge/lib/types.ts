@@ -1601,6 +1601,27 @@ export interface RegionColors {
 	 */
 	inks?: InkShare[];
 	/**
+	 * The region's text by ROLE — headings vs everything else — as the single
+	 * dominant ink of each.
+	 *
+	 * The palette answers "which colours are here"; it cannot answer "which
+	 * colour is a heading". eca.directory's footer proves the difference matters:
+	 * 62% of its glyph area is `#747474` (the link LISTS) and 38% is `#27104a`
+	 * (the three block TITLES plus the wordmark). Writing the palette's winner
+	 * into `chrome.footerInk` — the slot that paints the rebuilt H3s — recoloured
+	 * every footer title grey, and the colour gate reported BOTH inks as drift
+	 * because the rebuild then carried only one of them (2026-11-24).
+	 *
+	 * `heading` is the dominant ink of heading-like text (`h1`–`h6`, and a
+	 * builder's heading widget — Elementor's `elementor-heading-title` is a
+	 * `div`); `body` is the dominant ink of the rest. Absent when the region has
+	 * no text of that role, so a single-ink footer keeps the older behaviour.
+	 */
+	roles?: {
+		heading?: string;
+		body?: string;
+	};
+	/**
 	 * The region's painted background IMAGE, when it has one — a `linear-gradient(…)`
 	 * or a `url(…)`. Bands only (`ColorRegion.descendantFill`): a builder paints a
 	 * band's gradient on a child layer and the sanitizer drops the `<style>` that

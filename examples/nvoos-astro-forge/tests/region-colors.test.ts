@@ -525,6 +525,77 @@ describe( 'chrome surfaces (measurement beats the stylesheet harvest)', () => {
 
 		expect( chrome.navInk ).toBe( '#27104a' );
 	} );
+
+	// eca.directory, measured on the live footer: 62% of the glyph area is
+	// `#747474` (the link LISTS) and 38% is `#27104a` (the block TITLES and the
+	// wordmark). The palette winner is therefore the WORDS, not the titles — and
+	// `chrome.footerInk` paints the rebuilt H3s while `footerBrand.text.ink`
+	// paints the list copy. Writing the winner into both slots greyed every
+	// title and the colour gate reported both source inks as drift, because the
+	// rebuild carried only one of them.
+	it( 'splits a two-ink footer across the heading and text slots by ROLE', () => {
+		const chrome: {
+			footerInk?: string;
+			footerBarInk?: string;
+			footerBrand?: { text?: { ink?: string } };
+		} = {};
+		const applied = applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a' },
+				{
+					background: '#f7f7f7',
+					text: '#747474',
+					inks: [ { color: '#747474', share: 0.62 }, { color: '#27104a', share: 0.38 } ],
+					roles: { heading: '#27104a', body: '#747474' },
+				}
+			)
+		);
+
+		expect( chrome.footerInk ).toBe( '#27104a' );
+		expect( chrome.footerBarInk ).toBe( '#747474' );
+		expect( chrome.footerBrand?.text?.ink ).toBe( '#747474' );
+		expect( applied ).toContain( 'chrome.footerBrand.text.ink' );
+	} );
+
+	it( 'leaves the footer text slot alone when one ink paints the whole footer', () => {
+		const chrome: { footerInk?: string; footerBrand?: { text?: { ink?: string } } } = {};
+		const applied = applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a' },
+				{
+					background: '#f7f7f7',
+					text: '#27104a',
+					inks: [ { color: '#27104a', share: 1 } ],
+					roles: { heading: '#27104a', body: '#27104a' },
+				}
+			)
+		);
+
+		expect( chrome.footerInk ).toBe( '#27104a' );
+		expect( chrome.footerBrand?.text?.ink ).toBeUndefined();
+		expect( applied ).not.toContain( 'chrome.footerBrand.text.ink' );
+	} );
+
+	it( 'keeps an operator-pinned footer text ink', () => {
+		const chrome: { footerBrand?: { text?: { ink?: string } } } = { footerBrand: { text: { ink: '#111827' } } };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a' },
+				{
+					background: '#f7f7f7',
+					text: '#747474',
+					inks: [ { color: '#747474', share: 0.62 }, { color: '#27104a', share: 0.38 } ],
+					roles: { heading: '#27104a', body: '#747474' },
+				}
+			),
+			{ preserve: ( path ) => path === 'chrome.footerBrand.text.ink' }
+		);
+
+		expect( chrome.footerBrand?.text?.ink ).toBe( '#111827' );
+	} );
 } );
 
 describe( 'compareRegionColors with a band image', () => {
