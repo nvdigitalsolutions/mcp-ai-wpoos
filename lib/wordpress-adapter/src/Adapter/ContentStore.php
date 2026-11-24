@@ -107,7 +107,8 @@ class ContentStore implements ContentStoreInterface {
 			\update_post_meta( $postId, \sanitize_key( $key ), $value );
 		}
 
-		// Set taxonomy terms.
+		// Replace taxonomy terms: the command carries the complete set.
+		// `$append` defaults to false, which is the contract (UpdateContentCommand).
 		foreach ( $command->taxonomyInput as $taxonomy => $terms ) {
 			\wp_set_post_terms( $postId, $terms, \sanitize_key( $taxonomy ) );
 		}
@@ -163,7 +164,8 @@ class ContentStore implements ContentStoreInterface {
 			\update_post_meta( $id, \sanitize_key( $key ), $value );
 		}
 
-		// Set taxonomy terms (replace, not append).
+		// Replace taxonomy terms: the command carries the complete set, and
+		// `$append` defaults to false, which is the contract (UpdateContentCommand).
 		foreach ( $command->taxonomyInput as $taxonomy => $terms ) {
 			\wp_set_post_terms( $id, $terms, \sanitize_key( $taxonomy ) );
 		}

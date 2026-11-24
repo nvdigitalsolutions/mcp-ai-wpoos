@@ -2192,3 +2192,90 @@ the two targets gone.
 `lib/core` 2,272 / 16,812. Adapter 350 / 1,876. The two skeleton feature tests that read
 this manifest — `ToolRegistrationTest` and `AdminDiagnosticsTest` — 14 / 50. No production
 code changed; the delta is two manifest rows and this section.
+
+## 32. Addendum: taxonomy writes, and the adapter that appended (2026-11-24)
+
+### The bug was reachable, not theoretical
+
+Issue #8191 framed the divergence as a contract ambiguity: no tool used `taxonomyInput`
+until §26. That is true of §26's tool, which works around it — but `save_post` predates it,
+is servable on both hosts, and builds `taxonomyInput` whenever `categories` or `tags` are
+supplied. So on Laravel, saving a post whose categories were `[News, Tech]` with
+`categories: [News]` kept `Tech`, while WordPress dropped it. Same tool, same arguments,
+two different posts.
+
+### Replace is the rule, and three sources agree
+
+1. **WordPress.** `wp_set_post_terms( $post_id, $terms, $taxonomy, $append = false )` —
+   replace is the default. The docs for `wp_set_object_terms` state that keeping existing
+   terms is the opt-in (`$append = true`), not the default.
+2. **RFC 7396 (JSON Merge Patch).** A patch array replaces the target array; it is not
+   concatenated. This is the convention a `PATCH`-shaped command inherits.
+3. **JSON:API.** A `PATCH` that includes a to-many relationship replaces that relationship.
+
+The WordPress adapter already did this. Only Laravel diverged — and in the direction no
+portable caller can rely on: a caller that sent only the new terms expecting append was
+*already* dropping terms on WordPress. Making Laravel replace therefore cannot break a
+caller that was correct on both hosts.
+
+### Why the issue's option 2 was not implemented literally
+
+The issue proposed `sync()`. That is unsafe here for a reason not visible from the call
+site: `NvoosPost::terms()` is one many-to-many over `nvoos_post_term`, and categories and
+tags share that pivot. `sync()` detaches every term not in its argument, so setting
+`category` would have cleared `post_tag` as a side effect.
+
+The implementation is taxonomy-scoped instead: attach the desired terms, then detach only
+*this* taxonomy's stale ones. Same end state for the named taxonomy, no collateral damage
+to the others. Attach runs before detach, so a failure between the two cannot remove a term
+the caller asked for.
+
+### Why option 3 (split the field) was declined
+
+Option 3 would add `taxonomyReplace` beside `taxonomyInput`. It is defensible — append is
+expressible in WordPress — but it solves a problem no caller has. Appending is already
+expressible *by the caller*: send the union. `auto_categorize_content` has always done
+exactly that, and its unit test pins it. A second field would also leave `taxonomyInput`
+ambiguous for anyone who sets only that, which is the original complaint. The append case
+stays the caller's job, and the store's rule becomes one sentence instead of two.
+
+### The second divergence, found while testing
+
+The issue named one difference; there were two. For a taxonomy named with an **empty list**,
+WordPress's `wp_set_post_terms( $id, array(), $taxonomy )` clears the taxonomy, while the
+Laravel adapter's `if ( array() !== $termIds )` guard silently skipped it — a no-op. Both
+hosts now clear, which is the honest reading of a present key with an empty value.
+
+The outer array keeps its "no change" meaning: `taxonomyInput: array()` is the array
+equivalent of a null field, so an update that never mentions taxonomy cannot erase it.
+Together the rules give a caller all three states — omit to keep, name and fill to replace,
+name and empty to clear.
+
+### What changed
+
+- `UpdateContentCommand`, `CreateContentCommand`, `ContentStoreInterface` — the rule is
+  stated where a caller reads it, with the WordPress and RFC 7396 precedents.
+- `Laravel\Adapter\ContentStore` — `syncTaxonomyTerms()` became `replaceTaxonomyTerms()`,
+  taxonomy-scoped, with the `sync()` hazard documented so the next reader does not reach
+  for it.
+- `AutoCategorizeContentCompletionTool` — the union stays, but its justification changed
+  from "the adapters disagree" to "adding without removing is this tool's promise". The
+  workaround became a deliberate implementation.
+- The WordPress adapter is unchanged apart from comments; it was already correct.
+
+### Validation
+
+`ContentStoreTaxonomyTest` (adapter, 9 tests): replace; replace with an entirely different
+set; keep a shared term; other taxonomy untouched; absent taxonomy untouched; two
+taxonomies in one command; empty list clears; empty outer array no-op; create sets the set.
+
+The tests were falsified before being kept: with the stale-term detach replaced by a no-op
+(the old append behaviour), 6 of the 9 fail — and the 3 that still pass are exactly the ones
+asserting "no change" or create, which append cannot break.
+
+`ContentAndProjectToolsTest` gains two feature tests through `save_post` (replace, and no
+change when `categories` is absent) because that is the reachable path.
+
+`lib/core` 2,272 / 16,812. Adapter 359 / 1,889. Skeleton `ContentAndProjectToolsTest` +
+`AutoCategorizeContentToolTest` 30 / 188. phpcs clean on both rulesets — PSR-12 for
+core/adapter/skeleton, WPCS for the WordPress adapter.

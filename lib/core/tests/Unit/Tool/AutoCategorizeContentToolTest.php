@@ -286,7 +286,7 @@ final class AutoCategorizeContentToolTest extends TestCase
 
         $this->assertSame(array( 'Technology' ), $result['data']['assigned']);
 
-        // The pre-existing term survives: WordPress's replace semantics would have
+        // The pre-existing term survives: the store's replace semantics would have
         // deleted it, and that is the behaviour this tool deliberately does not copy.
         $this->assertSame(
             array( 'category' => array( 'Curated', 'Technology' ) ),
