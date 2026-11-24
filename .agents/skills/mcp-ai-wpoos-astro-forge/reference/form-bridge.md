@@ -98,3 +98,107 @@ through WordPress.**
   hidden inputs — no `data-*` surface needed; bridge PHPUnit needs the
   Docker `oos-wp` env (wp-tests-config targets the compose network) — phpcs
   + `php -l` run anywhere, PHPUnit does not.
+
+## Live dispatch — the two contract bugs (bridge 0.3.3–0.3.4 + Form.astro, 2026-11-24)
+
+Wiring the ECA enquiry bands end to end proved the bridge is only as good as the
+**pair** of contracts it sits between. Both halves were wrong at once, and each one
+alone produced the same opaque symptom.
+
+### Symptom
+
+`POST /wp-json/nvoos-forge/v1/forms/submit` → HTTP **200** with
+`{"ok":false,"message":"Your submission failed because the form is invalid.","errors":[]}`,
+and **no** row in Elementor → Submissions. A 200 means a native handler ran and
+rejected the submission — it is never the route/gate layer (that answers 404/403/429).
+
+### Bug 1 — the wrong ajax action (bridge)
+
+Elementor Pro gates every classic-form dispatch on its own action, not a nonce:
+
+```php
+// elementor-pro/modules/forms/classes/ajax-handler.php
+public static function is_form_submitted() {
+    // PHPCS - No nonce is required, all visitors may send the form.
+    return wp_doing_ajax() && isset( $_POST['action'] )
+        && 'elementor_pro_forms_send_form' === $_POST['action'];
+}
+```
+
+The bridge forced `wp_doing_ajax()` true but set
+`$_POST['action'] = 'elementor_pro_forms'` — the **nonce** action. The strings
+differ by `_send_form`, so `is_form_submitted()` was false on every dispatch.
+Sending a valid `_nonce` changes nothing (the handler never verifies one; a bogus
+or empty `_nonce` still succeeds natively).
+
+Fixed by `Forms::elementor_request()` — one method that builds the whole ajax
+request, unit-tested on the exact action string.
+
+### Bug 2 — the page never sent `post_id` (component)
+
+With the bridge fixed, the **browser** still failed while the identical curl
+payload succeeded. Elementor resolves the widget through the document:
+
+```php
+$document = Plugin::$instance->documents->get( (int) $_POST['post_id'] );
+$this->instance = $this->find_element_recursive( $document->get_elements_data(), $form_id );
+```
+
+The forged form renders the hidden `post_id` carrier (it is in the source markup)
+and the bridge's `elementor_has_form()` deliberately searches **all** posts — so the
+render was found, `post_id` 0 was handed to the handler, `documents->get(0)` returned
+null, and the same "form is invalid" came back. `Form.astro` had been skipping
+`post_id` with the other reserved keys when collecting fields. It now reads the
+hidden carrier into the payload; `tests/forms.test.ts` pins it.
+
+`queried_id`, `referrer` and `referer_title` are **not** required — native
+submissions succeed with none of them.
+
+Bridge **0.3.4** makes it self-describing: an Elementor submission with `post_id`
+0 answers `400 nvoos_forge_form_post_id_required` instead of being forwarded to a
+guaranteed rejection.
+
+### JetFormBuilder is different
+
+`Jet_Form_Builder\Form_Handler::process_form()` has **no** action guard: it needs
+`$_POST[ $form_key ]` (`_jet_engine_booking_form_id`) and
+`$_POST[ $refer_key ]` (`_jet_engine_refer`), or it answers `{status:'failed', reload:true}`.
+It reads `$_POST['form_fields']` as a **nested map**, which PHP's own POST parsing
+produces from `form_fields[name]` keys — a JSON body never does, so
+`Forms::bracket_fields()` rebuilds it while keeping the flat keys for
+`jet_fb_context()->update_request()`.
+
+### Diagnostic ladder (in this order)
+
+1. `GET /wp-json/nvoos-forge/v1/health` → `formsEnabled`, `formsConfigured`,
+   `formsOriginsCount`.
+2. The submitting origin is in Settings → Forge Bridge → Static origins (exact
+   `scheme://host[:port]`, no trailing slash).
+3. Submit **in a browser** from the forged origin and read `.ds-form-status`. A curl
+   that passes while the page fails means the component's payload (bug 2 class).
+4. `POST …/forms/submit` with the page's own body + an `Origin` header:
+   `404 form_not_found` = neither handler resolved the identifier;
+   200 `ok:false` = a native handler ran and rejected it (bug 1 class).
+5. Submit the **real** WP form and read the `admin-ajax.php` response
+   (`{"success":true,"data":{"message":"Your submission was successful."}}`).
+   If the source fails too, the site is the problem, not the bridge.
+6. To read a handler's own source/state on a live site, install a throwaway probe
+   plugin with a token-gated REST route (`ReflectionClass::getFileName()` +
+   `file_get_contents()`) — 5 upload cycles of guessing is slower than one probe.
+   Delete it afterwards.
+
+### Operational notes (learned the hard way)
+
+- **Package the bridge with `bin/build-nvoos-forge-bridge.py`**, never a hand-rolled
+  zip: `plugins/nvoos-forge-bridge/.distignore` excludes the dev `vendor/`, and the
+  builder emits the 16-file shipping shape. A 17.7 MB zip that includes
+  `vendor/wp-phpunit` extracts into a `tmp-…` wrapper directory that WordPress then
+  cannot activate ("Plugin file does not exist."); re-uploading the clean zip on top
+  fixes the stale row and leaves the correct `nvoos-forge-bridge/` path.
+- **Replacing the bridge re-activates it** via "Replace current with uploaded" —
+  always re-check `/health` for the new `pluginVersion` before testing a fix, and
+  never ship two different artefacts under one version.
+- **Elementor submissions are a CPT the admin list paginates** ("All (n)"); a test
+  form's rows land there and are worth trashing after verification. The bulk-action
+  combobox is a React control — `select.value = …` does not register; use the real
+  select or the row action.

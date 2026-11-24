@@ -4,7 +4,7 @@ Tags: headless, rebuild, webhook, forms, redirects
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.3.3
+Stable tag: 0.3.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -88,6 +88,9 @@ The uncompiled source of this plugin lives in the public repository at https://g
 4. Optional revalidation for managed frontends — a revalidate endpoint and its write-only bearer token; the hop is disabled until both are saved.
 
 == Changelog ==
+
+= 0.3.4 =
+* New: an Elementor submission without the page's `post_id` is answered with a typed `400 nvoos_forge_form_post_id_required` instead of forwarding the handler's generic "the form is invalid". Elementor resolves the widget *inside* the carrier document, so the submission could never succeed — and because the existence check deliberately searches every post, the render was still found, which made the cause invisible.
 
 = 0.3.3 =
 * Fix: every Elementor Pro form submission answered "Your submission failed because the form is invalid." and recorded nothing. The in-process ajax emulation sent `$_POST['action'] = 'elementor_pro_forms'` (the NONCE action), but `Ajax_Handler::is_form_submitted()` gates the dispatch on the action the handler is registered under — `elementor_pro_forms_send_form`. The request payload is now built by a single testable `elementor_request()` method so the contract cannot drift again.
