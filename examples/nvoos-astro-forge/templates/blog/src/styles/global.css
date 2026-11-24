@@ -4388,3 +4388,43 @@ span.forge-icon-missing::before {
 .ds-lightbox__close:hover {
 	background: #fff;
 }
+
+/* ---------------------------------------------------------------------------
+ * Elementor's VISIBILITY utilities — the sanitizer keeps the class, the vendor
+ * sheet that gave it meaning never ships.
+ *
+ * `screen-only` is a real heading: it has to stay in the accessibility tree, so
+ * this is the clip pattern, not `display: none`. Without it eca.directory's
+ * "Courses List" label — a 1px clipped h2 above the ECA grid — rendered as a
+ * purple bar across the band (2026-11-24).
+ * ------------------------------------------------------------------------- */
+.elementor-screen-only {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* The responsive show/hide utilities, at the builder's own breakpoints. */
+@media (max-width: 767px) {
+	.elementor-hidden-mobile {
+		display: none !important;
+	}
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+	.elementor-hidden-tablet {
+		display: none !important;
+	}
+}
+
+@media (min-width: 1025px) {
+	.elementor-hidden-desktop {
+		display: none !important;
+	}
+}

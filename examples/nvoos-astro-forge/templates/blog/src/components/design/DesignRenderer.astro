@@ -294,6 +294,32 @@ const bandSidePadding = ( shorthand: string | undefined ): number => {
 	return Math.max( 0, horizontal ?? 0, left ?? 0 );
 };
 
+/**
+ * The band's measured PICTURE, taken from the element facts.
+ *
+ * `collectSlots` reads `<img src>`, and a builder paints a hero photo as a
+ * `background-image` on a spacer div — so a split hero arrived with an EMPTY
+ * media column and rendered only copy (eca.directory, 2026-11-24). The element
+ * pass already recorded every painted element's URL and height; the tallest is
+ * the picture, the shorter ones are its decorative blobs and shapes. One image
+ * beats a pile of ornaments the rebuild cannot position (their absolute offsets
+ * live in the vendor sheet that never ships).
+ */
+const mediaFromElementFacts = ( theme: SectionTheme | undefined ): Array< { src: string; alt: string } > | undefined => {
+	const painted = ( theme?.elements ?? [] )
+		.map( ( element ) => {
+			const match = /background-image:\s*url\(\s*["']?([^"')]+)["']?\s*\)/i.exec( element.bg ?? '' );
+			if ( ! match ) {
+				return undefined;
+			}
+			const height = typeof element.height === 'number' ? element.height : element.height?.desktop ?? 0;
+			return { src: match[ 1 ], height };
+		} )
+		.filter( ( entry ): entry is { src: string; height: number } => Boolean( entry?.src ) )
+		.sort( ( a, b ) => b.height - a.height );
+	return painted.length > 0 ? [ { src: painted[ 0 ].src, alt: '' } ] : undefined;
+};
+
 const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string, desktopCols?: number ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
@@ -1225,6 +1251,66 @@ const forceState = ( declarations: string ): string =>
  *
  * A state declaration is emitted `!important` — see `forceState`.
  */
+/**
+ * The band's ROWS, for a band that stays RAW.
+ *
+ * A raw band is the source's own markup with the builder's stylesheet gone, so
+ * every flex container inside it collapses to a block and its lanes stack:
+ * eca.directory's team band rendered three 1180px cards down the page against
+ * the source's three ~318px cards across, and its copy column sat on top of
+ * them instead of beside (2026-11-24).
+ *
+ * The widths are MEASURED — the band's own row from the column facts (the same
+ * numbers `--ds-cols-template-desktop` carries for a component band), the rows
+ * nested inside it from `bandFacts.rows`. Never a guess at the builder's
+ * classes: the vendor sheet that said `flex-direction: row` for THIS container
+ * and `column` for that one never ships. A phone keeps the source's stacking.
+ */
+const tracksFrom = ( widths: number[] ): string | undefined => {
+	const total = widths.reduce( ( sum, width ) => sum + width, 0 );
+	if ( widths.length < 2 || total <= 0 ) {
+		return undefined;
+	}
+	return widths.map( ( width ) => `minmax(0,${ Math.round( ( width / total ) * 1000 ) }fr)` ).join( ' ' );
+};
+
+const bandRowCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		// Only a RAW band needs this: a component band lays its own grid out.
+		if ( ! id || ( section.kind !== 'text' && section.kind !== 'raw' ) ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const desktop: string[] = [];
+		const mobile: string[] = [];
+		const push = ( selector: string, tracks: string | undefined ) => {
+			if ( ! tracks ) {
+				return;
+			}
+			desktop.push( `${ selector }{display:grid;grid-template-columns:${ tracks };align-items:start}` );
+			mobile.push( `${ selector }{grid-template-columns:minmax(0,1fr)}` );
+		};
+		// The band's OWN row — the first `.e-con-inner` under the band element.
+		push(
+			`${ scoped } > .post-body > .elementor-element > .e-con-inner`,
+			tracksFrom( ( theme?.columns ?? [] ).map( ( column ) => column.width ?? 0 ) )
+		);
+		// The rows NESTED inside it, addressed by their own element id.
+		for ( const row of theme?.rows ?? [] ) {
+			push( `${ scoped } .elementor-element-${ row.id }`, tracksFrom( row.widths ) );
+		}
+		if ( desktop.length === 0 ) {
+			return '';
+		}
+		// The SOURCE's own stacking breakpoint (see the scaffold's `stackAt`): a
+		// band whose lanes are full-width at 834px must not keep two columns there.
+		const stackAt = theme?.stackAt === 'tablet' ? 1024 : 767;
+		return desktop.join( '' ) + `@media (max-width: ${ stackAt }px){${ mobile.join( '' ) }}`;
+	} )
+	.join( '' );
+
 const bandInteractionCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
@@ -1325,8 +1411,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
@@ -1339,30 +1425,37 @@ const bandParallaxCss = sections
 			// keeps `section.html` but never emits it, so suppressing there would
 			// drop the anchor entirely.
 			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
+			// A band whose measured columns say "copy beside media" renders as the
+			// SPLIT HERO even when its classified kind is something else: the photo
+			// is a background-image the semantic pass cannot see, so the kind's own
+			// component would drop the media column and its lane split entirely.
+			const splitHero = theme?.layout === 'split' && section.kind !== 'text' && section.kind !== 'raw';
+			const kind = splitHero ? 'hero' : section.kind;
+			const splitMedia = splitHero ? mediaFromElementFacts( theme ) : undefined;
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
-				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (
 						<>
-							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
-							{section.kind === 'accordion' && <Accordion section={section} theme={theme} />}
-							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index, theme)} theme={theme} />}
-							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index, theme)} theme={theme} />}
-							{section.kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
-							{section.kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
-							{section.kind === 'cta' && <Cta section={section} theme={theme} />}
-							{section.kind === 'gallery' && <Gallery section={section} theme={theme} />}
-							{section.kind === 'form' && <Form section={section} theme={theme} />}
-							{section.kind === 'pricing' && <Pricing section={section} theme={theme} />}
-							{section.kind === 'stats' && <Stats section={section} theme={theme} />}
-							{section.kind === 'steps' && <Steps section={section} theme={theme} />}
-							{section.kind === 'team' && <Team section={section} theme={theme} />}
-							{section.kind === 'marquee' && <Marquee section={section} uid={section.id ?? index} />}
-							{section.kind === 'comparison' && <Comparison section={section} theme={theme} />}
-							{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
-							{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
+							{kind === 'hero' && <Hero section={section} theme={theme} media={splitMedia} />}
+							{kind === 'accordion' && <Accordion section={section} theme={theme} />}
+							{kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index, theme)} theme={theme} />}
+							{kind === 'icon-list' && <IconList section={section} columns={columnsFor(index, theme)} theme={theme} />}
+							{kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
+							{kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
+							{kind === 'cta' && <Cta section={section} theme={theme} />}
+							{kind === 'gallery' && <Gallery section={section} theme={theme} />}
+							{kind === 'form' && <Form section={section} theme={theme} />}
+							{kind === 'pricing' && <Pricing section={section} theme={theme} />}
+							{kind === 'stats' && <Stats section={section} theme={theme} />}
+							{kind === 'steps' && <Steps section={section} theme={theme} />}
+							{kind === 'team' && <Team section={section} theme={theme} />}
+							{kind === 'marquee' && <Marquee section={section} uid={section.id ?? index} />}
+							{kind === 'comparison' && <Comparison section={section} theme={theme} />}
+							{kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
+							{kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
 						</>
 					)}
 					{/* The band's MARK STRIP. A builder carousel publishes each logo as a
