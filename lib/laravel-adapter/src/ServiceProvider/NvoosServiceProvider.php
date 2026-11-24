@@ -53,6 +53,9 @@ use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
 use Nvoos\Core\Domain\Contract\MediaWorkerClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
+use Nvoos\Core\Domain\Contract\OfficeWriterInterface;
+use Nvoos\Core\Domain\Contract\PdfMutatorInterface;
+use Nvoos\Core\Domain\Contract\PdfTextExtractorInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
@@ -122,6 +125,9 @@ use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
 use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
+use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
+use Nvoos\Laravel\Adapter\MediaWorkerPdfMutator;
+use Nvoos\Laravel\Adapter\MediaWorkerPdfTextExtractor;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
@@ -192,6 +198,15 @@ class NvoosServiceProvider extends ServiceProvider {
 		// false when no worker is configured, and the tool then refuses with
 		// `no_pdf_engine` rather than producing an empty document.
 		$this->app->bind( HtmlToPdfInterface::class, MediaWorkerHtmlToPdf::class );
+
+		// The rest of the document family rides the same worker (Proposal 164
+		// section 164.4.3): extract, merge and watermark are `/api/pdf/*`
+		// multipart routes, Word and Excel are `/api/document/*` JSON routes.
+		// Each tool asks `isAvailable()` and refuses with a named capability
+		// error rather than discovering the absence mid-render.
+		$this->app->bind( PdfTextExtractorInterface::class, MediaWorkerPdfTextExtractor::class );
+		$this->app->bind( PdfMutatorInterface::class, MediaWorkerPdfMutator::class );
+		$this->app->bind( OfficeWriterInterface::class, MediaWorkerOfficeWriter::class );
 
 		// The capability matrix, probed once and cached (Proposal 164 section
 		// 164.4.2). Every later domain adapter and both diagnostic surfaces read
