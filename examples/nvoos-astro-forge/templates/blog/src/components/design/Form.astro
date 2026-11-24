@@ -237,8 +237,14 @@ const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
 		const honeypot = formEl.elements.namedItem('honeypot') as HTMLInputElement | null;
 		if (honeypot && honeypot.value.trim() !== '') return; // Bot floor — silently drop.
 
-		const payload: { form: string; fields: Record<string, string>; honeypot: string; timestamp: number; page: string } = {
+		// `post_id` is the Elementor carrier post the form widget lives on. The
+		// handler resolves the widget through that document, so omitting it makes
+		// every submit answer "the form is invalid" (the widget is still found by
+		// the bridge's existence check, which searches all posts).
+		const postIdEl = formEl.elements.namedItem('post_id') as HTMLInputElement | null;
+		const payload: { form: string; post_id?: number; fields: Record<string, string>; honeypot: string; timestamp: number; page: string } = {
 			form: (formEl.elements.namedItem('form') as HTMLInputElement).value,
+			...(postIdEl && postIdEl.value ? { post_id: Number(postIdEl.value) || 0 } : {}),
 			fields: {},
 			honeypot: '',
 			timestamp: Date.now(),

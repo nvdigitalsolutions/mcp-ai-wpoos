@@ -8,6 +8,9 @@
 // function of the payload (same payload → same key → one email).
 // ---------------------------------------------------------------------------
 
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -18,6 +21,7 @@ import {
 	readSubmissionFields,
 	submissionMessage,
 } from '../lib/forms.ts';
+import { FORGE_ROOT } from '../lib/scaffold.ts';
 
 function jsonRequest( body: unknown ): Request {
 	return new Request( 'https://example.com/api/forms/submit', {
@@ -168,6 +172,21 @@ describe( 'harvestedField', () => {
 				page: 'https://virtuallyjamaica.com/',
 			} )
 		).toBeUndefined();
+	} );
+} );
+
+describe( 'the component payload', () => {
+	it( 'carries the Elementor carrier post the handler resolves the widget through', async () => {
+		// Elementor Pro finds the form widget inside the document named by
+		// `post_id`. Without it the bridge's all-posts existence check still
+		// resolves the render, then hands the handler post 0 — and the handler
+		// answers "Your submission failed because the form is invalid."
+		const source = await readFile(
+			path.join( FORGE_ROOT, 'templates', 'blog', 'src', 'components', 'design', 'Form.astro' ),
+			'utf8'
+		);
+		expect( source ).toContain( "namedItem('post_id')" );
+		expect( source ).toContain( 'post_id: Number(postIdEl.value)' );
 	} );
 } );
 
