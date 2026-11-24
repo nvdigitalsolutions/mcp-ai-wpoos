@@ -296,3 +296,33 @@ jobs:
         # how sse_offload_elapsed_seconds shipped invisible in #7905. Also
         # fails on a stale baseline entry in settings-field-registration.txt.
         run: php .github/scripts/check-settings-field-registration.php
+
+  class-aliases:
+    name: Class-alias resolution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Verify the resolver against its fixtures
+        # A hand-rolled tokenizer is only as good as its tests. These cover
+        # every shape the gate classifies, including the four original defects
+        # (two missing imports, two imports pointing at a namespace that does
+        # not exist).
+        run: php bin/check-class-aliases.php --self-test
+
+      - name: Run the class-alias gate
+        # Fails when a name in class position resolves to a FQCN that nothing
+        # declares. PHP resolves an unimported `Foo::class` to
+        # `<current namespace>\Foo` at compile time, silently: a binding lands
+        # on a name nobody asks for and a `catch` never matches. Four such
+        # defects shipped in one wave (#8131). PHPStan runs at level 1 over
+        # includes/ and addons/ only, so it never sees lib/ or docker/laravel/.
+        run: php bin/check-class-aliases.php
