@@ -476,3 +476,140 @@ The watermark defaults are the old hard-coded mark **exactly** (`diagonal` repro
 ### Measurement
 
 `bin/audit-tool-readiness.php`: **256 rows / 237 servable / 0 violations** (was 254 / 235). `lib/core` 2,376 tests; adapter 359; the worker suite gained 13 route/style tests and 2 ingest cases (`node --test`, run against the worker image).
+
+## 164.14 Addendum — the image pipeline family and the Phase 6 gate (2026-11-24)
+
+Ten of the twenty-two `image-production` slugs now run on this runtime, and the
+regression gate that protects every port so far is wired into CI.
+
+### Worker
+
+Four additive changes, each advertised as its own capability key because a
+runtime has to be able to tell that a route **argument** is absent, not just that
+the route is:
+
+| Change | Route | Key |
+|---|---|---|
+| `position` on the transform resize op | `POST /api/image/transform` | `image_smart_crop` |
+| `lossless` encoder flag | `POST /api/image/batch` | `image_batch_encoding` |
+| `progressive` encoder flag | `POST /api/image/batch` | `image_batch_encoding` |
+| `enhance` / `upscale` / `batch` / `edit` declared | existing routes | `image_enhancement`, `image_upscaling`, `image_batch`, `image_editing` |
+
+`position` is an allowlist of Sharp's own anchor and saliency spellings, with
+`center` normalised to `centre`, so an arbitrary string never reaches the image
+library. `lossless` **refuses JPEG** with a 400 rather than pretending: there is
+no lossless JPEG, and the alternative is returning a larger file that is still
+not bit-identical while reporting success. `lossless` with `format: original` is
+refused for the same reason — the source encoding is not known until the bytes
+are read.
+
+`image_editing` is derived from the three provider keys the `/edit` route
+actually resolves (`GEMINI_API_KEY`, `OPENAI_API_KEY`, `REPLICATE_API_KEY`), so a
+worker without one reports the capability as unavailable and the tools refuse
+with `no_image_provider`.
+
+### Runtime
+
+`ImageProductionInterface` is a **new contract**, not an extension of
+`ImageProcessingInterface`. Adding `batch()` there would have forced every host
+with GD to implement a worker protocol it does not speak; the WordPress adapter
+implements `ImageProcessingInterface` and nothing else, which is exactly what
+interface segregation is for.
+
+`MediaWorkerImageProduction` implements it over `MediaWorkerOutput` (shared
+decode/write/fingerprint) and `MediaWorkerCapabilityProbe`. `supports()` answers
+per operation so a caller can distinguish "this worker cannot edit images" from
+"this host has no worker".
+
+Ten tools, all registered as `ready` in the manifest with evidence in
+`ImageProductionToolsTest`:
+
+`compress_image` · `optimize_for_web` · `enhance_image_quality` ·
+`upscale_image_ai` · `optimise_images_batch` · `generate_responsive_images` ·
+`colorize_image` · `apply_artistic_style` · `get_unoptimised_images` ·
+`get_images_without_alt`
+
+`optimize()` and `batch()` both ride `/api/image/batch`: it is the only route
+that reports **both** dimensions *and* accepts AVIF, and asking `/optimize` for
+a height it does not return would be a guess followed by a second round trip.
+
+### Three defects found while making it honest
+
+- **The adapter defaulted `sharpen` to `true`.** An enhance call that asked only
+  for denoising would have sharpened as well, and `enhancements` would have
+  reported an operation nobody requested. The default is now off.
+- **A full-strength sharpen collided with the route's boolean spelling.** The
+  route treats the bare strings `true` and `1` as flags, and `1` is also a
+  legitimate 0-1 amount. Numeric amounts are now sent as `1.00`, which keeps them
+  on the scalar path where `strength` applies.
+- **Argument validation ran after the capability probe.** `scale_factor: 3` and
+  an unknown style preset both reported `image_pipeline_unavailable` /
+  `no_image_provider`, sending the operator to the wrong problem. Both tools now
+  validate first — the same ordering rule `dryRunPlan()` documents.
+
+### Deliberate deviations from WordPress
+
+- **`model` and `denoise` are absent from `upscale_image_ai`.** The WordPress
+  tool declares both and its own description admits it ignores them. A schema
+  that teaches an orchestrator that `model: anime` changes the output, when it
+  does not, is worse than a smaller schema. `kernel` is the only resampling
+  control and the response names the method used.
+- **`style_image` is absent from `apply_artistic_style`** for the same reason: an
+  image-to-image reference is a different route, not a flag.
+- **`use_remote` is absent from `enhance_image_quality`** and
+  **`strip_metadata` from `optimize_for_web`.** A port has no local Sharp to fall
+  back to, and the worker always strips EXIF on re-encode; declaring a `false`
+  that cannot be honoured is the failure `AddWatermarkToPdfTool` already refused.
+- **`method: lossless` is honoured, not ignored.** The WordPress tool accepts the
+  value and calls `save()`, which has no lossless path.
+- **`max_size_kb` reports a miss.** Quality steps down by five to a floor of ten,
+  at most ten passes; if the target is still unmet the tool returns
+  `target_size_unmet` with the size achieved instead of a success whose number is
+  wrong.
+- **`dry_run` stays `true` by default** in `optimise_images_batch`. A bulk rewrite
+  of a library should be asked for twice.
+- **`optimize_for_web` resolves `auto` to WebP, not AVIF.** AVIF encodes several
+  times slower and is unevenly supported in mail clients and older Safari; a
+  silent pick of the slowest, least-portable option is not a helpful default.
+
+### What is still open, with the reason
+
+| Slug | Why it is not ported |
+|---|---|
+| `apply_watermark_batch` | Needs image compositing; the worker has no `composite` op. Its own slice (text-to-SVG overlay + gravity) is a genuine worker feature. |
+| `batch_process_images` | Chains ordered ops including `remove_background`; depends on the two rows below. |
+| `remove_background`, `remove_image_background` | Need `rembg` or a Clipdrop-style provider. No route exists; `auto`/`free`/`paid` would collapse to one real option. |
+| `image_inpainting` | Needs a mask channel and a provider that accepts one. `/edit` has neither. |
+| `generate_image_ai`, `generate_image_variations` | Provider-backed **generation**; `nvoos/core` already serves the `generate_*` family under its own slugs, and duplicating the toolkit slug would mean two tools doing the same work. |
+| `get_unwatermarked_images` | No watermark concept exists in the file registry, so there is nothing to audit. |
+| `resize_image_smart`, `optimize_image_sharp` | Reachable — `position: attention` and the multi-op route both exist — but each is a thin alias over `resize_image` / `compress_image`. Deferred to a naming decision, not a capability one. |
+| `text_to_image_prompt_optimizer` | A prompt builder that performs no work; it belongs in `quarantined`, not `ready`. |
+
+### Phase 6 — the regression gate
+
+`bin/toolkit-parity.php` extracts `get_slug()` statically from
+`addons/pro/includes/tools/<toolkit>/*.php`, intersects it with the servable rows
+in `lib/core/resources/tool-readiness.php`, and compares against
+`lib/core/resources/toolkit-parity-baseline.json`.
+
+Modes: no flag (markdown table), `--json`, `--write` (regenerate the baseline),
+and `--check`, which **fails only on regression** — a slug the baseline records
+as served and that is served no longer.
+
+It deliberately does not gate on a ratio. A ratio gate rewards porting a tool
+badly to move a number; a regression gate protects the ones already ported. The
+`toolkit-parity` job in `.github/workflows/tool-readiness.yml` runs `--check`.
+
+The extractor skips `abstract class` and `interface` files, which legitimately
+declare no literal slug — without that skip the report counted them as
+unreadable.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **266 rows / 247 servable / 0 violations** (was
+256 / 237). `bin/toolkit-parity.php`: **46 ported of 854 across 52 toolkits**
+(was 36); `image-production` is **11 of 22** (was 1).
+
+`lib/core` 2,376 tests / 17,255 assertions; adapter 359 / 1,907; the app suite
+gains 25 tests in `ImageProductionToolsTest`; the worker suite gains 2 batch
+cases and 2 transform cases (`node --test`, run against the worker image).

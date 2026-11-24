@@ -112,3 +112,26 @@ jobs:
       # to the package's nine-profession starter.
       - name: Check the snapshot is in step with the reference data
         run: php bin/sync-professions.php --check
+
+  toolkit-parity:
+    name: Toolkit parity (regression)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      # Proposal 164 §164.6 Phase 6. Fails on regression only — a slug the
+      # checked-in baseline records as served and that is served no longer. It
+      # deliberately does not gate on a ratio: a ratio gate rewards porting a
+      # tool badly to move a number.
+      - name: Check no ported toolkit tool has disappeared
+        run: php bin/toolkit-parity.php --check

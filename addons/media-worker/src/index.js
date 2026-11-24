@@ -198,6 +198,29 @@ app.get( '/api/health/full', async (_req, res) => {
 				ai_providers: providers,
 				ai_content: !!process.env.OPENAI_API_KEY,
 				image_optimization: true,
+				// The pipeline half of the image family (Proposal 164 section
+				// 164.6 phase 2). These are Sharp calls with no external binary,
+				// so they are declared unconditionally — except editing, which
+				// needs a model key and is refused with 503
+				// `capability_unavailable` when none resolves.
+				//
+				// Separate keys rather than one `image_pipeline`, because a
+				// runtime must be able to tell that a specific operation is
+				// absent rather than inferring it from a version string.
+				image_enhancement: true,
+				image_upscaling: true,
+				image_batch: true,
+				// `position` on the transform resize op is newer than the route.
+				image_smart_crop: true,
+				// `lossless` and `progressive` on `/api/image/batch` are newer than
+				// the route. JPEG has no lossless mode and says so with a 400; the
+				// other encoders honour it, and PNG raises its deflate effort.
+				image_batch_encoding: true,
+				image_editing: !!(
+					providers.gemini ||
+					providers.openai ||
+					providers.replicate
+				),
 				video_generation: !!process.env.REPLICATE_API_KEY,
 				video_processing: caps.ffmpeg && caps.ffprobe,
 				pdf_extraction: true,
