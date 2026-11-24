@@ -488,6 +488,31 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An Elementor render without its carrier post id can never dispatch —
+	 * report why instead of forwarding the handler's generic rejection.
+	 */
+	public function test_elementor_without_the_carrier_post_is_a_typed_400(): void {
+		$this->enable_forms();
+		$post_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Contact', 'post_status' => 'publish' ) );
+		update_post_meta( $post_id, '_elementor_data', wp_json_encode( array( array( 'widgetType' => 'form', 'settings' => array( 'form_id' => 'widget-9' ) ) ) ) );
+		add_filter( 'nvoos_forge_bridge_forms_elementor_available', '__return_true' );
+
+		$response = $this->server->dispatch(
+			$this->json_request(
+				$this->valid_payload(
+					array(
+						'form'   => 'widget-9',
+						'fields' => array( 'form_fields[name]' => 'Jane' ),
+					)
+				)
+			)
+		);
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'nvoos_forge_form_post_id_required', $response->get_data()['code'] );
+	}
+
+	/**
 	 * Captcha: enabled → a missing/failed token is a 403; a verified token
 	 * (intercepted siteverify) proceeds; action/hostname mismatches fail.
 	 */

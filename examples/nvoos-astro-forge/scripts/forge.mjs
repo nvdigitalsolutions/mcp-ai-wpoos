@@ -33,7 +33,7 @@
 import { readFile, readdir, mkdir, stat, writeFile } from 'node:fs/promises';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { confirm, isCancel, password as passwordPrompt, select, spinner, text } from '@clack/prompts';
@@ -69,6 +69,8 @@ import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
 import { applyBandSurfaces, applyChromeSurfaces, bandRegionName, bandRegionSelector, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
 import { compareChromeGeometry, compareFooterBrand, compareMobileNav } from '../lib/chrome-audit.ts';
 import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
+import { auditFormBands, describeFormProblems } from '../lib/forms-gate.ts';
+import { describeHealth, fetchFormsHealth, sendFormProbe } from '../lib/forms-check.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
@@ -92,6 +94,48 @@ const DEPLOY_MODES = [ 'github-pages', 'cloudflare-pages', 'velocity' ];
 function fail( message ) {
 	console.error( message );
 	process.exit( 2 );
+}
+
+/**
+ * The endpoint the profile's forms should post to — the same default the
+ * scaffold bakes into `manifest.forms` (`<url>/wp-json/nvoos-forge/v1`).
+ *
+ * `undefined` when the profile declares no `forms` block: the bands then degrade
+ * to contact cards BY DESIGN, and the forms gates report that instead of failing.
+ */
+function profileFormsEndpoint( profile ) {
+	const forms = profile?.forms;
+	if ( ! forms ) {
+		return undefined;
+	}
+	const declared = typeof forms.endpoint === 'string' ? forms.endpoint.trim() : '';
+	if ( declared !== '' ) {
+		return declared;
+	}
+	const origin = String( profile.url ?? '' ).trim().replace( /\/+$/, '' );
+	return origin === '' ? undefined : `${ origin }/wp-json/nvoos-forge/v1`;
+}
+
+/** Every built `.html` file under `<target>/dist`, recursively. */
+function builtHtmlFiles( target ) {
+	const found = [];
+	const walk = ( dir ) => {
+		if ( ! existsSync( dir ) ) {
+			return;
+		}
+		for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
+			const path = `${ dir }/${ entry.name }`;
+			if ( entry.isDirectory() ) {
+				walk( path );
+				continue;
+			}
+			if ( /\.html$/i.test( entry.name ) ) {
+				found.push( path );
+			}
+		}
+	};
+	walk( join( target, 'dist' ) );
+	return found;
 }
 
 function failDeployMode( mode ) {
@@ -2211,6 +2255,7 @@ const GATE_ORDER = [
 	'nav anchors',
 	'built ids',
 	'route keys',
+	'forms',
 	'fact consumption',
 	'chrome facts',
 	'font coverage',
@@ -2391,6 +2436,129 @@ async function checkDeployedBuild( { target, url, expected, indexHtml, attempts 
 async function hasSourceSeam( dir ) {
 	const files = await readdir( dir ).catch( () => [] );
 	return files.some( ( file ) => /^source-.+\.png$/.test( file ) );
+}
+
+/**
+ * `forge forms check` — the LIVE half of the enquiry contract.
+ *
+ * `verify --forms` can prove the build renders a form with a field, at the right
+ * endpoint, with a carrier that can resolve. It cannot prove the endpoint ACCEPTS
+ * it. On 2026-11-24 every forged Elementor form answered HTTP 200 with
+ * `{"ok":false}` and recorded nothing, and every unit test missed it because they
+ * all drive the dispatch-seam filters. This is the check that closes that gap.
+ *
+ * Read-only by default. `--send` posts one clearly-labelled probe, because the
+ * dispatch question only has a live answer — and a real submission with real mail
+ * is a decision, never a default.
+ */
+async function runFormsCheck( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const endpoint = profileFormsEndpoint( profile );
+	if ( ! endpoint ) {
+		fail(
+			`The profile declares no \`forms\` block, so there is nothing to check. Add \`"forms": { "delivery": "bridge" }\` and re-scaffold (Proposal 163 ��6).`
+		);
+	}
+	if ( ! existsSync( options.target ) ) {
+		fail( `No build at ${ options.target } — run \`npm run build\` in the project first (or pass --target).` );
+	}
+
+	const origin = String( options.origin ?? profile?.deploy?.publicOrigin ?? profile.url ?? '' )
+		.trim()
+		.replace( /\/+$/, '' );
+	if ( ! /^https?:\/\//i.test( origin ) ) {
+		fail( `Cannot resolve the submitting origin (got "${ origin }") — pass --origin https://your.static.host` );
+	}
+
+	// `builtHtmlFiles` returns paths under `<target>/dist`; resolve the target so
+	// a relative `--target .` still produces a matching prefix. Labels are then
+	// build-root relative (`index.html` = the front page), which is also what the
+	// probe records as its page.
+	const buildRoot = `${ resolve( options.target ).replace( /\\/g, '/' ) }/dist/`;
+	const built = builtHtmlFiles( options.target ).map( ( file ) => ( {
+		file: resolve( file ).replace( /\\/g, '/' ).replace( buildRoot, '' ),
+		html: readFileSync( file, 'utf8' ),
+	} ) );
+	const report = auditFormBands( built, { endpoint } );
+	// Probe the FRONT PAGE's form first: it is the site's main enquiry path, and
+	// `builtHtmlFiles` walks directories alphabetically (so `contact-us/` would
+	// otherwise win). Everything else follows in document order.
+	const surfaceRank = ( file ) => ( file === 'index.html' ? 0 : 1 );
+	const submits = report.bands
+		.flatMap( ( band ) =>
+			band.forms.filter( ( form ) => form.method !== 'get' && form.fields.length > 0 ).map( ( form ) => ( { band, form } ) )
+		)
+		.sort( ( a, b ) => surfaceRank( a.band.file ) - surfaceRank( b.band.file ) );
+
+	const health = await fetchFormsHealth( endpoint );
+	const result = {
+		endpoint,
+		origin,
+		surfaces: report.bands.length,
+		submitForms: submits.length,
+		contract: { status: report.status, note: report.note, problems: describeFormProblems( report ) },
+		health,
+		probe: null,
+	};
+	let blocking = report.status === 'fail' || health.formsEnabled === false || ! health.formsConfigured;
+
+	if ( options.send ) {
+		const first = submits[ 0 ];
+		if ( ! first ) {
+			result.probe = { status: 0, ok: false, message: 'no submit form in the build to probe' };
+			blocking = true;
+		} else {
+			const carriers = first.form.carriers;
+			const page = `${ origin }/${ first.band.file.replace( /index\.html$/i, '' ) }`;
+			result.probe = await sendFormProbe( {
+				endpoint,
+				origin,
+				form: carriers.form ?? '',
+				postId: carriers.post_id ? Number( carriers.post_id ) : undefined,
+				fields: first.form.fields,
+				page,
+			} );
+			result.probe.surface = `${ first.band.file } ${ first.band.sectionId || '(no id)' }`;
+			blocking = blocking || ! result.probe.ok;
+		}
+	}
+
+	if ( options.json ) {
+		console.log( JSON.stringify( result, null, 2 ) );
+	} else {
+		console.log( `Forms endpoint: ${ endpoint }` );
+		console.log( `  origin  : ${ origin }` );
+		console.log( `  surfaces: ${ result.surfaces } (${ result.submitForms } submit form(s))` );
+
+		if ( report.problems.length > 0 ) {
+			for ( const line of result.contract.problems ) {
+				console.warn( `  \u2717 ${ line }` );
+			}
+		} else {
+			console.log( `  \u2713 ${ report.note || 'contract intact' }` );
+		}
+
+		for ( const line of describeHealth( health ) ) {
+			const bad = /DISABLED|no static origin|empty|unreachable/.test( line );
+			console.log( `  ${ bad ? '\u2717' : '\u2713' } health: ${ line }` );
+		}
+
+		if ( options.send ) {
+			const probe = result.probe;
+			if ( probe?.ok ) {
+				console.log( `  \u2713 probe: ${ probe.message || 'accepted' } (${ probe.surface })` );
+			} else {
+				const detail = probe?.code ? `${ probe.code }: ${ probe.message }` : probe?.message ?? 'no reply';
+				console.warn( `  \u2717 probe: ${ detail }${ probe?.transportError ? ` (${ probe.transportError })` : '' }` );
+			}
+		} else {
+			console.log( '  \u00b7 probe: skipped (pass --send to submit one labelled probe)' );
+		}
+	}
+
+	if ( blocking ) {
+		process.exitCode = 1;
+	}
 }
 
 async function runVerify( profileRef, options ) {
@@ -2870,27 +3038,6 @@ function collectFactDeclarations( profile ) {
 }
 
 /** Every built HTML file under `<target>/dist`, recursively (absolute paths). */
-function builtHtmlFiles( target ) {
-	const found = [];
-	const walk = ( dir ) => {
-		if ( ! existsSync( dir ) ) {
-			return;
-		}
-		for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
-			const path = `${ dir }/${ entry.name }`;
-			if ( entry.isDirectory() ) {
-				walk( path );
-				continue;
-			}
-			if ( /\.html$/i.test( entry.name ) ) {
-				found.push( path );
-			}
-		}
-	};
-	walk( join( target, "dist" ) );
-	return found;
-}
-/** Concatenate every built stylesheet and document under `dist`. */
 function readBuiltStyles( target ) {
 	const parts = [];
 	const walk = ( dir ) => {
@@ -3001,6 +3148,39 @@ function readBuiltStyles( target ) {
 		}
 	}
 
+
+	// The enquiry contract — an OUTPUT gate, like the retired-CMS one below.
+	// A `form` band can render a heading and no form, a form with nothing to
+	// fill in, or a form posting nowhere, and the band/fact/text gates are all
+	// blind to it: the ECA front end scored 13/14 gates with no enquiry form
+	// anywhere on the site (2026-11-24). This judges the contract a browser or
+	// a no-JS visitor would use. Whether the endpoint actually DISPATCHES is a
+	// different question — `forge forms check --send`.
+	if ( options.forms !== false ) {
+		const declaredForms = profileFormsEndpoint( profile );
+		const rootPrefix = `${ String( options.target ).replace( /\\/g, '/' ).replace( /\/+$/, '' ) }/`;
+		const builtForms = builtHtmlFiles( options.target ).map( ( file ) => ( {
+			file: String( file ).replace( /\\/g, '/' ).replace( rootPrefix, '' ),
+			html: readFileSync( file, 'utf8' ),
+		} ) );
+		const formsReport = auditFormBands( builtForms, { endpoint: declaredForms } );
+		if ( formsReport.status === 'fail' ) {
+			for ( const line of describeFormProblems( formsReport ).slice( 0, 8 ) ) {
+				console.warn( `\u2717 Forms: ${ line }` );
+			}
+			const hidden = describeFormProblems( formsReport ).length - 8;
+			if ( hidden > 0 ) {
+				console.warn( `  \u2026 ${ hidden } more.` );
+			}
+			process.exitCode = 1;
+			record( 'forms', 'fail', formsReport.note );
+		} else if ( formsReport.status === 'na' ) {
+			record( 'forms', 'na', formsReport.note );
+		} else {
+			console.log( `\u2713 Forms: ${ formsReport.note }.` );
+			record( 'forms', 'pass', formsReport.note );
+		}
+	}
 
 	// A materialized profile is a PROMISE that the CMS is gone, so nothing the
 	// build ships may still address it. The search is for ASSET paths, not the
@@ -4470,13 +4650,30 @@ program
 		await runCompare( profileRef, options );
 	} );
 
+const formsCommand = program
+	.command( 'forms' )
+	.description( 'inspect the enquiry path a forged site depends on (Proposal 163 §6)' );
+formsCommand
+	.command( 'check' )
+	.description(
+		'check the built forms and the live bridge — the contract the page emits, whether the endpoint accepts submissions, and with --send a real dispatch through the native handler'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name (must carry a forms block)' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.option( '--origin <url>', 'the static origin the bridge allowlists (default: deploy.publicOrigin, then the profile url)' )
+	.option( '--send', 'POST one clearly-labelled probe submission — it creates a real record and may send real mail' )
+	.option( '--json', 'print the machine-readable report' )
+	.action( async ( profileRef, options ) => {
+		await runFormsCheck( profileRef, options );
+	} );
+
 program
 	.command( 'verify' )
 	.description( 'score design-language parity between the source site and the built frontend (Proposal 114)' )
 	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
 	.option( '--all', 'enable every gate (default \u2014 kept as an explicit alias)' )
-	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, route keys, font coverage, text, SEO, tracking)' )
+	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, route keys, forms, font coverage, text, SEO, tracking)' )
 	.option( '--no-bands', 'skip the per-band audit (presence · surface · content · facts · text · geometry per band)' )
 	.option( '--bands-warn', 'report per-band failures as warnings instead of failing the run' )
 	.option( '--bands-json <path>', 'where to write the per-band report (default <target>/verify-artifacts/bands.json)' )
@@ -4517,6 +4714,8 @@ program
 	.option( '--colors-modes <modes>', 'with --colors: colour schemes to measure, comma-separated (default light,dark)', 'light,dark' )
 	.option( '--strict-colors', 'with --colors: fail when a region the source had is missing from the build, or resolved to an empty element' )
 	.option( '--chrome', 'gate chrome STATES the colour gate cannot see \u2014 the opened mobile menu\u0027s surface and ink, and the header\u0027s container cap and gutter vs the source (needs `analyze --geometry`; requires Playwright)' )
+	.option( '--forms', 'gate the enquiry contract in the built pages: a form band must render a form, with a fillable field, posting at the configured endpoint, and an Elementor carrier post that can dispatch (on by default)' )
+	.option( '--no-forms', 'skip the enquiry-contract gate' )
 	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
 	.option( '--strict-media', 'fail when the artifact still ships a JPEG/PNG the localizer could not re-encode (Proposal 140)' )
 	.option( '--fonts', 'render-check every icon font family the built page uses (requires Playwright; on by default outside --minimal)' )
