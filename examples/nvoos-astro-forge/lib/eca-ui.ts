@@ -36,6 +36,11 @@ export function ecaRouteFiles( profile: SiteProfile ): ForgeFile[] {
 	const basePath = ( profile.eca?.basePath ?? ECA_COLLECTION.basePath ?? '/activities' ).replace( /\/+$/, '' ) || '/activities';
 	const schoolName = profile.eca?.schoolName ?? profile.name ?? 'the school';
 	const taxonomyBase = ( profile.eca as { taxonomyRestBase?: string } | undefined )?.taxonomyRestBase ?? deriveTaxonomyRestBase( collection.restBase );
+	// The CMS pages that are really data views (a day timetable, the full list).
+	const dataPages = ecaDataPages( profile ).map( ( page ) => ( {
+		path: `src/pages/${ page.slug }.astro`,
+		content: dataPage( page, basePath ),
+	} ) );
 
 	return [
 		{ path: 'src/lib/eca-site.ts', content: siteLib( slug ) },
@@ -56,6 +61,7 @@ export function ecaRouteFiles( profile: SiteProfile ): ForgeFile[] {
 		{ path: 'src/pages/eca-index.json.ts', content: indexEndpoint() },
 		{ path: 'src/pages/calendar/index.astro', content: calendarPage() },
 		{ path: 'src/pages/timetable/[stage].astro', content: timetablePage() },
+		...dataPages,
 		{ path: 'src/pages/terms/index.astro', content: termsPage() },
 		{ path: 'src/pages/feeds/[slug].ics.ts', content: icsEndpoint( taxonomyBase ) },
 	];
@@ -275,6 +281,10 @@ const ECA_CSS = `/* eca.css — the catalogue's own surface (Proposal 163 §P2).
 /* --- layout: rail + grid --- */
 .eca-layout { display: grid; gap: var(--forge-space); align-items: start; }
 @media (min-width: 60rem) { .eca-layout { grid-template-columns: 16rem minmax(0, 1fr); } }
+/* No rail: a landing / day / list page is one dimension already, so the content
+ * takes the whole measure. Without this the section sat in the 16rem rail track
+ * and every row title wrapped to a few characters. */
+@media (min-width: 60rem) { .eca-layout--full { grid-template-columns: minmax(0, 1fr); } }
 
 .eca-rail { display: grid; gap: var(--forge-space); position: sticky; top: 1rem; }
 .eca-rail fieldset { border: 0; margin: 0; padding: 0; }
@@ -315,6 +325,72 @@ const ECA_CSS = `/* eca.css — the catalogue's own surface (Proposal 163 §P2).
 .eca-card__when { font-weight: 600; font-size: var(--forge-scale-small); }
 .eca-card__meta { display: grid; gap: 0.2rem; color: var(--forge-muted); font-size: var(--forge-scale-small); }
 .eca-card__foot { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.2rem; }
+
+/* ---------------------------------------------------------------------------
+ * The LIST view (.eca-rows).
+ *
+ * A builder's day page is a timetable, not a catalogue: eca.directory's
+ * /tuesday/ is 31 rows of 51px, one line each — title, time, venue, year and
+ * type — separated by a hairline. Replaying that page's widgets as cards made
+ * it 5603px where the source is 2312. The grid here is the row's own:
+ * two flexible text columns, then fixed time/venue/meta/action tracks.
+ * ------------------------------------------------------------------------- */
+.eca-rows { list-style: none; margin: 0; padding: 0; }
+.eca-row {
+	display: grid;
+	/* time is max-content: a 13-char range ("12:10 pm – 12:40 pm") overflows a
+	 * fixed rem track and printed over the venue. */
+	grid-template-columns: minmax(0, 1fr) minmax(9.5rem, max-content) minmax(0, 9rem) minmax(0, 13rem) auto;
+	gap: var(--forge-space-sm) var(--forge-space);
+	align-items: center;
+	padding: 0.6rem 0;
+	border-bottom: 1px solid var(--forge-line);
+}
+.eca-row[hidden] { display: none; }
+.eca-row__title {
+	font-family: var(--forge-font-display);
+	font-size: var(--forge-scale-body);
+	font-weight: 600;
+	color: inherit;
+	text-decoration: none;
+}
+.eca-row__title:hover { color: var(--forge-accent); text-decoration: underline; }
+.eca-row__day { font-weight: 600; }
+.eca-row__when { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.eca-row__venue { color: var(--forge-muted); font-size: var(--forge-scale-small); }
+.eca-row__meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	align-items: center;
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+}
+.eca-row__actions { justify-self: end; }
+
+/* A FULL LIST page packs its rows: the source shows a stage's whole catalogue 3
+ * across (105 activities over 35 lines), not one 51px line per viewport row. */
+.eca-rows--multi {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+	column-gap: var(--forge-space);
+}
+.eca-rows--multi .eca-row {
+	grid-template-columns: minmax(0, 1fr);
+	row-gap: 0.15rem;
+	align-items: start;
+}
+.eca-rows--multi .eca-row__actions { justify-self: start; }
+
+@media (max-width: 900px) {
+	.eca-row {
+		grid-template-columns: minmax(0, 1fr) auto;
+		row-gap: 0.25rem;
+	}
+	.eca-row__title { grid-column: 1 / -1; }
+	.eca-row__meta,
+	.eca-row__venue { grid-column: 1 / -1; }
+}
 
 .eca-tag {
 	display: inline-flex; align-items: center; gap: 0.25rem;
@@ -417,8 +493,13 @@ const ECA_CSS = `/* eca.css — the catalogue's own surface (Proposal 163 §P2).
 
 function activityCard(): string {
 	return `---
-// ActivityCard — one activity, rendered server-side. The data-* attributes are
-// the island's contract; a card with no JS still reads perfectly.
+// ActivityCard — one activity, rendered server-side in one of two shapes.
+//
+// \`row\` is the LIST view a builder's day pages use: a single line of title,
+// time, venue, year groups and type, 51px tall in the source's own measurement
+// (eca.directory /tuesday/: 31 rows, /junior-school-list/: 105). \`card\` is the
+// catalogue tile. Both carry the SAME data-* contract, so the facet island
+// filters either without knowing which one it is looking at.
 import { ecaBasePath } from '../../lib/eca.generated.ts';
 import { bookingLabel, formatClock } from '../../forge/eca.ts';
 import type { EcaRecord } from '../../forge/eca.ts';
@@ -426,14 +507,18 @@ import ShortlistButton from './ShortlistButton.astro';
 
 interface Props {
 	record: EcaRecord;
+	variant?: 'card' | 'row';
+	/** Print the day inside the row (a list page; a day page implies it). */
+	showDay?: boolean;
 }
 
-const { record } = Astro.props;
+const { record, variant = 'card', showDay = false } = Astro.props;
 const href = ecaBasePath + '/' + record.slug + '/';
 const days = record.schedule.days.length > 0 ? record.schedule.days.join( ' & ' ) : null;
 const start = formatClock( record.schedule.start );
 const end = formatClock( record.schedule.end );
 const when = days && start ? ( end ? days + ' · ' + start + ' – ' + end : days + ' · ' + start ) : days ?? 'Schedule to be confirmed';
+const time = start ? ( end ? start + ' – ' + end : start ) : null;
 const years =
 	record.yearGroups === null
 		? null
@@ -445,7 +530,7 @@ const text = [ record.title, record.summary, record.provider ?? '', record.venue
 ---
 
 <li
-	class="eca-card"
+	class:list={ [ variant === 'row' ? 'eca-row' : 'eca-card' ] }
 	data-eca-card
 	data-day={ record.schedule.days.join( ' ' ) }
 	data-stage={ record.stages.join( ' ' ) }
@@ -457,7 +542,26 @@ const text = [ record.title, record.summary, record.provider ?? '', record.venue
 	data-price={ record.pricing.paid ? 'paid' : 'free' }
 	data-text={ text }
 >
-	<a class="eca-card__link" href={ href }>
+	{variant === 'row' ? (
+		<>
+			<a class="eca-row__title" href={ href }>{ record.title }</a>
+			{ showDay && days && <span class="eca-row__day">{ days }</span> }
+			<span class="eca-row__when">{ time ?? when }</span>
+			<span class="eca-row__venue">{ record.venue ?? '' }</span>
+			<span class="eca-row__meta">
+				{ years && <span class="eca-row__years">{ years }</span> }
+				<span class="eca-row__type">{ typeLabel }</span>
+				{ record.pricing.paid && <span class="eca-tag eca-tag--price">{ record.pricing.display ?? 'Paid' }</span> }
+				{ record.capacity.state === 'full' && <span class="eca-tag eca-tag--full">Full</span> }
+				{ record.capacity.state === 'waitlist' && <span class="eca-tag eca-tag--full">Waitlist</span> }
+			</span>
+			<span class="eca-row__actions">
+				<ShortlistButton slug={ record.slug } />
+			</span>
+		</>
+	) : (
+		<>
+			<a class="eca-card__link" href={ href }>
 		<span class="eca-card__top">
 			<span class="eca-card__type">{ typeLabel }</span>
 			{ record.code && <span class="eca-tag">{ record.code }</span> }
@@ -470,19 +574,21 @@ const text = [ record.title, record.summary, record.provider ?? '', record.venue
 			{ record.provider && <span>with { record.provider }</span> }
 		</span>
 		<span class="eca-card__foot">
-			{ record.pricing.paid ? (
-				<span class="eca-tag eca-tag--price">{ record.pricing.display ?? 'Paid' }</span>
-			) : (
-				<span class="eca-tag eca-tag--free">Free</span>
-			) }
-			<span class="eca-tag">{ bookingLabel( record.booking.type, record.booking.requiresAudition ) }</span>
-			{ record.capacity.state === 'full' && <span class="eca-tag eca-tag--full">Full</span> }
-			{ record.capacity.state === 'waitlist' && <span class="eca-tag eca-tag--full">Waitlist</span> }
-		</span>
-	</a>
-	<div class="eca-card__actions">
-		<ShortlistButton slug={ record.slug } />
-	</div>
+					{ record.pricing.paid ? (
+						<span class="eca-tag eca-tag--price">{ record.pricing.display ?? 'Paid' }</span>
+					) : (
+						<span class="eca-tag eca-tag--free">Free</span>
+					) }
+					<span class="eca-tag">{ bookingLabel( record.booking.type, record.booking.requiresAudition ) }</span>
+					{ record.capacity.state === 'full' && <span class="eca-tag eca-tag--full">Full</span> }
+					{ record.capacity.state === 'waitlist' && <span class="eca-tag eca-tag--full">Waitlist</span> }
+				</span>
+			</a>
+			<div class="eca-card__actions">
+				<ShortlistButton slug={ record.slug } />
+			</div>
+		</>
+	)}
 </li>
 `;
 }
@@ -557,9 +663,17 @@ interface Props {
 	/** Landing pages keep the rail off — they are one dimension already. */
 	showFacets?: boolean;
 	total?: number;
+	/** \`rows\` is the LIST view a builder’s day and list pages use: one line per
+	 * activity. \`cards\` is the catalogue tile grid. */
+	layout?: 'cards' | 'rows';
+	/** A list page prints the day inside each row; a day page implies it. */
+	showDay?: boolean;
+	/** Rows per line. A day page is a timetable (1); a full list page packs 3
+	 * across, as the source does (105 activities in 6435px). */
+	rowColumns?: number;
 }
 
-const { title, intro, records, facets, active, showFacets = true, total } = Astro.props;
+const { title, intro, records, facets, active, showFacets = true, total, layout = 'cards', showDay = false, rowColumns = 1 } = Astro.props;
 const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 ---
 
@@ -579,7 +693,7 @@ const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 		</p>
 	) }
 
-	<div class="eca-layout">
+	<div class:list={ [ 'eca-layout', showFacets ? '' : 'eca-layout--full' ] }>
 		{ showFacets && (
 			<form class="eca-rail" data-eca-facets aria-label="Filter activities">
 				<fieldset>
@@ -655,8 +769,8 @@ const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 
 		<div>
 			{ showFacets && <p class="eca-count" data-eca-result-count aria-live="polite">{ records.length } activities</p> }
-			<ul class="eca-grid" data-eca-grid>
-				{ records.map( ( record ) => <ActivityCard record={ record } /> ) }
+			<ul class:list={ [ layout === 'rows' ? 'eca-rows' : 'eca-grid', layout === 'rows' && rowColumns > 1 ? 'eca-rows--multi' : '' ] } data-eca-grid>
+				{ records.map( ( record ) => <ActivityCard record={ record } variant={ layout === 'rows' ? 'row' : 'card' } showDay={ showDay } /> ) }
 			</ul>
 			<p class="eca-empty" data-eca-empty hidden>
 				No activities match those filters. <button type="button" data-eca-reset>Clear them</button>
@@ -913,6 +1027,130 @@ const title = day + ' activities';
 <Base title={ title } description={ 'Activities that run on ' + day + '.' }>
 	<main>
 		<Catalogue title={ title } records={ records } facets={ facets } active={ { key: 'day', value: day, label: day } } total={ all.length } showFacets={ false } />
+	</main>
+</Base>
+`;
+}
+
+/**
+ * A CMS PAGE THAT IS REALLY A DATA VIEW, claimed for the product template.
+ *
+ * A builder's listing page (Elementor + JetEngine's `jet-listing-grid`) is 600+
+ * widgets whose only job is to print rows of records. Replaying those widgets as
+ * rebuilt markup is always wrong: eca.directory's `/tuesday/` rendered 5603px
+ * against the source's 2312, and `/junior-school-list/` 19844 against 6435,
+ * because 105 rows became 105 stacked cards.
+ *
+ * The claim is derived from the site's own inventory + measured pages, so it is
+ * driven by what the site HAS, not by a hardcoded slug list:
+ *   - a slug that IS a weekday → that day's timetable, in rows;
+ *   - a slug ending in `-list` → the full catalogue, in rows, day shown.
+ * `select-list` (a chooser page with no rows) and `eca-days` (a 14-row subset
+ * nothing in the record set reproduces) are deliberately NOT claimed.
+ */
+export interface EcaDataPage {
+	/** The page slug (also the route segment). */
+	slug: string;
+	/** The day this page lists, title-cased; null for the full listing. */
+	day: string | null;
+	/** The page's own title, from the measurement when it has one. */
+	title: string;
+	/** Print the day inside each row (a list page; a day page implies it). */
+	showDay: boolean;
+}
+
+const ECA_WEEKDAYS = [ 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday' ];
+
+/** `junior-school-list` → `Junior School List`. */
+function titleFromSlug( slug: string ): string {
+	return slug
+		.split( '-' )
+		.filter( Boolean )
+		.map( ( word ) => word.charAt( 0 ).toUpperCase() + word.slice( 1 ) )
+		.join( ' ' );
+}
+
+/** The CMS pages this preset takes over (see `EcaDataPage`). */
+export function ecaDataPages( profile: SiteProfile ): EcaDataPage[] {
+	const excluded = new Set(
+		( profile.inventory?.excluded ?? [] ).map( ( path ) => String( path ).replace( /^\/+|\/+$/g, '' ) )
+	);
+	const candidates: string[] = [];
+	for ( const path of profile.inventory?.covered ?? [] ) {
+		candidates.push( String( path ).replace( /^\/+|\/+$/g, '' ) );
+	}
+	for ( const slug of Object.keys( profile.pageBands ?? {} ) ) {
+		candidates.push( slug );
+	}
+
+	const seen = new Set< string >();
+	const out: EcaDataPage[] = [];
+	for ( const slug of candidates ) {
+		if ( ! slug || seen.has( slug ) || excluded.has( slug ) || slug === profile.frontPage ) {
+			continue;
+		}
+		seen.add( slug );
+		const bands = profile.pageBands?.[ slug ];
+		const measuredTitle = bands
+			? Object.values( bands.bandFacts ?? {} )
+					.map( ( facts ) => facts.titleText )
+					.find( ( text ): text is string => Boolean( text ) )
+			: undefined;
+		if ( ECA_WEEKDAYS.includes( slug ) ) {
+			const day = slug.charAt( 0 ).toUpperCase() + slug.slice( 1 );
+			out.push( { slug, day, title: measuredTitle ?? `${ day } activities`, showDay: false } );
+			continue;
+		}
+		if ( /-list$/.test( slug ) ) {
+			// Only a page that actually RENDERS a listing. `select-list` is a
+			// chooser (two 2-lane teaser bands, no rows) despite the suffix.
+			const listing = bands?.sections.some( ( section ) => {
+				const geometry = section.id ? bands.geometry?.[ section.id ]?.desktop : undefined;
+				const lanes = section.columns?.length ?? 0;
+				const height = geometry?.height ?? 0;
+				return lanes >= 20 || height >= 2000;
+			} );
+			if ( listing ) {
+				out.push( { slug, day: null, title: measuredTitle ?? titleFromSlug( slug ), showDay: true } );
+			}
+		}
+	}
+	return out;
+}
+
+/** One claimed page: the product template at the CMS page's own URL. */
+function dataPage( page: EcaDataPage, basePath: string ): string {
+	const filter = page.day ? `{ day: [ ${ JSON.stringify( page.day ) } ] }` : '{}';
+	const active = page.day
+		? `{ key: 'day', value: ${ JSON.stringify( page.day ) }, label: ${ JSON.stringify( page.day ) } }`
+		: 'undefined';
+	return `---
+// /${ page.slug }/ — a CMS page that is really a DATA VIEW (Proposal 163 §P4).
+//
+// The builder rendered this page from a JetEngine listing; the record set is
+// the source of truth, so the route renders the catalogue's ROW layout at the
+// page's own URL. Generated by nvoos-astro-forge — edits are overwritten.
+import Base from '../layouts/Base.astro';
+import Catalogue from '../components/eca/Catalogue.astro';
+import { catalogueFor } from '../lib/eca-site.ts';
+
+const { records, facets, all } = await catalogueFor( ${ filter } );
+const title = ${ JSON.stringify( page.title ) };
+---
+
+<Base title={ title } description={ ${ JSON.stringify( `${ page.title } — the full list, with times, venues and year groups.` ) } }>
+	<main>
+		<Catalogue
+			title={ title }
+			records={ records }
+			facets={ facets }
+			active={ ${ active } }
+			total={ all.length }
+			showFacets={ false }
+			layout="rows"
+			showDay={ ${ page.showDay ? 'true' : 'false' } }
+			rowColumns={ ${ page.showDay ? '3' : '1' } }
+		/>
 	</main>
 </Base>
 `;

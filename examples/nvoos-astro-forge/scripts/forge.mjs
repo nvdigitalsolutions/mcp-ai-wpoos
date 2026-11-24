@@ -66,6 +66,7 @@ import { measureIconFonts, usedDroppedFamilies } from '../lib/font-audit.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
+import { ecaDataPages } from '../lib/eca-ui.ts';
 import { applyBandSurfaces, applyChromeSurfaces, bandRegionName, bandRegionSelector, builtBandSelectors, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
 import { compareChromeGeometry, compareFooterBrand, compareMobileNav } from '../lib/chrome-audit.ts';
 import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
@@ -3400,11 +3401,23 @@ function readBuiltStyles( target ) {
 				profile.pageBands && options.pages !== false && options.bands !== false;
 			if ( runsPageBands ) {
 				const pageBandsPolicy = resolveGateMode( 'page bands', profile.verify );
+				// Pages the ECA preset REBUILDS as data views (a day timetable, a stage
+				// list). The source's band ids do not exist in the build because the
+				// route renders the catalogue, not the builder page — so this gate has
+				// no opinion on them, and says so instead of reporting 3 "missing"
+				// bands per page (eca.directory, 2026-11-24).
+				const claimedPages = new Set( ecaDataPages( profile ).map( ( page ) => page.slug ) );
+				let claimed = 0;
 				let compared = 0;
 				let pageFailures = 0;
 				let pageWarnings = 0;
 				let columnAdvisories = 0;
 				for ( const [ slug, page ] of Object.entries( profile.pageBands ) ) {
+					if ( claimedPages.has( slug ) ) {
+						claimed += 1;
+						console.log( `  \u2013 page bands /${ slug }/: data view (claimed by the eca preset \u2014 compared against the record set, not the builder's bands)` );
+						continue;
+					}
 					const pageIds = Object.keys( page.geometry ?? {} );
 					if ( pageIds.length === 0 ) {
 						continue;
@@ -3451,6 +3464,11 @@ function readBuiltStyles( target ) {
 					const detail = `${ pageFailures } fail, ${ pageWarnings } warn across ${ compared } band(s)${
 						columnAdvisories > 0 ? `, ${ columnAdvisories } lane advisory(ies)` : ''
 					}`;
+					if ( claimed > 0 ) {
+						console.log(
+							`  page bands: ${ claimed } page(s) rebuilt as data views (eca preset) — not band-compared`
+						);
+					}
 					console.log( `  page bands: ${ detail }` );
 					if ( columnAdvisories > 0 && ! options.strictPages ) {
 						console.warn(
