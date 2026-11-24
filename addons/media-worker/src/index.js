@@ -257,6 +257,14 @@ app.get( '/api/health/full', async (_req, res) => {
 				web_crawling: true,
 				social_publishing: Object.values( social ).some( Boolean ),
 				social_platforms: social,
+				// Reading the channel list and composing copy do not need a platform
+				// key: `/accounts` reports which keys are set, and `/generate-content`
+				// falls back to a template when no model key resolves. They are
+				// declared separately from `social_publishing` so a runtime can tell
+				// "this worker predates the read routes" from "this worker has no
+				// platform credentials" — two different fixes.
+				social_accounts: true,
+				social_composition: true,
 				workflows: true,
 				job_queue: caps.redis,
 			},

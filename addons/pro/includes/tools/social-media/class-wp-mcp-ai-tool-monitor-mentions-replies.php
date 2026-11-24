@@ -201,6 +201,7 @@ class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interfac
 			'social-media',
 			'external-api',
 			'ai-content',
+			'read-only',              // Reads mentions; replying is auto_respond_messages' job.
 		);
 	}
 

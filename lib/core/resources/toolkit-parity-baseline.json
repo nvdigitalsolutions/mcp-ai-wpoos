@@ -100,7 +100,10 @@
         "research": [],
         "shopify-sync": [],
         "site-creator-toolkit": [],
-        "social-media": [],
+        "social-media": [
+            "generate_post_ideas",
+            "generate_social_captions"
+        ],
         "vault": [],
         "vector-storage": [],
         "video-production": [],

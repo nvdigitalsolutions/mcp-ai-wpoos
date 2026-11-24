@@ -345,6 +345,46 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
     }
 
     /**
+     * GET a worker JSON endpoint and decode the envelope.
+     *
+     * The read half of the JSON family (`/api/social/accounts`) has no body, so
+     * `postJson()` would be a lie in the request log. Same error contract as its
+     * POST sibling, on purpose: an adapter should not need to know which verb it
+     * used to know what a failure looks like.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws \RuntimeException When the worker is unconfigured, unreachable, or answers an error.
+     */
+    public function getJson(string $endpoint, int $timeout = 30): array
+    {
+        if (! $this->configured()) {
+            throw new \RuntimeException('The media worker is not configured.');
+        }
+
+        try {
+            $response = Http::timeout(max(1, $timeout))
+                ->acceptJson()
+                ->withHeaders($this->headers())
+                ->get($this->url().$endpoint);
+        } catch (Throwable $e) {
+            throw new \RuntimeException('Media worker request failed: '.$e->getMessage(), 0, $e);
+        }
+
+        $decoded = $response->json();
+
+        if (! $response->ok() || ! is_array($decoded)) {
+            $reason = is_array($decoded) && isset($decoded['error'])
+                ? (string) $decoded['error']
+                : 'HTTP '.$response->status();
+
+            throw new \RuntimeException('Media worker error: '.$reason);
+        }
+
+        return $decoded;
+    }
+
+    /**
      * POST one file to a worker endpoint and decode the JSON envelope.
      *
      * `optimize()` predates this helper and is left untouched so its shipped

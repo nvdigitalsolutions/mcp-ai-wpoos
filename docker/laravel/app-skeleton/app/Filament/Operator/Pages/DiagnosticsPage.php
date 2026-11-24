@@ -20,6 +20,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\ValueObject\MediaWorkerCapabilityReport;
+use Nvoos\Core\Domain\ValueObject\ToolCoverage;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 use Nvoos\Laravel\Adapter\JobStatusStore;
 use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
@@ -241,7 +242,7 @@ class DiagnosticsPage extends Page
                 ['label' => 'Plan source', 'value' => (string) $entitlement->source()],
             ],
             'Tool registration' => $this->toolRegistrationRows($readiness),
-            'Media worker' => $this->mediaWorkerRows($probe),
+            'Media worker' => $this->mediaWorkerRows($probe, $readiness),
             'Queue' => $queueRows,
             'Provider credentials' => $providerRows,
             'Routing (30d)' => array_merge($this->routingRows($routing), $this->exportRows()),
@@ -258,7 +259,7 @@ class DiagnosticsPage extends Page
      *
      * @return list<array{label: string, value: string}>
      */
-    private function mediaWorkerRows(MediaWorkerCapabilityProbe $probe): array
+    private function mediaWorkerRows(MediaWorkerCapabilityProbe $probe, ToolReadiness $readiness): array
     {
         $report = $probe->report();
 
@@ -266,15 +267,22 @@ class DiagnosticsPage extends Page
             return [['label' => 'Status', 'value' => 'not configured']];
         }
 
+        // What the *worker* can do and what this *host* does are different
+        // questions, and this page is read as the second one. Coverage adds
+        // `served` and `worker_only` so "Social: worker available, no tool here"
+        // can say that the runtime has nothing that publishes, instead of
+        // printing the worker's answer under the host's heading.
+        $coverage = ToolCoverage::fromReport($report, \array_keys($readiness->servable()));
+
         $rows = [
             ['label' => 'Status', 'value' => $report->isAvailable() ? 'available' : 'unreachable'],
             ['label' => 'Version', 'value' => $report->version() ?? 'unknown'],
         ];
 
-        foreach ($report->domains() as $domain => $tier) {
+        foreach ($coverage->domains() as $domain => $row) {
             $rows[] = [
                 'label' => ucfirst(str_replace('_', ' ', (string) $domain)),
-                'value' => $tier,
+                'value' => $coverage->describe((string) $domain),
             ];
         }
 

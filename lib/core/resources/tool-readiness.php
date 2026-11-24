@@ -951,6 +951,15 @@ return array(
 			'replaced_by' => 'generate_post_excerpt',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'generate_post_ideas' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GeneratePostIdeasTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerSocialComposer implements SocialComposerInterface over the media-worker `POST /api/social/generate-content` route. Reads only: there is no publish path. Industry, audience, content types and topics are folded into the single subject the composer accepts rather than silently dropped.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SocialComposerToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'generate_responsive_images' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateResponsiveImagesTool',
 			'readiness' => 'ready',
@@ -973,6 +982,15 @@ return array(
 			'readiness' => 'pure',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'generate_social_captions' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GenerateSocialCaptionsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerSocialComposer over `POST /api/social/generate-content`. Returns finished copy when a model resolves and the worker\'s prompt templates when none does, with `provider` naming which — rendering a prompt as a caption is the lie this avoids. Does not publish.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SocialComposerToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'generate_sora_video' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateSoraVideoTool',
@@ -1223,6 +1241,14 @@ return array(
 			'parity' => 'port',
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'get_social_accounts' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GetSocialAccountsTool',
+			'readiness' => 'ready',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerSocialComposer over `GET /api/social/accounts`. Reports which platforms have credentials configured; a configured credential is not a verified one.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SocialComposerToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_student' => array(

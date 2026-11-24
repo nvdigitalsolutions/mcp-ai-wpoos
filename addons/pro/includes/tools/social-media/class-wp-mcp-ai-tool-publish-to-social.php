@@ -133,7 +133,11 @@ class WP_MCP_AI_Tool_Publish_To_Social implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'pro',
 			'database-write',
+			'external-communication', // Publishes to people outside this site.
+			'irreversible',           // dry_run defaults to true; the real call cannot be taken back.
 			'requires-capability',
+			'state-changing',
+			'write',
 		);
 	}
 

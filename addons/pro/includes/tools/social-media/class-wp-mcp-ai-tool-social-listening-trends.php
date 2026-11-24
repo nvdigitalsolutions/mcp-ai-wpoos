@@ -222,6 +222,7 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 			'social-media',
 			'external-api',
 			'ai-integration',
+			'read-only',              // Reads trends; nothing is published.
 		);
 	}
 
