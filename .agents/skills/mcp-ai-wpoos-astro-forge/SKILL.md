@@ -1450,6 +1450,11 @@ stylesheet, which is the point of the path.
   [`reference/media-localization.md`](reference/media-localization.md) —
   localizing everything `<Image>` cannot see (body `<img>`, chrome
   logos/favicon).
+- Builder-4 parity gotchas (a gated Elementor 4 rebuild, 2026-11-24):
+  [`reference/builder-4-parity-gotchas.md`](reference/builder-4-parity-gotchas.md)
+  — hash ids are not CSS identifiers, `--ds-measure` is the content column,
+  a state delta must outrank the positional fact, and a query-loop band is
+  data rather than design.
 
 ## Email delivery
 

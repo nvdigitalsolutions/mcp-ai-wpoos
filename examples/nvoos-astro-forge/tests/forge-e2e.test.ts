@@ -765,8 +765,10 @@ describe('forge e2e — emitted site', () => {
 			// measured `--ds-pad-x: 0px` (a full-bleed hero photo) ran its form,
 			// fields and Turnstile widget edge-to-edge on a phone, and a CENTRED
 			// band's submit hugged the left edge. The floor is mobile-only;
-			// desktop keeps the measured fact.
-			expect(css).toMatch(/padding-left:\s*max\(\s*var\(--forge-space\)\s*,\s*var\(--ds-pad-x\s*,\s*0px\s*\)\s*\)/);
+			// desktop keeps the measured fact. It is the floor MINUS the band's own
+			// side padding, so a band that already carries its measured 30px gutter
+			// is not topped up to 46 (eca.directory's day pages).
+			expect(css).toMatch(/padding-left:\s*max\(\s*calc\(\s*var\(--forge-space\)\s*-\s*var\(--ds-band-pad-x\s*,\s*0px\s*\)\s*\)\s*,\s*var\(--ds-pad-x\s*,\s*0px\s*\)\s*\)/);
 			expect(css).toMatch(/\.ds-form\s+\.ds-button\s*,\s*\.ds-form\s+\.cf-turnstile\s*\{[^}]*justify-self:\s*center/);
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);

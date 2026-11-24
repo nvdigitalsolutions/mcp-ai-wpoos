@@ -66,7 +66,7 @@ import { measureIconFonts, usedDroppedFamilies } from '../lib/font-audit.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
-import { applyBandSurfaces, applyChromeSurfaces, bandRegionName, bandRegionSelector, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
+import { applyBandSurfaces, applyChromeSurfaces, bandRegionName, bandRegionSelector, builtBandSelectors, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
 import { compareChromeGeometry, compareFooterBrand, compareMobileNav } from '../lib/chrome-audit.ts';
 import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
 import { auditFormBands, describeFormProblems } from '../lib/forms-gate.ts';
@@ -4043,7 +4043,14 @@ function readBuiltStyles( target ) {
 			// `descendantFill`: the source baseline was measured that way, so the
 			// build must be too — a rebuilt band's surface can sit on the wrap or on
 			// a child layer, and a gradient has no `background-color` at all.
-			...bandNames.map( ( name ) => ( { name, selectors: [ `#${ name.slice( 5 ) }` ], descendantFill: true } ) ),
+			...bandNames.map( ( name ) => ( {
+				name,
+				// Built bands carry `data-section-id`, not `id`, and a builder hash
+				// cannot be a CSS identifier anyway — `builtBandSelectors` is the one
+				// place that decides how a rebuilt band is addressed.
+				selectors: builtBandSelectors( name.slice( 5 ) ),
+				descendantFill: true,
+			} ) ),
 		];
 		let builtColors;
 		let builtResolutions = {};

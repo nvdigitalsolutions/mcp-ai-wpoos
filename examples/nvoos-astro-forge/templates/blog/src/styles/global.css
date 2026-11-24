@@ -1146,8 +1146,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	.ds-section-wrap--dark .ds-section,
 	.ds-section-wrap--alt .ds-section,
 	.ds-section-wrap--light .ds-section {
-		padding-left: max(var(--forge-space), var(--ds-pad-x, 0px));
-		padding-right: max(var(--forge-space), var(--ds-pad-x, 0px));
+		/* The floor is `--forge-space` MINUS the band's own side padding: a band
+		 * that already carries 30px of measured padding needs no top-up, and a
+		 * band at zero still gets the phone gutter. */
+		padding-left: max(
+			calc(var(--forge-space) - var(--ds-band-pad-x, 0px)),
+			var(--ds-pad-x, 0px)
+		);
+		padding-right: max(
+			calc(var(--forge-space) - var(--ds-band-pad-x, 0px)),
+			var(--ds-pad-x, 0px)
+		);
 	}
 }
 

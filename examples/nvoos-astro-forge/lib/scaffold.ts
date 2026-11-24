@@ -34,7 +34,7 @@ import { ECA_CONFIG_PATH, ecaCollection, ecaScaffoldWarnings, renderEcaGenerated
 import { ecaRouteFiles } from './eca-ui.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor, isCookielessVendor } from './tracking.ts';
-import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ForgeSectionColumn, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { BandBoxFacts, BandGeometry, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ForgeSectionColumn, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -1603,25 +1603,46 @@ function collapseDevice( desktop?: string, tablet?: string, mobile?: string ): R
  */
 function measuredContainer(
 	bandFacts: ForgeBandFacts | undefined,
-	fallbackPadX?: ResponsiveLength
+	fallbackPadX?: ResponsiveLength,
+	measured?: Record< string, BandGeometry >
 ): { measure?: ResponsiveLength; paddingX?: ResponsiveLength } {
 	const at = ( device: 'desktop' | 'tablet' | 'mobile' ): { measure: string; padX: string } | undefined => {
 		const entry = bandFacts?.container?.[ device ];
-		if ( ! entry || ! ( entry.content > 0 ) ) {
-			return undefined;
+		if ( entry && entry.content > 0 ) {
+			// 0 is a fact (a genuinely flush container), not an absence — it must
+			// override the template's clamp, exactly as the band padding does.
+			const padX = Number.isFinite( entry.padX ) && entry.padX > 0 ? entry.padX : 0;
+			// A band whose grid cancels the gutter renders FLUSH so its columns span the
+			// container's border-box; the per-column padding is already in the `box`
+			// facts. Applying `padX` there would re-inset a band the source lets bleed
+			// (virtuallyjamaica's #wifi grew 29px taller when it was narrowed by 30px).
+			const sectionPadX = entry.flush ? 0 : padX;
+			return {
+				measure: `${ Math.round( entry.content + padX * 2 ) }px`,
+				padX: `${ Math.round( sectionPadX * 100 ) / 100 }px`,
+			};
 		}
-		// 0 is a fact (a genuinely flush container), not an absence — it must
-		// override the template's clamp, exactly as the band padding does.
-		const padX = Number.isFinite( entry.padX ) && entry.padX > 0 ? entry.padX : 0;
-		// A band whose grid cancels the gutter renders FLUSH so its columns span the
-		// container's border-box; the per-column padding is already in the `box`
-		// facts. Applying `padX` there would re-inset a band the source lets bleed
-		// (virtuallyjamaica's #wifi grew 29px taller when it was narrowed by 30px).
-		const sectionPadX = entry.flush ? 0 : padX;
-		return {
-			measure: `${ Math.round( entry.content + padX * 2 ) }px`,
-			padX: `${ Math.round( sectionPadX * 100 ) / 100 }px`,
-		};
+		// The BAND's own measured content column.
+		//
+		// Builder 4.x containers (`e-con` / `e-con-inner`) are not `.container`
+		// or `.row`, so `bandFacts.container` is absent and `containerWidth`
+		// below reports the band's PADDING box instead — eca.directory's hero
+		// rebuilt 1380px wide against a 1280px source container, and every day
+		// page 1380 against 1328 (2026-11-24). The measured content box is the
+		// column the copy actually occupies, which is exactly what
+		// `--ds-measure` means, so it replaces the gutter guess.
+		const box = measured?.[ device ];
+		const contentWidth = box?.content?.width;
+		if ( typeof contentWidth === 'number' && contentWidth > 0 && typeof box?.width === 'number' ) {
+			const available = box.width - ( box.paddingLeft ?? 0 ) - ( box.paddingRight ?? 0 );
+			// A partial slab reports the SLAB, and constraining a band to it would
+			// re-centre a surface the source paints flush; `theme.panel` already
+			// carries that case. Below 60% of the row it is a slab, not a container.
+			if ( available > 0 && contentWidth >= available * 0.6 && contentWidth <= available + 1 ) {
+				return { measure: `${ Math.round( contentWidth ) }px`, padX: '0px' };
+			}
+		}
+		return undefined;
 	};
 	const desktop = at( 'desktop' );
 	if ( desktop ) {
@@ -1794,7 +1815,7 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	}
 	// The container measure + side gutter, MEASURED per device (114 §3.6). An
 	// explicit profile fact wins; otherwise the source's own container decides.
-	const container = measuredContainer( bandFacts, section.paddingX );
+	const container = measuredContainer( bandFacts, section.paddingX, section.id ? profile.geometry?.[ section.id ] : undefined );
 	// An analyzed `section.measure` can be the THEME's container width applied to
 	// a FULL-WIDTH band (jayainc's services band: the CSS says 1140, the live
 	// `.elementor-container` is 1440, so its columns rendered 524 instead of the

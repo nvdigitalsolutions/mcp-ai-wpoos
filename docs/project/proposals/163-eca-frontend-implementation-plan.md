@@ -283,6 +283,79 @@ Acceptance
 - All existing gates stay green.
 - A fresh clone can forge a school site from a profile in one command.
 
+### Delivered 2026-11-24 — the gated parity pass
+
+The first run of the full browser gates against a *gated* profile (the earlier
+profile had been captured through the holding page, so it carried no geometry,
+colours or page bands). Four defects fell out; all four are generic to any
+builder source, not ECA-specific.
+
+1. **The colour gate crashed instead of measuring.**
+   `querySelector('#6daaaef9')` throws — a CSS identifier cannot start with a
+digit — and one such id aborted every comparison. Band surfaces are now
+addressed through `idSelectors` / `builtBandSelectors` (an attribute selector
+for a hash id, the `data-section-id` marker for a rebuilt band, which carries no
+`id` at all), and a malformed selector costs one region instead of the run.
+   *Result: crash → 24 measured surfaces, 0 missing.*
+2. **`--ds-measure` was the band's padding box, not its content column.**
+   Elementor 4 containers (`e-con` / `e-con-inner`) are not `.container` or
+`.row`, so the container pool found nothing and the scaffold fell back to
+`containerWidth + 64` — 1444px where the source caps its copy at 1280. The
+measured content box from `analyze --geometry` is now the middle rung between
+the classic container fact and that guess.
+   *Result: page-band failures 106 → 54.*
+3. **Interaction states never won.** The per-element positional facts
+   (`.post-body > * > div:nth-child(1) > … > a:nth-child(1)`) re-state the box
+measured from the source, and three `:nth-child()` steps outrank any class-level
+state rule — so a rebuilt button kept its resting background on hover with the
+correct `:hover` rule present in the sheet. State deltas are now emitted
+`!important`; the resting pass stays overrideable.
+   *Result: interaction-state failures 4 → 0.*
+4. **The mobile gutter floor double-counted the band padding.** A measured 30px
+   band gutter was topped up to 46px, costing 32px of copy width on a phone. The
+floor is now `--forge-space` minus the band's own side padding.
+   *Result: page-band failures 54 → 31.*
+
+### Outstanding — three clusters, each with a diagnosed cause
+
+`verify` on the rebuilt `eca.directory` now reports 31 page-band and 6 box
+findings, and every one belongs to one of these:
+
+| Cluster | Evidence | Cause | Plan |
+|---|---|---|---|
+| **A. ECA data pages replay the builder** | `/junior-school-list/` 6435 → 19844; `/tuesday/` 2312 → 5603; `/eca-days/` 1419 → 2898 | `[slug].astro` rebuilds the WP page widget-by-widget (609 widgets on a day page) including a `jet-listing-grid` that is *data*, not design. The source's day row is a 51px single line (title link, start/end, venue, year, Book button, divider) at `grid-col-desk-1`; the rebuild renders card blocks. | Claim the data slugs for the product template: a day route renders `Catalogue` in a **row** layout (new `layout="rows"`), a `<stage>-list` route renders the stage listing, `eca-days` the day index. Claiming must be explicit — a static route at the slug, with the slug filtered out of the `pages` collection so the route-keys gate keeps one URL per page. |
+| **B. A raw band loses its row layout** | home band `3589820`: 521 → 1724 tall; lanes 286/954 → 1180/1180 | This band is emitted as raw markup (`data-section="text"` → `.post-body`), and the Elementor-4 primitives that made its columns sit side by side (`e-flex`, `e-con-inner`) never ship with it. The three columns stack. | Either map it to the existing split/team component (it is a 2-column icon-box row) or emit the measured column ratio onto the raw band's immediate row wrapper — the same `--ds-cols-template-desktop` the component bands already consume. Prefer the component: the measured `columns` fact [286, 954] is a 23/77 split the split component already models. |
+| **C. The source's transparent band inset** | 10 findings: `1388 → 1440` desktop, `804 → 834` tablet | The day bands are `e-con-full` with `max-width: 96.394%` and 26px auto margins — an Elementor width percentage. The band paints **no** background (transparent over the page's `rgb(247,250,252)`), so the inset is invisible. | Do not reproduce it. Make the *gate* say so: compare a band's outer width only when either side paints a surface of its own; a transparent band's box has no visual identity and its content column is already compared separately. |
+
+Two content gaps ride along and are smaller than they look:
+
+- **Text parity 68.6 %**, dominated by band `77f4271d` at 8.6 % — an Elementor
+  *toggle/accordion* band whose panel bodies the sanitizer drops (it rebuilds as
+  a 3-card grid with empty cards). The fix is an accordion component fed from the
+  panel facts, not a text extraction tweak.
+- **Colour drift, 7 bands** — the rebuild paints `#1a1e1d` where the source's
+  dominant ink is `#747474` (and the footer's `#27104a` becomes `#747474`). The
+  band ink fact is measured but the rebuild's own `--ds-ink` outranks it; the
+  fix is to emit the measured band ink as the section's default rather than
+  inheriting the token layer.
+
+### What this pass says about the forge (not only the site)
+
+Three capabilities the ECA build needed that belong in the forge itself, because
+every builder-sourced site needs them:
+
+1. **A content-column measure from the measured box**, not from a container
+   class pool. Done here (item 2 above); it is what makes `--ds-measure` mean
+   "the column the copy occupies" for any builder.
+2. **State rules that outrank positional facts.** Done here (item 3). Worth
+   generalising into the documented rule "a generated state delta is
+   `!important`, a resting fact is not".
+3. **A "data page vs design page" split.** Not done. A page whose band is a
+   dynamic listing (`jet-listing-grid`, a query loop, a Woo archive) is a data
+   view: replaying its widgets is always wrong. The preset should classify it at
+   analyze time and route it to a product template. This is the single largest
+   remaining win on eca.directory and the reason cluster A exists.
+
 ---
 
 ## Test matrix (per phase)

@@ -11,13 +11,17 @@ import { describe, expect, it } from 'vitest';
 import {
 	applyBandSurfaces,
 	applyChromeSurfaces,
+	bandRegionSelector,
+	builtBandSelectors,
 	colorDeltaE,
 	compareRegionColorModes,
 	compareRegionColors,
+	cssIdSelector,
 	DEFAULT_COLOR_REGIONS,
 	deltaE2000,
 	GATED_INK_SHARE,
 	GRADIENT_SURFACE_RE,
+	idSelectors,
 	inkMass,
 	normalizeColorModes,
 	normalizeCssColor,
@@ -617,5 +621,90 @@ describe( 'colour schemes (light/dark)', () => {
 	it( 'gates dark when the source does define it', () => {
 		const report = compareRegionColorModes( { light, dark }, { light } );
 		expect( report.unimplemented ).toEqual( [] );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// Selector safety. A CSS identifier cannot start with a digit, so `#6daaaef9`
+// throws in `querySelector` — and one such id aborted every colour comparison
+// on the page (eca.directory, 2026-11-24). Builders mint hash ids constantly,
+// so these helpers are the single place that decision is made.
+// ---------------------------------------------------------------------------
+describe( 'idSelectors', () => {
+	it( 'prefers #id when the id is a legal CSS identifier', () => {
+		expect( idSelectors( 'about' ) ).toEqual( [ '#about', '[id="about"]' ] );
+		expect( idSelectors( 'about-us' ) ).toEqual( [ '#about-us', '[id="about-us"]' ] );
+		expect( idSelectors( '_band' ) ).toEqual( [ '#_band', '[id="_band"]' ] );
+	} );
+
+	it( 'falls back to an attribute selector for a digit-leading id', () => {
+		expect( idSelectors( '6daaaef9' ) ).toEqual( [ '[id="6daaaef9"]' ] );
+	} );
+
+	it( 'returns no selector for an empty id', () => {
+		expect( idSelectors( '' ) ).toEqual( [] );
+		expect( idSelectors( undefined as unknown as string ) ).toEqual( [] );
+	} );
+
+	it( 'escapes a quote so the attribute selector stays well formed', () => {
+		expect( idSelectors( 'a"b' ) ).toEqual( [ '[id="a\\"b"]' ] );
+	} );
+} );
+
+describe( 'cssIdSelector', () => {
+	it( 'never returns an invalid identifier selector', () => {
+		expect( cssIdSelector( '6daaaef9' ) ).toBe( '[id="6daaaef9"]' );
+		expect( cssIdSelector( 'about' ) ).toBe( '#about' );
+	} );
+
+	it( 'returns an empty string when there is nothing to address', () => {
+		expect( cssIdSelector( '' ) ).toBe( '' );
+	} );
+} );
+
+describe( 'bandRegionSelector', () => {
+	const section = ( patch: Partial< ForgeSection > ): ForgeSection =>
+		( { id: 'b1', ...patch } ) as ForgeSection;
+
+	it( 'addresses an anchored band by its id', () => {
+		expect( bandRegionSelector( section( { anchor: 'about' } ) ) ).toBe( '#about' );
+	} );
+
+	it( 'escapes a digit-leading anchor', () => {
+		expect( bandRegionSelector( section( { anchor: '6daaaef9' } ) ) ).toBe( '[id="6daaaef9"]' );
+	} );
+
+	it( 'falls back to the Elementor element class', () => {
+		expect( bandRegionSelector( section( { vendorId: '4c649f2e' } ) ) ).toBe(
+			'.elementor-element-4c649f2e'
+		);
+	} );
+
+	it( 'returns undefined when the band has no handle at all', () => {
+		expect( bandRegionSelector( section( { anchor: '', vendorId: '' } ) ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'builtBandSelectors', () => {
+	it( 'addresses a rebuilt band by its marker first', () => {
+		// The scaffold emits `data-section-id` and no `id`; the marker is the
+		// only handle that actually resolves in the built document.
+		expect( builtBandSelectors( '6daaaef9' )[ 0 ] ).toBe( '[data-section-id="6daaaef9"]' );
+	} );
+
+	it( 'keeps the id selectors as a fallback, escaped when needed', () => {
+		expect( builtBandSelectors( 'about' ) ).toEqual( [
+			'[data-section-id="about"]',
+			'#about',
+			'[id="about"]',
+		] );
+		expect( builtBandSelectors( '6daaaef9' ) ).toEqual( [
+			'[data-section-id="6daaaef9"]',
+			'[id="6daaaef9"]',
+		] );
+	} );
+
+	it( 'returns no selector for an empty id', () => {
+		expect( builtBandSelectors( '' ) ).toEqual( [] );
 	} );
 } );
