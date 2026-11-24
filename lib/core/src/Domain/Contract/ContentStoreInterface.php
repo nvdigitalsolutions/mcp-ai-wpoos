@@ -52,6 +52,9 @@ interface ContentStoreInterface
     /**
      * Create a new content item.
      *
+     * `taxonomyInput` is the item's complete term set per taxonomy. On create the
+     * item has no terms yet, so this is the set it is born with.
+     *
      * @return ContentItem  The newly created item with its assigned ID.
      *
      * @throws \Nvoos\Core\Domain\Error\AccessDeniedException  When user lacks permission.
@@ -64,6 +67,11 @@ interface ContentStoreInterface
      *
      * Only the fields present (non-null) in the command are updated.
      * Meta fields are merged, not replaced.
+     *
+     * `taxonomyInput` **replaces** each named taxonomy's terms: it is the complete
+     * desired set, not an addition. Naming a taxonomy with an empty list clears
+     * it; omitting the taxonomy leaves it untouched. Both hosts implement this
+     * the same way — see {@see UpdateContentCommand} for the rule and why.
      *
      * @return ContentItem  The updated item.
      *

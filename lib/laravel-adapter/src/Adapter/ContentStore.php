@@ -539,8 +539,8 @@ class ContentStore implements ContentStoreInterface {
 			$model->save();
 		}
 
-		// Attach taxonomy terms via many-to-many.
-		$this->syncTaxonomyTerms( $model, $command->taxonomyInput );
+		// Replace taxonomy terms.
+		$this->replaceTaxonomyTerms( $model, $command->taxonomyInput );
 
 		return $this->hydrateContentItem( $model->fresh() );
 	}
@@ -549,7 +549,7 @@ class ContentStore implements ContentStoreInterface {
 	 * Update an existing content item.
 	 *
 	 * Only non-null fields in the command are applied. Meta is merged,
-	 * not replaced.
+	 * not replaced. Taxonomy is replaced, per taxonomy.
 	 *
 	 * @param int                  $id       Content item ID.
 	 * @param UpdateContentCommand $command  Update parameters.
@@ -593,8 +593,8 @@ class ContentStore implements ContentStoreInterface {
 			$model->save();
 		}
 
-		// Sync taxonomy terms.
-		$this->syncTaxonomyTerms( $model, $command->taxonomyInput );
+		// Replace taxonomy terms.
+		$this->replaceTaxonomyTerms( $model, $command->taxonomyInput );
 
 		return $this->hydrateContentItem( $model->fresh() );
 	}
@@ -816,18 +816,29 @@ class ContentStore implements ContentStoreInterface {
 	}
 
 	/**
-	 * Sync taxonomy terms for a model.
+	 * Replace the terms of each named taxonomy on a model.
+	 *
+	 * `taxonomyInput` is the complete desired set per taxonomy, matching
+	 * `wp_set_post_terms( $append = false )`. The `terms()` relation spans every
+	 * taxonomy on the item — categories and tags share one pivot — so a bare
+	 * `sync()` would detach the other taxonomies' terms as a side effect. This
+	 * attaches the desired terms and detaches only *this* taxonomy's stale ones,
+	 * which is the same end state without the collateral damage.
+	 *
+	 * A taxonomy named with an empty list detaches all of its terms, matching
+	 * `wp_set_post_terms( $id, array(), $taxonomy )`.
 	 *
 	 * @param Model                              $model          The content model.
-	 * @param array<string, array<int, string>>  $taxonomyInput  Taxonomy → term names.
+	 * @param array<string, array<int, string>>  $taxonomyInput  Taxonomy → complete term set.
 	 */
-	private function syncTaxonomyTerms( Model $model, array $taxonomyInput ): void {
+	private function replaceTaxonomyTerms( Model $model, array $taxonomyInput ): void {
 		if ( array() === $taxonomyInput || ! method_exists( $model, 'terms' ) ) {
 			return;
 		}
 
 		foreach ( $taxonomyInput as $taxonomy => $termNames ) {
-			$termIds = array();
+			$desired = array();
+
 			foreach ( $termNames as $name ) {
 				$term = \Nvoos\Laravel\Models\NvoosTerm::firstOrCreate(
 					array(
@@ -835,11 +846,30 @@ class ContentStore implements ContentStoreInterface {
 						'taxonomy' => $taxonomy,
 					)
 				);
-				$termIds[] = $term->getKey();
+
+				$desired[] = (int) $term->getKey();
 			}
 
-			if ( array() !== $termIds ) {
-				$model->terms()->syncWithoutDetaching( $termIds );
+			$desired = array_values( array_unique( $desired ) );
+
+			$relation = $model->terms();
+
+			$current = $relation
+				->where( $relation->getRelated()->qualifyColumn( 'taxonomy' ), $taxonomy )
+				->get()
+				->map( static fn ( $term ): int => (int) $term->getKey() )
+				->all();
+
+			$stale = array_values( array_diff( $current, $desired ) );
+
+			// Attach before detaching: a failure between the two must not leave
+			// the item with terms the caller asked for removed.
+			if ( array() !== $desired ) {
+				$model->terms()->syncWithoutDetaching( $desired );
+			}
+
+			if ( array() !== $stale ) {
+				$model->terms()->detach( $stale );
 			}
 		}
 	}

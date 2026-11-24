@@ -24,9 +24,10 @@
  *   because a parameter with no reader is a rendered control with no behaviour.
  * - **`auto_assign` adds here, it does not replace.** WordPress calls
  *   `wp_set_object_terms( ..., $append = false )`, which removes every term the model
- *   did not name. This host's store merges taxonomy on update, and either way a
- *   model's suggestion should not silently delete curation a human made. The tool
- *   computes the union itself, so both hosts land on the same result.
+ *   did not name. A model's suggestion should not silently delete curation a human
+ *   made, so this computes the union of the current terms and the chosen ones and
+ *   writes that set. The store's `taxonomyInput` is a complete set (see
+ *   `UpdateContentCommand`), so the union is what makes "add" expressible at all.
  * - **It can be dry run.** `dry_run` reports what would be added and writes nothing,
  *   which is the safe way to look at a categorizer before trusting it.
  *
@@ -404,10 +405,10 @@ final class AutoCategorizeContentCompletionTool extends AbstractCompletionTool
     /**
      * Add the chosen terms, or report what would be added.
      *
-     * The union is computed here rather than delegated, because the two adapters
-     * disagree: WordPress's `wp_set_post_terms()` replaces, Laravel's
-     * `syncWithoutDetaching()` appends. Passing the full desired set means both
-     * hosts reach the same state.
+     * The union is computed here because the store's `taxonomyInput` is a complete
+     * term set: writing only the chosen terms would remove every term the model did
+     * not choose. "Add without removing" is this tool's promise, so the tool has to
+     * express it — identically on every host.
      *
      * @param array<string, mixed>                                                $arguments
      * @param list<array{id:int, name:string, confidence:float}>                   $suggestions
