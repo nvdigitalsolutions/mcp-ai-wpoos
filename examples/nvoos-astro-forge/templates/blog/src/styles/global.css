@@ -3253,6 +3253,78 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	height: var(--ds-shape-h, auto);
 }
 
+/* ---------------------------------------------------------------------------
+ * The hero's MEASURED collage layers.
+ *
+ * A builder stacks its hero art as separate painted spacers — a blob, two
+ * shapes, then the photograph — overlapping them with a transform the vendor
+ * sheet owns. Flattening that to one image loses the composition: the green
+ * blob behind the student IS the design (eca.directory). Each layer is placed
+ * at the top of a box sized to the media lane's measured height, in DOM order,
+ * so the photograph (last) sits over the art it was designed to sit on.
+ * ------------------------------------------------------------------------- */
+.ds-hero-collage--layered {
+	position: relative;
+	height: var(--ds-collage-h, auto);
+	min-height: var(--ds-collage-h, 0);
+}
+
+.ds-collage-layer {
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline-start: 0;
+	width: 100%;
+	height: var(--ds-layer-h, auto);
+	max-width: none;
+	object-fit: contain;
+	object-position: top center;
+}
+
+/* Below the split's own breakpoint the collage returns to static flow: absolute
+ * art on a phone pokes past the viewport edge where the body's overflow guard
+ * clips it mid-photo. */
+@media (width<=767px) {
+	.ds-hero-collage--layered {
+		height: auto;
+	}
+
+	.ds-collage-layer {
+		position: static;
+		width: auto;
+		max-width: 100%;
+		height: auto;
+		margin-inline: auto;
+	}
+}
+
+/* The hero's measured STAT strip (a rating chip, an avatar stack, a count). */
+.ds-hero-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--forge-space);
+	margin: 0;
+}
+
+.ds-hero-stat {
+	display: grid;
+	gap: 0.15rem;
+}
+
+.ds-hero-stat__value {
+	margin: 0;
+	font-family: var(--forge-font-display);
+	font-size: var(--ds-h3-size, 1.5rem);
+	font-weight: 700;
+	line-height: 1.1;
+	color: var(--ds-ink, currentColor);
+}
+
+.ds-hero-stat__label {
+	margin: 0;
+	font-size: var(--forge-scale-small);
+	color: var(--forge-muted);
+}
+
 .ds-collage-media {
 	position: absolute;
 	top: var(--ds-off-top, auto);

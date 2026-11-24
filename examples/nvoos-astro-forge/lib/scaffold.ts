@@ -2245,6 +2245,58 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			entry.push( `layout: 'split'` );
 		}
 	}
+	// The hero's COLLAGE, layer by layer.
+	//
+	// eca.directory's hero media column is five spacer divs, each painted with a
+	// background image (a green blob, two shapes and the student photo) that the
+	// vendor sheet overlaps with transforms. One image lost the composition — the
+	// blob and the shapes ARE the design — so every painted element of the media
+	// lane is emitted in DOM order with its measured height, and the renderer
+	// stacks them as layers.
+	if ( entry.some( ( line ) => line.startsWith( 'layout: ' ) ) ) {
+		const lanes = bandFacts?.columns?.desktop ?? [];
+		const mediaIndex = lanes.findIndex( ( lane ) => lane.image );
+		const lane = lanes[ mediaIndex ];
+		// A lane's element path carries its position as the 2nd segment when the
+		// band wraps its lanes in a container row (`e-con-inner`), and as the 1st
+		// when the lanes ARE the band's children. Both shapes occur.
+		const laneOf = ( path: string ): number | undefined => {
+			const segments = path.split( ' > ' );
+			const index = ( segment: string | undefined ): number | undefined => {
+				const match = segment ? /^div:nth-child\((\d+)\)$/.exec( segment ) : null;
+				return match ? Number( match[ 1 ] ) : undefined;
+			};
+			return index( segments[ 1 ] ) ?? index( segments[ 0 ] );
+		};
+		type Layer = { src: string; height?: number };
+		const layers = mediaIndex < 0
+			? []
+			: ( bandFacts?.elements ?? [] )
+					.filter( ( element ) => laneOf( element.path ) === mediaIndex + 1 )
+					.map( ( element ): Layer | undefined => {
+						const src = /background-image:\s*url\(\s*["']?([^"')]+)["']?\s*\)/i.exec( element.bg ?? '' )?.[ 1 ];
+						if ( ! src || ! /\.(?:png|jpe?g|webp|svg|gif|avif)(?:\?|$)/i.test( src ) ) {
+							return undefined;
+						}
+						const height =
+							typeof element.height === 'number' ? element.height : element.height?.desktop;
+						return { src, height };
+					} )
+					.flatMap( ( layer ): Layer[] => ( layer ? [ layer ] : [] ) )
+					// The BOTTOM layer (a blob) is painted first in DOM order and the photo
+					// last; keep that order, the renderer stacks from it.
+					.slice( 0, 6 );
+		if ( layers.length > 0 ) {
+			entry.push(
+				`mediaLayers: [${ layers
+					.map( ( layer ) => `{ src: ${ tsString( layer.src ) }${ layer.height ? `, height: ${ Math.round( layer.height ) }` : '' } }` )
+					.join( ', ' ) }]`
+			);
+			if ( lane?.height ) {
+				entry.push( `mediaHeight: ${ Math.round( lane.height ) }` );
+			}
+		}
+	}
 	if ( section.titleDivider ) {
 		const divider = section.titleDivider;
 		entry.push(
@@ -2571,6 +2623,12 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * instead of squeezing a copy column. Absent → the template\u2019s mobile',
 		'\t * breakpoint, which is where almost every builder stacks. */',
 		'\tstackAt?: \'tablet\' | \'mobile\';',
+		'\t/** The hero collage, layer by layer (`analyze --geometry` element facts):',
+		'\t * a builder stacks the blob, the shapes and the photo as separate painted',
+		'\t * spacers, so one image loses the composition. In DOM order, bottom first. */',
+		'\tmediaLayers?: Array<{ src: string; height?: number }>;',
+		'\t/** The media lane\u2019s measured height, so the layers have a box to sit in. */',
+		'\tmediaHeight?: number;',
 		'\t/** The content rhythm (125 §1) — \'split\' = a copy column beside a',
 		'\t * media collage column (the source\'s two-column hero bands). */',
 		"\tlayout?: 'split';",
@@ -2654,6 +2712,31 @@ export function renderPagesGenerated( profile: SiteProfile ): string {
 	body.push( '};' );
 	body.push( '' );
 	return [ ...header, ...body ].join( '\n' );
+}
+
+/**
+ * A chrome href, made LOCAL.
+ *
+ * The nav is MEASURED from the live site, so every menu item carries the CMS's
+ * absolute URL — and clicking it left the rebuilt front end for the WordPress
+ * install it is meant to replace (eca.directory: Home / About Us / Contact Us,
+ * 2026-11-24). A same-origin URL becomes its path plus hash; an off-site URL is
+ * a genuine outbound link and is left exactly as it is.
+ */
+function localHref( href: string | undefined, origin: string | undefined ): string | undefined {
+	if ( ! href || ! origin ) {
+		return href;
+	}
+	try {
+		const base = new URL( origin );
+		const target = new URL( href, base );
+		if ( target.origin !== base.origin ) {
+			return href;
+		}
+		return `${ target.pathname }${ target.search }${ target.hash }`;
+	} catch {
+		return href;
+	}
 }
 
 /**
@@ -2859,7 +2942,11 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		entry.push( `tagline: ${ tsString( chrome.tagline ) }` );
 	}
 	if ( chrome.nav && chrome.nav.length > 0 ) {
-		entry.push( `nav: [${ chrome.nav.map( ( item ) => `{ label: ${ tsString( item.label ) }, href: ${ tsString( item.href ) } }` ).join( ', ' ) }]` );
+		entry.push(
+			`nav: [${ chrome.nav
+				.map( ( item ) => `{ label: ${ tsString( item.label ) }, href: ${ tsString( localHref( item.href, profile.url ) ?? item.href ?? '/' ) } }` )
+				.join( ', ' ) }]`
+		);
 	}
 	if ( chrome.navStyle ) {
 		entry.push( `navStyle: ${ renderChromeStyle( chrome.navStyle ) }` );
