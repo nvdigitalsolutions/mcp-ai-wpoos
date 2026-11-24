@@ -263,17 +263,56 @@ final class PdfDocumentToolsTest extends TestCase
 
         $this->assertTrue($result['success']);
         $this->assertSame('CONFIDENTIAL', $result['data']['watermark']);
-        $this->assertSame(array(array('/tmp/a.pdf', 'CONFIDENTIAL')), $mutator->watermarks);
+        $this->assertSame(array(array('/tmp/a.pdf', 'CONFIDENTIAL', array())), $mutator->watermarks);
         $this->assertSame('watermarked.pdf', $store->writes[0]['filename']);
     }
 
-    public function test_watermark_does_not_offer_style_it_cannot_honour(): void
+    public function test_watermark_offers_the_style_knobs_the_engine_honours(): void
     {
         $schema = $this->watermarkTool($this->mutator())->getParametersSchema();
 
-        $this->assertArrayNotHasKey('opacity', $schema['properties']);
-        $this->assertArrayNotHasKey('position', $schema['properties']);
-        $this->assertSame(array('file_id', 'text'), $schema['required']);
+        $this->assertArrayHasKey('opacity', $schema['properties']);
+        $this->assertArrayHasKey('position', $schema['properties']);
+        $this->assertSame(
+            array('diagonal', 'center', 'top', 'bottom'),
+            $schema['properties']['position']['enum']
+        );
+    }
+
+    public function test_a_requested_style_reaches_the_engine(): void
+    {
+        $mutator = $this->mutator();
+
+        $result = $this->watermarkTool($mutator, $this->registry(array(1 => '/tmp/a.pdf')))
+            ->execute(array('file_id' => 1, 'text' => 'DRAFT', 'opacity' => 0.75, 'position' => 'top'));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(
+            array(array('/tmp/a.pdf', 'DRAFT', array('opacity' => 0.75, 'position' => 'top'))),
+            $mutator->watermarks
+        );
+    }
+
+    public function test_an_engine_without_style_support_refuses_a_non_default_style(): void
+    {
+        $mutator = $this->mutator(styleSupported: false);
+
+        $result = $this->watermarkTool($mutator, $this->registry(array(1 => '/tmp/a.pdf')))
+            ->execute(array('file_id' => 1, 'text' => 'DRAFT', 'position' => 'top'));
+
+        $this->assertSame('watermark_style_unavailable', $result['error']['code']);
+        $this->assertSame(array(), $mutator->watermarks, 'Nothing is stamped under the wrong style.');
+    }
+
+    public function test_an_engine_without_style_support_still_stamps_the_default_mark(): void
+    {
+        $mutator = $this->mutator(styleSupported: false);
+
+        $result = $this->watermarkTool($mutator, $this->registry(array(1 => '/tmp/a.pdf')))
+            ->execute(array('file_id' => 1, 'text' => 'DRAFT', 'opacity' => 0.3, 'position' => 'diagonal'));
+
+        $this->assertTrue($result['success'], 'The historical default needs no style support.');
+        $this->assertCount(1, $mutator->watermarks);
     }
 
     // ─── Doubles ───────────────────────────────────────────────────────
@@ -371,13 +410,13 @@ final class PdfDocumentToolsTest extends TestCase
     /**
      * A recording mutator.
      */
-    private function mutator(bool $available = true, ?string $failure = null): PdfMutatorInterface
+    private function mutator(bool $available = true, ?string $failure = null, bool $styleSupported = true): PdfMutatorInterface
     {
-        return new class ($available, $failure, $this->tempFile('merged.pdf'), $this->tempFile('watermarked.pdf')) implements PdfMutatorInterface {
+        return new class ($available, $failure, $this->tempFile('merged.pdf'), $this->tempFile('watermarked.pdf'), $styleSupported) implements PdfMutatorInterface {
             /** @var list<array<int, string>> */
             public array $merges = array();
 
-            /** @var list<array{0: string, 1: string}> */
+            /** @var list<array{0: string, 1: string, 2: array<string, mixed>}> */
             public array $watermarks = array();
 
             public function __construct(
@@ -385,6 +424,7 @@ final class PdfDocumentToolsTest extends TestCase
                 private readonly ?string $failure,
                 private readonly string $mergePath,
                 private readonly string $watermarkPath,
+                private readonly bool $styleSupported = true,
             ) {
             }
 
@@ -404,9 +444,9 @@ final class PdfDocumentToolsTest extends TestCase
                 );
             }
 
-            public function watermark(string $localPath, string $text): array
+            public function watermark(string $localPath, string $text, array $options = array()): array
             {
-                $this->watermarks[] = array($localPath, $text);
+                $this->watermarks[] = array($localPath, $text, $options);
 
                 if (null !== $this->failure) {
                     throw new \RuntimeException($this->failure);
@@ -418,6 +458,11 @@ final class PdfDocumentToolsTest extends TestCase
                     'bytes' => 1024,
                     'pages' => 2,
                 );
+            }
+
+            public function watermarkStyleSupported(): bool
+            {
+                return $this->styleSupported;
             }
 
             public function isAvailable(): bool

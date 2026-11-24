@@ -203,6 +203,12 @@ app.get( '/api/health/full', async (_req, res) => {
 				pdf_extraction: true,
 				pdf_generation: true,
 				pdf_rendering: true,
+				// Page-by-page OCR (pdfjs + tesseract) and styleable watermarks.
+				// Separate keys, not a version check: a runtime talking to an older
+				// worker must be able to tell that the route or the arguments are
+				// absent rather than discovering it by failing a call.
+				pdf_ocr: true,
+				pdf_watermark_style: true,
 				document_excel: true,
 				document_word: true,
 				document_ocr: true,
@@ -236,7 +242,7 @@ app.get( '/api/health/full', async (_req, res) => {
 				video: [ '/api/video/generate', '/api/video/process', '/api/video/info', '/api/video/models', '/api/video/prediction/:id' ],
 				social: [ '/api/social/post', '/api/social/generate-content', '/api/social/accounts' ],
 				workflow: [ '/api/workflow/social-package', '/api/workflow/brand-assets', '/api/workflow/video-pipeline', '/api/workflow/status' ],
-				pdf: [ '/api/pdf/extract', '/api/pdf/render', '/api/pdf/generate', '/api/pdf/merge', '/api/pdf/watermark' ],
+				pdf: [ '/api/pdf/extract', '/api/pdf/render', '/api/pdf/generate', '/api/pdf/merge', '/api/pdf/watermark', '/api/pdf/ocr' ],
 				document: [ '/api/document/excel', '/api/document/word' ],
 				ocr: [ '/api/ocr/recognize' ],
 				email: [ '/api/email/send', '/api/email/compile-mjml', '/api/email/parse' ],

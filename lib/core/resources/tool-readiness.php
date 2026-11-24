@@ -638,6 +638,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ChartAndPlanningToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'excel_data_import' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ExcelDataImportTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerTabularReader implements TabularReaderInterface over the media worker `POST /api/ingest/parse` (ExcelJS for xlsx, the repo parser for csv/tsv/json); needs `oos.media_worker.url` at runtime. `max_rows` is bounded on both sides so an older worker cannot return an unbounded matrix into a prompt.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/TabularAndOcrAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'execute_workflow' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExecuteWorkflowTool',
 			'readiness' => 'ready',
@@ -1532,6 +1541,15 @@ return array(
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CacheQueueAndBatchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'ocr_pdf_text' => array(
+			'class' => 'Nvoos\\Core\\Tool\\OcrPdfTextTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerPdfOcr implements PdfOcrInterface over the media worker `POST /api/pdf/ocr` (pdfjs rasterisation at 300 DPI plus tesseract.js, one worker per call). Availability asks the capability matrix for `pdf_ocr` because the route is newer than the rest of the PDF family; a worker without it answers `no_ocr_engine` rather than 404.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/TabularAndOcrAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'open_openai_logs' => array(
 			'class' => 'Nvoos\\Core\\Tool\\OpenOpenAILogsTool',

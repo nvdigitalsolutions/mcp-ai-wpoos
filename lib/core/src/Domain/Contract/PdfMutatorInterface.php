@@ -11,15 +11,19 @@
  *
  * The WordPress tool accepts `opacity` and `position` (`center`, `diagonal`,
  * `top`, `bottom`) and spends those options in its own `pdf-lib` code path. The
- * media worker's `/api/pdf/watermark` route draws one fixed mark — 48pt
- * Helvetica, grey, 30% opacity, centred, rotated −45° — and takes no style
- * arguments. This contract therefore takes **text only**: accepting `opacity`
- * and `position` here and ignoring them would be a rendered control with no
- * reader, and silently rendering a different watermark than the caller asked
- * for is worse than refusing to offer the knob.
+ * media worker's `/api/pdf/watermark` route draws a mark whose default is the
+ * original fixed one — 48pt Helvetica, grey, 30% opacity, centred, rotated −45°
+ * — and now accepts `opacity` and `position` too.
  *
- * When the worker route grows style arguments, they become an `$options` array
- * on this method and the tool's schema grows with it.
+ * The style arguments are **newer than the route**, so a worker may exist that
+ * honours none of them. `watermarkStyleSupported()` is therefore part of this
+ * contract: a caller that was asked for a non-default style must be able to
+ * refuse with a named error rather than quietly stamp the default mark and
+ * report success.
+ *
+ * `fontSize` is deliberately not offered. The route's mark size is part of the
+ * mark's identity; a caller that could set it would be designing a watermark,
+ * which is a template's job (§164.7).
  *
  * @package Nvoos\Core
  * @since   2.4.0
@@ -51,13 +55,25 @@ interface PdfMutatorInterface
      *
      * @param string $localPath Absolute path to the source PDF.
      * @param string $text      The mark, e.g. `CONFIDENTIAL`.
+     * @param array<string, mixed> $options {
+     *     @type float  $opacity  0.0–1.0. Default 0.3.
+     *     @type string $position `diagonal` | `center` | `top` | `bottom`. Default `diagonal`.
+     * }
      *
      * @return array{path: string, mime_type: string, bytes: int, pages: int}
      *
      * @throws \InvalidArgumentException When the path or the text is empty.
-     * @throws \RuntimeException         When the engine fails.
+     * @throws \RuntimeException         When the engine fails or the style is not supported.
      */
-    public function watermark(string $localPath, string $text): array;
+    public function watermark(string $localPath, string $text, array $options = array()): array;
+
+    /**
+     * Whether this engine honours `opacity` and `position`.
+     *
+     * False means a non-default style cannot be honoured, and the caller must
+     * say so rather than rendering the default mark under a different name.
+     */
+    public function watermarkStyleSupported(): bool;
 
     /**
      * Whether a PDF engine is bound and usable on this host.
