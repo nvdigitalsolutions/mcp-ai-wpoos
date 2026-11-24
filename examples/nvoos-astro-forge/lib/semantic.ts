@@ -146,6 +146,19 @@ export interface SectionItem {
 	 * (virtuallysrilanka's black services column, 2026-11-20).
 	 */
 	paragraphs?: string[];
+	/**
+	 * The card's BULLET LIST — a list the CARD carries, not items beside it.
+	 *
+	 * A builder publishes one as `<ul class="elementor-icon-list-items">
+	 * <li class="elementor-icon-list-item"><span class="elementor-icon-list-text">
+	 * Branding &amp; SSO setup</span></li>…`. `iconListItems` turns each ENTRY into a
+	 * card when the list IS the band, which is right for an icon-list section and
+	 * wrong inside a card: the column path then dropped the entries entirely.
+	 * eca.directory's phased-delivery band lost 17 entries this way — its largest
+	 * text loss (2026-11-23), still missing after `iconListItems` shipped because
+	 * `columnItems` replaced the items it had found (2026-11-24).
+	 */
+	bullets?: string[];
 	media?: MediaRef;
 	links?: LinkRef[];
 	/** The item renders with an icon marker (icon-list family). */
@@ -751,7 +764,7 @@ function glyphClassesOf( node: HNode ): string | undefined {
 	return undefined;
 }
 
-function extractStructuredItem( node: HNode ): { title?: string; titleLevel?: number; body?: string; media?: MediaRef; icon: boolean; iconClass?: string; layout?: 'row' | 'stack' } | undefined {
+function extractStructuredItem( node: HNode ): { title?: string; titleLevel?: number; body?: string; bullets?: string[]; media?: MediaRef; icon: boolean; iconClass?: string; layout?: 'row' | 'stack' } | undefined {
 	// h3–h6 or a DIV heading are CARD titles. An h1/h2 inside a widget is the
 	// band's own heading — treating it as a card title hid the band title from
 	// every caller that reads `slots.title`.
@@ -804,7 +817,10 @@ function extractStructuredItem( node: HNode ): { title?: string; titleLevel?: nu
 		.map( ( p ) => trimmed( textOf( p ) ) )
 		.filter( ( value ) => value && value !== title );
 	const body = paragraphs.length > 0 ? paragraphs.join( ' ' ) : undefined;
-	return { title, titleLevel: headingLevelOf( headings[ 0 ] ) <= 6 ? headingLevelOf( headings[ 0 ] ) : undefined, body, media, icon, iconClass, layout };
+	// A list INSIDE the card (see `SectionItem.bullets`) — the entries are the
+	// card's copy, never sibling cards.
+	const bullets = bulletItems( node );
+	return { title, titleLevel: headingLevelOf( headings[ 0 ] ) <= 6 ? headingLevelOf( headings[ 0 ] ) : undefined, body, bullets, media, icon, iconClass, layout };
 }
 
 /**
@@ -843,6 +859,43 @@ function iconListItems( node: HNode ): SectionItem[] | undefined {
 		} );
 	}
 	return items.length > 0 ? items : undefined;
+}
+
+/**
+ * The BULLETS a card carries (see `SectionItem.bullets`).
+ *
+ * Only a real list counts: a `<ul>`/`<ol>` with at least one `<li>`, and not a
+ * navigation menu, breadcrumb row, pagination row or social row — chrome the
+ * card's copy must never absorb (a mega-menu's entries would print as bullet
+ * copy). Entries are de-duplicated and length-capped: a bullet is copy, not a
+ * paragraph.
+ */
+function bulletItems( node: HNode ): string[] | undefined {
+	const chrome = allDescendants(
+		node,
+		( n ) =>
+			n.type === 'tag' &&
+			( n.name === 'nav' ||
+				( n.attribs?.role ?? '' ) === 'navigation' ||
+				classList( n.attribs ).some( ( c ) => /(?:^|[-_])(?:menu|nav|breadcrumb|pagination|social)(?:[-_]|$)/i.test( c ) ) )
+	);
+	const bullets: string[] = [];
+	for ( const list of allDescendants( node, ( n ) => n.type === 'tag' && ( n.name === 'ul' || n.name === 'ol' ) ) ) {
+		if ( chrome.some( ( ancestor ) => within( list, ancestor ) ) ) {
+			continue;
+		}
+		for ( const entry of directChildren( list ) ) {
+			if ( entry.type !== 'tag' || entry.name !== 'li' ) {
+				continue;
+			}
+			const text = trimmed( textOf( entry ) );
+			if ( ! text || text.length > 160 || bullets.includes( text ) ) {
+				continue;
+			}
+			bullets.push( text );
+		}
+	}
+	return bullets.length > 0 ? bullets : undefined;
 }
 
 /** The attribution line of a quote widget (aux-author / cite / byline). */
@@ -957,7 +1010,7 @@ function accordionPanelOf( node: HNode, titleNode: HNode ): HNode | undefined {
  * pushed off the right edge). Returns undefined unless at least two columns
  * carry content, so an ordinary one-column band keeps its old path.
  */
-function columnItems( section: HNode ): SectionItem[] | undefined {
+function columnItems( section: HNode ): { items: SectionItem[]; lead: string[] } | undefined {
 	const container = findDescendant(
 		section,
 		( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-container' )
@@ -1000,6 +1053,13 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 		if ( ( collected.links ?? [] ).length > 0 ) {
 			item.links = collected.links;
 		}
+		// A list inside the card (see `SectionItem.bullets`). This is where
+		// eca.directory's phased-delivery entries were lost: the entries are
+		// neither the card's title nor its `<p>` copy.
+		const bullets = bulletItems( column );
+		if ( bullets ) {
+			item.bullets = bullets;
+		}
 		if ( ! item.title && ! item.body && ! item.media ) {
 			// A column with no copy and no media (a photo painted as a CSS
 			// background, a spacer) has no rebuildable content, so no item is
@@ -1019,7 +1079,21 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 	// A single surviving card is still a column grid WHEN one was removed here:
 	// falling back to the raw band HTML would put the placeholder straight back
 	// (the sanitized markup still carries the source's posts widget).
-	return items.length >= 2 || ( droppedPlaceholder && items.length >= 1 ) ? items : undefined;
+	if ( ! ( items.length >= 2 || ( droppedPlaceholder && items.length >= 1 ) ) ) {
+		return undefined;
+	}
+	// Copy that sits OUTSIDE the columns — the band's own LEDE, above the grid.
+	// The caller replaces `slots` with the items, so without this the sentence
+	// introducing the cards is thrown away (eca.directory's phased-delivery band,
+	// 2026-11-24). Paragraphs a card already carries are excluded so the lede
+	// never repeats the cards.
+	const carried = new Set(
+		items.flatMap( ( item ) => [ item.body ?? '', ...( item.paragraphs ?? [] ), ...( item.bullets ?? [] ) ] ).filter( Boolean )
+	);
+	const lead = allDescendants( section, ( n ) => n.type === 'tag' && n.name === 'p' && ! within( n, container ) )
+		.map( ( n ) => trimmed( textOf( n ) ) )
+		.filter( ( text ) => text && ! carried.has( text ) );
+	return { items, lead };
 }
 
 /**
@@ -1092,6 +1166,9 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 			}
 			if ( structured.body ) {
 				item.body = structured.body;
+			}
+			if ( structured.bullets ) {
+				item.bullets = structured.bullets;
 			}
 			if ( structured.media ) {
 				item.media = structured.media;
@@ -1220,7 +1297,15 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 	if ( matched.kind === 'text' && section ) {
 		const columns = columnItems( section );
 		if ( columns ) {
-			return { kind: 'feature-grid', confidence: 'low', slots: { items: columns } };
+			return {
+				kind: 'feature-grid',
+				confidence: 'low',
+				slots: {
+					...( slots.title ? { title: slots.title } : {} ),
+					...( columns.lead.length > 0 ? { body: columns.lead } : {} ),
+					items: columns.items,
+				},
+			};
 		}
 	}
 	return { kind: matched.kind, confidence: effectiveConfidence, slots };

@@ -947,3 +947,36 @@ describe( 'container-page text recovery (eca.directory, 2026-11-23)', () => {
 		expect( items.every( ( item ) => Boolean( item.title || item.body || item.media ) ) ).toBe( true );
 	} );
 } );
+
+describe( 'items[].bullets — a list INSIDE a card', () => {
+	// A card's list is the card's COPY. Turning each entry into a sibling card
+	// (the icon-list path) or dropping it (the column path) both lose the card;
+	// eca.directory's phased-delivery band lost 17 entries this way.
+	it( 'keeps a plain list inside an icon box as the card’s bullets', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Phased Delivery</h2>' ) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Pilot Setup</h3><p class="elementor-icon-box-description">Weeks 1–6</p><ul><li>Branding &amp; SSO setup</li><li>Enrolment &amp; waitlists</li></ul></div></div>`
+				)
+		);
+		const items = classifyHtml( html )[ 0 ].slots.items ?? [];
+		const card = items.find( ( item ) => item.title === 'Pilot Setup' );
+		expect( card?.bullets ).toEqual( [ 'Branding & SSO setup', 'Enrolment & waitlists' ] );
+		// The entries are NOT cards of their own.
+		expect( items.map( ( item ) => item.title ) ).not.toContain( 'Branding & SSO setup' );
+	} );
+
+	it( 'never swallows a navigation menu into a card', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Contact</h2>' ) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Find us</h3><nav class="site-nav"><ul><li>Home</li><li>About</li></ul></nav></div></div>`
+				)
+		);
+		const items = classifyHtml( html )[ 0 ].slots.items ?? [];
+		const card = items.find( ( item ) => item.title === 'Find us' );
+		expect( card?.bullets ).toBeUndefined();
+	} );
+} );
