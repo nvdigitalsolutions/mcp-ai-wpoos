@@ -155,7 +155,7 @@ class HtmlToPdfTool extends AbstractTool implements ToolCapabilityFlagsInterface
                 'bytes' => $result['bytes'],
             );
 
-            if (null !== $this->store) {
+            if ($this->boolParam($arguments, 'save_to_media', true) && null !== $this->store) {
                 $payload = (new GeneratedMediaPersister($this->store))->attachFile(
                     $payload,
                     $result['path'],

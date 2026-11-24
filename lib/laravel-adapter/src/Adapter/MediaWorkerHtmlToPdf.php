@@ -76,26 +76,18 @@ final class MediaWorkerHtmlToPdf implements HtmlToPdfInterface
 
         $encoded = $body['data_base64'] ?? null;
 
-        if ( ! is_string( $encoded ) || '' === $encoded ) {
-            throw new \RuntimeException( 'The media worker returned no PDF payload.' );
-        }
-
-        $bytes = base64_decode( $encoded, true );
-
-        if ( false === $bytes || '' === $bytes ) {
-            throw new \RuntimeException( 'The media worker returned an undecodable PDF payload.' );
-        }
-
-        $path = $this->outputPath( $html, $format, $landscape );
-
-        if ( false === file_put_contents( $path, $bytes ) ) {
-            throw new \RuntimeException( 'Unable to write the rendered PDF to '.$path );
-        }
+        $path = MediaWorkerOutput::persist(
+            $encoded,
+            'pdf',
+            'pdf',
+            $html."\0".$format."\0".( $landscape ? '1' : '0' ),
+            'PDF'
+        );
 
         return array(
             'path'      => $path,
             'mime_type' => 'application/pdf',
-            'bytes'     => strlen( $bytes ),
+            'bytes'     => (int) filesize( $path ),
             'format'    => strtolower( $format ).' '.($landscape ? 'landscape' : 'portrait'),
         );
     }
@@ -113,25 +105,6 @@ final class MediaWorkerHtmlToPdf implements HtmlToPdfInterface
         }
 
         return 'A4';
-    }
-
-    /**
-     * Content-addressed output path, so repeating a render rewrites one file.
-     */
-    private function outputPath( string $html, string $format, bool $landscape ): string {
-        $directory = (string) config( 'oos.media_worker.output_dir', '' );
-
-        if ( '' === $directory ) {
-            $directory = storage_path( 'app/media-worker' );
-        }
-
-        if ( ! is_dir( $directory ) && ! @mkdir( $directory, 0775, true ) && ! is_dir( $directory ) ) {
-            throw new \RuntimeException( 'PDF output directory is not writable: '.$directory );
-        }
-
-        $hash = sha1( $html."\0".$format."\0".( $landscape ? '1' : '0' ) );
-
-        return rtrim( $directory, '/\\' ).DIRECTORY_SEPARATOR.'pdf-'.$hash.'.pdf';
     }
 
     /**
