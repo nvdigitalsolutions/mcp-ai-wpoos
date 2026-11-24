@@ -537,9 +537,9 @@ class Forms extends \WP_REST_Controller {
 				// Elementor resolves the widget INSIDE the carrier document, so a
 				// submission without the post id always makes the handler answer
 				// "Your submission failed because the form is invalid." — say why
-				// instead of forwarding a guaranteed rejection. (The existence
-				// check above searches every post, which is why the render is
-				// found even when the carrier is missing.)
+				// instead of forwarding a guaranteed rejection. The existence check
+				// above searches every post, which is why the render is found even
+				// when the carrier is missing.
 				return new \WP_Error( 'nvoos_forge_form_post_id_required', __( 'The Elementor form needs the post_id of the page that carries it.', 'nvoos-forge-bridge' ), array( 'status' => 400 ) );
 			}
 			return $this->dispatch_elementor( $form, $post_id, $fields );
