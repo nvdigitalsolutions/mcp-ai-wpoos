@@ -28,6 +28,7 @@ import {
 } from '../lib/eca-scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
 import { resolveContactBlock } from '../lib/scaffold.ts';
+import { ecaRouteFiles } from '../lib/eca-ui.ts';
 
 const profile = ( over: Partial< SiteProfile > = {} ): SiteProfile => ( {
 	url: 'https://eca.directory',
@@ -303,6 +304,21 @@ describe( 'resolveContactBlock — the contact band’s people', () => {
 		// An empty contact band is worse than none: never invent one.
 		expect( resolveContactBlock( base( {} ) ) ).toBeUndefined();
 		expect( resolveContactBlock( base( { eca: { contacts: [] } } ) ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'the generated help page', () => {
+	it( 'opts the contact addresses out of Cloudflare email obfuscation', () => {
+		// The zone rewrites a mailto anchor's href and its text, restoring both with
+		// JS. On a help page every address would read "[email protected]" for a
+		// no-JS parent, which is the opposite of the page's job.
+		const help = ecaRouteFiles( {
+			url: 'https://school.test',
+			collections: [],
+			eca: { contacts: [ { label: 'ECA Coordinator', email: 'eca@school.test' } ] },
+		} ).find( ( file ) => file.path === 'src/pages/help/index.astro' );
+		expect( help?.content ).toContain( '<!--email_off-->' );
+		expect( help?.content ).toContain( '<!--/email_off-->' );
 	} );
 } );
 

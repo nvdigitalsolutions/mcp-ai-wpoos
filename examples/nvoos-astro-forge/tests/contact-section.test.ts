@@ -76,6 +76,18 @@ describe( 'contact band (issue #7549)', () => {
 		expect( component ).toContain( "'/api/forms/submit'" );
 		expect( component ).toContain( 'forms/submit' );
 		expect( component ).toContain( 'data-ds-contact' );
+		// Cloudflare's Email Address Obfuscation rewrites a mailto anchor's href and
+		// its text, restoring them with JS: a no-JS parent gets a dead link and
+		// "[email protected]". Both components that print an address opt out.
+		expect( component ).toContain( '<!--email_off-->' );
+		expect( component ).toContain( '<!--/email_off-->' );
+
+		const form = await readFile(
+			path.join( target, 'src', 'components', 'design', 'Form.astro' ),
+			'utf8'
+		);
+		expect( form ).toContain( '<!--email_off-->' );
+		expect( form ).toContain( '<!--/email_off-->' );
 	} );
 
 	it( 'omits the block when the profile declares no contact', async () => {

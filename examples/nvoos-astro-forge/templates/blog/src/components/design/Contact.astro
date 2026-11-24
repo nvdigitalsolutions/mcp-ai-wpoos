@@ -60,7 +60,16 @@ const pagePath = Astro.url?.pathname || '/';
 				<p class="ds-form-status" role="status" aria-live="polite" hidden></p>
 			</form>
 		) : email ? (
-			<p><a class="ds-button" href={`mailto:${email}`}>{email}</a></p>
+			<>
+				{/* Cloudflare's Email Address Obfuscation rewrites a mailto anchor's href
+				 * and the address text, restoring them with JS — dead for a no-JS
+				 * visitor. These markers are the documented opt-out. */}
+				<!--email_off-->
+				<p>
+					<a class="ds-button" href={`mailto:${email}`}>{email}</a>
+				</p>
+				<!--/email_off-->
+			</>
 		) : null}
 	</section>
 )}

@@ -1527,6 +1527,13 @@ const label = ecaConfig.booking?.label ?? 'Book';
 		{ contacts.length > 0 && (
 			<section>
 				<h2>Who to contact</h2>
+				{/*
+				 * Cloudflare's Email Address Obfuscation rewrites a mailto anchor's href and
+				 * the address text, then restores them with JS — every address reads
+				 * "[email protected]" without it, which is the opposite of what a help page
+				 * is for. These markers are Cloudflare's documented opt-out.
+				 */}
+				<!--email_off-->
 				<ul class="eca-contacts">
 					{ contacts.map( ( contact ) => (
 						<li>
@@ -1536,6 +1543,7 @@ const label = ecaConfig.booking?.label ?? 'Book';
 						</li>
 					) ) }
 				</ul>
+				<!--/email_off-->
 			</section>
 		) }
 	</main>
