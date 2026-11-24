@@ -17,7 +17,16 @@ interface Props {
 }
 
 const { section, theme } = Astro.props;
-const { title, body, media, links } = section.slots;
+// The band's TITLE, from the measurement when the classifier found none.
+//
+// A page-title band renders its heading through a widget the tag-based
+// classifier cannot see as a heading (Elementor's `theme-page-title` prints a
+// plain div), so `slots.title` was empty while the measurement recorded the
+// 47.78px title. The band rendered its paragraph under a page h1 that the
+// template had already moved off-screen for it — a page with no visible
+// heading at all (eca.directory /about-us/, 2026-11-24).
+const title = section.slots.title ?? theme?.titleText;
+const { body, media, links } = section.slots;
 
 const titleVars = [
 	theme?.titleStyle?.size && `--ds-title-size:${theme.titleStyle.size}`,
