@@ -470,3 +470,69 @@ chrome slots read them) and drops two `/author/…` entries from
 `inventory.missing` that discovery now resolves. The per-page band facts were
 kept from the previous run: a re-measure re-keys Elementor's per-render
 `elementor-dcss-…` class hashes with identical values, which is churn, not data.
+
+---
+
+## Pass — card ink, chosen by SURFACE not by contrast (2026-11-24, second pass)
+
+### The finding
+
+The last two band drifts (`41b89b66`, `319dfe29`) were not a missing fact. The
+scoped rule WAS emitted, with the right colour:
+
+```
+[data-section-id="41b89b66"] p{…;color:rgb(116, 116, 116)}   → #747474
+```
+
+…and then `.ds-section .ds-card p { color: var(--forge-muted) }` — specificity
+(0,2,1) against the band rule's (0,1,1) — repainted the card copy with the
+`muted` token (`#69727d`, Elementor's global text colour). ΔE00 6.41 on both
+bands.
+
+That card rule is deliberate: it was added for virtuallysrilanka, where a
+band-level ink harvested from a **dark panel** landed on a **white card**.
+
+### The discriminator
+
+Not contrast — eca.directory's `#747474` on the card is 4.34:1, and the whole
+premise of this pass is that a source's low-contrast choice is parity, not a
+defect. The honest question is *"was this ink measured on the surface the card
+will paint?"*:
+
+- band surface ≈ card surface (`contrast < 1.15`; `#ffffff` vs `#f5f5f4` = 1.08)
+  → the ink was measured **on the card** → reuse it;
+- band surface ≠ card surface (virtuallysrilanka's dark panel vs a white card)
+  → the ink belongs to the panel → keep the template's `muted`.
+
+### The fix
+
+`cardInkFor(section, type, profile)` returns the mediated body ink only on the
+same-surface case; `renderSectionThemeEntry` emits it as `SectionTheme.cardInk`,
+and `DesignRenderer` writes one scoped rule:
+
+```css
+[data-section-id="…"] .ds-card:not(.ds-card--surface) p{color:#747474}
+```
+
+`--ds-card-ink`, a global token change, and removing the blanket rule were all
+rejected: each would move every site in the fleet. `:not(.ds-card--surface)`
+keeps a card that paints its OWN measured slab on its own derived ink.
+
+### Result (build `cardink16`)
+
+| Metric | gated15 | cardink16 |
+|---|---|---|
+| colour drift | 3 | **1** |
+| `41b89b66` / `319dfe29` | `#69727d` (ΔE 6.41) | **clean** |
+
+`cardInk` is emitted for five of the seven homepage bands (the hero and the two
+listing bands included). A rule on a band that renders no `.ds-card` is inert,
+so the fact is emitted wherever it is MEASURED rather than guessed per kind.
+
+### The one remaining finding
+
+`77f4271d` — source `#27104a` (32 %), build `#1a1e1d` (ΔE 22.2). Its copy is the
+accordion panel bodies the sanitizer drops (8.6 % text coverage), so the rebuild
+is not painting the source's copy at all. This closes with `items[].bullets` /
+accordion content, not with a colour rule. After that, `verify --colors` reports
+zero drift on eca.directory.

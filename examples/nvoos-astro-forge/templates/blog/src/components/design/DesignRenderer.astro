@@ -826,6 +826,15 @@ const bandTypeCss = sections
 			// also hit emphasized inline copy.
 			rules.push( ...withDevices( 'p', type.body, { weight: false } ) );
 		}
+		if ( theme.cardInk ) {
+			// The band's CARDS paint their copy in the ink measured ON the card
+			// (`cardInkFor`). The template's blanket `.ds-section .ds-card p` rule is
+			// (0,2,1) and outranks the band's `p` rule above, so without this the card
+			// copy falls back to the `muted` token — a different grey from the source's.
+			// A card that paints its OWN measured surface is excluded: it derives its
+			// ink from that surface (`--ds-card-surface-ink`).
+			rules.push( `${ scoped } .ds-card:not(.ds-card--surface) p{color:${ theme.cardInk }}` );
+		}
 		return rules.join( '' );
 	} )
 	.join( '' );
