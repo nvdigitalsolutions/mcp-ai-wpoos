@@ -1733,3 +1733,462 @@ user's file answering as missing).
 (`content_recommendation_engine` on its success path and `analyze_file_suitability` on
 its not-found path). Auditor 243 rows / 224 servable, no violations. phpcs clean on all
 four files at the CI severities.
+
+## 26. Addendum: a taxonomy read, and auto_categorize_content (2026-11-24)
+
+### The slice
+
+§23 recorded `auto_categorize_content` as blocked on one dependency: the category list.
+`ContentQuery.taxQuery` *filters* by term names it is given; nothing enumerates them. A
+categorizer that cannot see the vocabulary cannot ask a model to choose from it, so the
+read came first.
+
+`ContentStoreInterface::listTaxonomyTerms( string $taxonomy, int $limit = 200 )` now
+returns `array{id, name, slug, count}` ordered by name. There are exactly two
+implementations — the Laravel and WordPress adapters — so the method went on the
+existing contract rather than into a second interface with an `instanceof` dance at
+every call site. The two adapters were loaded and reflected against the interface to
+prove both still satisfy it; lint alone would not have caught a missing method, because
+PHP only fatals at class load.
+
+An unused term is still listed. It is the *vocabulary* that matters to a categorizer,
+not the usage: a term nobody has used yet is a legitimate answer.
+
+### A closed list, and invented ids dropped
+
+The model is given the real ids and names and asked to pick. An id it returns that was
+never in the list is dropped and counted — the same rule as §23, for the same reason:
+assigning it would fail, or silently create a near-duplicate of a term that does exist,
+and the caller could not tell the difference.
+
+An empty vocabulary returns a finding **before** the model call. There is nothing to
+choose from, so nothing is spent saying so.
+
+### `create_new` is not offered
+
+WordPress accepts `create_new` and never reads it: `assign_categories()` calls
+`wp_set_object_terms()` with ids that already exist, and nothing creates a term. It is
+the same inert-parameter defect as §24's `use_semantic_search`, so the port does not
+declare it.
+
+### `auto_assign` adds here; WordPress replaces
+
+This is a real semantic split, not a preference. `wp_set_post_terms( ..., $append =
+false )` removes every term the model did not name. The Laravel store's update path
+merges (`syncWithoutDetaching`), so the same call would append. The two adapters have
+disagreed about `UpdateContentCommand::$taxonomyInput` since it was written.
+
+Rather than change either adapter — which would alter every existing `save_post` and
+`update_post` caller — the tool computes the union itself and passes the **full desired
+set**. WordPress replaces with that set, Laravel appends it, and both hosts converge on
+the same state without a suggestion deleting curation a human made. The payload reports
+`assigned` (newly added) and `already_present` separately, and nothing is written at all
+when every suggestion is already attached, so an idempotent call does not touch the row
+or fire update hooks.
+
+A follow-up worth its own issue: the adapters should agree on what `taxonomyInput`
+means before more tools write through it.
+
+### Dry run, and what confidence is
+
+`dry_run` with `auto_assign` reports what would be added and writes nothing — the safe
+way to look at a categorizer before trusting it.
+
+`min_confidence` filters on the number the model returned. That number is a claim, not a
+measurement, so every suggestion carries the confidence next to the term it refers to
+rather than being collapsed into one opaque relevance score.
+
+### Validation
+
+`AutoCategorizeContentToolTest` (core, 18 tests: slug/capability/flags with `write` and
+`state-changing` present and `read-only` absent; the missing store; a required source;
+an empty taxonomy; a non-resolving `post_id`; an unreadable answer; **an empty
+vocabulary as a finding that spends no completion**; **an invented id dropped and
+counted**; the confidence floor; `max_categories`; equal confidence ordered by name for
+reproducibility; no write without `auto_assign`; the term added; **an existing term kept
+through the union**; no write when everything is already present; dry run writing
+nothing; a missing caller refused with `user_required`; inline content only suggesting).
+Feature test `docker/laravel/app-skeleton/tests/Feature/AutoCategorizeContentToolTest.php`
+(6 tests against the real store and the real `nvoos_terms` rows: registration, the
+vocabulary read, a real term suggested while an invented id is dropped, `auto_assign`
+attaching a term while the existing one survives the round trip, dry run writing
+nothing, and a term-free taxonomy returning a finding without a completion).
+
+`lib/core` 2,225 / 16,639; adapter 350 / 1,872; auditor 244 rows / 225 servable, no
+violations. phpcs clean under both the PSR-12 ruleset (core, Laravel adapter, skeleton)
+and the WordPress ruleset (the WordPress adapter).
+
+## 27. Two promises declined with evidence (2026-11-24)
+
+Both of the remaining "just port it" items turned out to need a decision rather than a
+port. Recording the evidence so the next session does not rediscover it.
+
+### `run_openai_external_action` posts a payload no OpenAI endpoint accepts
+
+The WordPress tool sends `POST https://api.openai.com/v1/responses` with:
+
+- `action_type = workflow`: `metadata`, `workflow_id`, `inputs`, `input`.
+- `action_type = assistant`: `metadata`, `assistant_id`, `input` (a messages array).
+
+The Responses API's create method takes `model`, `input`, `instructions`, `tools`,
+`previous_response_id`, `store`, `background` and friends. It has no `workflow_id` and no
+`assistant_id`.
+
+- `assistant_id` is an **Assistants API** identifier. Assistants is superseded by
+  Responses, and migrating means threads/runs or a real Responses call — not posting the
+  id to `/v1/responses`.
+- `workflow_id` is assigned by **Agent Builder** and invoked through **ChatKit**, which
+  uses a server-side session endpoint with a per-user token. OpenAI's own community
+  threads ask whether a workflow can be called through the API and report that it cannot
+  be called through the Agents SDK.
+
+So the tool, as written, makes a call the API rejects. Porting it faithfully would ship a
+tool that always fails — the exact opposite of this proposal's purpose — so it is not
+ported.
+
+What would make it portable:
+
+1. `workflow` via the ChatKit session flow. Needs a server-side session endpoint and a
+   user token, which is a different tool shape (and a different secret).
+2. `assistant` via the Assistants threads/runs endpoints, or a real Responses call with
+   `model` and `input`.
+
+Whichever is chosen, the WordPress tool also gates on `manage_options`; a port needs an
+equivalent gate rather than the usual `edit_posts`.
+
+### `analyze_video` and `generate_video_caption` need a frame-extraction decision
+
+`lib/core` has no frame extraction, and the Laravel runtime image has no `ffmpeg`
+binary — verified inside `oos-laravel-app`. Without frames there is nothing to send to a
+vision model, so both tools are blocked on the same prerequisite.
+
+Three shapes are viable, and the choice belongs to whoever owns the deployment:
+
+1. **Bundle `ffmpeg`** into the image and add a `FrameExtractorInterface` with a process
+   adapter. Self-contained host; larger image; needs sandboxing and timeouts.
+2. **Delegate to the design-stack media worker**, which already has `ffmpeg` and a
+   transform endpoint. Cheapest to build, but couples the runtime to a second service.
+3. **A hosted service.** No local binary, but adds cost, a network hop and a data
+   egress question for customer video.
+
+That is an architecture choice, not a coding task, so it is left as the next slice
+rather than guessed at here. The two tools are otherwise conventional vision tools of
+the same shape as §22's image readers.
+
+## 28. Addendum: batch_embed_content, and a blocker that was not one (2026-11-24)
+
+### The record was wrong about the blocker
+
+§23 and §24 both recorded `batch_embed_content` as blocked on
+`EmbeddingServiceInterface` having no implementation. That was the wrong dependency.
+The WordPress tool does not use the interface at all: it calls a provider, then stores
+the vectors in **post meta** under `_wp_mcp_ai_embeddings`. Nothing about the promise
+required a vector service, and the slice was smaller than the record claimed.
+
+An implementation of that interface does exist on the WordPress side
+(`lib/wordpress-adapter/src/Adapter/EmbeddingService.php`), delegating to
+`WP_MCP_AI_Content_Embedding_Service`. It is unrelated to the tool.
+
+### Where the vectors go
+
+The direct analogue of WordPress post meta on this contract is the item's own meta,
+written through `UpdateContentCommand::$meta`. So the port needs **no migration, no
+vector database and no second store**, and it behaves identically on both hosts. The
+stored record carries the provider, model, dimensions, embedded timestamp, a SHA-1 of
+the embedded text, and the vector.
+
+That is a stated limit, not an oversight: this is an index for a bounded corpus. A
+caller with millions of rows needs a real index, and the docblock says so instead of
+implying otherwise. It also explains why the tool does **not** implement
+`EmbeddingServiceInterface`: its `search()` would be a linear scan over meta, which is
+not a search engine, and calling it one would be the kind of claim this proposal keeps
+removing.
+
+### Two limits, because tokens bind before counts
+
+A chunk is capped by input count **and** total characters. A request of a hundred
+32,000-character documents is rejected upstream for token count long before the input
+count matters, so a count-only cap would look correct and fail in production.
+
+Chunks are sent in order and each is stored before the next is requested, so a provider
+failure leaves the earlier work durable and the error message reports how much was
+done. An item with no text is skipped with a reason rather than sent as an empty string.
+
+### Re-running is cheap
+
+`update_existing` defaults to false, so an item that already carries an embedding is
+skipped rather than paid for twice. The stored `text_hash` is what a future freshness
+check needs to tell a stale vector from a current one — it is written now so that slice
+does not need a migration later.
+
+### Two WordPress parameters not offered, and one provider
+
+- **`store_in_meta`** is not a parameter: the tool always stores. Computing an embedding
+  and discarding it spends tokens for nothing, and returning a hundred 1,536-float
+  vectors would be unusable in a transcript. `dry_run` is the preview.
+- **`provider: gemini`** is refused by name. WordPress advertises Gemini with a
+  separate batching path; an endpoint shape that has not been exercised here is a guess,
+  and attributing a vector to a provider that was never called is worse than refusing.
+
+### Validation
+
+`BatchEmbedContentToolTest` (core, 16 tests: slug/capability/flags; the missing store;
+the missing HTTP client or settings; **an unimplemented provider refused by name**; a
+missing caller; a missing API key; **a provider refusal reported with its status and
+body**; a response with no embeddings treated as invalid; **dry run calling no provider
+and writing nothing**; the vector stored with provider, model, dimensions and
+`text_hash`; the request carrying bearer auth and the right body; **an already-embedded
+item skipped**; `update_existing` re-embedding; an empty-text item skipped; the limit
+reaching the query; **65 items split across two requests**). Feature test
+`docker/laravel/app-skeleton/tests/Feature/BatchEmbedContentToolTest.php` (4 tests
+against the real store with `Http::fake()`: registration, a vector landing in the real
+meta and reading back, a second run skipping with `Http::assertSentCount(1)` proving it
+cost nothing, and a missing key writing nothing).
+
+`lib/core` 2,243 / 16,701; adapter 350 / 1,873; auditor 245 rows / 226 servable, no
+violations. phpcs clean on all three files at the CI severities.
+
+## 29. Addendum: the video pair, and a prerequisite that was not one (2026-11-24)
+
+### §27's framing is superseded
+
+§27 recorded `analyze_video` and `generate_video_caption` as blocked on a
+frame-extraction decision: bundle `ffmpeg`, delegate to the media worker, or use a hosted
+service. Two checks retired that framing.
+
+1. **The media worker's video endpoint has no frame operation.** Its documented
+   `operation` enum is `resize | trim | convert | compress | gif`. So the "cheap" option
+   in §27 did not exist.
+2. **Frames are the wrong input anyway.** A model given stills cannot see motion, and
+   "what happens next" is the question a video tool exists to answer.
+
+So neither tool extracts frames. The stored video is sent to the provider whole, and the
+`ffmpeg` question never arises for them.
+
+### What carries it
+
+`AbstractVideoCompletionTool` resolves the stored file, checks its mime, reads its
+bytes and hands the provider a `data:video/…;base64,…` URI — the same segment type §22
+uses for images, which `GeminiClient` converts to `inlineData` with the declared mime.
+Gemini therefore reasons about the video natively.
+
+**OpenAI is the provider that refuses.** Its chat endpoint accepts an image in that slot
+and rejects a video. That is the provider's refusal to give: the tool states the
+requirement in its description and manifest `reason`, and the provider's own message
+reaches the caller unchanged rather than being rewritten into something vaguer.
+
+### Three guards
+
+- **`video/` or nothing.** A PDF sent down this path would spend a completion to be
+  refused *and* would describe the bytes to the model as something they are not, so the
+  mime is checked first. A test pins that the refusal costs no completion.
+- **12 MB, and the arithmetic is in the docblock.** Gemini's inline ceiling is about
+  20 MB per request and base64 adds a third, so 12 MB of raw bytes becomes ~16 MB
+  encoded. The refusal names the actual size and the ceiling **in bytes**, because both
+  can render as "11.4 MB" and that sentence would be absurd.
+- **The caption is bounded here.** A prompt that says "at most 200 characters" is a
+  request; a truncation is a guarantee. `truncated: true` says when the cut happened,
+  and surrounding quotes are stripped because models add them when told not to.
+
+### Four WordPress parameters not offered
+
+| WordPress | Here |
+|---|---|
+| `video_url`, `url` | Not offered. This runtime does not fetch remote URLs — the same rule `ImageInput` states — so a caller stores the video and passes `file_id`. |
+| `attachment_id` | `file_id`. The attachment id has no meaning off WordPress. |
+| `frame_count` (on the Pro frame extractor) | Not offered: nothing extracts frames. |
+| `store_in_meta`-style options | None. These two tools write nothing. |
+
+### Validation
+
+`VideoToolsTest` (core, 15 tests: both slugs, capability and flags with `write` absent;
+the required `file_id` naming the no-remote-URL rule; the missing file store; a missing
+file; another user's file answering as missing; **a PDF refused before any completion**;
+an oversized video refused with both figures; **the bytes leaving as a `video/mp4` data
+URI**; the analysis type reaching the prompt; timestamps only when asked; the analysis
+returned with its type; a long caption truncated and flagged; a short caption untouched;
+quotes stripped; `max_length` clamped). Feature test
+`docker/laravel/app-skeleton/tests/Feature/VideoToolsTest.php` (4 tests against the real
+file store: both tools registered, a real stored video analysed with the store's sniffed
+`video/mp4` visible in the request segment, a caption truncated to the limit, and a
+stored text document refused with no completion spent).
+
+`lib/core` 2,262 / 16,769; adapter 350 / 1,875; auditor 247 rows / 228 servable, no
+violations. phpcs clean on all five files at the CI severities.
+
+## 30. Addendum: vision_object_localization, and a credential that may not fit (2026-11-24)
+
+### A port, not a stub
+
+Unlike several of the promises in this document, the WordPress tool is real: it posts to
+`https://vision.googleapis.com/v1/images:annotate`. Only the transport was missing on
+this host, so this is a straight port of a working call.
+
+### Why not ask the chat model for boxes
+
+Localisation has a fixed output contract. A chat model asked for bounding boxes returns
+coordinates that look plausible and cannot be checked; Vision returns
+`localizedObjectAnnotations` with normalised vertices that can. So the tool spends no
+tokens and makes one HTTP request per image — which is also why it declares
+`read-only` + `external-api` rather than `consumes-tokens`.
+
+### The credential, and the failure it implies
+
+The WordPress client reads its key from `gemini_api_key`. This port asks the settings
+store for the `gemini` key for the same reason. That key is a Google API key, and Cloud
+Vision answers it only when the **Vision API is enabled on the same Google Cloud
+project**. The port does not pretend otherwise: a `403` is returned with Vision's own
+message, because that message is the one sentence that tells an operator what to enable.
+Rewriting it as "vision failed" would cost them the fix.
+
+### Two traps in the response shape
+
+1. **`200 OK` with a per-image error.** Vision's batch shape can answer 200 and put a
+   failure in `responses[0].error`. Treating that as success returns an empty object
+   list, which reads as "nothing in the picture" — a different and wrong answer. It is
+   checked and reported as a provider error.
+2. **A missing polygon.** Collapsing vertices to a box with `min`/`max` is only correct
+   when there are vertices. When there are none the box is `null`, not `0,0,0,0`, which
+   would put every such object in the top-left corner.
+
+### Reusing ImageInput, and the constructor lesson
+
+Image resolution is `ImageInput` from §22 — `file_id` or a data URI, image-only, capped
+at 6 MB — rather than a second implementation of the same rules.
+
+The first version injected `ImageInput` as a constructor argument, and
+`ToolRegistryIntegrationTest` failed: its reflector refuses to build a `final` class with
+required constructor arguments. §22 builds `new ImageInput( $this->errors, $this->files )`
+inline for exactly this reason, so this does the same. The tool's constructor is back to
+interface-typed collaborators only, which is the shape every other tool in the registry
+has.
+
+### The class name collided with the stub, and the auditor did not notice
+
+The quarantined prompt-builder is `VisionObjectLocalizationTool` — no `Detect` or
+`Prompt` suffix, unlike the other stand-ins — so the first version of this slice wrote
+the implementation **over that file**. The manifest's `_prompt` row then pointed at a
+class declaring `vision_object_localization`, and `bin/audit-tool-readiness.php` still
+reported no violations.
+
+The reason is worth recording. The scanner only reads files matching
+`/^class\s+(\w+)/m`, so a `final class` is skipped entirely — and every tool added in
+this loop is `final`. The `dangling` check still works, because it uses `class_exists()`,
+but `slug_mismatch` cannot fire for those 25 classes, and a shared FQCN between two rows
+is exactly what that check exists to catch.
+
+The implementation now lives in `VisionObjectLocalizationDetectTool`, the stub is
+restored byte-identical, and the scanner gap is filed as its own issue rather than
+widened into this PR.
+
+### The gate is kept at edit_posts
+
+The tool is read-only, so `read` would be defensible — but a Vision call is **billed per
+image**, and the original gates it on `edit_posts`. Parity wins here because the gate is
+about cost as much as about access.
+
+### Validation
+
+`VisionObjectLocalizationToolTest` (core, 8 tests: slug/capability/flags; the missing
+HTTP client or settings; a missing key naming the Vision-API requirement; **a provider
+refusal carrying its status and body**; **a 200 with a per-image error treated as
+failure**; malformed JSON; objects returned with scores and a min/max box while a
+polygon-less object gets `null`, with the request shape asserted; `max_results` clamped).
+Feature test
+`docker/laravel/app-skeleton/tests/Feature/VisionObjectLocalizationToolTest.php` (3 tests
+against the real file store with `Http::fake()`: registration, a real stored image
+localised with the request asserted as `POST … images:annotate?key=…` and
+`OBJECT_LOCALIZATION`, and a missing key sending no request at all).
+
+`lib/core` 2,270 / 16,802; adapter 350 / 1,876; auditor 248 rows / 229 servable, no
+violations. phpcs clean on all three files at the CI severities.
+
+## 31. The last two promises, closed by declining (2026-11-24)
+
+Every section before this one closed a `replaced_by` promise by shipping the replacement.
+This one closes the last two by refusing to, and records why. No capability was added:
+under both WordPress slugs there is still nothing this runtime can do, and the manifest
+now says so in the row itself.
+
+### What changed in the manifest
+
+Both rows were `quarantined` and carried `replaced_by`. They are still `quarantined` — the
+readiness class did not move, and neither slug is servable before or after — but two keys
+changed:
+
+- `replaced_by` is **removed**. The promise is withdrawn, so the loop's target set is now
+  empty rather than pointing at a tool that will not be built.
+- `parity => 'declined'` is **added**, and the `reason` states the evidence.
+
+The marker exists because the alternative is inference. Nineteen quarantined rows had a
+`replaced_by` before this slice and zero did not, so "no `replaced_by`" would have been an
+unambiguous way to mean "declined" *today* — and a silent trap the next time somebody adds
+a stand-in whose replacement is not decided yet. This file's own premise is that readiness
+is declared rather than inferred; the same argument applies to a refusal.
+
+`parity` is not part of `ToolReadiness`'s closed vocabulary and is read in exactly one
+place — the `shadowed` rule, which only inspects **servable** rows. A declined row is never
+servable, so the new value cannot reach it. The auditor needed no change.
+
+Deleting the rows was the other option and it is worse: an unknown slug is `unverified`,
+which is also unservable, so the runtime behaves identically — but the record of *why* the
+slug has no implementation disappears with the row.
+
+### `run_openai_external_action`: §27 was right, and the fallback has since closed
+
+§27 already recorded the payload problem: the WordPress tool posts `workflow_id` or
+`assistant_id` to `/v1/responses`, and neither is a Responses parameter. Nothing there
+needs restating.
+
+What §27 offered as the second migration path has since closed. It described `assistant`
+as portable "via the Assistants threads/runs endpoints, or a real Responses call". The
+**Assistants API was sunset on 2026-08-26**, so threads and runs are no longer an option,
+and a real Responses call with `model` and `input` is a different tool that ignores both
+of the WordPress tool's inputs. That leaves the ChatKit session flow, which needs a
+server-side session endpoint and a per-user token — a new tool with a new secret, not a
+port of this one.
+
+### `vision_product_search`: a retired service, plus a catalogue that does not exist
+
+This one §27 did not cover. The WordPress tool calls the `PRODUCT_SEARCH` feature on
+`https://vision.googleapis.com/v1/images:annotate`, passing `imageContext.productSearchParams`
+to match an image against a product set.
+
+Three things stand between that and a working port:
+
+1. **Google documents Product Search as maintenance mode** and points to Vision Warehouse
+   as the successor. Porting would mean writing a client for a service its own vendor is
+   steering customers away from.
+2. **There is no product set to search.** A call needs a Google Cloud project with the
+   Vision API enabled *and* a Product Search product set populated with a product
+   catalogue. That is infrastructure the operator stands up, not a parameter this runtime
+   can supply.
+3. **The resource does not exist in this codebase.** Neither the WordPress side nor
+   `lib/core` has a product catalogue, so even a successful client would have nothing to
+   rank against.
+
+What would reopen it: a decision to target Vision Warehouse, plus a product catalogue in
+this runtime. Both are prerequisites, so this is `unavailable` in substance — but it is
+recorded as declined because the decision is not to pursue it, and `quarantined` is the
+honest class for a slug whose stand-in describes work it does not do.
+
+### The tally
+
+Seventeen promises closed by shipping the replacement. Two closed by declining with
+evidence. None open.
+
+The tally script needs to say that. Counted only by "is the target servable", the two
+declined rows drop out of the `open` list and the loop reads `17 closed / 0 open` — which
+happens to be true but reports the wrong thing if a future row is quarantined with no
+`replaced_by` for an unrelated reason. The script gains a third bucket keyed on
+`parity => 'declined'` so the three states are counted separately.
+
+### Validation
+
+`bin/audit-tool-readiness.php` — 248 rows, 229 servable (189 ready / 34 pure / 6
+delegated), 19 quarantined, **no violations**, and the `replacement` class stays empty with
+the two targets gone.
+
+`lib/core` 2,272 / 16,812. Adapter 350 / 1,876. The two skeleton feature tests that read
+this manifest — `ToolRegistrationTest` and `AdminDiagnosticsTest` — 14 / 50. No production
+code changed; the delta is two manifest rows and this section.

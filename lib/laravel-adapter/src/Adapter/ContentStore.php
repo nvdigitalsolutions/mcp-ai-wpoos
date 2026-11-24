@@ -650,6 +650,47 @@ class ContentStore implements ContentStoreInterface {
 	}
 
 	/**
+	 * List the terms defined in a taxonomy.
+	 *
+	 * The vocabulary, not the assignment: a term with no posts is still listed,
+	 * because a categorizer may legitimately choose one that is new to the site.
+	 * `count` is the number of posts carrying the term, so a caller can tell a
+	 * well-used term from an unused one without a second query.
+	 *
+	 * @param string $taxonomy  Taxonomy slug.
+	 * @param int    $limit     Maximum terms to return, 1–500.
+	 *
+	 * @return array<int, array{id:int, name:string, slug:string, count:int}>
+	 */
+	public function listTaxonomyTerms( string $taxonomy, int $limit = 200 ): array {
+		if ( '' === trim( $taxonomy ) ) {
+			return array();
+		}
+
+		$limit = max( 1, min( 500, $limit ) );
+
+		$rows = \Nvoos\Laravel\Models\NvoosTerm::query()
+			->where( 'taxonomy', $taxonomy )
+			->withCount( 'posts' )
+			->orderBy( 'name' )
+			->limit( $limit )
+			->get();
+
+		$terms = array();
+
+		foreach ( $rows as $row ) {
+			$terms[] = array(
+				'id'    => (int) $row->getKey(),
+				'name'  => (string) $row->name,
+				'slug'  => (string) ( $row->slug ?? '' ),
+				'count' => (int) ( $row->posts_count ?? 0 ),
+			);
+		}
+
+		return $terms;
+	}
+
+	/**
 	 * Get taxonomy terms assigned to a content item.
 	 *
 	 * Reads from a many-to-many 'terms' relationship on the model.

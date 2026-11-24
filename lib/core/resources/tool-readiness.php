@@ -98,12 +98,29 @@ return array(
 			'replaced_by' => 'analyze_image',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'analyze_video' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AnalyzeVideoCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Sends the stored video to the provider whole; needs a provider that accepts video inline (Gemini). OpenAI refuses a video in that slot and its refusal is returned unchanged.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'analyze_video_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AnalyzeVideoTool',
 			'readiness' => 'quarantined',
 			'reason' => 'Prompt-builder stand-in: returns a prompt and performs no work. The WordPress tool with this slug is canonical.',
 			'replaced_by' => 'analyze_video',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
+		),
+		'auto_categorize_content' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AutoCategorizeContentCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AutoCategorizeContentToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
 		'auto_categorize_content_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AutoCategorizeContentTool',
@@ -117,6 +134,14 @@ return array(
 			'readiness' => 'pure',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'batch_embed_content' => array(
+			'class' => 'Nvoos\\Core\\Tool\\BatchEmbedContentIndexTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/BatchEmbedContentToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'batch_embed_content_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\BatchEmbedContentTool',
@@ -908,6 +933,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoAndAudioToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
+		'generate_video_caption' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GenerateVideoCaptionCompletionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Sends the stored video to the provider whole and truncates the caption to max_length locally. Needs a provider that accepts video inline (Gemini).',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
+		),
 		'generate_video_caption_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateVideoCaptionTool',
 			'readiness' => 'quarantined',
@@ -1561,8 +1595,8 @@ return array(
 		'run_openai_external_action_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RunOpenAIExternalActionTool',
 			'readiness' => 'quarantined',
-			'reason' => 'Prompt-builder stand-in: returns a prompt and performs no work. The WordPress tool with this slug is canonical.',
-			'replaced_by' => 'run_openai_external_action',
+			'parity' => 'declined',
+			'reason' => 'Declined, not ported: the WordPress tool posts workflow_id or assistant_id to /v1/responses, and neither is a Responses parameter. assistant_id is an Assistants API identifier, and that API was sunset on 2026-08-26. workflow_id is an Agent Builder identifier ChatKit invokes through a server-side session endpoint, not this API. A faithful port would always fail. Proposal 090-M section 31.',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
 		'save_post' => array(
@@ -1878,6 +1912,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => true ),
 		),
+		'vision_object_localization' => array(
+			'class' => 'Nvoos\\Core\\Tool\\VisionObjectLocalizationDetectTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Calls Cloud Vision images:annotate with the gemini key, which only authorises it when the Vision API is enabled on the same Google Cloud project; a 403 is returned unchanged.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VisionObjectLocalizationToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'vision_object_localization_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\VisionObjectLocalizationTool',
 			'readiness' => 'quarantined',
@@ -1888,8 +1931,8 @@ return array(
 		'vision_product_search_prompt' => array(
 			'class' => 'Nvoos\\Core\\Tool\\VisionProductSearchTool',
 			'readiness' => 'quarantined',
-			'reason' => 'Prompt-builder stand-in: returns a prompt and performs no work. The WordPress tool with this slug is canonical.',
-			'replaced_by' => 'vision_product_search',
+			'parity' => 'declined',
+			'reason' => 'Declined, not ported: the WordPress tool calls the PRODUCT_SEARCH feature on vision.googleapis.com/v1/images:annotate. Google documents Product Search as maintenance mode and points to Vision Warehouse instead, and the tool also needs a Product Search project, product sets and a product catalogue to exist before it can answer. Proposal 090-M section 31.',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
 		'wait_for_user' => array(
