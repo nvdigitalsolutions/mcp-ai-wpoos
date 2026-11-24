@@ -216,6 +216,53 @@ export function normalizeCssValue( input: string ): string {
 export const GRADIENT_SURFACE_RE = /(?:repeating-)?(?:linear|radial|conic)-gradient\(/i;
 
 /**
+ * A CSS identifier: what `#<value>` may legally contain.
+ */
+const CSS_IDENTIFIER_RE = /^-?[_a-zA-Z][_a-zA-Z0-9-]*$/;
+
+/**
+ * Every selector that can address a DOM id, best first.
+ *
+ * Builders mint ids like `6daaaef9`, and a CSS identifier cannot start with a
+ * digit — `querySelector('#6daaaef9')` throws a SyntaxError, which aborted the
+ * whole colour gate on every forged page whose band ids are hashes
+ * (eca.directory, 2026-11-24). An attribute selector is always valid, so `#id`
+ * is emitted only when the id is a legal identifier.
+ */
+export function idSelectors( id: string ): string[] {
+	const value = String( id ?? '' );
+	if ( value === '' ) {
+		return [];
+	}
+	const quoted = `[id="${ value.replace( /"/g, '\\"' ) }"]`;
+	return CSS_IDENTIFIER_RE.test( value ) ? [ `#${ value }`, quoted ] : [ quoted ];
+}
+
+/** The single best selector for a DOM id (never an invalid one). */
+export function cssIdSelector( id: string ): string {
+	return idSelectors( id )[ 0 ] ?? '';
+}
+
+/**
+ * Every selector a REBUILT band can be addressed by, best first.
+ *
+ * The scaffold wraps each band in `<div data-section-id="<id>" class="ds-section-wrap">`
+ * and deliberately emits no `id` attribute (a band id is a builder hash, not a
+ * fragment a visitor should land on). So the marker is the ONLY reliable handle
+ * — addressing built bands by `id` measured nothing and reported all seven
+ * baselines as "dropped" on eca.directory (2026-11-24). `idSelectors` stays as
+ * a fallback for a hand-authored wrapper that does carry one.
+ */
+export function builtBandSelectors( id: string ): string[] {
+	const value = String( id ?? '' );
+	if ( value === '' ) {
+		return [];
+	}
+	const marker = `[data-section-id="${ value.replace( /"/g, '\\"' ) }"]`;
+	return [ marker, ...idSelectors( value ) ];
+}
+
+/**
  * The selector a SOURCE band can be addressed by.
  *
  * A nav anchor (`#about`) is the friendliest handle, but most builder bands
@@ -225,8 +272,12 @@ export const GRADIENT_SURFACE_RE = /(?:repeating-)?(?:linear|radial|conic)-gradi
  * addressable, and the unaddressed ones kept invented backgrounds).
  */
 export function bandRegionSelector( section: ForgeSection ): string | undefined {
-	if ( section.anchor ) {
-		return `#${ section.anchor }`;
+	const anchor = String( section.anchor ?? '' );
+	if ( anchor !== '' ) {
+		const selector = cssIdSelector( anchor );
+		if ( selector !== '' ) {
+			return selector;
+		}
 	}
 	if ( section.vendorId ) {
 		return `.elementor-element-${ section.vendorId }`;
@@ -1261,7 +1312,17 @@ export interface MeasureColorOptions {
 						};
 						for ( const region of args.regions ) {
 							for ( const selector of region.selectors ) {
-								const element = document.querySelector( selector );
+								// A malformed selector must cost THIS region its measurement, never
+								// the whole gate: `querySelector('#6daaaef9')` throws because a CSS
+								// identifier cannot start with a digit, and one unescaped id took
+								// down every colour comparison on the page (eca.directory,
+								// 2026-11-24). Builders mint digit-leading ids constantly.
+								let element = null;
+								try {
+									element = document.querySelector( selector );
+								} catch {
+									element = null;
+								}
 								if ( element ) {
 									const surface = readBackground(
 										element,
