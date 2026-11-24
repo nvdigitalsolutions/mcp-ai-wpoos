@@ -47,6 +47,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/PdfDocumentAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'adjust_video_speed' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AdjustVideoSpeedTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerVideo over `POST /api/video/process` (operation `speed`: `setpts` on the video and an `atempo` chain on the audio, chained below 0.5 so it also works on pre-4.1 ffmpeg) then `GET /api/video/download`. Needs ffmpeg on the worker. Refuses a factor of 1.0, which would re-encode without changing anything.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoProcessingAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'analyze_code_sequence' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AnalyzeCodeSequenceCompletionTool',
 			'readiness' => 'ready',

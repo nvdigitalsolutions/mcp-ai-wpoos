@@ -20,6 +20,8 @@ import {
 	boundedDimension,
 	resolveFormat,
 	parseRational,
+	boolField,
+	atempoChain,
 	PROCESS_FORMATS,
 } from './video.js';
 
@@ -77,4 +79,58 @@ test( 'a rational is divided, never evaluated', () => {
 	assert.equal( parseRational( 'javascript:process.exit(1)' ), 0 );
 	assert.equal( parseRational( '1/0' ), 0 );
 	assert.equal( parseRational( '' ), 0 );
+} );
+
+test( 'a multipart boolean is read from its text form', () => {
+	// Every multipart field arrives as a string, so "false" is truthy unless
+	// it is parsed. The old route had no boolean field; this pins the new one.
+	assert.equal( boolField( 'false', true ), false );
+	assert.equal( boolField( 'FALSE', true ), false );
+	assert.equal( boolField( '0', true ), false );
+	assert.equal( boolField( 'no', true ), false );
+	assert.equal( boolField( 'off', true ), false );
+
+	assert.equal( boolField( 'true', false ), true );
+	assert.equal( boolField( '1', false ), true );
+
+	// Absent or empty takes the fallback, so a caller can omit the field.
+	assert.equal( boolField( undefined, true ), true );
+	assert.equal( boolField( '', false ), false );
+} );
+
+test( 'an atempo stage never leaves the filter range', () => {
+	for ( const ratio of [ 0.25, 0.3, 0.5, 0.75, 1, 1.5, 2, 4 ] ) {
+		for ( const stage of atempoChain( ratio ).split( ',' ) ) {
+			const factor = Number( stage.replace( 'atempo=', '' ) );
+
+			assert.match( stage, /^atempo=[0-9.]+$/ );
+			assert.ok( factor >= 0.5 && factor <= 100, `${ stage } is outside 0.5–100` );
+		}
+	}
+} );
+
+test( 'an atempo chain multiplies back to the requested factor', () => {
+	for ( const ratio of [ 0.25, 0.3, 0.5, 1, 2.5, 4 ] ) {
+		const product = atempoChain( ratio )
+			.split( ',' )
+			.reduce( ( acc, stage ) => acc * Number( stage.replace( 'atempo=', '' ) ), 1 );
+
+		assert.ok( Math.abs( product - ratio ) < 1e-6, `${ ratio } chained to ${ product }` );
+	}
+} );
+
+test( 'half speed is chained because a single atempo cannot go below 0.5', () => {
+	assert.equal( atempoChain( 1 ), 'atempo=1' );
+	assert.equal( atempoChain( 2 ), 'atempo=2' );
+	assert.equal( atempoChain( 0.25 ), 'atempo=0.5,atempo=0.5' );
+	assert.equal( atempoChain( 0.3 ), 'atempo=0.5,atempo=0.6' );
+} );
+
+test( 'a speed outside the tool range is refused with the field name', () => {
+	assert.equal( boundedNumber( '2.5', 0.25, 4, 'speed' ), 2.5 );
+	assert.equal( boundedNumber( undefined, 0.25, 4, 'speed' ), null );
+
+	assert.throws( () => boundedNumber( 0.1, 0.25, 4, 'speed' ), /speed must be a number between 0.25 and 4/ );
+	assert.throws( () => boundedNumber( 5, 0.25, 4, 'speed' ), /speed must be a number/ );
+	assert.throws( () => boundedNumber( '2; rm -rf /', 0.25, 4, 'speed' ), /speed must be a number/ );
 } );

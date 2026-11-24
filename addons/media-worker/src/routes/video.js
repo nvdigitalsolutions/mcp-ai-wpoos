@@ -19,6 +19,10 @@ const router = Router();
 const PROCESS_FORMATS = new Set( [ 'mp4', 'webm', 'mov', 'mkv', 'gif', 'mp3', 'm4a', 'aac', 'jpg', 'jpeg', 'png' ] );
 const MAX_DIMENSION = 8192;
 const MAX_SECONDS = 24 * 60 * 60;
+// Matches the `adjust_video_speed` tool's range, so the route refuses exactly
+// what the tool refuses and a caller sees one consistent boundary.
+const MIN_SPEED = 0.25;
+const MAX_SPEED = 4;
 // Without `-movflags +faststart` the moov atom lands at the end of the file and
 // a browser must download the whole thing before the first frame paints.
 const FASTSTART_FORMATS = new Set( [ 'mp4', 'mov' ] );
@@ -93,6 +97,87 @@ function parseRational( value ) {
 	}
 
 	return numerator / denominator;
+}
+
+/**
+ * Read a boolean from a multipart text field.
+ *
+ * Multipart bodies carry every field as a string, so `false` arrives as the
+ * text "false" — which is truthy in JavaScript. Only the four spellings a
+ * caller might send for "no" are read as false; anything else (including an
+ * absent field) takes the fallback.
+ *
+ * @param {*}      value    Raw field value.
+ * @param {boolean} fallback Value when the field is absent or empty.
+ * @return {boolean}
+ */
+function boolField( value, fallback ) {
+	if ( undefined === value || null === value || '' === value ) {
+		return fallback;
+	}
+
+	return ! [ 'false', '0', 'no', 'off' ].includes( String( value ).trim().toLowerCase() );
+}
+
+/**
+ * Build an `atempo` chain that multiplies to the requested factor.
+ *
+ * `atempo` accepts 0.5–100 per instance on ffmpeg 4.1+, and 0.5–2.0 before
+ * that. Chaining by 0.5 downwards is valid on both, so a 0.25× request becomes
+ * two stages rather than a silent refusal on an older binary. `atempo`
+ * preserves pitch, which is what makes it the right filter here.
+ *
+ * @param {number} ratio Speed multiplier, 0.25–4.
+ * @return {string} Comma-separated filter stages.
+ */
+function atempoChain( ratio ) {
+	const stages = [];
+	let remaining = ratio;
+
+	while ( remaining < 0.5 ) {
+		stages.push( 'atempo=0.5' );
+		remaining /= 0.5;
+	}
+
+	while ( remaining > 100 ) {
+		stages.push( 'atempo=100' );
+		remaining /= 100;
+	}
+
+	stages.push( `atempo=${ Number( remaining.toFixed( 6 ) ) }` );
+
+	return stages.join( ',' );
+}
+
+/**
+ * The first audio stream's sample rate, or null when the file has no audio.
+ *
+ * `setpts` needs no probe, but `-af` fails outright on a file with no audio
+ * stream, and the sample rate is only needed when the caller asks *not* to
+ * keep the pitch. One ffprobe answers both questions.
+ *
+ * @param {string} inputPath Uploaded file.
+ * @return {Promise<number|null>} Sample rate in Hz, or null.
+ */
+async function probeAudioStream( inputPath ) {
+	try {
+		const { stdout } = await execFileAsync(
+			'ffprobe',
+			[
+				'-v', 'quiet',
+				'-print_format', 'json',
+				'-select_streams', 'a:0',
+				'-show_entries', 'stream=sample_rate',
+				inputPath,
+			],
+			{ timeout: 30000 }
+		);
+		const rate = parseInt( JSON.parse( stdout )?.streams?.[ 0 ]?.sample_rate, 10 );
+
+		return Number.isFinite( rate ) && rate > 0 ? rate : null;
+	} catch {
+		return null;
+	}
 }
 
 // Uploads land in the caller's site namespace (multi-tenant) or the system
@@ -335,9 +420,11 @@ router.post('/process', upload.single('file'), async (req, res) => {
       fps: rawFps,
       start: rawStart,
       duration: rawDuration,
-      timestamps,
-      count,
-    } = req.body;
+	      timestamps,
+	      count,
+	      speed: rawSpeed,
+	      maintain_pitch: rawMaintainPitch,
+	    } = req.body;
     const inputPath = req.file.path;
     const videoDir = siteDirFor(req.site, 'video');
 
@@ -345,16 +432,18 @@ router.post('/process', upload.single('file'), async (req, res) => {
     let height;
     let start;
     let duration;
-    let fps;
-    let format;
+	    let fps;
+	    let format;
+	    let speed;
 
     try {
       width = boundedDimension(rawWidth, 'width');
       height = boundedDimension(rawHeight, 'height');
       start = boundedNumber(rawStart, 0, MAX_SECONDS, 'start');
       duration = boundedNumber(rawDuration, 0.01, MAX_SECONDS, 'duration');
-      fps = boundedNumber(rawFps, 0.1, 120, 'fps');
-      format = resolveFormat(rawFormat);
+	      fps = boundedNumber(rawFps, 0.1, 120, 'fps');
+	      speed = boundedNumber(rawSpeed, MIN_SPEED, MAX_SPEED, 'speed');
+	      format = resolveFormat(rawFormat);
     } catch (argErr) {
       cleanupUpload();
       return res.status(400).json({ error: argErr.message });
@@ -501,11 +590,40 @@ router.post('/process', upload.single('file'), async (req, res) => {
         }
         break;
 
-      case 'extract_audio': {
-        const codec = 'mp3' === format ? 'libmp3lame' : ('m4a' === format || 'aac' === format ? 'aac' : 'copy');
-        args.push('-vn', '-c:a', codec);
-        break;
-      }
+	      case 'extract_audio': {
+	        const codec = 'mp3' === format ? 'libmp3lame' : ('m4a' === format || 'aac' === format ? 'aac' : 'copy');
+	        args.push('-vn', '-c:a', codec);
+	        break;
+	      }
+
+	      case 'speed': {
+	        if ( null === speed ) {
+	          cleanupUpload();
+	          return res.status(400).json({ error: 'speed is required for the speed operation' });
+	        }
+
+	        // `setpts` takes a multiplier on the timestamps, so twice the speed
+	        // is half the PTS. Audio is the reciprocal problem: `atempo` takes
+	        // the speed itself.
+	        args.push('-vf', `setpts=PTS/${speed}`);
+
+	        const sampleRate = await probeAudioStream(inputPath);
+
+	        if ( sampleRate ) {
+	          if ( boolField(rawMaintainPitch, true) ) {
+	            args.push('-af', atempoChain(speed));
+	          } else {
+	            // Deliberately *not* pitch-preserving: resampling the wrong way
+	            // shifts the pitch with the speed. That is the "chipmunk"
+	            // effect, and asking for it is the only reason to be here.
+	            args.push(
+	              '-af',
+	              `asetrate=${ Math.round(sampleRate * speed) },aresample=${ sampleRate }`
+	            );
+	          }
+	        }
+	        break;
+	      }
 
       default:
         cleanupUpload();
@@ -637,5 +755,7 @@ export {
 	boundedDimension,
 	resolveFormat,
 	parseRational,
+	boolField,
+	atempoChain,
 	PROCESS_FORMATS,
 };
