@@ -27,6 +27,8 @@ import {
 	renderEcaGenerated,
 } from '../lib/eca-scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
+import { resolveContactBlock } from '../lib/scaffold.ts';
+import { ecaRouteFiles } from '../lib/eca-ui.ts';
 
 const profile = ( over: Partial< SiteProfile > = {} ): SiteProfile => ( {
 	url: 'https://eca.directory',
@@ -256,6 +258,67 @@ describe( 'ecaScaffoldWarnings', () => {
 	it( 'warns when the stage list is emptied on purpose', () => {
 		const warnings = ecaScaffoldWarnings( profile( { eca: { stages: [] } } ) );
 		expect( warnings.some( ( line ) => line.includes( 'eca.stages' ) ) ).toBe( true );
+	} );
+} );
+
+describe( 'resolveContactBlock — the contact band’s people', () => {
+	const base = ( extra: Partial< SiteProfile > ): SiteProfile => ( {
+		url: 'https://school.test',
+		collections: [],
+		...extra,
+	} );
+
+	it( 'derives the people from eca.contacts instead of a second copy', () => {
+		// One source of truth: `/help/` renders the same list, so an address
+		// changed in `eca.contacts` must not leave the home band stale.
+		const block = resolveContactBlock(
+			base( {
+				eca: {
+					contacts: [
+						{ label: 'ECA Coordinator', role: 'Senior School programme', email: 'eca@school.test' },
+						{ label: 'IT Support' },
+					],
+				},
+			} )
+		);
+		expect( block?.people ).toEqual( [
+			{ label: 'ECA Coordinator', role: 'Senior School programme', email: 'eca@school.test' },
+			{ label: 'IT Support' },
+		] );
+		// The first reachable address is the single-email fallback.
+		expect( block?.email ).toBe( 'eca@school.test' );
+		expect( block?.links?.[ 0 ]?.href ).toBe( '/help/' );
+	} );
+
+	it( 'lets an explicit contact block win', () => {
+		const block = resolveContactBlock(
+			base( {
+				contact: { heading: 'Speak to admissions', email: 'admissions@school.test' },
+				eca: { contacts: [ { label: 'ECA Coordinator', email: 'eca@school.test' } ] },
+			} )
+		);
+		expect( block ).toEqual( { heading: 'Speak to admissions', email: 'admissions@school.test' } );
+	} );
+
+	it( 'returns nothing when there is no one to name', () => {
+		// An empty contact band is worse than none: never invent one.
+		expect( resolveContactBlock( base( {} ) ) ).toBeUndefined();
+		expect( resolveContactBlock( base( { eca: { contacts: [] } } ) ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'the generated help page', () => {
+	it( 'opts the contact addresses out of Cloudflare email obfuscation', () => {
+		// The zone rewrites a mailto anchor's href and its text, restoring both with
+		// JS. On a help page every address would read "[email protected]" for a
+		// no-JS parent, which is the opposite of the page's job.
+		const help = ecaRouteFiles( {
+			url: 'https://school.test',
+			collections: [],
+			eca: { contacts: [ { label: 'ECA Coordinator', email: 'eca@school.test' } ] },
+		} ).find( ( file ) => file.path === 'src/pages/help/index.astro' );
+		expect( help?.content ).toContain( '<!--email_off-->' );
+		expect( help?.content ).toContain( '<!--/email_off-->' );
 	} );
 } );
 

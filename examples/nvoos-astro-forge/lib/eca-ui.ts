@@ -101,11 +101,16 @@ export function loadActivities(): Promise< EcaRecord[] > {
 		cache = ( async () => {
 			const [ terms, entries ] = await Promise.all( [
 				ecaTerms(),
-				getCollection( ${ JSON.stringify( slug ) } as CollectionKey ),
+				// The generated collection union does not include the profile's own
+				// collection name, so the lookup narrows to 'never' — pin the shape
+				// the loader writes instead of casting at each use site.
+				getCollection( ${ JSON.stringify( slug ) } as CollectionKey ) as Promise<
+					Array< { id: string; data: Record< string, unknown > } >
+				>,
 			] );
 			const records = entries
 				.map( ( entry ) => {
-					const data = entry.data as Record< string, unknown >;
+					const data = entry.data;
 					// meta, the taxonomy ids and the raw body arrive only because the
 					// collection declares them as passthrough — the loader projects a
 					// fixed field set. Passthrough bypasses the loader's sanitiser, so
@@ -519,7 +524,7 @@ const built = window ? bookingState( zonedStamp( new Date(), timezone ), window,
 			const term = el.getAttribute( 'data-term' ) || '';
 			if ( win && win.opens ) {
 				const now = new Date();
-				const pad = ( n ) => String( n ).padStart( 2, '0' );
+				const pad = ( n: number ) => String( n ).padStart( 2, '0' );
 				const stamp = now.getFullYear() + '-' + pad( now.getMonth() + 1 ) + '-' + pad( now.getDate() ) + 'T' + pad( now.getHours() ) + ':' + pad( now.getMinutes() );
 				let phase = 'running';
 				if ( now < new Date( win.opens ) ) phase = 'before';
@@ -664,18 +669,17 @@ const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 	<script>
 		// Progressive enhancement: every card is already in the DOM, so the island
 		// only toggles [hidden]. No-JS visitors get the full catalogue.
-		const rail = document.querySelector( '[data-eca-facets]' );
-		const grid = document.querySelector( '[data-eca-grid]' );
+		const rail = document.querySelector< HTMLElement >( '[data-eca-facets]' );
+		const grid = document.querySelector< HTMLElement >( '[data-eca-grid]' );
 		if ( rail && grid ) {
-			const cards = Array.prototype.slice.call( grid.querySelectorAll( '[data-eca-card]' ) );
-			const empty = document.querySelector( '[data-eca-empty]' );
-			const count = document.querySelector( '[data-eca-result-count]' );
-			const year = rail.querySelector( '[data-eca-year]' );
-			const search = rail.querySelector( '[data-eca-search]' );
+			const cards = Array.from( grid.querySelectorAll< HTMLElement >( '[data-eca-card]' ) );
+			const empty = document.querySelector< HTMLElement >( '[data-eca-empty]' );
+			const count = document.querySelector< HTMLElement >( '[data-eca-result-count]' );
+			const year = rail.querySelector< HTMLInputElement >( '[data-eca-year]' );
+			const search = rail.querySelector< HTMLInputElement >( '[data-eca-search]' );
 
-			const checked = ( name ) =>
-				Array.prototype.slice
-					.call( rail.querySelectorAll( '[data-eca-group="' + name + '"] input:checked' ) )
+			const checked = ( name: string ) =>
+				Array.from( rail.querySelectorAll< HTMLInputElement >( '[data-eca-group="' + name + '"] input:checked' ) )
 					.map( ( input ) => input.value );
 
 			const apply = () => {
@@ -689,7 +693,7 @@ const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 				let shown = 0;
 
 				for ( const card of cards ) {
-					const read = ( name ) => ( card.getAttribute( 'data-' + name ) || '' ).split( ' ' ).filter( Boolean );
+					const read = ( name: string ) => ( card.getAttribute( 'data-' + name ) || '' ).split( ' ' ).filter( Boolean );
 					const from = Number( card.getAttribute( 'data-year-from' ) || 0 );
 					const to = Number( card.getAttribute( 'data-year-to' ) || 0 );
 					let visible = true;
@@ -712,10 +716,10 @@ const yearValues = facets.yearGroup.map( ( entry ) => entry.value );
 
 			rail.addEventListener( 'change', apply );
 			if ( search ) search.addEventListener( 'input', apply );
-			const reset = document.querySelector( '[data-eca-reset]' );
+			const reset = document.querySelector< HTMLElement >( '[data-eca-reset]' );
 			if ( reset ) {
 				reset.addEventListener( 'click', () => {
-					rail.reset();
+					( rail as HTMLFormElement ).reset();
 					apply();
 				} );
 			}
@@ -1413,8 +1417,8 @@ import Base from '../../layouts/Base.astro';
 			free: boolean;
 		}
 
-		const list = document.querySelector( '[data-eca-shortlist-list]' );
-		const empty = document.querySelector( '[data-eca-shortlist-empty]' );
+		const list = document.querySelector< HTMLUListElement >( '[data-eca-shortlist-list]' );
+		const empty = document.querySelector< HTMLElement >( '[data-eca-shortlist-empty]' );
 
 		const render = async (): Promise< void > => {
 			if ( ! list || ! empty ) return;
@@ -1527,6 +1531,13 @@ const label = ecaConfig.booking?.label ?? 'Book';
 		{ contacts.length > 0 && (
 			<section>
 				<h2>Who to contact</h2>
+				{/*
+				 * Cloudflare's Email Address Obfuscation rewrites a mailto anchor's href and
+				 * the address text, then restores them with JS — every address reads
+				 * "[email protected]" without it, which is the opposite of what a help page
+				 * is for. These markers are Cloudflare's documented opt-out.
+				 */}
+				<!--email_off-->
 				<ul class="eca-contacts">
 					{ contacts.map( ( contact ) => (
 						<li>
@@ -1536,6 +1547,7 @@ const label = ecaConfig.booking?.label ?? 'Book';
 						</li>
 					) ) }
 				</ul>
+				<!--/email_off-->
 			</section>
 		) }
 	</main>

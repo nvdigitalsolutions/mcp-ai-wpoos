@@ -68,9 +68,16 @@ interface Props {
 	 * measured on this page, so its heights/padding/typography are its own.
 	 */
 	bandThemes?: SectionTheme[];
+	/**
+	 * This body IS the page's document outline (the front page) — no article
+	 * heading sits above the bands. The FIRST band may then render the source's
+	 * `h1` as an `h1`; everywhere else a band h1 maps down to `h2` so a post page
+	 * cannot gain a second one (see lib/title-tag.ts).
+	 */
+	pageHeading?: boolean;
 }
 
-const { html = '', wireframeSections, bandGeometry = false, bandThemes } = Astro.props;
+const { html = '', wireframeSections, bandGeometry = false, bandThemes, pageHeading = false } = Astro.props;
 const rawSections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
 	: classifyBody( html );
@@ -98,6 +105,23 @@ const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, numb
  * defaults instead of the source's own surfaces (virtuallyjamaica's red hero).
  */
 const themeFor = ( section: SemanticSection, index: number ): SectionTheme | undefined => {
+	const theme = themeAt( section, index );
+	if ( ! pageHeading || index !== 0 ) {
+		return theme;
+	}
+	// The classifier's level is the fallback: an outline profile has no measured
+	// `titleLevel`, and the band is still the page's own headline.
+	const level = theme?.type?.titleLevel ?? ( section.slots.titleLevel === 1 ? 'h1' : undefined );
+	if ( level !== 'h1' ) {
+		return theme;
+	}
+	return {
+		...( theme ?? { theme: 'alt' as SectionTheme[ 'theme' ] } ),
+		type: { ...( theme?.type ?? {} ), titleLevel: 'h1', allowH1: true },
+	} as SectionTheme;
+};
+/** The measured source theme for a band, before the page-heading policy. */
+const themeAt = ( section: SemanticSection, index: number ): SectionTheme | undefined => {
 	// The page's OWN measured list wins: its bands were measured on this page,
 	// so position is the identity and every fact applies as-is.
 	if ( bandThemes ) {

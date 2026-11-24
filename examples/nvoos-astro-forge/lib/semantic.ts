@@ -211,6 +211,8 @@ export interface SemanticSection {
 	confidence: 'high' | 'medium' | 'low';
 	slots: {
 		title?: string;
+		/** The source heading level the title came from (`title` is an h1 at 1). */
+		titleLevel?: number;
 		body?: string[];
 		media?: MediaRef[];
 		items?: SectionItem[];
@@ -970,6 +972,7 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 		return undefined;
 	}
 	const items: SectionItem[] = [];
+	let droppedPlaceholder = false;
 	for ( const [ columnIndex, column ] of columns.entries() ) {
 		const collected = collectSlots( column );
 		// The LANE index rides every item, including the ones after a skipped lane:
@@ -1005,9 +1008,48 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 			// lane's surface. Skipping the item must not renumber the lanes.
 			continue;
 		}
+		if ( isPlaceholderCard( item ) ) {
+			// WordPress's default "Hello world!" post, rendered by the source's
+			// own posts widget. The lane keeps its index like any skipped column.
+			droppedPlaceholder = true;
+			continue;
+		}
 		items.push( item );
 	}
-	return items.length >= 2 ? items : undefined;
+	// A single surviving card is still a column grid WHEN one was removed here:
+	// falling back to the raw band HTML would put the placeholder straight back
+	// (the sanitized markup still carries the source's posts widget).
+	return items.length >= 2 || ( droppedPlaceholder && items.length >= 1 ) ? items : undefined;
+}
+
+/**
+ * WordPress ships one placeholder post and one placeholder page on every
+ * install — "Hello world!" (slug `hello-world`) and "Sample Page"
+ * (`sample-page`) — and every setup checklist tells the owner to delete them.
+ *
+ * A rebuild cannot delete CMS content, and a builder's "Latest posts" widget
+ * renders whatever the CMS returns, so a dropped-in card titled "Hello world!"
+ * published as if it were the school's only story (eca.directory's updates
+ * band, 2026-11-24). Drop the CARD, not the record: the post keeps its route,
+ * so removing the placeholder in the CMS is still all it takes for the card to
+ * come back.
+ *
+ * Matching is on the TITLE only and only for a card with no body, media or
+ * attribution — an article that quotes "Hello world!" is copy, not a placeholder.
+ */
+const PLACEHOLDER_TITLES = new Set( [ 'hello world', 'sample page' ] );
+
+function isPlaceholderCard( item: SectionItem ): boolean {
+	if ( item.body || item.media || item.author ) {
+		return false;
+	}
+	const title = ( item.title ?? '')
+		.toLowerCase()
+		.replace( /\s+/g, ' ' )
+		// "Hello world!" also arrives as "Hello world" and "Hello, world!"
+		// depending on the WP version and locale.
+		.replace( /^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '' );
+	return title.length > 0 && PLACEHOLDER_TITLES.has( title );
 }
 
 /** Merge widget slots into one section draft. */
@@ -1068,10 +1110,15 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		}
 		const collected = collectSlots( widget.node );
 		// Item widgets (feature/icon/quote) carry their own headings — those are
-		// card captions, never the band title.
+		// card captions, never the band title. An `h1` is the exception wherever it
+		// sits: eca.directory's hero publishes the page's only h1 inside an icon-box
+		// (`elementor-icon-box-title`), so treating the widget as a card demoted it
+		// to an `<h3>` inside a grid and titled the band after a rating label
+		// ("Parent ratings") — the page had no h1 at all (2026-11-24).
 		const isItemWidget =
 			widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote';
-		if ( collected.title && ! isItemWidget ) {
+		const isBandHeading = collected.titleLevel === 1;
+		if ( collected.title && ( ! isItemWidget || isBandHeading ) ) {
 			headingCandidates.push( { level: collected.titleLevel ?? 6, text: collected.title } );
 		}
 		for ( const paragraph of collected.body ?? [] ) {
@@ -1081,7 +1128,7 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		}
 		media.push( ...( collected.media ?? [] ) );
 		links.push( ...( collected.links ?? [] ) );
-		if ( widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote' ) {
+		if ( ( widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote' ) && ! isBandHeading ) {
 			const item: SectionItem = {};
 			if ( collected.title ) {
 				item.title = collected.title;
@@ -1117,11 +1164,24 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		slots.body = body;
 	}
 	if ( items.length > 0 ) {
-		slots.items = items;
+		// One guard covers EVERY item path (structured extract, icon list, posts
+		// widget): WordPress's placeholder post must never publish as a card.
+		// Placed here because the same band reaches `items` through three
+		// different branches and a per-branch check had already missed two.
+		const published = items.filter( ( item ) => ! isPlaceholderCard( item ) );
+		if ( published.length !== items.length ) {
+			slots.items = published.length > 0 ? published : undefined;
+		} else {
+			slots.items = items;
+		}
 	}
 	const title = pickHeadingTitle( headingCandidates );
 	if ( title ) {
 		slots.title = title.text;
+		// The level rides along so the renderer can keep an `h1` where the page
+		// owns one (the front page) instead of relying on measured facts that a
+		// maintenance-mode analysis never captured.
+		slots.titleLevel = title.level;
 	}
 	// Every heading that is not the title is still the source's copy — it ships
 	// as the band's intro text so no word is lost (and the title gate stays
@@ -1427,8 +1487,61 @@ function pricingFrom( node: HNode ): SemanticSection['pricing'] | undefined {
 	return plans.length >= 2 ? { plans } : undefined;
 }
 
+/**
+ * Elementor's counter widget ANIMATES from 0: the DOM text is the start value
+ * ("0") and the real number lives in `data-to-value`. Reading text alone is why
+ * about-us (`14c60321`) published "0 / %" and "0 / Term" while the titles
+ * ("Hour allocation time", "Pilot implementation") were dropped in favour of the
+ * suffix spans (2026-11-24). The live site shows the same `0` in its HTML and
+ * only reaches the real figure once its JS runs.
+ *
+ * The prefix carries the comparison ("≤", "+"); the suffix carries the unit
+ * ("%", "% less", "Term") and belongs in `unit`, which Stats renders inside the
+ * same node as the value.
+ */
+function elementorCounterStats( node: HNode ): StatItem[] | undefined {
+	const boxes = descendantTags( node ).filter( ( tag ) => ownsClass( tag, /^elementor-counter$/ ) );
+	if ( boxes.length < 2 ) {
+		return undefined;
+	}
+	const items: StatItem[] = [];
+	for ( const box of boxes ) {
+		const number = findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number$/ ) );
+		const target = trimmed( attrOf( number ?? box, 'data-to-value' ) ?? '' );
+		const digits = /^[\d.,]+$/.test( target ) ? target : trimmed( textOf( number ?? box ) );
+		if ( ! /^[\d.,]+$/.test( digits ) ) {
+			continue;
+		}
+		const prefix = trimmed( textOf( findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number-prefix$/ ) ) ?? box ) );
+		const suffixEl = findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number-suffix$/ ) );
+		const suffix = suffixEl ? trimmed( textOf( suffixEl ) ) : '';
+		const label = trimmed( textOf( findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-title$/ ) ) ?? box ) );
+		if ( ! label || label.length > 80 ) {
+			continue;
+		}
+		// A prefix that is only the widget's own text (no number element at all)
+		// would be the whole box — never prepend that.
+		const barePrefix = number && prefix && prefix !== trimmed( textOf( box ) ) ? prefix : '';
+		// A WORD suffix needs a space (`1Term` reads as a typo); a symbol does not
+		// (`50% less`, not `50 % less`).
+		const unit = suffix ? ( /^[a-z]/i.test( suffix ) ? ` ${ suffix }` : suffix ) : '';
+		items.push( {
+			value: `${ barePrefix }${ digits }`,
+			...( unit ? { unit } : {} ),
+			label,
+		} );
+	}
+	return items.length >= 2 ? items : undefined;
+}
+
 /** Value/label metrics. A label is required — a bare number is not a stat. */
 function statsFrom( node: HNode ): SemanticSection['stats'] | undefined {
+	// A counter widget first: its text is always "0", so the generic path below
+	// finds numbers that are animation artefacts and labels that are suffixes.
+	const counters = elementorCounterStats( node );
+	if ( counters ) {
+		return { items: counters };
+	}
 	const all = descendantTags( node );
 	let boxes = all.filter( ( tag ) => ownsClass( tag, STAT_INTENT ) && STAT_VALUE.test( trimmed( textOf( tag ) ) ) );
 	if ( boxes.length < 2 ) {

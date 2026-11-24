@@ -14,6 +14,131 @@ const SECTION = ( inner: string ) =>
 const WIDGET = ( name: string, inner: string ) =>
 	`<div class="elementor-widget elementor-widget-${ name }"><div class="elementor-widget-container">${ inner }</div></div>`;
 
+describe( 'classifyHtml — an h1 inside a card widget', () => {
+	it( 'is the band title, not a grid card', () => {
+		// eca.directory's hero publishes its h1 inside an Elementor icon-box
+		// (`elementor-icon-box-title`). Treating the widget as an item demoted the
+		// page's only h1 to an <h3> inside a grid and titled the band after a
+		// rating label instead ("Parent ratings", 2026-11-24).
+		const html = SECTION(
+			WIDGET(
+				'icon-box',
+				`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h1 class="elementor-icon-box-title"><span>ECA Management for British School in Colombo</span></h1><p class="elementor-icon-box-description">Real-time enrolment, instant parent updates.</p></div></div>`
+			) +
+				WIDGET( 'text-editor', '<p>4.8</p>' ) +
+				WIDGET( 'text-editor', '<p>+1k</p>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'ECA Management for British School in Colombo' );
+		expect( sections[ 0 ].slots.titleLevel ).toBe( 1 );
+		expect( sections[ 0 ].slots.body ).toContain( 'Real-time enrolment, instant parent updates.' );
+		// The headline must not also appear as a card.
+		const titles = ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).not.toContain( 'ECA Management for British School in Colombo' );
+	} );
+
+	it( 'leaves an h2 or h3 card caption alone', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our benefits</h2>' ) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Live ECA Catalogue</h3><p class="elementor-icon-box-description">Browse by day.</p></div></div>`
+				) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Instant Notifications</h3><p class="elementor-icon-box-description">SMS alerts.</p></div></div>`
+				)
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'Our benefits' );
+		expect( ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title ) ).toEqual( [
+			'Live ECA Catalogue',
+			'Instant Notifications',
+		] );
+	} );
+} );
+
+describe( 'classifyHtml — Elementor counters', () => {
+	// The widget animates from 0, so its DOM text is always "0"; the real figure
+	// is in `data-to-value`. about-us (`14c60321`) published "0 / %" and
+	// "0 / Term" until this read the attribute (2026-11-24).
+	const COUNTER = ( title: string, to: string, prefix = '', suffix = '' ) =>
+		WIDGET(
+			'counter',
+			`<div class="elementor-counter"><div class="elementor-counter-title">${ title }</div><div class="elementor-counter-number-wrapper"><span class="elementor-counter-number-prefix">${ prefix }</span><span class="elementor-counter-number" data-to-value="${ to }" data-from-value="0">0</span><span class="elementor-counter-number-suffix">${ suffix }</span></div></div>`
+		);
+
+	it( 'reads data-to-value, the prefix and the suffix instead of the "0" text', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Why choose our platform</h2>' ) +
+				COUNTER( 'Hour allocation time', '48', '≤' ) +
+				COUNTER( 'Parents updated within 5 minutes', '100', '', '%' )
+		);
+		const stats = classifyHtml( html )[ 0 ].stats?.items ?? [];
+		expect( stats ).toEqual( [
+			{ value: '≤48', label: 'Hour allocation time' },
+			{ value: '100', unit: '%', label: 'Parents updated within 5 minutes' },
+		] );
+	} );
+
+	it( 'keeps a suffix phrase as the unit rather than the label', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Why choose our platform</h2>' ) +
+				COUNTER( 'Routine ECA admin emails', '80', '', '% less' ) +
+				COUNTER( 'Pilot implementation', '3', '', 'Term' )
+		);
+		const stats = classifyHtml( html )[ 0 ].stats?.items ?? [];
+		expect( stats.map( ( item ) => [ item.value, item.unit, item.label ] ) ).toEqual( [
+			[ '80', '% less', 'Routine ECA admin emails' ],
+			// A WORD suffix gets a space ("1Term" reads as a typo); a symbol does not.
+			[ '3', ' Term', 'Pilot implementation' ],
+		] );
+	} );
+} );
+
+describe( 'classifyHtml — WordPress placeholder content', () => {
+	// WordPress installs "Hello world!" (slug hello-world) and "Sample Page"
+	// on every site. A builder's posts widget renders them as a real card, so a
+	// rebuild published one as the school's only story (eca.directory, 2026-11-24).
+	const POSTS_WIDGET = ( title: string, body = '' ) =>
+		WIDGET(
+			'posts',
+			`<div class="elementor-posts-container elementor-posts"><div class="elementor-post"><h3 class="elementor-post__title">${ title }</h3>${ body }</div></div>`
+		);
+
+	it( 'drops a card that is only the default post title', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our Updates</h2>' ) +
+				WIDGET( 'text-editor', '<h3>News &amp; Insights</h3><p>Follow along as we roll out live enrolment.</p>' ) +
+				POSTS_WIDGET( 'Hello world!' )
+		);
+		const sections = classifyHtml( html );
+		const titles = ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).not.toContain( 'Hello world!' );
+		expect( titles ).toContain( 'News & Insights' );
+	} );
+
+	it( 'keeps a card that carries copy, even when the title reads like one', () => {
+		// An article ABOUT the default content is copy, not a placeholder.
+		const html = SECTION(
+			WIDGET( 'text-editor', '<h3>Hello world!</h3><p>Why every WordPress site starts with this post.</p>' ) +
+				WIDGET( 'text-editor', '<h3>News &amp; Insights</h3><p>Follow along as we roll out live enrolment.</p>' )
+		);
+		const titles = ( classifyHtml( html )[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).toContain( 'Hello world!' );
+	} );
+
+	it( 'keeps a real post card next to the placeholder', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our Updates</h2>' ) +
+				POSTS_WIDGET( 'Hello world!' ) +
+				POSTS_WIDGET( 'Michaelmas fixtures published' )
+		);
+		const titles = ( classifyHtml( html )[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).toEqual( [ 'Michaelmas fixtures published' ] );
+	} );
+} );
+
 describe( 'classifyHtml — vendor-prefixed widget families (Phlox/Auxin)', () => {
 	it( 'rebuilds aux_* widgets like the core Elementor ones', () => {
 		const html = SECTION(

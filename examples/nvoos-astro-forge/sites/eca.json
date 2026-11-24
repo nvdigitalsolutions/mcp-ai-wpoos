@@ -2,6 +2,9 @@
 	"url": "https://eca.directory",
 	"name": "ECA Directory",
 	"fetch": { "timeoutMs": 60000 },
+	"forms": {
+		"delivery": "bridge"
+	},
 	"eca": {
 		"basePath": "/activities",
 		"schoolName": "The British School in Colombo",

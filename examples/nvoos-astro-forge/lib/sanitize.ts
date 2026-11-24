@@ -121,7 +121,13 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		blockquote: ['class', 'cite'],
 		code: ['class'],
 		pre: ['class'],
-		span: ['class'],
+		// `data-to-value` is the only data attribute worth keeping: Elementor's
+		// counter widget animates from 0, so the START value is the DOM text and
+		// the real figure exists only in that attribute. Stripped here, the
+		// classifier could only ever read "0" (about-us `14c60321`, 2026-11-24:
+		// "≤0" and "0% less" shipped instead of ≤48 and a real percentage). Inert
+		// in output — the Stats component renders text, not the attribute.
+		span: ['class', 'data-to-value'],
 		// Headings keep their CLASS. A builder styles its headings by class
 		// (`panel-title`, `heading-style13`, `text-medium`), so stripping it left
 		// the rebuilt heading at the template's prose defaults: virtuallyjamaica's
@@ -137,7 +143,7 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		// selects the glyph in the source's own icon sheet; without it every
 		// feature/accordion icon renders as an empty box.
 		i: ['class', 'aria-hidden'],
-		div: ['class', 'id', 'style'],
+		div: ['class', 'id', 'style', 'data-to-value'],
 		section: ['class', 'id', 'style'],
 		ul: ['class'],
 		ol: ['class', 'start'],

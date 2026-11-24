@@ -203,6 +203,36 @@ Acceptance
 - Search returns the expected top-3 for 10 fixture queries.
 - Shortlist survives navigation and reload; no server call.
 
+### Delivered 2026-11-24 — the contact band and placeholder posts
+
+Two behaviours the fleet's parity gate surfaced on `eca.directory`. Both are
+generic (a WP site of any shape hits them), not ECA-specific:
+
+1. **A form with no transport names its people instead.** `https://eca.directory`
+   has no forge bridge (`/wp-json/nvoos-forge/v1` → 404), so the source's
+   enquiry form cannot post anywhere. `Form.astro` already degraded to a
+   title-only band ("never a dead endpoint"); it now renders the school's
+   people as mailto cards plus the `/help/` link. The list is DERIVED by the
+   scaffold from `eca.contacts` (`resolveContactBlock`), so the home band,
+   `/help/` and the JSON-LD cannot disagree about an address; an explicit
+   `profile.contact` wins. `index.astro` skips the appended `#contact` block
+   when the body already rendered one, so the page asks once.
+2. **WordPress's default post never publishes as a card.** Every install ships
+   `hello-world` ("Hello world!") and `sample-page`; a builder's posts widget
+   renders them, and the rebuild published "Hello world!" as the school's only
+   story. `isPlaceholderCard` drops a card whose whole content is the
+   placeholder title — no body, media or attribution — at the single point
+   where `slots.items` is assigned (the band reached `items` through three
+   branches; a per-branch check missed two). The record keeps its route, so
+   deleting the placeholder in the CMS restores the card.
+
+The contact people are also published as `Organization.contactPoint` nodes, and
+the styled contact cards resolve against the token layer (0 inert classes).
+
+**Known, not fixed:** the source's "Read more articles" button renders
+`href="#"` — ten components share the `href ?? '#'` fallback, and a dead control
+is a WCAG 2.4.4 problem. Worth one focused pass rather than a partial fix.
+
 ---
 
 ## Phase 6 — Contracts: WP projection + Laravel adapter (2 d)
