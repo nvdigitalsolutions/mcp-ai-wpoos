@@ -231,12 +231,35 @@ Same pass, defensive: `Forms::bracket_fields()` also rebuilds the nested
 JetFormBuilder's request reads it. JetFormBuilder has **no** equivalent action
 guard (verified against `Jet_Form_Builder\Form_Handler::process_form()`).
 
+### Defect 2 — the component never sent `post_id`
+
+With the bridge fixed, the same message came back **from the browser**, while the
+identical curl payload succeeded. The difference was one missing key.
+
+Elementor resolves the form widget inside the document named by `post_id`:
+`documents->get( $post_id )` → walk `get_elements_data()` → the widget. The forged
+form renders the hidden `post_id` carrier (it is in the source markup) and the
+bridge's existence check deliberately searches *all* posts — but the component's
+JSON payload skipped `post_id` along with the other reserved keys, so the handler
+was handed post `0`, found no document, and answered "the form is invalid".
+
+Fix: `Form.astro` reads the hidden carrier into the payload
+(`test/forms.test.ts` → *the component payload*). The no-JS floor was already
+correct — a native POST sends the field, and `parse_payload()` reads it.
+
+**Lesson.** A 200 with `ok:false` from the bridge means a *native handler ran and
+rejected the submission*. Check both halves of the contract: the bridge's request
+shape, and the page's payload. A curl that succeeds while the browser fails points
+at the component, not the bridge.
+
 ### What to check when a forged form dies
 
 1. `GET /wp-json/nvoos-forge/v1/health` → `formsEnabled` + `formsConfigured`.
 2. The submitting origin is in Settings → Forge Bridge → Static origins.
-3. `POST …/forms/submit` with the page's own body and an `Origin` header — a
+3. Submit the form **in a browser** from the forged origin and read the inline
+   status. A curl-only test can pass while the page still fails (§6, defect 2).
+4. `POST …/forms/submit` with the page's own body and an `Origin` header — a
    `404 form_not_found` means neither handler resolved the identifier; a 200 with
    `ok:false` means a native handler ran and rejected it (the class of bug above).
-4. Compare against the source: submit the real WP form and read the
+5. Compare against the source: submit the real WP form and read the
    `admin-ajax.php` response. If the source fails too, the site is the problem.
