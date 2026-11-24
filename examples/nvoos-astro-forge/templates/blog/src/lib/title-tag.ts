@@ -11,18 +11,28 @@
 // An `h1` maps DOWN to `h2` on purpose: the page article owns the single `<h1>`
 // (the front page renders the source's own h1 inside its first band), so a band
 // title that happens to be an h1 in the source must not create a second one.
+//
+// `allowH1` is the exception that makes that sentence true: on a page whose body
+// IS the document outline — the front page, where no article sits above the
+// bands — the first band's h1 must render as an `h1`, or the page publishes no
+// h1 at all (eca.directory's home, 2026-11-24: the hero h1 had been demoted to a
+// card `<h3>` and every band title was an `h2`). Post bodies keep the default.
 // ---------------------------------------------------------------------------
 
-export type TitleTag = 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+export type TitleTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 /**
  * The tag a band title uses.
  *
  * `type` is the band's measured typography block (`SectionTheme.type`); only
- * `titleLevel` is read. Absent or unrecognised → `h2`, the template default.
+ * `titleLevel` and `allowH1` are read. Absent or unrecognised → `h2`, the
+ * template default.
  */
-export const titleTag = ( type?: { titleLevel?: string } ): TitleTag => {
+export const titleTag = ( type?: { titleLevel?: string; allowH1?: boolean } ): TitleTag => {
 	const level = type?.titleLevel;
+	if ( level === 'h1' ) {
+		return type?.allowH1 ? 'h1' : 'h2';
+	}
 	return level === 'h3' || level === 'h4' || level === 'h5' || level === 'h6' ? level : 'h2';
 };
 

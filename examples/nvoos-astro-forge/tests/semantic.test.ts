@@ -14,6 +14,50 @@ const SECTION = ( inner: string ) =>
 const WIDGET = ( name: string, inner: string ) =>
 	`<div class="elementor-widget elementor-widget-${ name }"><div class="elementor-widget-container">${ inner }</div></div>`;
 
+describe( 'classifyHtml — an h1 inside a card widget', () => {
+	it( 'is the band title, not a grid card', () => {
+		// eca.directory's hero publishes its h1 inside an Elementor icon-box
+		// (`elementor-icon-box-title`). Treating the widget as an item demoted the
+		// page's only h1 to an <h3> inside a grid and titled the band after a
+		// rating label instead ("Parent ratings", 2026-11-24).
+		const html = SECTION(
+			WIDGET(
+				'icon-box',
+				`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h1 class="elementor-icon-box-title"><span>ECA Management for British School in Colombo</span></h1><p class="elementor-icon-box-description">Real-time enrolment, instant parent updates.</p></div></div>`
+			) +
+				WIDGET( 'text-editor', '<p>4.8</p>' ) +
+				WIDGET( 'text-editor', '<p>+1k</p>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'ECA Management for British School in Colombo' );
+		expect( sections[ 0 ].slots.titleLevel ).toBe( 1 );
+		expect( sections[ 0 ].slots.body ).toContain( 'Real-time enrolment, instant parent updates.' );
+		// The headline must not also appear as a card.
+		const titles = ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).not.toContain( 'ECA Management for British School in Colombo' );
+	} );
+
+	it( 'leaves an h2 or h3 card caption alone', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our benefits</h2>' ) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Live ECA Catalogue</h3><p class="elementor-icon-box-description">Browse by day.</p></div></div>`
+				) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Instant Notifications</h3><p class="elementor-icon-box-description">SMS alerts.</p></div></div>`
+				)
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'Our benefits' );
+		expect( ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title ) ).toEqual( [
+			'Live ECA Catalogue',
+			'Instant Notifications',
+		] );
+	} );
+} );
+
 describe( 'classifyHtml — Elementor counters', () => {
 	// The widget animates from 0, so its DOM text is always "0"; the real figure
 	// is in `data-to-value`. about-us (`14c60321`) published "0 / %" and

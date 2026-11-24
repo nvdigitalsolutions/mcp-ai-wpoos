@@ -211,6 +211,8 @@ export interface SemanticSection {
 	confidence: 'high' | 'medium' | 'low';
 	slots: {
 		title?: string;
+		/** The source heading level the title came from (`title` is an h1 at 1). */
+		titleLevel?: number;
 		body?: string[];
 		media?: MediaRef[];
 		items?: SectionItem[];
@@ -1108,10 +1110,15 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		}
 		const collected = collectSlots( widget.node );
 		// Item widgets (feature/icon/quote) carry their own headings — those are
-		// card captions, never the band title.
+		// card captions, never the band title. An `h1` is the exception wherever it
+		// sits: eca.directory's hero publishes the page's only h1 inside an icon-box
+		// (`elementor-icon-box-title`), so treating the widget as a card demoted it
+		// to an `<h3>` inside a grid and titled the band after a rating label
+		// ("Parent ratings") — the page had no h1 at all (2026-11-24).
 		const isItemWidget =
 			widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote';
-		if ( collected.title && ! isItemWidget ) {
+		const isBandHeading = collected.titleLevel === 1;
+		if ( collected.title && ( ! isItemWidget || isBandHeading ) ) {
 			headingCandidates.push( { level: collected.titleLevel ?? 6, text: collected.title } );
 		}
 		for ( const paragraph of collected.body ?? [] ) {
@@ -1121,7 +1128,7 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		}
 		media.push( ...( collected.media ?? [] ) );
 		links.push( ...( collected.links ?? [] ) );
-		if ( widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote' ) {
+		if ( ( widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote' ) && ! isBandHeading ) {
 			const item: SectionItem = {};
 			if ( collected.title ) {
 				item.title = collected.title;
@@ -1171,6 +1178,10 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 	const title = pickHeadingTitle( headingCandidates );
 	if ( title ) {
 		slots.title = title.text;
+		// The level rides along so the renderer can keep an `h1` where the page
+		// owns one (the front page) instead of relying on measured facts that a
+		// maintenance-mode analysis never captured.
+		slots.titleLevel = title.level;
 	}
 	// Every heading that is not the title is still the source's copy — it ships
 	// as the band's intro text so no word is lost (and the title gate stays

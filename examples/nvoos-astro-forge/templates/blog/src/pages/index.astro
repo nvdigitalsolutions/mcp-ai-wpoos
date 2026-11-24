@@ -63,7 +63,7 @@ const bodyHasContactBand = homeBands.some((band) => band.kind === 'form');
 	seo={frontPage?.data.seo}
 >
 	{frontPage && frontBody ? (
-		<DesignRenderer html={frontBody} bandGeometry />
+		<DesignRenderer html={frontBody} bandGeometry pageHeading />
 	) : frontPage && frontContent ? (
 		<div class="post-body">
 			<frontContent.Content />

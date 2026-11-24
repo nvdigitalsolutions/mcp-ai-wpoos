@@ -2424,7 +2424,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * otherwise renders at the browser default heading scale (a 40px source',
 		'\t * `<h3>` came out at 15.21px = 1.17em of the 13px body). `title` is the',
 		'\t * band\u2019s LARGEST heading \u2014 the visual title the components size from. */',
-		'\ttype?: { headings?: Record<string, BandTypeFact>; body?: BandTypeFact; title?: BandTypeFact; titleLevel?: string };',
+		'\ttype?: { headings?: Record<string, BandTypeFact>; body?: BandTypeFact; title?: BandTypeFact; titleLevel?: string; /** The page owns this band’s h1 (front page) — see title-tag.ts. */ allowH1?: boolean };',
 		'\t/** Selectors for subtrees the SOURCE renders hidden at rest (accordion',
 		'\t * panels, tab panes) — emitted as scoped `display:none` rules. */',
 		'\thidden?: string[];',
