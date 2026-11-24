@@ -1171,6 +1171,15 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'html_to_pdf' => array(
+			'class' => 'Nvoos\\Core\\Tool\\HtmlToPdfTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerHtmlToPdf implements HtmlToPdfInterface over the media worker `POST /api/pdf/generate`, bound in NvoosServiceProvider; needs `oos.media_worker.url` at runtime, and the worker is faked in the evidence test (Proposal 164 section 164.4.3). With no renderer bound the tool answers the named `no_pdf_engine` error rather than an empty document.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/HtmlToPdfAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'huggingface_dataset_filter' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HuggingFaceDatasetFilterTool',
 			'readiness' => 'ready',

@@ -49,6 +49,7 @@ use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HealthReportInterface;
 use Nvoos\Laravel\Health\PackageHealthReport;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
@@ -116,6 +117,7 @@ use Nvoos\Laravel\Adapter\DatabaseTraceStore;
 use Nvoos\Laravel\Adapter\HarnessProfileProvider;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
@@ -180,6 +182,13 @@ class NvoosServiceProvider extends ServiceProvider {
 		// which is the same shape WordPress has without GD/Imagick
 		// (Proposal 149 §160).
 		$this->app->bind( ImageProcessingInterface::class, MediaWorkerImageProcessing::class );
+
+		// Documents follow the same ladder (Proposal 164 §164.4.2): the worker
+		// renders with a real browser at `/api/pdf/generate`, so `html_to_pdf`
+		// is servable without adding a PHP PDF library. `isAvailable()` answers
+		// false when no worker is configured, and the tool then refuses with
+		// `no_pdf_engine` rather than producing an empty document.
+		$this->app->bind( HtmlToPdfInterface::class, MediaWorkerHtmlToPdf::class );
 
 		// Agent orchestration needs assistants (a host contract) and a runner (the
 		// host's chat pipeline). Both are optional so the package can construct
