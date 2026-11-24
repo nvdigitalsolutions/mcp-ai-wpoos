@@ -19,8 +19,10 @@ use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\ValueObject\MediaWorkerCapabilityReport;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
 use Nvoos\Laravel\Adapter\TokenUsage;
 
 /**
@@ -175,6 +177,7 @@ class DiagnosticsPage extends Page
         $providers = app(ProviderRouter::class);
         $tools = app(ToolRegistry::class);
         $readiness = app(ToolReadiness::class);
+        $probe = app(MediaWorkerCapabilityProbe::class);
         $settings = app(SettingsStoreInterface::class);
         $entitlement = app(ProEntitlementInterface::class);
         $jobs = app(JobStatusStore::class);
@@ -238,10 +241,55 @@ class DiagnosticsPage extends Page
                 ['label' => 'Plan source', 'value' => (string) $entitlement->source()],
             ],
             'Tool registration' => $this->toolRegistrationRows($readiness),
+            'Media worker' => $this->mediaWorkerRows($probe),
             'Queue' => $queueRows,
             'Provider credentials' => $providerRows,
             'Routing (30d)' => array_merge($this->routingRows($routing), $this->exportRows()),
         ];
+    }
+
+    /**
+     * What the processing tier can do (Proposal 164 §164.4.2).
+     *
+     * One row per domain rather than a dump of the worker's matrix: the
+     * question an operator asks is "can this host transcode?", and a domain
+     * row answers it. `Unknown` is kept distinct from `Unavailable` so a probe
+     * timeout is not read as a missing binary — the two have different fixes.
+     *
+     * @return list<array{label: string, value: string}>
+     */
+    private function mediaWorkerRows(MediaWorkerCapabilityProbe $probe): array
+    {
+        $report = $probe->report();
+
+        if (! $report->isConfigured()) {
+            return [['label' => 'Status', 'value' => 'not configured']];
+        }
+
+        $rows = [
+            ['label' => 'Status', 'value' => $report->isAvailable() ? 'available' : 'unreachable'],
+            ['label' => 'Version', 'value' => $report->version() ?? 'unknown'],
+        ];
+
+        foreach ($report->domains() as $domain => $tier) {
+            $rows[] = [
+                'label' => ucfirst(str_replace('_', ' ', (string) $domain)),
+                'value' => $tier,
+            ];
+        }
+
+        foreach (MediaWorkerCapabilityReport::knownDomains() as $domain) {
+            $missing = $report->missing($domain);
+
+            if ([] !== $missing) {
+                $rows[] = [
+                    'label' => ucfirst($domain) . ' missing',
+                    'value' => implode(', ', $missing),
+                ];
+            }
+        }
+
+        return $rows;
     }
 
     /**

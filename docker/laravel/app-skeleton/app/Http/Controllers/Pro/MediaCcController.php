@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Pro;
 
 use App\Support\Media\MediaLibrary;
 use App\Support\Media\MediaSweeper;
+use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
 use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use App\Support\TenantContext;
 use Cron\CronExpression;
@@ -20,8 +21,9 @@ use Illuminate\Support\Facades\Schema;
  *    coverage come from `nvoos_files`. The image list and the filename
  *    heuristic mirror WordPress's own gatherers, so the same library reports
  *    the same percentages on either runtime.
- *  - **The worker** — version and uptime from `GET /api/health`, plus the
- *    queue counts for `media.*` handlers in `nvoos_jobs`.
+ *  - **The worker** — version and uptime from `GET /api/health`, the domain
+ *    tiers from `GET /api/health/full` (via {@see MediaWorkerCapabilityProbe}),
+ *    plus the queue counts for `media.*` handlers in `nvoos_jobs`.
  *
  * `compression` is the sum of recorded derivative savings, so a saving is only
  * ever reported once the optimised bytes exist. `schedule` is the one section
@@ -40,13 +42,14 @@ class MediaCcController
      * The library numbers come from {@see MediaLibrary} rather than a private
      * copy, because `/admin/{estate}/media` reads the same projection (§109).
      */
-    public function health(MediaWorkerClient $worker): JsonResponse
+    public function health(MediaWorkerClient $worker, MediaWorkerCapabilityProbe $probe): JsonResponse
     {
         if (! $worker->configured()) {
             return $this->notConfigured();
         }
 
         $library = app(MediaLibrary::class)->summary(TenantContext::current());
+        $report = $probe->report();
 
         return response()->json([
             'attachments' => [
@@ -62,7 +65,13 @@ class MediaCcController
             'queue' => $this->queue(),
             'schedule' => $this->schedule(),
             'capabilities' => ['sweep' => true],
-            'worker' => ['configured' => true] + $worker->health(),
+            // `domains` and `missing` are the new keys; `configured`,
+            // `available`, `version` and `uptime` keep the shape
+            // `api/media-ops.ts` already parses.
+            'worker' => ['configured' => true] + $worker->health() + [
+                'domains' => $report->domains(),
+                'missing' => $report->toArray()['missing'],
+            ],
         ]);
     }
 

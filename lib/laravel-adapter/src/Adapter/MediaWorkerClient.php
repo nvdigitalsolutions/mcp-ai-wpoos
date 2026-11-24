@@ -3,6 +3,7 @@
 namespace Nvoos\Laravel\Adapter;
 
 use Illuminate\Support\Facades\Http;
+use Nvoos\Core\Domain\Contract\MediaWorkerClientInterface;
 use Throwable;
 
 /**
@@ -23,7 +24,7 @@ use Throwable;
  * `available: false` so the command centre can still show local library
  * numbers beside an honest "worker unreachable" line.
  */
-final class MediaWorkerClient
+final class MediaWorkerClient implements MediaWorkerClientInterface
 {
     /**
      * Base URL, without a trailing slash. Empty when unconfigured.
@@ -35,10 +36,24 @@ final class MediaWorkerClient
 
     /**
      * Whether this runtime has a worker to talk to.
+     *
+     * The canonical spelling, from {@see MediaWorkerClientInterface}. The
+     * shorter `configured()` predates the contract and stays as a delegate so
+     * the existing call sites did not need a rename for a spelling.
+     */
+    public function isConfigured(): bool
+    {
+        return '' !== $this->url();
+    }
+
+    /**
+     * Whether this runtime has a worker to talk to.
+     *
+     * @deprecated Use {@see isConfigured()}; this is the pre-contract spelling.
      */
     public function configured(): bool
     {
-        return '' !== $this->url();
+        return $this->isConfigured();
     }
 
     /**
@@ -76,6 +91,57 @@ final class MediaWorkerClient
             'version' => isset($body['version']) ? (string) $body['version'] : null,
             'uptime' => isset($body['uptime']) ? (float) $body['uptime'] : null,
         ];
+    }
+
+    /**
+     * The worker's capability matrix, from `GET /api/health/full`.
+     *
+     * This is the probe besides `/api/health`: that one answers "is it up",
+     * this one answers "can it do the thing". A managed Node host can be up and
+     * still have no `ffmpeg`, so the two questions have different answers.
+     *
+     * An empty array means the worker did not answer — unconfigured,
+     * unreachable, or erroring. It is not a claim that the worker can do
+     * nothing, and `MediaWorkerCapabilityReport` reports that distinction as
+     * `unknown` rather than `unavailable`.
+     *
+     * Deliberately uncached: this is a transport, and caching here would make
+     * `MediaWorkerCapabilityProbe::report( fresh: true )` a lie — the probe holds
+     * one client instance, so a memoised matrix would outlive every refresh. The
+     * probe owns the TTL; the client asks.
+     *
+     * @return array<string, bool>
+     */
+    public function capabilities(): array
+    {
+        if (! $this->configured()) {
+            return [];
+        }
+
+        try {
+            $response = Http::timeout($this->capabilitiesTimeout())
+                ->acceptJson()
+                ->withHeaders($this->headers())
+                ->get($this->url().'/api/health/full');
+        } catch (Throwable) {
+            return [];
+        }
+
+        $body = $response->json();
+
+        if (! $response->ok() || ! is_array($body) || ! is_array($body['capabilities'] ?? null)) {
+            return [];
+        }
+
+        $capabilities = [];
+
+        foreach ($body['capabilities'] as $key => $value) {
+            if (is_string($key) && '' !== $key) {
+                $capabilities[$key] = (bool) $value;
+            }
+        }
+
+        return $capabilities;
     }
 
     /**
@@ -354,5 +420,14 @@ final class MediaWorkerClient
     private function timeout(): int
     {
         return max(1, (int) config('oos.media_worker.timeout', 3));
+    }
+
+    /**
+     * `health/full` shells out to `which` on a cold worker, so it gets its own
+     * budget rather than the 3-second liveness timeout.
+     */
+    private function capabilitiesTimeout(): int
+    {
+        return max(1, (int) config('oos.media_worker.capabilities_timeout', 8));
     }
 }

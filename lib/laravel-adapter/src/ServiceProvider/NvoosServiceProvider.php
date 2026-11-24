@@ -51,6 +51,7 @@ use Nvoos\Laravel\Health\PackageHealthReport;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
+use Nvoos\Core\Domain\Contract\MediaWorkerClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
@@ -117,6 +118,8 @@ use Nvoos\Laravel\Adapter\DatabaseTraceStore;
 use Nvoos\Laravel\Adapter\HarnessProfileProvider;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
+use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
 use Nvoos\Laravel\Adapter\MemoryStore;
@@ -189,6 +192,13 @@ class NvoosServiceProvider extends ServiceProvider {
 		// false when no worker is configured, and the tool then refuses with
 		// `no_pdf_engine` rather than producing an empty document.
 		$this->app->bind( HtmlToPdfInterface::class, MediaWorkerHtmlToPdf::class );
+
+		// The capability matrix, probed once and cached (Proposal 164 section
+		// 164.4.2). Every later domain adapter and both diagnostic surfaces read
+		// this one answer, so a managed Node host with no `ffmpeg` reports
+		// `video: unavailable` instead of discovering it by failing a request.
+		$this->app->bind( MediaWorkerClientInterface::class, MediaWorkerClient::class );
+		$this->app->singleton( MediaWorkerCapabilityProbe::class );
 
 		// Agent orchestration needs assistants (a host contract) and a runner (the
 		// host's chat pipeline). Both are optional so the package can construct
