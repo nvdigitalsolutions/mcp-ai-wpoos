@@ -46,6 +46,12 @@ final class MediaWorkerCapabilityProbeTest extends TestCase
             'chart_rendering' => true,
             'browser_automation' => true,
             'web_crawling' => true,
+            // The `social` domain reads the two read-side keys, while
+            // `social_publishing` reads the write-side one. Declaring only the
+            // write key leaves `social` unavailable — which is what happened
+            // when the domain was split in two.
+            'social_accounts' => true,
+            'social_composition' => true,
             'social_publishing' => true,
         );
     }
