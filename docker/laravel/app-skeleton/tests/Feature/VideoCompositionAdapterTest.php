@@ -304,21 +304,118 @@ final class VideoCompositionAdapterTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_a_fade_transition_is_refused_with_the_reason(): void
+    public function test_a_fade_transition_re_encodes_and_says_so(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured, self::CAPABILITIES, array(
+            'operation' => 'merge',
+            'reencoded' => true,
+            'transition' => 'fade',
+            'duration' => 8.0,
+        ));
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark(), $this->video()),
+            'transition' => 'fade',
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success'], 'a fade is implemented, so it must not be refused');
+        $this->assertSame('fade', $this->field($captured, 'transition'));
+        $this->assertSame('1', $this->field($captured, 'transition_duration'), 'the WordPress default is 1 s');
+
+        // The caller has to be able to tell a copy from a re-encode: one loses
+        // nothing, the other loses a generation.
+        $this->assertTrue($result['data']['reencoded']);
+        $this->assertSame('fade', $result['data']['transition']);
+    }
+
+    public function test_a_dissolve_transition_carries_its_duration(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured, self::CAPABILITIES, array(
+            'operation' => 'merge',
+            'reencoded' => true,
+            'transition' => 'dissolve',
+        ));
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->video()),
+            'transition' => 'dissolve',
+            'transition_duration' => 0.5,
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertSame('dissolve', $this->field($captured, 'transition'));
+        $this->assertSame('0.5', $this->field($captured, 'transition_duration'));
+    }
+
+    public function test_a_copy_merge_carries_no_transition_duration(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark()),
+            'save_to_media' => false,
+        ));
+
+        $this->assertSame('none', $this->field($captured, 'transition'));
+        $this->assertNull(
+            $this->field($captured, 'transition_duration'),
+            'a copy has no overlap, so there is no duration to send'
+        );
+    }
+
+    public function test_a_slideshow_transition_is_not_a_merge_transition(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark()),
+            'transition' => 'slide',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('slide', $result->getMessage());
+        $this->assertStringContainsString('fade', $result->getMessage());
+
+        Http::assertNothingSent();
+    }
+
+    public function test_a_transition_duration_outside_the_range_is_refused_before_a_request(): void
     {
         Http::fake();
 
         $result = $this->app->make(MergeVideosTool::class)->execute(array(
             'video_urls' => array($this->video(), $this->mark()),
             'transition' => 'fade',
+            'transition_duration' => 30,
         ));
 
         $this->assertInstanceOf(RuntimeException::class, $result);
         $this->assertSame(422, $result->getCode());
-        $this->assertStringContainsString('not implemented', $result->getMessage());
-        $this->assertStringContainsString('xfade', $result->getMessage());
+        $this->assertStringContainsString('transition_duration must be between', $result->getMessage());
 
         Http::assertNothingSent();
+    }
+
+    public function test_an_overlapping_transition_is_a_caller_error(): void
+    {
+        $this->fakeWorkerRefusing('The transitions would overlap: the clips are too short for that transition duration.');
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark()),
+            'transition' => 'fade',
+            'save_to_media' => false,
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('too short', $result->getMessage());
     }
 
     public function test_a_worker_refusal_for_mismatched_clips_is_a_caller_error(): void
@@ -392,21 +489,60 @@ final class VideoCompositionAdapterTest extends TestCase
         $this->assertSame(6.0, $result['data']['duration'], 'two images at three seconds each');
     }
 
-    public function test_a_slideshow_fade_is_refused_with_the_reason(): void
+    public function test_a_slideshow_slide_is_forwarded(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured, self::CAPABILITIES, array(
+            'operation' => 'images',
+            'transition' => 'slide',
+            'duration' => 5.0,
+        ));
+
+        $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video(), $this->mark(), $this->video()),
+            'duration_per_image' => 2,
+            'transition' => 'slide',
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success'], 'a slide is implemented, so it must not be refused');
+        $this->assertSame('slide', $this->field($captured, 'transition'));
+        $this->assertSame('slide', $result['data']['transition']);
+
+        // The route removes one overlap per boundary, so three 2 s stills with
+        // a 0.5 s transition are 5 s, not 6.
+        $this->assertSame(5.0, $result['data']['duration']);
+    }
+
+    public function test_a_slideshow_zoom_is_refused_as_motion_not_a_transition(): void
     {
         Http::fake();
 
         $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
-            'image_urls' => array($this->video()),
-            'transition' => 'fade',
+            'image_urls' => array($this->video(), $this->mark()),
+            'transition' => 'zoom',
         ));
 
         $this->assertInstanceOf(RuntimeException::class, $result);
         $this->assertSame(422, $result->getCode());
-        $this->assertStringContainsString('not implemented', $result->getMessage());
-        $this->assertStringContainsString('xfade', $result->getMessage());
+        $this->assertStringContainsString('zoompan', $result->getMessage());
+        $this->assertStringContainsString('fade', $result->getMessage());
 
         Http::assertNothingSent();
+    }
+
+    public function test_a_slideshow_with_no_transition_still_says_none(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video(), $this->mark()),
+            'save_to_media' => false,
+        ));
+
+        $this->assertSame('none', $this->field($captured, 'transition'));
     }
 
     public function test_an_unknown_slideshow_resolution_is_refused_with_the_supported_ones(): void
@@ -441,18 +577,22 @@ final class VideoCompositionAdapterTest extends TestCase
     /**
      * Fake health, `/compose` and the download route.
      *
-     * @param array{url: string, data: mixed}|null $captured Receives the compose request.
-     * @param array<string, bool>                  $capabilities
+     * @param array{url: string, data: mixed}|null $captured         Receives the compose request.
+     * @param array<string, bool>                  $capabilities     Capability flags to answer.
+     * @param array<string, mixed>                 $composeOverrides Fields the fake route answers.
      */
-    private function fakeWorker(?array &$captured, array $capabilities = self::CAPABILITIES): void
-    {
+    private function fakeWorker(
+        ?array &$captured,
+        array $capabilities = self::CAPABILITIES,
+        array $composeOverrides = array(),
+    ): void {
         $captured = null;
 
         $json = array('Content-Type' => 'application/json');
 
         $health = Http::response(array('status' => 'ok', 'capabilities' => $capabilities), 200, $json);
 
-        $compose = Http::response(array(
+        $compose = Http::response($composeOverrides + array(
             'success' => true,
             'operation' => 'watermark',
             'position' => 'bottom-right',

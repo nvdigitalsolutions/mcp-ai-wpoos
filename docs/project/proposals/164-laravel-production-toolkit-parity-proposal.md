@@ -1344,6 +1344,9 @@ the `pad` branch.
 
 ### Two deliberate omissions
 
+Superseded for `fade` and `slide` by §164.23; the `zoom` refusal and the
+missing audio argument still stand.
+
 - **Only `transition: none`.** `fade`/`slide`/`zoom` are `xfade`/`zoompan`: a
   chain that re-encodes and needs cumulative offsets from every segment's
   duration. Declared, refused with the reason, recorded as the follow-up.
@@ -1378,3 +1381,122 @@ one contract: `merge_videos`, `add_watermark_to_video`,
 this arc began. The nine remaining are the groups §164.19 described — a
 renderer, speech models, audit surfaces with no equivalent table, one duplicate,
 and two operations no WordPress slug asks for.
+
+## 164.23 — Transitions: `xfade` and `acrossfade` (2026-11-25)
+
+Both tools already declared a transition argument and then refused every value
+but `none` (§164.19, §164.22). That is now false: `merge_videos` implements
+`fade` and `dissolve`, and `create_video_from_images` implements `fade` and
+`slide`. `zoom` is still refused, and still for the reason §164.22 gave.
+
+### A transition cannot copy, so it re-encodes
+
+Every frame `xfade` emits during an overlap is a blend of two frames. There is
+nothing to copy, so `transition: none` and a transition are two different paths
+on the same operation, not one path with a flag:
+
+| | `none` | `fade` / `dissolve` / `slide` |
+|---|---|---|
+| encode | `-c copy` via the concat demuxer | `libx264` (or `libvpx-vp9` into WebM) |
+| preconditions | identical frame, rate, codec, audio layout | only a readable duration |
+| mismatches | refused, first difference named | normalised into the first clip's frame |
+| cost | none | one generation |
+
+`none` stays the default even though the WordPress schemas default to `fade`.
+A default that silently re-encodes would change the output of every existing
+pipeline; opting in costs one argument.
+
+### The offsets are cumulative, and that is the whole difficulty
+
+`offset` is measured on the **first** input's timeline, and after chaining the
+first input is the previous result. So each cut is the running sum of the clips
+behind it, less every overlap already removed:
+
+```
+offset_i = (d₁ + … + d_i) − i × T
+```
+
+Three independent write-ups give the same formula, and it was checked against
+the ffmpeg in the worker image (8.1.2) rather than trusted:
+
+| inputs | T | offsets | measured |
+|---|---|---|---|
+| 2 + 3 + 4 s | 0.5 | `[1.5, 4]` | **8.000000 s** video-only; 8.024–8.056 s with AAC |
+| 10 + 10 + 10 s | 1 | `[9, 18]` | 29 s |
+| three 2 s stills | 0.5 | `[1.5, 3]` | **5.000000 s** exactly |
+
+A non-positive offset means a clip is shorter than the transition, so the cut
+would have to start before that clip has a frame. The route refuses that with
+`transition_duration >= shortest` and `xfadeOffsets()` returns `null` as the
+second line of defence — never a clamp, because clamping changes the timing of
+every later cut.
+
+Audio costs an extra frame of container time: AAC primes its first frame, so a
+run asserted to be 8 s reads 8.024–8.056 s from `ffprobe`. Assert the duration
+the route reports, and allow a tolerance only when a track is present.
+
+### Normalise, then cross-fade
+
+`xfade` refuses mismatched inputs rather than adapting them, so the transition
+path scales and pads each clip into the first clip's frame (`decrease` + `pad`
+is `contain` — a crop would silently lose edges), sets `setsar=1`, forces the
+first clip's `fps`, and `aformat`s the audio to `fltp`/stereo/48 kHz before
+`acrossfade`. This is deliberately the opposite of the copy path, which refuses
+a mismatch: re-encoding makes adaptation free, copying makes it impossible.
+
+Mixed audio presence is still **refused**: `acrossfade` needs a track on both
+sides of every boundary, and both available answers — drop the tracks, or invent
+silence — change the result in a way the caller should choose, not the route.
+
+### Names are looked up, not relayed
+
+`slide` is the tool's word; ffmpeg calls the filter `slideleft`. `XFADE` is the
+table that maps one to the other, and a name outside it never reaches a filter
+argument. `zoom` has no entry on purpose: Ken Burns motion is `zoompan` applied
+**within** each still — a different filter on a different timeline — so
+answering `zoom` with a cross-fade would be a different video from the one asked
+for. The enum keeps `zoom` (the WordPress contract has it); the tool refuses it
+and names `zoompan` in the message.
+
+Per-operation allowlists, because the two WordPress enums differ:
+
+- `merge` → `none`, `fade`, `dissolve`
+- `images` → `none`, `fade`, `slide`
+
+### A latent WebM bug fell out of this
+
+The §164.22 slideshow path hardcoded `-c:v libx264` while `resolveFormat()`
+accepts `webm`. H.264 cannot be written into WebM, so `output_format: webm`
+would have failed at the ffmpeg call and surfaced as a 500. Both re-encoding
+paths now choose the encoder from the container (`videoEncoder()`), and the
+handler smoke asserts a `webm` merge really is `vp9`.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `addons/media-worker/src/routes/video.js` | `XFADE`, `TRANSITIONS`, `resolveTransition()`, `xfadeOffsets()`, `videoEncoder()`; `probeMedia()` now reports `duration`; merge split into copy and transition paths; slideshow gained the chain |
+| `lib/core/src/Tool/MergeVideosTool.php` | `transition_duration` added to the schema; the refusal removed; transition reported in `data` |
+| `lib/core/src/Tool/CreateVideoFromImagesTool.php` | `fade`/`slide` accepted; `zoom` refused with the `zoompan` reason |
+| `lib/laravel-adapter/src/Adapter/MediaWorkerVideoComposition.php` | per-operation transition allowlist; `transition`/`transition_duration` fields; `transition` surfaced in the result |
+| `lib/core/resources/tool-readiness.php` | both `reason` entries describe the two paths |
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **282 rows / 263 servable / 0 violations**
+(unchanged — no slug added). `bin/toolkit-parity.php`: **61 of 854**,
+`video-production` **12 of 21** (both unchanged: transitions fulfil arguments
+those tools already advertised, they do not add tools).
+
+`lib/core` 2,466 / 17,575 (unchanged); adapter 359 / 1,923 (unchanged);
+`VideoCompositionAdapterTest` **27** (was 20 — two refusal tests replaced by
+nine that pin the new behaviour); worker pure tests **30** (was 20).
+
+On top of those, a handler-level smoke boots the real router, posts real
+multipart bodies and probes real output with ffmpeg 8.1.2 — **25 checks**, in
+one container, covering: merge-with-fade duration and frame, dissolve with the
+default 1 s, the `slide`-on-merge refusal, the copy path still refusing a
+mismatch and still copying, mixed audio, a transition longer than the shortest
+clip, `webm` → VP9, a `slide` slideshow at 5.000 s, the plain slideshow
+unchanged at 6 s, `zoom` refused, a 0.4 s image too short for a 0.5 s
+transition, and a single still reporting `none`.
