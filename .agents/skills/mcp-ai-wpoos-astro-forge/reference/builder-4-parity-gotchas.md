@@ -311,3 +311,38 @@ prints: `title`, `body`, `author`… and `kicker` and `bullets`. Adding a slot
 without adding it to the count makes a correct band look lossy and silently
 disappears from the page — the symptom reads as "the section type was not
 detected", not "the guard miscounted".
+
+## A card whose heading IS the band title is the band's sub-heading
+
+A builder publishes an "updates" band as a small kicker heading plus an icon-box
+whose title is the real heading and whose body is the band's lede — eca.directory
+pairs a 14px `h2` "Our Updates" with a 33px icon-box "News & Insights". The
+measured eyebrow/title pair correctly promotes the icon-box heading to the band
+title, and the icon-box is ALSO rebuilt as a card, so the same string prints
+twice above an empty-looking one-card grid.
+
+The rule (`titleEchoItems` in `lib/band-copy.ts`) folds such a card into the
+band's lede. It must NEVER fold a card that carries media, its own link, or a
+measured lane surface — those are content the title does not speak for. Keep the
+rule in one place: `DesignRenderer` needs the same answer to decide the band's
+height (below).
+
+## A measured `min-height` is a height WITH the content you dropped
+
+Once a dynamic list folds away or its only card was a placeholder, the band's
+measured `min-height` floors nothing — eca.directory's updates band held 478px
+around three lines of copy. Skip the measured height for such a band **in both
+emission paths** (`wrapStyle`'s inline value AND the per-device scoped CSS), or
+one of them reinstates the void.
+
+This legitimately costs band-geometry parity (the source's height included the
+card). Record the delta rather than "fixing" it by shipping dead space, and note
+the band id so the fail is attributable.
+
+## A scaffolded `src/` is a COPY — re-sync it after changing `lib/` or `templates/`
+
+`src/forge/*.ts` and the template components in a scaffolded project do not track
+the forge repo. Editing `lib/eca.ts` and rebuilding the existing project re-ran a
+bug that had already been fixed upstream, because `src/forge/eca.ts` was stale.
+Either copy each changed file into the project or re-scaffold; then run the
+project's own `npm run check` before building.
