@@ -1203,6 +1203,37 @@ const bandColumnCss = sections
 	} )
 	.join( '' );
 
+// A measured structure the SOURCE hides on a device end. The vendor class that
+// says so (`elementor-hidden-mobile`) survives sanitisation but the stylesheet
+// that gave it meaning never ships, so the rebuild showed eca.directory's matrix
+// as a squeezed table at 390px where the source shows nothing.
+const bandStructureCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const entries = theme?.structure ?? [];
+		if ( ! id || entries.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		for ( const entry of entries ) {
+			const hidden = entry.data?.hiddenAt ?? [];
+			if ( entry.type !== 'comparison' || hidden.length === 0 ) {
+				continue;
+			}
+			const selector = `${ scoped } [data-structure="comparison"]`;
+			if ( hidden.includes( 'tablet' ) ) {
+				rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selector }{display:none}}` );
+			}
+			if ( hidden.includes( 'mobile' ) ) {
+				rules.push( `@media (max-width: 767px){${ selector }{display:none}}` );
+			}
+		}
+		return rules.join( '' );
+	} )
+	.join( '' );
+
 /**
  * The band's measured CAROUSELS (`bandFacts[id].carousel`).
  *
@@ -1448,8 +1479,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
