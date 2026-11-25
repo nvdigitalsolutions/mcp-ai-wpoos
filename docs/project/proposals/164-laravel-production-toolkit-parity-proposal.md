@@ -1456,7 +1456,8 @@ argument. `zoom` has no entry on purpose: Ken Burns motion is `zoompan` applied
 **within** each still — a different filter on a different timeline — so
 answering `zoom` with a cross-fade would be a different video from the one asked
 for. The enum keeps `zoom` (the WordPress contract has it); the tool refuses it
-and names `zoompan` in the message.
+and names `zoompan` in the message. (Superseded by §164.24, which implements
+that drift.)
 
 Per-operation allowlists, because the two WordPress enums differ:
 
@@ -1511,3 +1512,89 @@ unchanged at 6 s, `zoom` refused, a 0.4 s image too short for a 0.5 s
 transition, a 0.25 s transition making three 2 s stills 5.5 s, an explicit
 duration equal to the image length refused, an out-of-range duration refused,
 and a single still reporting `none`.
+
+## 164.24 — `zoom` becomes Ken Burns motion (2026-11-25)
+
+§164.23 shipped `fade` and `slide` and refused `zoom`, naming `zoompan` as the
+missing filter. This is that filter. `create_video_from_images` now accepts all
+four of the WordPress enum's values.
+
+### The one enum value that is not a boundary
+
+`fade`, `slide` and `dissolve` join two inputs and therefore remove their
+overlap from the timeline. `zoom` does not: it is motion **inside** one still,
+so the joins stay hard cuts and the timeline keeps its full length. Two stills
+of 2 s are 4 s with `zoom`, and 3.5 s with a 0.5 s `fade`.
+
+That also makes `transition_duration` inert for `zoom`. It is not refused — the
+render is correct either way — but it is not sent, and the route's overlap
+arithmetic is gated on `XFADE[ name ]` rather than on `name !== 'none'`.
+
+A caller who wanted a zoom *transition* between two stills asked for something
+this tool does not do; the schema description says so rather than quietly
+substituting a cross-fade. Combining the drift with a cross-fade would need a
+separate `motion` field: one enum cannot express two axes, and inventing a
+second name inside `transition` would be worse than stating the limit.
+
+### Two traps, both measured
+
+`zoompan` has two behaviours that produce a file which `ffprobe` calls correct
+and a viewer calls broken.
+
+**`d` is a frame count per input frame.** With `-loop 1 -t N` the branch already
+carries N × fps frames, so `d` must be 1. Anything larger multiplies the clip's
+length instead of setting it. Verified: 2 s at 25 fps with `d=1` gives exactly
+50 frames and 2.000 s.
+
+**`zoom` restarts at 1 for every input frame.** The usual tutorial expression —
+`z='min(zoom+0.0015,1.5)'` — never moves on a looped still, because each of the
+50 input frames starts the accumulator again. The expression is driven by `on`,
+the output frame number, instead:
+
+```
+z='min(1.12,1+0.1200*max(on-1,0)/49)'
+```
+
+`max(on-1,0)` holds the first frame at exactly 1.0 whichever of 0 or 1 `on`
+begins at, and `min()` removes the overshoot if it begins at 1. Verified with
+frame-to-frame PSNR: frame 0 against frame 49 reads **7.27 dB**, where an unmoving
+still would read `inf`.
+
+### Upscale, or the pan shimmers
+
+`zoompan` computes `x`/`y` in integer source pixels, so a source the same size
+as the output steps a whole output pixel at a time and the drift shimmers.
+`kenBurnsUpscale()` doubles the branch first — but only while the doubled frame
+fits an 8.5-megapixel budget, so 720p and 1080p are doubled and 4K is not (a
+33-megapixel intermediate would buy nothing visible). Both branches are
+exercised in the smoke, at 1920x1080 and 3840x2160.
+
+The motion is a centred drift; there is no pan. A pan needs a direction, and a
+direction is a second parameter with no home in the WordPress contract.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `addons/media-worker/src/routes/video.js` | `zoom` added to `TRANSITIONS.images`; `KEN_BURNS_*`; `kenBurnsUpscale()`, `kenBurnsZoompan()`; the slideshow's overlap maths gated on `XFADE[ name ]` |
+| `lib/core/src/Tool/CreateVideoFromImagesTool.php` | `zoom` accepted; `BOUNDARY_TRANSITIONS` added so `transition_duration` travels only with a join |
+| `lib/laravel-adapter/src/Adapter/MediaWorkerVideoComposition.php` | `zoom` on the `images` allowlist; `BOUNDARY_TRANSITIONS` gates the duration |
+| `lib/core/resources/tool-readiness.php` | the `reason` describes three graph shapes, not two |
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **282 rows / 263 servable / 0 violations**
+(unchanged — no slug added). `bin/toolkit-parity.php`: **61 of 854**,
+`video-production` **12 of 21** (unchanged).
+
+`lib/core` 2,466 / 17,575 and adapter 359 / 1,923, both unchanged;
+`VideoCompositionAdapterTest` **30** (was 29 — the zoom refusal became a
+forwarding test, plus one pinning that `zoom` is not a merge transition); worker
+pure tests **35** (was 30 — five pin the `on`-driven expression, `d=1`, the
+output frame and the upscale budget).
+
+The handler smoke grows to **21 checks** and is the only place the drift is
+proven rather than described: two 2 s stills with `zoom` are 100 frames and
+4.000 s, frame 0 against frame 49 reads 7.27 dB, the second still starts its own
+drift, 1080p and 4K both keep their frame, WebM still encodes VP9, and a single
+still reports `none` because one still has no boundary — and no motion to add.

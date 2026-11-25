@@ -515,19 +515,46 @@ final class VideoCompositionAdapterTest extends TestCase
         $this->assertSame(5.0, $result['data']['duration']);
     }
 
-    public function test_a_slideshow_zoom_is_refused_as_motion_not_a_transition(): void
+    public function test_a_slideshow_zoom_is_motion_and_carries_no_duration(): void
     {
-        Http::fake();
+        $captured = null;
+        $this->fakeWorker($captured, self::CAPABILITIES, array(
+            'operation' => 'images',
+            'transition' => 'zoom',
+            'duration' => 6.0,
+        ));
 
         $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
             'image_urls' => array($this->video(), $this->mark()),
+            'duration_per_image' => 3,
+            'transition' => 'zoom',
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success'], 'zoom is implemented as motion, so it must not be refused');
+        $this->assertSame('zoom', $this->field($captured, 'transition'));
+
+        // Motion happens inside each still, so there is no boundary to describe
+        // and the timeline keeps its full length.
+        $this->assertNull($this->field($captured, 'transition_duration'));
+        $this->assertSame('zoom', $result['data']['transition']);
+        $this->assertArrayNotHasKey('transition_duration', $result['data']);
+        $this->assertSame(6.0, $result['data']['duration']);
+    }
+
+    public function test_zoom_is_not_a_merge_transition(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark()),
             'transition' => 'zoom',
         ));
 
         $this->assertInstanceOf(RuntimeException::class, $result);
         $this->assertSame(422, $result->getCode());
-        $this->assertStringContainsString('zoompan', $result->getMessage());
-        $this->assertStringContainsString('fade', $result->getMessage());
+        $this->assertStringContainsString('zoom', $result->getMessage());
 
         Http::assertNothingSent();
     }

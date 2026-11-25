@@ -32,6 +32,8 @@ import {
 	mergeMismatch,
 	xfadeOffsets,
 	videoEncoder,
+	kenBurnsUpscale,
+	kenBurnsZoompan,
 	VIDEO_CODECS,
 	AUDIO_CODECS,
 	PROCESS_FORMATS,
@@ -326,8 +328,10 @@ test( 'a transition one operation does not offer is refused there', () => {
 	assert.throws( () => resolveTransition( 'slide', 'merge' ), /none, fade, dissolve/ );
 	assert.throws( () => resolveTransition( 'dissolve', 'images' ), /none, fade, slide/ );
 
-	// The WordPress enum lists `zoom`; it is `zoompan`, not an xfade.
-	assert.throws( () => resolveTransition( 'zoom', 'images' ), /zoom/ );
+	// `zoom` is the reverse: Ken Burns motion is a still's, so a merge has no
+	// use for it — but a slideshow now accepts it.
+	assert.throws( () => resolveTransition( 'zoom', 'merge' ), /none, fade, dissolve/ );
+	assert.equal( resolveTransition( 'zoom', 'images' ), 'zoom' );
 
 	// The value reaches a filter argument, so an injection attempt is refused.
 	assert.throws( () => resolveTransition( 'fade; rm -rf /', 'merge' ), /must be one of/ );
@@ -339,19 +343,74 @@ test( 'the transition table only maps names ffmpeg knows', () => {
 	assert.equal( XFADE.slide, 'slideleft' );
 	assert.equal( XFADE.fade, 'fade' );
 	assert.equal( XFADE.dissolve, 'dissolve' );
-	assert.equal( XFADE.zoom, undefined, 'zoom is zoompan, not a transition' );
+	assert.equal( XFADE.zoom, undefined, 'zoom is zoompan motion inside one still, not an xfade' );
 } );
 
-test( 'no operation offers a transition that cannot be mapped', () => {
+test( 'every transition is either a mapped boundary filter or zoom', () => {
 	for ( const [ operation, names ] of Object.entries( TRANSITIONS ) ) {
 		for ( const name of names ) {
 			if ( 'none' === name ) {
 				continue;
 			}
 
+			if ( 'zoom' === name ) {
+				// Ken Burns motion is `zoompan` applied inside one still: the one
+				// value in the enum that is not a boundary between two inputs.
+				assert.equal( 'images', operation, 'zoom is a slideshow value; a merge has no still to move inside' );
+				assert.equal( XFADE.zoom, undefined, 'zoom must not be mapped to an xfade filter' );
+				continue;
+			}
+
 			assert.ok( XFADE[ name ], `${ operation } offers ${ name } but XFADE has no filter for it` );
 		}
 	}
+} );
+
+// ── Ken Burns motion ────────────────────────────────────────
+
+test( 'a branch is upscaled only while the doubling fits the budget', () => {
+	// `zoompan` steps in source pixels, so a doubled source halves every step.
+	assert.equal( kenBurnsUpscale( 1280, 720 ), 2 );
+	assert.equal( kenBurnsUpscale( 1920, 1080 ), 2 );
+
+	// Doubling 4K would build a 33-megapixel intermediate for no visible gain.
+	assert.equal( kenBurnsUpscale( 3840, 2160 ), 1 );
+	assert.equal( kenBurnsUpscale( 8192, 8192 ), 1 );
+} );
+
+test( 'the zoom expression is driven by on, not by the zoom accumulator', () => {
+	const filter = kenBurnsZoompan( 320, 240, 25, 2 );
+
+	// 2 s at 25 fps is 50 frames, so the last step divides by 49.
+	assert.match( filter, /max\(on-1,0\)\/49/ );
+
+	// The documented trap: `zoom` restarts at 1 for every input frame, so an
+	// expression built on it never moves on a looped still. Measured: the frame
+	// 0 to frame 49 drift is 7.3 dB PSNR, i.e. real and monotonic.
+	assert.ok( ! /zoom\s*\+/.test( filter ), `zoom must not be accumulated: ${ filter }` );
+
+	assert.match( filter, /^zoompan=/ );
+	assert.match( filter, /z='min\(1\.12,1\+0\.1200\*max\(on-1,0\)\/49\)'/ );
+} );
+
+test( 'd is 1, because a looped still is already N times fps frames long', () => {
+	// A larger `d` multiplies the clip's length instead of setting it: with
+	// `-loop 1 -t 2` the branch already carries 50 frames.
+	assert.match( kenBurnsZoompan( 320, 240, 25, 2 ), /:d=1:/ );
+} );
+
+test( 'the zoompan output frame and rate are the frame every branch shares', () => {
+	const filter = kenBurnsZoompan( 1280, 720, 30, 4 );
+
+	assert.match( filter, /:s=1280x720:/ );
+	assert.match( filter, /:fps=30$/ );
+	// 4 s at 30 fps is 120 frames.
+	assert.match( filter, /\/119\)/ );
+} );
+
+test( 'a duration too short to fill two frames still yields a usable expression', () => {
+	// `frames - 1` is a denominator, and a single frame has no motion.
+	assert.match( kenBurnsZoompan( 320, 240, 1, 0.1 ), /\/1\)/ );
 } );
 
 test( 'the encoder follows the container, because H.264 cannot go in webm', () => {

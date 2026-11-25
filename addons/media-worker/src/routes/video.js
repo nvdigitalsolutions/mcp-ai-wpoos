@@ -41,9 +41,9 @@ const COPY_CONTAINERS = {
 const FASTSTART_FORMATS = new Set( [ 'mp4', 'mov' ] );
 // A transition name is interpolated into a filter argument, so it is looked up
 // in a table and never relayed. `slide` is the tool's name for what ffmpeg
-// calls `slideleft`. `zoom` is deliberately absent: Ken Burns motion is
-// `zoompan` applied to each still, not an xfade between two of them, so there
-// is no entry a caller could ask for and get something else.
+// calls `slideleft`. This is the **boundary** table: every key here is a filter
+// that joins two inputs, and its absence is what distinguishes a boundary
+// transition from `zoom`, which is motion applied inside one still.
 const XFADE = {
 	fade: 'fade',
 	dissolve: 'dissolve',
@@ -51,10 +51,11 @@ const XFADE = {
 };
 // The WordPress tools declare these enums, so the route refuses exactly what
 // the tool refuses. `merge` copies by default, so its only transitions are the
-// two that re-encode; `images` has no copy path at all.
+// two that re-encode; `images` has no copy path at all. `zoom` is offered on
+// `images` only: it is Ken Burns motion, which has no counterpart on a merge.
 const TRANSITIONS = {
 	merge: [ 'none', 'fade', 'dissolve' ],
-	images: [ 'none', 'fade', 'slide' ],
+	images: [ 'none', 'fade', 'slide', 'zoom' ],
 };
 // The WordPress `merge_videos` schema declares a 1 s default. `images` has no
 // transition-duration parameter, so a shorter built-in suits stills that may be
@@ -62,6 +63,13 @@ const TRANSITIONS = {
 const DEFAULT_MERGE_TRANSITION_SECONDS = 1;
 const IMAGES_TRANSITION_SECONDS = 0.5;
 const MAX_TRANSITION_SECONDS = 5;
+// Ken Burns motion. `zoompan` works in integer source pixels, so a slow zoom on
+// a source the same size as the output steps a whole pixel at a time and
+// shimmers. Upscaling the branch before the filter makes those steps a fraction
+// of an output pixel. 12% over a still is the usual documentary drift; more
+// than that reads as a push rather than a move.
+const KEN_BURNS_MAX_ZOOM = 1.12;
+const KEN_BURNS_UPSCALE_BUDGET = 8500000;
 
 /**
  * Parse an optional bounded number from a request field.
@@ -518,6 +526,58 @@ function videoEncoder( format ) {
 	return 'webm' === format
 		? [ '-c:v', 'libvpx-vp9', '-crf', '32', '-b:v', '0', '-row-mt', '1' ]
 		: [ '-c:v', 'libx264', '-crf', '20' ];
+}
+
+/**
+ * How much a branch is upscaled before `zoompan`, as an integer factor.
+ *
+ * `zoompan` computes `x` and `y` in integer source pixels, so a source the same
+ * size as the output moves a whole output pixel at a time and shimmers. A
+ * doubled source halves every step. The budget stops a 4K still being doubled
+ * into a 33-megapixel intermediate for no visible gain.
+ *
+ * @param {number} width  Output width.
+ * @param {number} height Output height.
+ * @return {number} 2 when the doubling fits the budget, otherwise 1.
+ */
+function kenBurnsUpscale( width, height ) {
+	return 4 * width * height <= KEN_BURNS_UPSCALE_BUDGET ? 2 : 1;
+}
+
+/**
+ * The `zoompan` filter that drifts one still from 1.0 to KEN_BURNS_MAX_ZOOM.
+ *
+ * Two traps, both measured on ffmpeg 8.1.2:
+ *
+ *  - `d` is a frame count per **input** frame. With `-loop 1 -t N` the input
+ *    already carries N × fps frames, so `d` has to be 1; anything larger
+ *    multiplies the clip's length instead of setting it.
+ *  - `zoom` is a per-input-frame accumulator that starts again at 1, so the
+ *    usual `zoom + 0.0015` expression never moves on a looped still. The
+ *    expression is driven by `on` — the output frame number — instead. Verified:
+ *    a 50-frame branch goes 1.000 → 1.0588 → 1.120 (first and last frames
+ *    differ at 7.3 dB PSNR, so the drift is real and monotonic).
+ *
+ * `max(on-1,0)` holds the first frame at exactly 1.0 whichever of 0 or 1 `on`
+ * starts at, and `min()` removes the overshoot if it starts at 1.
+ *
+ * @param {number} width     Output width.
+ * @param {number} height    Output height.
+ * @param {number} frameRate Output frames per second.
+ * @param {number} seconds   How long the still is shown.
+ * @return {string} A `zoompan=…` filter, quoted for `-filter_complex`.
+ */
+function kenBurnsZoompan( width, height, frameRate, seconds ) {
+	// Two frames is the floor: one frame has no motion, and `frames - 1` is a
+	// denominator.
+	const frames = Math.max( 2, Math.round( frameRate * seconds ) );
+	const step = ( KEN_BURNS_MAX_ZOOM - 1 ).toFixed( 4 );
+
+	return (
+		`zoompan=z='min(${ KEN_BURNS_MAX_ZOOM },1+${ step }*max(on-1,0)/${ frames - 1 })'` +
+		`:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'` +
+		`:d=1:s=${ width }x${ height }:fps=${ frameRate }`
+	);
 }
 
 /**
@@ -1422,8 +1482,9 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 
 		// ── images ──
 		// A slideshow: every still is looped for a fixed duration, fitted into
-		// one frame, then concatenated. `contain` rather than `cover` because
-		// cropping a photo is worse than bars around it.
+		// one frame, then either cross-faded (`fade`/`slide`), given Ken Burns
+		// motion (`zoom`), or joined with hard cuts. `contain` rather than `cover`
+		// because cropping a photo is worse than bars around it.
 		if ( 'images' === operation ) {
 			if ( ! files.length ) {
 				cleanup();
@@ -1467,15 +1528,21 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			// transition only has an effect from the second image onward.
 			const boundaries = Math.max( 0, files.length - 1 );
 			const usedTransition = boundaries > 0 ? transition : 'none';
+			// Only a filter in `XFADE` joins two inputs. `zoom` is motion inside a
+			// still, so it has no boundary — and therefore no overlap to shorten
+			// the timeline or to check against the per-image duration.
+			const boundaryTransition = XFADE[ usedTransition ] ? usedTransition : null;
 
-			if ( 'none' !== usedTransition && transitionDuration >= perImage ) {
+			if ( boundaryTransition && transitionDuration >= perImage ) {
 				cleanup();
-				return res.status(400).json({ error: `A ${ usedTransition } transition lasts ${ transitionDuration } s, so each image has to be shown for longer than that; got ${ perImage } s.` });
+				return res.status(400).json({ error: `A ${ boundaryTransition } transition lasts ${ transitionDuration } s, so each image has to be shown for longer than that; got ${ perImage } s.` });
 			}
 
-			const offsets = 'none' === usedTransition ? null : xfadeOffsets( files.map( () => perImage ), transitionDuration );
+			const offsets = boundaryTransition
+				? xfadeOffsets( files.map( () => perImage ), transitionDuration )
+				: null;
 
-			if ( 'none' !== usedTransition && ! offsets ) {
+			if ( boundaryTransition && ! offsets ) {
 				cleanup();
 				return res.status(400).json({ error: 'The transitions would overlap: the images are too short for that transition duration.' });
 			}
@@ -1488,10 +1555,20 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 				args.push( '-loop', '1', '-t', String( perImage ), '-i', file.path );
 			}
 
+			// `zoompan` sits between the fit and the pixel-format conversion because
+			// it steps in source pixels — see `kenBurnsUpscale()`. Everything else
+			// keeps the fitted branch exactly as it was.
+			const upscaleFactor = 'zoom' === usedTransition ? kenBurnsUpscale( frameWidth, frameHeight ) : 1;
+			const motion =
+				'zoom' === usedTransition
+					? `,scale=${ frameWidth * upscaleFactor }:${ frameHeight * upscaleFactor },` +
+						kenBurnsZoompan( frameWidth, frameHeight, frameRate, perImage )
+					: '';
+
 			const branches = files.map(
 				( _file, index ) =>
 					`[${ index }:v]scale=${ frameWidth }:${ frameHeight }:force_original_aspect_ratio=decrease,` +
-					`pad=${ frameWidth }:${ frameHeight }:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${ frameRate },format=yuv420p[v${ index }]`
+					`pad=${ frameWidth }:${ frameHeight }:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${ frameRate }${ motion },format=yuv420p[v${ index }]`
 			);
 
 			let graph;
@@ -1763,6 +1840,8 @@ export {
 	mergeMismatch,
 	xfadeOffsets,
 	videoEncoder,
+	kenBurnsUpscale,
+	kenBurnsZoompan,
 	parseRational,
 	boolField,
 	atempoChain,
