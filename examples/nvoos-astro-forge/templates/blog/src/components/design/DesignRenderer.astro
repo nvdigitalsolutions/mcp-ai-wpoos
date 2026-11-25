@@ -1468,6 +1468,22 @@ const bandParallaxCss = sections
 			// component would drop the media column and its lane split entirely.
 			const splitHero = theme?.layout === 'split' && section.kind !== 'text' && section.kind !== 'raw';
 			const kind = splitHero ? 'hero' : section.kind;
+			// A query loop with nothing published has no cards to show. The band's own
+			// copy is real content and stays; the band goes only when the loop WAS the
+			// band — no title, no lede, nothing else to frame (see
+			// `SemanticSection.dynamicList`).
+			const emptyLoop =
+				section.dynamicList === true && ( section.slots.items?.length ?? 0 ) === 0;
+			const dropBand =
+				emptyLoop &&
+				! section.slots.title &&
+				( section.slots.body?.length ?? 0 ) === 0 &&
+				! theme?.comparison &&
+				( theme?.structure?.length ?? 0 ) === 0 &&
+				( theme?.logos?.length ?? 0 ) === 0;
+			if ( dropBand ) {
+				return null;
+			}
 			const splitMedia = splitHero ? mediaFromElementFacts( theme ) : undefined;
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
@@ -1521,7 +1537,7 @@ const bandParallaxCss = sections
 							</section>
 						);
 					})()}
-					{/* The band's COMPARISON MATRIX (Proposal 136 §4.1). A builder
+					{/* MEASURED STRUCTURE (see `SectionTheme.structure`). A builder
 					 * publishes each check and cross as an `<svg>`, and sanitisation strips
 					 * every one — so the classifier can never see the table and this fact is
 					 * measured at analyze time (eca.directory's "Compare User Roles": 52
@@ -1530,8 +1546,26 @@ const bandParallaxCss = sections
 					 * Rendered IN ADDITION to the band's own component, never instead of it:
 					 * that band also carries three phase cards, and swapping the kind would
 					 * delete them. The heading and links are the band's own — they already
-					 * rendered above, so the table renders without them. */}
-					{theme?.comparison && section.kind !== 'comparison' && (
+					 * rendered above, so the structure renders without them. */}
+					{( theme?.structure ?? [] ).map((entry) => {
+						if ( entry.type !== 'comparison' || section.kind === 'comparison' ) {
+							return null;
+						}
+						return (
+							<Comparison
+								section={{
+									...section,
+									slots: { ...section.slots, title: undefined, links: undefined },
+									comparison: entry.data,
+								}}
+								theme={theme}
+							/>
+						);
+					})}
+					{/* The typed fast path for a profile recorded before the channel
+					 * existed (`SectionTheme.comparison`); the scaffold emits `structure`
+					 * for both shapes, so this only fires on an un-regenerated project. */}
+					{theme?.comparison && ! theme.structure && section.kind !== 'comparison' && (
 						<Comparison
 							section={{
 								...section,

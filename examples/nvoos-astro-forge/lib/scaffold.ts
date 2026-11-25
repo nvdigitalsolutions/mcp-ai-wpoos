@@ -1843,6 +1843,18 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	if ( section.comparison && section.comparison.rows.length > 0 ) {
 		entry.push( `comparison: ${ JSON.stringify( section.comparison ) }` );
 	}
+	// MEASURED STRUCTURE — the generic channel (see `ForgeSection.structure`).
+	// A profile recorded before the channel existed carries only `comparison`, so
+	// synthesise the entry rather than emitting two shapes the renderer must know.
+	const structure =
+		section.structure && section.structure.length > 0
+			? section.structure
+			: section.comparison && section.comparison.rows.length > 0
+				? [ { type: 'comparison' as const, data: section.comparison } ]
+				: [];
+	if ( structure.length > 0 ) {
+		entry.push( `structure: ${ JSON.stringify( structure ) }` );
+	}
 	// The band's PANEL surface (`ForgeSection.panel`) — a literal colour + its
 	// legible ink, so the item group renders on the source's slab.
 	// The band's padding: an explicit profile fact wins — but only for the
@@ -2604,6 +2616,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tlogos?: Array<{ src: string; alt?: string }>;',
 		'/\*\* The band\u2019s COMPARISON MATRIX \u2014 role columns against feature rows,\n			 * recorded at analyze time from the raw HTML because sanitisation strips\n			 * the check/cross `<svg>` the build-time classifier would need. Rendered\n			 * as a real table AFTER the band\u2019s own component (the band usually holds\n			 * cards too). */',
 		'\tcomparison?: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string };',
+		'/\*\* MEASURED STRUCTURE (see `ForgeSection.structure`). One entry per\n			 * measured structure; rendered IN ADDITION to the band\u2019s classified kind,\n			 * never instead of it. `comparison` above is the typed fast path. */',
+		'\tstructure?: Array<{ type: \'comparison\'; data: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string } }>;',
 		'\t/** The band\u2019s measured PAGED carousel (`bandFacts[].carousel`) \u2014',
 		'\t * slides-per-view and the gutter the source renders. A logo wall is as',
 		'\t * often a slider as a static row, and the difference is only measurable',

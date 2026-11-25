@@ -2220,6 +2220,9 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		const comparison = comparisonOf( section );
 		if ( comparison ) {
 			fact.comparison = comparison;
+			// The generic channel (see `ForgeSection.structure`): one slot for every
+			// measured structure, so the next detector needs no profile plumbing.
+			fact.structure = [ { type: 'comparison', data: comparison } ];
 		}
 		// The boxed container's measure + column gap (124 §3): boxed sections
 		// constrain their CONTENT (the band bg stays full-width) — the rebuilt
