@@ -1,0 +1,334 @@
+<?php
+
+/**
+ * `docgen_capture_style_memory`.
+ *
+ * The behaviour worth pinning is the verbatim discipline: the exact text is
+ * always recoverable, a summary is a second record rather than a replacement,
+ * and a failure to keep the original stops before anything shorter is written.
+ * Also that the fields `MemoryStoreInterface` cannot hold are absent from the
+ * schema rather than silently dropped.
+ *
+ * @package Nvoos\Core\Tests
+ * @since   2.5.0
+ * @license MIT
+ */
+
+declare(strict_types=1);
+
+namespace Nvoos\Core\Tests\Unit\Tool;
+
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
+use Nvoos\Core\Tool\DocgenCaptureStyleMemoryTool;
+use PHPUnit\Framework\TestCase;
+
+final class DocgenCaptureStyleMemoryToolTest extends TestCase
+{
+    private ErrorFactoryInterface $errors;
+
+    protected function setUp(): void
+    {
+        $this->errors = $this->createMock(ErrorFactoryInterface::class);
+
+        $this->errors->method('create')->willReturnCallback(
+            static fn (string $code, string $message, array $data = array()): array => array(
+                'success' => false,
+                'error' => array('code' => $code, 'message' => $message),
+            )
+        );
+
+        $this->errors->method('validationFailed')->willReturnCallback(
+            static fn (string $message, array $fields = array()): array => array(
+                'success' => false,
+                'error' => array('code' => 'validation_failed', 'message' => $message),
+            )
+        );
+    }
+
+    // ─── Identity ──────────────────────────────────────────────────────────
+
+    public function test_it_declares_its_slug_and_flags(): void
+    {
+        $tool = $this->tool();
+
+        $this->assertSame('docgen_capture_style_memory', $tool->getSlug());
+        $this->assertSame('edit_posts', $tool->getRequiredCapability());
+        $this->assertContains('write', $tool->getCapabilityFlags());
+    }
+
+    /**
+     * `MemoryStoreInterface::store()` writes fixed columns and drops unknown
+     * keys. Offering these would let a caller believe provenance and validity
+     * were recorded when nothing was.
+     */
+    public function test_fields_the_store_cannot_hold_are_not_offered(): void
+    {
+        $properties = $this->tool()->getParametersSchema()['properties'];
+
+        foreach (
+            array(
+            'verbatim',
+            'allow_summarisation',
+            'sensitivity',
+            'consent_basis',
+            'subject_refs',
+            'attachments',
+            'recorded_at',
+            'valid_from',
+            'valid_until',
+            'tier',
+            ) as $absent
+        ) {
+            $this->assertArrayNotHasKey($absent, $properties);
+        }
+    }
+
+    // ─── The verbatim discipline ───────────────────────────────────────────
+
+    public function test_without_a_summary_one_verbatim_record_is_written(): void
+    {
+        $memory = $this->memory();
+
+        $result = $this->tool($memory)->execute(array(
+            'agent_id' => '42',
+            'content' => 'A voice that prefers short sentences.',
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(1, $result['data']['records']);
+        $this->assertNull($result['data']['archival_id']);
+        $this->assertCount(1, $memory->records);
+        $this->assertSame(MemoryStoreInterface::TIER_RECALL, $memory->records[0]['tier']);
+        $this->assertSame('A voice that prefers short sentences.', $memory->records[0]['content']);
+    }
+
+    public function test_a_summary_becomes_the_recall_representative_and_the_original_stays_archival(): void
+    {
+        $memory = $this->memory();
+
+        $result = $this->tool($memory)->execute(array(
+            'agent_id' => '42',
+            'content' => 'Long verbatim sample. ' . str_repeat('detail ', 50),
+            'summary' => 'Terse, declarative, numbers over adjectives.',
+        ));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(2, $result['data']['records']);
+        $this->assertCount(2, $memory->records);
+
+        $archival = $memory->records[0];
+        $recall = $memory->records[1];
+
+        $this->assertSame(MemoryStoreInterface::TIER_ARCHIVAL, $archival['tier']);
+        $this->assertStringStartsWith('Long verbatim sample.', $archival['content']);
+        $this->assertSame(MemoryStoreInterface::TIER_RECALL, $recall['tier']);
+        $this->assertSame('Terse, declarative, numbers over adjectives.', $recall['content']);
+    }
+
+    public function test_a_summary_identical_to_the_content_writes_one_record(): void
+    {
+        $memory = $this->memory();
+
+        $result = $this->tool($memory)->execute(array(
+            'agent_id' => '42',
+            'content' => 'Same text.',
+            'summary' => 'Same text.',
+        ));
+
+        $this->assertSame(1, $result['data']['records']);
+        $this->assertCount(1, $memory->records);
+    }
+
+    /**
+     * A summary without its original breaks the discipline this tool exists for,
+     * so a failure to keep the original must stop before anything shorter lands.
+     */
+    public function test_a_failed_archival_write_stores_no_summary(): void
+    {
+        $memory = $this->memory(MemoryStoreInterface::TIER_ARCHIVAL);
+
+        $result = $this->tool($memory)->execute(array(
+            'agent_id' => '42',
+            'content' => 'The original.',
+            'summary' => 'A summary.',
+        ));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('store_failed', $result['error']['code']);
+        $this->assertCount(1, $memory->records, 'Only the failed archival attempt was made.');
+        $this->assertSame(MemoryStoreInterface::TIER_ARCHIVAL, $memory->records[0]['tier']);
+    }
+
+    public function test_a_failed_recall_write_is_reported(): void
+    {
+        $memory = $this->memory(MemoryStoreInterface::TIER_RECALL);
+
+        $result = $this->tool($memory)->execute(array(
+            'agent_id' => '42',
+            'content' => 'The original.',
+        ));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('store_failed', $result['error']['code']);
+    }
+
+    // ─── Placement ─────────────────────────────────────────────────────────
+
+    public function test_the_wing_is_derived_from_the_agent_and_the_room_from_the_kind(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array(
+            'agent_id' => 42,
+            'kind' => 'drafts',
+            'content' => 'A draft.',
+        ));
+
+        $this->assertSame('user/42', $memory->records[0]['wing']);
+        $this->assertSame('drafts', $memory->records[0]['room']);
+        $this->assertSame('42', $memory->records[0]['agent_id']);
+    }
+
+    public function test_the_default_kind_is_style(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array('agent_id' => 'u1', 'content' => 'x'));
+
+        $this->assertSame('style', $memory->records[0]['room']);
+        $this->assertSame('Style sample', $memory->records[0]['title']);
+    }
+
+    public function test_tags_always_carry_docgen_and_the_kind(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array(
+            'agent_id' => 'u1',
+            'kind' => 'drafts',
+            'content' => 'x',
+            'tags' => array('legal', 'docgen', ''),
+        ));
+
+        $this->assertSame(array('docgen', 'drafts', 'legal'), $memory->records[0]['tags']);
+    }
+
+    public function test_the_ttl_defaults_to_two_years(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array('agent_id' => 'u1', 'content' => 'x'));
+
+        $this->assertSame(DocgenCaptureStyleMemoryTool::DEFAULT_TTL, $memory->records[0]['ttl']);
+    }
+
+    public function test_importance_is_clamped_to_zero_and_one(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array('agent_id' => 'u1', 'content' => 'x', 'importance' => 5));
+
+        $this->assertSame(1.0, $memory->records[0]['importance']);
+    }
+
+    /**
+     * `stringParam()` strips tags, which would silently mangle a style sample
+     * containing "a < b" or a draft the author wrote in markdown.
+     */
+    public function test_the_content_is_stored_exactly_as_given(): void
+    {
+        $memory = $this->memory();
+        $content = 'When a < b, prefer the shorter form. **Bold** stays.';
+
+        $this->tool($memory)->execute(array('agent_id' => 'u1', 'content' => $content));
+
+        $this->assertSame($content, $memory->records[0]['content']);
+    }
+
+    // ─── Refusals ──────────────────────────────────────────────────────────
+
+    public function test_an_agent_id_is_required(): void
+    {
+        $result = $this->tool()->execute(array('content' => 'x'));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('validation_failed', $result['error']['code']);
+    }
+
+    public function test_empty_content_is_refused(): void
+    {
+        $result = $this->tool()->execute(array('agent_id' => 'u1', 'content' => '   '));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('validation_failed', $result['error']['code']);
+    }
+
+    public function test_an_unknown_kind_is_refused(): void
+    {
+        $result = $this->tool()->execute(array('agent_id' => 'u1', 'content' => 'x', 'kind' => 'poetry'));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('validation_failed', $result['error']['code']);
+    }
+
+    // ─── Helpers ───────────────────────────────────────────────────────────
+
+    private function tool(?MemoryStoreInterface $memory = null): DocgenCaptureStyleMemoryTool
+    {
+        return new DocgenCaptureStyleMemoryTool($this->errors, $memory ?? $this->memory());
+    }
+
+    /**
+     * A recording memory store.
+     *
+     * @param string $failTier Tier whose write should fail; empty for none.
+     */
+    private function memory(string $failTier = ''): MemoryStoreInterface
+    {
+        return new class ($failTier) implements MemoryStoreInterface {
+            /** @var list<array<string, mixed>> */
+            public array $records = array();
+
+            public function __construct(private readonly string $failTier)
+            {
+            }
+
+            public function store(array $record): array
+            {
+                $this->records[] = $record;
+
+                if ('' !== $this->failTier && ($record['tier'] ?? '') === $this->failTier) {
+                    return array('success' => false, 'error' => 'The store refused this tier.');
+                }
+
+                return array('success' => true, 'memory_id' => 'mem-' . count($this->records));
+            }
+
+            public function get(string $memoryId): array
+            {
+                return array('found' => false);
+            }
+
+            public function update(string $memoryId, array $patch): array
+            {
+                return array('success' => true);
+            }
+
+            public function delete(string $memoryId): array
+            {
+                return array('success' => true);
+            }
+
+            public function search(string $query, array $filters = array(), int $limit = 10): array
+            {
+                return array();
+            }
+
+            public function listByAgent(string $agentId, array $filters = array(), int $limit = 50, int $offset = 0): array
+            {
+                return array('memories' => array(), 'total' => 0);
+            }
+        };
+    }
+}
