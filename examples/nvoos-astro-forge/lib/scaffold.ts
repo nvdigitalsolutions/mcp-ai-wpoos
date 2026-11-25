@@ -2482,6 +2482,9 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		if ( base.align ) {
 			parts.push( `align: ${ tsString( base.align ) }` );
 		}
+		if ( base.labelInk ) {
+			parts.push( `labelInk: ${ tsString( base.labelInk ) }` );
+		}
 		// A device override only when the SOURCE changes direction there — an
 		// unchanged value would double the stylesheet for nothing.
 		for ( const device of [ 'tablet', 'mobile' ] as const ) {
@@ -2496,6 +2499,20 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			parts.push( `${ device }: { ${ overrideParts.join( ', ' ) } }` );
 		}
 		entry.push( `rowLayout: { ${ parts.join( ', ' ) } }` );
+	}
+	// The NARROW, centred containers nested in the band (`ForgeBandNarrowBox`).
+	// The wrapper has no id, so the fact names its parent and the measured width.
+	if ( bandFacts?.narrowBoxes && bandFacts.narrowBoxes.length > 0 ) {
+		entry.push(
+			`narrowBoxes: [${ bandFacts.narrowBoxes
+				.map(
+					( box ) =>
+						`{ parentId: ${ tsString( box.parentId ) }, width: ${ box.width }, align: ${ tsString(
+							box.align
+						) }${ box.alignItems ? `, alignItems: ${ tsString( box.alignItems ) }` : '' } }`
+				)
+				.join( ', ' ) }]`
+		);
 	}
 	// WHERE the source stops splitting its own row.
 	//
@@ -2968,9 +2985,16 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t\tgap?: number;',
 		'\t\tjustify?: string;',
 		'\t\talign?: string;',
+		'\t\t/** The band\u2019s LABEL ink (a counter title / dd), when one is present:',
+		'\t\t * the muted default is unreadable on a dark panel. */',
+		'\t\tlabelInk?: string;',
 		"\t\ttablet?: { direction: 'row' | 'column'; gap?: number };",
 		"\t\tmobile?: { direction: 'row' | 'column'; gap?: number };",
 		'\t};',
+		'\t/** The NARROW containers nested in the band, measured: a builder insets',
+		'\t * copy by wrapping it in a smaller centred container (500px inside 1280).',
+		'\t * The wrapper has no builder id, so the fact names its PARENT. */',
+		"\tnarrowBoxes?: Array<{ parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string }>;",
 		'\t/** The breakpoint at which the SOURCE stops laying its own lanes side',
 		'\t * by side (`analyze --geometry`, measured): the rebuild stacks there',
 		'\t * instead of squeezing a copy column. Absent → the template\u2019s mobile',

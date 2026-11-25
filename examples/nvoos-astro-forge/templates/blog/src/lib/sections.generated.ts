@@ -117,9 +117,16 @@ export interface SectionTheme {
 		gap?: number;
 		justify?: string;
 		align?: string;
+		/** The band's LABEL ink (a counter title / dd), when one is present: the
+		 * muted default is unreadable on a dark panel. */
+		labelInk?: string;
 		tablet?: { direction: 'row' | 'column'; gap?: number };
 		mobile?: { direction: 'row' | 'column'; gap?: number };
 	};
+	/** The NARROW containers nested in the band, measured: a builder insets copy
+	 * by wrapping it in a smaller centred container; the wrapper has no builder
+	 * id, so each fact names its parent. */
+	narrowBoxes?: Array<{ parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string }>;
 	/** Which side of the split holds the media — measured from the lane order. */
 	mediaSide?: 'left' | 'right';
 	/** The split's COPY lane measure in px (`ForgeBandFacts.copyWidth`): the

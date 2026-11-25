@@ -1589,11 +1589,52 @@ const rowLayoutCss = sections
 		const items = widths
 			.map( ( width, item ) => `${ scoped } .ds-stat:nth-child(${ item + 1 }){flex:0 0 ${ width }px}` )
 			.join( '' );
+		// The labels' measured ink: the muted default is unreadable on a dark panel.
+		const labelInk = layout.labelInk ? `${ scoped } .ds-stat__label{color:${ layout.labelInk }}` : '';
 		return (
 			`${ scoped } .ds-stats{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:${ layout.gap ?? 0 }px}` +
 			`${ scoped } .ds-stat{text-align:start;flex:0 1 auto}` +
-			items
+			items +
+			labelInk
 		);
+	} )
+	.join( '' );
+
+/**
+ * The NARROW containers nested in a band (`ForgeBandNarrowBox`).
+ *
+ * A builder insets copy by wrapping it in a smaller centred container —
+ * eca.directory's about-us CTA puts the eyebrow, title and button in a 500px
+ * `e-con-inner` inside 1280. Without the width the wrapper stretched, so the
+ * eyebrow chip painted as a 1280px purple bar and the title wrapped at 1280
+ * (2026-11-25). The width is the source's own rendered box, not a guess.
+ */
+const narrowBoxCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const boxes = theme?.narrowBoxes ?? [];
+		if ( ! id || boxes.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return boxes
+			.map( ( box ) => {
+				const margin =
+					box.align === 'center'
+						? 'margin-left:auto;margin-right:auto'
+						: box.align === 'start'
+							? 'margin-right:auto'
+							: 'margin-left:auto';
+				return (
+					`${ scoped } .elementor-element-${ box.parentId } > .e-con-inner{width:${ box.width }px;max-width:100%;${ margin };` +
+					// The source's inset container is a FLEX column: `align-items` is what
+					// shrinks the eyebrow chip to its text instead of a full-width bar, and a
+					// block container ignores it entirely.
+					`${ box.alignItems ? `display:flex;flex-direction:column;align-items:${ box.alignItems };` : '' }}`
+				);
+			} )
+			.join( '' );
 	} )
 	.join( '' );
 
@@ -1944,8 +1985,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandSplitCss || splitBandCss || rowLayoutCss || textBandCss || breadcrumbCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandSplitCss }${ splitBandCss }${ rowLayoutCss }${ textBandCss }${ breadcrumbCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandSplitCss || splitBandCss || rowLayoutCss || narrowBoxCss || textBandCss || breadcrumbCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandSplitCss }${ splitBandCss }${ rowLayoutCss }${ narrowBoxCss }${ textBandCss }${ breadcrumbCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);

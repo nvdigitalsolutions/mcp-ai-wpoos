@@ -2016,11 +2016,19 @@ function collectBandColumnFacts( input: {
 						? justifyRaw
 						: flexKeyword( justifyRaw );
 			const align = flexKeyword( style.alignItems );
+			// The band's LABEL ink: a counter title (`dd` / `.elementor-counter-title`)
+			// carries the source's own muted colour, which is white on a dark panel.
+			const labelNode = band.querySelector( '.elementor-counter-title, dd, small' );
+			const labelInk =
+				labelNode && getComputedStyle( labelNode ).color !== 'rgb(0, 0, 0)'
+					? getComputedStyle( labelNode ).color
+					: undefined;
 			out[ id ] = {
 				direction: style.flexDirection === 'column' ? 'column' : 'row',
 				...( gap > 0 ? { gap } : {} ),
 				...( justify ? { justify } : {} ),
 				...( align ? { align } : {} ),
+				...( labelInk ? { labelInk } : {} ),
 			};
 		}
 		return out;
@@ -2288,7 +2296,16 @@ export function collectBandLayoutFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, { split?: number[]; centered?: boolean; rows?: Array< { id: string; widths: number[] } >; copyWidth?: number } > {
+} ): Record<
+	string,
+	{
+		split?: number[];
+		centered?: boolean;
+		rows?: Array< { id: string; widths: number[] } >;
+		copyWidth?: number;
+		narrowBoxes?: Array< { parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string } >;
+	}
+> {
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -2301,7 +2318,16 @@ export function collectBandLayoutFacts( input: {
 	// The SAME structural signature the template's hero rule uses, so a measured
 	// ratio always lands on the element the rule will lay out.
 	const TRACK = ':is(div, section):has(> div > h1):has(> div > img)';
-	const out: Record< string, { split?: number[]; centered?: boolean; rows?: Array<{ id: string; widths: number[] }>; copyWidth?: number } > = {};
+	const out: Record<
+		string,
+		{
+			split?: number[];
+			centered?: boolean;
+			rows?: Array< { id: string; widths: number[] } >;
+			copyWidth?: number;
+			narrowBoxes?: Array< { parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string } >;
+		}
+	> = {};
 	for ( const id of input.ids ) {
 		const candidates =
 			input.kind === 'built'
@@ -2334,7 +2360,13 @@ export function collectBandLayoutFacts( input: {
 		// renderer keeps its historical default for a profile that has no fact
 		// (older profiles, unmeasured pages) and only opts OUT on an explicit
 		// `false`.
-		const entry: { split?: number[]; centered?: boolean; rows?: Array<{ id: string; widths: number[] }>; copyWidth?: number } = { centered: false };
+		const entry: {
+			split?: number[];
+			centered?: boolean;
+			rows?: Array< { id: string; widths: number[] } >;
+			copyWidth?: number;
+			narrowBoxes?: Array< { parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string } >;
+		} = { centered: false };
 		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
 			const style = getComputedStyle( node );
 			if ( style.display === 'table-cell' && style.verticalAlign === 'middle' ) {
@@ -2457,6 +2489,66 @@ export function collectBandLayoutFacts( input: {
 		}
 		if ( rows.length > 0 ) {
 			entry.rows = rows;
+		}
+		// NARROW nested containers (see `ForgeBandNarrowBox`): a builder insets copy
+		// by wrapping it in a smaller centred container — eca.directory's about-us
+		// CTA puts the eyebrow, the title and the button in a 500px `e-con-inner`
+		// inside a 1280px band, so the chip shrank to its text and the copy wrapped
+		// at 500. The wrapper carries no id, so the fact names its PARENT.
+		const narrowBoxes: Array< {
+			parentId: string;
+			width: number;
+			align: 'start' | 'center' | 'end';
+			alignItems?: string;
+		} > = [];
+		for ( const node of Array.from(
+			element.querySelectorAll( '[class~="e-con-inner"], [class~="elementor-container"]' )
+		) ) {
+			const parent = node.parentElement;
+			if ( ! parent ) {
+				continue;
+			}
+			const parentId = /elementor-element-([0-9a-f]{4,})/i.exec( parent.getAttribute( 'class' ) ?? '' )?.[ 1 ];
+			if ( ! parentId ) {
+				continue;
+			}
+			const rect = node.getBoundingClientRect();
+			const parentRect = parent.getBoundingClientRect();
+			// A full-width stage is not an inset; a tiny one is a widget, not a lane.
+			// The band-relative floor keeps the band's own content box out of the list.
+			const bandWidth = element.getBoundingClientRect().width;
+			if ( rect.width < 120 || rect.width > parentRect.width - 8 || rect.width >= bandWidth * 0.85 ) {
+				continue;
+			}
+			const gapLeft = Math.round( rect.left - parentRect.left );
+			const gapRight = Math.round( parentRect.right - rect.right );
+			const align = Math.abs( gapLeft - gapRight ) <= 2 ? 'center' : gapLeft <= 2 ? 'start' : 'end';
+			const alignItems = ( ( value: string ): string | undefined => {
+				switch ( value ) {
+					case 'start':
+					case 'self-start':
+					case 'flex-start':
+						return 'flex-start';
+					case 'end':
+					case 'self-end':
+					case 'flow-end':
+					case 'flex-end':
+						return 'flex-end';
+					case 'center':
+						return 'center';
+					default:
+						return undefined;
+				}
+			} )( getComputedStyle( node ).alignItems );
+			narrowBoxes.push( {
+				parentId,
+				width: Math.round( rect.width ),
+				align,
+				...( alignItems ? { alignItems } : {} ),
+			} );
+		}
+		if ( narrowBoxes.length > 0 ) {
+			entry.narrowBoxes = narrowBoxes;
 		}
 		if ( entry.split || entry.centered !== undefined || entry.rows ) {
 			out[ id ] = entry;
@@ -3063,6 +3155,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			// (see `ForgeBandRowFact`).
 			if ( layout?.rows && layout.rows.length > 0 ) {
 				band.rows = layout.rows;
+			}
+			// The NARROW, centred containers inside the band (see
+			// `ForgeBandNarrowBox`) — the copy lane a component band rebuilds.
+			if ( layout?.narrowBoxes && layout.narrowBoxes.length > 0 ) {
+				band.narrowBoxes = layout.narrowBoxes;
 			}
 			const box = mergeBoxFacts( desktopBox[ id ]?.boxes, tabletBox[ id ]?.boxes, mobileBox[ id ]?.boxes );
 			if ( box ) {

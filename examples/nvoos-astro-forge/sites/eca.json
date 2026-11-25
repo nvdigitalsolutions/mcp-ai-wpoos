@@ -13377,8 +13377,8 @@
 		},
 		"contact-us": {
 			"url": "https://eca.directory/contact-us/",
-			"measuredAt": "2026-11-25T19:04:30.719Z",
-			"sourceHash": "daeb825cc4e2fd43",
+			"measuredAt": "2026-11-25T19:37:07.812Z",
+			"sourceHash": "701301caaa052a6c",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -13916,6 +13916,13 @@
 						}
 					},
 					"titleText": "Get in touch",
+					"narrowBoxes": [
+						{
+							"parentId": "e7f1a29",
+							"width": 894,
+							"align": "start"
+						}
+					],
 					"box": {
 						"elementor-element-a969758": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 90px 0px"
@@ -14365,6 +14372,14 @@
 						"level": 2
 					},
 					"centeredContent": true,
+					"narrowBoxes": [
+						{
+							"parentId": "7f49f06",
+							"width": 1100,
+							"align": "center",
+							"alignItems": "center"
+						}
+					],
 					"box": {
 						"elementor-element-7f49f06": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -14713,8 +14728,8 @@
 		},
 		"about-us": {
 			"url": "https://eca.directory/about-us/",
-			"measuredAt": "2026-11-25T19:03:53.506Z",
-			"sourceHash": "11b0accddac2bb58",
+			"measuredAt": "2026-11-25T19:36:28.529Z",
+			"sourceHash": "ba879f56eb1dbfa8",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -15847,6 +15862,13 @@
 						}
 					},
 					"titleText": "Why choose our platform",
+					"narrowBoxes": [
+						{
+							"parentId": "14c60321",
+							"width": 1100,
+							"align": "center"
+						}
+					],
 					"box": {
 						"e-con-inner": {
 							"base": "padding:60px 0px 60px 0px;margin:0px 140px 0px 140px",
@@ -16020,17 +16042,20 @@
 						"desktop": {
 							"direction": "row",
 							"gap": 60,
-							"justify": "space-between"
+							"justify": "space-between",
+							"labelInk": "rgb(255, 255, 255)"
 						},
 						"tablet": {
 							"direction": "row",
 							"gap": 60,
-							"justify": "space-between"
+							"justify": "space-between",
+							"labelInk": "rgb(255, 255, 255)"
 						},
 						"mobile": {
 							"direction": "row",
 							"gap": 40,
-							"justify": "space-between"
+							"justify": "space-between",
+							"labelInk": "rgb(255, 255, 255)"
 						}
 					},
 					"classes": [
@@ -16133,6 +16158,14 @@
 						"text": "Our blog",
 						"level": 2
 					},
+					"narrowBoxes": [
+						{
+							"parentId": "3b9857a4",
+							"width": 500,
+							"align": "center",
+							"alignItems": "center"
+						}
+					],
 					"box": {
 						"elementor-element": {
 							"base": "margin:0px 0px 0px 0px"

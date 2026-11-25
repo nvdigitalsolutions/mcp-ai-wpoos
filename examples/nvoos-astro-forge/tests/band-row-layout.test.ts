@@ -82,6 +82,24 @@ describe( 'sections.generated — the band row layout', () => {
 		expect( module ).toContain( 'statsWidths: [151, 253, 197, 163]' );
 	} );
 
+	it( 'carries the narrow inset boxes and the label ink', () => {
+		const module = entriesOf(
+			renderSectionsGenerated(
+				profileWith( {
+					rowLayout: { desktop: { direction: 'row', gap: 60, labelInk: 'rgb(255, 255, 255)' } },
+					narrowBoxes: [ { parentId: 'abc999', width: 500, align: 'center', alignItems: 'center' } ],
+				} as ForgeBandFacts )
+			)
+		);
+		// The counters' labels are white on the source's dark panel; the rebuild's
+		// muted default would be unreadable.
+		expect( module ).toContain( "labelInk: 'rgb(255, 255, 255)'" );
+		// The wrapper has no id of its own, so the fact names its parent.
+		expect( module ).toContain(
+			"narrowBoxes: [{ parentId: 'abc999', width: 500, align: 'center', alignItems: 'center' }]"
+		);
+	} );
+
 	it( 'carries a split copy measure', () => {
 		const module = entriesOf(
 			renderSectionsGenerated(
