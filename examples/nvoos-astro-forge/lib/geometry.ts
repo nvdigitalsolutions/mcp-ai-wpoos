@@ -152,6 +152,8 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						columnWidths?: number[];
 						content?: { width: number; x: number };
 						kind?: string;
+						/** The build declares it renders this band shorter (see `BandGeometry.collapsed`). */
+						collapsed?: boolean;
 					}
 				> = {};
 				for ( const id of ids ) {
@@ -369,6 +371,9 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					// builder columns even when the source row did. Tag the kind so the
 					// column diff can tell that apart from a row that went missing.
 					const bandKind = kind === 'built' ? element.getAttribute( 'data-section' ) : null;
+					// The build declares a band it deliberately renders SHORTER (its grid
+					// folded away or its list is empty) — see `BandGeometry.collapsed`.
+					const collapsed = kind === 'built' && element.hasAttribute( 'data-section-collapsed' );
 					out[ id ] = {
 						height: rect.height,
 						width: rect.width,
@@ -381,6 +386,7 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						...( columns ? { columns: columns.heights, columnWidths: columns.widths } : {} ),
 						...( content ? { content } : {} ),
 						...( bandKind ? { kind: bandKind } : {} ),
+						...( collapsed ? { collapsed: true } : {} ),
 					};
 				}
 				return out;
@@ -398,6 +404,7 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					marginBottom: Math.round( band.marginBottom ),
 					...( band.columns ? { columns: band.columns } : {} ),
 					...( band.columnWidths ? { columnWidths: band.columnWidths } : {} ),
+					...( band.collapsed ? { collapsed: true } : {} ),
 					...( band.content ? { content: band.content } : {} ),
 					...( band.kind ? { kind: band.kind } : {} ),
 				};
@@ -4482,6 +4489,14 @@ export function diffGeometry(
 					delta: 0,
 					severity: 'fail',
 				} );
+				continue;
+			}
+			if ( actual.collapsed ) {
+				// The build DECLARED this band shorter: its grid folded away (every card
+				// was the band's own sub-heading) or its query loop has nothing
+				// published. The source's height is the height WITH that content, so a
+				// comparison here reports drift where the build made a decision. The
+				// wrapper's `data-section-collapsed` is the record of why.
 				continue;
 			}
 			for ( const { key, metric } of METRICS ) {

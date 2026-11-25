@@ -369,3 +369,36 @@ After any design refresh on an outline-builder site, diff `bandSource` and the
 section background facts against the previous profile before building. If they
 regressed, apply the one fact you came for to the OLD profile instead of shipping
 the refresh.
+
+## An unseeded Elementor widget is a `content` blob
+
+`collectWidgets` resolves an unknown `elementor-widget-<name>` to
+`{ kind: 'content' }`, which flattens the widget's own structure **and** forces
+the band to `low` confidence (the `effectiveConfidence` rule). `posts` was
+unseeded for a long time: a query loop was indistinguishable from an authored
+grid. Seed the widget dictionary before concluding a band "has no structure" —
+and give loops the `list` role, which names them without downgrading confidence
+or skipping their real cards.
+
+## A design refresh can flip the band model
+
+`analyze --design --write` may switch `bandSource` between `sections` and
+`outline`. Outline bands carry no `bgColor`/`bgGradient`, so the flip repaints
+every band transparent. `diffDesignFacts` now reports the flip and each dropped
+surface, and `mergeProfileDraft` carries surfaces forward on surviving ids — but
+check `bandSource` after any refresh on an outline-builder site.
+
+## Re-scaffolding for a profile change is a wrecking ball
+
+`forge regen <profile> --target <dir> --only sections` rewrites the generated
+modules in place (byte-identical to the scaffold's output) and skips modules the
+project does not ship. On Windows a full re-scaffold fails with `EPERM` whenever
+an editor or watcher holds the target; `regen` never swaps the directory, so it
+does not. Use it for profile-fact changes; re-scaffold only for template changes.
+
+## A band you deliberately render shorter is not drift
+
+Emit `data-section-collapsed` on the wrapper (the renderer does this when a grid
+folds away) and `diffGeometry` skips the band. Without it, a correct decision
+scores as geometry drift: eca.directory's updates band read 478 → 239 and
+counted three fails.

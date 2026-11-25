@@ -1037,3 +1037,50 @@ describe( 'flex-container card rows (Elementor 4.x)', () => {
 		expect( section.slots.body ).toContain( 'Student' );
 	} );
 } );
+
+// ---------------------------------------------------------------------------
+// Elementor's own vocabulary (2026-11-25).
+//
+// `posts` was unseeded, and an unseeded name resolves to `content` — which
+// forces the band to `low` confidence by the `effectiveConfidence` rule and
+// says nothing about the band being a QUERY LOOP. A posts band is a recognised
+// widget, not an unknown one: it gets its own `list` role, which names the loop
+// without claiming its cards are authored.
+// ---------------------------------------------------------------------------
+describe( 'seeded Elementor vocabulary', () => {
+	it( 'knows the posts widget and marks the band as a dynamic list', () => {
+		expect( SEEDED_WIDGET_ROLES.posts?.kind ).toBe( 'list' );
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>News &amp; Insights</h2>' ) +
+				WIDGET(
+					'posts',
+					'<div class="elementor-posts-container"><article class="elementor-post"><h3 class="elementor-post__title"><a>Hello world!</a></h3></article></div>'
+				)
+		);
+		const [ band ] = classifyHtml( html );
+		expect( band.dynamicList ).toBe( true );
+		// A recognised loop is not an "unknown widget": confidence stays as measured.
+		expect( band.confidence ).not.toBe( 'low' );
+		// The placeholder card is still suppressed.
+		expect( band.slots.items ?? [] ).toEqual( [] );
+	} );
+
+	it( 'does not mark an authored card grid as a dynamic list', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Phases</h2>' ) +
+				WIDGET( 'icon-box', '<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Phase 1</h3><p>Pilot setup.</p></div></div>' )
+		);
+		const [ band ] = classifyHtml( html );
+		expect( band.dynamicList ).toBeUndefined();
+	} );
+
+	it( 'reads a tab set as an accordion (its titles are controls, not buttons)', () => {
+		expect( SEEDED_WIDGET_ROLES.tabs?.kind ).toBe( 'accordion' );
+		const tab = ( title: string, body: string ) =>
+			`<div class="elementor-tab-title">${ title }</div><div class="elementor-tab-content">${ body }</div>`;
+		const html = SECTION( WIDGET( 'tabs', tab( 'One', 'First pane copy.' ) + tab( 'Two', 'Second pane copy.' ) ) );
+		const [ band ] = classifyHtml( html );
+		expect( band.kind ).toBe( 'accordion' );
+		expect( ( band.slots.items ?? [] ).map( ( item ) => item.title ) ).toEqual( [ 'One', 'Two' ] );
+	} );
+} );

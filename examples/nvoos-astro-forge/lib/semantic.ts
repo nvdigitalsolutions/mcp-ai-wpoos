@@ -269,6 +269,17 @@ export interface SemanticSection {
 	marquee?: { items: MarqueeItem[]; speed?: string };
 	/** Comparison band: columns then rows; `values` align to the columns. */
 	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string };
+	/**
+	 * The band renders a DYNAMIC LIST — a query loop (Elementor's Posts /
+	 * Portfolio widget), not authored cards.
+	 *
+	 * Recorded because the two cases need different empty states: an authored
+	 * grid with no cards is a classification miss, while a query loop with no
+	 * published cards is the CMS honestly having nothing. The renderer also uses
+	 * it to keep a loop band's empty state to its own COPY instead of inventing
+	 * placeholder tiles.
+	 */
+	dynamicList?: boolean;
 }
 
 /** classifyHtml options (the generated renderer passes the manifest's
@@ -355,7 +366,7 @@ const WPB_ROW = /(^|\s)(?:vc_row|wpb_row)(?:[\s-]|$)/;
  * they classify as `content` (slots merge, the section shape decides the
  * kind) and the operator can pin them per-profile via `widgetRoles`.
  */
-export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'accordion' | 'content' };
+export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'accordion' | 'list' | 'content' };
 export type BlockRole = { kind: 'title' | 'body' | 'media' | 'links' | 'quote' | 'gallery' | 'container' | 'content' };
 
 /** The seeded widget dictionary (exported for the learn/report surface). */
@@ -387,6 +398,48 @@ export const SEEDED_WIDGET_ROLES: Record<string, WidgetRole> = {
 	// expanded to 2987px).
 	accordion: { kind: 'accordion' },
 	'toggle': { kind: 'accordion' },
+	// A tab set is an accordion with a different control: its pane TITLES are
+	// links the flat merge would collect as buttons and its panes are body copy.
+	// Fewer than two panes falls through to the normal path (see `accordionEntries`).
+	tabs: { kind: 'accordion' },
+	// DYNAMIC LISTS. Their cards come from a query, not from the markup, so the
+	// role only NAMES the band: `SectionItem`s still come from the rendered
+	// cards, but the renderer can now tell that a band is a post/portfolio loop
+	// (and render its empty state instead of a placeholder card). A `list` role
+	// deliberately does NOT force `low` confidence the way `content` does — a
+	// posts band is a recognised widget, not an unknown one.
+	posts: { kind: 'list' },
+	portfolio: { kind: 'list' },
+	// Elementor Free widgets that were unseeded: an unseeded name resolves to
+	// `content`, which (a) flattens the widget's own structure and (b) forces
+	// the band to `low` confidence by the `effectiveConfidence` rule.
+	'star-rating': { kind: 'feature' },
+	video: { kind: 'media' },
+	google_maps: { kind: 'media' },
+	'social-icons': { kind: 'links' },
+	'text-path': { kind: 'body' },
+	// Elementor Pro widgets.
+	'nav-menu': { kind: 'links' },
+	'search-form': { kind: 'form' },
+	login: { kind: 'form' },
+	'share-buttons': { kind: 'links' },
+	'paypal-button': { kind: 'links' },
+	'stripe-button': { kind: 'links' },
+	countdown: { kind: 'feature' },
+	rating: { kind: 'feature' },
+	'price-table': { kind: 'feature' },
+	'price-list': { kind: 'feature' },
+	'animated-headline': { kind: 'title' },
+	gallery: { kind: 'gallery' },
+	slides: { kind: 'gallery' },
+	// Theme-builder widgets: a header/footer/archive template renders through
+	// these, and their copy belongs to the slot the name says.
+	'theme-site-logo': { kind: 'media' },
+	'theme-site-title': { kind: 'title' },
+	'theme-post-title': { kind: 'title' },
+	'theme-archive-title': { kind: 'title' },
+	'theme-post-content': { kind: 'body' },
+	'theme-post-featured-image': { kind: 'media' },
 	// Phlox Pro / Auxin widget family (jayainc's live vocabulary, 2026-11-06
 	// run) — same Elementor widget-class contract, vendor-prefixed names.
 	aux_modern_heading: { kind: 'title' },
@@ -1311,7 +1364,13 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 			continue;
 		}
 		const structured =
-			widget.role.kind === 'body' || widget.role.kind === 'content' || widget.role.kind === 'feature'
+			widget.role.kind === 'body' ||
+			widget.role.kind === 'content' ||
+			widget.role.kind === 'feature' ||
+			// A query loop's REAL cards are still authored markup — `list` only adds
+			// the signal, it must not skip the extractor (a genuine post card was
+			// dropped the first time this role was added).
+			widget.role.kind === 'list'
 				? extractStructuredItem( widget.node )
 				: undefined;
 		if ( structured ) {
@@ -1420,6 +1479,8 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 	// green) without changing how the band is classified.
 	const extraHeadings = headingCandidates.map( ( heading ) => heading.text ).filter( ( text ) => text !== title?.text );
 
+	// A query loop (Posts/Portfolio) — see `SemanticSection.dynamicList`.
+	const dynamicList = widgets.some( ( widget ) => widget.role.kind === 'list' );
 	const hasBody = ( slots.body?.length ?? 0 ) > 0;
 	// Unknown-name widgets drop the confidence — the shape decided the kind,
 	// not a recognized vocabulary entry (Proposal 116).
@@ -1445,7 +1506,7 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 	}
 	if ( matched.kind === 'accordion' ) {
 		slots.items = accordionItems;
-		return { kind: 'accordion', confidence: effectiveConfidence, slots };
+		return { kind: 'accordion', confidence: effectiveConfidence, slots, ...( dynamicList ? { dynamicList: true } : {} ) };
 	}
 	// Cards that are CONTAINERS (Elementor 4.x flex) — see `cardContainerItems`.
 	// Runs before the text→columns fallback: such a band has no
@@ -1518,7 +1579,7 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 			};
 		}
 	}
-	return { kind: matched.kind, confidence: effectiveConfidence, slots };
+	return { kind: matched.kind, confidence: effectiveConfidence, slots, ...( dynamicList ? { dynamicList: true } : {} ) };
 }
 
 // -- structural kinds (Proposal 136 §4.1) -------------------------------------
