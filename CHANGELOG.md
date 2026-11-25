@@ -1,5 +1,16 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Fixed — DeepSeek V4.1 Flash rejected the research-tool token budget
+
+- **`research_product` no longer fails on `deepseek-flash`** with `Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.` The DeepSeek client now writes the budget under the key the resolved model accepts (`deepseek-flash`, `deepseek-v4-flash*` and `deepseek-v4.1*` use `max_completion_tokens`; `deepseek-v4-pro` and legacy ids keep `max_tokens`), and a 400 naming the offending parameter is retried once with the corrected key so proxy/model ids not yet in the list self-heal. The rule covers the buffered and real-time streaming paths, the Pro research completion ladder (which now scales the key actually sent, and also handles OpenAI o-series / gpt-5), the `lib/core` `DeepSeekClient` / `OpenAiCompatibleClient` used by the Laravel runtime, and the Settings → Diagnostics connection probe. Filters: `wp_mcp_ai_deepseek_requires_max_completion_tokens`, `wp_mcp_ai_research_completion_requires_max_completion_tokens`.
+
+### Fixed — Remote WP connections resolve products by SKU for variations
+
+- **`get_wc_product_variations` no longer demands a numeric ID.** `remote_wp_connection` now accepts `post_id`, the `product_id` alias, or `sku` on `get_wc_product` and `get_wc_product_variations`. A SKU is looked up with the exact WooCommerce `sku` filter, then a search fallback that still requires an exact match; the variations reply adds `resolved_by: "sku"` and the matched `product` (id, name, sku, type). A variation SKU cannot resolve on its own — the products endpoint never returns variations — so the error names that case and points at the variation's `parent_id`.
+- **`include_variations` actually works now.** The remote site manager decodes JSON to associative arrays while the product logic addressed object properties, so `type => variable` was never detected and `get_wc_products` silently returned parent products with `variation_count: 0`. Payload items (products, single product, variations, batch variations) are normalised to objects, which also re-enables the documented image capping and description truncation on this path.
+
 ## [1.2.23] - 2026-11-25
 
 ### Added — Machine principals and scoped credentials (Proposal 159)

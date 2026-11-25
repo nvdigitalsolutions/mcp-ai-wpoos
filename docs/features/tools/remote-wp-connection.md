@@ -243,37 +243,43 @@ Note: No need to specify `include_variations: true` - variations are fetched aut
 
 **Note:** Simple products and other non-variable product types are always included in results regardless of the `include_variations` setting. Only variable product parents are replaced with their variations.
 
-You do NOT need to make a separate call to `get_wc_product_variations` unless you want to get variations for a specific product ID only.
+You do NOT need to make a separate call to `get_wc_product_variations` unless you want variations for a specific product only — it accepts `post_id`, `product_id`, or `sku`.
 
 **Performance Optimization:** The variation fetching is optimized using batched logic that separates products by type before making API calls. This approach leverages the Remote Site Manager's caching layer for improved performance, especially with multiple variable products.
 
 #### `get_wc_product`
-Get a single product by ID.
+Get a single product by ID or SKU.
 
 **Parameters:**
 - `connection_id` (string, required): Connection ID
-- `post_id` (integer, required): Product ID
+- `post_id` (integer): Product ID (alias: `product_id`)
+- `sku` (string): Product SKU, resolved to the product ID when no ID is supplied
+
+Supply one of `post_id`, `product_id`, or `sku`.
 
 #### `get_wc_product_variations`
 Get all variations for a specific variable product.
 
 **Parameters:**
 - `connection_id` (string, required): Connection ID
-- `post_id` (integer, required): Product ID of the parent variable product
+- `post_id` (integer): Product ID of the parent variable product (alias: `product_id`)
+- `sku` (string): Parent product SKU, resolved to the product ID automatically. The WooCommerce products endpoint never returns variations, so a **variation** SKU still needs the parent product ID.
 
-**Example:**
+Supply one of `post_id`, `product_id`, or `sku`.
+
+**Example (by SKU):**
 ```json
 {
   "connection_id": "conn_abc123",
   "action": "get_wc_product_variations",
-  "post_id": 123
+  "sku": "TSH-001"
 }
 ```
 
 **Returns:**
 ```json
 {
-  "summary": "Retrieved 8 variation(s) for product ID 123",
+  "summary": "Retrieved 8 variation(s) for product ID 123 (Product: Cotton T-Shirt)",
   "variations": [
     {
       "id": 456,
@@ -291,9 +297,18 @@ Get all variations for a specific variable product.
     }
   ],
   "count": 8,
-  "product_id": 123
+  "product_id": 123,
+  "resolved_by": "sku",
+  "product": {
+    "id": 123,
+    "name": "Cotton T-Shirt",
+    "sku": "TSH-001",
+    "type": "variable"
+  }
 }
 ```
+
+`resolved_by` and `product` are only present when the ID was resolved from a SKU. If no parent product matches the SKU, the tool returns `wp_mcp_ai_pro_product_not_found` explaining that a variation SKU needs the parent product ID.
 
 #### `get_wc_orders`
 Get WooCommerce orders.

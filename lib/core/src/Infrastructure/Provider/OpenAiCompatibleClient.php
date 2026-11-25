@@ -62,8 +62,13 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient
         if (isset($options['temperature'])) {
             $payload['temperature'] = (float) $options['temperature'];
         }
+        // Accept both caller conventions; applyModelConstraints() emits the
+        // key the resolved model accepts (`max_tokens` or
+        // `max_completion_tokens`).
         if (isset($options['max_tokens'])) {
             $payload['max_tokens'] = (int) $options['max_tokens'];
+        } elseif (isset($options['max_completion_tokens'])) {
+            $payload['max_tokens'] = (int) $options['max_completion_tokens'];
         }
         if (! empty($options['tools'])) {
             $payload['tools'] = $options['tools'];
@@ -151,8 +156,12 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient
         if (isset($options['temperature'])) {
             $payload['temperature'] = (float) $options['temperature'];
         }
+        // Accept both caller conventions; applyModelConstraints() emits the
+        // key the resolved model accepts.
         if (isset($options['max_tokens'])) {
             $payload['max_tokens'] = (int) $options['max_tokens'];
+        } elseif (isset($options['max_completion_tokens'])) {
+            $payload['max_tokens'] = (int) $options['max_completion_tokens'];
         }
         if (! empty($options['tools'])) {
             $payload['tools'] = $options['tools'];
