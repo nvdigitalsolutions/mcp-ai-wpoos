@@ -247,3 +247,30 @@ is wrong for a content band. The consequence is worse than a missing picture —
 back to the PAGE background when the surface is a photo, so the source's white
 copy is dropped as "invisible on white" and the rebuild paints dark text on a
 bare panel. Wiring the photo and its ink must land together.
+
+## A positioned pseudo under 50 % opacity is a VEIL, not a surface
+
+`readBackground` reads a band's positioned `::before`/`::after` before the
+element's own paint, because a builder often paints the band on an inner layer.
+That is right for an OPAQUE overlay and wrong for a decorative one:
+eca.directory's phased-delivery band paints `linear-gradient(#27104a 30%,
+#ffffff 0%)` on the box and `url(bg-01.png)` on `::before` at **opacity 0.2**.
+The photo won, the gradient was never emitted, the band rendered white, and the
+white intro copy was then dropped as "invisible on white" — one wrong statistic
+showed up as two unrelated-looking defects. Skip the pseudo below 0.5 opacity.
+
+## A band can hold a card row AND a table — never drop either
+
+When grouping a flex band into cards, the copy that is NOT in a card (the band
+lede, a comparison table sharing the band) has to go somewhere: the band's text,
+or a flat item. Dropping it makes the fidelity guard demote the whole band to raw
+text, which reads like "the grouping did not fire" but is really "the grouping
+lost words".
+
+## The kicker comes FIRST
+
+A builder's card often publishes a small label (`h3 "Phase 1"`) above its title
+(`h4 "Pilot Setup"`, an `elementor-icon-box-title`). The title is the icon-box
+heading; the label is a **kicker** rendered above it. Printing the label after
+the title reorders the copy and the band's text shingles stop matching — the
+coverage report says "phase 1 pilot" is missing even though both words render.

@@ -159,6 +159,15 @@ export interface SectionItem {
 	 * `columnItems` replaced the items it had found (2026-11-24).
 	 */
 	bullets?: string[];
+	/**
+	 * A small label that sits ABOVE the card's title in the source — Elementor’s
+	 * `h3` “Phase 1” over its icon-box title “Pilot Setup”.
+	 *
+	 * Order is copy: printed after the title the shingles no longer match the
+	 * source (“phase 1 pilot” vanished from eca.directory’s coverage report,
+	 * 2026-11-24). Absent → no kicker.
+	 */
+	kicker?: string;
 	media?: MediaRef;
 	links?: LinkRef[];
 	/** The item renders with an icon marker (icon-list family). */
@@ -1097,6 +1106,144 @@ function columnItems( section: HNode ): { items: SectionItem[]; lead: string[] }
 }
 
 /**
+ * One item per CARD CONTAINER of a band.
+ *
+ * Elementor 4.x publishes each card as its own flex container
+ * (`div.e-con-full.e-child`), not as a `.elementor-column`, so `columnItems`
+ * cannot see the band at all:
+ *
+ * ```
+ * e-con-inner                    (the band)
+ * ├─ e-con-boxed.e-child        (intro row: h2 + icon-box)
+ * ├─ e-con-full.e-child         (card row)
+ * │   ├─ e-con-full.e-child     (CARD: h3 label + h4 title + p + ul ×4 + a)
+ * │   └─ …
+ * └─ e-con-full.e-child         (comparison table — a grid of CELLS)
+ * ```
+ *
+ * A CARD is a container with a heading AND a LIST. That is what separates the
+ * three phase cards from the comparison table: a table cell holds a heading and
+ * nothing else (or a mark), a row of cells is not a row of cards, and the intro
+ * row is a single child. Without the predicate, grouping took the ROWS for cards
+ * and produced 2 items for 5.
+ *
+ * Items carry `columnIndex`, so the laned grid renders exactly the cards the
+ * source laid out.
+ */
+function cardContainerItems( section: HNode ): { items: SectionItem[]; lead: string[] } | undefined {
+	const isContainer = ( node: HNode ): boolean =>
+		node.type === 'tag' && classList( node.attribs ).some( ( name ) => /^(?:e-con|e-con-inner|e-con-full|e-con-boxed|e-child|elementor-column)$/.test( name ) );
+	const headingIn = ( node: HNode ): HNode | undefined =>
+		findDescendant(
+			node,
+			( n ) =>
+				n.type === 'tag' &&
+				( /^h[1-6]$/.test( n.name ?? '' ) ||
+					( ! /^h[1-6]$/.test( n.name ?? '' ) &&
+						classList( n.attribs ).some( ( c ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( c ) ) ) )
+		);
+	const isCard = ( node: HNode ): boolean =>
+		Boolean( headingIn( node ) ) &&
+		Boolean( findDescendant( node, ( n ) => n.type === 'tag' && ( n.name === 'ul' || n.name === 'ol' ) ) );
+	const signature = ( node: HNode ): string =>
+		classList( node.attribs )
+			.filter( ( name ) => ! /^elementor-(?:element-|col-)/.test( name ) )
+			.sort()
+			.join( ' ' );
+
+	const buckets: HNode[][] = [];
+	for ( const parent of allDescendants( section, ( n ) => n.type === 'tag' && isContainer( n ) ) ) {
+		const kids = directChildren( parent ).filter( isContainer );
+		if ( kids.length < 2 ) {
+			continue;
+		}
+		const bySignature = new Map< string, HNode[] >();
+		for ( const kid of kids ) {
+			const key = signature( kid );
+			if ( ! key ) {
+				continue;
+			}
+			bySignature.set( key, [ ...( bySignature.get( key ) ?? [] ), kid ] );
+		}
+		for ( const members of bySignature.values() ) {
+			if ( members.length >= 2 && members.every( isCard ) ) {
+				buckets.push( members );
+			}
+		}
+	}
+	if ( buckets.length === 0 ) {
+		return undefined;
+	}
+
+	const headingsOf = ( card: HNode ): HNode[] =>
+		allDescendants(
+			card,
+			( n ) =>
+				n.type === 'tag' &&
+				( /^h[1-6]$/.test( n.name ?? '' ) || classList( n.attribs ).some( ( c ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( c ) ) )
+		);
+
+	const items: SectionItem[] = [];
+	for ( const bucket of buckets ) {
+		for ( const [ columnIndex, card ] of bucket.entries() ) {
+			const headings = headingsOf( card );
+			// The visual TITLE is the icon-box heading when the card has one; the
+			// plain heading above it is a KICKER (“Phase 1” over “Pilot Setup”).
+			const titleNode =
+				headings.find( ( n ) => classList( n.attribs ).some( ( c ) => /icon-box-title/.test( c ) ) ) ?? headings[ 0 ];
+			const title = titleNode ? trimmed( textOf( titleNode ) ) : '';
+			if ( ! title ) {
+				continue;
+			}
+			const bullets = bulletItems( card ) ?? [];
+			// A heading that comes BEFORE the title is the card's KICKER (“Phase 1”
+			// over “Pilot Setup”); one after it is copy. Printing the kicker after the
+			// title breaks the source's word order.
+			const titleIndex = titleNode ? headings.indexOf( titleNode ) : -1;
+			const label = ( n: HNode ): string => trimmed( textOf( n ) );
+			const usable = ( text: string ): boolean => Boolean( text ) && text !== title && ! bullets.includes( text );
+			const kicker = ( titleIndex > 0 ? headings.slice( 0, titleIndex ) : [] ).map( label ).filter( usable ).join( ' ' );
+			const others = ( titleIndex >= 0 ? headings.slice( titleIndex + 1 ) : headings ).map( label ).filter( usable );
+			const paragraphs = allDescendants( card, ( n ) => n.type === 'tag' && n.name === 'p' )
+				.map( ( n ) => trimmed( textOf( n ) ) )
+				.filter( ( text ) => text && text !== title && ! bullets.includes( text ) );
+			const body = [ ...new Set( [ ...others, ...paragraphs ] ) ];
+			const anchor = findDescendant(
+				card,
+				( n ) => n.type === 'tag' && n.name === 'a' && Boolean( trimmed( attrOf( n, 'href' ) ?? '' ) ) && Boolean( trimmed( textOf( n ) ) )
+			);
+			const href = anchor ? trimmed( attrOf( anchor, 'href' ) ?? '' ) : '';
+			const item: SectionItem = {
+				title,
+				columnIndex,
+				...( kicker ? { kicker } : {} ),
+				...( titleNode && headingLevelOf( titleNode ) <= 6 ? { titleLevel: headingLevelOf( titleNode ) } : {} ),
+				...( body.length > 0 ? { body: body.join( ' ' ), ...( body.length > 1 ? { paragraphs: body } : {} ) } : {} ),
+				...( bullets.length > 0 ? { bullets } : {} ),
+				...( anchor && href && ! href.startsWith( '#' ) ? { links: [ { text: trimmed( textOf( anchor ) ), href } ] } : {} ),
+			};
+			items.push( item );
+		}
+	}
+	if ( items.length < 2 ) {
+		return undefined;
+	}
+	// Copy that sits OUTSIDE the cards — the band’s own lede, above the grid. The
+	// flat merge leaves it inside a card-like item instead, so the intro printed
+	// as a card and the comparison table’s headings became the lede
+	// (eca.directory, 2026-11-24).
+	const cardNodes = buckets.flat();
+	const lead = [
+		...new Set(
+			allDescendants( section, ( n ) => n.type === 'tag' && n.name === 'p' && ! cardNodes.some( ( card ) => within( n, card ) ) )
+				.map( ( n ) => trimmed( textOf( n ) ) )
+				.filter( Boolean )
+		),
+	];
+	return { items, lead };
+}
+
+/**
  * WordPress ships one placeholder post and one placeholder page on every
  * install — "Hello world!" (slug `hello-world`) and "Sample Page"
  * (`sample-page`) — and every setup checklist tells the owner to delete them.
@@ -1291,6 +1438,61 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 	if ( matched.kind === 'accordion' ) {
 		slots.items = accordionItems;
 		return { kind: 'accordion', confidence: effectiveConfidence, slots };
+	}
+	// Cards that are CONTAINERS (Elementor 4.x flex) — see `cardContainerItems`.
+	// Runs before the text→columns fallback: such a band has no
+	// `.elementor-container` for that path to find.
+	if ( section && ( matched.kind === 'feature-grid' || matched.kind === 'icon-list' || matched.kind === 'text' ) ) {
+		const cards = cardContainerItems( section );
+		if ( cards ) {
+			// The flat merge put the cards’ captions in `body`; they live in the items
+			// now, so the body keeps the copy no card carries — the band’s own lede.
+			const carried = new Set(
+				cards.items
+					.flatMap( ( item ) => [ item.kicker ?? '', item.title ?? '', item.body ?? '', ...( item.paragraphs ?? [] ), ...( item.bullets ?? [] ) ] )
+					.filter( Boolean )
+			);
+			const body = [
+				...cards.lead,
+				// Copy the flat merge found but no card carries and the lead does not
+				// repeat — the comparison table’s headings, when a band mixes a card row
+				// with a table. Losing them demoted the band to raw text once already.
+				...( slots.body ?? [] ).filter( ( text ) => ! carried.has( text ) && ! cards.lead.includes( text ) ),
+			];
+			// Flat items no card carries are still the band’s content — the comparison
+			// table that shares this band, for instance. Keeping them means no word is
+			// lost: when they were dropped the fidelity guard demoted the whole band to
+			// raw text (2026-11-24).
+			const extras = ( slots.items ?? [] ).filter( ( item ) => {
+				if ( item.columnIndex !== undefined ) {
+					return false;
+				}
+				const text = [ item.title ?? '', item.body ?? '', ...( item.paragraphs ?? [] ), ...( item.bullets ?? [] ) ].filter( Boolean );
+				// The band already renders its own title and lede — an extra that repeats
+				// them would print the intro twice.
+				const own = new Set( [ slots.title ?? '', ...( body ) ].filter( Boolean ) );
+				if ( text.some( ( value ) => own.has( value ) ) ) {
+					return false;
+				}
+				return text.every( ( value ) => ! carried.has( value ) );
+			} );
+			// An extra is a ROW LABEL of a comparison table that shares this band. It
+			// is copy, not a card: rendered as a card it printed as a 35px heading in
+			// the phase grid (eca.directory, 2026-11-24). Fold the labels into the
+			// band's text so no word is lost and the grid stays cards-only.
+			const extraLines = extras.map( ( item ) => item.title ?? '' ).filter( Boolean );
+			const finalBody = [ ...body, ...extraLines.filter( ( text ) => ! body.includes( text ) ) ];
+			return {
+				kind: 'feature-grid',
+				confidence: 'high',
+				slots: {
+					...( slots.title ? { title: slots.title } : {} ),
+					...( slots.titleLevel ? { titleLevel: slots.titleLevel } : {} ),
+					...( finalBody.length > 0 ? { body: finalBody } : {} ),
+					items: cards.items,
+				},
+			};
+		}
 	}
 	// A band the flat merge could only describe as one text blob, whose source
 	// spreads its copy across columns, rebuilds as a column grid instead.

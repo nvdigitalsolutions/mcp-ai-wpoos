@@ -1125,6 +1125,16 @@ export interface MeasureColorOptions {
 								if ( style.position !== 'absolute' && style.position !== 'fixed' ) {
 									continue;
 								}
+								// A pseudo at reduced opacity is a VEIL, not a surface: the band's own
+								// paint shows through it. eca.directory's phased-delivery band paints
+								// `linear-gradient(#27104a 30%, #ffffff 0%)` on the box and a decorative
+								// `url(bg-01.png)` on `::before` at opacity 0.2 — reading the pseudo
+								// first recorded the PHOTO as the surface, so the gradient was never
+								// emitted, the band rendered white, and its white intro copy was then
+								// dropped as "invisible on white" (2026-11-24).
+								if ( Number.parseFloat( style.opacity ) < 0.5 ) {
+									continue;
+								}
 								const image = style.backgroundImage;
 								if ( imageIsSurface( image ) ) {
 									return { color: style.backgroundColor, image };
