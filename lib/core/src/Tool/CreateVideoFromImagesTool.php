@@ -35,11 +35,18 @@
  * to 0.5 s because the WordPress contract has no such field and a half-second
  * reads better against a 2–3 s still than the merge default of 1 s.
  *
- * **`zoom` is refused, not approximated.** Ken Burns motion is `zoompan`
- * applied *within* each still, which is a different filter and a different
- * timeline; answering it with a cross-fade would be a different video from the
- * one asked for. The WordPress tool lists `zoom` in its enum and then does
- * nothing at all, so naming the gap is more honest than silently sliding.
+ * ## `zoom` is motion, not a boundary
+ *
+ * `zoom` is the one value in the enum that does not join two stills. It is Ken
+ * Burns motion — `zoompan` drifting each still from 1.0 to 1.12 — so the
+ * boundaries stay hard cuts and the timeline keeps its full length. Naming that
+ * difference matters: a caller who wanted a zoom *transition* between two
+ * images asked for something this tool does not do, and the description says so
+ * rather than quietly substituting a cross-fade.
+ *
+ * A future `motion` field could combine the drift with a cross-fade; one enum
+ * cannot express both, and inventing a name for a second effect inside
+ * `transition` would be worse than stating the limit.
  *
  * **There is no background audio argument.** The worker's compose route reads
  * an ordered list of files, and mixing "N images then a track" into one list
@@ -75,9 +82,11 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
     private const TRANSITIONS = array('fade', 'slide', 'zoom', 'none');
 
     /**
-     * What this tool actually implements, which is the contract less `zoom`.
+     * The values that join two stills, and therefore remove their overlap from
+     * the timeline. `zoom` and `none` are not among them: one is motion inside a
+     * still, the other is a hard cut.
      */
-    private const IMPLEMENTED = array('fade', 'slide', 'none');
+    private const BOUNDARY_TRANSITIONS = array('fade', 'slide');
 
     public function getSlug(): string
     {
@@ -91,7 +100,7 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
 
     public function getDescription(): string
     {
-        return 'Turn a list of images into a slideshow video, each shown for a fixed number of seconds, fitted into one frame without cropping. "fade" and "slide" cross-fade or push between images; "zoom" is not a transition and is refused. The result is silent.';
+        return 'Turn a list of images into a slideshow video, each shown for a fixed number of seconds, fitted into one frame without cropping. "fade" and "slide" cross-fade or push between images; "zoom" adds Ken Burns motion inside each image and leaves the joins as hard cuts. The result is silent.';
     }
 
     public function getParametersSchema(): array
@@ -126,13 +135,13 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
                 ),
                 'transition' => array(
                     'type' => 'string',
-                    'description' => 'How each image meets the next. "zoom" (Ken Burns) is not implemented: it is a per-image motion, not a transition between images.',
+                    'description' => 'How the slideshow moves. "fade" and "slide" cross-fade or push between images; "zoom" adds Ken Burns motion inside each image and leaves the joins as hard cuts.',
                     'enum' => self::TRANSITIONS,
                     'default' => 'none',
                 ),
                 'transition_duration' => array(
                     'type' => 'number',
-                    'description' => 'Seconds each cross-fade or slide lasts. Only read when transition is not "none", and it has to be shorter than duration_per_image.',
+                    'description' => 'Seconds each cross-fade or slide lasts. Only read by "fade" and "slide", and it has to be shorter than duration_per_image.',
                     'minimum' => 0.05,
                     'maximum' => 5,
                     'default' => 0.5,
@@ -185,17 +194,12 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
             );
         }
 
-        if (! \in_array($transition, self::IMPLEMENTED, true)) {
-            return $this->errors->validationFailed(
-                \sprintf(
-                    'A "%s" transition is not implemented. Ken Burns motion is ffmpeg zoompan applied within each still — a different filter on a different timeline — so answering it with a cross-fade would be a different video. Use "fade", "slide", or "none".',
-                    $transition,
-                ),
-                array('transition' => array('Implemented: ' . \implode(', ', self::IMPLEMENTED) . '.')),
-            );
-        }
+        // Only a boundary transition has an overlap, so only it has a duration to
+        // bound. A duration sent with `zoom` or `none` is inert — refused would be
+        // disproportionate, since the video renders correctly either way.
+        $boundary = \in_array($transition, self::BOUNDARY_TRANSITIONS, true);
 
-        if ('none' !== $transition) {
+        if ($boundary) {
             $crossFade = $this->floatParam($arguments, 'transition_duration', 0.5);
 
             if ($crossFade < 0.05 || $crossFade > 5.0) {
@@ -205,7 +209,6 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
                 );
             }
         }
-
         $resolution = \strtolower(\trim($this->stringParam($arguments, 'resolution', '1080p')));
 
         if (! isset(self::FRAMES[$resolution])) {
@@ -237,9 +240,10 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
             'transition' => $transition,
         );
 
-        // A still has no boundary to cross-fade on its own, and a plain
-        // slideshow carries no overlap, so the duration only travels with one.
-        if ('none' !== $transition) {
+        // A still has no boundary to cross-fade on its own, `zoom` is motion
+        // inside one, and a plain slideshow is all hard cuts — so the duration
+        // only travels when there is an overlap for it to describe.
+        if ($boundary) {
             $options['transition_duration'] = $this->floatParam($arguments, 'transition_duration', 0.5);
         }
 

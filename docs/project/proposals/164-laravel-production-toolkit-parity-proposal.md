@@ -1456,7 +1456,8 @@ argument. `zoom` has no entry on purpose: Ken Burns motion is `zoompan` applied
 **within** each still — a different filter on a different timeline — so
 answering `zoom` with a cross-fade would be a different video from the one asked
 for. The enum keeps `zoom` (the WordPress contract has it); the tool refuses it
-and names `zoompan` in the message.
+and names `zoompan` in the message. (Superseded by §164.24, which implements
+that drift.)
 
 Per-operation allowlists, because the two WordPress enums differ:
 
@@ -1511,3 +1512,192 @@ unchanged at 6 s, `zoom` refused, a 0.4 s image too short for a 0.5 s
 transition, a 0.25 s transition making three 2 s stills 5.5 s, an explicit
 duration equal to the image length refused, an out-of-range duration refused,
 and a single still reporting `none`.
+
+## 164.24 — `zoom` becomes Ken Burns motion (2026-11-25)
+
+§164.23 shipped `fade` and `slide` and refused `zoom`, naming `zoompan` as the
+missing filter. This is that filter. `create_video_from_images` now accepts all
+four of the WordPress enum's values.
+
+### The one enum value that is not a boundary
+
+`fade`, `slide` and `dissolve` join two inputs and therefore remove their
+overlap from the timeline. `zoom` does not: it is motion **inside** one still,
+so the joins stay hard cuts and the timeline keeps its full length. Two stills
+of 2 s are 4 s with `zoom`, and 3.5 s with a 0.5 s `fade`.
+
+That also makes `transition_duration` inert for `zoom`. It is not refused — the
+render is correct either way — but it is not sent, and the route's overlap
+arithmetic is gated on `XFADE[ name ]` rather than on `name !== 'none'`.
+
+A caller who wanted a zoom *transition* between two stills asked for something
+this tool does not do; the schema description says so rather than quietly
+substituting a cross-fade. Combining the drift with a cross-fade would need a
+separate `motion` field: one enum cannot express two axes, and inventing a
+second name inside `transition` would be worse than stating the limit.
+
+### Two traps, both measured
+
+`zoompan` has two behaviours that produce a file which `ffprobe` calls correct
+and a viewer calls broken.
+
+**`d` is a frame count per input frame.** With `-loop 1 -t N` the branch already
+carries N × fps frames, so `d` must be 1. Anything larger multiplies the clip's
+length instead of setting it. Verified: 2 s at 25 fps with `d=1` gives exactly
+50 frames and 2.000 s.
+
+**`zoom` restarts at 1 for every input frame.** The usual tutorial expression —
+`z='min(zoom+0.0015,1.5)'` — never moves on a looped still, because each of the
+50 input frames starts the accumulator again. The expression is driven by `on`,
+the output frame number, instead:
+
+```
+z='min(1.12,1+0.1200*max(on-1,0)/49)'
+```
+
+`max(on-1,0)` holds the first frame at exactly 1.0 whichever of 0 or 1 `on`
+begins at, and `min()` removes the overshoot if it begins at 1. Verified with
+frame-to-frame PSNR: frame 0 against frame 49 reads **7.27 dB**, where an unmoving
+still would read `inf`.
+
+### Upscale, or the pan shimmers
+
+`zoompan` computes `x`/`y` in integer source pixels, so a source the same size
+as the output steps a whole output pixel at a time and the drift shimmers.
+`kenBurnsUpscale()` doubles the branch first — but only while the doubled frame
+fits an 8.5-megapixel budget, so 720p and 1080p are doubled and 4K is not (a
+33-megapixel intermediate would buy nothing visible). Both branches are
+exercised in the smoke, at 1920x1080 and 3840x2160.
+
+The motion is a centred drift; there is no pan. A pan needs a direction, and a
+direction is a second parameter with no home in the WordPress contract.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `addons/media-worker/src/routes/video.js` | `zoom` added to `TRANSITIONS.images`; `KEN_BURNS_*`; `kenBurnsUpscale()`, `kenBurnsZoompan()`; the slideshow's overlap maths gated on `XFADE[ name ]` |
+| `lib/core/src/Tool/CreateVideoFromImagesTool.php` | `zoom` accepted; `BOUNDARY_TRANSITIONS` added so `transition_duration` travels only with a join |
+| `lib/laravel-adapter/src/Adapter/MediaWorkerVideoComposition.php` | `zoom` on the `images` allowlist; `BOUNDARY_TRANSITIONS` gates the duration |
+| `lib/core/resources/tool-readiness.php` | the `reason` describes three graph shapes, not two |
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **282 rows / 263 servable / 0 violations**
+(unchanged — no slug added). `bin/toolkit-parity.php`: **61 of 854**,
+`video-production` **12 of 21** (unchanged).
+
+`lib/core` 2,466 / 17,575 and adapter 359 / 1,923, both unchanged;
+`VideoCompositionAdapterTest` **30** (was 29 — the zoom refusal became a
+forwarding test, plus one pinning that `zoom` is not a merge transition); worker
+pure tests **35** (was 30 — five pin the `on`-driven expression, `d=1`, the
+output frame and the upscale budget).
+
+The handler smoke grows to **21 checks** and is the only place the drift is
+proven rather than described: two 2 s stills with `zoom` are 100 frames and
+4.000 s, frame 0 against frame 49 reads 7.27 dB, the second still starts its own
+drift, 1080p and 4K both keep their frame, WebM still encodes VP9, and a single
+still reports `none` because one still has no boundary — and no motion to add.
+
+## 164.25 — `extract_video_frames`, and the many-file return shape (2026-11-25)
+
+§164.19 grouped this slug under "the route has the operation and no slug asks for
+it". That was half right: the route had the operation since it was written, but
+nothing could return its answer. `/process` is one file in, one file out, and
+four tools read that meaning. A contact sheet is N files.
+
+### A contract, not a widened return type
+
+```php
+VideoFrameExtractionInterface::extract( string $localPath, array $options ): array
+// { frames: list<{path, bytes}>, frame_count: int, source_duration: float }
+```
+
+The same reasoning that gave composition its own contract for N *inputs*
+(§164.20) gives extraction one for N *outputs*. Widening `process()` would have
+changed a return shape that eight tools destructure — `trim_video`,
+`compress_video`, `transcode_video`, `resize_video_resolution`,
+`convert_video_format`, `adjust_video_speed`, `optimize_for_platform` and
+`generate_video_thumbnails`.
+
+### The three modes are alternatives
+
+`timestamps` names the moments, `interval` asks for a cadence, `frame_count`
+asks for an even spread. They are not additive — "every 5 s and also at these
+moments" is a list, and the list is `timestamps`. Sending `timestamps` and
+`interval` together is **refused** rather than resolved by a precedence the
+caller has to guess; a contact sheet at the wrong moments looks exactly like one
+at the right ones.
+
+### What the route was missing
+
+The operation existed, but it overrode two fields the WordPress tool declares:
+`-q:v` was hardcoded to 2, and `interval` was not read at all. Silently ignoring
+a declared parameter is the one thing this family refuses to do, so the route now
+reads both. `interval` is expanded to stamps from the duration ffprobe reports —
+multiplication rather than accumulation, because `0.1 + 0.2 + 0.3` is
+`0.6000000000000001` and a seek time that drifts is a frame at the wrong moment.
+
+Two details fell out of writing it:
+
+- the route was probing the duration **inside** the count branch; one probe now
+  answers both questions;
+- the answer gained `source_duration`, which the tool reports so a caller can
+  reason about `interval` without a second call.
+
+### Measured, not assumed
+
+A handler smoke posts real multipart bodies and inspects the files:
+
+| request | result |
+|---|---|
+| `interval: 2` on a 10 s clip | **5 frames**, `source_duration: 10` |
+| `timestamps: 1,5,9` | 3 frames |
+| `quality: 31` vs `2` at the same timestamp | **3,254 B vs 9,190 B** — the field reaches `-q:v` |
+| `width: 160` | a 160×120 frame |
+| `count: 4` | 4 names, 4 files |
+| `interval: 0.01` | 400, "between 0.1 and 3600" |
+
+The first answered name downloads with JPEG magic bytes `ffd8`, and
+`MediaWorkerRemoteName` validates the nested `frames_<ts>/frame_000.jpg`
+per segment — a single-filename regex would have passed `../../etc/passwd`.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/VideoFrameExtractionInterface.php` | new contract |
+| `lib/core/src/Tool/ExtractVideoFramesTool.php` | new tool; three modes refused when combined |
+| `lib/laravel-adapter/src/Adapter/MediaWorkerVideoFrames.php` | upload once, download N times, write content-addressed frames |
+| `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` | binding |
+| `addons/media-worker/src/routes/video.js` | `frameTimestamps()`, `quality`, `interval`, `source_duration` |
+| `lib/core/resources/tool-readiness.php` | 283rd row |
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **283 rows / 264 servable / 0 violations** (was
+282 / 263). `bin/toolkit-parity.php`: **62 of 854** (was 61); `video-production`
+is **13 of 21** (was 12) — the baseline records the new slug.
+
+`lib/core` 2,468 / 17,585 (was 2,466 — the class-derived tests pick the tool up
+on their own); adapter 359 / 1,925; the app gains `VideoFramesAdapterTest`
+(**13** tests / 61 assertions); worker pure tests **40** (was 35).
+
+### What is left, and why each stays
+
+Eight, not nine:
+
+- **A renderer.** `create_remotion_video` is React rendering, not ffmpeg.
+- **Speech models.** `transcribe_video` and `generate_video_captions` are
+  provider calls with no worker route to wrap.
+- **A table that does not exist.** `get_queued_videos`,
+  `get_videos_without_thumbnails`, `get_videos_without_transcripts` and
+  `upload_video_batch` read WordPress's attachment and queue tables. Inventing
+  one so a slug can answer `[]` is parity theatre, the objection §164.18 raised
+  to porting a stub.
+- **A duplicate.** `extract_video_metadata` is the same ffprobe report as
+  `get_video_metadata` behind different flags, and its row already says so.
+
+`extract_audio` — which no WordPress slug requests — remains the one additive
+tool §164.19 called "available": the route has the operation, so it needs a tool
+and nothing else.

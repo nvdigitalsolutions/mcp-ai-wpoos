@@ -41,9 +41,9 @@ const COPY_CONTAINERS = {
 const FASTSTART_FORMATS = new Set( [ 'mp4', 'mov' ] );
 // A transition name is interpolated into a filter argument, so it is looked up
 // in a table and never relayed. `slide` is the tool's name for what ffmpeg
-// calls `slideleft`. `zoom` is deliberately absent: Ken Burns motion is
-// `zoompan` applied to each still, not an xfade between two of them, so there
-// is no entry a caller could ask for and get something else.
+// calls `slideleft`. This is the **boundary** table: every key here is a filter
+// that joins two inputs, and its absence is what distinguishes a boundary
+// transition from `zoom`, which is motion applied inside one still.
 const XFADE = {
 	fade: 'fade',
 	dissolve: 'dissolve',
@@ -51,10 +51,11 @@ const XFADE = {
 };
 // The WordPress tools declare these enums, so the route refuses exactly what
 // the tool refuses. `merge` copies by default, so its only transitions are the
-// two that re-encode; `images` has no copy path at all.
+// two that re-encode; `images` has no copy path at all. `zoom` is offered on
+// `images` only: it is Ken Burns motion, which has no counterpart on a merge.
 const TRANSITIONS = {
 	merge: [ 'none', 'fade', 'dissolve' ],
-	images: [ 'none', 'fade', 'slide' ],
+	images: [ 'none', 'fade', 'slide', 'zoom' ],
 };
 // The WordPress `merge_videos` schema declares a 1 s default. `images` has no
 // transition-duration parameter, so a shorter built-in suits stills that may be
@@ -62,6 +63,15 @@ const TRANSITIONS = {
 const DEFAULT_MERGE_TRANSITION_SECONDS = 1;
 const IMAGES_TRANSITION_SECONDS = 0.5;
 const MAX_TRANSITION_SECONDS = 5;
+// Ken Burns motion. `zoompan` works in integer source pixels, so a slow zoom on
+// a source the same size as the output steps a whole pixel at a time and
+// shimmers. Upscaling the branch before the filter makes those steps a fraction
+// of an output pixel. 12% over a still is the usual documentary drift; more
+// than that reads as a push rather than a move.
+const KEN_BURNS_MAX_ZOOM = 1.12;
+const KEN_BURNS_UPSCALE_BUDGET = 8500000;
+// Each extracted frame is its own ffmpeg invocation, so the list is bounded.
+const MAX_EXTRACT_FRAMES = 120;
 
 /**
  * Parse an optional bounded number from a request field.
@@ -521,6 +531,106 @@ function videoEncoder( format ) {
 }
 
 /**
+ * The timestamps an `extract_frames` run will seek to.
+ *
+ * Three modes, in precedence order.
+ *
+ *  - Explicit `timestamps` win outright: a caller who named the moments meant
+ *    them.
+ *  - A regular `interval` needs the duration, so it is only usable when ffprobe
+ *    answered one. It starts at 0 — a contact sheet wants the first frame — and
+ *    stops before the duration, because a seek past the end is an ffmpeg error
+ *    rather than an empty frame.
+ *  - Otherwise nothing is returned, and the caller spreads `count` frames across
+ *    the duration with the `fps` filter in one pass.
+ *
+ * Every stamp is its own ffmpeg invocation, so the list is capped. The cap is
+ * the same 120 the count mode already allowed.
+ *
+ * @param {object}      options
+ * @param {number[]}    options.timestamps Explicit seconds.
+ * @param {number|null} options.interval   Seconds between frames.
+ * @param {number}      options.duration   Source length in seconds, 0 if unknown.
+ * @return {number[]} Ordered, de-duplicated timestamps, or an empty list.
+ */
+function frameTimestamps( { timestamps = [], interval = null, duration = 0 } = {} ) {
+	const explicit = timestamps
+		.map( Number )
+		.filter( ( value ) => Number.isFinite( value ) && value >= 0 )
+		.slice( 0, MAX_EXTRACT_FRAMES );
+
+	if ( explicit.length ) {
+		return explicit;
+	}
+
+	if ( ! ( interval > 0 ) || ! ( duration > 0 ) ) {
+		return [];
+	}
+
+	const stamps = [];
+
+	for ( let index = 0; index * interval < duration && stamps.length < MAX_EXTRACT_FRAMES; index++ ) {
+		// Multiplication rather than accumulation: 0.1 + 0.2 + 0.3 drifts, and
+		// a seek time that drifts is a frame at the wrong moment.
+		stamps.push( Number( ( index * interval ).toFixed( 3 ) ) );
+	}
+
+	return stamps;
+}
+
+/**
+ * How much a branch is upscaled before `zoompan`, as an integer factor.
+ *
+ * `zoompan` computes `x` and `y` in integer source pixels, so a source the same
+ * size as the output moves a whole output pixel at a time and shimmers. A
+ * doubled source halves every step. The budget stops a 4K still being doubled
+ * into a 33-megapixel intermediate for no visible gain.
+ *
+ * @param {number} width  Output width.
+ * @param {number} height Output height.
+ * @return {number} 2 when the doubling fits the budget, otherwise 1.
+ */
+function kenBurnsUpscale( width, height ) {
+	return 4 * width * height <= KEN_BURNS_UPSCALE_BUDGET ? 2 : 1;
+}
+
+/**
+ * The `zoompan` filter that drifts one still from 1.0 to KEN_BURNS_MAX_ZOOM.
+ *
+ * Two traps, both measured on ffmpeg 8.1.2:
+ *
+ *  - `d` is a frame count per **input** frame. With `-loop 1 -t N` the input
+ *    already carries N × fps frames, so `d` has to be 1; anything larger
+ *    multiplies the clip's length instead of setting it.
+ *  - `zoom` is a per-input-frame accumulator that starts again at 1, so the
+ *    usual `zoom + 0.0015` expression never moves on a looped still. The
+ *    expression is driven by `on` — the output frame number — instead. Verified:
+ *    a 50-frame branch goes 1.000 → 1.0588 → 1.120 (first and last frames
+ *    differ at 7.3 dB PSNR, so the drift is real and monotonic).
+ *
+ * `max(on-1,0)` holds the first frame at exactly 1.0 whichever of 0 or 1 `on`
+ * starts at, and `min()` removes the overshoot if it starts at 1.
+ *
+ * @param {number} width     Output width.
+ * @param {number} height    Output height.
+ * @param {number} frameRate Output frames per second.
+ * @param {number} seconds   How long the still is shown.
+ * @return {string} A `zoompan=…` filter, quoted for `-filter_complex`.
+ */
+function kenBurnsZoompan( width, height, frameRate, seconds ) {
+	// Two frames is the floor: one frame has no motion, and `frames - 1` is a
+	// denominator.
+	const frames = Math.max( 2, Math.round( frameRate * seconds ) );
+	const step = ( KEN_BURNS_MAX_ZOOM - 1 ).toFixed( 4 );
+
+	return (
+		`zoompan=z='min(${ KEN_BURNS_MAX_ZOOM },1+${ step }*max(on-1,0)/${ frames - 1 })'` +
+		`:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'` +
+		`:d=1:s=${ width }x${ height }:fps=${ frameRate }`
+	);
+}
+
+/**
  * The first video stream's width, or null.
  *
  * The watermark is a fraction of the video's width, so the pixel size has to
@@ -803,6 +913,8 @@ router.post('/process', upload.single('file'), async (req, res) => {
       duration: rawDuration,
 	      timestamps,
 	      count,
+	      quality: rawQuality,
+	      interval: rawInterval,
 	      speed: rawSpeed,
 	      maintain_pitch: rawMaintainPitch,
 	      fit: rawFit,
@@ -858,10 +970,29 @@ router.post('/process', upload.single('file'), async (req, res) => {
 
     // ── extract_frames (multi-output) — handled separately ──
     if ('extract_frames' === operation) {
-      const stamps = String(timestamps || '')
+      const requested = String(timestamps || '')
         .split(',')
         .map((s) => parseFloat(String(s).trim()))
         .filter((n) => Number.isFinite(n) && n >= 0);
+      let quality;
+      let interval;
+
+      try {
+        // The WordPress tool declares both of these, so the route reads them
+        // rather than silently overriding them with its own defaults.
+        quality = boundedNumber(rawQuality, 1, 31, 'quality') ?? 2;
+        interval = boundedNumber(rawInterval, 0.1, 3600, 'interval');
+      } catch (argErr) {
+        cleanupUpload();
+        return res.status(400).json({ error: argErr.message });
+      }
+
+      // One probe answers both questions: whether `interval` can expand into
+      // stamps, and the rate at which the `count` mode spreads frames.
+      const probe = await probeMedia(inputPath);
+      const sourceDuration = probe ? probe.duration : 0;
+      const stamps = frameTimestamps({ timestamps: requested, interval, duration: sourceDuration });
+
       const frameDirName = `frames_${Date.now()}`;
       const frameDir = path.join(videoDir, frameDirName);
       fs.mkdirSync(frameDir, { recursive: true });
@@ -872,7 +1003,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
         for (let i = 0; i < stamps.length; i++) {
           const name = `frame_${String(i).padStart(3, '0')}.jpg`;
           const out = path.join(frameDir, name);
-          const args = ['-ss', String(stamps[i]), '-i', inputPath, '-frames:v', '1', '-q:v', '2'];
+          const args = ['-ss', String(stamps[i]), '-i', inputPath, '-frames:v', '1', '-q:v', String(quality)];
 
           if (scale) {
             args.push('-vf', scale);
@@ -883,27 +1014,15 @@ router.post('/process', upload.single('file'), async (req, res) => {
           files.push(`${frameDirName}/${name}`);
         }
       } else {
-        const frameCount = Math.max(1, Math.min(120, parseInt(count, 10) || 10));
-        let fpsFilter = 'fps=1';
-        try {
-          const { stdout } = await execFileAsync(
-            'ffprobe',
-            ['-v', 'quiet', '-print_format', 'json', '-show_format', inputPath],
-            { timeout: 30000 }
-          );
-          const meta = JSON.parse(stdout);
-          const videoDuration = parseFloat(meta?.format?.duration || 0);
-          if (videoDuration > 0) {
-            fpsFilter = `fps=${Math.max(0.01, frameCount / videoDuration)}`;
-          }
-        } catch {
-          // Duration unknown — fall back to 1 fps.
-        }
+        const frameCount = Math.max(1, Math.min(MAX_EXTRACT_FRAMES, parseInt(count, 10) || 10));
+        const fpsFilter = sourceDuration > 0
+          ? `fps=${Math.max(0.01, frameCount / sourceDuration)}`
+          : 'fps=1';
         const filters = [fpsFilter, scale].filter(Boolean).join(',');
         const outPattern = path.join(frameDir, 'frame_%03d.jpg');
         await execFileAsync(
           'ffmpeg',
-          ['-i', inputPath, '-vf', filters, '-q:v', '2', '-y', outPattern],
+          ['-i', inputPath, '-vf', filters, '-q:v', String(quality), '-y', outPattern],
           { timeout: 300000 }
         );
         for (let i = 1; i <= frameCount; i++) {
@@ -919,6 +1038,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
         success: true,
         operation,
         frame_count: files.length,
+        source_duration: sourceDuration,
         output_files: files,
       });
     }
@@ -1422,8 +1542,9 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 
 		// ── images ──
 		// A slideshow: every still is looped for a fixed duration, fitted into
-		// one frame, then concatenated. `contain` rather than `cover` because
-		// cropping a photo is worse than bars around it.
+		// one frame, then either cross-faded (`fade`/`slide`), given Ken Burns
+		// motion (`zoom`), or joined with hard cuts. `contain` rather than `cover`
+		// because cropping a photo is worse than bars around it.
 		if ( 'images' === operation ) {
 			if ( ! files.length ) {
 				cleanup();
@@ -1467,15 +1588,21 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			// transition only has an effect from the second image onward.
 			const boundaries = Math.max( 0, files.length - 1 );
 			const usedTransition = boundaries > 0 ? transition : 'none';
+			// Only a filter in `XFADE` joins two inputs. `zoom` is motion inside a
+			// still, so it has no boundary — and therefore no overlap to shorten
+			// the timeline or to check against the per-image duration.
+			const boundaryTransition = XFADE[ usedTransition ] ? usedTransition : null;
 
-			if ( 'none' !== usedTransition && transitionDuration >= perImage ) {
+			if ( boundaryTransition && transitionDuration >= perImage ) {
 				cleanup();
-				return res.status(400).json({ error: `A ${ usedTransition } transition lasts ${ transitionDuration } s, so each image has to be shown for longer than that; got ${ perImage } s.` });
+				return res.status(400).json({ error: `A ${ boundaryTransition } transition lasts ${ transitionDuration } s, so each image has to be shown for longer than that; got ${ perImage } s.` });
 			}
 
-			const offsets = 'none' === usedTransition ? null : xfadeOffsets( files.map( () => perImage ), transitionDuration );
+			const offsets = boundaryTransition
+				? xfadeOffsets( files.map( () => perImage ), transitionDuration )
+				: null;
 
-			if ( 'none' !== usedTransition && ! offsets ) {
+			if ( boundaryTransition && ! offsets ) {
 				cleanup();
 				return res.status(400).json({ error: 'The transitions would overlap: the images are too short for that transition duration.' });
 			}
@@ -1488,10 +1615,20 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 				args.push( '-loop', '1', '-t', String( perImage ), '-i', file.path );
 			}
 
+			// `zoompan` sits between the fit and the pixel-format conversion because
+			// it steps in source pixels — see `kenBurnsUpscale()`. Everything else
+			// keeps the fitted branch exactly as it was.
+			const upscaleFactor = 'zoom' === usedTransition ? kenBurnsUpscale( frameWidth, frameHeight ) : 1;
+			const motion =
+				'zoom' === usedTransition
+					? `,scale=${ frameWidth * upscaleFactor }:${ frameHeight * upscaleFactor },` +
+						kenBurnsZoompan( frameWidth, frameHeight, frameRate, perImage )
+					: '';
+
 			const branches = files.map(
 				( _file, index ) =>
 					`[${ index }:v]scale=${ frameWidth }:${ frameHeight }:force_original_aspect_ratio=decrease,` +
-					`pad=${ frameWidth }:${ frameHeight }:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${ frameRate },format=yuv420p[v${ index }]`
+					`pad=${ frameWidth }:${ frameHeight }:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${ frameRate }${ motion },format=yuv420p[v${ index }]`
 			);
 
 			let graph;
@@ -1763,6 +1900,9 @@ export {
 	mergeMismatch,
 	xfadeOffsets,
 	videoEncoder,
+	kenBurnsUpscale,
+	kenBurnsZoompan,
+	frameTimestamps,
 	parseRational,
 	boolField,
 	atempoChain,

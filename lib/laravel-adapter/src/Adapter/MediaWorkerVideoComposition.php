@@ -37,14 +37,20 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
     private const POSITIONS = array('top-left', 'top-right', 'bottom-left', 'bottom-right', 'center');
 
     /**
-     * The transitions each operation offers. `zoom` is absent from `images`
-     * because it is `zoompan` — per-still motion, not a transition — and the
-     * route would answer a cross-fade instead of the video that was asked for.
+     * The transitions each operation offers. `zoom` is a slideshow-only value:
+     * it is Ken Burns motion (`zoompan`) inside a still, so it has no counterpart
+     * on a merge, which only ever joins clips at a boundary.
      */
     private const TRANSITIONS = array(
         'merge' => array('none', 'fade', 'dissolve'),
-        'images' => array('none', 'fade', 'slide'),
+        'images' => array('none', 'fade', 'slide', 'zoom'),
     );
+
+    /**
+     * The transitions that join two inputs, and so have an overlap to describe.
+     * `none` and `zoom` have no boundary, which is why they carry no duration.
+     */
+    private const BOUNDARY_TRANSITIONS = array('fade', 'dissolve', 'slide');
 
     private const FORMATS = array('mp4', 'webm', 'mov', 'mkv');
 
@@ -117,7 +123,7 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
             $fields['fps'] = $this->number($options['fps'] ?? 25, 1, 120, 'fps');
             $fields['transition'] = $this->transition($options['transition'] ?? 'none', 'images');
 
-            if ('none' !== $fields['transition']) {
+            if (\in_array($fields['transition'], self::BOUNDARY_TRANSITIONS, true)) {
                 $fields['transition_duration'] = $this->number(
                     $options['transition_duration'] ?? 0.5,
                     0.05,
@@ -132,7 +138,7 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
 
             // Only a transition reads a duration; a copy-merge sends exactly the
             // fields it always sent.
-            if ('none' !== $fields['transition']) {
+            if (\in_array($fields['transition'], self::BOUNDARY_TRANSITIONS, true)) {
                 $fields['transition_duration'] = $this->number(
                     $options['transition_duration'] ?? 1,
                     0.05,

@@ -113,6 +113,7 @@
             "compress_video",
             "convert_video_format",
             "create_video_from_images",
+            "extract_video_frames",
             "generate_video_thumbnails",
             "get_video_metadata",
             "merge_videos",
