@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: wp-action-scheduler
-description: Design and review Action Scheduler jobs in WordPress plugins using Action Scheduler 3.9.x public APIs - async, single, recurring, and cron-expression actions; action_scheduler_init load timing; hook/args/group naming; unique and priority parameters; idempotent callbacks; chunked workloads; activation/deactivation cleanup; WooCommerce-bundled or standalone dependency usage; admin and WP-CLI debugging; queue runner limits; and safe operational troubleshooting. Use when a plugin schedules background jobs with as_enqueue_async_action, as_schedule_single_action, as_schedule_recurring_action, as_schedule_cron_action, as_get_scheduled_actions, or integrates with WooCommerce background queues.
+description: "Design and review Action Scheduler jobs in WordPress plugins using the 3.9.x public APIs: async, single, recurring, and cron-expression actions; action_scheduler_init load timing; hook/args/group naming; unique and priority; idempotent callbacks; chunked workloads; activation/deactivation cleanup; WooCommerce-bundled or standalone usage; admin and WP-CLI debugging. Use when a plugin schedules jobs with as_enqueue_async_action, as_schedule_single_action, as_schedule_recurring_action, as_schedule_cron_action, or as_get_scheduled_actions."
 license: MIT
 metadata:
   type: Skill
@@ -354,7 +354,38 @@ as_unschedule_all_actions(
 // RIGHT - on deactivation, clear all pending actions in an exclusive
 // plugin-owned group.
 as_unschedule_all_actions( '', array(), 'myplugin' );
+
+// WRONG - "Action Scheduler is loaded" does not mean it works. A cloned site,
+// or any site that ships a shim, has the as_* functions while ac_actions /
+// ac_actionmeta are missing; the enqueue then throws or returns 0 and the
+// caller treats it as queued.
+if ( function_exists( 'as_enqueue_async_action' ) ) {
+    as_enqueue_async_action( 'myplugin/process_order', array( $order_id ), 'myplugin' );
+}
+
+// RIGHT - try the queue, then degrade. Throwable covers the missing-table
+// case; an empty id covers the "accepted nothing" case. spawn_cron() kicks
+// the WP-Cron runner without waiting for the next page load.
+$action_id = 0;
+if ( function_exists( 'as_enqueue_async_action' ) ) {
+    try {
+        $action_id = as_enqueue_async_action( 'myplugin/process_order', array( $order_id ), 'myplugin' );
+    } catch ( \Throwable $e ) {
+        $action_id = 0; // Tables absent - fall through to WP-Cron.
+    }
+}
+
+if ( ! $action_id ) {
+    wp_schedule_single_event( time(), 'myplugin/process_order', array( $order_id ) );
+    if ( function_exists( 'spawn_cron' ) ) {
+        spawn_cron();
+    }
+}
 ```
+
+Degrading silently is only half the job - log which backend ran, and expose a
+filter (`myplugin_queue_backend`) so an operator can force the WP-Cron path on
+a site whose AS queue is backed up rather than waiting for it to fail.
 
 ## Cross-references
 

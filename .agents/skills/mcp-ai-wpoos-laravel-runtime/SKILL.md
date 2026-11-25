@@ -1220,3 +1220,15 @@ skeleton (`cp -a docker/laravel/app-skeleton <scratch>/appsnap`) and mount that;
 the vendor volume's `nvoos/*` symlinks still point at `/workspace/oos/lib/…`, so
 `lib/` edits stay live. Mount `oos-laravel_laravel_storage` for speed: without it
 the suite runs 2–3× slower (~4.5 s/test).
+
+
+## 20. Machine principals, estate scope, the root key and the file registry (v1.2.23)
+
+Moved to `reference/machine-principals-and-estate-scope.md` — the `nvoos:machine-token`
+refusals (`*`/`any`, estate-bound assistant scopes, the 90-day PAT baseline), the tenant
+columns behind estate scope, `BudgetGuard`'s **429 `budget_exceeded`** /
+**503 `budget_unverifiable`** contract, the root key's **423** semantics and why the
+gate lives in `SettingsService::write()` rather than middleware, the `nvoos_files`
+visibility/owner/slug model with `GET /api/v1/files/{id}`, the skill manager's write
+rules, per-tool quotas, the estate-overlay profession catalogue, magic-link/Auth0
+identity, and the media worker's two-step video contract with path-segment validation.
