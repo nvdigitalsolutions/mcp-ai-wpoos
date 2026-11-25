@@ -30,7 +30,8 @@
             "html_to_pdf",
             "merge_pdfs",
             "ocr_pdf_text",
-            "pro_pdf_document"
+            "pro_pdf_document",
+            "pro_word_document"
         ],
         "eca-management": [
             "bulk_enroll_students",

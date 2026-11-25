@@ -1807,6 +1807,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/ProPdfDocumentToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'pro_word_document' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ProWordDocumentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Four operations (generate, structure, format, template) over MediaWorkerOfficeWriter (`POST /api/document/word`, docx) and FileVisibilityStoreInterface. Adds heading-level sections, styled runs and five template scaffolds to what `generate_word` can express. Declares neither `requires-model` nor page geometry: the worker calls no model and emits one default-geometry section, so `orientation` and `page_margins` are absent from the schema rather than accepted and dropped (Proposal 164 section 164.33).',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProWordDocumentToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'probe_remote_mcp' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ProbeRemoteMcpTool',
 			'readiness' => 'ready',
