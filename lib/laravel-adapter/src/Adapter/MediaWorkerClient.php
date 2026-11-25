@@ -560,6 +560,15 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
                 ? (string) $body['error']
                 : 'HTTP '.$response->status();
 
+            // 400 and 422 are the worker saying the *request* is wrong — an
+            // option it refuses, inputs it cannot use. The caller can fix those,
+            // so they are a different exception from an engine failure and a
+            // tool can answer 422 rather than reporting a bad argument as a
+            // broken worker. Everything else (auth, 5xx) stays a runtime error.
+            if (in_array($response->status(), array(400, 422), true)) {
+                throw new \InvalidArgumentException('Media worker refused the request: '.$reason);
+            }
+
             throw new \RuntimeException('Media worker error: '.$reason);
         }
 

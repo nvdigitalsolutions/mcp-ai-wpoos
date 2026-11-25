@@ -1661,6 +1661,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/PdfDocumentAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'merge_videos' => array(
+			'class' => 'Nvoos\\Core\\Tool\\MergeVideosTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerVideoComposition over `POST /api/video/compose` (operation `merge`: ffprobe every clip, refuse the first property that differs, then the concat demuxer with `-c copy`) then `GET /api/video/download`. Copy-only on purpose: the demuxer does not fail on a mismatched frame rate, it silently writes a file with the wrong duration. The WordPress tool with this slug is a stub, and it declares `transition: fade` as its default while doing nothing; `none` is the only implemented transition here.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoCompositionAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'mine_agent_memory' => array(
 			'class' => 'Nvoos\\Core\\Tool\\MineAgentMemoryTool',
 			'readiness' => 'ready',

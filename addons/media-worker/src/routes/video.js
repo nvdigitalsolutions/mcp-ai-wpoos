@@ -27,6 +27,15 @@ const MAX_SPEED = 4;
 // than passed to ffmpeg as an `-c:v` argument.
 const VIDEO_CODECS = new Set( [ 'libx264', 'libx265', 'libvpx', 'libvpx-vp9' ] );
 const AUDIO_CODECS = new Set( [ 'aac', 'libmp3lame', 'libvorbis', 'libopus' ] );
+// Which containers accept a stream untouched. A merge copies, so the output
+// has to be one that already speaks the source codec.
+const COPY_CONTAINERS = {
+	h264: [ 'mp4', 'mov', 'mkv' ],
+	hevc: [ 'mp4', 'mov', 'mkv' ],
+	vp8: [ 'webm', 'mkv' ],
+	vp9: [ 'webm', 'mkv' ],
+	av1: [ 'mp4', 'webm', 'mkv' ],
+};
 // Without `-movflags +faststart` the moov atom lands at the end of the file and
 // a browser must download the whole thing before the first frame paints.
 const FASTSTART_FORMATS = new Set( [ 'mp4', 'mov' ] );
@@ -295,6 +304,106 @@ function positionExpression( position, margin ) {
 		default:
 			return `x=main_w-overlay_w-${ margin }:y=main_h-overlay_h-${ margin }`;
 	}
+}
+
+/**
+ * Probe the properties a copy-based merge has to agree on.
+ *
+ * @param {string} inputPath Uploaded file.
+ * @return {Promise<object|null>}
+ */
+async function probeMedia( inputPath ) {
+	try {
+		const { stdout } = await execFileAsync(
+			'ffprobe',
+			[ '-v', 'quiet', '-print_format', 'json', '-show_streams', '-show_format', inputPath ],
+			{ timeout: 30000 }
+		);
+		const parsed = JSON.parse( stdout );
+		const streams = Array.isArray( parsed?.streams ) ? parsed.streams : [];
+		const video = streams.find( ( stream ) => 'video' === stream.codec_type );
+		const audio = streams.find( ( stream ) => 'audio' === stream.codec_type );
+
+		if ( ! video ) {
+			return null;
+		}
+
+		return {
+			width: parseInt( video.width, 10 ) || 0,
+			height: parseInt( video.height, 10 ) || 0,
+			fps: parseRational( video.r_frame_rate ),
+			vcodec: String( video.codec_name || '' ),
+			hasAudio: Boolean( audio ),
+			acodec: audio ? String( audio.codec_name || '' ) : '',
+			sampleRate: audio ? parseInt( audio.sample_rate, 10 ) || 0 : 0,
+		};
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * The first property two clips disagree about, or null when they match.
+ *
+ * This is not a convenience check. The concat demuxer does **not** fail on a
+ * mismatch: joining a 25 fps clip to a 30 fps one under `-c copy` produced a
+ * 4.8 s file instead of 5.0 s and still reported 25/1. So this comparison is
+ * what stops a corrupt merge being answered as a success.
+ *
+ * @param {object|null} a First clip's probe.
+ * @param {object|null} b Another clip's probe.
+ * @return {string|null}
+ */
+function firstDifference( a, b ) {
+	if ( ! a || ! b ) {
+		return 'a clip whose video stream could not be read';
+	}
+
+	if ( a.width !== b.width || a.height !== b.height ) {
+		return `frame size (${ a.width }x${ a.height } vs ${ b.width }x${ b.height })`;
+	}
+
+	if ( Math.abs( a.fps - b.fps ) > 0.01 ) {
+		return `frame rate (${ a.fps.toFixed( 2 ) } vs ${ b.fps.toFixed( 2 ) })`;
+	}
+
+	if ( a.vcodec !== b.vcodec ) {
+		return `video codec (${ a.vcodec } vs ${ b.vcodec })`;
+	}
+
+	if ( a.hasAudio !== b.hasAudio ) {
+		return a.hasAudio ? 'a clip with no audio' : 'a clip with audio';
+	}
+
+	if ( a.hasAudio && b.hasAudio ) {
+		if ( a.acodec !== b.acodec ) {
+			return `audio codec (${ a.acodec } vs ${ b.acodec })`;
+		}
+
+		if ( a.sampleRate !== b.sampleRate ) {
+			return `sample rate (${ a.sampleRate } vs ${ b.sampleRate })`;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * The first clip that differs from the first, described for the caller.
+ *
+ * @param {Array<object|null>} probes
+ * @return {string|null}
+ */
+function mergeMismatch( probes ) {
+	for ( let index = 1; index < probes.length; index++ ) {
+		const difference = firstDifference( probes[ 0 ], probes[ index ] );
+
+		if ( difference ) {
+			return `clip ${ index + 1 } differs from clip 1: ${ difference }`;
+		}
+	}
+
+	return null;
 }
 
 /**
@@ -947,6 +1056,91 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 		} = req.body;
 		const videoDir = siteDirFor(req.site, 'video');
 
+		// ── merge ──
+		// A copy-based join: nothing is re-encoded, so nothing is lost. The price
+		// is the precondition, and it is enforced because ffmpeg will not.
+		if ( 'merge' === operation ) {
+			if ( files.length < 2 ) {
+				cleanup();
+				return res.status(400).json({ error: 'merge needs at least two video files under the "files" field, in the order to join them.' });
+			}
+
+			const mergeFormat = resolveFormat(rawFormat);
+
+			if ( ! mergeFormat ) {
+				cleanup();
+				return res.status(400).json({ error: `Unknown output format: ${ rawFormat }` });
+			}
+
+			const probes = [];
+
+			for ( const file of files ) {
+				probes.push( await probeMedia( file.path ) );
+			}
+
+			const mismatch = mergeMismatch( probes );
+
+			if ( mismatch ) {
+				cleanup();
+				return res.status(400).json({
+					error: `${ mismatch }. A merge copies the streams, so every clip has to match; normalise the outliers first (the transcode operation does that).`,
+				});
+			}
+
+			const containers = COPY_CONTAINERS[ probes[ 0 ].vcodec ] || [ 'mkv' ];
+
+			if ( ! containers.includes( mergeFormat ) ) {
+				cleanup();
+				return res.status(400).json({
+					error: `A ${ probes[ 0 ].vcodec } stream cannot be copied into ${ mergeFormat }. Use one of: ${ containers.join( ', ' ) }.`,
+				});
+			}
+
+			// The demuxer reads its list from disk, so the quoting is ffmpeg's
+			// (single quotes, escaped), not a shell's.
+			const listName = `concat_${ Date.now() }.txt`;
+			const listPath = path.join( videoDir, listName );
+			const lines = files.map(
+				( file ) => `file '${ path.resolve( file.path ).replace( /'/g, "'\\''" ) }'`
+			);
+
+			fs.writeFileSync( listPath, lines.join( '\n' ) + '\n' );
+
+			const mergeOutputName = `processed_${ Date.now() }.${ mergeFormat }`;
+			const mergeOutputPath = path.join( videoDir, mergeOutputName );
+
+			try {
+				const args = [ '-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy' ];
+
+				if ( FASTSTART_FORMATS.has( mergeFormat ) ) {
+					args.push( '-movflags', '+faststart' );
+				}
+
+				args.push( '-y', mergeOutputPath );
+
+				console.log( `[FFmpeg] ffmpeg ${ args.join( ' ' ) }` );
+				await execFileAsync( 'ffmpeg', args, { timeout: 300000 } );
+			} finally {
+				try { fs.unlinkSync( listPath ); } catch {}
+			}
+
+			const mergeStats = fs.statSync( mergeOutputPath );
+
+			res.json({
+				success: true,
+				operation,
+				source_count: files.length,
+				reencoded: false,
+				output_size: mergeStats.size,
+				output_file: mergeOutputName,
+			});
+
+			cleanup();
+			setTimeout(() => { try { fs.unlinkSync( mergeOutputPath ); } catch {} }, 60000);
+
+			return;
+		}
+
 		let opacity;
 		let scaleFactor;
 		let position;
@@ -1146,6 +1340,8 @@ export {
 	resolveBitrate,
 	resolvePosition,
 	positionExpression,
+	firstDifference,
+	mergeMismatch,
 	parseRational,
 	boolField,
 	atempoChain,

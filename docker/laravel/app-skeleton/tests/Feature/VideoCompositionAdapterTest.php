@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
 use Nvoos\Core\Tool\AddWatermarkToVideoTool;
+use Nvoos\Core\Tool\MergeVideosTool;
 use Nvoos\Laravel\Adapter\MediaWorkerVideoComposition;
 use RuntimeException;
 use Tests\TestCase;
@@ -79,7 +80,7 @@ final class VideoCompositionAdapterTest extends TestCase
 
         $this->assertInstanceOf(MediaWorkerVideoComposition::class, $adapter);
         $this->assertTrue($adapter->isAvailable());
-        $this->assertSame(array('watermark'), $adapter::operations());
+        $this->assertSame(array('watermark', 'merge'), $adapter::operations());
     }
 
     // ── The two-input contract ───────────────────────────────────────────────
@@ -250,6 +251,91 @@ final class VideoCompositionAdapterTest extends TestCase
         $this->assertSame(\strlen(self::STUB_BYTES), $result['data']['bytes']);
     }
 
+    // ── Merge ────────────────────────────────────────────────────────────────
+
+    public function test_a_merge_sends_the_clips_in_order(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark()),
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('merge', $this->field($captured, 'operation'));
+        $this->assertSame(array('files[0]', 'files[1]'), $this->filePartNames($captured));
+
+        // Nothing is re-encoded, and the result says so rather than leaving the
+        // caller to guess whether the quality changed.
+        $this->assertFalse($result['data']['reencoded']);
+        $this->assertSame(2, $result['data']['source_count']);
+    }
+
+    public function test_a_merge_does_not_carry_watermark_fields(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark()),
+            'save_to_media' => false,
+        ));
+
+        $this->assertNull($this->field($captured, 'position'), 'a merge has no position');
+        $this->assertNull($this->field($captured, 'opacity'));
+    }
+
+    public function test_a_single_clip_is_not_a_merge(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video()),
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('at least two videos', $result->getMessage());
+
+        Http::assertNothingSent();
+    }
+
+    public function test_a_fade_transition_is_refused_with_the_reason(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark()),
+            'transition' => 'fade',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('not implemented', $result->getMessage());
+        $this->assertStringContainsString('xfade', $result->getMessage());
+
+        Http::assertNothingSent();
+    }
+
+    public function test_a_worker_refusal_for_mismatched_clips_is_a_caller_error(): void
+    {
+        $this->fakeWorkerRefusing('clip 2 differs from clip 1: frame rate (25.00 vs 30.00)');
+
+        $result = $this->app->make(MergeVideosTool::class)->execute(array(
+            'video_urls' => array($this->video(), $this->mark()),
+            'save_to_media' => false,
+        ));
+
+        // A 400 from the route is the caller's to fix, so it must not be
+        // reported as a broken worker (500).
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('clip 2 differs from clip 1', $result->getMessage());
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private function video(): string
@@ -282,6 +368,8 @@ final class VideoCompositionAdapterTest extends TestCase
             'position' => 'bottom-right',
             'output_size' => \strlen(self::STUB_BYTES),
             'output_file' => 'processed_1700000000.mp4',
+            'source_count' => 2,
+            'reencoded' => false,
         ), 200, $json);
 
         $bytes = Http::response(self::STUB_BYTES, 200, array('Content-Type' => 'video/mp4'));
@@ -300,6 +388,21 @@ final class VideoCompositionAdapterTest extends TestCase
             $captured = array('url' => $url, 'data' => $request->data());
 
             return $compose;
+        });
+    }
+
+    /**
+     * A worker that refuses the request, which the route does with a 400.
+     */
+    private function fakeWorkerRefusing(string $error, int $status = 400): void
+    {
+        $json = array('Content-Type' => 'application/json');
+
+        $health = Http::response(array('status' => 'ok', 'capabilities' => self::CAPABILITIES), 200, $json);
+        $refusal = Http::response(array('error' => $error), $status, $json);
+
+        Http::fake(static function (ClientRequest $request) use ($health, $refusal) {
+            return str_contains($request->url(), '/api/health') ? $health : $refusal;
         });
     }
 

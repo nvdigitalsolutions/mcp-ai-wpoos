@@ -1219,3 +1219,78 @@ gains 10 tests in `VideoCompositionAdapterTest`; the worker gains 2 in
 only their filter graphs are new. `merge` still owns the hard part: inputs that
 differ in resolution, frame rate or audio presence need normalising before
 `concat`, which is a graph of its own rather than a second upload route.
+
+## 164.21 Addendum — `merge_videos`, and the precondition that stops a silent corruption (2026-11-25)
+
+### The third stub
+
+`add_watermark_to_video` and `optimize_for_platform` were stubs; so is this one
+— `// TODO` then a success envelope. It is the least honest of the three,
+because it declares `transition: fade` as its **default** and then does nothing
+at all.
+
+### A copy-merge is the right merge
+
+The concat demuxer with `-c copy` joins streams without re-encoding: no quality
+loss, and sub-second. The concat *filter* re-encodes every frame. When the clips
+already match, re-encoding them buys nothing, so copy is the path taken here.
+
+### But the demuxer does not fail on a mismatch — measured
+
+This is the finding the whole design hangs on. Joining a 25 fps, 2 s clip to a
+30 fps, 2 s clip with `-c copy`:
+
+```
+copy path duration:       5.000000      # matching pair, correct
+mismatched-fps duration:  4.800000      # wrong, and no error
+streams:                  h264,25/1,110  # still claims 25/1
+```
+
+The merge **succeeded** and produced a file whose duration is wrong. That is
+worse than a refusal, so the route probes every clip and compares the
+properties a copy cannot change:
+
+| property | why |
+| --- | --- |
+| frame size | the decoder would resize mid-stream |
+| frame rate | the case measured above |
+| video codec | a copy cannot transcode |
+| presence of audio | the demuxer expects the same streams in every file |
+| audio codec, sample rate | same reason, one layer down |
+
+A mismatch is refused naming **which clip** and **which property**, with the fix
+in the message (`transcode` normalises an outlier). The output container is
+gated the same way, from the probed codec rather than the caller's wish: h264
+and hevc copy into mp4/mov/mkv, VP8/VP9 into webm/mkv.
+
+### Transitions are a different operation, not a flag
+
+`fade`/`dissolve` need `xfade` and `acrossfade`, which re-encode both clips and
+require cumulative offsets computed from every clip's duration. That is a
+re-encode operation with its own preconditions, so it is recorded as the
+follow-up rather than half-built. The default here is `none`; asking for a fade
+is refused **with the reason**, not silently ignored.
+
+### Errors now carry the right class
+
+`decodeFileResponse()` split its non-2xx handling: **400 and 422** become
+`InvalidArgumentException` — the caller can fix the request, and a refused
+option or mismatched input is such a case — while auth failures and 5xx stay
+`RuntimeException`. Without that split a mismatch refusal reached the caller as
+a 500, which says the worker is broken when it is being precise. Only the upload
+path changed; the base64 decode path is untouched.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **281 rows / 262 servable / 0 violations** (was
+280 / 261). `bin/toolkit-parity.php`: **60 of 854** (was 59);
+`video-production` is **11 of 21** (was 10).
+
+`lib/core` 2,464 tests / 17,565 assertions; adapter 359 / 1,922; the app suite
+gains 5 tests in `VideoCompositionAdapterTest` (15 total); the worker gains 3 in
+`video.test.js` (20 total).
+
+### What is left in this group
+
+`create_video_from_images` — the same endpoint and the same contract; the work
+is a per-image duration and the `image2`/`loop` handling.
