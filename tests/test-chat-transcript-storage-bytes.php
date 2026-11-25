@@ -189,4 +189,126 @@ class Test_Chat_Transcript_Storage_Bytes extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'storage_bytes', $data, 'List envelope should always include storage_bytes' );
 		$this->assertSame( 0, $data['storage_bytes'], 'storage_bytes should default to 0' );
 	}
+
+	/**
+	 * Build a repository whose aggregate is counted instead of executed.
+	 *
+	 * @return WP_MCP_AI_Transcript_Repository Counting stub.
+	 */
+	private function make_counting_repository() {
+		return new class() extends WP_MCP_AI_Transcript_Repository {
+			/**
+			 * Number of aggregate executions.
+			 *
+			 * @var int
+			 */
+			public $queries = 0;
+
+			/**
+			 * Value returned by the aggregate (null simulates a timeout).
+			 *
+			 * @var int|null
+			 */
+			public $bytes = 1234;
+
+			/**
+			 * Pretend the CCT table is present.
+			 *
+			 * @return bool
+			 */
+			public function table_exists() {
+				return true;
+			}
+
+			/**
+			 * Counting stub for the real aggregate.
+			 *
+			 * @param int $user_id      User identifier.
+			 * @param int $assistant_id Optional assistant ID.
+			 * @return int|null
+			 */
+			protected function query_storage_bytes( $user_id, $assistant_id = 0 ) {
+				++$this->queries;
+
+				return $this->bytes;
+			}
+		};
+	}
+
+	/**
+	 * A repeated read must not re-run the aggregate.
+	 */
+	public function test_repository_caches_storage_bytes() {
+		$repository = $this->make_counting_repository();
+
+		$this->assertSame( 1234, $repository->get_storage_bytes( $this->admin_id ) );
+
+		// The cached figure wins even if the underlying data would differ now.
+		$repository->bytes = 9999;
+		$this->assertSame( 1234, $repository->get_storage_bytes( $this->admin_id ) );
+		$this->assertSame( 1, $repository->queries, 'The aggregate should run once per freshness window.' );
+	}
+
+	/**
+	 * The all-assistants total and a single-assistant total are cached apart.
+	 */
+	public function test_cache_is_scoped_per_assistant() {
+		$repository = $this->make_counting_repository();
+
+		$repository->get_storage_bytes( $this->admin_id, 7 );
+		$repository->get_storage_bytes( $this->admin_id, 0 );
+
+		$this->assertSame( 2, $repository->queries, 'Each assistant scope should be cached separately.' );
+	}
+
+	/**
+	 * Deleting a transcript must invalidate every scope for that user.
+	 */
+	public function test_flush_storage_bytes_cache_forces_recompute() {
+		$repository = $this->make_counting_repository();
+
+		$repository->get_storage_bytes( $this->admin_id, 7 );
+		$repository->flush_storage_bytes_cache( $this->admin_id );
+		$repository->bytes = 5000;
+
+		$this->assertSame( 5000, $repository->get_storage_bytes( $this->admin_id, 7 ) );
+		$this->assertSame( 2, $repository->queries );
+	}
+
+	/**
+	 * A zero TTL opts out of caching entirely.
+	 */
+	public function test_zero_ttl_disables_caching() {
+		$filter = static function () {
+			return 0;
+		};
+
+		add_filter( 'wp_mcp_ai_transcript_storage_bytes_ttl', $filter );
+
+		$repository = $this->make_counting_repository();
+		$repository->get_storage_bytes( $this->admin_id );
+		$repository->get_storage_bytes( $this->admin_id );
+
+		remove_filter( 'wp_mcp_ai_transcript_storage_bytes_ttl', $filter );
+
+		$this->assertSame( 2, $repository->queries );
+	}
+
+	/**
+	 * A recompute that blows its time budget falls back to the last good figure.
+	 */
+	public function test_timed_out_recompute_serves_last_known_good() {
+		$repository         = $this->make_counting_repository();
+		$repository->bytes = 500;
+
+		$this->assertSame( 500, $repository->get_storage_bytes( $this->admin_id ) );
+
+		// Invalidate the fresh entry, then simulate the aggregate timing out.
+		// The backstop should keep the reported figure stable rather than
+		// dropping the status bar to 0 or blocking the request.
+		$repository->flush_storage_bytes_cache( $this->admin_id );
+		$repository->bytes = null;
+
+		$this->assertSame( 500, $repository->get_storage_bytes( $this->admin_id ) );
+	}
 }
