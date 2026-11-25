@@ -1053,6 +1053,10 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			opacity: rawOpacity,
 			scale: rawScale,
 			format: rawFormat,
+			duration: rawDuration,
+			width: rawWidth,
+			height: rawHeight,
+			fps: rawFps,
 		} = req.body;
 		const videoDir = siteDirFor(req.site, 'video');
 
@@ -1137,6 +1141,97 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 
 			cleanup();
 			setTimeout(() => { try { fs.unlinkSync( mergeOutputPath ); } catch {} }, 60000);
+
+			return;
+		}
+
+		// ── images ──
+		// A slideshow: every still is looped for a fixed duration, fitted into
+		// one frame, then concatenated. `contain` rather than `cover` because
+		// cropping a photo is worse than bars around it.
+		if ( 'images' === operation ) {
+			if ( ! files.length ) {
+				cleanup();
+				return res.status(400).json({ error: 'images needs at least one image under the "files" field, in the order to show them.' });
+			}
+
+			let perImage;
+			let frameWidth;
+			let frameHeight;
+			let frameRate;
+			let imagesFormat;
+
+			try {
+				perImage = boundedNumber( rawDuration, 0.1, 60, 'duration' ) ?? 3;
+				frameWidth = boundedDimension( rawWidth, 'width' );
+				frameHeight = boundedDimension( rawHeight, 'height' );
+				frameRate = boundedNumber( rawFps, 1, 120, 'fps' ) ?? 25;
+				imagesFormat = resolveFormat( rawFormat );
+			} catch ( argErr ) {
+				cleanup();
+				return res.status(400).json({ error: argErr.message });
+			}
+
+			if ( ! imagesFormat ) {
+				cleanup();
+				return res.status(400).json({ error: `Unknown output format: ${ rawFormat }` });
+			}
+
+			if ( ! frameWidth || ! frameHeight ) {
+				cleanup();
+				return res.status(400).json({ error: 'width and height are required: the frame every still is fitted into.' });
+			}
+
+			const args = [];
+
+			// `-t` before `-i` bounds how much of the looped still is read, which
+			// is what gives each image its duration.
+			for ( const file of files ) {
+				args.push( '-loop', '1', '-t', String( perImage ), '-i', file.path );
+			}
+
+			const branches = files.map(
+				( _file, index ) =>
+					`[${ index }:v]scale=${ frameWidth }:${ frameHeight }:force_original_aspect_ratio=decrease,` +
+					`pad=${ frameWidth }:${ frameHeight }:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${ frameRate },format=yuv420p[v${ index }]`
+			);
+
+			const joined = files.map( ( _file, index ) => `[v${ index }]` ).join( '' );
+			const graph = `${ branches.join( ';' ) };${ joined }concat=n=${ files.length }:v=1:a=0[v]`;
+
+			const imagesOutputName = `processed_${ Date.now() }.${ imagesFormat }`;
+			const imagesOutputPath = path.join( videoDir, imagesOutputName );
+
+			args.push(
+				'-filter_complex', graph,
+				'-map', '[v]',
+				'-c:v', 'libx264',
+				'-crf', '20',
+				'-pix_fmt', 'yuv420p'
+			);
+
+			if ( FASTSTART_FORMATS.has( imagesFormat ) ) {
+				args.push( '-movflags', '+faststart' );
+			}
+
+			args.push( '-y', imagesOutputPath );
+
+			console.log( `[FFmpeg] ffmpeg ${ args.join( ' ' ) }` );
+			await execFileAsync( 'ffmpeg', args, { timeout: 300000 } );
+
+			const imagesStats = fs.statSync( imagesOutputPath );
+
+			res.json({
+				success: true,
+				operation,
+				source_count: files.length,
+				duration: files.length * perImage,
+				output_size: imagesStats.size,
+				output_file: imagesOutputName,
+			});
+
+			cleanup();
+			setTimeout(() => { try { fs.unlinkSync( imagesOutputPath ); } catch {} }, 60000);
 
 			return;
 		}

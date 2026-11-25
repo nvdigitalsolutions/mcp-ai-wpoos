@@ -128,6 +128,83 @@ abstract class AbstractVideoTool extends AbstractTool
     }
 
     /**
+     * Several inputs, in order — or the reason they could not be resolved.
+     *
+     * `$idsKey` wins over `$urlsKey` for the same reason `sourcePath()` prefers
+     * an id: a stored file is already inside the estate, a URL has to be
+     * fetched. Order is the caller's, never sorted — a merge that reordered its
+     * clips would be a silent corruption.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return list<string>|string Paths, or a message naming the missing id.
+     */
+    protected function inputPaths(array $arguments, string $idsKey, string $urlsKey): array|string
+    {
+        $ids = $this->intList($arguments, $idsKey);
+
+        if (array() !== $ids) {
+            $paths = array();
+
+            foreach ($ids as $id) {
+                $path = $this->files?->getPath($id);
+
+                if (null === $path || '' === $path) {
+                    return 'No stored file with id ' . $id . '.';
+                }
+
+                $paths[] = $path;
+            }
+
+            return $paths;
+        }
+
+        return $this->stringList($arguments, $urlsKey);
+    }
+
+    /**
+     * @param array<string, mixed> $arguments
+     *
+     * @return list<int>
+     */
+    private function intList(array $arguments, string $key): array
+    {
+        $raw = $arguments[$key] ?? array();
+        $raw = \is_array($raw) ? $raw : array($raw);
+
+        $values = array();
+
+        foreach ($raw as $value) {
+            if (\is_numeric($value) && (int) $value > 0) {
+                $values[] = (int) $value;
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param array<string, mixed> $arguments
+     *
+     * @return list<string>
+     */
+    private function stringList(array $arguments, string $key): array
+    {
+        $raw = $arguments[$key] ?? array();
+        $raw = \is_array($raw) ? $raw : array($raw);
+
+        $values = array();
+
+        foreach ($raw as $value) {
+            if (\is_string($value) && '' !== \trim($value)) {
+                $values[] = \trim($value);
+            }
+        }
+
+        return $values;
+    }
+
+    /**
      * The MIME type for a container.
      */
     protected static function mime(string $format): string

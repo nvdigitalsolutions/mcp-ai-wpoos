@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
 use Nvoos\Core\Tool\AddWatermarkToVideoTool;
+use Nvoos\Core\Tool\CreateVideoFromImagesTool;
 use Nvoos\Core\Tool\MergeVideosTool;
 use Nvoos\Laravel\Adapter\MediaWorkerVideoComposition;
 use RuntimeException;
@@ -80,7 +81,7 @@ final class VideoCompositionAdapterTest extends TestCase
 
         $this->assertInstanceOf(MediaWorkerVideoComposition::class, $adapter);
         $this->assertTrue($adapter->isAvailable());
-        $this->assertSame(array('watermark', 'merge'), $adapter::operations());
+        $this->assertSame(array('watermark', 'merge', 'images'), $adapter::operations());
     }
 
     // ── The two-input contract ───────────────────────────────────────────────
@@ -336,6 +337,95 @@ final class VideoCompositionAdapterTest extends TestCase
         $this->assertStringContainsString('clip 2 differs from clip 1', $result->getMessage());
     }
 
+    // ── Slideshow ────────────────────────────────────────────────────────────
+
+    public function test_a_slideshow_sends_the_frame_and_the_per_image_duration(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video(), $this->mark()),
+            'resolution' => '720p',
+            'duration_per_image' => 2.5,
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('images', $this->field($captured, 'operation'));
+        $this->assertSame('1280', $this->field($captured, 'width'));
+        $this->assertSame('720', $this->field($captured, 'height'));
+        $this->assertSame('2.5', $this->field($captured, 'duration'));
+        $this->assertSame('720p', $result['data']['resolution']);
+    }
+
+    public function test_one_image_is_enough_for_a_slideshow(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video()),
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success'], 'a single still is a valid one-frame slideshow');
+        $this->assertSame(array('files[0]'), $this->filePartNames($captured));
+        $this->assertSame('1920', $this->field($captured, 'width'), '1080p is the default frame');
+    }
+
+    public function test_a_slideshow_reports_the_total_duration(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured);
+
+        $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video(), $this->mark()),
+            'duration_per_image' => 3,
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertSame(2, $result['data']['source_count']);
+        $this->assertSame(6.0, $result['data']['duration'], 'two images at three seconds each');
+    }
+
+    public function test_a_slideshow_fade_is_refused_with_the_reason(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video()),
+            'transition' => 'fade',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('not implemented', $result->getMessage());
+        $this->assertStringContainsString('xfade', $result->getMessage());
+
+        Http::assertNothingSent();
+    }
+
+    public function test_an_unknown_slideshow_resolution_is_refused_with_the_supported_ones(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video()),
+            'resolution' => '8k',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('Unknown resolution: 8k', $result->getMessage());
+        $this->assertStringContainsString('1080p', $result->getMessage());
+
+        Http::assertNothingSent();
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private function video(): string
@@ -370,6 +460,7 @@ final class VideoCompositionAdapterTest extends TestCase
             'output_file' => 'processed_1700000000.mp4',
             'source_count' => 2,
             'reencoded' => false,
+            'duration' => 6.0,
         ), 200, $json);
 
         $bytes = Http::response(self::STUB_BYTES, 200, array('Content-Type' => 'video/mp4'));

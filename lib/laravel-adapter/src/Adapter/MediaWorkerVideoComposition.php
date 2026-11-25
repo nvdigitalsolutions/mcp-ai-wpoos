@@ -32,7 +32,7 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
      * The shapes an overlay can take. `merge` will join this list on the same
      * endpoint rather than getting a contract of its own.
      */
-    private const OPERATIONS = array('watermark', 'merge');
+    private const OPERATIONS = array('watermark', 'merge', 'images');
 
     private const POSITIONS = array('top-left', 'top-right', 'bottom-left', 'bottom-right', 'center');
 
@@ -65,11 +65,15 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
 
         $inputs = \array_values($inputs);
 
-        if (\count($inputs) < 2) {
+        $minimum = 'images' === $operation ? 1 : 2;
+
+        if (\count($inputs) < $minimum) {
             throw new \InvalidArgumentException(
-                'merge' === $operation
-                    ? 'A merge needs at least two inputs, in the order to join them.'
-                    : 'A watermark needs two inputs: the video, then the mark.'
+                match ($operation) {
+                    'images' => 'A slideshow needs at least one image.',
+                    'merge' => 'A merge needs at least two inputs, in the order to join them.',
+                    default => 'A watermark needs two inputs: the video, then the mark.',
+                }
             );
         }
 
@@ -92,6 +96,15 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
             $fields['position'] = $this->position($options['position'] ?? 'bottom-right');
             $fields['opacity'] = $this->number($options['opacity'] ?? 0.7, 0.0, 1.0, 'opacity');
             $fields['scale'] = $this->number($options['scale'] ?? 0.2, 0.01, 1.0, 'scale');
+        }
+
+        if ('images' === $operation) {
+            // Even dimensions, because x264 refuses an odd width or height
+            // rather than rounding it.
+            $fields['width'] = $this->even($options['width'] ?? 1920, 'width');
+            $fields['height'] = $this->even($options['height'] ?? 1080, 'height');
+            $fields['duration'] = $this->number($options['duration'] ?? 3, 0.1, 60.0, 'duration');
+            $fields['fps'] = $this->number($options['fps'] ?? 25, 1, 120, 'fps');
         }
 
         try {
@@ -157,6 +170,10 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
 
         if (isset($body['reencoded'])) {
             $result['reencoded'] = (bool) $body['reencoded'];
+        }
+
+        if (isset($body['duration'])) {
+            $result['duration'] = (float) $body['duration'];
         }
 
         return $result;
@@ -227,6 +244,16 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
         }
 
         return $number;
+    }
+
+    /**
+     * A dimension rounded to an even pixel count.
+     */
+    private function even(mixed $value, string $label): int
+    {
+        $pixels = (int) \round($this->number($value, 16, 8192, $label));
+
+        return 0 === $pixels % 2 ? $pixels : $pixels + 1;
     }
 
     private function extension(string $format): string

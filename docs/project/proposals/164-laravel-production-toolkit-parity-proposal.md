@@ -1304,3 +1304,77 @@ gains 5 tests in `VideoCompositionAdapterTest` (15 total); the worker gains 3 in
 
 `create_video_from_images` — the same endpoint and the same contract; the work
 is a per-image duration and the `image2`/`loop` handling.
+
+## 164.22 Addendum — `create_video_from_images`, and the group closes (2026-11-25)
+
+### The fourth stub
+
+`class-wp-mcp-ai-tool-create-video-from-images.php` is `// TODO` followed by a
+success envelope, and it declares `transition: fade` as its default. Same call
+as §164.18 and §164.20: implemented, with that stated.
+
+### Each still becomes a looped input
+
+```
+-loop 1 -t <seconds> -i <file>     (per image)
+[i:v]scale=W:H:force_original_aspect_ratio=decrease,pad=W:H:(ow-iw)/2:(oh-ih)/2,
+     setsar=1,fps=25,format=yuv420p[vi];
+[v0][v1]…concat=n=N:v=1:a=0[v]
+```
+
+The obvious alternative — a concat-demuxer list with a `duration` line per
+image — needs the **last file repeated** (the demuxer ignores a trailing
+duration) and assumes every still has the same dimensions. Explicit looped
+branches have neither problem, and the normalisation is the same recipe `fit`
+and `merge` already use.
+
+### `contain`, not `cover`
+
+A portrait photograph in a landscape frame is letterboxed, not cropped.
+Cropping a still loses the part someone chose to show; bars are honest about
+the shape mismatch. `optimize_for_platform` remains the tool for *filling* a
+frame, including its `cover` mode.
+
+### Verified against real ffmpeg
+
+Three stills at 2 s each — 1920×1080, a **portrait** 1080×1920, and 800×600 —
+produced **6.000 s exactly**, 1280×720, 150 frames at 25 fps. The portrait one
+was letterboxed rather than stretched or cropped, which is the whole point of
+the `pad` branch.
+
+### Two deliberate omissions
+
+- **Only `transition: none`.** `fade`/`slide`/`zoom` are `xfade`/`zoompan`: a
+  chain that re-encodes and needs cumulative offsets from every segment's
+  duration. Declared, refused with the reason, recorded as the follow-up.
+- **No background-audio argument.** The compose route reads one ordered file
+  list; mixing "N images then a track" into it makes the boundary ambiguous. A
+  silent slideshow that says it is silent beats an `audio` argument that is
+  accepted and dropped.
+
+### One ordering rule, now in the base
+
+`inputPaths()` moved from a private method on `MergeVideosTool` into
+`AbstractVideoTool`, because both multi-input tools need it and the rule is the
+same one `sourcePath()` has always used: **ids win over URLs**, and the caller's
+order is preserved — never sorted.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **282 rows / 263 servable / 0 violations** (was
+281 / 262). `bin/toolkit-parity.php`: **61 of 854** (was 60);
+`video-production` is **12 of 21** (was 11).
+
+`lib/core` 2,466 tests / 17,575 assertions; adapter 359 / 1,923; the app suite
+gains 5 tests in `VideoCompositionAdapterTest` (20 total); the worker stays at
+20 — this slice added no new pure helper, because the graph is built inline from
+validated fields.
+
+### The second-input group is closed
+
+All three slugs that needed more than one upload now exist on one endpoint and
+one contract: `merge_videos`, `add_watermark_to_video`,
+`create_video_from_images`. `video-production` is **12 of 21**, from 0 when
+this arc began. The nine remaining are the groups §164.19 described — a
+renderer, speech models, audit surfaces with no equivalent table, one duplicate,
+and two operations no WordPress slug asks for.
