@@ -1508,7 +1508,8 @@ function contentlessBand( facts: ForgeBandFacts | undefined ): boolean {
  */
 function measuredLaneColumns(
 	bandFacts: ForgeBandFacts | undefined,
-	declared: ForgeSectionColumn[] | undefined
+	declared: ForgeSectionColumn[] | undefined,
+	contentWidth?: number
 ): ForgeSectionColumn[] | undefined {
 	const lanes = bandFacts?.columns?.desktop;
 	if ( ! lanes || lanes.length < 2 ) {
@@ -1522,13 +1523,23 @@ function measuredLaneColumns(
 		return undefined;
 	}
 	const total = lanes.reduce( ( sum, lane ) => sum + ( lane.width ?? 0 ), 0 );
+	// A lane set where EVERY lane fills the content column is a STACK, not a row:
+	// eca.directory's about-us CTA measures two 1280px lanes inside a 1280px
+	// content column. Normalising those to 50/50 laid them side by side; recording
+	// each as 100% lets the renderer derive ONE track (see lib/lane-tracks.ts).
+	const stacked =
+		contentWidth !== undefined &&
+		contentWidth > 0 &&
+		lanes.every( ( lane ) => ( lane.width ?? 0 ) >= contentWidth * 0.95 );
 	const declaredImages = ( declared ?? [] )
 		.map( ( column ) => column.bgImage )
 		.filter( ( url ): url is string => Boolean( url ) );
 	const used = new Set< string >();
 	return lanes.map( ( lane, index ) => {
 		const column: ForgeSectionColumn = {};
-		if ( lane.width && total > 0 ) {
+		if ( stacked ) {
+			column.width = 100;
+		} else if ( lane.width && total > 0 ) {
 			// A one-decimal share keeps the lanes summing to 100.
 			column.width = Math.round( ( lane.width / total ) * 1000 ) / 10;
 		}
@@ -2282,7 +2293,7 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// services row is 432 / 432 / 571, not equal thirds) and the surfaces only a
 	// browser can see — a builder scopes the slab to a nested wrapper, which is
 	// how the black third column and its photo column went unrecorded.
-	const measuredColumns = measuredLaneColumns( bandFacts, section.columns );
+	const measuredColumns = measuredLaneColumns( bandFacts, section.columns, box?.desktop?.content?.width );
 	if ( measuredColumns ) {
 		const lanes = measuredColumns.map( ( column ) => {
 			const parts: string[] = [];

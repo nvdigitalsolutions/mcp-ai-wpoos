@@ -322,6 +322,37 @@ const mediaFromElementFacts = ( theme: SectionTheme | undefined ): Array< { src:
 	return painted.length > 0 ? [ { src: painted[ 0 ].src, alt: '' } ] : undefined;
 };
 
+/** Any `property:` prefix — the shape that makes a value a DECLARATION. */
+const CSS_DECLARATION_RE = /^[a-z-]+\s*:/i;
+
+/**
+ * A band's background fact, as a CSS declaration.
+ *
+ * `bg` is usually a VALUE (`#fff`, `linear-gradient(…)`). The per-page pass also
+ * records some surfaces as a full DECLARATION, and prefixing those produced
+ * `background:background-image:url(…)` — invalid CSS, silently dropped, so the
+ * band rendered flat. eca.directory's about-us "Why choose" band lost its blob
+ * photo this way.
+ *
+ * A `background-image`/`background` declaration is passed through verbatim. A
+ * bare `background-color:` declaration is NOT trusted as a BAND surface: the
+ * page pass also hoists a lane's slab, and painting the whole band with one
+ * lane's colour is worse than leaving it — colours arrive via `bgColor`.
+ */
+function bandBackground( value: string ): string | undefined {
+	const trimmed = value.trim();
+	if ( trimmed === '' ) {
+		return undefined;
+	}
+	if ( /^background(?:-image)?\s*:/i.test( trimmed ) ) {
+		return trimmed;
+	}
+	if ( CSS_DECLARATION_RE.test( trimmed ) ) {
+		return undefined;
+	}
+	return `background:${ trimmed }`;
+}
+
 const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string, desktopCols?: number, collapsed = false ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
@@ -509,7 +540,7 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		}
 		// A color alongside the photo is the source's UNDERLAY (invisible
 		// beneath an opaque image) — never paint it over the photo.
-		if ( theme.bg && ! theme.bgImage ) {
+		if ( theme.bg && ! theme.bgImage && ! CSS_DECLARATION_RE.test( theme.bg ) ) {
 			parts.push( `background-color:${ theme.bg }` );
 		}
 		if ( theme.overlay ) {
@@ -518,7 +549,10 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		return parts.length > 0 ? parts.join( ';' ) : undefined;
 	}
 	if ( theme.bg ) {
-		parts.push( `background:${ theme.bg }` );
+		const declaration = bandBackground( theme.bg );
+		if ( declaration ) {
+			parts.push( declaration );
+		}
 	}
 	// Section-level pull facts (124 §4): negative margins overlap the
 	// neighbor band; z-index stacks the overlap.
@@ -1278,6 +1312,7 @@ const bandLaneCss = sections
 		// rule could outrank.
 		(
 			[
+				[ 'desktop', '(min-width: 1025px)' ],
 				[ 'tablet', '(min-width: 768px) and (max-width: 1024px)' ],
 				[ 'mobile', '(max-width: 767px)' ],
 			] as const
