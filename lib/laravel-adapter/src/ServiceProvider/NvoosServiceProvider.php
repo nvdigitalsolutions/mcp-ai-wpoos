@@ -32,6 +32,7 @@ use Nvoos\Core\Domain\Contract\AgentOrchestrationInterface;
 use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Contract\AudioTranscriptionInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
@@ -145,6 +146,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerVideo;
 use Nvoos\Laravel\Adapter\MediaWorkerVideoComposition;
 use Nvoos\Laravel\Adapter\MediaWorkerVideoFrames;
 use Nvoos\Laravel\Adapter\MemoryStore;
+use Nvoos\Laravel\Adapter\OpenAiTranscription;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
@@ -245,6 +247,16 @@ class NvoosServiceProvider extends ServiceProvider {
 		// `process()` deliberately does not have. Its own contract keeps that
 		// meaning intact for the four tools that read it (§164.25).
 		$this->app->bind( VideoFrameExtractionInterface::class, MediaWorkerVideoFrames::class );
+
+		// Speech-to-text with timings (Proposal 164 §164.27). Separate from
+		// `transcribe_openai_audio` because a transcript is text and a caption
+		// needs segments; the adapter asks for `verbose_json` and normalises, so
+		// the formatter never speaks a provider dialect. It needs no worker —
+		// only a key — which is why an audio file can be captioned on a host that
+		// has no ffmpeg.
+		$this->app->bind( AudioTranscriptionInterface::class, function ( $app ) {
+			return new OpenAiTranscription( $app->make( SettingsStoreInterface::class ) );
+		} );
 
 		// Documents follow the same ladder (Proposal 164 §164.4.2): the worker
 		// renders with a real browser at `/api/pdf/generate`, so `html_to_pdf`

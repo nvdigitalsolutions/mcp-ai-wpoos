@@ -19,6 +19,7 @@ namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Infrastructure\Http\MultipartBody;
 
 class TranscribeOpenAIAudioTool extends AbstractTool
 {
@@ -90,27 +91,7 @@ class TranscribeOpenAIAudioTool extends AbstractTool
             ? 'https://api.openai.com/v1/audio/translations'
             : 'https://api.openai.com/v1/audio/transcriptions';
 
-        $formFields = array(
-            array( 'name' => 'model', 'contents' => $model ),
-            array( 'name' => 'response_format', 'contents' => $format ),
-        );
-
-        if ('' !== $language) {
-            $formFields[] = array( 'name' => 'language', 'contents' => $language );
-        }
-        if ('' !== $prompt) {
-            $formFields[] = array( 'name' => 'prompt', 'contents' => $prompt );
-        }
-
-        // Build multipart form for file upload.
-        $boundary = '----WhisperBoundary' . \bin2hex(\random_bytes(8));
-        $body     = '';
-
-        foreach ($formFields as $field) {
-            $body .= "--{$boundary}\r\n";
-            $body .= "Content-Disposition: form-data; name=\"{$field['name']}\"\r\n\r\n";
-            $body .= "{$field['contents']}\r\n";
-        }
+        $file = null;
 
         // If audio_url provided, fetch the audio first then attach.
         if ('' !== $audioUrl) {
@@ -120,16 +101,29 @@ class TranscribeOpenAIAudioTool extends AbstractTool
                     return $this->errors->create('fetch_failed', "Failed to fetch audio from URL (HTTP {$audioResp->statusCode}).");
                 }
 
-                $body .= "--{$boundary}\r\n";
-                $body .= "Content-Disposition: form-data; name=\"file\"; filename=\"audio.mp3\"\r\n";
-                $body .= "Content-Type: audio/mpeg\r\n\r\n";
-                $body .= $audioResp->body . "\r\n";
+                $file = array(
+                    'name'     => 'file',
+                    'filename' => 'audio.mp3',
+                    'mime'     => 'audio/mpeg',
+                    'bytes'    => $audioResp->body,
+                );
             } catch (\Throwable $e) {
                 return $this->errors->create('fetch_failed', "Failed to fetch audio: {$e->getMessage()}");
             }
         }
 
-        $body .= "--{$boundary}--\r\n";
+        $multipart = MultipartBody::build(
+            \array_filter(
+                array(
+                    'model'           => $model,
+                    'response_format' => $format,
+                    'language'        => $language,
+                    'prompt'          => $prompt,
+                ),
+                static fn (string $value): bool => '' !== $value,
+            ),
+            $file,
+        );
 
         try {
             $response = $this->http->send(
@@ -137,9 +131,9 @@ class TranscribeOpenAIAudioTool extends AbstractTool
                 $endpoint,
                 array(
                     'Authorization' => "Bearer {$apiKey}",
-                    'Content-Type'  => "multipart/form-data; boundary={$boundary}",
+                    'Content-Type'  => $multipart['contentType'],
                 ),
-                $body,
+                $multipart['body'],
             );
 
             if ($response->statusCode >= 400) {

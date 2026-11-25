@@ -68,6 +68,13 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 		'text/markdown'   => array( 'md', 'document' ),
 		'text/csv'        => array( 'csv', 'document' ),
 		'application/json' => array( 'json', 'document' ),
+		// Subtitles. Both are what libmagic actually reports for the bytes —
+		// `application/x-subrip` for an SRT and `text/vtt` for a WebVTT file —
+		// so they can be typed without trusting a caller's extension. ASS has no
+		// distinct signature (it sniffs as `text/plain`) and is therefore not
+		// here; storing one would file it as `.txt`.
+		'application/x-subrip' => array( 'srt', 'document' ),
+		'text/vtt'             => array( 'vtt', 'document' ),
 		'application/msword' => array( 'doc', 'document' ),
 		'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => array( 'docx', 'document' ),
 		'application/vnd.ms-excel' => array( 'xls', 'document' ),
