@@ -766,3 +766,34 @@ Deployed to `site/eca`; staging verified `live release days25 matches this build
 - Home-band geometry (`3589820` lanes 286/954 → 273/907, tablet stacking 766 →
   1638) — pre-existing, untouched by this pass.
 - `href="#"` sweep: the source's own buttons go nowhere.
+
+### Follow-on — a label can name a RANGE of days, and the parser read only its first word
+
+Verifying the deployed page against the CMS surfaced a 15th Monday row the
+source's own listing does not print: **SS Lion's Mane** (id 11153). Its
+`_eca_day` meta is empty, but its prose says
+
+> ECA Day & Time: **Monday to Friday** (specific session times are not stated in the booklet)
+
+`parseDays()` split on `& , / + and` — none of which appear in `Monday to
+Friday` — so it took the leading word and recorded Monday alone. The record is a
+five-day activity; the Monday-only model hid it from Tue–Fri entirely (worse than
+the source, whose meta-only query hides it from every day).
+
+`parseDays()` now expands a RANGE (`Monday to Friday`, `Mon–Fri`, `Tue - Thurs`,
+`Friday to Monday` wraps) before splitting, and only when both words are day
+names — so a clock range (`Tuesday 2:45 p.m. – 3:30 p.m.`) and a hyphenated
+title (`Monday- Junior School`) are unaffected. Shipped separately as #8236.
+
+Effect (build `days26`): day landings now carry the record on every weekday it
+runs — Tue 31→32, Wed 12→13, Thu 26→27, Fri 17→18, Mon 14→15. Gate numbers are
+unchanged (page bands 8 fail / 10 warn, text parity 85.1 %), because a claimed
+data view is compared against the record set, not the builder's query.
+
+**This is a deliberate, visible divergence from the source:** the live
+`/eca-days/` prints 14 items because its JetEngine query reads `_eca_day` only.
+The rebuild prints 15, because the record's own copy says Monday. Data wins over
+the query; the inference is recorded in `inferred` (`rule: label:day`).
+
+Records with no day anywhere appear in the full catalogue only — that is a CMS
+data-entry gap, not a parser gap. `SS Maths Mastery Hub` (11155) is one.
