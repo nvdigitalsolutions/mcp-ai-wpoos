@@ -422,3 +422,20 @@ the `structure` entry from it, so an old profile still renders.
 `unknown`), a deterministic detector always wins, and a stored verdict carries
 `source: 'vision'` plus the model id. Never let vision overrule a measured fact,
 and never let it emit markup or copy.
+
+## A vendor's per-device HIDING class is a fact, not a style
+
+`elementor-hidden-mobile` survives sanitisation; the stylesheet that made it mean
+something does not. A rebuild that ignores it shows content the source hides —
+eca.directory's comparison matrix is a desktop-only table and was rebuilt as a
+squeezed one at 390px.
+
+Record the devices a measured structure is hidden at (`hiddenAt`) and emit a
+band-scoped `display:none` at those ends. Keep the markup in the DOM: CSS hiding
+preserves it for crawlers and desktop readers. Map the `_extra` breakpoints onto
+the ends the template renders, and say so in the docblock.
+
+**The emitted interface is part of the contract.** A field the renderer reads
+must also appear in the `sections.generated.ts` type the scaffold writes, or a
+fresh scaffold fails `astro check` with `ts(2339)` — even though the existing
+project builds fine.

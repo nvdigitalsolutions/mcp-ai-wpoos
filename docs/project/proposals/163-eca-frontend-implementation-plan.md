@@ -1034,3 +1034,33 @@ structure from a closed vocabulary, and store the answer as a `structure` entry
 
 This is the highest-leverage item for unnamed builders, and the last one I would
 build: it is only useful once the `structure` channel exists to receive it.
+
+## Pass — a measured structure honours the device the source hides it at (2026-11-25, ninth pass)
+
+The matrix row is `elementor-hidden-mobile` in the source: a three-column table
+on desktop, **nothing** on a phone. `sanitizeHtml` keeps the class and the vendor
+stylesheet that gave it meaning never ships, so the rebuild rendered a squeezed
+table at 390px.
+
+`comparisonOf()` now records `hiddenAt` (read from the row container's classes)
+on the fact and on its `structure` entry, and the renderer emits a band-scoped
+`display:none` at the right end. Verified on the deployed build: **visible at
+1440px, hidden at 390px**, with the table still in the DOM for desktop readers
+and crawlers.
+
+Two rules worth keeping:
+
+- **The `_extra` breakpoints collapse onto the two ends the template renders**
+  (`tablet_extra` → tablet, `mobile_extra` → mobile). That over-hides a narrow
+  band; it is documented in `hiddenAt` rather than silently approximated at a
+  range the template cannot express.
+- **The emitted interface is part of the contract.** The renderer read
+  `structure[].data.hiddenAt` while the scaffold still wrote the old type, so a
+  freshly scaffolded project failed `astro check` with `ts(2339)`. The e2e gate
+  caught it; `npm run check` on the eca project now reports 0 errors.
+
+**Still not done — lane-level per-device facts.** `widthTablet` / `hiddenMobile`
+are recorded and emitted for legacy `.elementor-column` bands but no renderer
+consumes them, and for an `e-con` band the lane is the card row's child, not the
+row itself. Mapping that needs the container model applied to lanes first; doing
+it blind would risk hiding the wrong element.
