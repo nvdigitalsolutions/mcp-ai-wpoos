@@ -2630,6 +2630,16 @@ export function bandOutline( input: DesignFetchInput ): {
  */
 export function diffDesignFacts( before: ForgeDesign | undefined, after: ForgeDesign | undefined ): string[] {
 	const dropped: string[] = [];
+	// The BAND MODEL decides where every section fact comes from, and a refresh
+	// can flip it (the Elementor section pass keeps only bands that STATE a fact,
+	// so a page whose sections carry fewer facts than the vendor-agnostic outline
+	// silently switches to `outline`). The outline bands carry no
+	// `bgColor`/`bgGradient`, so the flip repaints every band transparent —
+	// eca.directory's phased-delivery gradient, the point of an earlier fix,
+	// vanished that way with no warning at all (2026-11-25).
+	if ( before?.bandSource && after?.bandSource && before.bandSource !== after.bandSource ) {
+		dropped.push( `band model ${ before.bandSource } → ${ after.bandSource }` );
+	}
 	const afterById = new Map( ( after?.sections ?? [] ).map( ( section ) => [ section.id, section ] ) );
 	for ( const section of before?.sections ?? [] ) {
 		if ( ! section.id ) {
@@ -2642,6 +2652,13 @@ export function diffDesignFacts( before: ForgeDesign | undefined, after: ForgeDe
 		}
 		if ( section.anchor && section.anchor !== next.anchor ) {
 			dropped.push( `section ${ section.id }'s anchor "${ section.anchor }"` );
+		}
+		// A band SURFACE is the most expensive fact to lose: it decides the theme,
+		// the ink and the contrast audit. Named per band so the loss is attributable.
+		for ( const key of [ 'bgColor', 'bgGradient', 'bgImage', 'overlay', 'panel' ] as const ) {
+			if ( section[ key ] !== undefined && next[ key ] === undefined ) {
+				dropped.push( `section ${ section.id }'s ${ key }` );
+			}
 		}
 	}
 	// Chrome facts only: a palette or typography role that shifts is a source

@@ -330,6 +330,37 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 		if ( ! design.chrome?.geometry && existing.design?.chrome?.geometry ) {
 			design.chrome = { ...design.chrome, geometry: existing.design.chrome.geometry };
 		}
+		// Band SURFACES outlive a refresh that changed the BAND MODEL. The outline
+		// model derives its bands from the vendor's row wrappers and carries the
+		// backgrounds it can read from CSS; the section model reads them per
+		// `elementor-element-*` rule. When the model flips, the surviving list
+		// silently loses `bgColor`/`bgGradient` per band — eca.directory's
+		// phased-delivery gradient went that way, and nothing warned (2026-11-25).
+		// A surface the source genuinely removed still disappears: only bands whose
+		// ID survives AND whose new section states no surface are carried forward,
+		// and `diffDesignFacts` reports every carry-forward as a drop the operator
+		// can confirm against the live site.
+		if (
+			existing.design?.bandSource &&
+			design.bandSource &&
+			existing.design.bandSource !== design.bandSource &&
+			( existing.design.sections?.length ?? 0 ) > 0
+		) {
+			const priorById = new Map( ( existing.design.sections ?? [] ).map( ( section ) => [ section.id, section ] ) );
+			design.sections = ( design.sections ?? [] ).map( ( section ) => {
+				const prior = section.id ? priorById.get( section.id ) : undefined;
+				if ( ! prior ) {
+					return section;
+				}
+				const carried: typeof section = { ...section };
+				for ( const key of [ 'bgColor', 'bgGradient', 'bgImage', 'overlay', 'panel' ] as const ) {
+					if ( carried[ key ] === undefined && prior[ key ] !== undefined ) {
+						( carried as Record< string, unknown > )[ key ] = prior[ key ];
+					}
+				}
+				return carried;
+			} );
+		}
 		merged.design = design;
 	} else if ( fresh.design?.chrome && existing.design?.chrome ) {
 		// A `--geometry` run measures CHROME facts (the top strip, the mobile menu,
