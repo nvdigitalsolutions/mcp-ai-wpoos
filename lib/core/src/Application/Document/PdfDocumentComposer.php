@@ -105,6 +105,22 @@ final class PdfDocumentComposer
             throw new \InvalidArgumentException('The document is empty. Give content or at least one section.');
         }
 
+        return $this->wrap($body, $document);
+    }
+
+    /**
+     * Wrap an already-composed body in the document shell.
+     *
+     * `compose()` derives the body from prose, which cannot express a table. An
+     * invoice is a table plus totals, so its tool builds the body and hands it
+     * here — page width, orientation and typography still come from one place,
+     * so an invoice cannot drift from the other PDFs this host writes.
+     *
+     * @param string               $body     Already-escaped body HTML.
+     * @param array<string, mixed> $document Descriptor for {@see compose()}.
+     */
+    private function wrap(string $body, array $document): string
+    {
         $formatting = \is_array($document['formatting'] ?? null) ? $document['formatting'] : array();
 
         $options = array(
@@ -152,8 +168,48 @@ final class PdfDocumentComposer
      */
     public function document(array $document, array $arguments, array $context): array
     {
-        $html = $this->compose($document);
+        return $this->render($this->compose($document), $document, $arguments, $context);
+    }
 
+    /**
+     * Render a body the caller composed itself.
+     *
+     * Everything after the body is shared with {@see document()}: page size
+     * resolution, orientation, the registry row and the payload shape. An
+     * invoice supplies its own table and gets identical treatment.
+     *
+     * @param string               $bodyHtml  Already-escaped body HTML.
+     * @param array<string, mixed> $document  Descriptor for {@see compose()}.
+     * @param array<string, mixed> $arguments The originating tool arguments.
+     * @param array<string, mixed> $context   Execution context.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws \InvalidArgumentException When the body is empty.
+     * @throws \RuntimeException         When the engine fails.
+     */
+    public function documentFromHtml(string $bodyHtml, array $document, array $arguments, array $context): array
+    {
+        if ('' === \trim($bodyHtml)) {
+            throw new \InvalidArgumentException('The document body is empty.');
+        }
+
+        return $this->render($this->wrap($bodyHtml, $document), $document, $arguments, $context);
+    }
+
+    /**
+     * Render finished HTML, persist it when asked, and build the payload.
+     *
+     * @param array<string, mixed> $document  Resolved descriptor.
+     * @param array<string, mixed> $arguments The originating tool arguments.
+     * @param array<string, mixed> $context   Execution context.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws \RuntimeException When the engine fails.
+     */
+    private function render(string $html, array $document, array $arguments, array $context): array
+    {
         $pageSize = $this->pageSize((string) ($document['page_size'] ?? ''));
         $landscape = 'landscape' === $this->orientation($document['orientation'] ?? 'portrait');
 

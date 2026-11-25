@@ -21,6 +21,7 @@
         "document-generation": [
             "add_watermark_to_pdf",
             "archive_documents",
+            "docgen_capture_style_memory",
             "docs_hub_delete_doc",
             "docs_hub_list_docs",
             "docs_hub_read_doc",
@@ -31,6 +32,8 @@
             "extract_pdf_text",
             "generate_email_template",
             "generate_excel",
+            "generate_invoice_batch",
+            "generate_invoice_pdf",
             "generate_pdf",
             "generate_word",
             "get_expired_documents",
@@ -69,7 +72,9 @@
             "update_student",
             "withdraw_student_eca"
         ],
-        "ecommerce": [],
+        "ecommerce": [
+            "generate_invoice_pdf"
+        ],
         "email-marketing": [],
         "erp-ezuite": [],
         "extended-cognition": [],
