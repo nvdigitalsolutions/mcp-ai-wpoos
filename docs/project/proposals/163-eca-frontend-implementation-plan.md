@@ -1096,6 +1096,19 @@ So the next piece is small and precise: record the layer's `opacity` and
 `overlay` beside the image, render it on a pseudo-element rather than the wrap,
 and only then store page band images.
 
+### The gate: `forge surfaces`
+
+`lib/surface-coverage.ts` answers the question every other gate was missing —
+**did the page PAINT it?** For each band declaring an image (a bare URL, or the
+older declaration shape in `bgGradient`/`bgColor`) or a panel, it reads the
+built page and fails when nothing carries it. Deterministic, browser-free, and
+narrow on purpose: a band COLOUR is not checked, because a band that shares the
+page background legitimately paints nothing.
+
+It is inert until the facts exist — on eca.directory today no band stores a
+surface in a shape it reads — which is exactly why it pairs with `page-design`:
+the moment those facts are written, the gate bites.
+
 Still missing after that, on this site: the stats band's dark purple COLOUR (no
 fact is recorded at all), the lane image URLs (`image: true` with no URL to pair,
 so the photo lane is dropped), the stat value/unit concatenation, and the eyebrow

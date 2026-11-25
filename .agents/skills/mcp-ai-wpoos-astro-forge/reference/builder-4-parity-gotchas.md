@@ -510,7 +510,13 @@ module emitted `bg`, so the fact was "rendered" — but `background:background-c
 is invalid CSS and the browser discarded it. Likewise the colour gate reported
 the missing surfaces as **not comparable (transparent)** rather than failed.
 When a gate asks "was the fact present?", a wrong rendering is invisible. Ask
-"did the page paint it?".
+"did the page paint it?". `forge surfaces` is that check for the two signals
+that are never a page default: a band image (a bare URL, or the older
+`background-image:` declaration in `bgGradient`/`bgColor`) and a panel. It reads
+`dist/**/index.html`, finds the band's wrapper (the LAST `data-section-id`, since
+the scoped `<style>` comes first) and accepts an image on the wrapper **or** on a
+scoped `::before` layer. Colours are deliberately excluded — a band that shares
+the page background paints nothing and is still right.
 
 ## Lane visibility is `nth-child`, never a reorder
 

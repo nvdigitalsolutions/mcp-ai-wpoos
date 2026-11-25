@@ -75,6 +75,7 @@ import { describeHealth, fetchFormsHealth, sendFormProbe } from '../lib/forms-ch
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { parseStructureCache, runStructurePass, serializeStructureCache, STRUCTURE_DEVICES } from '../lib/structure-pass.ts';
 import { analyzePageDesigns } from '../lib/page-design.ts';
+import { auditSurfaces, describeSurfaceCoverage } from '../lib/surface-coverage.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
@@ -4878,6 +4879,43 @@ async function runPageDesign( profileRef, options ) {
 	}
 }
 
+/**
+ * `forge surfaces` — did the build PAINT the surfaces the profile declares?
+ *
+ * The gate the pipeline was missing: every other check asked whether a fact was
+ * present, so a dropped band image (or an invalid declaration the browser
+ * discards) kept the scorecard green. Deterministic and browser-free.
+ */
+async function runSurfaces( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const target = resolve( options.target );
+	const dist = existsSync( join( target, 'dist', 'index.html' ) )
+		? join( target, 'dist' )
+		: join( target, 'dist', 'client' );
+	const readPage = ( page ) => {
+		const file = page === '/' ? join( dist, 'index.html' ) : join( dist, page, 'index.html' );
+		try {
+			return readFileSync( file, 'utf8' );
+		} catch {
+			return undefined;
+		}
+	};
+	const report = auditSurfaces( profile, readPage );
+	console.log( `\u2713 Surface coverage \u2014 ${ profile.url } (${ dist })` );
+	for ( const line of describeSurfaceCoverage( report ) ) {
+		console.log( line );
+	}
+	if ( report.checked === 0 ) {
+		console.log( '  no band image or panel is declared \u2014 nothing to check' );
+		return;
+	}
+	const painted = report.checked - report.gaps.length;
+	console.log( `\n${ painted }/${ report.checked } declared surface(s) painted` );
+	if ( report.gaps.length > 0 ) {
+		process.exitCode = 1;
+	}
+}
+
 program
 	.command( 'structure' )
 	.description(
@@ -4905,6 +4943,15 @@ program
 	.option( '--json', 'print the machine-readable report' )
 	.action( async ( profileRef, options ) => {
 		await runPageDesign( profileRef, options );
+	} );
+
+program
+	.command( 'surfaces' )
+	.description( 'check that every band image / panel the profile declares is actually PAINTED in the build' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.action( async ( profileRef, options ) => {
+		await runSurfaces( profileRef, options );
 	} );
 
 program
