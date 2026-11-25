@@ -853,9 +853,32 @@ the CMS removes the failure. A baseline-side filter (drop the post card whose ow
 heading is a placeholder title when capturing `analyze --text`) would encode the
 expectation properly; it needs a re-analyse of the profile, so it is deferred.
 
-### Open on this band
+### A band whose grid folds away sizes to its copy
 
-- The measured `min-height: 478px` now frames three lines of copy, leaving a void
-  under the lede. Pre-existing (the band has always been pinned to the source's
-  height); shrinking a band whose dynamic list is empty is a separate layout
-  decision.
+The measured `min-height: 478px` framed three lines of copy, because the
+source's height included the post card. Once the card folds into the lede, that
+floor covers nothing.
+
+The rule moved into `titleEchoItems()` (`lib/band-copy.ts`) so `FeatureGrid` (which
+renders the cards) and `DesignRenderer` (which decides the wrapper's height) share
+one answer. When **every** card folds, the band's measured `min-height` is skipped
+in both paths that emit it — the inline `wrapStyle` value and the per-device
+scoped CSS — and the band sizes to its content (build `days29`: **478px → 239px**).
+A card whose measured lane paints a surface is never folded, so a panel is never
+lost.
+
+**Cost, recorded deliberately:** `--geometry` now reports three fails on this
+band (`desktop 478 → 239`, `tablet 530 → 239`, `mobile 559 → 268`). The source's
+height is the height *with* the post card; reproducing it would mean shipping
+~240px of dead space. Geometry fails therefore go **5 → 8**, all three on
+`319dfe29`, and all explained by content we intentionally do not render. A
+per-band "removed content" opt-out in the audit is the way to encode this
+properly; not done.
+
+### Note for anyone rebuilding this site by hand
+
+`src/forge/*.ts` and `src/lib/*.ts` in a scaffolded project are **copies**. A
+change to `lib/eca.ts` / `templates/blog/src/**` does not reach the built site
+until the copy is refreshed (`cp` the file, or re-scaffold). Building `days28`
+from a stale `src/forge/eca.ts` re-introduced the day-range type error that #8236
+had already fixed.
