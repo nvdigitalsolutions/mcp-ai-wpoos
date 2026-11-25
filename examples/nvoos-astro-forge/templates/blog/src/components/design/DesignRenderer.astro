@@ -1471,7 +1471,7 @@ const bandParallaxCss = sections
 			const splitMedia = splitHero ? mediaFromElementFacts( theme ) : undefined;
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
-				<div data-section={kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop, foldsAway(section, theme)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={kind} data-section-id={section.id ?? theme?.id} data-section-collapsed={foldsAway(section, theme) ? 'grid' : undefined} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop, foldsAway(section, theme)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (
@@ -1521,6 +1521,26 @@ const bandParallaxCss = sections
 							</section>
 						);
 					})()}
+					{/* The band's COMPARISON MATRIX (Proposal 136 §4.1). A builder
+					 * publishes each check and cross as an `<svg>`, and sanitisation strips
+					 * every one — so the classifier can never see the table and this fact is
+					 * measured at analyze time (eca.directory's "Compare User Roles": 52
+					 * SVGs raw, 0 sanitised, classified as a 3-card feature grid).
+					 *
+					 * Rendered IN ADDITION to the band's own component, never instead of it:
+					 * that band also carries three phase cards, and swapping the kind would
+					 * delete them. The heading and links are the band's own — they already
+					 * rendered above, so the table renders without them. */}
+					{theme?.comparison && section.kind !== 'comparison' && (
+						<Comparison
+							section={{
+								...section,
+								slots: { ...section.slots, title: undefined, links: undefined },
+								comparison: theme.comparison,
+							}}
+							theme={theme}
+						/>
+					)}
 				</div>
 			);
 		})}

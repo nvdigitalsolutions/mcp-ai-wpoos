@@ -1836,6 +1836,13 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	if ( section.logos && section.logos.length > 0 ) {
 		entry.push( `logos: ${ JSON.stringify( section.logos ) }` );
 	}
+	// The band's COMPARISON MATRIX (analyzer-measured from the RAW html — see
+	// `ForgeSection.comparison`). The build-time classifier cannot see it because
+	// sanitisation strips the check/cross `<svg>`, so the renderer appends it from
+	// this fact instead of trying to detect it.
+	if ( section.comparison && section.comparison.rows.length > 0 ) {
+		entry.push( `comparison: ${ JSON.stringify( section.comparison ) }` );
+	}
 	// The band's PANEL surface (`ForgeSection.panel`) — a literal colour + its
 	// legible ink, so the item group renders on the source's slab.
 	// The band's padding: an explicit profile fact wins — but only for the
@@ -2595,6 +2602,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * `background-image` slides, which the classifier (reading `<img>` only)',
 		'\t * cannot see. Rendered as a `.ds-logos` row inside the band. */',
 		'\tlogos?: Array<{ src: string; alt?: string }>;',
+		'/\*\* The band\u2019s COMPARISON MATRIX \u2014 role columns against feature rows,\n			 * recorded at analyze time from the raw HTML because sanitisation strips\n			 * the check/cross `<svg>` the build-time classifier would need. Rendered\n			 * as a real table AFTER the band\u2019s own component (the band usually holds\n			 * cards too). */',
+		'\tcomparison?: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string };',
 		'\t/** The band\u2019s measured PAGED carousel (`bandFacts[].carousel`) \u2014',
 		'\t * slides-per-view and the gutter the source renders. A logo wall is as',
 		'\t * often a slider as a static row, and the difference is only measurable',
@@ -5264,4 +5273,101 @@ async function scaffoldProject(
 		warnings,
 		...( wireframePages.length > 0 ? { wireframePages } : {} ),
 	};
+}
+
+/**
+ * The generated modules a RE-FORGE can rewrite in place.
+ *
+ * A profile fact often changes without the template changing at all: a
+ * re-analyze adds a measured fact, an operator pins a colour, the day-range
+ * parser learns a new shape. Re-scaffolding for that is a wrecking ball — it
+ * swaps the whole target (and on Windows it fails with EPERM whenever an editor
+ * or watcher holds the directory), so the operator either hand-copies files or
+ * leaves the site stale. `forge regen` rewrites exactly the derived modules and
+ * touches nothing else.
+ */
+export const REGEN_MODULES = [
+	'design',
+	'sections',
+	'pages',
+	'chrome',
+	'behaviors',
+	'animations',
+	'tracking',
+	'vocabulary',
+	'eca',
+] as const;
+
+export type RegenModule = ( typeof REGEN_MODULES )[ number ];
+
+export interface RegenResult {
+	written: string[];
+	/** Modules whose target file does not exist in this project. */
+	skipped: string[];
+}
+
+/** Rewrite the generated modules from `profile` without re-scaffolding. */
+export async function regenGenerated(
+	profile: SiteProfile,
+	targetDir: string,
+	only?: readonly string[]
+): Promise< RegenResult > {
+	const requested = ( only && only.length > 0 ? only : REGEN_MODULES ) as readonly string[];
+	const unknown = requested.filter( ( name ) => ! ( REGEN_MODULES as readonly string[] ).includes( name ) );
+	if ( unknown.length > 0 ) {
+		throw new Error( `unknown regen module(s): ${ unknown.join( ', ' ) } — expected ${ REGEN_MODULES.join( '|' ) }` );
+	}
+	const lib = ( file: string ): string => path.join( targetDir, 'src', 'lib', file );
+	const tokens = mergeTokens( profile.design, profile.tokens, profile.colors, accentFamilyOf( profile ) );
+	const renderers: Record< RegenModule, () => { file: string; contents: string } > = {
+		design: () => ( { file: lib( 'design.generated.ts' ), contents: renderDesignGenerated( profile, tokens ) } ),
+		sections: () => ( { file: lib( 'sections.generated.ts' ), contents: renderSectionsGenerated( profile ) } ),
+		pages: () => ( { file: lib( 'pages.generated.ts' ), contents: renderPagesGenerated( profile ) } ),
+		chrome: () => ( { file: lib( 'chrome.generated.ts' ), contents: renderChromeGenerated( profile ) } ),
+		behaviors: () => ( { file: lib( 'behaviors.generated.ts' ), contents: renderBehaviorsGenerated( profile ) } ),
+		animations: () => ( { file: lib( 'animations.generated.ts' ), contents: renderAnimationsGenerated( profile ) } ),
+		tracking: () => ( { file: lib( 'tracking.generated.ts' ), contents: renderTrackingGenerated( profile ) } ),
+		vocabulary: () => ( { file: lib( 'vocabulary.generated.ts' ), contents: renderVocabularyGenerated( profile ) } ),
+		eca: () => ( { file: path.join( targetDir, ECA_CONFIG_PATH ), contents: renderEcaGenerated( profile ) } ),
+	};
+	const result: RegenResult = { written: [], skipped: [] };
+	const writtenFiles: string[] = [];
+	for ( const name of requested as RegenModule[] ) {
+		const { file, contents } = renderers[ name ]();
+		// Only rewrite a module this project actually ships: the minimal preset has
+		// no `animations.generated.ts`, and writing one would add a file the
+		// template never imports (and `check-generated.mjs` would then flag it).
+		try {
+			await stat( file );
+		} catch {
+			result.skipped.push( name );
+			continue;
+		}
+		await writeFile( file, contents, 'utf8' );
+		result.written.push( name );
+		writtenFiles.push( file );
+	}
+	// Keep the DRIFT GATE honest: a regenerated module is not a hand edit, and
+	// `check-generated.mjs` would fail the next build on the stale hash. The
+	// manifest is the scaffold's, so only its entries are touched.
+	if ( writtenFiles.length > 0 ) {
+		const manifestPath = path.join( targetDir, 'nvoos.generated.json' );
+		try {
+			const manifest = JSON.parse( await readFile( manifestPath, 'utf8' ) ) as {
+				regeneratedAt?: string;
+				files?: Record< string, string >;
+			};
+			manifest.files ??= {};
+			for ( const file of writtenFiles ) {
+				const relative = path.relative( targetDir, file ).split( path.sep ).join( '/' );
+				const contents = await readFile( file, 'utf8' );
+				manifest.files[ relative ] = createHash( 'sha256' ).update( contents ).digest( 'hex' );
+			}
+			manifest.regeneratedAt = new Date().toISOString();
+			await writeFile( manifestPath, JSON.stringify( manifest, null, 2 ) + '\n', 'utf8' );
+		} catch {
+			// No manifest (a LOCKED or minimal project) — nothing to keep honest.
+		}
+	}
+	return result;
 }

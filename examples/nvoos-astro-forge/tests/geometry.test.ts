@@ -241,3 +241,29 @@ describe( 'geometry survives analyze --write (118 §3)', () => {
 		expect( merged.geometry?.abc.desktop.height ).toBe( 500 );
 	} );
 } );
+
+// ---------------------------------------------------------------------------
+// A band the build DECLARED shorter (2026-11-25).
+//
+// `data-section-collapsed` is the renderer saying "I deliberately render less
+// here": the grid folded away because every card was the band's own
+// sub-heading, or the query loop has nothing published. The source's height is
+// the height WITH that content, so comparing it reports drift where the build
+// made a decision (eca.directory's updates band, 478px → 239px).
+// ---------------------------------------------------------------------------
+describe( 'diffGeometry — a collapsed band', () => {
+	const base = { height: 478, width: 1440, paddingTop: 0, paddingBottom: 0, marginTop: 0, marginBottom: 0 };
+
+	it( 'skips a band the build declares collapsed', () => {
+		const source = { abc: { desktop: { ...base } } };
+		const built = { abc: { desktop: { ...base, height: 239, collapsed: true } } };
+		expect( diffGeometry( source, built ) ).toEqual( [] );
+	} );
+
+	it( 'still reports the same difference when the band is NOT declared collapsed', () => {
+		const source = { abc: { desktop: { ...base } } };
+		const built = { abc: { desktop: { ...base, height: 239 } } };
+		const deviations = diffGeometry( source, built );
+		expect( deviations.map( ( deviation ) => deviation.metric ) ).toContain( 'height' );
+	} );
+} );

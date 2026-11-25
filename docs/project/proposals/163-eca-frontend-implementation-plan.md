@@ -882,3 +882,136 @@ change to `lib/eca.ts` / `templates/blog/src/**` does not reach the built site
 until the copy is refreshed (`cp` the file, or re-scaffold). Building `days28`
 from a stale `src/forge/eca.ts` re-introduced the day-range type error that #8236
 had already fixed.
+
+## Pass — the comparison matrix, measured where the SVGs still exist (2026-11-25, seventh pass)
+
+### What shipped
+
+`77f4271d` carries a **"Compare User Roles"** matrix (Student / Parent / Teacher
+against four features, a check or a cross in every value cell). The rebuild
+rendered it as loose text inside a three-card feature grid, and the build-time
+classifier could never do better: the marks are `<svg>`, and `sanitizeHtml`
+strips every one (52 raw → 0 sanitised; the pipeline reports
+`kind feature-grid items 3 cmp no`).
+
+The fact is now measured at **analyze** time from the raw HTML, exactly as the
+fifth pass prescribed:
+
+| Piece | Where |
+|---|---|
+| `comparisonOf()` — structural detector (equal rows of equal cells, text header, label + icon-only cells, one mark per cell) | `lib/design.ts` |
+| `comparisonFactsById()` — the same facts keyed by section id | `lib/design.ts` |
+| emission on the section entry + the generated `SectionTheme` field | `lib/scaffold.ts` |
+| `<Comparison>` appended **after** the band's own component, heading/links suppressed | `DesignRenderer.astro` |
+
+The marks are stored as **text** (`✓` / `✗`), so nothing downstream depends on an
+icon font.
+
+### Why the id-keyed merge was needed
+
+`comparisonOf()` first ran inside `analyzeSections()`, and the fact never
+appeared in the profile. The reason: the band MODEL is chosen after the section
+pass, and eca's profile is **`bandSource: outline`** — the Elementor section list
+(fewer bands than the outline) is discarded and the outline bands, which carry no
+comparison, are used. Recording by id lets either model pick the fact up. A
+detector inside a pass whose output can be discarded is invisible, not wrong.
+
+### Result (build `days32`)
+
+- the band renders a real `<table class="ds-compare">` with `<caption>Compare
+  User Roles</caption>`, `scope="col"` role headers and `scope="row"` feature
+  labels — `✓ ✓ ✓ / ✓ ✗ ✓ / ✓ ✓ ✓ / ✓ ✓ ✓`
+- **text parity 85.1 % → 85.6 %**, colour 0 fail / 1 warn (unchanged), page bands
+  8 fail / 10 warn (unchanged)
+- tests **2237 passed / 140 files**, typecheck clean
+
+### Hazard found — `analyze --design --write` can flip the band model
+
+The refresh that recorded the fact also flipped this profile from `elementor`
+bands to `outline` bands, and **silently dropped**:
+
+- three `chrome` facts (`footerBrand`, `mobileNav`, `footerInk`) — `diffDesignFacts`
+  warns about these;
+- every section `bgColor` / `bgGradient`, including `77f4271d`'s
+  `linear-gradient(#27104a 30%, #ffffff 0%)` — the fix an earlier pass existed
+  to make. **Nothing warns about this at all.**
+
+The profile committed here is therefore the PREVIOUS profile plus the verified
+fact, not the refresh's output. Until the flip is reported (or pinned), treat a
+design refresh on this site as "re-verify every band surface afterwards".
+
+## Pass — what the forge itself gained (2026-11-25, eighth pass)
+
+Everything above was paid for by hand. These are the changes that make the next
+Elementor forge cheaper, in three PRs.
+
+### Shipped
+
+| PR | Change | Why |
+|---|---|---|
+| #8242 | Elementor Free + Pro widget vocabulary; a `list` role for query loops; `SemanticSection.dynamicList` | An unseeded widget name resolves to `content`, which flattens its structure **and** forces the band to `low` confidence. `posts` was unseeded, so a loop band was indistinguishable from an authored grid. |
+| #8242 | `diffDesignFacts` reports a **band-model flip** and every dropped `bgColor`/`bgGradient`/`bgImage`/`overlay`/`panel`; `mergeProfileDraft` carries surfaces forward on surviving ids **when the model changed** | The refresh that recorded the comparison fact flipped `sections → outline` and repainted every band transparent, including the gradient an earlier pass existed to capture. Only the chrome loss was reported. |
+| #8244 | `forge regen <profile> --target <dir> [--only …]` | Re-scaffolding to pick up a profile fact swaps the whole target and fails with `EPERM` on Windows; the alternative was hand-copying `sections.generated.ts`. Output is byte-identical to the scaffold's. |
+| #8244 | `SiteProfile.gateProbe` + a `verify` warning | A gated source analysed without credentials yields the holding page and a plausible, wrong design block, with no trace afterwards. |
+| #8244 | `BandGeometry.collapsed` + `data-section-collapsed` + a `diffGeometry` skip | A band the build deliberately renders shorter is a **decision**, not drift. eca's geometry fails went back from 8 to 5. |
+
+### Design note — the `structure` channel (not yet built)
+
+`comparison` needed its own fact, its own detector, its own emitted field and its
+own renderer branch. So will the next structural widget. That is the wrong shape.
+
+**Contract.** One `structure` map, keyed by section id, populated at analyze time
+from the RAW html, consumed by the renderer as a per-section list of
+`{ type, data }` entries. `comparison` becomes its first entry rather than its own
+pipeline; the rating, stats, timeline and tabs detectors join it.
+
+**Why one channel.** The build-time classifier runs on sanitised HTML and is
+blind to anything an icon carries (52 SVGs raw → 0 clean). Facts measured before
+sanitisation are the only general answer, and every one of them needs the same
+three things: a detector, a profile slot, an emission. Sharing the slot and the
+emission turns the third structural widget from a pipeline into a detector.
+
+**Ordering rule (do not re-litigate).** A measured structure renders **in
+addition to** the classified kind, never instead of it — the band that carries a
+comparison matrix also carries three phase cards, and an override deletes them.
+`theme.logos` is the existing precedent.
+
+**Migration.** `ForgeSection.comparison` stays as the first key of `structure`
+for one release (profiles in the wild carry it), then the reader switches.
+
+### Design note — `e-con` as a named concept (not yet built)
+
+Elementor 4.x replaced `.elementor-container > .elementor-column` with
+`e-con` / `e-con-full` / `e-child` / `e-flex`, and the classifier learned it
+ad hoc: `cardContainerItems()` recognises cards as "repeated sibling containers
+whose children carry a heading AND a list". That predicate is doing three jobs
+(rows, cards, lane surfaces) and the symptoms of getting it wrong were a band
+twice its height and lanes 286/954 rendered 273/907.
+
+The next step is to model the container explicitly: a **row** is an `e-flex`
+container whose children are `e-child` containers with equal flex-basis; a
+**card** is a child that owns a heading and a body; a **lane surface** is a
+child whose computed background is not transparent. Per-device facts
+(`elementor-widget-tablet_extra__width-initial`, `elementor-hidden-mobile`) then
+attach to the same node instead of being re-derived from class strings.
+
+### Design note — a vision STRUCTURE pass (not yet built)
+
+`lib/vision.ts` already runs a VLM for **pixel** comparison and
+`visionConfigFromLocal` already targets a local model (Ollama / LM Studio), so
+the plumbing exists; what does not is a structural role.
+
+For a band that resists markup classification (an oddly-built table, a timeline,
+a phase row), screenshot it at 1440 and 390, ask the model to name **one**
+structure from a closed vocabulary, and store the answer as a `structure` entry
+(the channel above). Rules:
+
+- **opt-in**, and cached by `section id + screenshot hash`;
+- **never authoritative** over a deterministic detector — it fills gaps, it does
+  not overrule the comparison extractor;
+- **provenance recorded** in the fact (`source: 'vision'`, model id), so a bad
+  classification is attributable and removable;
+- the model never writes markup or copy — it picks a label.
+
+This is the highest-leverage item for unnamed builders, and the last one I would
+build: it is only useful once the `structure` channel exists to receive it.
