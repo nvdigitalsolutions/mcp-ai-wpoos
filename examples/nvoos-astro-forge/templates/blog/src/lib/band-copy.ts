@@ -13,9 +13,22 @@
 // `FeatureGrid` renders the cards and `DesignRenderer` decides whether the
 // band's measured `min-height` still applies once they fold away — so it lives
 // here rather than being re-derived at each call site.
+//
+// This module is DELIBERATELY dependency-free: it is copied into every
+// generated project, where `src/forge/*` exists, but it is also type-checked in
+// the forge repo, where it does not. The item shape below is therefore
+// structural, never an import of `SectionItem`.
 // ---------------------------------------------------------------------------
 
-import type { SectionItem } from '../forge/semantic.ts';
+/** The item fields the fold rule reads (structurally compatible with `SectionItem`). */
+export interface BandCardItem {
+	title?: string;
+	body?: string;
+	paragraphs?: string[];
+	media?: unknown;
+	links?: readonly unknown[];
+	columnIndex?: number;
+}
 
 /** The measured heading facts a band body must not repeat. */
 export interface BandHeadingFacts {
@@ -79,12 +92,12 @@ export function bandShownTitle(
  *   - a card with its own link — that is a destination;
  *   - a card whose measured lane paints a surface — that is a panel the band owns.
  */
-export function titleEchoItems(
-	items: SectionItem[] | undefined,
+export function titleEchoItems< T extends BandCardItem >(
+	items: T[] | undefined,
 	title: string | undefined,
 	theme?: BandHeadingFacts,
 	lanes?: BandLaneSurface[]
-): SectionItem[] {
+): T[] {
 	const shown = bandShownTitle( title, theme );
 	if ( ! shown ) {
 		return [];
