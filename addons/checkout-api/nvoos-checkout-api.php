@@ -53,6 +53,7 @@ require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-token.
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-rate-limiter.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-stripe-client.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-download-server.php';
+require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-license-resolver.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-rest-controller.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/admin/class-nvoos-checkout-api-admin-page.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-plugin.php';
@@ -66,6 +67,11 @@ require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-plugin
  */
 function nvoos_checkout_api_activate(): void {
 	NVOOS_Checkout_API_License_Store::install_table();
+
+	// The legacy license paths are rewrite rules; activation is the one moment
+	// they can be registered before the rewrite cache is rebuilt.
+	NVOOS_Checkout_API_Plugin::register_license_rewrites();
+	flush_rewrite_rules();
 }
 
 register_activation_hook( __FILE__, 'nvoos_checkout_api_activate' );
