@@ -125,6 +125,15 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		api: chatClientEndpoint,
 		fetch: customFetch,
 		streamProtocol: 'data',
+		// Coalesce streaming updates to ~16/s. Without this, `useChat` calls
+		// SWR `mutate()` once per streamed delta across four separate caches
+		// (messages/streamData/status/error). React 19 counts each cache
+		// notification that lands during an in-progress render as a nested
+		// update and throws error #185 ("Maximum update depth exceeded")
+		// once the count passes 50 — which is what flooded the console on
+		// Victory. This is the AI SDK's documented remedy; see
+		// https://ai-sdk.dev/docs/troubleshooting/react-maximum-update-depth-exceeded
+		experimental_throttle: 60,
 		initialMessages,
 		onFinish: ( _message, { usage, finishReason } ) => {
 			// Capture usage data (v0.9.0).

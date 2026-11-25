@@ -6,7 +6,7 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type JSX, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type Message } from '@ai-sdk/react';
 import { renderMarkdown } from '../../components/shared/MarkdownContent';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
@@ -180,7 +180,7 @@ function roleEmoji( role: string ): string {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function MessageView( {
+function MessageViewComponent( {
 	message,
 	index,
 	totalCount,
@@ -973,3 +973,67 @@ function MessageToolbar( {
 		</div>
 	);
 }
+
+/**
+ * Props the agent panel rebuilds on every streamed delta even when a given
+ * message is untouched (`delegations` is derived from *all* messages, `jobs`
+ * changes on every job-bus event). Comparing those by identity would defeat
+ * the memo for every message on every token — the exact cost this memo exists
+ * to remove — so they are compared by size instead.
+ *
+ * Delegation notices only appear when a `delegate_to_*` tool reaches
+ * `state === 'result'`, so the notice count is the meaningful signal.
+ *
+ * @param prev Previous props.
+ * @param next Next props.
+ * @return True when the message cannot have changed visually.
+ */
+export function areMessageViewPropsEqual(
+	prev: MessageViewProps,
+	next: MessageViewProps
+): boolean {
+	// `useChat` replaces only the streaming message object; every settled
+	// message keeps its identity across deltas, which is what makes this
+	// check do the heavy lifting for long conversations.
+	if ( prev.message !== next.message ) return false;
+	if ( prev.index !== next.index || prev.totalCount !== next.totalCount ) return false;
+	if ( prev.isStreaming !== next.isStreaming ) return false;
+	if ( prev.feedback !== next.feedback ) return false;
+	if ( prev.usage !== next.usage ) return false;
+	if ( prev.workflow !== next.workflow ) return false;
+	if ( prev.speechStateFor !== next.speechStateFor ) return false;
+
+	// Callbacks are memoised by the parent; a new identity means real change.
+	if ( prev.onDelete !== next.onDelete ) return false;
+	if ( prev.onFeedback !== next.onFeedback ) return false;
+	if ( prev.onEdit !== next.onEdit ) return false;
+	if ( prev.onRegenerate !== next.onRegenerate ) return false;
+	if ( prev.onSpeechPlay !== next.onSpeechPlay ) return false;
+	if ( prev.onSpeechStop !== next.onSpeechStop ) return false;
+	if ( prev.onCancelJob !== next.onCancelJob ) return false;
+	if ( prev.onRetryJob !== next.onRetryJob ) return false;
+
+	if (
+		prev.delegations !== next.delegations &&
+		( prev.delegations?.length ?? 0 ) !== ( next.delegations?.length ?? 0 )
+	) {
+		return false;
+	}
+
+	if ( prev.jobs !== next.jobs ) {
+		const hadJobs = !! prev.jobs && Object.keys( prev.jobs ).length > 0;
+		const hasJobs = !! next.jobs && Object.keys( next.jobs ).length > 0;
+		if ( hadJobs || hasJobs ) return false;
+	}
+
+	return true;
+}
+
+/**
+ * Memoised message row.
+ *
+ * Streaming rewrites the trailing message object on every delta; without this
+ * boundary every prior message re-runs its content-type probes and Markdown
+ * render pass each time, so a long transcript degrades quadratically.
+ */
+export const MessageView = memo( MessageViewComponent, areMessageViewPropsEqual );

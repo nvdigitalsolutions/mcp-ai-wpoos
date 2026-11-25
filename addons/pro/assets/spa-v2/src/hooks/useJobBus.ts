@@ -73,15 +73,35 @@ interface CronStatusSsePayload {
 }
 
 /**
- * Connect to the cron-status SSE stream, dispatching job events
- * onto the global bus.  Returns an abort controller the caller
- * can use to tear down the connection.
+ * Reconnect backoff for the cron-status stream. A healthy stream is resumed
+ * promptly (the server caps each connection at 6 minutes so workers recycle);
+ * genuine failures back off exponentially.
  */
-function connectCronStatusSse(
+const SSE_RECONNECT_BASE_MS = 1_000;
+const SSE_RECONNECT_MAX_MS = 30_000;
+const SSE_RECONNECT_MAX_ATTEMPT = 5;
+
+interface CronStatusStreamHandlers {
+	/** Aborts this single connection attempt. */
+	signal: AbortSignal;
+	/**
+	 * Invoked exactly once when the attempt ends. `healthy` is true when at
+	 * least one SSE frame arrived before the connection closed.
+	 */
+	onClosed: ( healthy: boolean ) => void;
+}
+
+/**
+ * Open a single cron-status SSE connection, dispatching job events onto the
+ * global bus and reporting closure back to the caller for reconnection.
+ */
+function openCronStatusStream(
 	cronStatusBaseUrl: string,
 	nonce: string,
-): AbortController {
-	const ac = new AbortController();
+	handlers: CronStatusStreamHandlers,
+): void {
+	const { signal, onClosed } = handlers;
+	let sawFrame = false;
 	const url = new URL(
 		`${ cronStatusBaseUrl.replace( /\/+$/, '' ) }/cron-status`,
 		window.location.origin,
@@ -103,9 +123,9 @@ function connectCronStatusSse(
 			Accept: 'text/event-stream',
 			'X-WP-Nonce': nonce,
 		},
-		signal: ac.signal,
+		signal,
 	} )
-		.then( async ( response ) => {
+	.then( async ( response ) => {
 			if ( ! response.ok || ! response.body ) {
 				throw new Error( `SSE connection failed: ${ response.status }` );
 			}
@@ -131,6 +151,7 @@ function connectCronStatusSse(
 					} else if ( line.startsWith( 'data:' ) ) {
 						data += line.slice( 5 );
 					} else if ( line === '' && data ) {
+						sawFrame = true;
 						handleSseFrame( eventType, data );
 						eventType = 'message';
 						data = '';
@@ -147,6 +168,9 @@ function connectCronStatusSse(
 					);
 				}
 			}
+		} )
+		.finally( () => {
+			onClosed( sawFrame );
 		} );
 
 	function handleSseFrame( eventType: string, raw: string ): void {
@@ -210,11 +234,9 @@ function connectCronStatusSse(
 		}
 
 		bus.dispatchEvent(
-			new CustomEvent( eventName, { detail } ),
-		);
+				new CustomEvent( eventName, { detail } ),
+			);
 	}
-
-	return ac;
 }
 
 // ---------------------------------------------------------------------------
@@ -253,6 +275,9 @@ export function useJobBus(
 	const [ jobs, setJobs ] = useState< Record< string, JobRecord > >( {} );
 	const sseRef = useRef< AbortController | null >( null );
 	const pollRef = useRef< ReturnType< typeof setInterval > | null >( null );
+	// Tracks whether the SSE stream is currently delivering frames, so the REST
+	// fallback only fires when SSE is genuinely unavailable.
+	const sseHealthyRef = useRef( false );
 
 	// ── 1. Ensure the global job bus exists ──────────────────────────────
 	useEffect( () => {
@@ -388,15 +413,55 @@ export function useJobBus(
 	}, [] );
 
 	// ── 3. SSE cron-status stream (v2.1.0) ────────────────────────────────
+	// The server caps each connection (SSE_JOB_MAX_POLLS × interval, 6 min) so
+	// a PHP-FPM worker is recycled rather than pinned for the whole session.
+	// Without reconnecting, the console silently lost job updates after the
+	// cap and fell back to polling until it gave up entirely.
 	useEffect( () => {
 		if ( ! cronStatusBaseUrl ) return;
 
-		// Try SSE first.
-		const ac = connectCronStatusSse( cronStatusBaseUrl, nonce );
-		sseRef.current = ac;
+		const lifecycle = new AbortController();
+		sseRef.current = lifecycle;
+		let attempt = 0;
+		let timer: ReturnType< typeof setTimeout > | null = null;
+
+		const connect = () => {
+			if ( lifecycle.signal.aborted ) return;
+			openCronStatusStream( cronStatusBaseUrl, nonce, {
+				signal: lifecycle.signal,
+				onClosed: ( healthy ) => {
+					if ( lifecycle.signal.aborted ) return;
+					sseHealthyRef.current = healthy;
+
+					let delay: number;
+					if ( healthy ) {
+						// Expected cap reached — resume almost immediately.
+						attempt = 0;
+						delay = SSE_RECONNECT_BASE_MS;
+					} else {
+						delay = Math.min(
+							SSE_RECONNECT_MAX_MS,
+							SSE_RECONNECT_BASE_MS * 2 ** attempt,
+						);
+						attempt = Math.min(
+							attempt + 1,
+							SSE_RECONNECT_MAX_ATTEMPT,
+						);
+					}
+
+					timer = setTimeout( connect, delay );
+				},
+			} );
+		};
+
+		connect();
 
 		return () => {
-			ac.abort();
+			lifecycle.abort();
+			if ( timer !== null ) {
+				clearTimeout( timer );
+			}
+			sseHealthyRef.current = false;
 			sseRef.current = null;
 		};
 	}, [ cronStatusBaseUrl, nonce ] );
@@ -413,6 +478,14 @@ export function useJobBus(
 		const timer = setInterval( async () => {
 			attempts++;
 			if ( attempts > maxAttempts ) {
+				clearInterval( timer );
+				pollRef.current = null;
+				return;
+			}
+			// The SSE stream now reconnects itself. Polling on top of a healthy
+			// stream costs a full WordPress bootstrap (~2.7 s, ~310 MB RSS on
+			// this fleet) per tick, so stand down as soon as SSE is delivering.
+			if ( sseHealthyRef.current ) {
 				clearInterval( timer );
 				pollRef.current = null;
 				return;
