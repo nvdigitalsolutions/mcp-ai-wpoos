@@ -556,6 +556,26 @@ export interface SiteProfile {
 	 */
 	gate?: ForgeGate;
 	/**
+	 * The gate as MEASURED by the last analyze run (Proposal 152).
+	 *
+	 * Recorded because a gated source has two very different failure modes and
+	 * only the profile can tell them apart later: a run WITH credentials measured
+	 * the real page, while a run WITHOUT them measured the holding screen and
+	 * produced a plausible-looking, completely wrong design block. `verify` reads
+	 * this to refuse to treat a holding page as the source of truth.
+	 *
+	 * Non-secret by construction — a state, an optional fingerprint, the HTTP
+	 * status. Credentials never land here (see `ForgeGate`).
+	 */
+	gateProbe?: {
+		state: string;
+		fingerprint?: string;
+		status?: number;
+		restHealthy?: boolean;
+		/** When this probe ran (ISO). */
+		measuredAt: string;
+	};
+	/**
 	 * The media block (Proposal 139) — extra authorized image hosts and the
 	 * build-time localization pass. Absent = CMS host only, localization on.
 	 */
@@ -849,6 +869,17 @@ export interface BandGeometry {
 	paddingBottom: number;
 	marginTop: number;
 	marginBottom: number;
+	/**
+	 * The BUILT band deliberately renders less than the source here.
+	 *
+	 * Set when the rebuilt wrapper carries `data-section-collapsed`: the band's
+	 * grid folded away because every card was the band's own sub-heading, or a
+	 * dynamic list had nothing published. The source's height was the height WITH
+	 * that content, so comparing it reports drift where the build made a correct
+	 * decision — eca.directory's updates band, 478px → 239px (2026-11-25).
+	 * `diffGeometry` skips a collapsed band; the attribute is the record of WHY.
+	 */
+	collapsed?: boolean;
 	/** Horizontal padding. Optional: baselines recorded before it was measured
 	 * stay valid and are simply treated as 0. */
 	paddingLeft?: number;
