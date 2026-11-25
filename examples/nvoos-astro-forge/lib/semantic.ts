@@ -1072,6 +1072,113 @@ function accordionPanelOf( node: HNode, titleNode: HNode ): HNode | undefined {
 }
 
 /**
+ * Elementor's CONTAINER model, named once (4.x flexbox + the legacy grid).
+ *
+ * Elementor 4.x publishes a band as a stack of flex containers —
+ * `div.e-con.e-parent > .e-con-inner > .e-con-full.e-child` — and each CARD is
+ * itself a container (`e-con-full e-child`). The pre-4.x model is the same idea
+ * under different names (`.elementor-container > .elementor-column`), and a
+ * builder that migrated halfway carries BOTH in one page.
+ *
+ * Before this, three consumers re-derived the vocabulary from class strings and
+ * disagreed: `columnItems` only knew the legacy pair, and `cardContainerItems`
+ * carried its own regex plus a private card predicate. The symptoms were a band
+ * grouped by ROWS instead of cards (2 items for 5) and a comparison table's
+ * cells read as cards. One model, one place to fix the next shape.
+ *
+ * A ROW is ≥2 sibling containers of the same SHAPE — the shape signature drops
+ * `elementor-element-*`/`elementor-col-*`, so two cards built in different
+ * sessions still match. A CARD is a container with a heading AND a list; that
+ * is what separates the three phase cards from a matrix cell (heading only) and
+ * from an intro row (a single child).
+ */
+
+/** Every class token that marks a container in either model. */
+const CONTAINER_TOKENS = /^(?:e-con|e-con-inner|e-con-full|e-con-boxed|e-child|elementor-column|elementor-container)$/;
+
+/** A heading, or a builder's heading element (Elementor uses a `div`). */
+export function isHeadingNode( node: HNode ): boolean {
+	return (
+		node.type === 'tag' &&
+		( /^h[1-6]$/.test( node.name ?? '' ) ||
+			classList( node.attribs ).some( ( name ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( name ) ) )
+	);
+}
+
+/** Is this node a layout container (flexbox or legacy grid)? */
+export function isContainerNode( node: HNode ): boolean {
+	return node.type === 'tag' && classList( node.attribs ).some( ( name ) => CONTAINER_TOKENS.test( name ) );
+}
+
+/** The legacy row wrapper (`.elementor-container`). */
+export function isLegacyRow( node: HNode ): boolean {
+	return node.type === 'tag' && classList( node.attribs ).includes( 'elementor-container' );
+}
+
+/** A legacy column (`.elementor-column`) — a direct child of `isLegacyRow`. */
+export function isLegacyColumn( node: HNode ): boolean {
+	return node.type === 'tag' && classList( node.attribs ).includes( 'elementor-column' );
+}
+
+/**
+ * A container's SHAPE: its class tokens minus the per-element identity.
+ *
+ * `elementor-element-<id>` is unique per instance and `elementor-col-*` encodes
+ * a width, so keeping either would give every card its own shape and the row
+ * would never group.
+ */
+export function containerShape( node: HNode ): string {
+	return classList( node.attribs )
+		.filter( ( name ) => ! /^elementor-(?:element-|col-)/.test( name ) )
+		.sort()
+		.join( ' ' );
+}
+
+/** The card's own heading — the icon-box title wins over a plain heading above it. */
+export function containerHeadingNode( node: HNode ): HNode | undefined {
+	return findDescendant( node, isHeadingNode );
+}
+
+/** A CARD: a container carrying a heading AND a list (see the model note). */
+export function isCardContainer( node: HNode ): boolean {
+	return (
+		Boolean( containerHeadingNode( node ) ) &&
+		Boolean( findDescendant( node, ( child ) => child.type === 'tag' && ( child.name === 'ul' || child.name === 'ol' ) ) )
+	);
+}
+
+/**
+ * The ROWS of a band: sibling container groups of ≥2 members sharing a shape.
+ *
+ * Groups, not children: a band can carry several rows (an intro row and a card
+ * row) with different shapes, and a nested row is its own group. Document order
+ * is preserved — the caller indexes cards by it.
+ */
+export function containerRows( scope: HNode ): HNode[][] {
+	const rows: HNode[][] = [];
+	for ( const parent of allDescendants( scope, isContainerNode ) ) {
+		const kids = directChildren( parent ).filter( isContainerNode );
+		if ( kids.length < 2 ) {
+			continue;
+		}
+		const byShape = new Map< string, HNode[] >();
+		for ( const kid of kids ) {
+			const shape = containerShape( kid );
+			if ( ! shape ) {
+				continue;
+			}
+			byShape.set( shape, [ ...( byShape.get( shape ) ?? [] ), kid ] );
+		}
+		for ( const members of byShape.values() ) {
+			if ( members.length >= 2 ) {
+				rows.push( members );
+			}
+		}
+	}
+	return rows;
+}
+
+/**
  * One item per SOURCE COLUMN, when a band spreads its content across columns.
  *
  * A multi-column band has no flat equivalent: concatenating the columns gave
@@ -1081,16 +1188,11 @@ function accordionPanelOf( node: HNode, titleNode: HNode ): HNode | undefined {
  * carry content, so an ordinary one-column band keeps its old path.
  */
 function columnItems( section: HNode ): { items: SectionItem[]; lead: string[] } | undefined {
-	const container = findDescendant(
-		section,
-		( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-container' )
-	);
+	const container = findDescendant( section, isLegacyRow );
 	if ( ! container ) {
 		return undefined;
 	}
-	const columns = childrenOf( container ).filter(
-		( child ) => child.type === 'tag' && classList( child.attribs ).includes( 'elementor-column' )
-	);
+	const columns = childrenOf( container ).filter( isLegacyColumn );
 	if ( columns.length < 2 ) {
 		return undefined;
 	}
@@ -1192,57 +1294,16 @@ function columnItems( section: HNode ): { items: SectionItem[]; lead: string[] }
  * source laid out.
  */
 function cardContainerItems( section: HNode ): { items: SectionItem[]; lead: string[] } | undefined {
-	const isContainer = ( node: HNode ): boolean =>
-		node.type === 'tag' && classList( node.attribs ).some( ( name ) => /^(?:e-con|e-con-inner|e-con-full|e-con-boxed|e-child|elementor-column)$/.test( name ) );
-	const headingIn = ( node: HNode ): HNode | undefined =>
-		findDescendant(
-			node,
-			( n ) =>
-				n.type === 'tag' &&
-				( /^h[1-6]$/.test( n.name ?? '' ) ||
-					( ! /^h[1-6]$/.test( n.name ?? '' ) &&
-						classList( n.attribs ).some( ( c ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( c ) ) ) )
-		);
-	const isCard = ( node: HNode ): boolean =>
-		Boolean( headingIn( node ) ) &&
-		Boolean( findDescendant( node, ( n ) => n.type === 'tag' && ( n.name === 'ul' || n.name === 'ol' ) ) );
-	const signature = ( node: HNode ): string =>
-		classList( node.attribs )
-			.filter( ( name ) => ! /^elementor-(?:element-|col-)/.test( name ) )
-			.sort()
-			.join( ' ' );
-
-	const buckets: HNode[][] = [];
-	for ( const parent of allDescendants( section, ( n ) => n.type === 'tag' && isContainer( n ) ) ) {
-		const kids = directChildren( parent ).filter( isContainer );
-		if ( kids.length < 2 ) {
-			continue;
-		}
-		const bySignature = new Map< string, HNode[] >();
-		for ( const kid of kids ) {
-			const key = signature( kid );
-			if ( ! key ) {
-				continue;
-			}
-			bySignature.set( key, [ ...( bySignature.get( key ) ?? [] ), kid ] );
-		}
-		for ( const members of bySignature.values() ) {
-			if ( members.length >= 2 && members.every( isCard ) ) {
-				buckets.push( members );
-			}
-		}
-	}
+	// One row per shape-sharing sibling group (see `containerRows`), keeping the
+	// groups whose members are all CARDS. The comparison table's cells fail
+	// `isCardContainer` (a heading and nothing else), so the matrix is never
+	// mistaken for a card row.
+	const buckets = containerRows( section ).filter( ( members ) => members.every( isCardContainer ) );
 	if ( buckets.length === 0 ) {
 		return undefined;
 	}
 
-	const headingsOf = ( card: HNode ): HNode[] =>
-		allDescendants(
-			card,
-			( n ) =>
-				n.type === 'tag' &&
-				( /^h[1-6]$/.test( n.name ?? '' ) || classList( n.attribs ).some( ( c ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( c ) ) )
-		);
+	const headingsOf = ( card: HNode ): HNode[] => allDescendants( card, isHeadingNode );
 
 	const items: SectionItem[] = [];
 	for ( const bucket of buckets ) {
