@@ -163,7 +163,7 @@ class Test_Checkout_Api_License_Endpoints extends WP_UnitTestCase {
 		$key = $this->issue();
 		NVOOS_Checkout_API_License_Store::revoke( $key );
 
-		$this->assertSame( 'invalid', $this->controller->check_license( $this->check_request( $key ) )->get_data() );
+		$this->assertSame( 'invalid', $this->controller->check_license( $this->check_request( $key ) )->get_data()['status'] );
 	}
 
 	/**
