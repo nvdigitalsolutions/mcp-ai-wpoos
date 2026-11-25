@@ -1755,12 +1755,19 @@ export type {
  * the channel level: adding a structure type must not require touching the
  * channel, only adding a detector and a renderer entry.
  */
-export interface ForgeStructureEntry {
+	export interface ForgeStructureEntry {
 	type: 'comparison';
 	data: {
 		columns: string[];
 		rows: ComparisonRow[];
 		caption?: string;
+		/**
+		 * Devices the source HIDES this structure at (`elementor-hidden-mobile`).
+		 * The renderer emits `display:none` at those ends; without it the rebuild
+		 * shows content the source hides — eca.directory's matrix is hidden on
+		 * phones and was rebuilt as a squeezed table at 390px.
+		 */
+		hiddenAt?: Array< 'tablet' | 'mobile' >;
 	};
 }
 
@@ -2050,7 +2057,7 @@ export interface ForgeMark {
 	 * fact resolves; the pause control is always rendered (WCAG 2.2.2). */
 	marquee?: { items: MarqueeItem[]; speed?: string };
 	/** Comparison band: columns then rows; `values` align to the columns. */
-	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string };
+	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string; hiddenAt?: Array< 'tablet' | 'mobile' > };
 	/**
 	 * MEASURED STRUCTURE — the generic channel behind `comparison`.
 	 *

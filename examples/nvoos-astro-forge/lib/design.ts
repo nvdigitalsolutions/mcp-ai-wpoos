@@ -1589,6 +1589,7 @@ export function comparisonOf( section: HNodeLike ): ForgeSection[ 'comparison' ]
 						columns: columns as string[],
 						rows: body,
 						...( caption ? { caption } : {} ),
+						...( hiddenAt( node ).length > 0 ? { hiddenAt: hiddenAt( node ) } : {} ),
 					};
 					return;
 				}
@@ -1600,6 +1601,37 @@ export function comparisonOf( section: HNodeLike ): ForgeSection[ 'comparison' ]
 	};
 	visit( section );
 	return found;
+}
+
+/**
+ * The devices a source container is HIDDEN at.
+ *
+ * A builder hides whole sub-trees per device (`elementor-hidden-mobile`), and
+ * the sanitizer keeps the class while the vendor stylesheet that gave it meaning
+ * never ships — so the rebuild rendered content the source hides. eca.directory's
+ * "Compare User Roles" matrix is `elementor-hidden-mobile`: the source shows a
+ * 3-column table on desktop and NOTHING on a phone, and the rebuild showed a
+ * squeezed table at 390px.
+ *
+ * Only the two ends the template renders are reported. The extra Elementor
+ * breakpoints collapse onto them (their `_extra` ranges sit inside the template's
+ * tablet/mobile buckets, so hiding at the bucket end over-hides a narrow band —
+ * recorded rather than guessed at a range the template cannot express).
+ */
+function hiddenAt( node: HNodeLike ): Array< 'tablet' | 'mobile' > {
+	const classes = ( node.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
+	const devices: Array< 'tablet' | 'mobile' > = [];
+	if ( classes.includes( 'elementor-hidden-tablet' ) || classes.includes( 'elementor-hidden-tablet_extra' ) ) {
+		devices.push( 'tablet' );
+	}
+	if (
+		classes.includes( 'elementor-hidden-mobile' ) ||
+		classes.includes( 'elementor-hidden-phone' ) ||
+		classes.includes( 'elementor-hidden-mobile_extra' )
+	) {
+		devices.push( 'mobile' );
+	}
+	return devices;
 }
 
 /**

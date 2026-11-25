@@ -92,3 +92,43 @@ describe( 'comparison fact (analyze time)', () => {
 		expect( facts[ 'c0a1b2c' ]?.caption ).toBe( 'Compare User Roles' );
 	} );
 } );
+
+describe( 'comparison visibility facts', () => {
+	// eca.directory's matrix row is `elementor-hidden-mobile`: the source shows a
+	// 3-column table on desktop and NOTHING on a phone. The class survives
+	// sanitisation, the stylesheet that gave it meaning does not — so the fact is
+	// recorded with the structure and the renderer emits the rule.
+	const grid = ( classes: string ): string =>
+		section(
+			`<div class="${ classes }">` +
+				'<div class="row"><div class="cell"></div><div class="cell">Student</div><div class="cell">Parent</div><div class="cell">Teacher</div></div>' +
+				'<div class="row"><div class="cell">Catalogue</div><div class="cell"><svg class="e-fas-check"></svg></div><div class="cell"><svg class="e-fas-check"></svg></div><div class="cell"><svg class="e-fas-check"></svg></div></div>' +
+				'<div class="row"><div class="cell">Dashboards</div><div class="cell"><svg class="e-fas-check"></svg></div><div class="cell"><svg class="e-fas-check"></svg></div><div class="cell"><svg class="e-fas-check"></svg></div></div>' +
+				'</div>'
+		);
+
+	it( 'records the devices the source hides the matrix at', () => {
+		const [ band ] = analyzeSections( {
+			url: 'https://eca.example',
+			html: grid( 'matrix elementor-hidden-mobile' ),
+			css: [],
+		} );
+		expect( band.comparison?.hiddenAt ).toEqual( [ 'mobile' ] );
+		// The same fact rides the generic channel.
+		expect( band.structure?.[ 0 ]?.data.hiddenAt ).toEqual( [ 'mobile' ] );
+	} );
+
+	it( 'maps the extra Elementor breakpoints onto the ends the template renders', () => {
+		const [ band ] = analyzeSections( {
+			url: 'https://eca.example',
+			html: grid( 'matrix elementor-hidden-tablet_extra elementor-hidden-mobile_extra' ),
+			css: [],
+		} );
+		expect( band.comparison?.hiddenAt ).toEqual( [ 'tablet', 'mobile' ] );
+	} );
+
+	it( 'records no visibility fact for a matrix the source shows everywhere', () => {
+		const [ band ] = analyzeSections( { url: 'https://eca.example', html: grid( 'matrix' ), css: [] } );
+		expect( band.comparison?.hiddenAt ).toBeUndefined();
+	} );
+} );

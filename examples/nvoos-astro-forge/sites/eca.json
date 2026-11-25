@@ -329,7 +329,10 @@
 							]
 						}
 					],
-					"caption": "Compare User Roles"
+					"caption": "Compare User Roles",
+					"hiddenAt": [
+						"mobile"
+					]
 				}
 			},
 			{
