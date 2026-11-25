@@ -94,12 +94,19 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
             $fields['scale'] = $this->number($options['scale'] ?? 0.2, 0.01, 1.0, 'scale');
         }
 
-        $body = $this->worker->uploadFiles(
-            '/api/video/compose',
-            $inputs,
-            $fields,
-            \max(1, (int) \config('oos.media_worker.video_timeout', 300)),
-        );
+        try {
+            $body = $this->worker->uploadFiles(
+                '/api/video/compose',
+                $inputs,
+                $fields,
+                \max(1, (int) \config('oos.media_worker.video_timeout', 300)),
+            );
+        } catch (MediaWorkerRefusedException $e) {
+            // The route refused the inputs — clips that do not match, a
+            // container the codec cannot be copied into. This contract reports
+            // those as a caller error; the engine's own failures stay runtime.
+            throw new \InvalidArgumentException($e->getMessage(), 0, $e);
+        }
 
         $remote = (string) ($body['output_file'] ?? '');
 
