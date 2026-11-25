@@ -24,10 +24,12 @@
             "extract_pdf_text",
             "generate_email_template",
             "generate_excel",
+            "generate_pdf",
             "generate_word",
             "html_to_pdf",
             "merge_pdfs",
-            "ocr_pdf_text"
+            "ocr_pdf_text",
+            "pro_pdf_document"
         ],
         "eca-management": [
             "bulk_enroll_students",
