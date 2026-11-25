@@ -47,6 +47,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/PdfDocumentAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'add_watermark_to_video' => array(
+			'class' => 'Nvoos\\Core\\Tool\\AddWatermarkToVideoTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerVideoComposition over `POST /api/video/compose` (operation `watermark`: `format=rgba,scale=<fraction of the video width>:-2,colorchannelmixer=aa=<opacity>` then `overlay`, with `-map 0:a?` so a silent video does not fail) then `GET /api/video/download`. The WordPress tool with this slug is a stub that returns success without processing anything.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoCompositionAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'adjust_video_speed' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AdjustVideoSpeedTool',
 			'readiness' => 'ready',

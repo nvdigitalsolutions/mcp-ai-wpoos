@@ -108,6 +108,7 @@
         "vault": [],
         "vector-storage": [],
         "video-production": [
+            "add_watermark_to_video",
             "adjust_video_speed",
             "compress_video",
             "convert_video_format",

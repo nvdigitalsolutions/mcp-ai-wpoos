@@ -78,6 +78,7 @@ use Nvoos\Core\Domain\Contract\TabularReaderInterface;
 use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
+use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
 use Nvoos\Core\Domain\Contract\VideoProcessingInterface;
 use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
@@ -140,6 +141,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerSocialComposer;
 use Nvoos\Laravel\Adapter\MediaWorkerSocialPublisher;
 use Nvoos\Laravel\Adapter\MediaWorkerTabularReader;
 use Nvoos\Laravel\Adapter\MediaWorkerVideo;
+use Nvoos\Laravel\Adapter\MediaWorkerVideoComposition;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
@@ -230,6 +232,12 @@ class NvoosServiceProvider extends ServiceProvider {
 		// ffmpeg and ffprobe, which a managed Node host often lacks — so each tool
 		// asks and refuses with `no_video_engine` rather than failing mid-upload.
 		$this->app->bind( VideoProcessingInterface::class, MediaWorkerVideo::class );
+
+		// Multi-input video (a video plus a mark) is its own contract on its own
+		// endpoint: `/api/video/compose` takes an ordered `files` array, so the
+		// single-input route above keeps the meaning every other operation
+		// depends on. `merge` will join it rather than widen this one.
+		$this->app->bind( VideoCompositionInterface::class, MediaWorkerVideoComposition::class );
 
 		// Documents follow the same ladder (Proposal 164 §164.4.2): the worker
 		// renders with a real browser at `/api/pdf/generate`, so `html_to_pdf`

@@ -1138,3 +1138,84 @@ actually blocks them:
 `lib/core` 2,460 tests / 17,545 assertions; adapter 359 / 1,920; the app suite
 gains 5 tests in `VideoProcessingAdapterTest`; the worker gains 2 in
 `video.test.js` (15 total).
+
+## 164.20 Addendum — the second-input contract, and `add_watermark_to_video` (2026-11-25)
+
+### The contract changed rather than the method
+
+`VideoProcessingInterface::process()` is one file in, one file out, and every
+video tool depends on that meaning. A watermark is two inputs and a merge is N,
+so composition is its **own** contract — the same split as
+`SocialComposerInterface` versus `SocialPublisherInterface` in §164.15:
+
+```php
+VideoCompositionInterface::compose( string $operation, array $inputs, array $options ): array
+```
+
+`$inputs` is ordered, base first, and an adapter must not reorder it. A swapped
+pair does not fail — it overlays the video onto the mark and returns a
+successful, useless file.
+
+### One endpoint for the family
+
+`POST /api/video/compose` takes an ordered `files` array plus `operation`.
+`merge` will join it rather than inventing a third contract. The route uses
+`upload.any()` and sorts by the index in `files[n]`, mirroring the PDF merge
+route, because `MediaWorkerClient::uploadFiles()` already sends indexed parts
+and **arrival order is not a contract**.
+
+### The overlay recipe, and why each step exists
+
+```
+[1:v]format=rgba,scale=<fraction of video width>:-2,colorchannelmixer=aa=<opacity>[wm];
+[0:v][wm]overlay=x=main_w-overlay_w-<gutter>:y=main_h-overlay_h-<gutter>:format=auto[v]
+```
+
+- **`format=rgba` comes first** because a JPEG mark has no alpha channel and
+  `colorchannelmixer` would have nothing to multiply.
+- **The mark's pixel width is resolved from the video's width.** `overlay` can
+  compute positions from its own inputs, but not the `scale` that precedes it —
+  so the route probes the video first. That is also what makes the same
+  `scale: 0.2` look identical on a 4K clip and a 720p one instead of being
+  invisible on one and enormous on the other.
+- **`-map 0:a?`** maps the audio when there is one and stays quiet when there is
+  not. Without the `?`, a silent video fails the whole run.
+- **`-c:v libx264 -crf 20 -pix_fmt yuv420p`** and audio `aac` (`libopus` for
+  webm). Watermarking re-encodes video by definition; re-encoding the audio too
+  is what keeps the output valid when the container changes.
+
+Proven against real ffmpeg in the worker image, not only in unit tests: a silent
+`testsrc` clip marked with a PNG, and the same clip marked with a **JPEG** (no
+alpha), both produced valid 640×360 H.264 output.
+
+### One filename rule, two adapters
+
+`safeRemoteName()` left `MediaWorkerVideo` and became `MediaWorkerRemoteName`,
+so the single-input and composition adapters cannot drift about what an output
+name may look like. §164.16's lesson — a containment check that *resolves* a
+path and a charset check that does not are not interchangeable — now lives in
+one place with the hostile-name tests still proving it through the tool.
+
+### Another stub, implemented
+
+`class-wp-mcp-ai-tool-add-watermark-to-video.php` is a `// TODO` followed by
+`return array( 'success' => true, … )`, exactly like §164.18's
+`optimize_for_platform`. It is recorded as a port with that stated, not as a
+faithful copy of a tool that never drew a pixel.
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **280 rows / 261 servable / 0 violations** (was
+279 / 260). `bin/toolkit-parity.php`: **59 of 854** (was 58);
+`video-production` is **10 of 21** (was 9).
+
+`lib/core` 2,462 tests / 17,555 assertions; adapter 359 / 1,921; the app suite
+gains 10 tests in `VideoCompositionAdapterTest`; the worker gains 2 in
+`video.test.js` (17 total).
+
+### What this unblocks
+
+`merge_videos` and `create_video_from_images` now reuse `/api/video/compose` —
+only their filter graphs are new. `merge` still owns the hard part: inputs that
+differ in resolution, frame rate or audio presence need normalising before
+`concat`, which is a graph of its own rather than a second upload route.

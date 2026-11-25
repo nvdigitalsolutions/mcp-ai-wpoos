@@ -27,6 +27,7 @@ use Nvoos\Core\Application\Media\GeneratedMediaPersister;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
+use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
 use Nvoos\Core\Domain\Contract\VideoProcessingInterface;
 
 abstract class AbstractVideoTool extends AbstractTool
@@ -36,6 +37,7 @@ abstract class AbstractVideoTool extends AbstractTool
         protected readonly VideoProcessingInterface $video,
         protected readonly ?FileStoreInterface $files = null,
         protected readonly ?FileVisibilityStoreInterface $store = null,
+        protected readonly ?VideoCompositionInterface $composition = null,
     ) {
         parent::__construct($e);
     }
@@ -72,6 +74,18 @@ abstract class AbstractVideoTool extends AbstractTool
             return null;
         }
 
+        return $this->engineRefusalMessage($capability);
+    }
+
+    /**
+     * The same refusal, built without asking the single-input engine.
+     *
+     * A composition tool asks {@see VideoCompositionInterface} instead, but the
+     * wording should not fork — an operator who sees one message learns the
+     * same thing from the other.
+     */
+    protected function engineRefusalMessage(string $capability): mixed
+    {
         return $this->errors->create(
             'no_video_engine',
             'The bound video engine cannot ' . $capability . ': the media worker needs ffmpeg and ffprobe, and reports the `video` domain as unavailable until then.',
