@@ -33,7 +33,7 @@
 import { readFile, readdir, mkdir, stat, writeFile } from 'node:fs/promises';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { confirm, isCancel, password as passwordPrompt, select, spinner, text } from '@clack/prompts';
@@ -73,6 +73,7 @@ import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
 import { auditFormBands, describeFormProblems } from '../lib/forms-gate.ts';
 import { describeHealth, fetchFormsHealth, sendFormProbe } from '../lib/forms-check.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
+import { parseStructureCache, runStructurePass, serializeStructureCache, STRUCTURE_DEVICES } from '../lib/structure-pass.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
@@ -1965,6 +1966,96 @@ async function runColors( profileRef, options ) {
 	} else {
 		console.log( '\n(dry run \u2014 pass --write to save the baseline)' );
 	}
+}
+
+/**
+ * `forge structure` — the opt-in vision structure pass (Proposal 163 §P6).
+ *
+ * Labels the bands a deterministic detector could not measure, using a
+ * screenshot per band at the two ends the template renders. Never a build step:
+ * it runs after `build`, it is advisory, and it stores nothing without
+ * `--write`. A missing vision endpoint or browser degrades to a printed skip.
+ */
+async function runStructure( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	if ( ! profile.design ) {
+		console.error( 'This profile has no design block \u2014 run `analyze <url> --write <profile>` first.' );
+		process.exitCode = 1;
+		return;
+	}
+	const target = resolve( options.target );
+	if ( ! existsSync( join( target, 'dist' ) ) ) {
+		console.error( `No dist/ in ${ target } \u2014 run \`npm run build\` in the project first.` );
+		process.exitCode = 1;
+		return;
+	}
+	const wanted = String( options.devices ?? 'desktop,mobile' )
+		.split( ',' )
+		.map( ( name ) => name.trim() )
+		.filter( Boolean );
+	const viewports = STRUCTURE_DEVICES.filter( ( device ) => wanted.includes( device.name ) );
+	if ( viewports.length === 0 ) {
+		console.error( `Unknown --devices: ${ wanted.join( ', ' ) } (known: ${ STRUCTURE_DEVICES.map( ( d ) => d.name ).join( ', ' ) }).` );
+		process.exitCode = 1;
+		return;
+	}
+	const cachePath = options.cache
+		? resolve( options.cache )
+		: join( target, '.forge', 'structure-cache.json' );
+	let cache = new Map();
+	if ( existsSync( cachePath ) ) {
+		cache = parseStructureCache( await readFile( cachePath, 'utf8' ) );
+	}
+	console.log( `\u2713 Structure pass \u2014 ${ profile.url } (${ viewports.map( ( d ) => d.name ).join( ', ' ) })` );
+	const outcome = await runStructurePass( profile, {
+		target,
+		path: options.path ?? '/',
+		viewports,
+		minConfidence:
+			options.minConfidence !== undefined && Number.isFinite( Number( options.minConfidence ) )
+				? Number( options.minConfidence )
+				: undefined,
+		cache,
+		onProgress: ( message ) => console.log( message ),
+	} );
+	if ( outcome.skipped ) {
+		// Opt-in by contract: an unconfigured pass is not a failure.
+		console.log( `\u2013 structure pass skipped (${ outcome.skipped })` );
+		console.log( '  Set NVOOS_FORGE_VISION_KEY/BASE_URL/MODEL, or run a local Ollama model.' );
+		return;
+	}
+	if ( options.json ) {
+		console.log( JSON.stringify( { ...outcome, profile: undefined, cache: undefined }, null, 2 ) );
+	} else {
+		console.log( `  model ${ outcome.model } \u00b7 ${ outcome.shots } screenshot(s)` );
+		for ( const band of outcome.bands ) {
+			if ( band.skipped ) {
+				console.log( `  = ${ band.id.padEnd( 10 ) } already measured (detector wins)` );
+				continue;
+			}
+			const label = band.type === 'unknown' ? 'unknown' : `${ band.type } ${ Math.round( band.confidence * 100 ) }%`;
+			console.log( `  ${ band.type === 'unknown' ? '?' : '\u2022' } ${ band.id.padEnd( 10 ) } ${ band.device.padEnd( 8 ) } ${ label }${ band.cached ? ' (cached)' : '' }` );
+		}
+		console.log(
+			`  ${ outcome.labelled } labelled \u00b7 ${ outcome.unknown } unnamed \u00b7 ${ outcome.asked } asked \u00b7 ${ outcome.cached } cached \u00b7 ${ outcome.failed } failed`
+		);
+	}
+	if ( ! options.write ) {
+		console.log( '\n(dry run \u2014 pass --write to store the labels in the profile)' );
+		return;
+	}
+	const profilePath = profilePathOf( profileRef );
+	if ( ! profilePath ) {
+		console.error( 'Cannot write: pass a site.json path (not a registered name) or run from the forge root.' );
+		process.exitCode = 1;
+		return;
+	}
+	await writeFile( profilePath, `${ JSON.stringify( outcome.profile, null, '\t' ) }\n`, 'utf8' );
+	await mkdir( dirname( cachePath ), { recursive: true } );
+	await writeFile( cachePath, `${ JSON.stringify( serializeStructureCache( outcome.cache ), null, '\t' ) }\n`, 'utf8' );
+	console.log( `\n\u2713 ${ outcome.labelled } label(s) written to ${ profilePath }` );
+	console.log( `  cache: ${ cachePath }` );
+	console.log( '  Next: `forge regen <profile> --target <dir> --only sections` to emit them.' );
 }
 
 /** Every built HTML page (homepage first), bounded — the SEO gate walks them. */
@@ -4716,6 +4807,23 @@ program
 	.option( '--write', 'save the measurement into the profile (default: dry run)' )
 	.action( async ( profileRef, options ) => {
 		await runColors( profileRef, options );
+	} );
+
+program
+	.command( 'structure' )
+	.description(
+		'label band STRUCTURES with a vision model (opt-in, advisory; a deterministic detector always wins)'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.option( '--path <path>', 'the built page to read', '/' )
+	.option( '--devices <devices>', 'device ends to ask, comma-separated', 'desktop,mobile' )
+	.option( '--min-confidence <n>', 'drop a label below this confidence (default: the merge contract\u2019s 0.7)' )
+	.option( '--cache <file>', 'verdict cache (default <target>/.forge/structure-cache.json)' )
+	.option( '--write', 'store the labels in the profile and the cache (default: report only)' )
+	.option( '--json', 'print the machine-readable report' )
+	.action( async ( profileRef, options ) => {
+		await runStructure( profileRef, options );
 	} );
 
 program

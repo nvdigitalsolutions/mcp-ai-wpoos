@@ -1235,6 +1235,45 @@ const bandStructureCss = sections
 	.join( '' );
 
 /**
+ * The band's measured LANE visibility (`design.sections[].columns[].hidden*`).
+ *
+ * A builder hides a whole lane per device (`elementor-hidden-mobile`). The class
+ * survives sanitisation but the vendor stylesheet that gave it meaning never
+ * ships — so the rebuild showed a lane the source hides. Hide by POSITION: the
+ * rebuilt cards follow the source's document order, so lane i is the grid's i-th
+ * child. Never reorder — the hidden lane still occupies its slot in the source's
+ * reading order (and in the DOM, for crawlers).
+ *
+ * The breakpoints match `bandStructureCss` (and the structure gate): tablet is
+ * 768–1024, mobile is <= 767, desktop is >= 1025.
+ */
+const bandLaneCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const lanes = theme?.columns ?? [];
+		if ( ! id || lanes.length < 2 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		lanes.forEach( ( lane, laneIndex ) => {
+			const selector = `${ scoped } .ds-grid > :nth-child(${ laneIndex + 1 })`;
+			if ( lane.hiddenDesktop ) {
+				rules.push( `@media (min-width: 1025px){${ selector }{display:none}}` );
+			}
+			if ( lane.hiddenTablet ) {
+				rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selector }{display:none}}` );
+			}
+			if ( lane.hiddenMobile ) {
+				rules.push( `@media (max-width: 767px){${ selector }{display:none}}` );
+			}
+		} );
+		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
  * The band's measured CAROUSELS (`bandFacts[id].carousel`).
  *
  * A vendor slider keeps its geometry in JS options — `items: 5`,
@@ -1479,8 +1518,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
@@ -1579,7 +1618,7 @@ const bandParallaxCss = sections
 					 * delete them. The heading and links are the band's own — they already
 					 * rendered above, so the structure renders without them. */}
 					{( theme?.structure ?? [] ).map((entry) => {
-						if ( entry.type !== 'comparison' || section.kind === 'comparison' ) {
+						if ( entry.type !== 'comparison' || ! entry.data || section.kind === 'comparison' ) {
 							return null;
 						}
 						return (

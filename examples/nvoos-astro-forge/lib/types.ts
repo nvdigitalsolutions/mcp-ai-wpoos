@@ -1754,10 +1754,15 @@ export type {
  * shape for that type (see `ForgeComparisonStructure`). Deliberately untyped at
  * the channel level: adding a structure type must not require touching the
  * channel, only adding a detector and a renderer entry.
+ *
+ * A VISION entry has no `data`: it records a label plus its provenance
+ * (`source`, `model`, `confidence`, `note`) so a detector can be written against
+ * it later. A deterministic detector always wins (`mergeStructureVerdicts`), and
+ * a renderer ignores an entry it does not know how to draw.
  */
-	export interface ForgeStructureEntry {
-	type: 'comparison';
-	data: {
+export interface ForgeStructureEntry {
+	type: 'comparison' | string;
+	data?: {
 		columns: string[];
 		rows: ComparisonRow[];
 		caption?: string;
@@ -1769,6 +1774,14 @@ export type {
 		 */
 		hiddenAt?: Array< 'tablet' | 'mobile' >;
 	};
+	/** `vision` when the label came from the opt-in structure pass. */
+	source?: 'vision';
+	/** The model id that produced a vision label (attribution). */
+	model?: string;
+	/** A vision label's own confidence (0–1); never set by a detector. */
+	confidence?: number;
+	/** One line of visual evidence for a vision label. */
+	note?: string;
 }
 
 /**

@@ -91,4 +91,28 @@ describe( 'sections.generated — measured lanes', () => {
 		expect( module ).toContain( "bgColor: '#DD3333'" );
 		expect( module ).not.toContain( 'columns: [{}, {}]' );
 	} );
+
+	it( 'carries the declared per-device intent through a measured override', () => {
+		// The measurement replaces the lane list (real widths beat the declared
+		// split), but a visibility class is not measurable from the desktop render
+		// — dropping it silently un-hid a lane the source hides on phones.
+		const module = entriesOf(
+			renderSectionsGenerated(
+				profileWith(
+					{
+						columns: {
+							desktop: [
+								{ selector: 'a', width: 700 },
+								{ selector: 'b', width: 300 },
+							],
+						},
+					},
+					[ { width: 70 }, { width: 30, hiddenMobile: true, widthTablet: 100 } ]
+				)
+			)
+		);
+		expect( module ).toContain( 'width: 70' );
+		expect( module ).toContain( 'hiddenMobile: true' );
+		expect( module ).toContain( 'widthTablet: 100' );
+	} );
 } );
