@@ -13383,7 +13383,13 @@
 			"sections": [
 				{
 					"id": "6f0d483",
-					"vendorId": "6f0d483"
+					"vendorId": "6f0d483",
+					"bgSize": "cover",
+					"bgRepeat": "no-repeat",
+					"bgPosition": "top center",
+					"bgLayerOpacity": 0.05,
+					"bgColor": "#F7F7F7",
+					"bgImage": "https://eca.directory/wp-content/uploads/2025/08/bg-01.png"
 				},
 				{
 					"id": "9c2d1fa",
@@ -13395,7 +13401,8 @@
 						{
 							"width": 50
 						}
-					]
+					],
+					"anchor": "form-field-message"
 				},
 				{
 					"id": "2f396e7",
@@ -14583,7 +14590,13 @@
 			"sections": [
 				{
 					"id": "3feed876",
-					"vendorId": "3feed876"
+					"vendorId": "3feed876",
+					"bgSize": "cover",
+					"bgRepeat": "no-repeat",
+					"bgPosition": "top center",
+					"bgLayerOpacity": 0.05,
+					"bgColor": "#F7F7F7",
+					"bgImage": "https://eca.directory/wp-content/uploads/2025/08/bg-01.png"
 				},
 				{
 					"id": "49146de0",
@@ -14599,7 +14612,13 @@
 				},
 				{
 					"id": "14c60321",
-					"vendorId": "14c60321"
+					"vendorId": "14c60321",
+					"bgSize": "cover",
+					"bgRepeat": "no-repeat",
+					"bgPosition": "center center",
+					"bgLayerOpacity": 0.2,
+					"bgColor": "#27104A",
+					"bgImage": "https://eca.directory/wp-content/uploads/2025/08/bg-01.png"
 				},
 				{
 					"id": "3a289853",

@@ -4847,7 +4847,7 @@ async function runPageDesign( profileRef, options ) {
 		return;
 	}
 	try {
-		const { reports } = await analyzePageDesigns( profile, {
+		const { profile: next, reports } = await analyzePageDesigns( profile, {
 			slugs,
 			fetchImpl: gate.fetch,
 			onPage: ( report ) => {
@@ -4865,15 +4865,20 @@ async function runPageDesign( profileRef, options ) {
 		if ( options.json ) {
 			console.log( JSON.stringify( reports, null, 2 ) );
 		}
-		// DIAGNOSTIC ONLY. The image, its box, its layer opacity and the band
-		// colour are all extracted now (and the stats band renders correctly with
-		// them). The remaining interference is the HERO: its own overlay/panel
-		// facts paint over the result, and until those are re-measured against the
-		// layer a write flips the hero between unreadable and grey. Re-open when
-		// the hero overlay is on the same channel.
-		console.log(
-			'\n(diagnostic only \u2014 the hero overlay/panel is not yet measured against the layer)'
-		);
+		if ( ! options.write ) {
+			console.log( '\n(dry run \u2014 pass --write to store the page design facts)' );
+			return;
+		}
+		const profilePath = profilePathOf( profileRef );
+		if ( ! profilePath ) {
+			console.error( 'Cannot write: pass a site.json path (not a registered name) or run from the forge root.' );
+			process.exitCode = 1;
+			return;
+		}
+		await writeFile( profilePath, `${ JSON.stringify( next, null, '\t' ) }\n`, 'utf8' );
+		const total = reports.reduce( ( sum, report ) => sum + report.matched, 0 );
+		console.log( `\n\u2713 ${ total } section(s) updated in ${ reports.length } page(s) \u2014 ${ profilePath }` );
+		console.log( '  Next: `forge regen <profile> --target <dir> --only pages`, then rebuild.' );
 	} finally {
 		gate.close();
 	}
@@ -4940,6 +4945,7 @@ program
 	)
 	.argument( '<profileRef>', 'site.json path or registered site name (must carry pageBands)' )
 	.option( '--slugs <list>', 'only these page slugs, comma-separated' )
+	.option( '--write', 'store the facts in the profile (default: dry run)' )
 	.option( '--json', 'print the machine-readable report' )
 	.action( async ( profileRef, options ) => {
 		await runPageDesign( profileRef, options );
