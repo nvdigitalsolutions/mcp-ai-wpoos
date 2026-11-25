@@ -29,6 +29,10 @@ class FileUploadService implements FileUploadServiceInterface {
 	/**
 	 * Sniffed MIME → stored extension. Never trust the client's extension.
 	 *
+	 * Used only on the path where no registry is bound; when one is, the store
+	 * assigns the extension from its own map. The two lists carry the same types
+	 * so a host that switches between them does not change the stored filename.
+	 *
 	 * @var array<string, string>
 	 */
 	private const EXTENSIONS = array(
@@ -42,6 +46,19 @@ class FileUploadService implements FileUploadServiceInterface {
 		'application/json' => 'json',
 		'application/msword' => 'doc',
 		'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+		'audio/mpeg'      => 'mp3',
+		'audio/wav'       => 'wav',
+		'audio/x-wav'     => 'wav',
+		'audio/ogg'       => 'ogg',
+		'audio/x-m4a'     => 'm4a',
+		'audio/mp4'       => 'm4a',
+		'audio/x-hx-aac-adts' => 'aac',
+		'audio/aac'       => 'aac',
+		'audio/flac'      => 'flac',
+		'audio/webm'      => 'webm',
+		'video/mp4'       => 'mp4',
+		'video/webm'      => 'webm',
+		'video/quicktime' => 'mov',
 	);
 
 	/**
@@ -152,7 +169,7 @@ class FileUploadService implements FileUploadServiceInterface {
 			$base = 'upload';
 		}
 
-		$filename = $base . '-' . Str::lower( Str::random( 10 ) ) . '.' . ( self::EXTENSIONS[ $mime ] ?? 'bin' );
+		$filename = $base . '-' . Str::lower( Str::random( 10 ) ) . '.' . self::extensionFor( $mime );
 		$path     = 'media/' . \date( 'Y/m' ) . '/' . $filename;
 		$contents = \file_get_contents( $tmp );
 
@@ -239,6 +256,17 @@ class FileUploadService implements FileUploadServiceInterface {
 	 */
 	public function isMimeTypeAllowed( string $mimeType ): bool {
 		return \in_array( $mimeType, $this->allowedTypes, true );
+	}
+
+	/**
+	 * The extension this host would give a sniffed type.
+	 *
+	 * Exposed so the allowlist can be checked against it: a type in the allowlist
+	 * with no extension here would be stored as `.bin` on the no-registry path,
+	 * which is a file no player opens.
+	 */
+	public static function extensionFor( string $mimeType ): string {
+		return self::EXTENSIONS[ $mimeType ] ?? 'bin';
 	}
 
 	/**
