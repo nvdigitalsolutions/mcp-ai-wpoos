@@ -283,6 +283,11 @@ final class DocsHubToolsTest extends TestCase
             /** @var list<string> */
             public array $deleted = array();
 
+            /** @var list<array<string, mixed>> */
+            public array $archived = array();
+
+            public bool $alreadyArchived = false;
+
             /** @var array<string, mixed> */
             public array $listing = array('documents' => array(), 'total' => 0);
 
@@ -335,6 +340,22 @@ final class DocsHubToolsTest extends TestCase
                 $this->deleted[] = $path;
 
                 return true;
+            }
+
+            public function archive(string $path, array $meta = array()): array
+            {
+                $this->archived[] = array('path' => $path, 'meta' => $meta);
+                $this->deny();
+
+                return array(
+                    'path' => $path,
+                    'title' => 'A',
+                    'status' => 'archived',
+                    'archived_at' => '2026-11-25T12:00:00+00:00',
+                    'archived_by' => (int) ($meta['user_id'] ?? 0),
+                    'archive_reason' => (string) ($meta['reason'] ?? ''),
+                    'already_archived' => $this->alreadyArchived,
+                );
             }
 
             public function rebuild(): array

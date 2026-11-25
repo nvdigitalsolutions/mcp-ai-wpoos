@@ -2695,3 +2695,201 @@ error rather than answering an empty listing that reads like "no documents yet".
 `guides//a.md` and a 250-character name are all refused before the filesystem is
 touched; a symlink out of the root reads as not-found; a 128-byte body against a
 64-byte cap is refused with nothing written.
+
+## 164.35 — What the standards actually require of the remaining 20 (2026-11-25)
+
+The last four areas are not all the same kind of work, and reading the standards
+they belong to changed what each one should be.
+
+| area | governing standard | what it requires |
+|---|---|---|
+| QMS (10 tools) | **21 CFR Part 11**, **ISO 9001 §7.5.2/7.5.3** | attributable signatures, an append-only timestamped audit trail, controlled lifecycle |
+| `archive_documents` | **ISO 9001 §7.5.3**, ISO 15489 | obsolete information clearly marked, prevented from unintended use, retained |
+| `pro_excel_document` | OOXML via ExcelJS | freeze panes, auto-filter and formulas are all supported — the blocker was never the engine |
+| service-dependent (6) | — | a service to stand up, not code |
+
+### 21 CFR Part 11: three things, and the one this runtime cannot claim
+
+The regulation's substantive requirements are narrow and specific:
+
+- **§11.10(e)** — "use of secure, computer-generated, time-stamped audit trails to
+  independently record the date and time of operator entries and actions that
+  create, modify, or delete electronic records. Record changes shall not obscure
+  previously recorded information."
+- **§11.50** — a signature must carry the signer's name, the date and time, and
+  **the meaning** of the signature (review, approval, responsibility, authorship).
+- **§11.100 / §11.200** — signatures must be unique to one individual and **not
+  transferable**, and where a signature is required it must use **two distinct
+  components** — identification plus a re-entered credential.
+
+The first two are implementable here. The third is not, and the difference
+matters: this runtime has a user id in the execution context and **no
+re-authentication ceremony**, so a record it writes can be *attributed* but not
+*verified*. Calling that a Part 11 e-signature would be false.
+
+So the port records an **attributed approval** — signer id, timestamp, meaning,
+and the document revision it applies to — and says in the schema and the payload
+that it is not a Part 11 e-signature unless a `SignatureVerifierInterface` is
+bound. A caller in a regulated environment then knows exactly what it has.
+
+ALCOA+ is the practical test inspectors apply to those records, and it is a good
+checklist for the design: **A**ttributable, **L**egible, **C**ontemporaneous,
+**O**riginal, **A**ccurate, plus **C**omplete, **C**onsistent, **E**nduring,
+**A**vailable. An append-only log with timestamps and no in-place edits satisfies
+all nine; a status field that is overwritten in place satisfies none of the last
+four.
+
+### ISO 9001 §7.5.3: archive is a state, not a deletion
+
+Clause 7.5.3 requires documented information to be controlled for availability,
+access, **version**, storage, **retention** and **disposition**, and requires that
+**obsolete information be prevented from unintended use**. Practice that follows
+from it: a superseded document is moved to an archived/obsolete state, **clearly
+marked as no longer current**, and **retained** for a defined period (commonly
+3–7 years) so it can still answer an audit or a dispute.
+
+That is the opposite of a delete, and it is why `archive_documents` was never a
+zip tool. Over the corpus from §164.34 the honest implementation is a **frontmatter
+lifecycle**: the file stays where it is, and its frontmatter gains `status:
+archived`, `archived_at`, `archived_by` and `archive_reason`. The body is
+untouched, so a superseded revision remains readable — which is the whole point of
+retention.
+
+### ExcelJS: the `pro_excel_document` blocker was never real
+
+The worker's `excel` route writes values and columns only, which is why §164.33
+deferred the tool. Reading the library's surface shows all four missing features
+are native to it:
+
+| feature | ExcelJS |
+|---|---|
+| freeze panes | `worksheet.views = [{ state: 'frozen', ySplit: 1 }]` |
+| auto-filter | `worksheet.autoFilter = 'A1:D1'` (range string, or `{from, to}`) |
+| formulas | a cell value of `{ formula: 'SUM(B2:C2)' }` |
+| charts | supported, but not needed for parity here |
+
+So `pro_excel_document` is a **worker change plus a port**, not a blocked port.
+It is the one remaining formatter and belongs after the worker gains the first
+three.
+
+### The service-dependent six
+
+`pro_unlimited_ocr` and `pro_batch_ocr` call the Unlimited OCR / DeepSeek-OCR
+services; `generate_invoice_pdf`, `generate_invoice_batch` and
+`get_uninvoiced_orders` need order data this runtime does not have. Both groups
+are a service to stand up, not code to port — the same verdict §164.27 reached for
+`run_openai_external_action` and `vision_product_search`. They stay recorded and
+unported.
+
+### What this section changes
+
+`archive_documents` ships here, over the corpus, as an ISO 9001 §7.5.3 archive
+state with Part 11-shaped attribution. That closes the document store the corpus
+opened. QMS, the Excel worker enhancement, and the six service-dependent tools
+remain, in that order, each with the standard it answers to now named.
+
+### Where the work lives (archive)
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/DocsCorpusInterface.php` | `archive()` — the lifecycle transition |
+| `lib/laravel-adapter/src/Adapter/FilesystemDocsCorpus.php` | frontmatter split/merge; archive state |
+| `lib/core/src/Tool/ArchiveDocumentsTool.php` | new; `archive_documents` |
+| `lib/core/resources/tool-readiness.php` | one row |
+| `lib/laravel-adapter/tests/FilesystemDocsCorpusTest.php` | eight archive tests |
+| `lib/core/tests/Unit/Tool/ArchiveDocumentsToolTest.php` | new; ten tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+### Measurement
+
+`lib/core` **2,664 / 18,161** (was 2,652 / 18,121); adapter **411 / 2,050** (was
+403 / 2,025); audit **296 / 296, servable 277**; toolkit parity **74 of 854**;
+`document-generation` **19 of 38**.
+
+Archiving a document prepends `status: archived`, `archived_at` (ISO 8601),
+`archived_by` and `archive_reason` to its frontmatter and leaves the body
+readable; archiving it again returns the original timestamp and signer rather
+than re-stamping them; a document with no frontmatter gains one and keeps its
+heading as its title; and `../victim.md` is refused before the filesystem is
+touched.
+
+### The remaining cluster, with its standard named
+
+| what | status |
+|---|---|
+| `qms_*` (10) | **next** — needs the lifecycle data model; Part 11 attribution shape is settled above |
+| `pro_excel_document` | worker first: freeze panes, `autoFilter`, formulas — all native to ExcelJS |
+| six service-dependent | recorded and not portable |
+
+## 164.36 — The Excel route grows the three things it was missing (2026-11-25)
+
+§164.35 found that §164.33's reason for deferring `pro_excel_document` was wrong:
+the worker wrote values only, but ExcelJS supports freeze panes, auto-filter and
+formulas natively. So the worker changed first and the tool followed, which is the
+order that keeps the tool's parameters real.
+
+### The route now applies three things
+
+| argument | ExcelJS |
+|---|---|
+| `sheetDef.views` | `worksheet.views = [{ state: 'frozen', ySplit: 1, topLeftCell: 'A2' }]` |
+| `sheetDef.autoFilter` | `worksheet.autoFilter = 'A1:D1'` (or `{from, to}`) |
+| `sheetDef.formulas` | `cell.value = { formula: '…' }` |
+
+Each is optional, so a caller that sends none gets the workbook it always got.
+
+### Formulas are a separate channel, and that is a security decision
+
+OWASP's spreadsheet guidance puts its strongest recommendation on **typed output**:
+a string cell cannot become a formula, so writing data as strings avoids the class
+entirely. The other half of the guidance is that a formula must be something the
+caller asked for.
+
+Both halves are implemented. A value arrives through `rows` and ExcelJS writes it
+as a string cell, so `=1+1` in a data cell is the *text* `=1+1`. A formula exists
+only in `sheetDef.formulas`, addressed by cell reference, which the route
+validates against `/^[A-Z]{1,3}[1-9][0-9]{0,6}$/` before use, refuses when empty or
+carrying control characters, and writes with a leading `=` stripped so both
+spellings work.
+
+`document.test.js` decodes the written workbook rather than asserting on the
+request, because "this cell is a string" is a property of the file. Seven tests:
+a `=1+1` data value stays a string, `+SUM(A1)` and `@cmd` likewise, the explicit
+channel produces a real formula, an invalid reference and a control-character
+formula are both `400`, a frozen view round-trips, an auto-filter round-trips, and
+a sheet with none of the new arguments still writes.
+
+### The tool, and the one operation still absent
+
+`pro_excel_document` offers `generate`, `table` and `multi_sheet`. `chart` is
+**not** offered: the route draws none, and accepting it would be the
+accepted-then-ignored defect this cluster has now corrected five times. A caller
+that asks for `chart` gets a validation error that lists the three supported
+operations, which is louder than a silent no-op and cheaper than a redundant
+`generate_excel`.
+
+`freeze_header`, `auto_filter`, `formatting.header_bg` and `formulas` are now
+honoured. `header_bg` is validated as 6–8 hex digits before it reaches the
+stylesheet, the same rule §164.31 and §164.33 applied elsewhere.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `addons/media-worker/src/routes/document.js` | `views`, `autoFilter`, validated `formulas` |
+| `addons/media-worker/src/routes/document.test.js` | new; 7 tests, workbook decoded |
+| `lib/core/src/Tool/ProExcelDocumentTool.php` | new; three operations |
+| `lib/core/resources/tool-readiness.php` | one row |
+| `lib/core/tests/Unit/Tool/ProExcelDocumentToolTest.php` | new; 16 tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+### Measurement
+
+`lib/core` **2,682 / 18,222** (was 2,664 / 18,161); adapter **411 / 2,051**;
+worker `document.test.js` **7 / 7**; audit **297 / 297, servable 278**; toolkit
+parity **75 of 854**; `document-generation` **20 of 38**.
+
+A data cell reading `=1+1` is written as text and carries no formula; `D2` with
+`SUM(A2:B2)` in the formula map is a live formula after a round-trip; `not-a-ref`
+is a `400`; and `freeze_header` with `auto_filter` over two columns produces
+`views[0].state === 'frozen'` and `A1:B1`.

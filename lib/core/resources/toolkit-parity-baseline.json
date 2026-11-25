@@ -20,6 +20,7 @@
         "dj-management": [],
         "document-generation": [
             "add_watermark_to_pdf",
+            "archive_documents",
             "docs_hub_delete_doc",
             "docs_hub_list_docs",
             "docs_hub_read_doc",
@@ -35,6 +36,7 @@
             "html_to_pdf",
             "merge_pdfs",
             "ocr_pdf_text",
+            "pro_excel_document",
             "pro_pdf_document",
             "pro_word_document"
         ],

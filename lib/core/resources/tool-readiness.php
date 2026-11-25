@@ -150,6 +150,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProductionToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'archive_documents' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ArchiveDocumentsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Withdraws documents from current use through DocsCorpusInterface by setting `status: archived` plus `archived_at`, `archived_by` and `archive_reason` in frontmatter. ISO 9001 section 7.5.3 requires obsolete information to be marked and prevented from unintended use while being retained, so the body is never deleted. Archiving an already-archived document changes nothing rather than re-stamping the withdrawal time. Takes corpus `paths` instead of the WordPress post ids, because there is no post type here (Proposal 164 section 164.35).',
+			'evidence' => 'lib/laravel-adapter/tests/FilesystemDocsCorpusTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'auto_categorize_content' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AutoCategorizeContentCompletionTool',
 			'readiness' => 'ready',
@@ -1842,6 +1851,15 @@ return array(
 			'readiness' => 'pure',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'pro_excel_document' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ProExcelDocumentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Three operations (generate, table, multi_sheet) over MediaWorkerOfficeWriter (`POST /api/document/excel`, exceljs) and FileVisibilityStoreInterface. The worker gained `views`, `autoFilter` and a validated formula map in Proposal 164 section 164.36, so `freeze_header`, `auto_filter`, `formatting.header_bg` and `formulas` are honoured rather than inert. `chart` is not offered: the route draws none. Formulas are an explicit channel; a data value that looks like one stays a string, which is the OWASP-recommended typed-output boundary.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProExcelDocumentToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
 		'pro_pdf_document' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ProPdfDocumentTool',
