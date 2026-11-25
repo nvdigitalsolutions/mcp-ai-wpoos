@@ -748,6 +748,17 @@ Deployed to `site/eca`; staging verified `live release days25 matches this build
 ### Still open
 
 - The `comparison` fact above (compound section: card row + matrix in one band).
+  **Settled design (do not re-litigate):** the fact renders **in addition to**
+  the classified kind, never instead of it — `77f4271d` carries three phase
+  cards AND the matrix, so an override to `comparison` would delete the cards.
+  Mirror the existing `theme.logos` precedent: capture `bandFacts.comparison` in
+  the browser, emit it on the section entry in `sections.generated.ts`, and have
+  `DesignRenderer.astro` append `<Comparison>` after the kind's component with
+  the band heading suppressed (it already rendered). Detector contract: a
+  container of ≥2 sibling ROWS, each with ≥2 equal-width cells, row 0 = column
+  labels (text), body rows = a text label plus icon-only cells classified by
+  icon class (`check`/`fa-check`/`e-fas-check` → ✓, `times`/`xmark`/`close` →
+  ✗), never by the presence of an `<svg>` in sanitised HTML.
 - `77f4271d`'s last 15 % of text (the matrix labels now ride the band, the values
   do not).
 - `319dfe29` at 69 % — the CMS's only post is `hello-world`; a client site should
