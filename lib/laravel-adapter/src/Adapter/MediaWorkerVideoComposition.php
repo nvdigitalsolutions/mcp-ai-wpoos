@@ -32,7 +32,7 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
      * The shapes an overlay can take. `merge` will join this list on the same
      * endpoint rather than getting a contract of its own.
      */
-    private const OPERATIONS = array('watermark');
+    private const OPERATIONS = array('watermark', 'merge');
 
     private const POSITIONS = array('top-left', 'top-right', 'bottom-left', 'bottom-right', 'center');
 
@@ -66,7 +66,11 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
         $inputs = \array_values($inputs);
 
         if (\count($inputs) < 2) {
-            throw new \InvalidArgumentException('A watermark needs two inputs: the video, then the mark.');
+            throw new \InvalidArgumentException(
+                'merge' === $operation
+                    ? 'A merge needs at least two inputs, in the order to join them.'
+                    : 'A watermark needs two inputs: the video, then the mark.'
+            );
         }
 
         foreach ($inputs as $input) {
@@ -77,20 +81,32 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
 
         $format = $this->format($options['format'] ?? 'mp4');
 
+        // Only the fields an operation reads are sent, so a merge does not
+        // carry a position nobody will look at.
         $fields = array(
             'operation' => $operation,
-            'position' => $this->position($options['position'] ?? 'bottom-right'),
-            'opacity' => $this->number($options['opacity'] ?? 0.7, 0.0, 1.0, 'opacity'),
-            'scale' => $this->number($options['scale'] ?? 0.2, 0.01, 1.0, 'scale'),
             'format' => $format,
         );
 
-        $body = $this->worker->uploadFiles(
-            '/api/video/compose',
-            $inputs,
-            $fields,
-            \max(1, (int) \config('oos.media_worker.video_timeout', 300)),
-        );
+        if ('watermark' === $operation) {
+            $fields['position'] = $this->position($options['position'] ?? 'bottom-right');
+            $fields['opacity'] = $this->number($options['opacity'] ?? 0.7, 0.0, 1.0, 'opacity');
+            $fields['scale'] = $this->number($options['scale'] ?? 0.2, 0.01, 1.0, 'scale');
+        }
+
+        try {
+            $body = $this->worker->uploadFiles(
+                '/api/video/compose',
+                $inputs,
+                $fields,
+                \max(1, (int) \config('oos.media_worker.video_timeout', 300)),
+            );
+        } catch (MediaWorkerRefusedException $e) {
+            // The route refused the inputs — clips that do not match, a
+            // container the codec cannot be copied into. This contract reports
+            // those as a caller error; the engine's own failures stay runtime.
+            throw new \InvalidArgumentException($e->getMessage(), 0, $e);
+        }
 
         $remote = (string) ($body['output_file'] ?? '');
 
@@ -117,14 +133,33 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
         $original = (int) \filesize($inputs[0]);
         $size = \strlen($bytes);
 
-        return array(
+        $result = array(
             'path' => $path,
             'operation' => $operation,
             'format' => $format,
             'bytes' => $size,
-            'original_bytes' => $original,
-            'savings_percent' => $original > 0 ? (($original - $size) / $original) * 100 : 0.0,
+            'original_bytes' => 'merge' === $operation ? $this->totalSize($inputs) : $original,
+            'savings_percent' => 0.0,
         );
+
+        // A merge copies, so it has no "original" of its own — the comparison
+        // that means something is the sum of its inputs against the result.
+        if ('merge' === $operation) {
+            $total = $result['original_bytes'];
+            $result['savings_percent'] = $total > 0 ? (($total - $size) / $total) * 100 : 0.0;
+        } elseif ($original > 0) {
+            $result['savings_percent'] = (($original - $size) / $original) * 100;
+        }
+
+        if (isset($body['source_count'])) {
+            $result['source_count'] = (int) $body['source_count'];
+        }
+
+        if (isset($body['reencoded'])) {
+            $result['reencoded'] = (bool) $body['reencoded'];
+        }
+
+        return $result;
     }
 
     /**
@@ -197,5 +232,21 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
     private function extension(string $format): string
     {
         return 'webm' === $format ? 'webm' : $format;
+    }
+
+    /**
+     * The sum of the inputs, which is the only "original" a merge has.
+     *
+     * @param list<string> $inputs
+     */
+    private function totalSize(array $inputs): int
+    {
+        $total = 0;
+
+        foreach ($inputs as $input) {
+            $total += (int) \filesize($input);
+        }
+
+        return $total;
     }
 }

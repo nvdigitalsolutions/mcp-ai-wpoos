@@ -27,6 +27,8 @@ import {
 	resolveBitrate,
 	resolvePosition,
 	positionExpression,
+	firstDifference,
+	mergeMismatch,
 	VIDEO_CODECS,
 	AUDIO_CODECS,
 	PROCESS_FORMATS,
@@ -74,6 +76,48 @@ test( 'the format list is small and contains no traversal characters', () => {
 	for ( const format of PROCESS_FORMATS ) {
 		assert.match( format, /^[a-z0-9]+$/, `${ format } must be a bare extension` );
 	}
+} );
+
+test( 'a merge compares every property a copy cannot change', () => {
+	const base = {
+		width: 640,
+		height: 360,
+		fps: 25,
+		vcodec: 'h264',
+		hasAudio: true,
+		acodec: 'aac',
+		sampleRate: 48000,
+	};
+
+	assert.equal( firstDifference( base, { ...base } ), null );
+
+	assert.match( firstDifference( base, { ...base, width: 1280 } ), /frame size/ );
+	assert.match( firstDifference( base, { ...base, fps: 30 } ), /frame rate/ );
+	assert.match( firstDifference( base, { ...base, vcodec: 'hevc' } ), /video codec/ );
+	assert.match( firstDifference( base, { ...base, hasAudio: false } ), /no audio/ );
+	assert.match( firstDifference( base, { ...base, acodec: 'opus' } ), /audio codec/ );
+	assert.match( firstDifference( base, { ...base, sampleRate: 44100 } ), /sample rate/ );
+	assert.match( firstDifference( base, null ), /could not be read/ );
+} );
+
+test( 'a missing audio stream counts as a mismatch, because the demuxer would not fail on it', () => {
+	const silent = { width: 640, height: 360, fps: 25, vcodec: 'h264', hasAudio: false, acodec: '', sampleRate: 0 };
+	const loud = { ...silent, hasAudio: true, acodec: 'aac', sampleRate: 48000 };
+
+	assert.match( firstDifference( silent, loud ), /with audio/ );
+	assert.match( firstDifference( loud, silent ), /no audio/ );
+} );
+
+test( 'the mismatched clip is named by its position', () => {
+	const base = { width: 640, height: 360, fps: 25, vcodec: 'h264', hasAudio: false, acodec: '', sampleRate: 0 };
+	const same = { ...base };
+	const taller = { ...base, height: 480 };
+
+	assert.equal( mergeMismatch( [ base, same, same ] ), null );
+	assert.equal(
+		mergeMismatch( [ base, same, taller ] ),
+		'clip 3 differs from clip 1: frame size (640x360 vs 640x480)'
+	);
 } );
 
 test( 'a watermark position is an allowlist', () => {
