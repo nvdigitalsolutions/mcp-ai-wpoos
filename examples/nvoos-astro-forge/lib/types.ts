@@ -918,7 +918,13 @@ export interface BandGeometry {
 	 * on a partial slab reports the slab, because that is the box the rebuild
 	 * constrains.
 	 */
-	content?: { width: number; x: number };
+	content?: {
+		width: number;
+		x: number;
+		/** The content stage's own block padding, when it states one (px). */
+		padTop?: number;
+		padBottom?: number;
+	};
 	/**
 	 * The REBUILT band's kind (`data-section` on the wrapper), recorded only when
 	 * measuring a build.
@@ -1310,6 +1316,17 @@ export interface ForgeBandContainer {
 	 * columns genuinely sit inside the gutter, so `padX` applies.
 	 */
 	flush?: boolean;
+	/**
+	 * The container's BLOCK padding (top / bottom, px).
+	 *
+	 * A builder insets the copy with `e-con-inner { padding: 60px 0 80px }` rather
+	 * than the band itself, so a rebuild that reads only the band's padding starts
+	 * the copy 60–80px high and every band below it shifts up (eca.directory's
+	 * about-us benefits band measured an ink top of 88px against the rebuild's 5,
+	 * 2026-11-25). Composed onto the band's own padding at emit time.
+	 */
+	padTop?: number;
+	padBottom?: number;
 }
 
 /**

@@ -1466,7 +1466,7 @@ const bandLaneCss = sections
 const anySplitLane = sections.some( ( section, index ) => Boolean( mediaLane( themeFor( section, index ) ) ) );
 const bandSplitCss =
 	( anySplitLane
-		? '.ds-band-split{display:grid;grid-template-columns:var(--ds-split-ratio,minmax(0,1fr) minmax(0,1fr));gap:var(--ds-split-gap,clamp(1.5rem,3vw,3rem));align-items:stretch}' +
+		? '.ds-band-split{display:grid;grid-template-columns:var(--ds-split-ratio,minmax(0,1fr) minmax(0,1fr));gap:var(--ds-split-gap,clamp(1.5rem,3vw,3rem));align-items:stretch;max-width:var(--ds-measure,100%);margin-inline:auto}' +
 		  '.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:-1}' +
 		  '.ds-band-split>.ds-section{max-width:none;padding-block:0}' +
 		  '.ds-band-split__media{margin:0;min-height:0;overflow:hidden}' +

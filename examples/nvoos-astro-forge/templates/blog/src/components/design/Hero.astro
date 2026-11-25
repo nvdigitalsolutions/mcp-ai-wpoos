@@ -237,6 +237,10 @@ const offsetVars = ( index: number ): string | undefined => {
 										alt={image.alt ?? ''}
 										sizes="(min-width: 768px) 50vw, 100vw"
 										eager={index === 0}
+										/* The measured media LANE height: the source crops the picture to
+										 * that box. Without it the band grew past the source's height and
+										 * pushed every following band down (2026-11-25). */
+										style={theme?.mediaHeight ? `max-height:${theme.mediaHeight}px;object-fit:cover` : undefined}
 									/>
 								)
 					  )}

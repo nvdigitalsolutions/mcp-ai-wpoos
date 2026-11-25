@@ -1628,6 +1628,54 @@ export function resolveBandPadding(
 	return resolved.tablet || resolved.mobile ? resolved : explicit;
 }
 
+/**
+ * Add a container's BLOCK padding onto a band's own padding fact.
+ *
+ * The builder often puts the copy's top/bottom inset on the inner container
+ * (`e-con-inner { padding: 60px 0 80px }`) and leaves the band's own padding at
+ * zero, so a rebuild that reads only the band's padding starts the copy 60–80px
+ * high and every band below it shifts up (eca.directory's about-us benefits band
+ * measured an ink top of 88px against the rebuild's 5, 2026-11-25). The shorthand
+ * is normalised to four sides, the two block values are summed and re-emitted.
+ */
+export function addBlockPadding(
+	padding: ResponsiveLength | undefined,
+	block: { top?: number; bottom?: number } | undefined
+): ResponsiveLength | undefined {
+	const top = Math.round( block?.top ?? 0 );
+	const bottom = Math.round( block?.bottom ?? 0 );
+	if ( top <= 0 && bottom <= 0 ) {
+		return padding;
+	}
+	const bump = ( value: string | undefined ): string => {
+		if ( typeof value !== 'string' || value.trim() === '' ) {
+			return `${ top }px 0px ${ bottom }px 0px`;
+		}
+		const parts = value.trim().split( /\s+/ );
+		const four =
+			parts.length === 1
+				? [ parts[ 0 ], parts[ 0 ], parts[ 0 ], parts[ 0 ] ]
+				: parts.length === 2
+					? [ parts[ 0 ], parts[ 1 ], parts[ 0 ], parts[ 1 ] ]
+					: parts.length === 3
+						? [ parts[ 0 ], parts[ 1 ], parts[ 2 ], parts[ 1 ] ]
+						: parts.slice( 0, 4 );
+		const add = ( token: string, extra: number ): string => {
+			const match = /^(\d+(?:\.\d+)?)px$/.exec( token );
+			return match ? `${ Math.round( Number( match[ 1 ] ) + extra ) }px` : token;
+		};
+		return [ add( four[ 0 ], top ), four[ 1 ], add( four[ 2 ], bottom ), four[ 3 ] ].join( ' ' );
+	};
+	if ( typeof padding === 'string' || padding === undefined ) {
+		return bump( padding );
+	}
+	return {
+		desktop: bump( padding.desktop ),
+		...( padding.tablet ? { tablet: bump( padding.tablet ) } : {} ),
+		...( padding.mobile ? { mobile: bump( padding.mobile ) } : {} ),
+	};
+}
+
 function measuredBandPadding(
 	section: ForgeSection,
 	geometry?: ForgeGeometry
@@ -1718,8 +1766,8 @@ function measuredContainer(
 	bandFacts: ForgeBandFacts | undefined,
 	fallbackPadX?: ResponsiveLength,
 	measured?: Record< string, BandGeometry >
-): { measure?: ResponsiveLength; paddingX?: ResponsiveLength } {
-	const at = ( device: 'desktop' | 'tablet' | 'mobile' ): { measure: string; padX: string } | undefined => {
+): { measure?: ResponsiveLength; paddingX?: ResponsiveLength; blockPad?: { top: number; bottom: number } } {
+	const at = ( device: 'desktop' | 'tablet' | 'mobile' ): { measure: string; padX: string; padTop?: number; padBottom?: number } | undefined => {
 		const entry = bandFacts?.container?.[ device ];
 		if ( entry && entry.content > 0 ) {
 			// 0 is a fact (a genuinely flush container), not an absence — it must
@@ -1733,6 +1781,8 @@ function measuredContainer(
 			return {
 				measure: `${ Math.round( entry.content + padX * 2 ) }px`,
 				padX: `${ Math.round( sectionPadX * 100 ) / 100 }px`,
+				...( entry.padTop ? { padTop: entry.padTop } : {} ),
+				...( entry.padBottom ? { padBottom: entry.padBottom } : {} ),
 			};
 		}
 		// The BAND's own measured content column.
@@ -1759,7 +1809,12 @@ function measuredContainer(
 			const offset = typeof box.content?.x === 'number' ? box.content.x : 0;
 			const centred = Math.abs( offset - ( box.width - contentWidth ) / 2 ) <= 8;
 			if ( available > 0 && centred && contentWidth >= available * 0.6 && contentWidth <= available + 1 ) {
-				return { measure: `${ Math.round( contentWidth ) }px`, padX: '0px' };
+				return {
+					measure: `${ Math.round( contentWidth ) }px`,
+					padX: '0px',
+					...( box.content?.padTop ? { padTop: box.content.padTop } : {} ),
+					...( box.content?.padBottom ? { padBottom: box.content.padBottom } : {} ),
+				};
 			}
 		}
 		return undefined;
@@ -1768,9 +1823,14 @@ function measuredContainer(
 	if ( desktop ) {
 		const tablet = at( 'tablet' );
 		const mobile = at( 'mobile' );
+		const blockPad =
+			desktop.padTop || desktop.padBottom
+				? { top: desktop.padTop ?? 0, bottom: desktop.padBottom ?? 0 }
+				: undefined;
 		return {
 			measure: collapseDevice( desktop.measure, tablet?.measure, mobile?.measure ),
 			paddingX: collapseDevice( desktop.padX, tablet?.padX, mobile?.padX ),
+			...( blockPad ? { blockPad } : {} ),
 		};
 	}
 	const width = bandFacts?.containerWidth;
@@ -1924,18 +1984,6 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	}
 	// The band's PANEL surface (`ForgeSection.panel`) — a literal colour + its
 	// legible ink, so the item group renders on the source's slab.
-	// The band's padding: an explicit profile fact wins — but only for the
-	// viewport it describes; see `resolveBandPadding`.
-	const padding = resolveBandPadding( section.padding, measuredBandPadding( section, profile.geometry ) );
-	if ( padding ) {
-		entry.push( `padding: ${ tsLength( padding ) }` );
-	}
-	// The boxed container measure + column gap (124 §3) — the inner
-	// column re-measures to the source's container width. An explicit profile
-	// fact wins; otherwise the MEASURED container (`.container` = 1140px,
-	// `.container-fluid` = the viewport) sets it. Without it every band rendered
-	// at the site measure: virtuallyjamaica's services band is fluid (1440px)
-	// and came out at 1136px.
 	const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
 	// The band's SLAB. `design.ts` records it on the SECTION for the homepage;
 	// the geometry pass records it as a BAND fact, which is the only path a
@@ -1994,6 +2042,15 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// The container measure + side gutter, MEASURED per device (114 §3.6). An
 	// explicit profile fact wins; otherwise the source's own container decides.
 	const container = measuredContainer( bandFacts, section.paddingX, section.id ? profile.geometry?.[ section.id ] : undefined );
+	// The band's PADDING: its own fact plus the container's block padding (see
+	// `addBlockPadding`). Emitted here because the container fact is read above.
+	const padding = addBlockPadding(
+		resolveBandPadding( section.padding, measuredBandPadding( section, profile.geometry ) ),
+		container.blockPad
+	);
+	if ( padding ) {
+		entry.push( `padding: ${ tsLength( padding ) }` );
+	}
 	// An analyzed `section.measure` can be the THEME's container width applied to
 	// a FULL-WIDTH band (jayainc's services band: the CSS says 1140, the live
 	// `.elementor-container` is 1440, so its columns rendered 524 instead of the
@@ -2502,9 +2559,14 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 					.map( ( layer ) => `{ src: ${ tsString( layer.src ) }${ layer.height ? `, height: ${ Math.round( layer.height ) }` : '' } }` )
 					.join( ', ' ) }]`
 			);
-			if ( lane?.height ) {
-				entry.push( `mediaHeight: ${ Math.round( lane.height ) }` );
-			}
+		}
+		// The media LANE's measured height, always — not only for a layered
+		// collage. A single photo rendered at its intrinsic aspect made the whole
+		// band taller than the source (eca.directory's about-us hero: 544px built
+		// against 420px, so its copy sat 59px low, 2026-11-25). The source crops the
+		// picture to this box with `cover`; the rebuild must too.
+		if ( lane?.height ) {
+			entry.push( `mediaHeight: ${ Math.round( lane.height ) }` );
 		}
 	}
 	if ( section.titleDivider ) {
