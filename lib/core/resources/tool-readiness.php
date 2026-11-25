@@ -1861,6 +1861,15 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'pro_batch_ocr' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ProBatchOcrTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'A loop over `PdfOcrInterface::recognize()` (media worker `POST /api/pdf/ocr`), resolving each `file_id` through `FileStoreInterface::getPath()`. No worker change was needed: the route already takes `dpi`, `max_pages`, `language` and a page budget, so the batch belongs in the tool (Proposal 164 section 164.39). `continue_on_error` defaults true so one unreadable file does not discard the batch; the WordPress-only `unlimited_ocr` and `deepseek_ocr` providers are refused by name rather than substituted with tesseract.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProBatchOcrToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'pro_excel_document' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ProExcelDocumentTool',
 			'readiness' => 'ready',

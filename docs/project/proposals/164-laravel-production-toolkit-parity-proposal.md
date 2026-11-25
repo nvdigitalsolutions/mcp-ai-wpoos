@@ -3104,3 +3104,112 @@ at 2027; a document with no rule never appears; and `disposition` defaults to
 Seven: the three OCR tools (worker first — the ladder is there, the batch loop and
 the page budget are not), `docgen_capture_style_memory` (a store), the two invoice
 tools (re-scope to accept invoice data), and `get_uninvoiced_orders` (order data).
+
+## 164.39 — The batch is a loop, because the engine was already there (2026-11-25)
+
+§164.38 closed with "the three OCR tools (worker first — the ladder is there, the
+batch loop and the page budget are not)". The second half of that sentence was
+wrong, and it was cheaper to read the contract than to write the route.
+
+### The correction
+
+`PdfOcrInterface::recognize()` already accepts the whole page-budget vocabulary:
+
+```
+@type int       $dpi        Rasterisation resolution. 300 is the working default.
+@type int       $max_pages  Page budget for this call.
+@type string    $language   Tesseract traineddata code, e.g. 'eng'.
+@type list<int> $pages      Explicit 1-based page numbers to read.
+```
+
+and returns `total_pages` and `truncated` alongside the text. `MediaWorkerPdfOcr`
+maps all four onto `POST /api/pdf/ocr`, whose `clampPageBudget()` *is* the budget.
+**No worker change is needed for any OCR tool.** A batch is a loop over an engine
+that already exists, so the loop belongs in the tool: a `/api/pdf/ocr/batch` route
+would duplicate the ladder and give the two runtimes two places to disagree about
+page budgets — the same class of drift §164.4.8 exists to prevent.
+
+That retires the "worker first" framing for this family. What is left is tool work.
+
+### A failing file must not cost the batch
+
+`continue_on_error` defaults to **true**. A twenty-document batch that aborts on the
+third has already paid for nineteen OCR runs and returns nothing, and OCR is the
+slowest operation in the toolkit — so aborting is the most expensive way to fail.
+Each result carries its own outcome:
+
+| field | meaning |
+|---|---|
+| `results[].ok` | did this file OCR |
+| `results[].error` | why not, including "no stored file with id N" |
+| `processed` / `failed` / `requested` | the batch's own count |
+| `total_pages` | pages actually read across the batch |
+| `stopped_early` | `continue_on_error: false` and a failure occurred |
+
+`continue_on_error: false` remains for a caller treating the batch as one unit of
+work. Both paths are tested: the default continues past a broken file, and the
+strict path stops *before* attempting the next one — the test asserts the engine was
+called twice, not three times.
+
+### A vendor's name is not a synonym for tesseract
+
+The WordPress tool offers `unlimited_ocr` and `deepseek_ocr`. This host runs
+tesseract against the worker. Running it under a vendor's name would let a caller
+believe it got a service it did not, and the text would still look plausible — the
+worst kind of wrong. Both names are refused with `ocr_provider_unavailable`, naming
+the provider and saying what this host runs. They stay in the schema's `enum` on
+purpose: a caller migrating from WordPress gets a *reason*, not a schema rejection
+that reads like a typo.
+
+### Small decisions
+
+- **`read`, not `edit_posts`**, matching `ocr_pdf_text`. A batch is several reads;
+  OCR writes nothing.
+- **`MAX_FILES = 25`** is a timeout guard as much as a courtesy, and it is public so
+  the test asserts against it rather than a literal.
+- **Duplicate ids are one run.** `intListParam()` de-duplicates, so `[1, 1]` is one
+  OCR pass and `requested` reports 1 — the caller is not charged twice for the same
+  page image.
+- **Options reach every file.** `dpi`, `max_pages` and `language` are forwarded per
+  file. Applying them once would OCR the rest at the wrong resolution in the wrong
+  language and still return plausible text, which is the accepted-then-ignored
+  defect wearing a different coat.
+- **Published defaults** (`DEFAULT_DPI = 300`, `DEFAULT_MAX_PAGES = 20`) mirror
+  `ocr_pdf_text`, so either tool can be read on its own.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Tool/ProBatchOcrTool.php` | new; the loop, the per-file result, the provider refusal |
+| `lib/core/resources/tool-readiness.php` | one row |
+| `lib/core/tests/Unit/Tool/ProBatchOcrToolTest.php` | fifteen tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+No worker file changed. That is the point of the section.
+
+### Measurement
+
+`lib/core` **2,721 / 18,406** (was 2,704 / 18,332; +15 from the file above, the other
++2 are catalogue-driven cases that grow with the tool set); adapter **444 / 2,126**
+(was 444 / 2,125); audit **309 / 309, servable 290**; toolkit parity **87 of 854**;
+`document-generation` **32 of 38**.
+
+Fifteen tests cover: every file OCRed with pages summed; options reaching every
+file; the published defaults; a broken file reported while the batch carries on;
+`continue_on_error: false` stopping before the third file; an unknown id becoming a
+per-file error; both vendor names refused *and* never reaching the engine; the
+`no_file_store` and `no_ocr_engine` gates; the 25-file cap; the empty batch; and a
+duplicate id costing one run.
+
+### What is left
+
+Six:
+
+| tool | what it needs |
+|---|---|
+| `pro_unlimited_ocr` | the same engine with a page budget instead of a vendor cap — tool work, no worker change |
+| `pro_document_ocr` | the `tesseract` path only; the hosted providers are vision model calls, so they are refused by name |
+| `docgen_capture_style_memory` | a store — corpus frontmatter is the likely home, to be decided before coding |
+| `generate_invoice_pdf`, `generate_invoice_batch` | a re-scope to accept invoice data as arguments; the worker renders, the order source is the gap, and that is a product decision |
+| `get_uninvoiced_orders` | order data — genuinely blocked, recorded and unported |
