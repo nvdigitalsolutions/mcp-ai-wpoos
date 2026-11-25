@@ -29,7 +29,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 import type { SiteProfile } from './types.ts';
-import { mergeStructureVerdicts, resolveVisionConfig, visionStructure, type StructureVerdict, type VisionConfig, type VisionImage } from './vision.ts';
+import { mergeStructureVerdicts, resolveVisionConfig, STRUCTURE_PROMPT, visionStructure, type StructureVerdict, type VisionConfig, type VisionImage } from './vision.ts';
 
 /** One device end the template renders (the two the structure pass asks). */
 export interface StructureDevice {
@@ -49,6 +49,10 @@ export interface BandShot {
 	device: string;
 	png: Uint8Array;
 	mime: string;
+	/** The band's own heading, read from the render — the prompt's evidence. */
+	title?: string;
+	/** The band renders a form — a MEASURED structure, so vision must not guess. */
+	hasForm?: boolean;
 }
 
 export interface CachedStructureVerdict {
@@ -96,6 +100,8 @@ export interface StructurePassOutcome {
 	labelled: number;
 	unknown: number;
 	failed: number;
+	/** Bands whose device reads named DIFFERENT structures (nothing stored). */
+	conflicts: number;
 	bands: StructurePassBand[];
 	/** The profile with vision labels merged — a COPY; the input is untouched. */
 	profile: SiteProfile;
@@ -185,7 +191,25 @@ async function captureBands( options: StructurePassOptions ): Promise< BandShot[
 							scale: 'css',
 							timeout: 20_000,
 						} );
-						shots.push( { id, device: device.name, png: new Uint8Array( buffer ), mime: 'image/png' } );
+						// The band's heading is the cheapest disambiguator a screenshot
+						// lacks — read it from the MEASURED render, never inferred.
+						const title = await locator
+							.locator( 'h1,h2,h3,h4' )
+							.first()
+							.innerText( { timeout: 2_000 } )
+							.catch( () => '' );
+						// A band that renders a form is measured, not guessed: a local VLM
+						// reads "Questions? Get a quick reply…" as `faq` on eca.directory's
+						// enquiry band, at 0.9, on BOTH device ends.
+						const hasForm = ( await locator.locator( 'form, [data-nvoos-form]' ).count() ) > 0;
+						shots.push( {
+							id,
+							device: device.name,
+							png: new Uint8Array( buffer ),
+							mime: 'image/png',
+							...( title.trim() ? { title: title.trim().replace( /\s+/g, ' ' ).slice( 0, 140 ) } : {} ),
+							...( hasForm ? { hasForm: true } : {} ),
+						} );
 					} catch {
 						// A band the template hides at this end is not a fact.
 					}
@@ -227,6 +251,7 @@ export async function runStructurePass(
 		labelled: 0,
 		unknown: 0,
 		failed: 0,
+		conflicts: 0,
 		bands: [],
 		profile,
 		cache,
@@ -262,6 +287,21 @@ export async function runStructurePass(
 	const sections = profile.design?.sections ?? [];
 	const byId = new Map( sections.map( ( section ) => [ section.id, section ] ) );
 	const grouped = shotsByBand( shots );
+	/**
+	 * The per-band prompt: the measured HEADING rides along as evidence.
+	 *
+	 * A screenshot alone says "lots of text" for a hero and for a services row,
+	 * which is exactly the answer a local VLM gave (every band `text` or a
+	 * sibling label, all at 0.9). The heading is a MEASURED fact from the
+	 * profile, not a guess, and it is the cheapest disambiguator there is.
+	 */
+	const promptFor = ( heading?: string ): string => {
+		const trimmed = ( heading ?? '' ).trim();
+		if ( ! trimmed ) {
+			return STRUCTURE_PROMPT;
+		}
+		return `${ STRUCTURE_PROMPT }\n\nThe band's heading, measured from the page: "${ trimmed }". Treat it as evidence, but the screenshot decides.`;
+	};
 	// A shallow copy: the caller's profile is only mutated through `--write`.
 	const updated: SiteProfile = {
 		...profile,
@@ -279,6 +319,7 @@ export async function runStructurePass(
 	let labelled = 0;
 	let unknown = 0;
 	let failed = 0;
+	let conflicts = 0;
 	const bands: StructurePassBand[] = [];
 
 	for ( const [ id, bandShots ] of grouped ) {
@@ -290,14 +331,22 @@ export async function runStructurePass(
 			bands.push( { id, device: bandShots[ 0 ]?.device ?? '', type: '', confidence: 0, cached: false, skipped: true } );
 			continue;
 		}
-		let accepted: { verdict: StructureVerdict; device: string; cached: boolean } | undefined;
+		// A rendered form is measured, so vision is not asked about it. The local
+		// VLM called eca.directory's enquiry band `faq` at 0.9 on both ends, and
+		// its heading (`Questions? Get a quick reply…`) genuinely reads that way.
+		if ( bandShots.some( ( shot ) => shot.hasForm ) ) {
+			bands.push( { id, device: bandShots[ 0 ]?.device ?? '', type: 'form', confidence: 0, cached: false, skipped: true } );
+			continue;
+		}
+		// Every non-abstaining read for this band, whichever device produced it.
+		const reads: Array< { verdict: StructureVerdict; device: string; cached: boolean } > = [];
 		for ( const shot of bandShots ) {
 			const key = structureCacheKey( id, shot.png );
 			const hit = cache.get( key );
 			if ( hit ) {
 				cachedHits += 1;
 				bands.push( { ...hit, id, device: shot.device, type: hit.type, cached: true, skipped: false } );
-				accepted ??= {
+				reads.push( {
 					verdict: {
 						type: hit.type as StructureVerdict[ 'type' ],
 						confidence: hit.confidence,
@@ -305,12 +354,12 @@ export async function runStructurePass(
 					},
 					device: shot.device,
 					cached: true,
-				};
+				} );
 				continue;
 			}
 			asked += 1;
 			const image: VisionImage = { data: Buffer.from( shot.png ).toString( 'base64' ), mime: shot.mime };
-			const outcome = await visionStructure( config, image, options.fetchImpl );
+			const outcome = await visionStructure( config, image, options.fetchImpl, undefined, promptFor( shot.title ) );
 			if ( ! outcome.ok ) {
 				failed += 1;
 				options.onProgress?.( `  ! ${ id } (${ shot.device }): ${ outcome.error }` );
@@ -336,11 +385,26 @@ export async function runStructurePass(
 				skipped: false,
 				...( verdict.note ? { note: verdict.note } : {} ),
 			} );
-			// The FIRST confident device wins: the desktop render carries the
-			// band's full structure, while a phone render legitimately collapses it
-			// to a stack of cards (the same trap `hiddenAt` guards).
-			accepted ??= { verdict, device: shot.device, cached: false };
+			reads.push( { verdict, device: shot.device, cached: false } );
 		}
+		const minimum = options.minConfidence ?? 0.7;
+		const confident = reads.filter( ( read ) => read.verdict.confidence >= minimum );
+		// TWO reads, one per device end, and they must AGREE. An abstention is not
+		// a contradiction, and a single confident read stands when the other end
+		// abstained — a matrix legitimately collapses to cards on a phone. Two
+		// different labels mean the band is genuinely ambiguous at this model's
+		// resolution, and a wrong structure is worse than none.
+		const types = new Set( confident.map( ( read ) => read.verdict.type ) );
+		if ( types.size > 1 ) {
+			conflicts += 1;
+			options.onProgress?.(
+				`  ! ${ id }: the device reads disagree (${ confident
+					.map( ( read ) => `${ read.verdict.type }@${ read.device }` )
+					.join( ', ' ) }) — nothing stored`
+			);
+			continue;
+		}
+		const accepted = confident[ 0 ];
 		if ( ! accepted ) {
 			continue;
 		}
@@ -367,6 +431,7 @@ export async function runStructurePass(
 		labelled,
 		unknown,
 		failed,
+		conflicts,
 		bands,
 		profile: updated,
 		cache,
