@@ -3022,3 +3022,85 @@ hosted providers are not), and `generate_invoice_pdf`, `generate_invoice_batch`,
 `get_uninvoiced_orders`, `get_expired_documents` and `docgen_capture_style_memory`
 need order or document data this runtime does not have. None of them is a
 formatter; each is a service to stand up or a source to connect.
+
+## 164.38 — Retention is a schedule, and detecting is not disposing (2026-11-25)
+
+§164.37 called the last eight tools "service-dependent". Re-reading the media
+worker's routes showed that was too pessimistic, and reading ISO 15489 changed the
+design of the one that needs no service at all.
+
+### What the worker already serves, and what it does not
+
+The OCR ladder exists: `/api/pdf/extract` (text layer), `/api/pdf/render`
+(rasterise), `/api/pdf/ocr` (per-page tesseract, `clampPageBudget`),
+`/api/ocr/recognize` (single image). That is *extract → render → recognise*, which
+is what a document-OCR pipeline is.
+
+| tool | verdict |
+|---|---|
+| `pro_batch_ocr` | **worker-fillable** — loop the existing ladder over N sources |
+| `pro_unlimited_ocr` | **worker-fillable in function** — the same ladder bounded by a page budget instead of a vendor cap |
+| `pro_document_ocr` | **partial** — `tesseract` works today; `openai`/`gemini`/`anthropic`/`ollama` are model calls, which belong in the vision path, not the worker |
+| `generate_invoice_pdf` / `_batch` | **half** — the worker renders the PDF; the gap is the order source. Re-scoping to accept invoice data as arguments makes it portable, and that is a product decision, not a blocker |
+| `get_uninvoiced_orders` | **not fillable** — a query against order tables |
+| `docgen_capture_style_memory` | not a worker problem — needs a store |
+
+So the honest re-count is: three fillable by the worker, one partially, one
+fillable with no new service, two genuinely data-blocked.
+
+### ISO 15489 changes the expiry design
+
+A retention schedule is not a date. The standard's model is **trigger event +
+retention period → disposition**, counted from the event that stopped the record
+being current. So a superseded procedure is kept for N months *from supersession*,
+not from the day it was written — which is why the corpus now understands three
+shapes, in order of authority:
+
+1. `expires_at` — stated outright, nothing computed;
+2. `retention_months` plus the record's own lifecycle stamp (`qms_withdrawn_at`,
+   `qms_released_at`, `archived_at`) — derived, and the **latest** stamp wins
+   because retention runs from the most recent event;
+3. neither — excluded. A document with no rule is not "in date"; it is unmanaged,
+   and those are different answers with only one defensible one.
+
+Every row reports `source` (`stated` or `derived`), `trigger` and `period_months`,
+because an auditor has to be able to reconstruct a derived date. A schedule that
+names no disposition defaults to `review` — silence must not imply destruction.
+
+### Detection is not disposal
+
+ISO 15489 keeps **disposal approval, execution and verification** apart.
+`get_expired_documents` is the first of the three and only the first: it is
+read-only, it changes no frontmatter, and it deletes nothing. A report that
+disposed as a side effect would collapse three reviewable steps into one nobody can
+audit, and `archive_documents` (§164.36) or `qms_mark_obsolete` (§164.37) remain a
+deliberate second call by a person.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/DocsCorpusInterface.php` | `expiring()` |
+| `lib/laravel-adapter/src/Adapter/FilesystemDocsCorpus.php` | stated + derived expiry, latest-stamp trigger |
+| `lib/core/src/Tool/GetExpiredDocumentsTool.php` | new; read-only report |
+| `lib/core/resources/tool-readiness.php` | one row |
+| `lib/laravel-adapter/tests/FilesystemDocsCorpusTest.php` | nine retention tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+### Measurement
+
+`lib/core` **2,704 / 18,332** (was 2,702 / 18,322); adapter **444 / 2,125** (was
+435 / 2,108); audit **308 / 308, servable 289**; toolkit parity **86 of 854**;
+`document-generation` **31 of 38**.
+
+A document withheld on 2026-01-15 with `retention_months: 12` is reported as
+`expires_at 2027-01-15, trigger withdrawn, source derived`; a released stamp
+earlier than a withdrawn one does not win; `expires_at 2030-01-01` is not reported
+at 2027; a document with no rule never appears; and `disposition` defaults to
+`review`.
+
+### What is left
+
+Seven: the three OCR tools (worker first — the ladder is there, the batch loop and
+the page budget are not), `docgen_capture_style_memory` (a store), the two invoice
+tools (re-scope to accept invoice data), and `get_uninvoiced_orders` (order data).

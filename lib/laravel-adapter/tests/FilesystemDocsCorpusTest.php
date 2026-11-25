@@ -469,6 +469,132 @@ final class FilesystemDocsCorpusTest extends TestCase {
 		$this->assertStringContainsString( 'status: archived', $corpus->read( 'a.md' )['content'] );
 	}
 
+	// ── Retention ───────────────────────────────────────────────────────
+
+	/**
+	 * ISO 15489 counts a period from a trigger event, so a stated expiry and a
+	 * derived one are both understood — and the result says which, because an
+	 * auditor has to be able to reconstruct a derived date.
+	 */
+	public function test_a_stated_expiry_is_reported_as_stated(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x', array( 'title' => 'A' ) );
+		$corpus->setFields( 'a.md', array( 'expires_at' => '2027-01-01' ) );
+
+		$result = $corpus->expiring( '2027-06-01' );
+
+		$this->assertSame( 1, $result['total'] );
+		$this->assertSame( 'stated', $result['documents'][0]['source'] );
+		$this->assertSame( '2027-01-01', $result['documents'][0]['expires_at'] );
+		$this->assertSame( 'review', $result['documents'][0]['disposition'], 'A schedule that says nothing must not imply destruction.' );
+	}
+
+	public function test_a_document_still_in_date_is_not_reported(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x' );
+		$corpus->setFields( 'a.md', array( 'expires_at' => '2030-01-01' ) );
+
+		$this->assertSame( 0, $corpus->expiring( '2027-06-01' )['total'] );
+	}
+
+	/**
+	 * The ISO 15489 model: a period measured from the event that stopped the record
+	 * being current, not from the day it was written.
+	 */
+	public function test_a_period_counts_from_the_lifecycle_trigger(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x' );
+		$corpus->setFields( 'a.md', array(
+			'qms_withdrawn_at' => '2026-01-15',
+			'retention_months' => '12',
+		) );
+
+		$result = $corpus->expiring( '2027-06-01' );
+
+		$this->assertSame( 1, $result['total'] );
+		$this->assertSame( 'derived', $result['documents'][0]['source'] );
+		$this->assertSame( 'withdrawn', $result['documents'][0]['trigger'] );
+		$this->assertSame( '2027-01-15', $result['documents'][0]['expires_at'] );
+	}
+
+	public function test_a_period_that_has_not_run_out_is_not_reported(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x' );
+		$corpus->setFields( 'a.md', array(
+			'qms_withdrawn_at' => '2026-01-15',
+			'retention_months' => '36',
+		) );
+
+		$this->assertSame( 0, $corpus->expiring( '2027-06-01' )['total'] );
+	}
+
+	/**
+	 * The latest stamp wins: retention runs from the most recent event.
+	 */
+	public function test_the_latest_lifecycle_stamp_is_the_trigger(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x' );
+		$corpus->setFields( 'a.md', array(
+			'qms_released_at' => '2025-01-01',
+			'qms_withdrawn_at' => '2026-03-01',
+			'retention_months' => '6',
+		) );
+
+		$result = $corpus->expiring( '2027-01-01' );
+
+		$this->assertSame( 'withdrawn', $result['documents'][0]['trigger'] );
+		$this->assertSame( '2026-09-01', $result['documents'][0]['expires_at'] );
+	}
+
+	public function test_a_schedule_disposition_is_carried_through(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x' );
+		$corpus->setFields( 'a.md', array(
+			'expires_at' => '2020-01-01',
+			'retention_disposition' => 'destroy',
+		) );
+
+		$this->assertSame( 'destroy', $corpus->expiring( '2027-01-01' )['documents'][0]['disposition'] );
+	}
+
+	/**
+	 * "We have no rule for this" and "this is still in date" are different answers.
+	 */
+	public function test_a_document_with_no_retention_rule_is_excluded(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x' );
+
+		$this->assertSame( 0, $corpus->expiring( '2099-01-01' )['total'] );
+	}
+
+	public function test_an_unparseable_as_of_is_refused(): void {
+		$this->expectException( \InvalidArgumentException::class );
+
+		$this->corpus()->expiring( 'next year' );
+	}
+
+	public function test_results_are_ordered_by_expiry(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'late.md', 'x' );
+		$corpus->setFields( 'late.md', array( 'expires_at' => '2024-01-01' ) );
+
+		$corpus->write( 'early.md', 'x' );
+		$corpus->setFields( 'early.md', array( 'expires_at' => '2020-01-01' ) );
+
+		$this->assertSame(
+			array( 'early.md', 'late.md' ),
+			\array_column( $corpus->expiring( '2027-01-01' )['documents'], 'path' ),
+		);
+	}
+
 	// ── Helpers ────────────────────────────────────────────────────────
 
 	private function corpus(): FilesystemDocsCorpus {

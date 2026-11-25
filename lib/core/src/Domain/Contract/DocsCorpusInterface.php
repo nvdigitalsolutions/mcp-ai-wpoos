@@ -98,6 +98,26 @@ interface DocsCorpusInterface
     public function delete(string $path): bool;
 
     /**
+     * Documents whose retention has run out, as of a date.
+     *
+     * ISO 15489 counts retention **from a trigger event**, not from creation, so a
+     * document's expiry is either stated outright (`expires_at`) or derived from a
+     * trigger date plus a period (`retention_months`). Both are reported, with
+     * `source` saying which, because a derived date an auditor cannot reconstruct
+     * is worth less than one they can.
+     *
+     * This is a **report**, not a disposal. ISO 15489 keeps disposal approval,
+     * execution and verification apart, and a query that destroyed records as a
+     * side effect would collapse all three into one unreviewable step.
+     *
+     * @param string $asOf ISO 8601 date the question is asked at, e.g. "2027-01-01".
+     * @param int    $limit Maximum documents to return.
+     *
+     * @return array{documents: list<array{path: string, title: string, expires_at: string, trigger: string, period_months: int, disposition: string, source: string}>, total: int}
+     */
+    public function expiring(string $asOf, int $limit = 100): array;
+
+    /**
      * Merge fields into a document's frontmatter, leaving the body untouched.
      *
      * The primitive behind every lifecycle write: an implementation reads the

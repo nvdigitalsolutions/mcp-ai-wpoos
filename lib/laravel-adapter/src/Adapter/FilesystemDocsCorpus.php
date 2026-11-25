@@ -225,6 +225,141 @@ final class FilesystemDocsCorpus implements DocsCorpusInterface
     /**
      * {@inheritDoc}
      */
+    public function expiring(string $asOf, int $limit = 100): array {
+        $this->assertActive();
+
+        $asOf = \substr(\trim($asOf), 0, 10);
+
+        if (1 !== \preg_match('/^\d{4}-\d{2}-\d{2}$/', $asOf)) {
+            throw new \InvalidArgumentException('The as-of date must be ISO 8601, e.g. 2027-01-01.');
+        }
+
+        $documents = array();
+        $this->scan(\rtrim($this->root, '/\\'), '', $documents);
+
+        $expired = array();
+
+        foreach ($documents as $document) {
+            $absolute = $this->resolve($document['path']);
+            $content = '' === $absolute ? false : @\file_get_contents($absolute);
+
+            if (false === $content) {
+                continue;
+            }
+
+            [$fields] = $this->split($content);
+            $row = $this->expiryOf($fields);
+
+            // A document with no retention rule is not "not expired" — it is
+            // unmanaged for retention, and reporting it as current would be a
+            // claim the record cannot support.
+            if (null === $row) {
+                continue;
+            }
+
+            if ($row['expires_at'] > $asOf) {
+                continue;
+            }
+
+            $expired[] = array(
+                'path' => $document['path'],
+                'title' => $fields['title'] ?? $document['title'],
+            ) + $row;
+        }
+
+        \usort($expired, static fn (array $a, array $b): int => \strcmp($a['expires_at'], $b['expires_at']));
+
+        $limit = \max(1, $limit);
+
+        return array(
+            'documents' => \array_slice($expired, 0, $limit),
+            'total' => \count($expired),
+        );
+    }
+
+    /**
+     * Derive a document's retention position from its frontmatter.
+     *
+     * Three shapes are understood, in order of authority:
+     *
+     *  1. `expires_at` — stated outright. Nothing is computed.
+     *  2. `retention_months` plus a trigger date — ISO 15489's model. The trigger
+     *     is whichever lifecycle stamp the document carries, so a record is kept
+     *     for a period *after it stops being current* rather than after it was
+     *     written.
+     *  3. neither — unmanaged, and reported as such by returning null.
+     *
+     * @param array<string, string> $fields Frontmatter.
+     *
+     * @return array{expires_at: string, trigger: string, period_months: int, disposition: string, source: string}|null
+     */
+    private function expiryOf(array $fields): ?array {
+        $disposition = '' !== \trim($fields['retention_disposition'] ?? '')
+            ? $fields['retention_disposition']
+            : 'review';
+
+        $explicit = \substr(\trim($fields['expires_at'] ?? ''), 0, 10);
+
+        if (1 === \preg_match('/^\d{4}-\d{2}-\d{2}$/', $explicit)) {
+            return array(
+                'expires_at' => $explicit,
+                'trigger' => 'explicit',
+                'period_months' => 0,
+                'disposition' => $disposition,
+                'source' => 'stated',
+            );
+        }
+
+        $months = $fields['retention_months'] ?? '';
+
+        if (!\is_numeric($months) || (int) $months <= 0) {
+            return null;
+        }
+
+        // The trigger is the last thing that happened to the record, which is what
+        // starts a retention clock: a superseded procedure is kept for N months
+        // from supersession, not from the day it was written.
+        $candidates = array(
+            'withdrawn' => $fields['qms_withdrawn_at'] ?? '',
+            'released' => $fields['qms_released_at'] ?? '',
+            'archived' => $fields['archived_at'] ?? '',
+        );
+
+        $trigger = 'untriggered';
+        $base = '';
+
+        foreach ($candidates as $name => $value) {
+            $value = \substr(\trim((string) $value), 0, 10);
+
+            if (1 !== \preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+                continue;
+            }
+
+            // The latest stamp wins: retention runs from the most recent event.
+            if ('' === $base || $value > $base) {
+                $base = $value;
+                $trigger = $name;
+            }
+        }
+
+        if ('' === $base) {
+            return null;
+        }
+
+        $expires = \gmdate('Y-m-d', (int) \strtotime($base.' +'.(int) $months.' months UTC'));
+
+        return array(
+            'expires_at' => $expires,
+            'trigger' => $trigger,
+            'period_months' => (int) $months,
+            'disposition' => $disposition,
+            'source' => 'derived',
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function setFields(string $path, array $fields): array {
         $this->assertActive();
 

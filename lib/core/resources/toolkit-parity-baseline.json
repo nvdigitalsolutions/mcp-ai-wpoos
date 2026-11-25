@@ -33,6 +33,7 @@
             "generate_excel",
             "generate_pdf",
             "generate_word",
+            "get_expired_documents",
             "html_to_pdf",
             "merge_pdfs",
             "ocr_pdf_text",
