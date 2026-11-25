@@ -2177,3 +2177,118 @@ to describe the list it now gets.
 parse is covered by the adapter test); adapter **363 / 1,957** (was 359 / 1,929 —
 the four allowlist assertions); `Phase3dTest` **+2 tests**. Audit and parity are
 untouched: **286 / 267 / 0** and **64 of 854** — the allowlist is not a tool.
+
+## 164.30 — Resumable uploads, and a limit the console could not keep (2026-11-25)
+
+§164.29 widened the allowlist and left the size cap alone, saying the operator
+could raise `oos.upload_max_bytes`. Measuring the shipped image made that advice
+incomplete, and the console dishonest:
+
+| directive | value |
+|---|---|
+| `upload_max_filesize` | **2 MB** |
+| `post_max_size` | **8 MB** |
+
+A single-request upload is therefore refused by PHP at **2 MB**, long before the
+application's own 10 MiB. The page printed the configured number regardless — a
+promise the interpreter would not keep — and a 3 MB mp3 could not be added at all.
+
+### Raising the limits is the wrong lever
+
+Setting `upload_max_filesize=512M` would let one enormous body through per
+request: a memory and bandwidth spike, no resumability, and a dropped connection
+costs the whole file. So the *request* stays small and the *file* gets its own
+ceiling. Two numbers instead of one, which is the shape every serious upload
+system has (tus `Upload-Length` vs chunk size; S3 part size vs object size).
+
+### tus 1.0.0 core, not a dialect
+
+The protocol is the specification: `POST` with `Upload-Length` to create, `HEAD`
+for the offset, `PATCH` with `application/offset+octet-stream` to append,
+`DELETE` to discard, `Tus-Resumable: 1.0.0` on every response, and `Tus-Max-Size`
+on `OPTIONS`. A client written against tus — Uppy, `tus-js-client`, `tusd` — works
+unmodified, and so does `curl`.
+
+The rule that earns the protocol its keep is the offset: a `PATCH` whose
+`Upload-Offset` is not the one the server holds is **409**, never a best-effort
+append, and the 409 carries the current offset so a client resumes without another
+round trip. Two clients resuming one id, and one client retrying a chunk whose
+response was lost, are indistinguishable from the server's side; appending at a
+guessed offset would corrupt a file that otherwise looked fine.
+
+Two additive extensions, both documented on the controller: the completing
+`PATCH` answers `X-Nvoos-Attachment-Id` and `X-Nvoos-Url`, and `OPTIONS`
+advertises the per-file ceiling.
+
+### Completion reuses the rules instead of restating them
+
+When the last chunk lands the assembled file is sniffed with
+`FileUploadService::detectMimeType()` (the *same* sniff the multipart path uses,
+now public), checked with `isMimeTypeAllowed()` (the *same* allowlist), and
+written through `FileVisibilityStoreInterface` (the *same* registry, which sniffs
+again and applies the per-group cap).
+
+What it deliberately does **not** call is `upload()`, because that enforces the
+per-**request** cap — the very number chunking exists to escape. The per-**file**
+ceiling is the session's `max_bytes` (default 512 MiB, the registry's video group
+cap), so neither path can be used to smuggle a file past the other's policy.
+
+A refusal at completion leaves the chunks in place and the session at
+`received === total`, so the client can retry (an empty `PATCH`) or abort instead
+of re-sending a file the network already carried.
+
+### State, chunks and expiry
+
+A row in `nvoos_upload_sessions` is a claim about bytes that are owed; the chunks
+are scratch on the **private** disk under `chunked-uploads/{id}/{offset}`. A
+session belongs to one caller *and* one estate — unknown and not-yours answer
+`404`, so ids cannot be probed. Assembly streams chunk to chunk (`readStream` →
+`stream_copy_to_stream`), because `file_get_contents` on a 500 MiB video would
+need more memory than the image has.
+
+Abandoned sessions expire after 24 hours, and the sweep runs on `begin()`: the
+one moment a client has already paid for a write, and the one place no scheduled
+job has to be deployed for it to happen.
+
+### The console now tells the truth about its own limit
+
+`MediaLibraryPage::maxBytes()` returns `min(config, upload_max_filesize,
+post_max_size)` — an unlimited directive (`0`, `-1`) reads as `PHP_INT_MAX` so the
+next number decides. The page says "the smaller of the app's allowance and PHP's
+own limits", and a second input sends chunks with vanilla `fetch` under the CSP
+nonce the panel already uses, resuming from whatever offset the server reports.
+
+### Deliberately not implemented
+
+The tus **concatenation**, **creation-defer-length** and parallel-chunk
+extensions. Each has its own consistency rules, and a resumable upload that can
+reorder bytes silently is worse than one that refuses to. Also absent: a scheduled
+pruner (opportunistic is enough) and any signed-URL handoff to object storage
+(there is one disk mode here).
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/ChunkedUploadInterface.php` | new; the state machine, no HTTP |
+| `lib/core/src/Domain/Error/ConflictException.php` | new; 409 for an offset that is not the current one |
+| `lib/laravel-adapter/src/Adapter/ChunkedUploadService.php` | new; sessions, chunks, streaming assembly, expiry |
+| `lib/laravel-adapter/src/Adapter/FileUploadService.php` | `detectMimeType()` made public so both paths sniff alike |
+| `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` | binding and config |
+| `docker/laravel/app-skeleton/app/Http/Controllers/MediaUploadController.php` | new; tus core over HTTP |
+| `docker/laravel/app-skeleton/routes/api.php` | five routes under `can:upload_files` |
+| `docker/laravel/app-skeleton/database/migrations/…upload_sessions` | the session table (app and adapter) |
+| `docker/laravel/app-skeleton/app/Filament/Admin/Pages/MediaLibraryPage.php` | `min()` ceiling, chunk helpers, `iniBytes()` |
+| `docker/laravel/app-skeleton/resources/views/filament/admin/media-library.blade.php` | the second input and its script |
+
+### Measurement
+
+`lib/core` **2,510 / 17,679** (unchanged — a contract and an exception are not
+tools); adapter **363 / 1,958** (was 363 / 1,957 — the binding resolves); the new
+`MediaChunkedUploadTest` **13 / 89**. Audit and parity untouched: **286 / 267 / 0**
+and **64 of 854**.
+
+A 12-byte mp3 in three 4-byte chunks becomes a media row with `audio/mpeg`, and
+the chunk directory is gone afterwards; a wrong offset answers 409 with the
+offset the server holds and writes nothing; an SVG is refused at completion with
+its chunks retained.

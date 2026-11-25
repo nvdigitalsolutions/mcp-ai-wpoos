@@ -15,6 +15,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\MagicLoginController;
 use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\MediaUploadController;
 use App\Http\Controllers\OkfController;
 use App\Http\Controllers\OkfWriteController;
 use App\Http\Controllers\OperationsController;
@@ -236,6 +237,24 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::get('/media', [MediaController::class, 'index']);
                 Route::post('/media', [MediaController::class, 'store']);
                 Route::get('/media/{id}', [MediaController::class, 'show'])->whereNumber('id');
+
+                // Proposals 164 §164.30 — resumable uploads (tus 1.0.0 core).
+                // PHP's `upload_max_filesize` is 2 MB in this image, so a file of
+                // any real size cannot arrive in one request however wide the
+                // application's own allowance is. Small requests, big files.
+                Route::options('/media/uploads', [MediaUploadController::class, 'options']);
+                Route::post('/media/uploads', [MediaUploadController::class, 'create']);
+
+                // `Route::head()` is not on the registrar, so HEAD is declared through
+                // `match`. Laravel answers a HEAD request by running the GET handler and
+                // discarding the body; there is no GET here, so the handler is the status
+                // probe itself.
+                Route::match(['head'], '/media/uploads/{uploadId}', [MediaUploadController::class, 'status'])
+                    ->where('uploadId', '[A-Fa-f0-9]{32}');
+                Route::patch('/media/uploads/{uploadId}', [MediaUploadController::class, 'append'])
+                    ->where('uploadId', '[A-Fa-f0-9]{32}');
+                Route::delete('/media/uploads/{uploadId}', [MediaUploadController::class, 'destroy'])
+                    ->where('uploadId', '[A-Fa-f0-9]{32}');
 
                 // 090-j slice 2 — alt text is the one mutable field.
                 Route::match(['put', 'patch'], '/media/{id}', [MediaController::class, 'update'])

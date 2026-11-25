@@ -62,7 +62,8 @@
         <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.35rem;">Add files</h2>
         <p style="font-size: 0.8rem; opacity: 0.8; margin: 0 0 0.75rem;">
             Images, audio, video, PDFs, plain text, CSV, JSON and Word documents, up to
-            {{ $this->humanBytes($this->maxBytes()) }} each. The type is sniffed
+            {{ $this->humanBytes($this->maxBytes()) }} each in one request — the smaller
+            of the app's allowance and PHP's own limits. The type is sniffed
             from the content, not trusted from the filename.
         </p>
 
@@ -98,6 +99,39 @@
                 @endforeach
             </ul>
         @endif
+    </div>
+
+    {{-- Resumable — §164.30. The input above is one request, and PHP bounds a
+         request (2 MB for the file in the shipped image). This one sends chunks,
+         so the ceiling is the app's per-file allowance rather than the
+         interpreter's per-request limit; the script resumes from whatever offset
+         the server reports after a dropped connection. --}}
+    <div style="padding: 1rem; border: 1px solid rgba(127, 127, 127, 0.25); border-radius: 0.5rem; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.35rem;">Add a large file</h2>
+        <p style="font-size: 0.8rem; opacity: 0.8; margin: 0 0 0.75rem;">
+            Up to {{ $this->humanBytes($this->chunkedMaxBytes()) }}, sent in
+            {{ $this->humanBytes($this->chunkBytes()) }} chunks. A dropped connection
+            costs one chunk, not the file. The same sniffed type list applies.
+        </p>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            <label for="media-chunked-file" style="font-weight: 600;">Choose a file</label>
+            <input
+                id="media-chunked-file"
+                type="file"
+                style="font-size: 0.85rem;"
+            />
+
+            <button
+                type="button"
+                id="media-chunked-go"
+                data-csrf="{{ csrf_token() }}"
+                data-chunk="{{ $this->chunkBytes() }}"
+                style="padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-weight: 600; border: 1px solid rgba(127, 127, 127, 0.4);"
+            >Upload in chunks</button>
+
+            <span id="media-chunked-status" style="font-size: 0.8rem; opacity: 0.85;" role="status" aria-live="polite"></span>
+        </div>
     </div>
 
     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(127, 127, 127, 0.25);">
@@ -269,3 +303,119 @@
         predates it may show a different count here than the console's global one.
     </p>
 </x-filament-panels::page>
+
+@php( $nonce = $cspNonce ?? null )
+<script @if ( filled( $nonce ) ) nonce="{{ $nonce }}" @endif>
+    (() => {
+        const input = document.getElementById('media-chunked-file');
+        const button = document.getElementById('media-chunked-go');
+        const status = document.getElementById('media-chunked-status');
+
+        if (!input || !button || !status) return;
+
+        const CHUNK = Number(button.dataset.chunk) || 4194304;
+        const CSRF = button.dataset.csrf || '';
+        const say = (text) => { status.textContent = text; };
+
+        // tus carries the filename base64-encoded; TextEncoder keeps non-ASCII
+        // names intact where `btoa(name)` would throw.
+        const b64 = (value) => btoa(Array.from(new TextEncoder().encode(value), (b) => String.fromCharCode(b)).join(''));
+
+        const create = async (file) => fetch('/api/v1/media/uploads', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Tus-Resumable': '1.0.0',
+                'Upload-Length': String(file.size),
+                'Upload-Metadata': 'filename ' + b64(file.name) + ',filetype ' + b64(file.type || ''),
+                'X-CSRF-TOKEN': CSRF,
+                'Accept': 'application/json',
+            },
+        });
+
+        const append = async (location, offset, chunk) => fetch(location, {
+            method: 'PATCH',
+            credentials: 'same-origin',
+            headers: {
+                'Tus-Resumable': '1.0.0',
+                'Upload-Offset': String(offset),
+                'Content-Type': 'application/offset+octet-stream',
+                'X-CSRF-TOKEN': CSRF,
+            },
+            body: chunk,
+        });
+
+        button.addEventListener('click', async () => {
+            const file = input.files && input.files[0];
+
+            if (!file) {
+                say('Choose a file first.');
+                return;
+            }
+
+            button.disabled = true;
+            say('Starting…');
+
+            let location;
+
+            try {
+                const created = await create(file);
+
+                if (!created.ok) {
+                    say('Refused (' + created.status + '). ' + (await created.text()).slice(0, 200));
+                    button.disabled = false;
+                    return;
+                }
+
+                location = created.headers.get('Location');
+            } catch (error) {
+                say('Network error: ' + error.message);
+                button.disabled = false;
+                return;
+            }
+
+            let offset = 0;
+
+            while (offset < file.size) {
+                const chunk = file.slice(offset, offset + CHUNK);
+                let response;
+
+                try {
+                    response = await append(location, offset, chunk);
+                } catch (error) {
+                    say('Connection lost at ' + offset + ' bytes. Press again to resume.');
+                    button.disabled = false;
+                    return;
+                }
+
+                // 409 means the server holds a different offset — take its answer
+                // rather than guessing, which is the whole point of the protocol.
+                if (response.status === 409) {
+                    const held = Number(response.headers.get('Upload-Offset'));
+
+                    if (!Number.isFinite(held) || held === offset) {
+                        say('The upload is out of step. Reload and try again.');
+                        button.disabled = false;
+                        return;
+                    }
+
+                    offset = held;
+                    continue;
+                }
+
+                if (!response.ok) {
+                    say('Refused (' + response.status + '). ' + (await response.text()).slice(0, 300));
+                    button.disabled = false;
+                    return;
+                }
+
+                const next = Number(response.headers.get('Upload-Offset'));
+                offset = Number.isFinite(next) ? next : offset + chunk.size;
+                say(Math.min(100, Math.round((offset / file.size) * 100)) + '% — ' + offset + ' of ' + file.size + ' bytes');
+            }
+
+            say('Stored. Reloading…');
+            window.location.reload();
+        });
+    })();
+</script>
