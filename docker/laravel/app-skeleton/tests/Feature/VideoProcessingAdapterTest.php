@@ -13,6 +13,7 @@ use Nvoos\Core\Tool\AdjustVideoSpeedTool;
 use Nvoos\Core\Tool\CompressVideoTool;
 use Nvoos\Core\Tool\ConvertVideoFormatTool;
 use Nvoos\Core\Tool\GenerateVideoThumbnailsTool;
+use Nvoos\Core\Tool\ExtractAudioTool;
 use Nvoos\Core\Tool\GetVideoMetadataTool;
 use Nvoos\Core\Tool\OptimizeForPlatformTool;
 use Nvoos\Core\Tool\ResizeVideoResolutionTool;
@@ -176,6 +177,111 @@ final class VideoProcessingAdapterTest extends TestCase
         $this->assertTrue($result['success']);
         $this->assertSame('convert', $this->field($captured, 'operation'));
         $this->assertSame('webm', $this->field($captured, 'format'));
+    }
+
+    // ── Audio extraction (additive: no WordPress slug requests it) ────────────
+
+    public function test_extract_audio_sends_the_container_and_the_bitrate(): void
+    {
+        $captured = null;
+        $downloads = array();
+        $this->fakeWorker($captured, $downloads, self::CAPABILITIES, array(
+            'operation' => 'extract_audio',
+            'reencoded' => true,
+            'output_file' => 'processed_1700000000.m4a',
+        ));
+
+        $result = $this->app->make(ExtractAudioTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'format' => 'm4a',
+            'audio_bitrate' => '192k',
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success'], json_encode($result));
+        $this->assertSame('/api/video/process', $this->path($captured));
+        $this->assertSame('extract_audio', $this->field($captured, 'operation'));
+        $this->assertSame('m4a', $this->field($captured, 'format'));
+        $this->assertSame('192k', $this->field($captured, 'audio_bitrate'));
+
+        // The download is what makes the bytes exist on this host.
+        $this->assertCount(1, $downloads);
+        $this->assertStringContainsString('/api/video/download/', $downloads[0]);
+    }
+
+    public function test_a_lossless_copy_is_reported_as_such(): void
+    {
+        $captured = null;
+        $downloads = array();
+        $this->fakeWorker($captured, $downloads, self::CAPABILITIES, array(
+            'operation' => 'extract_audio',
+            'reencoded' => false,
+            'output_file' => 'processed_1700000000.m4a',
+        ));
+
+        $result = $this->app->make(ExtractAudioTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'format' => 'm4a',
+            'save_to_media' => false,
+        ));
+
+        // "Did this cost me a generation?" is the one question an extraction
+        // caller always has, so the answer is in the envelope.
+        $this->assertIsArray($result);
+        $this->assertFalse($result['data']['reencoded']);
+        $this->assertTrue($result['data']['lossless']);
+    }
+
+    public function test_a_re_encode_is_reported_as_such(): void
+    {
+        $captured = null;
+        $downloads = array();
+        $this->fakeWorker($captured, $downloads, self::CAPABILITIES, array(
+            'operation' => 'extract_audio',
+            'reencoded' => true,
+            'output_file' => 'processed_1700000000.mp3',
+        ));
+
+        $result = $this->app->make(ExtractAudioTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['data']['reencoded']);
+        $this->assertFalse($result['data']['lossless']);
+    }
+
+    public function test_an_unknown_audio_container_is_refused_before_a_request(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(ExtractAudioTool::class)->execute(array(
+            'video_url' => $this->source(),
+            'format' => 'wav',
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('must be one of: mp3, m4a, aac', $result->getMessage());
+
+        Http::assertNothingSent();
+    }
+
+    public function test_extract_audio_refuses_a_host_without_ffmpeg(): void
+    {
+        $captured = null;
+        $downloads = array();
+        $this->fakeWorker($captured, $downloads, array('video_processing' => false));
+
+        $result = $this->app->make(ExtractAudioTool::class)->execute(array(
+            'video_url' => $this->source(),
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertStringContainsString('ffmpeg', $result->getMessage());
+        $this->assertNull($captured, 'no upload is spent before the refusal');
     }
 
     public function test_a_resolution_preset_maps_to_a_height_and_keeps_the_aspect_ratio(): void
@@ -535,11 +641,16 @@ final class VideoProcessingAdapterTest extends TestCase
      * Fake health, `/info`, `/process` and the download route.
      *
      * @param array{url: string, data: mixed}|null $captured
-     * @param list<string>|null                    $downloads Receives each download path, by reference.
+     * @param list<string>|null                    $downloads      Receives each download path, by reference.
      * @param array<string, bool>                  $capabilities
+     * @param array<string, mixed>                 $processOverrides Fields the fake `/process` answers.
      */
-    private function fakeWorker(?array &$captured, ?array &$downloads = null, array $capabilities = self::CAPABILITIES): void
-    {
+    private function fakeWorker(
+        ?array &$captured,
+        ?array &$downloads = null,
+        array $capabilities = self::CAPABILITIES,
+        array $processOverrides = array(),
+    ): void {
         $captured = null;
         $downloads = array();
 
@@ -569,7 +680,7 @@ final class VideoProcessingAdapterTest extends TestCase
             ),
         ), 200, $json);
 
-        $process = Http::response(array(
+        $process = Http::response($processOverrides + array(
             'success' => true,
             'operation' => 'trim',
             'original_size' => 10485760,

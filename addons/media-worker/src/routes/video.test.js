@@ -35,6 +35,7 @@ import {
 	kenBurnsUpscale,
 	kenBurnsZoompan,
 	frameTimestamps,
+	audioExtractionCodec,
 	VIDEO_CODECS,
 	AUDIO_CODECS,
 	PROCESS_FORMATS,
@@ -449,6 +450,28 @@ test( 'the timestamp list is capped, because each one is a separate process', ()
 	assert.equal( frameTimestamps( { timestamps: many } ).length, 120 );
 	// The interval mode is capped by the same ceiling.
 	assert.equal( frameTimestamps( { interval: 0.01, duration: 600 } ).length, 120 );
+} );
+
+// ── Audio extraction ────────────────────────────────────────
+
+test( 'a container that already speaks the source codec is copied, not re-encoded', () => {
+	// AAC into m4a/aac and MP3 into mp3 are the lossless answers; re-encoding
+	// them costs a generation for nothing.
+	assert.deepEqual( audioExtractionCodec( 'm4a', 'aac' ), { codec: 'copy', copy: true } );
+	assert.deepEqual( audioExtractionCodec( 'aac', 'aac' ), { codec: 'copy', copy: true } );
+	assert.deepEqual( audioExtractionCodec( 'mp3', 'mp3' ), { codec: 'copy', copy: true } );
+} );
+
+test( 'a mismatched source is encoded into the container codec', () => {
+	assert.deepEqual( audioExtractionCodec( 'mp3', 'aac' ), { codec: 'libmp3lame', copy: false } );
+	assert.deepEqual( audioExtractionCodec( 'm4a', 'mp3' ), { codec: 'aac', copy: false } );
+	assert.deepEqual( audioExtractionCodec( 'aac', 'opus' ), { codec: 'aac', copy: false } );
+} );
+
+test( 'an unreadable source codec encodes rather than copying what ffmpeg would reject', () => {
+	assert.deepEqual( audioExtractionCodec( 'm4a', '' ), { codec: 'aac', copy: false } );
+	assert.deepEqual( audioExtractionCodec( 'mp3', null ), { codec: 'libmp3lame', copy: false } );
+	assert.deepEqual( audioExtractionCodec( 'm4a', undefined ), { codec: 'aac', copy: false } );
 } );
 
 test( 'the encoder follows the container, because H.264 cannot go in webm', () => {
