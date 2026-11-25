@@ -20,6 +20,7 @@
         "dj-management": [],
         "document-generation": [
             "add_watermark_to_pdf",
+            "excel_data_export",
             "excel_data_import",
             "extract_pdf_text",
             "generate_email_template",

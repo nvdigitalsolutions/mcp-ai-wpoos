@@ -2442,3 +2442,74 @@ Not attempted here, and deliberately: slices B–G in the table above. Slice D
 (Docs Hub) and slice E (QMS) are each larger than this one and are subsystems
 rather than formatters — a content store and a signed document lifecycle
 respectively — so neither belongs in a PDF PR.
+
+## 164.32 — The write half of the spreadsheet pair (2026-11-25)
+
+§164.31 slice B. `excel_data_import` has shipped since the tabular reader landed;
+`excel_data_export` is the half that writes, so a caller can now round-trip a
+table without leaving the runtime. The engine is the same office writer
+`generate_excel` already uses — no new contract, no new route.
+
+Three decisions are worth recording, because each is a way a workbook can be
+wrong while still opening cleanly.
+
+### Rows are bound by column key, not by position
+
+The worker accepts positional rows and simply calls `addRow(row)`. That is fine
+when every row is the same width and a trap when one is not: a short row shifts
+every cell after the gap one column left, and the file opens, displays, and is
+quietly incorrect. Each cell is addressed by column key here, so a ragged row
+leaves `null` where it stopped instead of moving its neighbours.
+
+### A header row appears only when one was asked for
+
+ExcelJS writes a header row for every column that declares a `header`. The
+labels are generated (`Column 1`, `Column 2`) when the caller supplied fewer
+than the data needs, so a header-less export must therefore declare **no**
+`header` at all — otherwise an invented row displaces the caller's first data
+row by one. The payload reports `has_header` so a caller can see which shape it
+got.
+
+### No silent downgrade to CSV
+
+The WordPress tool tries PhpSpreadsheet and falls back to CSV, returning
+whatever it managed. That changes the format of a file whose name still says
+`.xlsx` — the kind of surprise a caller only discovers downstream. This refuses
+with `no_document_engine` and names the fix, in line with §164.4.8.
+
+### Sheet names are sanitised on this side
+
+Excel rejects a worksheet name longer than 31 characters, forbids
+`[ ] : * ? / \`, and will not accept a leading or trailing apostrophe. The worker
+hands the name straight to `addWorksheet()` with no check, so an unsanitised
+title fails at the far end of the request, after the rows have been serialised.
+Titles are reduced here: illegal characters become spaces, whitespace runs
+collapse (so `Q1/Q2: report` does not become `Q1 Q2  report`), the result is
+truncated to 31 and falls back to `Export` when nothing survives.
+
+### Non-scalar cells are refused, not coerced
+
+A cell must be a string, number, boolean or null — the four types the schema
+already declares. A nested array reaches the writer as `"[object Object]"` and
+produces a file that looks like a success. The refusal names the row and the
+column so the caller can find it.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Tool/ExcelDataExportTool.php` | new; `excel_data_export` |
+| `lib/core/resources/tool-readiness.php` | one row |
+| `lib/core/tests/Unit/Tool/ExcelDataExportToolTest.php` | new; 23 tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+### Measurement
+
+`lib/core` **2,599 / 17,943** (was 2,574 / 17,863); adapter **363 / 1,961**
+(was 363 / 1,960 — the manifest row resolves from the container); audit
+**289 / 289, servable 270**; toolkit parity **67 of 854**;
+`document-generation` **12 of 38**.
+
+A three-cell row followed by a one-cell row keeps its values in the columns it
+named, an export without `headers` declares no header, and `Q1/Q2: report*`
+becomes the sheet name `Q1 Q2 report`.

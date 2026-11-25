@@ -719,6 +719,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ChartAndPlanningToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'excel_data_export' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ExcelDataExportTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerOfficeWriter implements OfficeWriterInterface over the media worker `POST /api/document/excel` (exceljs), and the result is stored through FileVisibilityStoreInterface. Deterministic formatter, so no model is involved. Rows are bound to columns by key so a ragged row cannot shift its neighbours, and the sheet name is reduced to a legal Excel name here because the worker passes it straight to `addWorksheet()`. Differs from WordPress in one deliberate way: it refuses with `no_document_engine` rather than silently downgrading an `.xlsx` to CSV.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ExcelDataExportToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'excel_data_import' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExcelDataImportTool',
 			'readiness' => 'ready',
