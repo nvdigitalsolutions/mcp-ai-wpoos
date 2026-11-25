@@ -546,7 +546,7 @@ class WP_MCP_AI_Necessity_Gate {
 	 * Returning an empty array from the filter restores the prompt for every
 	 * tool; adding a slug widens the list for this site only.
 	 *
-	 * @since 1.10.0
+	 * @since 1.2.23
 	 *
 	 * @param string $tool_slug Tool slug.
 	 * @return bool
@@ -555,7 +555,7 @@ class WP_MCP_AI_Necessity_Gate {
 		/**
 		 * Filter the slugs that skip the necessity gate's approval step.
 		 *
-		 * @since 1.10.0
+		 * @since 1.2.23
 		 *
 		 * @param string[] $slugs Pre-approved tool slugs.
 		 */

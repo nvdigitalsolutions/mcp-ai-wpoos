@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: wp-rest-api
-description: Scaffolds and reviews custom WordPress REST API endpoints registered via register_rest_route on rest_api_init — namespace and version slug, permission_callback authorization (NEVER __return_true on state-changing routes, which is the most common plugin-side vulnerability on wp.org), args schema with validate_callback / sanitize_callback / type / enum, object-level capability checks via current_user_can with object ID, responses with WP_REST_Response and WP_Error carrying an HTTP status, no raw DB rows / sensitive columns in responses, cookie auth via X-WP-Nonce, REST vs admin-ajax decision. Recommends the better-route library when the plugin grows past a few endpoints. Use when scaffolding or reviewing a REST endpoint, or migrating from admin-ajax. Triggers on register_rest_route, rest_api_init, permission_callback, WP_REST_Request, WP_REST_Response, WP_Error, X-WP-Nonce, rest_ensure_response, register_rest_field, or any file path containing /rest/ or /api/ in a WP plugin or theme.
+description: "Scaffolds and reviews WordPress REST endpoints (register_rest_route on rest_api_init): namespace/version, permission_callback authorization (never __return_true on state-changing routes), args validate/sanitize schemas, object-level current_user_can checks, WP_REST_Response/WP_Error envelopes, no sensitive DB columns, X-WP-Nonce cookie auth, and REST vs admin-ajax. Use when scaffolding or reviewing endpoints or migrating from admin-ajax; triggers: register_rest_route, permission_callback, WP_REST_Response, rest_ensure_response, register_rest_field."
 license: MIT
 metadata:
   type: Skill
@@ -93,7 +93,7 @@ The single most common plugin-side vulnerability on wp.org. Rules:
 
 - **NEVER** use `'permission_callback' => '__return_true'` on a route that writes (POST / PUT / PATCH / DELETE). It means "any unauthenticated visitor can call this".
 - **Only acceptable** for genuinely public read-only routes (e.g. site status, public catalog). Even then, document the choice with a comment and consider rate limiting.
-- For state-changing routes, check at minimum a capability (`current_user_can('edit_posts')`) and ideally an object-level cap with the target ID:
+- **A GET that re-publishes operator-owned data is not "genuinely public".** Stored redirects, draft slugs, URL history, customer rows: the fact that a visitor could discover them by probing is not consent. Gate the export behind an explicit opt-in option (default off) plus an optional shared token compared with `hash_equals()` via an `X-…-Token` header or `Authorization: Bearer`, and answer `200 { enabled: false }` rather than 404 so the caller can tell "switched off" from "not installed". Keep health-style redaction (booleans, versions) a separate surface from the data export.
   ```php
   'permission_callback' => fn( $req ) => current_user_can( 'edit_post', (int) $req['id'] ),
   ```
@@ -152,6 +152,16 @@ return new WP_Error( 'code', 'message', array( 'status' => 422 ) ); // error
 
 `WP_Error` codes should be namespaced (`myplugin_validation_failed`, not `validation_failed`). Status codes follow HTTP semantics: `400` validation, `401` unauthenticated, `403` forbidden, `404` not found, `409` conflict, `422` semantic validation, `500` server error.
 
+**The `status` is not optional in practice.** `WP_Error` without error data becomes **HTTP 500** — `rest_convert_error_to_response()` falls back to 500 when there is no `status` key. A handler that means "404, no such schedule" and returns `new WP_Error( 'not_found', $msg )` ships a 500, and the client cannot tell a missing record from a server fault. Pass `array( 'status' => 404 )` (or `409` for a conflict, `422` for validation) at the point the error is created — not just where it is surfaced.
+
+```php
+// WRONG - a missing record looks like a server crash to the client
+return new WP_Error( 'not_found', __( 'Schedule not found.', 'myplugin' ) );
+
+// RIGHT
+return new WP_Error( 'not_found', __( 'Schedule not found.', 'myplugin' ), array( 'status' => 404 ) );
+```
+
 ### 5. Don't leak sensitive columns
 
 Never return raw `$wpdb->get_results()` rows — they contain `user_pass`, `user_activation_key`, internal meta. Build response objects explicitly:
@@ -201,6 +211,18 @@ The official `@wordpress/api-fetch` package adds the nonce automatically **only 
 ### 8. Treat the version segment as mandatory
 
 `/myplugin/v1/items` — the `v1` is not enforced by WP at runtime, but treat it as a project policy. When you need a breaking change, ship `v2` alongside, deprecate `v1`, and remove it after a long migration window. NEVER change the contract of an existing versioned route — clients in the wild won't know.
+
+### 9. Never do slow work inline in a browser-called callback
+
+A route that the admin UI or an SPA `await`s is bounded by whatever proxy sits in front of it. Cloudflare's default read timeout is ~100 s and its failure page is **HTML, not JSON** (HTTP 524); nginx-fronted setups give 504. PHP keeps running, so the work happens *invisibly* while the client shows a parse error or a generic "An error occurred. Please try again."
+
+The tell is that it works on a fast path and fails on anything that reaches a remote API, an AI provider, or an import. When the work can outlive the edge timeout:
+
+1. Validate the request, open a record, enqueue the work (Action Scheduler, `wp_schedule_single_event()`, a queue), and return immediately with a handle — `array( 'queued' => true, 'run_id' => $run_id )`.
+2. Register a status route the client polls (`GET …/runs/{id}`) with a terminal state it can stop on, and a backoff (2 s → 10 s) plus an attempt cap so a dead worker is reported, not spun on forever.
+3. Refuse a second in-flight request for the same object with `409` and a code the client can branch on.
+
+This is the shape of AIP-151 long-running operations, and it is the same rule on both surfaces: a REST route is no safer than `admin-ajax` here, because the constraint is the edge timeout, not the transport. Keep a synchronous entry point for callers that own their own time budget (WP-CLI, MCP tools) and make the browser entry point queue.
 
 ## Common mistakes
 

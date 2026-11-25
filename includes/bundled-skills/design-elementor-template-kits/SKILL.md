@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-elementor-template-kits
-description: Designs, generates, and packages Elementor template kits that import correctly — Envato Template Kit Import format, Elementor's native Kit format, and raw _elementor_data formats. Use when building/exporting template kits, fixing kit import errors ("newer Elementor Kit" warning, "nothing imports", broken images after import), migrating a site design into Elementor Pro, or packaging zips for any Elementor import pipeline. Covers verified manifest schemas, doc_type/template_type values, image URL sideloading rules, zip packaging constraints, and kit site-settings.
+description: "Designs, generates, and packages Elementor template kits that import correctly: Envato Template Kit Import format, Elementor native Kit format, and raw _elementor_data. Use when building or exporting template kits, fixing import errors (newer Elementor Kit warning, nothing imports, broken images), migrating a site design into Elementor Pro, or packaging zips. Covers verified manifest schemas, doc_type/template_type values, image sideloading rules, zip constraints, and kit site-settings."
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
@@ -250,7 +250,7 @@ Strategy:
 2. For Envato/native formats, make image URLs absolute and point them at a
    location that resolves during import — typically the target site itself
    after pre-uploading media to the referenced path (e.g.
-   `https://site.com/wp-content/uploads/sascha/x.jpg`).
+   `https://site.com/wp-content/uploads/kit/x.jpg`).
 3. Parametrize the generator with a `--media-base` flag and print a warning
    when it is missing.
 4. `Media_Mapper` (transient `elementor_media_mapping` + a
@@ -290,7 +290,7 @@ Strategy:
 
 ## This project's tooling
 
-The Sascha Torres kit generator demonstrates all three formats from one set of
+The kit generator demonstrates all three formats from one set of
 page definitions (`elementor-kit/scripts/`):
 
 - `generate-kit.mjs` — element builders (`container`, `row`, `heading`,

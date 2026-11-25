@@ -90,3 +90,25 @@ never ships the vendor sheet, so its lanes stack. The template carries only the
 safe box rule (`.e-con img { max-width: 100% }`) — a guessed direction made the
 band 100px TALLER. Closing it needs the measured per-container direction/width
 (on eca.directory's team band: 1689 vs the source's 783).
+
+## Card copy, lists and ink by role (v1.2.23, #8223–#8231)
+
+The last fidelity pass moved four rules out of "guess from the palette" and into
+"read the element":
+
+- **Footer ink is painted by role, not by palette share (#8223).** A footer's
+  link, label, legal and social inks are separate computed roles; picking the
+  nth palette entry drifts the moment the source reorders its palette. Resolve
+  each role's own colour and paint it.
+- **Card copy takes its measured ink (#8224).** A card's headline, body and CTA
+  do not inherit the band's ink — measure each element and paint that. A band
+  whose copy is right but whose card copy is inherited still fails the visual
+  diff.
+- **A card's list stays inside the card (#8227).** A `ul`/`ol` inside a card
+  must be contained by the card's measured box: a list that overflows changes
+  the band's height and the column rhythm. Contain the list, do not clip the
+  card.
+- **A band reads its real surface and groups its cards (#8231).** The band's
+  surface is the measured element (often a wrapper inside the section), and its
+  cards belong to the group that lays them out — spacing and columns come from
+  the group's measured geometry, not from a per-card guess.

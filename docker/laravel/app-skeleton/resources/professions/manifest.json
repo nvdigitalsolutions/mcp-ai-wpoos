@@ -1,5 +1,5 @@
 {
-    "catalogue_version": "sha256:d8ac05d02a1e4c04",
+    "catalogue_version": "sha256:a7433732b76ab505",
     "catalogue_licence": "LicenseRef-Proprietary",
     "licence_file": "LICENCE.md",
     "generated_by": "bin/sync-professions.php",

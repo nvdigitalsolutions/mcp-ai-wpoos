@@ -1,14 +1,14 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Cognition desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks, the screen-OCR snippet track, the document-OCR input track (PDF/multi-page TIFF via pdfium-render, plus the DeepSeek-OCR local model tier), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, screen OCR, document OCR, or the DeepSeek-OCR model tier.
+description: "Operational guide for the NV oOS Cognition desktop app (Tauri v2 + Rust, examples/nvoos-dictate): local-first engines (parakeet/whisper/fastconformer/moonshine/silero-vad), Stage-2 polish providers (openai_compat/nvoos, LM Studio, Ollama), camera detection + VLM relabeling, screen and document OCR (pdfium-render, DeepSeek-OCR), the CDP browser agent, and the test/clippy gates. Use when building/debugging the dictation app, adding an engine, provider, vision/OCR feature, or the browser agent."
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
-  app-version: "0.3.0"
+  app-version: "0.4.0"
   proposal: "067"
   pr: "7043"
-  last-updated: "2026-11-02"
+  last-updated: "2026-11-12"
 ---
 # NV oOS Cognition App — Build, Engines, and Verification Guide
 
@@ -65,10 +65,11 @@ examples/nvoos-dictate/
   the static CRT /MT, matching sherpa-onnx's prebuilt libs).
   **"Complete" build** (every opt-in surface) is the union of all
   feature-gated modules — engines + vision + agent + mcp + snippet OCR + document:
-  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx,document,snippet-pdf,memory`.
+  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,gestures,agent,mcp,snippet,snippet-onnx,document,snippet-pdf,memory`.
   **Trap — a build that omits a feature silently boots with that surface
   "not compiled", not an error.** `vision` (YOLO detection/tracking + camera
-  preview + VLM label-polish) and `agent` (browser control) are each
+  preview + VLM label-polish), `gestures` (hand-pose input, Proposal 153) and
+  `agent` (browser control) are each
   `cfg!`-gated and report `available() == false` when absent, so a
   "working" exe can still be missing them — always specify the FULL union
   for a hand-off exe, and verify with the string probe below.
@@ -79,21 +80,35 @@ examples/nvoos-dictate/
   `target/debug/nvoos-dictate.exe --mcp < /dev/null` — headless mode loads
   the configured engine and prints whisper.cpp's model-load log on
   success, or "engine unavailable in headless mode: …" on failure.
-  **Debug-exe size is roughly 56 MB — that is correct, not a partial build.**
-  `--debug --no-bundle` skips the installer/MSI + WebView2 bootstrap (the app
-  runs on the system WebView2 Win11 ships), and the engine *weights* (whisper
-  ~142 MB, parakeet ~600 MB, fastconformer ~162 MB) are downloaded at runtime
-  into `%APPDATA%/nvoos-dictate/models/`, never compiled in. To **prove** a
-  build has everything, scan the PE for feature strings (MSYS `strings` is
-  usually missing; write a `.ps1` file and use
-  `[System.IO.File]::ReadAllBytes` + a regex count — plain `powershell
-  -Command` with `$var` gets mangled by MSYS, so always `-File x.ps1`):
-  the presence of `fastconformer`/`parakeet`/`whisper`/`sherpa-onnx` means
-  the engines are linked; `Assistant` means the SPA tab shipped.
+  **Debug-exe size tracks the feature set — never read completeness from it.**
+  Engines-only builds land near 56 MB; the FULL union is ~100 MB (99.8 MB
+  measured with debuginfo). `--debug --no-bundle` skips the installer/MSI +
+  WebView2 bootstrap (the app runs on the system WebView2 Win11 ships), and
+  the engine *weights* (whisper ~142 MB, parakeet ~600 MB, fastconformer
+  ~162 MB) are downloaded at runtime into `%APPDATA%/nvoos-dictate/models/`,
+  never compiled in. To **prove** a build has everything, scan the PE for
+  feature strings (MSYS `strings` is usually missing; write a `.ps1` file and
+  use `[System.IO.File]::ReadAllBytes` + a regex count — plain `powershell
+  -Command` with `$var` gets mangled by MSYS, so always `-File x.ps1`).
+  A one-liner usually suffices:
+  `grep -a -o fastconformer nvoos-dictate.exe | wc -l`. The presence of
+  `fastconformer`/`parakeet`/`whisper`/`sherpa-onnx` means the engines are
+  linked; `Assistant` means the SPA tab shipped; `hand-landmark`,
+  `gesture://` and `ask_camera` mean the gesture surface shipped. **This only proves linkage,
+  not that the surface renders** — for that use the WebView2 CDP check under
+  *Verification harnesses*.
   **Release trap:** the `nvoos-agent` marker (a thread-name literal) is
   DCE'd by release optimizations — the script also matches the agent
   controller's spawn-error string (`could not spawn agent worker`), which
   survives both profiles.
+  **Probe only string literals.** Rust *type* names (`GestureController`,
+  `HandLandmarks`) are not in the binary — they live in debug info / panic
+  formatting — so they grep to 0 even in a fully-featured build. Probe the
+  literals the cfg'd code actually contains: `hand-landmark` (model id),
+  `gesture://` (event names), `start_gestures`/`ask_camera` (IPC names), or a
+  catalogue label such as `Open palm`. Verified on the complete-union debug
+  build 2026-11-21: `hand-landmark` 16, `gesture://` 3, `ask_camera` 1,
+  `Open palm` 1, `deictic` 6.
   **Trap:** a plain `cargo build`/`cargo run` (debug profile) compiles with
   `devUrl` (`http://localhost:1420`) baked in, so the webview loads the
   Vite dev server at runtime and shows `ERR_CONNECTION_REFUSED` in the app
@@ -113,7 +128,32 @@ examples/nvoos-dictate/
   — proof the `force-debug` wiring survives release profiles. Bundles are
   unsigned dev artifacts (`pubkey: ""`).
 - `generate_context!` embeds the frontend `dist` at compile time — run
-  `npm run build` before any cargo step in CI.
+  `npm run build` before **any** cargo step in CI, and in a fresh worktree
+  copy it in (`cp -r <main-tree>/dist ./dist`): even `cargo test --lib` fails
+  without it, because the macro expands inside `lib.rs`. A new worktree also
+  has a cold `target/`, so budget a full dependency rebuild (~6 min for
+  `cargo test --lib` on default features) — validate in the main tree when
+  the change allows it.
+- **Windows CI: ort-sys rc.9 breaks on rustc 1.100's build-dir layout
+  (2026-11-13).** Any build touching `vision` / `silero-vad` / `snippet-onnx`
+  / `memory` runs ort-sys's `copy_libraries`, which derives its destinations
+  from `OUT_DIR.ancestors().nth(3)` and then symlinks the ONNX Runtime DLLs
+  into that dir plus its `examples/` and `deps/` children.
+
+  1.99 put `OUT_DIR` at `target/debug/build/<pkg>-<hash>/out`, so `nth(3)` was
+  `target/debug`. **1.100 moved it to `build/<pkg>/<hash>/out`**, so `nth(3)`
+  is now `target/debug/build`. The first symlink still succeeds (that is why
+  its `rerun-if-changed` lines print), but `build/examples` and `build/deps`
+  have never been created, so `symlink_file` fails there and the crate's
+  fallback — an unwrapped `fs::copy` at `build.rs:109` — panics with
+  `Os { code: 3, NotFound }` (`ERROR_PATH_NOT_FOUND`) before linking.
+
+  It never reproduces on a 1.99 toolchain, or locally where the dirs already
+  exist. Fix: pre-create `target/debug/{examples,deps}` **and**
+  `target/debug/build/{examples,deps}` in a workflow step, then stage
+  `onnxruntime*.dll` from `target/debug/build/` next to the exe so the binary
+  can still load ORT (the `windows-bundle` job in
+  `build-nvoos-dictate.yml` does both).
 - Boot smoke test: `cmd //c start "" <exe>` → `tasklist //FI "IMAGENAME eq
   nvoos-dictate.exe"` after ~10 s (process alive = boot OK); kill with
   `taskkill //IM nvoos-dictate.exe //F`. A running app locks the exe — kill
@@ -148,23 +188,147 @@ cargo clippy --all-targets -- -D warnings                          # default
 cargo clippy --all-targets --features mcp -- -D warnings
 cargo clippy --all-targets --features camera -- -D warnings
 cargo clippy --all-targets --features vision -- -D warnings
+cargo clippy --all-targets --features gestures -- -D warnings
+cargo clippy --all-targets --features gestures,vision -- -D warnings  # both share ort + the camera ring
 cargo test            # default (mock/embedded)
-cargo test --features vision   # 94 lib (+9 vision/tracker/polish tests)
-cargo test --features mcp       # +4 toolbox tests
-cargo test --features parakeet  # 46 lib (+1 tar.bz2 extraction test)
-cargo test --features snippet   # 122 lib (+ snippet capture/selection/OCR tests)
-cargo test --features snippet-onnx  # 126 lib (+ RapidOCR decode tests)
+cargo test --features vision   # 275 lib
+cargo test --features gestures # 267 lib
+cargo test --features gestures,vision --lib  # 275 lib (same set: vision already implies camera)
+cargo test --features mcp       # 263 lib
+cargo test --features document        # 297 lib
+cargo test --features snippet-pdf     # 297 lib (implies `document` — see the trap below)
+cargo test --features parakeet        # 266 lib (needs no toolchain; sherpa ships prebuilt)
+cargo test --features fastconformer   # 266 lib
+cargo test --features snippet   # 268 lib
+cargo test --features snippet-onnx  # 273 lib
+# Measured 2026-11-21 after the feature-graph fixes. Lib counts: default/mock/
+# memory/mcp/moonshine/silero-vad 263 · agent 265 · camera/gestures 267 ·
+# snippet 268 · snippet-onnx 273 · vision/gestures+vision 275 ·
+# document/snippet-pdf 297 · parakeet/fastconformer 266. All targets for the
+# default set: 305 (the integration suites add history, cleanup golden, memory,
+# nvoos validation; `document_text` only under `document`).
+
+# Per-feature sweep — every opt-in surface on its own. The union hides
+# feature-implication breaks; this does not. Mirrors the `feature-matrix`
+# CI job (engines are the separate advisory `engine-matrix` job).
+for f in "" mock snippet document snippet-pdf snippet-onnx camera vision gestures \
+         gestures,vision moonshine silero-vad memory mcp agent; do
+  printf "clippy[%s] " "$f"
+  cargo clippy --all-targets ${f:+--features $f} -- -D warnings >/dev/null 2>&1 \
+    && echo OK || echo FAIL
+done
+
+# Pairs that share a feature-gated dependency (`--each-feature` cannot see these).
+for f in gestures,vision camera,vision document,snippet-pdf snippet,snippet-onnx; do
+  printf "pair[%s] " "$f"
+  cargo clippy --all-targets --features "$f" -- -D warnings >/dev/null 2>&1 \
+    && echo OK || echo FAIL
+done
+
+# The engine legs need a native toolchain (see the whisper section):
+#   for f in whisper parakeet fastconformer; do cargo clippy --all-targets --features "$f" -- -D warnings; done
+
+# The same sweep as tests (what CI runs). `--lib` keeps it to one binary per
+# run. The whole suite, `hotkey::win_hook` included — that module is
+# deterministic now that `ptt_pressed_alone` takes an injectable key table.
+cargo hack test --each-feature --lib --keep-going \
+  --exclude-features whisper,parakeet,fastconformer
 ```
 
 Native feature compile checks: `parakeet`, `whisper`, `moonshine`,
 `silero-vad`, and the combined `--features parakeet,silero-vad,moonshine`.
 **whisper needs extra env** (below). CI (`build-nvoos-dictate.yml`) runs
-fmt/clippy/test default + `mcp` on windows/ubuntu/macos, plus two macOS
-runtime gates: a headless `--mcp` engine-load probe (rmcp's exit-1
-"connection closed" on stdin EOF is expected teardown — fail only on
-"engine unavailable") and a `boot-smoke` job (real debug `.app`, 30 s
-boot-residency gate, `.app` zip + boot-log artifacts). The native engines
-are local gates.
+fmt/clippy/test default + `mcp` on windows/ubuntu/macos, plus the
+`feature-matrix` job (below), plus two macOS runtime gates: a headless
+`--mcp` engine-load probe (rmcp's exit-1 "connection closed" on stdin EOF
+is expected teardown — fail only on "engine unavailable") and a
+`boot-smoke` job (real debug `.app`, 30 s boot-residency gate, `.app` zip +
+boot-log artifacts). The native engines are local gates.
+
+**The `feature-matrix` CI job** runs `cargo hack clippy --each-feature
+--all-targets --keep-going --exclude-features whisper,parakeet,fastconformer
+-- -D warnings` on `windows-latest` (cargo-hack auto-detects new features —
+there is no list to maintain), then clippy over the feature *pairs* that share
+a dependency (`gestures,vision` `camera,vision` `document,snippet-pdf`
+`snippet,snippet-onnx`), and then the same sweep as **tests** (`--lib`).
+`--each-feature` also runs each feature with
+`--no-default-features`, so a feature must be self-sufficient. Engines are
+excluded here (CMake/libclang for whisper, the sherpa-onnx prebuilt for
+parakeet/fastconformer) and covered by the advisory job below;
+`windows-bundle` still links them all in the complete union.
+
+**The `engine-matrix` CI job (advisory).** On `ubuntu-latest` with
+`cmake libclang-dev clang` installed, it clippy-checks `whisper`, `parakeet`,
+`fastconformer`, and then all three together — each in its own `::group::`, with
+a hand-rolled keep-going so one broken engine does not hide the others.
+`continue-on-error: true` is deliberate: the leg is Linux-only and depends on
+native toolchain provisioning we do not control, so it reports without
+vetoing a merge. `windows-bundle` stays the authoritative build for these
+engines. **It earned its keep immediately** — see the `fastconformer` row below.
+
+**Why `--lib` for the test matrix.** `cargo hack test` without `--lib` links
+every integration test and example for each of the 15 feature sets; that
+exhausted link-time resources on the reference PC ("required to be available
+in rlib format" after ~26 min, target dir 53 GB). One lib binary per run
+stays cheap and deterministic (~55 s warm).
+
+**`hotkey::win_hook` — diagnosed and fixed (2026-11-21).** It used to fail
+intermittently: the same three tests, always as a *group*, roughly 1 in 90
+full runs, only on a busy machine. Root cause: `ptt_pressed_alone()` called
+the **live** `GetKeyboardState`, so a synthetic PTT press passed through
+whenever *any* other non-modifier key happened to be down — including
+left-Alt, which is deliberately not an allowed modifier (Alt+F4 / Alt+Tab
+must keep working). The assertion failed at `down.0 == 1`, then the panic
+poisoned `TEST_LOCK` and the next two tests died on `PoisonError` — which is
+why it always looked like three failures. (The old test's own comment admitted
+the gap: "simulate the combo … is not possible here".)
+
+Fix: the decision is now the pure `alone_from_state(&[u8; 256], ptt)`, and a
+`#[cfg(test)] TEST_KEY_STATE` override pins the key table; the live table is
+only read when no override is installed. The module also gained the coverage
+it previously could not express: shift/ctrl tolerated, left-Alt rejected, the
+PTT key excluded from the check, and a real Alt-combo pass-through case.
+200 consecutive full-suite runs are clean, and the module now runs in the
+feature matrix instead of being skipped.
+
+**Do not** "fix" a hook-test failure by loosening the swallow-pair assertion
+— that contract is the stuck-Alt guard.
+
+**Engine features can be validated locally on Windows.** `whisper` needs CMake
++ libclang, and you do not have to install either: Visual Studio 2022 ships a
+CMake, and its `bin` is just not on `PATH`. Prepend
+`/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin`
+and set `LIBCLANG_PATH='C:/Program Files/LLVM/bin'`, then
+`cargo clippy --all-targets --features whisper` works (first run ~3 min: it
+compiles whisper.cpp). `parakeet`/`fastconformer` need no extra toolchain —
+sherpa-onnx-sys fetches its own prebuilt.
+
+PDFium is fetched (pinned, sha256-verified, cached) so `document` and
+`snippet-pdf` lib tests can run; `tests/document_text.rs` then runs against
+real PDFs in the `Document integration tests` step.
+
+**Trap — a wrong feature implication is invisible in the union.** The
+complete-build union always enables everything at once, so `feature A`
+quietly relying on something only `feature B` brings in compiles fine there,
+while a user building `--features A` gets a hard error. Three live instances
+were found and fixed on 2026-11-21:
+
+| Feature | Was | Why it broke | Fix |
+|---|---|---|---|
+| `snippet-pdf` | `["snippet", "dep:lopdf"]` | `document/export_pdf.rs` re-rasterizes pages through the `document`-gated `document::pdf` | `["document", "dep:lopdf"]` |
+| `silero-vad` | `error.rs` gated its `From<ort::Error>` impl on this feature, but the feature only enabled `dep:ort-sys` | `ort::Error` unresolved (`audio/vad.rs` already maps that error by hand, so nothing needs the impl) | dropped `silero-vad` from the `error.rs` cfg |
+| `silero-vad` (tests) | `threshold_adapts_to_noise_floor` asserted the energy VAD adapts its gate | `adaptive_threshold` short-circuits under Silero by design, so `adapted > floor` can never hold | gated the energy test on `not(silero-vad)`, added a Silero counterpart |
+| `fastconformer` | the sherpa installer is gated `any(parakeet, fastconformer)` but `replace_dir`/`replace_dir_backoff` were `parakeet`-only | `--features fastconformer` alone: `cannot find function replace_dir` — the union with `parakeet` hid it | widened both helpers (and the three shared-installer tests) to `any(parakeet, fastconformer)` |
+
+The second one is the subtler shape: **`dep:ort-sys` without `dep:ort`**.
+`ort-sys` only provides the FFI build; `+ort` (the safe wrapper our code
+`use`s) is a separate optional dep. Any `#[cfg(feature = ...)]` block that
+mentions `ort::` must be gated on a feature that enables `dep:ort`
+(`vision`, `gestures`, `moonshine`, `snippet-onnx`, `memory`).
+
+When you add or change a feature, run the per-feature sweep below (~5 min)
+before pushing — the CI job will run it anyway. `cargo binstall cargo-hack`
+or a prebuilt release tarball is enough; no need to add it to the build.
 
 ## Verifying the macOS port from a non-Mac machine
 
@@ -221,6 +385,25 @@ The GitHub macOS runner is the remote Mac. The full remote loop:
   (CMake + LLVM via Chocolatey, `LIBCLANG_PATH`) with a 30 s
   boot-residency gate and uploads `nvoos-dictate-windows-exe`; both app
   artifacts retain 90 days.
+- **Mirror release (v0.4.0, PR #7606):** `publish-nvoos-dictate.yml`
+  creates a **draft** release, and a read-only mirror token cannot
+  download drafts — so `mirror-nvoos-cognition-release.yml` is
+  dispatch-only. Publish the monorepo draft first, then dispatch it with
+  `tag: nvoos-dictate-vX.Y.Z` (dispatch from `alpha-working`; the
+  self-referential push trigger registers the workflow before it reaches
+  `main`). It reuses `mirror-release.yml` with
+  `version_file: package.json` (JSON format) and copies `*.exe`, `*.msi`,
+  `*.dmg`, `latest.json`, `*.sig` into
+  `nvdigitalsolutions/nvoos-cognition` with `--clobber` (idempotent).
+  Secret: `NVOOS_COGNITION_REPO_TOKEN`. `latest.json` and
+  `tauri.conf.json` still point at the monorepo feed — mirroring the
+  installers does **not** move the updater channel.
+- **Version bump files (all five move together):** `package.json`,
+  `package-lock.json` (root + `packages[""]`), `src-tauri/tauri.conf.json`,
+  `src-tauri/Cargo.toml` and this crate's entry in `src-tauri/Cargo.lock`.
+  `package-lock.json` drifted at 0.2.0 through the 0.3.0 bump — check it
+  explicitly. Tag from the commit that carries the bump; tag-triggered
+  runs evaluate the workflow file from the tag's commit.
 
 Remote-Mac landscape (2026-10): **Cirrus CI shut down 2026-06-01**
 (Cirrus Labs joined OpenAI) — do not recommend it. Docker/QEMU macOS
@@ -482,6 +665,40 @@ cargo run --features parakeet --example transcribe_file -- ../speech.wav --engin
   (RTF 0.28), whisper tiny.en 1095 ms (WER 7.7%). Both beat the 1.5 s
   key-up→paste budget; release is faster.
 
+### Prove the UI actually renders (WebView2 CDP, no synthetic input)
+
+A string probe proves linkage; it does not prove the window loaded the bundled
+`dist` or that a view renders. WebView2 exposes CDP when you launch with:
+
+```bash
+export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9222 --remote-allow-origins=*"
+cmd //c start "" "…\target\debug\nvoos-dictate.exe"
+curl -s http://127.0.0.1:9222/json      # three page targets
+```
+
+Targets are the **main window** (`http://tauri.localhost/`), the recording
+overlay (`?window=overlay`) and the snippet palette (`?window=snippet`) —
+drive the one whose url ends in `/`. Node 22+ ships a global `WebSocket`, so a
+~30-line `.mjs` can `Runtime.evaluate` a click
+(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() ===
+'Diagnostics').click()`), dump `document.body.innerText` (Diagnostics prints
+capture device, capture mode, clipboard state, configured/resident engine and
+the installed model list — the fastest way to confirm a build's real wires),
+and `Page.captureScreenshot`. Kill and relaunch WITHOUT the env var
+afterwards: an open 9222 is a local control surface.
+
+Synthetic input is a dead end on this box. `SetForegroundWindow` is blocked by
+the Windows foreground lock (wrap it in `AttachThreadInput`, or it silently
+does nothing); `CopyFromScreen` grabs whatever window is on top, not the one
+you named; and `SetCursorPos` + `mouse_event` no-op under DPI/input
+virtualization. If you must capture a window without CDP, use
+`PrintWindow(hwnd, hdc, 2)` (`PW_RENDERFULLCONTENT`) — it renders WebView2
+content even when the window is fully occluded.
+
+Zed cannot `read_file` anything under `target/` (it matches
+`file_scan_exclusions`) or outside the project root; copy screenshots into the
+gitignored `dist/` to inspect them.
+
 ## Known Rust pitfalls (this codebase)
 
 - `cpal::Stream` is `!Send + !Sync` on WASAPI — streams must live on
@@ -631,6 +848,175 @@ download `yolo11n.pt` from
 (note: the id is `yolo11n`, not `yolov11n`), then
 `python -c "from ultralytics import YOLO; YOLO('yolo11n.pt').export(format='onnx', opset=12, imgsz=640)"`.
 No `onnxslim` = the simplifier step logs a non-fatal warning.
+
+## Hand gestures — pose input & deictic pointing (Proposal 153, feature `gestures`)
+
+Opt-in, local-only hand input on the **same** webcam preview. `gestures`
+implies `camera` (`gestures = ["camera", "dep:ort", "dep:ort-sys",
+"dep:ndarray16"]`) and reuses the pinned `ort` rc.9 already pulled in by
+`vision`. **One decode feeds two rings**: capture fills `preview` (≤320 px)
+and `frame_vision` (≤640 px); `PREVIEW_MAX_W`/`VISION_MAX_W` are the knobs in
+`camera/capture.rs`. Never add a third ring or a second `nokhwa` decode.
+
+Three separable capabilities — do not conflate them:
+
+1. **Gesture as input** (shipped) — 8 static + 5 motion gestures → a closed
+   `ActionId` allowlist.
+2. **Gesture as reference** (M5, **shipped as "point + ask"**) — the gesture
+   supplies the referent, a typed question supplies the intent, a local VLM
+   answers about the crop. Display-only.
+3. **Gesture as polish signal** (M6, rulebook shipped, not wired) — an LLM
+   arbitrates *between pre-approved actions only*; it can never invent one.
+
+### Layout
+
+`src/gestures/` — `mod.rs` (always compiled: `GestureId`, `ActionId`,
+`Safety`, `GestureIntent`, `available()`), `catalogue.rs` (`GESTURES`,
+`ACTIONS` const tables — the single vocabulary source), `geometry.rs` +
+`classifier.rs` + `normalize.rs` + `stabilize.rs` + `motion.rs` + `router.rs`
+(**pure, always compiled and always unit-tested**), and
+`landmarks.rs`/`models.rs`/`controller.rs` (bodies behind `dep:ort`).
+`examples/gesture_probe.rs` de-risks the ONNX session headlessly.
+
+**Decision layer is always compiled on purpose.** Only the three
+`ort`-touching bodies are feature-gated, so `cargo test` runs the whole
+safety and feel contract (240 lib tests) without the feature. If you gate
+`router.rs`/`stabilize.rs` behind `gestures`, default-feature CI silently
+stops covering the security spec.
+
+### Geometry classifier is v1 — deliberate
+
+No weights, no training pipeline: 21 landmarks → `normalize()` (translate to
+the palm, scale by palm width, derotate) → finger curl + spread + thumb
+ramps → `HandShape` → `GestureId`. A learned classifier is v2. Do not "fix"
+remaining ambiguity by widening the vocabulary; breadth is a false-positive
+and cultural-meaning liability.
+
+Threshold traps that cost real debugging time:
+
+| Symptom | Cause | Correct value |
+|---|---|---|
+| a pointing hand reads as a **fist** | `min_curl = 1.0 - min4(fingers)` rewards *any* extended finger as curled | use `shape.min_curl()` — **min** over fingers, so one extended finger vetoes the fist |
+| folded thumb reads 0.53 | a single `thumb` scalar cannot separate up/down/folded | there is **no** `HandShape.thumb`; `ThumbUp`/`ThumbDown` are pure `thumb_dir_y` ramps |
+| open palm and stop-hand collapse | measured spread is **0.356** for open palm, 0.60+ for stop | ramp must be **0.42–0.62**, not 0.28–0.38 |
+
+`classifier::tests::the_eight_static_poses_classify_as_themselves` is the
+accuracy fixture — extend it, never weaken it.
+
+### Safety model (the part to preserve)
+
+- **Arming is explicit.** `OpenPalm` held `arm_hold_ms` (default 600) arms;
+  `ClosedFist` dismisses or disarms. **Nothing fires while disarmed** —
+  `router::tests::nothing_else_fires_while_disarmed` is the spec.
+- **Forbidden actions are unrepresentable.** `ActionId` has no variant for
+  delete/purge/send/purchase/outbound tool call. The allowlist is enforced in
+  **one place** (`router.rs`); do not add string-level checks elsewhere.
+- **Guarded = `ToggleDictation` + `StopDictation` only.** A guarded intent
+  executes only when `hold_confirmed` (pose held ≥ `confirm_hold_ms`, default
+  1500). Otherwise the sink emits `gesture://pending-confirm` and runs
+  nothing. `confirmation_gestures_are_not_standalone_actions` locks this.
+- **Sessions expire** without activity (`armed_timeout_ms`), and every action
+  has a `cooldown_ms` floor.
+
+### Stabilizer feel contract (N-of-M, not over-a-window)
+
+`stabilize.rs` compares agreeing frames against `agree` (3) inside a sliding
+`window` (4). **Requiring `history.len() >= window` delays confirmation by a
+frame and breaks the tests that assert the 3rd agreeing frame fires.** Also:
+`min_track_frames` gates a hand *entering* the frame, hysteresis
+(`enter`/`exit` confidence) stops label flicker, and **losing the hand resets
+the hold timer** (otherwise a brief dropout re-fires a guarded action).
+
+### Mirroring — flip exactly once
+
+MediaPipe inverts handedness when the input buffer is mirrored. The backend
+mirrors the **pixels** and flips `Handedness` once in `landmarks.rs`; then
+`normalize()` runs on the unmirrored landmark set. Flipping again in the
+classifier makes every asymmetric pose (point, swipe) read backwards.
+
+### Model pinning — M0 is still open (fail-closed by design)
+
+`models.rs` ships **no URL and no hash** (`url: None`, `sha256: None`);
+`download()` returns a typed error naming M0. This is intentional: MediaPipe
+distributes `.task` (TFLite), **not** ONNX, and no verified ONNX export with a
+provenance trail was found. Users supply a local `.onnx` via
+`Settings.gestures.model_path`. **Do not invent a catalogue URL to "make it
+work"** — it fails on the user's machine instead of at review.
+`models::tests::the_catalogue_never_ships_an_unverified_download` enforces it.
+
+### Dictation integration (no hotkey changes)
+
+`state.rs` routes `StopDictation`/`ToggleDictation` through the existing
+`dictation::request_stop()` / `request_toggle()`, which write to the
+process-global `REQUEST_TX: OnceLock<Sender<HotkeyEvent>>` and read `PHASE`.
+`request_stop()` chooses `Released` vs `Pressed` by phase. **`src/hotkey/`
+was not touched and must not be** — it is the app's most fragile module; a
+hand-gesture diff that edits it is a review red flag.
+
+### Surfaces
+
+`Settings.gestures` (enabled, model_path, allowed_actions, min/exit
+confidence, debounce_agree/window, min_track_frames, arm_hold_ms,
+cooldown_ms, armed_timeout_ms, confirm_hold_ms, input_size,
+mirror_preview, deictic_enabled/provider/model), `StatusInfo.gestures_available/running/gesture_armed/
+gesture_last`, a Diagnostics gesture block, and IPC
+`gestures_available|start_gestures|stop_gestures|get_gesture_state|
+set_gesture_arming|get_gesture_catalogue|get_gesture_models|
+download_gesture_model|ask_camera`. Events: `gesture://action`,
+`gesture://pending-confirm`, `gesture://error`. `get_gesture_catalogue` takes
+`State` because it reports `deictic_enabled` alongside the static tables. The
+Home panel polls `get_gesture_state()` at **10 Hz** and draws the 21-point
+MediaPipe skeleton on the existing overlay `<canvas>` (purple `--accent-2`,
+distinct from the cyan detection boxes); it does **not** re-render per camera
+frame.
+
+### M5 — "ask your camera" (deictic grounding, shipped)
+
+`gestures/deictic.rs` is **pure geometry, always compiled**: 21 normalised
+landmarks → `normalised_region` → `pixel_region`. The pose matters: a
+`pointing_up` region is centred on the index-finger **tip** (landmark 8) at
+`POINT_CONTEXT` 2.4× the hand, anything else is centred on the hand bbox at
+`HAND_CONTEXT` 1.7×. Regions under `MIN_SIDE` (32 px) are refused — an
+honest "no referent" beats a 3-pixel crop the VLM will hallucinate about.
+
+`AppState::ask_camera` is **type-stable across builds**: the `gestures` build
+does the crop + call, the default build returns `NotConfigured`. Keep that
+shape — gating the IPC command instead makes the Tauri handler list
+feature-dependent. The command is `async` (a sync command runs on the UI
+thread and an 8 s VLM round-trip would freeze the window); the provider call
+is awaited, **never** `block_on` inside a runtime.
+
+Crop encoding is shared with vision polish in `util::image::crop_to_data_uri`
+(`max_edge` capped at 512 px here, `None` there). That module is gated on
+`camera` because it needs the optional `image` crate — do not "fix" the gate
+to `vision`, which would break a `gestures`-only build.
+
+Bright lines, enforced in `openai_shape::deictic_prompt`: no faces, no
+identity, no guessing, answer only from the crop. The answer is display-only
+in the Home panel — **never** pasted into another app. Off by default
+(`gestures.deictic_enabled`).
+
+### M6 — arbitration rulebook (shipped, not wired)
+
+`gestures/arbiter.rs` holds the three rejection rules from proposal §7.3:
+not-allowed → `Ignore(NotAllowed)`; guarded stays `ActGuarded` (arbitration
+**can never** skip the confirmation hold); the T0 fallback is used only when
+it is allowed **and** `Safe`; otherwise `Ignore(NoSafeFallback)`. `parse_reply`
+is strict-JSON-then-first-braced-span, and an invented action name degrades to
+`None` rather than coercing.
+
+A test asserts the serialised request contains no `image`/`base64`/`rgb`/
+`frame`/`landmark` key — the arbiter is text-only by construction. The router
+does **not** call it yet: the stabiliser does not publish an ambiguous band,
+so wiring it needs a new signal from `stabilize.rs` first. Do not "just call
+it from the router" without that signal and without a budget measurement.
+
+### Gate
+
+`cargo clippy --all-targets --features gestures,vision -- -D warnings` and
+`cargo test --features gestures,vision --lib` — both features pull `ort` and
+start two loops off the same ring, so they must be exercised **together**, not
+only in isolation. Also `cargo check --features gestures --example gesture_probe`.
 
 ## Snippet OCR — screen-to-text (Proposal 100, features `snippet`/`snippet-onnx`)
 
