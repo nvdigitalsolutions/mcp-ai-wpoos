@@ -2601,3 +2601,97 @@ heading, a `resume` appends it after `Skills`, a section named `skills` fills th
 `Skills` heading instead of repeating at the end, and
 `color: 'red; background: url(x)'` is dropped rather than written into the
 document.
+
+## 164.34 — One document store, five tools, and the guard that matters (2026-11-25)
+
+§164.31 slices C and D, done together because §164.33's correction showed they
+were one subsystem. The five `docs_hub_*` tools are readers and writers of a flat
+corpus of Markdown and plain-text files with YAML frontmatter — a docs site's
+source, not a database.
+
+### Why one contract instead of five path checks
+
+Every one of the five tools takes a caller-supplied relative path. Five copies of
+a traversal check is five chances to drop a layer, so the corpus owns the rules
+and the tools never learn where it lives.
+
+`DocsCorpusInterface` takes a corpus-relative path and is responsible for
+refusing anything that is not one. The tools ask, and translate the answer.
+
+### The guard is ported, not re-derived
+
+`FilesystemDocsCorpus` transcribes the two checks from
+`WP_MCP_AI_Docs_Hub_Helper`, because they were written against real attacks:
+
+- **Segment validation.** Separators are normalised to `/` *before* validating, so
+  `..\secret.md` is judged by the same rule as `../secret.md`. A drive letter and
+  any absolute or self-referencing prefix are refused, then every segment must
+  match `^[A-Za-z0-9][A-Za-z0-9 _.-]*$` — which rejects `..` and `.` without a
+  special case for either.
+- **Realpath containment.** `realpath()` of the target must stay inside
+  `realpath()` of the root, so a symlinked file cannot be read through. An
+  unwritten path walks up to its deepest existing ancestor and checks *that*, so a
+  write cannot create its way out either.
+
+The 40-test adapter suite exercises thirteen escaping shapes — parent segments,
+nested parents, Windows separators, absolute Unix and Windows paths, dot segments,
+dotfiles, empty segments, unserved extensions, an over-long path — plus both
+symlink cases: a link that points out of the root, and a symlinked directory the
+scan must not descend.
+
+### The two layers fail differently, on purpose
+
+A path that breaks a *segment* rule is refused: the caller can see the rule, and
+`validation_failed` tells it what to fix.
+
+A path that passes validation but *resolves* outside the root is reported as
+**not found**. That distinction is deliberate: a corpus that answered "refused"
+for `escape.md` and "not found" for `absent.md` would be an oracle for whether an
+arbitrary file exists. Writes are the exception — a write that cannot be placed
+inside the root is refused, because there is nothing to disclose and the caller
+needs to know why nothing was written.
+
+### What the port drops, and why
+
+| WordPress | here |
+|---|---|
+| `docs_hub_delete_doc` `rebuild` flag | absent — there is no index to rebuild |
+| `docs_hub_rebuild` `mode: async\|sync` | absent — a scan is bounded and runs in the call |
+| `docs_hub_rebuild` `reset` | absent — nothing to clear |
+| `include_content` on list | absent — `read_doc` exists, and a listing that inlines every document is a token bomb |
+
+Declaring any of those would be the accepted-then-ignored defect this cluster has
+now found four times (§164.31 `color`/`line_height`, §164.32 `requires-model`,
+§164.33 `orientation`/`page_margins`).
+
+`write_doc` gains one thing the WordPress tool lacks: the payload reports
+`created`, so an insert can be told from an overwrite. A tool that silently
+replaces a document is a data-loss path.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/DocsCorpusInterface.php` | new; the corpus contract |
+| `lib/laravel-adapter/src/Adapter/FilesystemDocsCorpus.php` | new; the ported path guard |
+| `lib/core/src/Tool/DocsHub{List,Read,Write,Delete,Rebuild}…Tool.php` | new; five tools |
+| `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` | singleton binding on `oos.docs.corpus.*` |
+| `docker/laravel/app-skeleton/config/oos.php` | `docs.corpus.root`, `max_bytes`, `extensions` |
+| `lib/core/resources/tool-readiness.php` | five rows |
+| `lib/laravel-adapter/tests/FilesystemDocsCorpusTest.php` | new; 40 tests, the traversal suite |
+| `lib/core/tests/Unit/Tool/DocsHubToolsTest.php` | new; 15 tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+An empty `docs.corpus.root` disables all five with the named `no_docs_corpus`
+error rather than answering an empty listing that reads like "no documents yet".
+
+### Measurement
+
+`lib/core` **2,652 / 18,121** (was 2,627 / 18,032); adapter **403 / 2,025** (was
+363 / 1,962 — the corpus suite and the new binding); audit **295 / 295, servable
+276**; toolkit parity **73 of 854**; `document-generation` **18 of 38**.
+
+`../secret.md`, `..\secret.md`, `C:/Windows/win.ini`, `/etc/passwd`, `.env`,
+`guides//a.md` and a 250-character name are all refused before the filesystem is
+touched; a symlink out of the root reads as not-found; a 128-byte body against a
+64-byte cap is refused with nothing written.

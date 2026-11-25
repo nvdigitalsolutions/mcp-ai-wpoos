@@ -20,6 +20,11 @@
         "dj-management": [],
         "document-generation": [
             "add_watermark_to_pdf",
+            "docs_hub_delete_doc",
+            "docs_hub_list_docs",
+            "docs_hub_read_doc",
+            "docs_hub_rebuild",
+            "docs_hub_write_doc",
             "excel_data_export",
             "excel_data_import",
             "extract_pdf_text",

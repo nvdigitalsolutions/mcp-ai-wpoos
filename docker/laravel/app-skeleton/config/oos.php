@@ -341,4 +341,25 @@ return array(
         ),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Docs corpus
+    |--------------------------------------------------------------------------
+    |
+    | The directory the five `docs_hub_*` tools read and write. In WordPress the
+    | corpus belongs to the standalone docs-hub plugin; here it is one root, and
+    | the adapter refuses anything that resolves outside it.
+    |
+    | Empty disables the tools with a named `no_docs_corpus` error rather than
+    | letting them answer an empty listing that looks like "no documents yet".
+    |
+    */
+    'docs' => array(
+        'corpus' => array(
+            'root' => env('NVOOS_DOCS_CORPUS_ROOT', ''),
+            'max_bytes' => (int) env('NVOOS_DOCS_CORPUS_MAX_BYTES', 2097152),
+            'extensions' => array('md', 'txt'),
+        ),
+    ),
+
 );
