@@ -109,8 +109,26 @@ export interface SectionTheme {
 	/** The content rhythm (125 §1) — 'split' = a copy column beside a
 	 * media collage column (the source's two-column hero bands). */
 	layout?: 'split';
+	/** How the band's OWN row lays its lanes out (`ForgeBandRowLayout`): `row`
+	 * lays them side by side, `column` stacks them, and `gap` spaces the
+	 * stacked lanes. A stack of full-width lanes must never become a grid. */
+	rowLayout?: {
+		direction: 'row' | 'column';
+		gap?: number;
+		justify?: string;
+		align?: string;
+		tablet?: { direction: 'row' | 'column'; gap?: number };
+		mobile?: { direction: 'row' | 'column'; gap?: number };
+	};
 	/** Which side of the split holds the media — measured from the lane order. */
 	mediaSide?: 'left' | 'right';
+	/** The split's COPY lane measure in px (`ForgeBandFacts.copyWidth`): the
+	 * builder pinned the lede narrower than its lane, and the rule that did it
+	 * never ships. Applied as a max-width on the copy body. */
+	copyWidth?: number;
+	/** A spaced row's per-item widths in px: the source states each counter's own
+	 * width, so an equal-cell stats grid wraps every label differently. */
+	statsWidths?: number[];
 	/** The heading's underline divider facts (width/height/background/shadow). */
 	titleDivider?: { width: string; height: string; background: string; shadow?: string };
 	/** The heading typography (size/weight/line-height/letter-spacing). */

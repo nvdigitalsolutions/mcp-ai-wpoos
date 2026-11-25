@@ -2465,6 +2465,38 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 				.join( ', ' ) }]`
 		);
 	}
+	// Whether the band's OWN row is a ROW or a STACK, and the gap between its
+	// lanes (`ForgeBandRowLayout`). The lane widths alone cannot say: two
+	// full-width lanes are a column, and normalising them into a two-track grid
+	// laid eca.directory's about-us CTA beside itself (2026-11-25).
+	const measuredRowLayout = bandFacts?.rowLayout;
+	if ( measuredRowLayout?.desktop ) {
+		const base = measuredRowLayout.desktop;
+		const parts = [ `direction: ${ tsString( base.direction ) }` ];
+		if ( base.gap ) {
+			parts.push( `gap: ${ base.gap }` );
+		}
+		if ( base.justify ) {
+			parts.push( `justify: ${ tsString( base.justify ) }` );
+		}
+		if ( base.align ) {
+			parts.push( `align: ${ tsString( base.align ) }` );
+		}
+		// A device override only when the SOURCE changes direction there — an
+		// unchanged value would double the stylesheet for nothing.
+		for ( const device of [ 'tablet', 'mobile' ] as const ) {
+			const override = measuredRowLayout[ device ];
+			if ( ! override || override.direction === base.direction ) {
+				continue;
+			}
+			const overrideParts = [ `direction: ${ tsString( override.direction ) }` ];
+			if ( override.gap ) {
+				overrideParts.push( `gap: ${ override.gap }` );
+			}
+			parts.push( `${ device }: { ${ overrideParts.join( ', ' ) } }` );
+		}
+		entry.push( `rowLayout: { ${ parts.join( ', ' ) } }` );
+	}
 	// WHERE the source stops splitting its own row.
 	//
 	// The measured lanes say it directly: at the device where their widths sum
@@ -2495,6 +2527,28 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	}
 	if ( section.mediaSide ) {
 		entry.push( `mediaSide: ${ tsString( section.mediaSide ) }` );
+	}
+	// The split's COPY MEASURE (`ForgeBandFacts.copyWidth`) — the builder's own
+	// cap on the lede's line length. Emitted for the band list, not only heroes:
+	// any two-lane band whose copy is pinned narrower than its lane needs it.
+	if ( bandFacts?.copyWidth ) {
+		entry.push( `copyWidth: ${ bandFacts.copyWidth }` );
+	}
+	// A SPACED row's per-item widths (absolute px), for the component that rebuilds
+	// it. The source spreads four counters across 1100px with `space-between`, and
+	// each states its own width (151 / 253 / 197 / 163); an equal-cell grid renders
+	// four 275px cells and wraps every label differently (eca.directory's stats
+	// band, 2026-11-25). A lane that fills the row is a heading the component
+	// renders itself, so it is left out.
+	if ( bandFacts?.rowLayout?.desktop?.justify === 'space-between' ) {
+		const lanes = ( bandFacts.columns?.desktop ?? [] )
+			.map( ( lane ) => Math.round( lane.width ?? 0 ) )
+			.filter( ( width ) => width > 0 );
+		const widest = lanes.length > 0 ? Math.max( ...lanes ) : 0;
+		const items = lanes.filter( ( width ) => width < widest * 0.9 );
+		if ( items.length >= 2 && widest > 0 ) {
+			entry.push( `statsWidths: [${ items.join( ', ' ) }]` );
+		}
 	}
 	// The page HERO, derived from MEASURED facts rather than markup: the band
 	// that owns the h1 and splits into a copy column beside a media column.
@@ -2905,6 +2959,18 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * source rendered. A raw band keeps the markup but never the vendor\u2019s',
 		'\t * flex CSS, so without these every nested row stacked. */',
 		'\trows?: Array<{ id: string; widths: number[] }>;',
+		'\t/** How the band\u2019s OWN row lays its lanes out (`ForgeBandRowLayout`):',
+		'\t * `row` lays them side by side, `column` stacks them, and `gap` is the',
+		'\t * space between the stacked lanes. The lane widths alone cannot say',
+		'\t * which — two full-width lanes are a stack. */',
+		'\trowLayout?: {',
+		"\t\tdirection: 'row' | 'column';",
+		'\t\tgap?: number;',
+		'\t\tjustify?: string;',
+		'\t\talign?: string;',
+		"\t\ttablet?: { direction: 'row' | 'column'; gap?: number };",
+		"\t\tmobile?: { direction: 'row' | 'column'; gap?: number };",
+		'\t};',
 		'\t/** The breakpoint at which the SOURCE stops laying its own lanes side',
 		'\t * by side (`analyze --geometry`, measured): the rebuild stacks there',
 		'\t * instead of squeezing a copy column. Absent → the template\u2019s mobile',
@@ -2921,7 +2987,15 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		"\tlayout?: 'split';",
 		'\t/** Which side of the split holds the media (`left` | `right`) — measured',
 		'\t * from the lane order, so a mirror-image design is not rebuilt flipped. */',
-		"\tmediaSide?: 'left' | 'right';",
+		'\tmediaSide?: \'left\' | \'right\';',
+		'\t/** The split\u2019s COPY lane measure in px (`ForgeBandFacts.copyWidth`):',
+		'\t * the builder pinned the lede narrower than its lane, and the rule',
+		'\t * that did it never ships. Applied as a max-width on the copy body. */',
+		'\tcopyWidth?: number;',
+		'\t/** A spaced row\u2019s per-item widths in px (`statsWidths`): the source',
+		'\t * states each counter\u2019s own width, so an equal-cell grid wraps the',
+		'\t * labels differently. Applied to the stats list in DOM order. */',
+		'\tstatsWidths?: number[];',
 		'\t/** The heading\'s underline divider facts (width/height/background/shadow). */',
 		'\ttitleDivider?: { width: string; height: string; background: string; shadow?: string };',
 		'\t/** The heading typography (size/weight/line-height/letter-spacing). */',

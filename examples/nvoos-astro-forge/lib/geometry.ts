@@ -33,6 +33,7 @@ import type {
 	ForgeBandCarouselFact,
 	ForgeBandColumnFact,
 	ForgeBandFacts,
+	ForgeBandRowLayout,
 	ForgeChromeBox,
 	ForgeChrome,
 	ForgeChromeGeometry,
@@ -341,56 +342,74 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 							return { width: Math.round( slab.width ), x: Math.round( slab.x - bandRect.x ) };
 						}
 						let node: Element = band;
-						for ( let guard = 0; guard < 6; guard++ ) {
-							const next = [ ...node.children ].filter(
-								( child ) => ! /^(style|script|link|template|noscript)$/i.test( child.tagName ) &&
+						let best: { width: number; x: number } | undefined;
+						// The block padding is the SUM of every container in the chain: a builder
+						// nests `e-con-inner` (padding 60) > `e-con-inner` (padding 0) and the copy
+						// sits 60 below the band, whichever one states it.
+						let padTop = 0;
+						let padBottom = 0;
+						const visibleChildren = ( parent: Element ): Element[] =>
+							[ ...parent.children ].filter(
+								( child ) =>
+									! /^(style|script|link|template|noscript)$/i.test( child.tagName ) &&
 									getComputedStyle( child ).display !== 'none'
 							);
+						for ( let guard = 0; guard < 8; guard++ ) {
+							const next = visibleChildren( node );
 							if ( next.length === 0 ) {
-								return undefined;
+								break;
 							}
-							// Several element children means the band stacks SEVERAL stages (a
-							// rebuilt hardware band is a heading section plus a logo row). The
-							// band's content is as wide as its WIDEST stage — the same container the
-							// source states once.
-							if ( next.length > 1 ) {
-								const widest = next.reduce( ( best, child ) =>
-									child.getBoundingClientRect().width > best.getBoundingClientRect().width ? child : best
-								);
-								const box = widest.getBoundingClientRect();
-								if ( box.width > 0 && box.width < bandRect.width - 2 ) {
-									return { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ), ...stagePadding( widest ) };
-								}
-								// A FULL-BLEED stage is a WRAPPER, not the content box: Elementor's
-								// `e-con-boxed` spans the band and insets with padding, and its single
-								// `e-con-inner` is the container the copy sits in. The probe used to
-								// give up here, so an `e-con` hero recorded no content box at all and
-								// rebuilt flush to the viewport edge (eca.directory's about-us hero,
-								// 2026-11-25). Descend only through a single-stage wrapper — anything
-								// else is ambiguous and stays unreported.
-								const stage = [ ...widest.children ].filter(
-									( child ) =>
-										! /^(style|script|link|template|noscript)$/i.test( child.tagName ) &&
-										getComputedStyle( child ).display !== 'none'
-								);
-								if ( stage.length !== 1 ) {
-									return undefined;
-								}
-								node = widest;
-								continue;
+							// Several element children means the band stacks SEVERAL stages (a rebuilt
+							// hardware band is a heading section plus a logo row). The band's content is
+							// as wide as its WIDEST stage — the same container the source states once.
+							const candidate =
+								next.length > 1
+									? next.reduce( ( widest, child ) =>
+											child.getBoundingClientRect().width > widest.getBoundingClientRect().width ? child : widest
+									  )
+									: next[ 0 ];
+							const box = candidate.getBoundingClientRect();
+							if ( box.width <= 0 || box.height < 8 ) {
+								break;
 							}
-							const box = next[ 0 ].getBoundingClientRect();
-							if ( box.height < 8 ) {
-								return undefined;
-							}
-							// The first narrowing IS the container. Anything deeper is the band's own
-							// padding, which the two sides express differently.
+							// A NARROWING that keeps most of the band is a container — and a builder
+							// nests them (`e-con-boxed > e-con-inner` at 1280 inside `e-con-inner` at
+							// 1100), so keep the DEEPEST substantial one. Below 60% it is a column or
+							// a slab, not the band's container, and deeper reads are the copy box.
 							if ( box.width < bandRect.width - 2 ) {
-								return { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ), ...stagePadding( next[ 0 ] ) };
+								if ( box.width < bandRect.width * 0.6 ) {
+									break;
+								}
+								// Keep the DEEPEST substantial container, but never let an EQUAL-WIDTH
+								// wrapper overwrite the box that stated the block padding — a builder
+								// nests `e-con-inner > e-con-full` at the same width, and the inner one
+								// carries none (eca.directory's stats band lost its 60px inset this way).
+								if ( ! best || box.width < best.width - 2 ) {
+									best = { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ) };
+								}
+								const stage = stagePadding( candidate );
+								padTop += stage.padTop ?? 0;
+								padBottom += stage.padBottom ?? 0;
 							}
-							node = next[ 0 ];
+							// Descend through a SINGLE stage only. A full-bleed stage with one child
+							// is a wrapper (Elementor's `e-con-boxed`); anything else is ambiguous
+							// and the deepest box we recorded stays the answer.
+							if ( next.length !== 1 ) {
+								if ( next.length > 1 && box.width >= bandRect.width - 2 && visibleChildren( candidate ).length === 1 ) {
+									node = candidate;
+									continue;
+								}
+								break;
+							}
+							node = candidate;
 						}
-						return undefined;
+						return best
+							? {
+									...best,
+									...( padTop > 0 ? { padTop } : {} ),
+									...( padBottom > 0 ? { padBottom } : {} ),
+							  }
+							: undefined;
 					};
 					const columns = columnsOf( element );
 					const content = contentOf( element );
@@ -1730,9 +1749,25 @@ function collectBandColumnFacts( input: {
 		// A GRID is a row even when it STACKS (the source's `col-md-12` columns at
 		// tablet/mobile): the class family proves it, and their heights still have
 		// to be recorded per device or a stacked photo panel loses its box.
+		//
+		// A FLEX ROW of plain widgets is a row too, even with no column classes: an
+		// Elementor counter row (`e-con-full` with `justify-content: space-between`)
+		// lays `elementor-widget`s side by side, and without its lanes the rebuild's
+		// equal cells cannot state the source's 151 / 253 / 197 / 163 distribution
+		// (eca.directory's about-us stats, 2026-11-25). The tile test is what keeps
+		// a background layer plus a content stage out: those do not tile.
+		const rowBox = row.getBoundingClientRect();
+		const sameTop = rects.every(
+			( box ) => Math.abs( box.top - rects[ 0 ].top ) <= Math.max( 8, box.height * 0.25 )
+		);
+		const tiled = rects.reduce( ( sum, box ) => sum + box.width, 0 ) >= rowBox.width * 0.9;
 		const isGrid =
 			ROW.test( row.getAttribute( 'class' ) ?? '' ) ||
-			kids.some( ( child ) => COLUMN.test( child.getAttribute( 'class' ) ?? '' ) || /column|e-con/i.test( child.getAttribute( 'class' ) ?? '' ) );
+			kids.some(
+				( child ) =>
+					COLUMN.test( child.getAttribute( 'class' ) ?? '' ) || /column|e-con/i.test( child.getAttribute( 'class' ) ?? '' )
+			) ||
+			( /flex|grid/.test( getComputedStyle( row ).display ) && ( sameTop || tiled ) );
 		// Only a GRID has columns. A band whose single-child chain lands on a
 		// wrapper (Flatsome's `section > section-bg + section-content`) has two
 		// "children" that happen to tile the row and share a top — they are the
@@ -1850,11 +1885,146 @@ function collectBandColumnFacts( input: {
 			facts.push( fact );
 		} );
 		if ( facts.length >= 2 ) {
-			out[ id ] = facts;
+				out[ id ] = facts;
+			}
 		}
+		return out;
 	}
-	return out;
-}
+
+	/**
+	 * How the band's OWN row lays its lanes out, per device (`ForgeBandRowLayout`).
+	 *
+	 * The column pass records each lane's rendered WIDTH. Width alone cannot say
+	 * whether the lanes are side by side or stacked: two 1280px lanes inside a
+	 * 1280px content column describe a COLUMN, and normalising them into a
+	 * two-track grid laid eca.directory's about-us CTA beside itself and pushed
+	 * the copy 319px left (2026-11-25). The row's computed `flex-direction` is the
+	 * fact that settles it; `row-gap` is the space between the stacked lanes (the
+	 * band's empty middle child still takes a gap, so the band height is
+	 * 60 + 135 + 40 + 0 + 40 + 53 + 60).
+	 *
+	 * Resolves the row exactly as `collectBandColumnFacts` does, so both facts
+	 * describe the same container.
+	 */
+	function collectBandRowLayoutFacts( input: {
+		ids: string[];
+		kind: 'built' | 'source';
+		selectors?: Record< string, string >;
+	} ): Record< string, ForgeBandRowLayout > {
+		const pick = ( selector: string ): Element | null => {
+			try {
+				return document.querySelector( selector );
+			} catch {
+				return null;
+			}
+		};
+		const COLUMN = /(^|\s)(wpb_column|vc_column_container)(\s|$)/;
+		const ROW = /(^|\s)(row|vc_row|wpb_row)(\s|$)|brando[_-](inner[_-])?row/;
+		const out: Record< string, ForgeBandRowLayout > = {};
+		for ( const id of input.ids ) {
+			const candidates =
+				input.kind === 'built'
+					? [ `[data-section-id="${ id }"]` ]
+					: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+							( value ): value is string => Boolean( value )
+					  );
+			let band = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) ) ?? null;
+			if ( input.kind === 'source' && band && COLUMN.test( band.getAttribute( 'class' ) ?? '' ) ) {
+				let parentRow: Element | null = null;
+				for ( let up = band.parentElement; up; up = up.parentElement ) {
+					if ( up.tagName === 'SECTION' ) {
+						band = up;
+						parentRow = null;
+						break;
+					}
+					if ( ! parentRow && ROW.test( up.getAttribute( 'class' ) ?? '' ) ) {
+						parentRow = up;
+					}
+				}
+				if ( parentRow ) {
+					band = parentRow;
+				}
+			}
+			if ( ! band ) {
+				continue;
+			}
+			let row: Element = band;
+			for ( let guard = 0; guard < 6 && row.children.length === 1; guard++ ) {
+				row = row.children[ 0 ] as Element;
+			}
+			if ( ! ROW.test( row.getAttribute( 'class' ) ?? '' ) ) {
+				const explicit = [ ...band.querySelectorAll( '[class~="row"],[class~="row-collapse"],[class~="banner-grid"]' ) ].find(
+					( node ) => node.children.length >= 2
+				);
+				if ( explicit ) {
+					row = explicit;
+				}
+			}
+			const laneKids = ( node: Element ): Element[] =>
+				[ ...node.children ].filter( ( child ) => {
+					const rect = child.getBoundingClientRect();
+					const style = getComputedStyle( child );
+					return (
+						rect.width >= 40 &&
+						rect.height >= 8 &&
+						style.display !== 'none' &&
+						style.position !== 'absolute' &&
+						style.position !== 'fixed'
+					);
+				} );
+			if ( laneKids( row ).length < 2 ) {
+				const queue: Element[] = [ ...band.querySelectorAll( '[class~="e-con-inner"],[class~="elementor-container"]' ) ];
+				for ( const candidate of queue ) {
+					if ( candidate !== band && laneKids( candidate ).length >= 2 ) {
+						row = candidate;
+						break;
+					}
+				}
+			}
+			if ( laneKids( row ).length < 2 ) {
+				continue;
+			}
+			const style = getComputedStyle( row );
+			const gap = Math.round( parseFloat( style.rowGap ) || 0 );
+			// `normal` is the initial value for both axes; a `space-between` row and a
+			// `center` stack ARE layout facts and travel with the row. Chromium
+			// serialises the flow-relative keywords (`align-items: end` computes to
+			// `flow-end`), so map them to the flex keywords the rebuild can emit — an
+			// unknown keyword would be dropped by the browser as invalid.
+			const flexKeyword = ( value: string ): string | undefined => {
+				switch ( value ) {
+					case 'start':
+					case 'self-start':
+					case 'flex-start':
+						return 'flex-start';
+					case 'end':
+					case 'self-end':
+					case 'flow-end':
+					case 'flex-end':
+						return 'flex-end';
+					case 'center':
+						return 'center';
+					default:
+						return undefined;
+				}
+			};
+			const justifyRaw = style.justifyContent;
+			const justify =
+				justifyRaw === 'normal' || justifyRaw === 'start' || justifyRaw === 'flex-start'
+					? undefined
+					: [ 'space-between', 'space-around', 'space-evenly', 'center' ].includes( justifyRaw )
+						? justifyRaw
+						: flexKeyword( justifyRaw );
+			const align = flexKeyword( style.alignItems );
+			out[ id ] = {
+				direction: style.flexDirection === 'column' ? 'column' : 'row',
+				...( gap > 0 ? { gap } : {} ),
+				...( justify ? { justify } : {} ),
+				...( align ? { align } : {} ),
+			};
+		}
+		return out;
+	}
 
 /**
  * The band's PANEL as the browser PAINTS it — the slab's own box
@@ -2118,7 +2288,7 @@ export function collectBandLayoutFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, { split?: number[]; centered?: boolean; rows?: Array< { id: string; widths: number[] } > } > {
+} ): Record< string, { split?: number[]; centered?: boolean; rows?: Array< { id: string; widths: number[] } >; copyWidth?: number } > {
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -2131,7 +2301,7 @@ export function collectBandLayoutFacts( input: {
 	// The SAME structural signature the template's hero rule uses, so a measured
 	// ratio always lands on the element the rule will lay out.
 	const TRACK = ':is(div, section):has(> div > h1):has(> div > img)';
-	const out: Record< string, { split?: number[]; centered?: boolean; rows?: Array< { id: string; widths: number[] } > } > = {};
+	const out: Record< string, { split?: number[]; centered?: boolean; rows?: Array<{ id: string; widths: number[] }>; copyWidth?: number } > = {};
 	for ( const id of input.ids ) {
 		const candidates =
 			input.kind === 'built'
@@ -2164,7 +2334,7 @@ export function collectBandLayoutFacts( input: {
 		// renderer keeps its historical default for a profile that has no fact
 		// (older profiles, unmeasured pages) and only opts OUT on an explicit
 		// `false`.
-		const entry: { split?: number[]; centered?: boolean; rows?: Array< { id: string; widths: number[] } > } = { centered: false };
+		const entry: { split?: number[]; centered?: boolean; rows?: Array<{ id: string; widths: number[] }>; copyWidth?: number } = { centered: false };
 		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
 			const style = getComputedStyle( node );
 			if ( style.display === 'table-cell' && style.verticalAlign === 'middle' ) {
@@ -2187,8 +2357,33 @@ export function collectBandLayoutFacts( input: {
 		} catch {
 			track = null;
 		}
+		// The structural TRACK signature is the TEMPLATE's rule, so a measured ratio
+		// always lands where the rebuild will lay it out — but it only recognises a
+		// copy column holding an h1 beside an image column two levels down. An
+		// Elementor hero nests the h1 inside a widget (`e-con-inner > e-con-full >
+		// widget > div > h1`), so the row is resolved the SAME way the column probe
+		// resolves it: the shallowest container with two in-flow lanes.
+		const laneKids = ( node: Element ): Element[] =>
+			[ ...node.children ].filter( ( child ) => {
+				const rect = child.getBoundingClientRect();
+				const style = getComputedStyle( child );
+				return (
+					rect.width >= 40 &&
+					rect.height >= 8 &&
+					style.display !== 'none' &&
+					style.position !== 'absolute' &&
+					style.position !== 'fixed'
+				);
+			} );
+		if ( ! track || laneKids( track ).length < 2 ) {
+			const queue: Element[] = [ ...element.querySelectorAll( '[class~="e-con-inner"],[class~="elementor-container"]' ) ];
+			const found = queue.find( ( candidate ) => candidate !== element && laneKids( candidate ).length >= 2 );
+			if ( found ) {
+				track = found;
+			}
+		}
 		if ( track ) {
-			const children = Array.from( track.children ).filter( ( child ) => {
+			const children = laneKids( track ).filter( ( child ) => {
 				const rect = child.getBoundingClientRect();
 				return rect.width > 0 && rect.height > 0;
 			} );
@@ -2202,6 +2397,31 @@ export function collectBandLayoutFacts( input: {
 			const total = rects.reduce( ( sum, rect ) => sum + rect.width, 0 );
 			if ( sideBySide && total > 0 ) {
 				entry.split = rects.map( ( rect ) => Math.round( ( rect.width / total ) * 1000 ) / 1000 );
+			}
+			// The COPY lane's inner MEASURE. A builder pins a split hero's lede to a
+			// fraction of its lane (`elementor-widget__width-initial`), and the vendor
+			// sheet that stated it never ships — so the rebuilt paragraph ran the full
+			// lane and wrapped one line longer (eca.directory's about-us hero: 610 of
+			// an 811px lane, 2026-11-25). Recorded only when it is genuinely narrower
+			// than the lane; an unconstrained lane needs no rule.
+			if ( sideBySide && children.length >= 2 ) {
+				const textLength = ( node: Element ): number => ( node.textContent ?? '' ).replace( /\s+/g, ' ' ).trim().length;
+				const copy = children.reduce( ( best, child ) => ( textLength( child ) > textLength( best ) ? child : best ) );
+				const laneWidth = copy.getBoundingClientRect().width;
+				let measure = 0;
+				for ( const node of Array.from( copy.querySelectorAll( 'p, ul, ol, blockquote' ) ) ) {
+					if ( node.closest( 'nav, form, footer, header' ) ) {
+						continue;
+					}
+					const rect = node.getBoundingClientRect();
+					if ( rect.height < 8 || textLength( node ) < 40 ) {
+						continue;
+					}
+					measure = Math.max( measure, rect.width );
+				}
+				if ( measure >= 200 && measure < laneWidth - 8 ) {
+					entry.copyWidth = Math.round( measure );
+				}
 			}
 		}
 		// NESTED ROWS (see `ForgeBandRowFact`). A raw band loses the vendor's
@@ -2679,6 +2899,13 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		// Whether the band's row is a ROW or a STACK, and the gap between its
+		// lanes (see `collectBandRowLayoutFacts`).
+		const desktopRowLayout = await page.evaluate( collectBandRowLayoutFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		// The band's painted SLAB and its own box (a panel that fills only part of
 		// the band) — see `collectBandPanelFacts`.
 		const desktopPanels = await page.evaluate( collectBandPanelFacts, {
@@ -2729,6 +2956,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		const tabletRowLayout = await page.evaluate( collectBandRowLayoutFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		const tabletCarousels = await page.evaluate( collectBandCarouselFacts, {
 			ids: options.ids,
 			kind: options.kind,
@@ -2746,6 +2978,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			selectors: options.selectors,
 		} );
 		const mobileColumns = await page.evaluate( collectBandColumnFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
+		const mobileRowLayout = await page.evaluate( collectBandRowLayoutFacts, {
 			ids: options.ids,
 			kind: options.kind,
 			selectors: options.selectors,
@@ -2813,6 +3050,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			const layout = desktopLayout[ id ];
 			if ( layout?.split && layout.split.length >= 2 ) {
 				band.splitColumns = layout.split;
+			}
+			// The copy lane's inner MEASURE (see `collectBandLayoutFacts`): the
+			// widest paragraph block, when the builder pins it narrower than the lane.
+			if ( layout?.copyWidth ) {
+				band.copyWidth = layout.copyWidth;
 			}
 			if ( layout?.centered ) {
 				band.centeredContent = true;
@@ -2892,6 +3134,18 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				band.columns = Object.fromEntries(
 					Object.entries( columns ).filter( ( [ , value ] ) => value !== undefined )
 				) as ForgeBandFacts[ 'columns' ];
+			}
+			// Whether the row is a ROW or a STACK, per device — the fact the lane
+			// widths alone cannot state (see `ForgeBandRowLayout`).
+			const rowLayout = {
+				desktop: desktopRowLayout[ id ],
+				tablet: tabletRowLayout[ id ],
+				mobile: mobileRowLayout[ id ],
+			};
+			if ( rowLayout.desktop || rowLayout.tablet || rowLayout.mobile ) {
+				band.rowLayout = Object.fromEntries(
+					Object.entries( rowLayout ).filter( ( [ , value ] ) => value !== undefined )
+				) as ForgeBandFacts[ 'rowLayout' ];
 			}
 			// The band's paged carousels per device: slides-per-view, gap and the
 			// source's own dot count (see `collectBandCarouselFacts`).

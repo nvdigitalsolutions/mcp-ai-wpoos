@@ -97,6 +97,14 @@ const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, numb
 	if ( count < 2 ) {
 		return undefined;
 	}
+	// A STACK of full-width lanes is not a row. `laneTracks` simulates the
+	// source's flex wrap and answers 1 for [100, 100]; a grid of two would lay
+	// the lanes beside themselves and move the copy 319px left (eca.directory's
+	// about-us CTA, 2026-11-25).
+	const measuredTracks = laneTracks( theme?.columns ?? [], 'desktop' );
+	if ( measuredTracks !== undefined && measuredTracks < 2 ) {
+		return undefined;
+	}
 	return { desktop: count, tablet: count >= 3 ? 2 : count, mobile: 1 };
 };
 /**
@@ -454,6 +462,23 @@ const bandInkCss = sections
 	} )
 	.join( '' );
 
+/**
+ * A two-lane band's measured RATIO as the grid token.
+ *
+ * `--ds-split-ratio` feeds `.ds-hero-split` AND `.ds-band-split`; a split hero
+ * needs the same fact as any other split band. It used to be emitted only past
+ * the hero branch's early return, so every split hero fell back to `1fr 1fr`:
+ * eca.directory's about-us copy lane measured 624px against the source's 811 and
+ * wrapped its lede one line longer (2026-11-25).
+ */
+const splitRatio = ( theme: SectionTheme | undefined ): string | undefined => {
+	const lanes = theme?.columns ?? [];
+	if ( lanes.length !== 2 || ! lanes[ 0 ].width || ! lanes[ 1 ].width ) {
+		return undefined;
+	}
+	return `--ds-split-ratio:minmax(0,${ lanes[ 0 ].width / 100 }fr) minmax(0,${ lanes[ 1 ].width / 100 }fr)`;
+};
+
 const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string, desktopCols?: number, collapsed = false ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
@@ -635,6 +660,15 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	if ( theme.centered === false ) {
 		parts.push( '--ds-hero-justify:flex-start' );
 	}
+	// A CENTRED band is centred ACROSS the band, not down it. The wrap is a column
+	// flex, so `.ds-section-wrap--centered{justify-content:center}` also centres
+	// the block axis and pushed the copy down by half the leftover min-height
+	// (eca.directory's FAQ band: 40px of dead space, 2026-11-25). The section's
+	// own auto margins already centre it across; only a full-height band is
+	// centred on the block axis.
+	if ( theme.centered === true && ! theme.fullViewport ) {
+		parts.push( 'justify-content:flex-start' );
+	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage && theme.bgLayerOpacity === undefined ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
@@ -663,6 +697,13 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		}
 		if ( theme.overlay ) {
 			parts.push( `--ds-overlay:${ theme.overlay }` );
+		}
+		// A split hero's lane ratio — the hero branch returns below, so the
+		// shared emission further down never runs for exactly the bands that
+		// need it most.
+		const heroRatio = splitRatio( theme );
+		if ( heroRatio ) {
+			parts.push( heroRatio );
 		}
 		return parts.length > 0 ? parts.join( ';' ) : undefined;
 	}
@@ -769,8 +810,9 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	// Exactly two: `--ds-split-ratio` feeds a two-lane grid (`.ds-hero-split`).
 	// A three-lane band (services is 3/4/5) used to inherit a truncated
 	// first-two-fr ratio here, which then applied 25/33 to a two-lane grid.
-	if ( columns.length === 2 && columns[ 0 ].width && columns[ 1 ].width ) {
-		parts.push( `--ds-split-ratio:minmax(0,${ columns[ 0 ].width / 100 }fr) minmax(0,${ columns[ 1 ].width / 100 }fr)` );
+	const ratio = splitRatio( theme );
+	if ( ratio ) {
+		parts.push( ratio );
 	}
 	if ( columns.some( ( column ) => column.reverseMobile ) ) {
 		parts.push( '--ds-icon-media-order:2' );
@@ -1479,15 +1521,81 @@ const textBandCss = sections.some( ( section ) => section.kind === 'text' || sec
 const bandSplitCss =
 	( anySplitLane
 		? '.ds-band-split{display:grid;width:100%;grid-template-columns:var(--ds-split-ratio,minmax(0,1fr) minmax(0,1fr));gap:var(--ds-split-gap,clamp(1.5rem,3vw,3rem));align-items:stretch;max-width:var(--ds-measure,100%);margin-inline:auto}' +
-		  '.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:-1}' +
-		  '.ds-band-split>.ds-section{max-width:none;padding-block:0}' +
-		  '.ds-band-split__media{margin:0;min-height:0;overflow:hidden}' +
-		  '.ds-band-split__media img{display:block;width:100%;height:100%;object-fit:cover}' +
-		  // Stacked, the picture needs a box of its own: `height:100%` against an
-		  // indefinite grid row resolves to auto, which collapsed the photo to its
-		  // line box (invisible) on a phone (2026-11-25).
-		  '@media (max-width:767px){.ds-band-split{grid-template-columns:minmax(0,1fr)}.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:0}.ds-band-split__media{aspect-ratio:4/3}}'
-		: '' );
+			  '.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:-1}' +
+			  '.ds-band-split>.ds-section{max-width:none;padding-block:0}' +
+			  '.ds-band-split__media{margin:0;min-height:0;overflow:hidden}' +
+			  '.ds-band-split__media img{display:block;width:100%;height:100%;object-fit:cover}' +
+			  // Stacked, the picture needs a box of its own: `height:100%` against an
+			  // indefinite grid row resolves to auto, which collapsed the photo to its
+			  // line box (invisible) on a phone (2026-11-25).
+			  '@media (max-width:767px){.ds-band-split{grid-template-columns:minmax(0,1fr)}.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:0}.ds-band-split__media{aspect-ratio:4/3}}'
+			: '' );
+
+/**
+ * The MEASURED geometry of a two-lane band: the row's GAP and the copy lane's
+ * inner MEASURE.
+ *
+ * The source states both in its own stylesheet — Elementor's `e-con` gap and a
+ * widget's `__width-initial` — and neither ships. Without the gap the hero's
+ * ratio was applied to the wrong track space (830/418 against the source's
+ * 811/409); without the measure the lede ran the full 811px lane and wrapped a
+ * line longer (eca.directory's about-us hero, 2026-11-25).
+ *
+ * Band-scoped on purpose: `global.css` cannot carry a per-band number, and the
+ * template's `.ds-hero-split` gap would otherwise stay its own 2rem guess.
+ */
+const splitBandCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ( theme?.columns?.length ?? 0 ) !== 2 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		const gap = theme?.rowLayout?.gap;
+		if ( gap ) {
+			rules.push( `${ scoped } .ds-hero-split,${ scoped } .ds-band-split{gap:${ gap }px}` );
+		}
+		if ( theme?.copyWidth ) {
+			rules.push( `${ scoped } .ds-hero-body{max-width:${ theme.copyWidth }px}` );
+		}
+		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * A band whose source row spreads its lanes with `justify-content: space-between`.
+ *
+ * The rebuild's stats list is an equal-cell grid with centred copy, so the
+ * source's counters (151/253/197/163 across 1100px) rendered as four 275px
+ * cells centred in the band — the ink lost 84px and drifted 50px right
+ * (eca.directory's about-us stats, 2026-11-25). The measured justify is the
+ * fact: the row spans the container, so the list does too.
+ *
+ * Scoped to `.ds-stats` only. Any other kind in the same band keeps its own
+ * layout; an absent list makes the rule inert.
+ */
+const rowLayoutCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const layout = theme?.rowLayout;
+		if ( ! id || layout?.justify !== 'space-between' ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const widths = theme?.statsWidths ?? [];
+		const items = widths
+			.map( ( width, item ) => `${ scoped } .ds-stat:nth-child(${ item + 1 }){flex:0 0 ${ width }px}` )
+			.join( '' );
+		return (
+			`${ scoped } .ds-stats{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:${ layout.gap ?? 0 }px}` +
+			`${ scoped } .ds-stat{text-align:start;flex:0 1 auto}` +
+			items
+		);
+	} )
+	.join( '' );
 
 /**
  * The hero BREADCRUMB (`Hero.astro` renders it when the band's only link is
@@ -1613,6 +1721,35 @@ const tracksFrom = ( widths: number[] ): string | undefined => {
 	return widths.map( ( width ) => `minmax(0,${ Math.round( ( width / total ) * 1000 ) }fr)` ).join( ' ' );
 };
 
+/**
+ * Do these lanes sit on ONE line?
+ *
+ * `widths` are lane shares (`100` = a full-width lane) for the band's own row,
+ * or rendered pixels for a nested row. Two shapes fail the test:
+ *
+ *  - shares that sum past 100% — Elementor wraps a flex row there, so the
+ *    lanes are stacked in the source even when `flex-direction` says `row`;
+ *  - pixel lanes that EACH fill the content column — a stack of full-width
+ *    stages is the same box repeated, not a row.
+ *
+ * A false positive is the expensive mistake: normalising eca.directory's
+ * about-us CTA ([100, 100]) into two tracks laid the copy beside itself and
+ * moved it 319px left (2026-11-25).
+ */
+const lanesWrap = ( widths: number[] | undefined, available: number | undefined ): boolean => {
+	if ( ! widths || widths.length < 2 ) {
+		return false;
+	}
+	const total = widths.reduce( ( sum, width ) => sum + width, 0 );
+	if ( total <= 0 ) {
+		return false;
+	}
+	if ( widths.every( ( width ) => width <= 100.5 ) ) {
+		return total > 100.5;
+	}
+	return available !== undefined && available > 0 && widths.every( ( width ) => width >= available * 0.95 );
+};
+
 const bandRowCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
@@ -1624,21 +1761,78 @@ const bandRowCss = sections
 		const scoped = `[data-section-id="${ id }"]`;
 		const desktop: string[] = [];
 		const mobile: string[] = [];
-		const push = ( selector: string, tracks: string | undefined ) => {
+		const measureText = typeof theme?.measure === 'string' ? theme.measure : theme?.measure?.desktop;
+		const available = Number.parseFloat( measureText ?? '' );
+		const box = ( layout: SectionTheme[ 'rowLayout' ] ): string =>
+			[ layout?.justify && `justify-content:${ layout.justify }`, layout?.align && `align-items:${ layout.align }` ]
+				.filter( Boolean )
+				.join( ';' );
+		const gapOf = ( layout: SectionTheme[ 'rowLayout' ] ): string => ( layout?.gap ? `;gap:${ layout.gap }px` : '' );
+		/**
+		 * `stacked` is the source's own layout, not a guess: a measured
+		 * `flex-direction: column`, or lanes that cannot share one line. A stack
+		 * renders as the source's flex column (the gap spaces the lanes; a block
+		 * container would collapse the gap away); a real row renders as a grid.
+		 */
+		const push = (
+			selector: string,
+			widths: number[] | undefined,
+			layout: SectionTheme[ 'rowLayout' ] | undefined
+		) => {
+			if ( ! widths ) {
+				return;
+			}
+			const boxDecl = box( layout );
+			if ( layout?.direction === 'column' || lanesWrap( widths, available ) ) {
+				desktop.push(
+					`${ selector }{display:flex;flex-direction:column${ gapOf( layout ) }${ boxDecl ? `;${ boxDecl }` : '' }}`
+				);
+				// A stacked lane fills the container's CROSS axis, exactly as Elementor's
+				// full-width children do. The measured `columnBox` gives every lane an
+				// `align-self:start` (a height floor for a grid row), and in a column
+				// flex that shrink-wraps the lane to its text — the copy measured 462px
+				// inside a 1280px container (eca.directory's about-us CTA, 2026-11-25).
+				desktop.push( `${ selector } > *{align-self:stretch}` );
+				return;
+			}
+			const tracks = tracksFrom( widths );
 			if ( ! tracks ) {
 				return;
 			}
-			desktop.push( `${ selector }{display:grid;grid-template-columns:${ tracks };align-items:start}` );
+			desktop.push( `${ selector }{display:grid;grid-template-columns:${ tracks };align-items:start${ gapOf( layout ) }}` );
 			mobile.push( `${ selector }{grid-template-columns:minmax(0,1fr)}` );
 		};
 		// The band's OWN row — the first `.e-con-inner` under the band element.
 		push(
 			`${ scoped } > .post-body > .elementor-element > .e-con-inner`,
-			tracksFrom( ( theme?.columns ?? [] ).map( ( column ) => column.width ?? 0 ) )
+			( theme?.columns ?? [] ).map( ( column ) => column.width ?? 0 ),
+			theme?.rowLayout
 		);
+		// A device on which the SOURCE changes direction keeps its own rule.
+		for ( const [ device, media ] of [
+			[ 'tablet', '(max-width: 1024px)' ],
+			[ 'mobile', '(max-width: 767px)' ],
+		] as const ) {
+			const override = theme?.rowLayout?.[ device ];
+			if ( ! override || override.direction === theme?.rowLayout?.direction ) {
+				continue;
+			}
+			const selector = `${ scoped } > .post-body > .elementor-element > .e-con-inner`;
+			if ( override.direction === 'column' ) {
+				desktop.push(
+					`@media ${ media }{${ selector }{display:flex;flex-direction:column${ override.gap ? `;gap:${ override.gap }px` : '' }}}`
+				);
+				continue;
+			}
+			const lanes = ( theme?.columns ?? [] ).map( ( column ) => column.width ?? 0 );
+			const tracks = lanesWrap( lanes, available ) ? undefined : tracksFrom( lanes );
+			if ( tracks ) {
+				desktop.push( `@media ${ media }{${ selector }{display:grid;grid-template-columns:${ tracks }}}` );
+			}
+		}
 		// The rows NESTED inside it, addressed by their own element id.
 		for ( const row of theme?.rows ?? [] ) {
-			push( `${ scoped } .elementor-element-${ row.id }`, tracksFrom( row.widths ) );
+			push( `${ scoped } .elementor-element-${ row.id }`, row.widths, undefined );
 		}
 		if ( desktop.length === 0 ) {
 			return '';
@@ -1646,7 +1840,7 @@ const bandRowCss = sections
 		// The SOURCE's own stacking breakpoint (see the scaffold's `stackAt`): a
 		// band whose lanes are full-width at 834px must not keep two columns there.
 		const stackAt = theme?.stackAt === 'tablet' ? 1024 : 767;
-		return desktop.join( '' ) + `@media (max-width: ${ stackAt }px){${ mobile.join( '' ) }}`;
+		return desktop.join( '' ) + ( mobile.length > 0 ? `@media (max-width: ${ stackAt }px){${ mobile.join( '' ) }}` : '' );
 	} )
 	.join( '' );
 
@@ -1750,8 +1944,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandSplitCss || textBandCss || breadcrumbCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandSplitCss }${ textBandCss }${ breadcrumbCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandSplitCss || splitBandCss || rowLayoutCss || textBandCss || breadcrumbCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandSplitCss }${ splitBandCss }${ rowLayoutCss }${ textBandCss }${ breadcrumbCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
