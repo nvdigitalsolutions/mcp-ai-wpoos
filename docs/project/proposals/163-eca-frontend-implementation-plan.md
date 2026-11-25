@@ -797,3 +797,65 @@ the query; the inference is recorded in `inferred` (`rule: label:day`).
 
 Records with no day anywhere appear in the full catalogue only — that is a CMS
 data-entry gap, not a parser gap. `SS Maths Mastery Hub` (11155) is one.
+
+## Pass — the card that was the title, and why the updates band is not hidden (2026-11-25, sixth pass)
+
+### The finding
+
+The home's updates band rendered the same string twice:
+
+```
+Our Updates          ← eyebrow  (measured: 14px h2)
+News & Insights      ← title    (measured: 33px icon-box heading)
+News & Insights      ← the SAME string again, as a one-card "grid"
+Follow along as we…  ← that card's body
+[Read more articles]
+```
+
+The source publishes the band as a kicker heading **plus an Elementor
+icon-box** whose title is the real heading and whose body is the band's lede.
+The measured eyebrow/title pair correctly promotes the icon-box heading to the
+band title — but the icon-box was *also* rebuilt as a card, so the title printed
+twice and the grid was a single empty-looking tile.
+
+### The fix
+
+`FeatureGrid.astro`: a card whose heading **is the band's rendered title**, and
+that carries **no media and no link of its own**, is the band's sub-heading — its
+copy folds into the lede and the card is not rendered; when every card folds, the
+grid is not emitted. Cards holding a picture or a destination are never folded,
+because that would delete content the title does not speak for.
+
+Text parity is unchanged (85.1 %): the fold removes a duplicate, not a word.
+
+### Why the band is not hidden
+
+The audit suggested hiding "a band with no real posts". The card is already
+suppressed — `isPlaceholderCard()` drops a source post card whose heading is
+WordPress's `Hello world!` / `Sample Page` and that has no body, media or
+attribution. What remains in this band is the client's **own copy** (`Our
+Updates`, `News & Insights`, the rollout paragraph). Hiding the band would delete
+that copy, so it is not hidden.
+
+Hiding instead is a deliberate product switch, not a bug fix: it needs a
+posts-band signal (the measured class facts already carry
+`elementor-widget-posts`) plus a build-time check of the posts collection, and it
+costs one band of **positional** parity, because the band audit aligns source and
+build bands by position. Tracked, not done.
+
+### The band's 69 % is the placeholder, and the gate is telling the truth
+
+`319dfe29` still fails text parity at 69 %, and every missing shingle belongs to
+the sample post: `hello world`, `august 4 2025`, `read more`. That content is
+deliberately not reproduced, so the gate is correct and the failure is expected
+while the CMS holds only WordPress's placeholder post. Deleting `hello-world` in
+the CMS removes the failure. A baseline-side filter (drop the post card whose own
+heading is a placeholder title when capturing `analyze --text`) would encode the
+expectation properly; it needs a re-analyse of the profile, so it is deferred.
+
+### Open on this band
+
+- The measured `min-height: 478px` now frames three lines of copy, leaving a void
+  under the lede. Pre-existing (the band has always been pinned to the source's
+  height); shrinking a band whose dynamic list is empty is a separate layout
+  decision.
