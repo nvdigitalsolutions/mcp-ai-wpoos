@@ -2513,3 +2513,91 @@ column so the caller can find it.
 A three-cell row followed by a one-cell row keeps its values in the columns it
 named, an export without `headers` declares no header, and `Q1/Q2: report*`
 becomes the sheet name `Q1 Q2 report`.
+
+## 164.33 — The Pro Word tool, and a correction to the remaining slices (2026-11-25)
+
+§164.31 slice F. `pro_word_document` is the first tool in this cluster that adds
+structure `generate_word` cannot express, so it earns its slot; the same cannot be
+said for most of what is left, and reading them properly changed the plan.
+
+### What it adds, and why that is enough
+
+`generate_word` takes a fixed shape — title, paragraphs, one table, header,
+footer. This adds an ordered section list with heading **levels**, a body of
+styled **runs** (bold, italic, colour, size, font), and five template scaffolds.
+All three are pure structure; none needs a model.
+
+`format` maps the WordPress tool's five scalars onto a single run, which is what
+that schema describes. `formatting.color` is validated as a six-digit hex before
+it reaches the writer, because a value like `red; background: url(x)` would
+otherwise be interpolated into a document property — the same class of hole
+§164.31 closed in the PDF stylesheet.
+
+The template operation is a scaffold, not prose: it names the headings a document
+of that kind carries and leaves the caller to fill them. A flat `content` lands
+under the scaffold's own `Body` heading when it has one (`business_letter`,
+`memo`) and is appended after the scaffold otherwise, rather than being dropped
+into a heading chosen on the caller's behalf. Sections are matched to headings by
+name and anything unmatched is appended, so no content is lost.
+
+### What it refuses to declare
+
+The WordPress schema offers `orientation`, `page_margins` and `model`. The bound
+writer emits one default-geometry section and calls no model. Declaring either
+geometry field would repeat the exact defect this cluster keeps finding — a field
+that is accepted and then ignored — so both are **absent** from the schema, and
+`additionalProperties => false` turns a ported request that sends them into a
+loud validation error instead of a silent no-op. `model` is accepted and ignored,
+so a verbatim request is not rejected on a field this runtime cannot use.
+
+A `description`-only call is refused with `no_content_generator`, as in §164.31.
+
+### The correction: most of the remaining slices are not ports
+
+Reading the remaining 25 tools instead of trusting the labels changed the plan.
+
+| tool(s) | what it actually needs | verdict |
+|---|---|---|
+| `archive_documents` | moves `mcp_ai_doc_tpl` posts to an archive status and writes `_archived_*` meta | **not a zip tool** — needs a document-template store |
+| `docs_hub_*` (5) | the standalone docs-hub plugin's filesystem corpus, a 2 MB per-file cap and `NV_oOS_Docs_Hub_Rebuild_Job` | needs a docs-hub corpus contract **and** a format decision |
+| `qms_*` (10) | a controlled-document lifecycle: draft → review → approve → release → supersede, with signatures and an audit trail | needs a data model (migrations) and signature semantics |
+| `pro_excel_document` | `auto_filter`, `freeze_header`, `formulas`, `chart` | the worker writes values and columns only — **worker first**, or it duplicates `excel_data_export` |
+| `pro_document_ocr` | tesseract via the worker is available; `unlimited_ocr` / `deepseek_ocr` are services | partial port at best |
+| `pro_batch_ocr`, `pro_unlimited_ocr` | the Unlimited OCR / DeepSeek-OCR services | **service dependency** |
+| `generate_invoice_pdf`, `generate_invoice_batch`, `get_uninvoiced_orders` | order data | **no orders exist on this runtime** |
+| `get_expired_documents` | document data plus an expiry policy | needs a store and a policy |
+| `docgen_capture_style_memory` | a style-memory store | needs a store |
+
+§164.31 recorded `archive_documents` as "needs a zip writer over registry files".
+That was wrong: it never touches bytes. It is a state transition on a post type
+this runtime does not have, which puts it with `docs_hub_*` rather than with the
+formatters. Recording the mistake here because the corrected grouping — **one
+document store serving C and D**, then **one lifecycle serving E** — is the plan
+the next session should follow, and it is only visible after reading the code.
+
+`pro_excel_document` is the one remaining formatter worth doing, and it is worth
+doing *after* the worker gains filters, freeze panes, formulas and charts. Ported
+today it would be `excel_data_export` with a second name and four parameters that
+do nothing — the shape §164.4.8 forbids.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Tool/ProWordDocumentTool.php` | new; `pro_word_document` |
+| `lib/core/resources/tool-readiness.php` | one row |
+| `lib/core/tests/Unit/Tool/ProWordDocumentToolTest.php` | new; 26 tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+### Measurement
+
+`lib/core` **2,627 / 18,032** (was 2,599 / 17,943); adapter **363 / 1,962**
+(was 363 / 1,961 — the manifest row resolves from the container); audit
+**290 / 290, servable 271**; toolkit parity **68 of 854**;
+`document-generation` **13 of 38**.
+
+A `memo` template with a flat body puts that body directly under its `Body`
+heading, a `resume` appends it after `Skills`, a section named `skills` fills the
+`Skills` heading instead of repeating at the end, and
+`color: 'red; background: url(x)'` is dropped rather than written into the
+document.
