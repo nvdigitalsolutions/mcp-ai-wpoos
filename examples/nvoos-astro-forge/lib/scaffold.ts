@@ -1870,6 +1870,14 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			entry.push( `bg: ${ tsString( bg ) }` );
 		}
 	}
+	// The image's BOX (`ForgeSection.bgSize`). Emitted for every theme, hero or
+	// not: an image without it paints at native scale.
+	for ( const key of [ 'bgSize', 'bgRepeat', 'bgPosition' ] as const ) {
+		const value = section[ key ];
+		if ( value ) {
+			entry.push( `${ key }: ${ tsString( value ) }` );
+		}
+	}
 	// The band's MARK STRIP (analyzer-measured logo wall — see
 	// `ForgeSection.logos`). Emitted for every theme: a logo wall is as often a
 	// transparent band as a light one.
@@ -2669,6 +2677,9 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbg?: string;',
 		'\t/** The hero photo (hero sections only). */',
 		'\tbgImage?: string;',
+		'\tbgSize?: string;',
+		'\tbgRepeat?: string;',
+		'\tbgPosition?: string;',
 		'\t/** The overlay tint over the hero photo. */',
 		'\toverlay?: string;',
 		'\t/** The band\u2019s MARK STRIP \u2014 logos the source publishes as carousel',

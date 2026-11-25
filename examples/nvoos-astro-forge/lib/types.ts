@@ -1826,6 +1826,16 @@ export interface ForgeMark {
 	 */
 	spacer?: boolean;
 	bgImage?: string;
+	/**
+	 * The band image's BOX — Elementor declares all three beside the URL
+	 * (`background-size: cover; background-repeat: no-repeat;
+	 * background-position: top center`). An image without its box paints at
+	 * NATIVE scale: eca.directory's dot pattern covered the hero and stats bands
+	 * and made white text unreadable (2026-11-25).
+	 */
+	bgSize?: string;
+	bgRepeat?: string;
+	bgPosition?: string;
 	bgColor?: string;
 	bgGradient?: string;
 	/** The background-overlay tint (Elementor's overlay layer). */

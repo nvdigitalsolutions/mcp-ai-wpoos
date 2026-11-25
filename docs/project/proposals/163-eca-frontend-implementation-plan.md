@@ -1084,17 +1084,17 @@ asymmetry: fetch each page, run the same extractor, merge the design facts onto
 that page's sections **by id**, never replacing `id`/`vendorId`/`columns` (the
 browser pass owns those). Unmatched work is reported, not guessed.
 
-**The write path is deliberately blocked.** On about-us the extractor named the
-hero and the stats band and added `bgImage: bg-01.png` to both — the dot pattern
-is real. Storing it made the rebuild WORSE: the forge has no band defaults for
-`background-size`/`repeat`/`position`, so the browser painted the pattern at
-native scale over the whole band and white text became unreadable. A background
-image is not a fact without its box.
+**The write path is blocked on the LAYER, not the box.** `bgImage` alone paints
+at native scale, so `background-size` / `repeat` / `position` now ride the same
+fact (`bgSize`/`bgRepeat`/`bgPosition`, extracted from the band-scoped rule and
+applied by `wrapStyle`). With the box the build is still wrong: Elementor renders
+`bg-01.png` on a `::before` layer faded by `opacity` + `--background-overlay`, so
+at full strength a faint texture becomes a 100% halftone that swallows the white
+text. Capture the layer (opacity, overlay) before enabling `--write`.
 
-So the next piece is small and precise: capture `background-size`,
-`background-repeat` and `background-position` beside the image (inline style or
-CSS rule scoped to the band), emit them on `SectionTheme`, and apply them in
-`wrapStyle`. Only then does a page band image render at its source scale.
+So the next piece is small and precise: record the layer's `opacity` and
+`overlay` beside the image, render it on a pseudo-element rather than the wrap,
+and only then store page band images.
 
 Still missing after that, on this site: the stats band's dark purple COLOUR (no
 fact is recorded at all), the lane image URLs (`image: true` with no URL to pair,

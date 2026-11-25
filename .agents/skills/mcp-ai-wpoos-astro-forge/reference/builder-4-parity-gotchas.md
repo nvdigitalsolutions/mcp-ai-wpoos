@@ -489,10 +489,19 @@ say nothing at section level, so their surfaces live on inner elements.
 
 `bgImage` alone paints at native scale: storing `bg-01.png` on eca.directory's
 hero and stats bands covered both with a giant checkerboard and made white text
-unreadable. Hero bands survive because their CSS sets `cover`; a plain band has
-no such default. Capture `background-size` / `background-repeat` /
-`background-position` beside the image before emitting one — and until then the
-page-design write path stays blocked (dry-run diagnostic only).
+unreadable. The source declares
+`background-size:cover; background-repeat:no-repeat; background-position:top center`
+beside the URL, and `bgSize` / `bgRepeat` / `bgPosition` now ride the same fact
+(extracted from the band-scoped rule, emitted on `SectionTheme`, applied by
+`wrapStyle` with `cover` / `no-repeat` / `center` as the fallback).
+
+**The box is necessary but not sufficient.** With the box applied the build
+still showed the halftone at full strength, because Elementor renders that
+image on a `::before` LAYER whose `opacity` and `--background-overlay` fade it.
+We capture the image and its box but not the layer's opacity, so the band is
+100% pattern where the source is a faint texture. Do not apply a page band's
+background image until the layer (opacity + overlay) is on the same channel —
+at full strength it is worse than no image at all.
 
 ## A gate must check EFFECT, not presence
 

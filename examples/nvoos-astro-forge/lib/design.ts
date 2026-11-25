@@ -1422,6 +1422,12 @@ function topLevelRules( cssText: string ): Array<{ selector: string; body: strin
 }
 const BG_GRADIENT_RE = /background-image\s*:\s*((?:repeating-)?(?:linear|radial|conic)-gradient\([^;]+)(\s*!\s*important)?/i;
 const BG_IMAGE_RE = /background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i;
+// The image's BOX. Elementor always declares these beside the URL; without them
+// the rebuild paints the image at native scale (a dot pattern becomes a
+// checkerboard over the whole band).
+const BG_SIZE_RE = /background-size\s*:\s*([^;!]+)/i;
+const BG_REPEAT_RE = /background-repeat\s*:\s*([^;!]+)/i;
+const BG_POSITION_RE = /background-position\s*:\s*([^;!]+)/i;
 const BG_COLOR_RE = /background-color\s*:\s*([^;!]+)(\s*!\s*important)?/i;
 const PADDING_RE = /padding\s*:\s*([^;!]+)/i;
 const SECTION_ID_RE = /elementor-element-([0-9a-f]{4,})/;
@@ -2242,6 +2248,11 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		if ( inlineColor ) {
 			fact.bgColor = inlineColor;
 		}
+		// The box can sit inline too (a hand-built band), so read it before the
+		// stylesheet pass and let the pass fill only what is missing.
+		fact.bgSize = inlineStyle( section, 'background-size', BG_SIZE_RE );
+		fact.bgRepeat = inlineStyle( section, 'background-repeat', BG_REPEAT_RE );
+		fact.bgPosition = inlineStyle( section, 'background-position', BG_POSITION_RE );
 		// Same-origin CSS rules scoped to this section's id.
 		for ( const rule of topLevelRules( cssText ) ) {
 			const selector = rule.selector;
@@ -2259,6 +2270,21 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			const image = body.match( BG_IMAGE_RE );
 			if ( image && ! fact.bgImage ) {
 				fact.bgImage = image[ 1 ].trim();
+			}
+			// The box rides the SAME rule as the image (Elementor's background layer
+			// pseudo-element); a band that declares no box keeps the renderer's
+			// default rather than a fabricated value.
+			const size = body.match( BG_SIZE_RE );
+			if ( size && ! fact.bgSize ) {
+				fact.bgSize = size[ 1 ].trim();
+			}
+			const repeat = body.match( BG_REPEAT_RE );
+			if ( repeat && ! fact.bgRepeat ) {
+				fact.bgRepeat = repeat[ 1 ].trim();
+			}
+			const position = body.match( BG_POSITION_RE );
+			if ( position && ! fact.bgPosition ) {
+				fact.bgPosition = position[ 1 ].trim();
 			}
 			const color = body.match( BG_COLOR_RE );
 			// The overlay rule's color belongs to the overlay layer — it must
