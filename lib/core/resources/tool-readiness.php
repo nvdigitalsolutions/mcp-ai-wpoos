@@ -522,6 +522,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageAndFileToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
+		'create_video_from_images' => array(
+			'class' => 'Nvoos\\Core\\Tool\\CreateVideoFromImagesTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerVideoComposition over `POST /api/video/compose` (operation `images`: `-loop 1 -t <seconds>` per still, each fitted with `force_original_aspect_ratio=decrease` and padded, then `concat=n:N:v=1:a=0`) then `GET /api/video/download`. `contain` rather than `cover` because cropping a photograph loses what someone chose to show. The WordPress tool with this slug is a stub, and it defaults `transition: fade` while doing nothing; `none` is the only implemented transition, and there is no audio argument because the route reads one ordered file list.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoCompositionAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'crop_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CropImageTool',
 			'readiness' => 'ready',
