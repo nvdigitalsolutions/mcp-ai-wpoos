@@ -676,6 +676,27 @@
 			"/wednesday/",
 			"/wpwbot-mobile-app/"
 		],
+		"titles": {
+			"/saturday/": "Saturday",
+			"/friday/": "Friday",
+			"/thursday/": "Thursday",
+			"/wednesday/": "Wednesday",
+			"/tuesday/": "Tuesday &#8211; Junior School",
+			"/eca-days/": "Monday- Junior School",
+			"/eca-template/": "ECA Template",
+			"/login/": "Login",
+			"/junior-school-list/": "Junior School List",
+			"/select-list/": "Select List",
+			"/wpwbot-mobile-app/": "wpwBot Mobile App",
+			"/contact-us/": "Contact Us",
+			"/about-us/": "About Us",
+			"/login-customizer/": "Login Customizer",
+			"/my-account/": "My account",
+			"/checkout/": "Checkout",
+			"/cart/": "Cart",
+			"/shop/": "Shop",
+			"/": "Home"
+		},
 		"excluded": [
 			"/cart/",
 			"/checkout/",
@@ -804,7 +825,7 @@
 			"/{{ url }}/"
 		],
 		"danglingAnchors": [],
-		"analyzedAt": "2026-11-24T21:14:28.578Z"
+		"analyzedAt": "2026-11-25T06:24:25.717Z"
 	},
 	"geometry": {
 		"3589820": {

@@ -499,11 +499,19 @@ function slotWordCount(
 	}
 	if ( rendered.includes( 'items' ) ) {
 		for ( const item of slots.items ?? [] ) {
+			if ( item.kicker ) {
+				parts.push( item.kicker );
+			}
 			if ( item.title ) {
 				parts.push( item.title );
 			}
 			if ( item.body ) {
 				parts.push( item.body );
+			}
+			// The card's LIST renders (`.ds-card-bullets`); leaving it out made a band
+			// whose words are mostly bullets look lossy to the fidelity guard.
+			for ( const bullet of item.bullets ?? [] ) {
+				parts.push( bullet );
 			}
 			if ( item.author ) {
 				parts.push( item.author );

@@ -298,6 +298,16 @@ export interface ForgeInventory {
 	navPages: string[];
 	/** Paths covered by the REST collections (after exclusions). */
 	covered: string[];
+	/**
+	 * The CMS page TITLE per covered path (`/eca-days/` → `Monday- Junior School`),
+	 * as the source publishes it.
+	 *
+	 * A page's title is how a builder's listing query announces itself: several
+	 * slugs are opaque (`eca-days`) while the title names the slice the page
+	 * renders. Recorded because a claim must be DERIVED from what the site says,
+	 * not from a hardcoded slug list. Absent on profiles recorded before it.
+	 */
+	titles?: Record< string, string >;
 	/** Paths the profile excludes. */
 	excluded: string[];
 	/** Paths the source exposes but the collections do not cover. */

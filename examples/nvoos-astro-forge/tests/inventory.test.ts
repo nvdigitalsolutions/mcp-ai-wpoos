@@ -87,7 +87,7 @@ describe( 'discoverInventory', () => {
 				'/wp-sitemap.xml': { status: 200, body: INDEX_XML },
 				'/wp-sitemap-pages-1.xml': { status: 200, body: SUB_XML },
 				'/': { status: 200, body: HOME_HTML },
-				'/wp-json/wp/v2/pages?_fields=slug,link&per_page=100&page=1': { status: 200, body: REST_PAGES },
+				'/wp-json/wp/v2/pages?_fields=slug,link,title&per_page=100&page=1': { status: 200, body: REST_PAGES },
 			} ),
 		} );
 
@@ -105,7 +105,7 @@ describe( 'discoverInventory', () => {
 		const inventory = await discoverInventory( PROFILE, {
 			fetch: fakeFetch( {
 				'/': { status: 200, body: home },
-				'/wp-json/wp/v2/pages?_fields=slug,link&per_page=100&page=1': { status: 200, body: '[]' },
+				'/wp-json/wp/v2/pages?_fields=slug,link,title&per_page=100&page=1': { status: 200, body: '[]' },
 			} ),
 		} );
 		expect( inventory.shape ).toBe( 'one-pager' );
@@ -121,7 +121,7 @@ describe( 'discoverInventory', () => {
 		const inventory = await discoverInventory( PROFILE, {
 			fetch: fakeFetch( {
 				'/': { status: 200, body: '<nav><a href="/services/">S</a></nav>' },
-				'/wp-json/wp/v2/pages?_fields=slug,link&per_page=100&page=1': { status: 200, body: '[]' },
+				'/wp-json/wp/v2/pages?_fields=slug,link,title&per_page=100&page=1': { status: 200, body: '[]' },
 				'__cdx__': { status: 200, body: cdx },
 			} ),
 			wayback: true,

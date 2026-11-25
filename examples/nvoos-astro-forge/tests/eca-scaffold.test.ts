@@ -349,3 +349,68 @@ describe( 'the committed ECA profile', () => {
 		expect( ecaScaffoldWarnings( profile ) ).toEqual( [] );
 	} );
 } );
+
+// ---------------------------------------------------------------------------
+// Which CMS pages the preset takes over (Proposal 163 §P4).
+//
+// A builder's listing page is a DATA VIEW: its rows come from the record set,
+// so replaying its widgets is always wrong. The claim must be DERIVED from what
+// the site says — its slug, its title, the shape of its band — never from a
+// hardcoded slug list.
+// ---------------------------------------------------------------------------
+describe( 'ecaDataPages — which pages become data views', () => {
+	const profile = ( over: Record< string, unknown > = {} ): never =>
+		( {
+			url: 'https://eca.example',
+			name: 'ECA',
+			collections: [],
+			inventory: {
+				shape: 'multi-page',
+				navAnchors: [],
+				navPages: [],
+				covered: [ '/', '/eca-days/', '/select-list/', '/junior-school-list/', '/tuesday/' ],
+				titles: {
+					'/eca-days/': 'Monday- Junior School',
+					'/select-list/': 'Select List',
+					'/junior-school-list/': 'Junior School List',
+					'/tuesday/': 'Tuesday activities',
+				},
+				excluded: [],
+				missing: [],
+				danglingAnchors: [],
+				analyzedAt: '2026-11-25T00:00:00.000Z',
+			},
+			pageBands: {
+				'junior-school-list': {
+					measuredAt: '2026-11-25T00:00:00.000Z',
+					sourceHash: 'x',
+					sections: [ { id: 'aaa', columns: new Array( 30 ).fill( { width: 3 } ) } ],
+					geometry: {},
+					bandFacts: {},
+				},
+			},
+			...over,
+		} ) as never;
+
+	it( 'claims a weekday slug as that day', async () => {
+		const { ecaDataPages } = await import( '../lib/eca-ui.ts' );
+		const pages = ecaDataPages( profile() );
+		expect( pages.find( ( page ) => page.slug === 'tuesday' )?.day ).toBe( 'Tuesday' );
+	} );
+
+	it( 'claims a page whose TITLE names a weekday, whatever its slug says', async () => {
+		// `eca-days` is titled "Monday- Junior School" and lists the Monday
+		// activities — its slug says nothing, so only the title can decide.
+		const { ecaDataPages } = await import( '../lib/eca-ui.ts' );
+		const page = ecaDataPages( profile() ).find( ( entry ) => entry.slug === 'eca-days' );
+		expect( page?.day ).toBe( 'Monday' );
+		expect( page?.title ).toBe( 'Monday- Junior School' );
+	} );
+
+	it( 'claims a -list page only when its band actually renders rows, and never a chooser', async () => {
+		const { ecaDataPages } = await import( '../lib/eca-ui.ts' );
+		const pages = ecaDataPages( profile() );
+		expect( pages.map( ( page ) => page.slug ) ).toContain( 'junior-school-list' );
+		expect( pages.map( ( page ) => page.slug ) ).not.toContain( 'select-list' );
+	} );
+} );
