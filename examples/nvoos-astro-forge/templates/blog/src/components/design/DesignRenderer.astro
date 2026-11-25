@@ -1464,9 +1464,21 @@ const bandLaneCss = sections
  * order (content, then media) and is only re-ordered on the wide layout.
  */
 const anySplitLane = sections.some( ( section, index ) => Boolean( mediaLane( themeFor( section, index ) ) ) );
+/**
+ * A RAW band's headings take the band's measured alignment.
+ *
+ * A `text` band ships the source's own markup, so none of the component rules
+ * apply — and the source's centred CTA rebuilt with its headings flush left
+ * (eca.directory's blog band measured 488px of left inset against the rebuild's
+ * 104, 2026-11-25). The measured alignment already rides `--ds-title-align`.
+ */
+const textBandCss = sections.some( ( section ) => section.kind === 'text' || section.kind === 'raw' )
+	? '.ds-text-band{text-align:var(--ds-title-align,inherit)}'
+	: '';
+
 const bandSplitCss =
 	( anySplitLane
-		? '.ds-band-split{display:grid;grid-template-columns:var(--ds-split-ratio,minmax(0,1fr) minmax(0,1fr));gap:var(--ds-split-gap,clamp(1.5rem,3vw,3rem));align-items:stretch;max-width:var(--ds-measure,100%);margin-inline:auto}' +
+		? '.ds-band-split{display:grid;width:100%;grid-template-columns:var(--ds-split-ratio,minmax(0,1fr) minmax(0,1fr));gap:var(--ds-split-gap,clamp(1.5rem,3vw,3rem));align-items:stretch;max-width:var(--ds-measure,100%);margin-inline:auto}' +
 		  '.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:-1}' +
 		  '.ds-band-split>.ds-section{max-width:none;padding-block:0}' +
 		  '.ds-band-split__media{margin:0;min-height:0;overflow:hidden}' +
@@ -1738,8 +1750,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandSplitCss || breadcrumbCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandSplitCss }${ breadcrumbCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandSplitCss || textBandCss || breadcrumbCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandSplitCss }${ textBandCss }${ breadcrumbCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);

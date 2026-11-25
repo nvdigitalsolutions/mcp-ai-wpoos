@@ -52,5 +52,5 @@ const { section, kind, theme, columns, media, uid } = Astro.props;
 {kind === 'team' && <Team section={section} theme={theme} />}
 {kind === 'marquee' && <Marquee section={section} uid={uid} />}
 {kind === 'comparison' && <Comparison section={section} theme={theme} />}
-{kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
-{kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
+{kind === 'text' && (section.html ? <div class="post-body ds-section ds-text-band" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
+{kind === 'raw' && <div class="post-body ds-section ds-text-band" set:html={section.html ?? ''} />}
