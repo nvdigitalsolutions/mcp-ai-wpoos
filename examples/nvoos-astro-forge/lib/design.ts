@@ -40,6 +40,16 @@ export interface DesignFetchInput {
 	html: string;
 	css: string[];
 	/**
+	 * Keep bands that state no fact.
+	 *
+	 * The band list is normally filtered to the bands that STATE something — an
+	 * empty band is not a design fact. The per-PAGE pass needs every band instead:
+	 * it merges facts onto an already-measured section list by id, and a band the
+	 * extractor drops can never be matched (eca.directory's about-us keeps 4
+	 * bands but the extractor named 2, 2026-11-25).
+	 */
+	includeBare?: boolean;
+	/**
 	 * The DESIGN-ORIGIN subset of `css` — theme, uploads (the builder's
 	 * generated kit/post sheets), inline `<style>` and core. Plugin sheets are
 	 * omitted: a plugin's widget UI is not the site's design language, and one
@@ -1432,6 +1442,28 @@ const BG_COLOR_RE = /background-color\s*:\s*([^;!]+)(\s*!\s*important)?/i;
 const PADDING_RE = /padding\s*:\s*([^;!]+)/i;
 const SECTION_ID_RE = /elementor-element-([0-9a-f]{4,})/;
 
+/**
+ * The element tokens that paint a background PHOTO.
+ *
+ * A container-mode lane usually paints its picture on a CHILD — an inner
+ * `e-con`, or an absolutely-positioned spacer — so the lane's own
+ * `elementor-element-<id>` has no rule and a split detector that reads the lane
+ * alone sees no media column (eca.directory's about-us hero + "Why … makes a
+ * difference", 2026-11-25).
+ */
+function paintedElementTokens( cssText: string ): Set< string > {
+	const out = new Set< string >();
+	for ( const rule of topLevelRules( cssText ) ) {
+		if ( ! /background(?:-image)?\s*:[^;}]*url\(/i.test( rule.body ) ) {
+			continue;
+		}
+		for ( const token of rule.selector.matchAll( /elementor-element-([0-9a-f]{4,})/gi ) ) {
+			out.add( `elementor-element-${ token[ 1 ].toLowerCase() }` );
+		}
+	}
+	return out;
+}
+
 /** A band needs at least this many marks before it reads as a logo wall. */
 const MARK_STRIP_MIN = 3;
 
@@ -2198,6 +2230,9 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 	// Every rule with the media condition guarding it — the per-section pass
 	// below reads top-level rules only, so device-scoped overrides were invisible.
 	const scopedRules = rulesInMedia( cssText );
+	// Which element tokens paint a photo — see `paintedElementTokens`. Read once
+	// per page: the split detector asks per band whether a LANE's subtree paints.
+	const paintedBoxes = paintedElementTokens( cssText );
 	const facts: ForgeSection[] = [];
 	for ( const section of sections ) {
 		const classes = sectionClasses( section );
@@ -2542,10 +2577,26 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			const classes = sectionClasses( node );
 			return classes.includes( 'elementor-column' ) || classes.includes( 'e-child' );
 		};
-		const findWrapped = ( node: HNodeLike, names: string[] ): HNodeLike | undefined =>
-			childNodes( node ).find(
-				( child ) => child.type === 'tag' && sectionClasses( child ).some( ( name ) => names.includes( name ) )
-			);
+		const findWrapped = ( node: HNodeLike, names: string[] ): HNodeLike | undefined => {
+			// BREADTH-FIRST, over the whole band. Elementor nests the row one level
+			// down (`… .e-con-boxed.e-child > .e-con-inner`), so a direct-children
+			// read found nothing and the band never split (eca.directory's about-us
+			// hero, 2026-11-25). The shallowest match is the band's own row.
+			const queue: HNodeLike[] = [ node ];
+			while ( queue.length > 0 ) {
+				const current = queue.shift() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					if ( child.type !== 'tag' ) {
+						continue;
+					}
+					if ( sectionClasses( child ).some( ( name ) => names.includes( name ) ) ) {
+						return child;
+					}
+					queue.push( child );
+				}
+			}
+			return undefined;
+		};
 		const findWidgetNode = ( node: HNodeLike, pattern: RegExp ): HNodeLike | undefined => {
 			const queue: HNodeLike[] = [ node ];
 			while ( queue.length > 0 ) {
@@ -2584,8 +2635,34 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		// an image widget; that is still the media column.
 		const hasColumnPhoto = ( node: HNodeLike ): boolean =>
 			/background(?:-image)?\s*:[^;"']*url\(/i.test( node.attribs?.style ?? '' );
+		// …and Elementor often paints it on a CHILD instead (`5a4bb73b` under the
+		// lane, a spacer, an inner `e-con`), so read the whole subtree against the
+		// page's photo rules. Without this no lane ever looked like media.
+		const subtreePaintsPhoto = ( node: HNodeLike ): boolean => {
+			// The lane ITSELF may be the painted box (about-us's hero media lane).
+			if ( sectionClasses( node ).some( ( cls ) => paintedBoxes.has( cls ) ) ) {
+				return true;
+			}
+			const stack: HNodeLike[] = [ node ];
+			while ( stack.length > 0 ) {
+				const current = stack.pop() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					if ( child.type !== 'tag' ) {
+						continue;
+					}
+					if ( sectionClasses( child ).some( ( cls ) => paintedBoxes.has( cls ) ) ) {
+						return true;
+					}
+					stack.push( child );
+				}
+			}
+			return false;
+		};
 		const isMediaColumn = ( column: HNodeLike ): boolean =>
-			hasWidget( column, MEDIA_WIDGET_RE ) || hasWidget( column, /aux-simple-shape/ ) || hasColumnPhoto( column );
+			hasWidget( column, MEDIA_WIDGET_RE ) ||
+			hasWidget( column, /aux-simple-shape/ ) ||
+			hasColumnPhoto( column ) ||
+			subtreePaintsPhoto( column );
 		const mediaColumn = domColumns.find( ( column ) => isMediaColumn( column ) && ! isCopyColumn( column ) );
 		const hasImageSrc = ( node: HNodeLike ): boolean => {
 			const stack: HNodeLike[] = [ node ];
@@ -2602,12 +2679,20 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		};
 		const mediaColumnReal =
 			mediaColumn &&
-			( hasImageSrc( mediaColumn ) || hasWidget( mediaColumn, /aux-simple-shape/ ) || hasColumnPhoto( mediaColumn ) );
+			( hasImageSrc( mediaColumn ) ||
+				hasWidget( mediaColumn, /aux-simple-shape/ ) ||
+				hasColumnPhoto( mediaColumn ) ||
+				subtreePaintsPhoto( mediaColumn ) );
 		// A photo-background hero never splits: the band itself IS the media
 		// (jayainc's hero carries an empty aux_image shell in its second
-		// column — a builder leftover, not content).
-		if ( ! fact.bgImage && domColumns.length === 2 && copyColumn && mediaColumnReal ) {
+		// column — a builder leftover, not content). A FADED band image is a
+		// decorative LAYER, not a photo (`bgLayerOpacity` marks the `::before`
+		// that carries it) — eca.directory's hero keeps a 5%-opacity dot pattern
+		// over its two-column row and must still split.
+		if ( ( ! fact.bgImage || fact.bgLayerOpacity !== undefined ) && domColumns.length === 2 && copyColumn && mediaColumnReal ) {
 			fact.layout = 'split';
+			// Which way round the source puts them — see `ForgeSection.mediaSide`.
+			fact.mediaSide = domColumns.indexOf( mediaColumn as HNodeLike ) < domColumns.indexOf( copyColumn ) ? 'left' : 'right';
 			// The body paragraphs sit in sub-columns (jayainc: two side-by-side).
 			// Legacy nests `.elementor-inner-section > .elementor-container >
 			// .elementor-column`; containers nest `.e-con.e-child > .e-con-inner >
@@ -2805,7 +2890,7 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		if ( fact.bgImage && fact.bgLayerOpacity === undefined ) {
 			delete fact.bgColor;
 		}
-		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog || fact.logos || fact.comparison || fact.panel ) {
+		if ( input.includeBare || fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog || fact.logos || fact.comparison || fact.panel ) {
 			facts.push( fact );
 		}
 	}

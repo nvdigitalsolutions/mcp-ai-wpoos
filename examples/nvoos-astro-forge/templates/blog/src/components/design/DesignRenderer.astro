@@ -1708,13 +1708,25 @@ const bandParallaxCss = sections
 			// kinds that actually RENDER their html can own it: a component band
 			// keeps `section.html` but never emits it, so suppressing there would
 			// drop the anchor entirely.
-			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
 			// A band whose measured columns say "copy beside media" renders as the
 			// SPLIT HERO even when its classified kind is something else: the photo
 			// is a background-image the semantic pass cannot see, so the kind's own
 			// component would drop the media column and its lane split entirely.
-			const splitHero = theme?.layout === 'split' && section.kind !== 'text' && section.kind !== 'raw';
+			const splitMedia = theme ? mediaFromElementFacts( theme ) : undefined;
+			// A LEADING band whose measured row is copy beside a photo IS the hero,
+			// whatever the classifier called it: a page-title + text + breadcrumb band
+			// classifies as `text`, and its raw markup cannot lay the picture out at
+			// all (eca.directory's about-us hero had no photo, 2026-11-25).
+			const leadingHero =
+				index === 0 && theme?.layout === 'split' && ( splitMedia?.length ?? 0 ) > 0;
+			const splitHero = Boolean(
+				theme?.layout === 'split' &&
+					( leadingHero || ( section.kind !== 'text' && section.kind !== 'raw' ) )
+			);
 			const kind = splitHero ? 'hero' : section.kind;
+			// A band that RENDERS its html can own the anchor; a component band keeps
+			// `section.html` but never emits it, so suppressing there would drop it.
+			const renderedHtml = kind === 'text' || kind === 'raw' ? section.html : undefined;
 			// A query loop with nothing published has no cards to show. The band's own
 			// copy is real content and stays; the band goes only when the loop WAS the
 			// band — no title, no lede, nothing else to frame (see
@@ -1731,7 +1743,6 @@ const bandParallaxCss = sections
 			if ( dropBand ) {
 				return null;
 			}
-			const splitMedia = splitHero ? mediaFromElementFacts( theme ) : undefined;
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
 				<div data-section={kind} data-section-id={section.id ?? theme?.id} data-section-collapsed={foldsAway(section, theme) ? 'grid' : undefined} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop, foldsAway(section, theme)), parallaxStyle(behavior)].filter(Boolean).join(';')}>

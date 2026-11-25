@@ -1648,13 +1648,42 @@ function collectBandColumnFacts( input: {
 				row = explicit;
 			}
 		}
-		const kids = [ ...row.children ].filter( ( child ) => {
-			const rect = child.getBoundingClientRect();
-			// Not a lane: a spacer column (see the twin filter in
-			// `measureGeometry`). virtuallyjamaica's contact band ships a pair of
-			// 2px-tall spacers whose heights are not a layout fact.
-			return rect.width >= 40 && rect.height >= 8 && getComputedStyle( child ).display !== 'none';
-		} );
+		const laneKids = ( node: Element ): Element[] =>
+			[ ...node.children ].filter( ( child ) => {
+				const rect = child.getBoundingClientRect();
+				const style = getComputedStyle( child );
+				// Not a lane: a spacer column (see the twin filter in
+				// `measureGeometry`). virtuallyjamaica's contact band ships a pair of
+				// 2px-tall spacers whose heights are not a layout fact.
+				//
+				// Nor is an ABSOLUTELY-POSITIONED child: Elementor paints its
+				// decorative blobs and shapes on `elementor-absolute` spacers beside
+				// the real lanes, and counting one as a lane put a 14.8% / 85.2%
+				// "split" on eca.directory's about-us hero (2026-11-25). Lanes are
+				// in-flow by definition.
+				return (
+					rect.width >= 40 &&
+					rect.height >= 8 &&
+					style.display !== 'none' &&
+					style.position !== 'absolute' &&
+					style.position !== 'fixed'
+				);
+			} );
+		let kids = laneKids( row );
+		// A container-mode band often puts its real row one level down
+		// (`… .e-con-boxed > .e-con-inner > .e-child`), so the band's own children
+		// are a decorative layer plus a wrapper. Descend to the shallowest row
+		// that actually has two in-flow lanes.
+		if ( kids.length < 2 ) {
+			const queue: Element[] = [ ...band.querySelectorAll( '[class~="e-con-inner"],[class~="elementor-container"]' ) ];
+			for ( const candidate of queue ) {
+				if ( candidate !== band && laneKids( candidate ).length >= 2 ) {
+					row = candidate;
+					kids = laneKids( candidate );
+					break;
+				}
+			}
+		}
 		if ( kids.length < 2 ) {
 			continue;
 		}

@@ -13377,8 +13377,8 @@
 		},
 		"contact-us": {
 			"url": "https://eca.directory/contact-us/",
-			"measuredAt": "2026-11-24T12:49:20.937Z",
-			"sourceHash": "b17ce9ca0f21ba5f",
+			"measuredAt": "2026-11-25T15:49:55.193Z",
+			"sourceHash": "ee4bf7b2a3393457",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -13389,14 +13389,17 @@
 					"bgPosition": "top center",
 					"bgLayerOpacity": 0.05,
 					"bgColor": "#F7F7F7",
-					"bgImage": "https://eca.directory/wp-content/uploads/2025/08/bg-01.png"
+					"bgImage": "https://eca.directory/wp-content/uploads/2025/08/bg-01.png",
+					"layout": "split",
+					"mediaSide": "right"
 				},
 				{
 					"id": "9c2d1fa",
 					"vendorId": "9c2d1fa",
 					"columns": [
 						{
-							"width": 50
+							"width": 50,
+							"bgImage": "https://eca.directory/wp-content/uploads/2025/08/hi-everyone-2024-05-27-22-07-46-utc.jpg"
 						},
 						{
 							"width": 50
@@ -13743,48 +13746,47 @@
 							}
 						}
 					],
-					"panel": {
-						"bg": "rgb(135, 100, 160)",
-						"ink": "#ffffff"
-					},
 					"columns": {
 						"desktop": [
 							{
-								"selector": "elementor-element-b83a214",
-								"height": 250,
-								"width": 250,
-								"bg": "rgb(135, 100, 160)"
+								"selector": "elementor-element-03f0398",
+								"height": 300,
+								"width": 811
 							},
 							{
-								"selector": "e-con-boxed",
+								"selector": "elementor-element-890ff21",
 								"height": 300,
-								"width": 1440
+								"width": 409,
+								"image": true,
+								"attachment": "scroll",
+								"size": "cover"
 							}
 						],
 						"tablet": [
 							{
-								"selector": "elementor-element-b83a214",
-								"height": 180,
-								"width": 180,
-								"bg": "rgb(135, 100, 160)"
+								"selector": "elementor-element-03f0398",
+								"height": 300,
+								"width": 473
 							},
 							{
-								"selector": "e-con-boxed",
+								"selector": "elementor-element-890ff21",
 								"height": 300,
-								"width": 834
+								"width": 241,
+								"image": true,
+								"attachment": "scroll",
+								"size": "cover"
 							}
 						],
 						"mobile": [
 							{
-								"selector": "elementor-element-b83a214",
-								"height": 180,
-								"width": 180,
-								"bg": "rgb(135, 100, 160)"
+								"selector": "elementor-element-03f0398",
+								"height": 84,
+								"width": 330
 							},
 							{
-								"selector": "e-con-boxed",
-								"height": 424,
-								"width": 390,
+								"selector": "elementor-element-890ff21",
+								"height": 300,
+								"width": 330,
 								"image": true,
 								"attachment": "scroll",
 								"size": "cover"
@@ -14584,8 +14586,8 @@
 		},
 		"about-us": {
 			"url": "https://eca.directory/about-us/",
-			"measuredAt": "2026-11-24T12:50:12.414Z",
-			"sourceHash": "2f672c416de20688",
+			"measuredAt": "2026-11-25T15:49:15.495Z",
+			"sourceHash": "5a8b83827a4b5397",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -14596,19 +14598,24 @@
 					"bgPosition": "top center",
 					"bgLayerOpacity": 0.05,
 					"bgColor": "#F7F7F7",
-					"bgImage": "https://eca.directory/wp-content/uploads/2025/08/bg-01.png"
+					"bgImage": "https://eca.directory/wp-content/uploads/2025/08/bg-01.png",
+					"layout": "split",
+					"mediaSide": "right"
 				},
 				{
 					"id": "49146de0",
 					"vendorId": "49146de0",
 					"columns": [
 						{
-							"width": 50
+							"width": 50,
+							"bgImage": "https://eca.directory/wp-content/uploads/2025/08/eduqe-benefits-container.png"
 						},
 						{
 							"width": 50
 						}
-					]
+					],
+					"layout": "split",
+					"mediaSide": "left"
 				},
 				{
 					"id": "14c60321",
@@ -15061,48 +15068,50 @@
 							}
 						}
 					],
-					"panel": {
-						"bg": "rgb(135, 100, 160)",
-						"ink": "#ffffff"
-					},
 					"columns": {
 						"desktop": [
 							{
-								"selector": "elementor-element-5771f3c",
-								"height": 250,
-								"width": 250,
-								"bg": "rgb(135, 100, 160)"
+								"selector": "elementor-element-1dac485b",
+								"height": 300,
+								"width": 811
 							},
 							{
-								"selector": "e-con-boxed",
+								"selector": "elementor-element-6b852b86",
 								"height": 300,
-								"width": 1440
+								"width": 409,
+								"image": true,
+								"attachment": "scroll",
+								"size": "cover"
 							}
 						],
 						"tablet": [
 							{
-								"selector": "elementor-element-5771f3c",
-								"height": 180,
-								"width": 180,
-								"bg": "rgb(135, 100, 160)"
+								"selector": "elementor-element-1dac485b",
+								"height": 300,
+								"width": 473
 							},
 							{
-								"selector": "e-con-boxed",
+								"selector": "elementor-element-6b852b86",
 								"height": 300,
-								"width": 834
+								"width": 241,
+								"image": true,
+								"attachment": "scroll",
+								"size": "cover"
 							}
 						],
 						"mobile": [
 							{
-								"selector": "elementor-element-5771f3c",
-								"height": 180,
-								"width": 180,
-								"bg": "rgb(135, 100, 160)"
+								"selector": "elementor-element-1dac485b",
+								"height": 335,
+								"width": 330
 							},
 							{
-								"selector": "e-con-boxed",
-								"height": 675,
-								"width": 390
+								"selector": "elementor-element-6b852b86",
+								"height": 300,
+								"width": 330,
+								"image": true,
+								"attachment": "scroll",
+								"size": "cover"
 							}
 						]
 					},
