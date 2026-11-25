@@ -78,7 +78,7 @@ import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy, suggestedVariant } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
-import { accentFamilyOf, auditTokenBlock, mergeTokens, rewriteGlobalCss, scaffold, TEMPLATE_VARIANTS } from '../lib/scaffold.ts';
+import { accentFamilyOf, auditTokenBlock, mergeTokens, REGEN_MODULES, regenGenerated, rewriteGlobalCss, scaffold, TEMPLATE_VARIANTS } from '../lib/scaffold.ts';
 import { auditSeo, scanSeoHtml } from '../lib/seo-audit.ts';
 import { analyzeTracking, mergeTrackingDraft, renderTrackingReport, trackingFromReport } from '../lib/tracking.ts';
 import { auditTracking } from '../lib/tracking-audit.ts';
@@ -377,6 +377,18 @@ async function runAnalyze( url, options ) {
 		allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
 	} );
 	printGateProbe( gate, '  ' );
+	// Record what was ACTUALLY measured. A gated source measured without
+	// credentials yields a plausible-looking but wrong design block, and nothing
+	// downstream can tell afterwards — this is the only trace.
+	if ( profile.gateProbe === undefined || gate.probe.state !== 'open' ) {
+		profile.gateProbe = {
+			state: gate.probe.state,
+			...( gate.probe.fingerprint ? { fingerprint: gate.probe.fingerprint } : {} ),
+			...( typeof gate.probe.status === 'number' ? { status: gate.probe.status } : {} ),
+			restHealthy: gate.probe.restHealthy === true,
+			measuredAt: new Date().toISOString(),
+		};
+	}
 	if ( gate.blocked ) {
 		if ( ! options.allowBlocked ) {
 			console.error(
@@ -2565,6 +2577,22 @@ async function runFormsCheck( profileRef, options ) {
 async function runVerify( profileRef, options ) {
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
+	// A gated source measured WITHOUT credentials yields the holding page, and
+	// the mismatch is invisible: the build is compared against a coming-soon
+	// screen and every gate reports drift that is not drift. The analyze run
+	// records what it measured (`gateProbe`); when this run has no credentials
+	// for the same gate, say so before the scorecard rather than after it.
+	if (
+		profile.gateProbe &&
+		profile.gateProbe.state !== 'open' &&
+		! process.env.WP_GATE_USERNAME &&
+		profile.gate?.mode !== 'off'
+	) {
+		console.warn(
+			`⚠ The profile records this source as ${ profile.gateProbe.state }${ profile.gateProbe.fingerprint ? ` (${ profile.gateProbe.fingerprint })` : '' } and no gate credential is set.\n` +
+				'  Any measurement below may be reading the holding page, not the site. Set WP_GATE_USERNAME/WP_GATE_PASSWORD.'
+		);
+	}
 	// Every applicable gate runs by default: putting a site through the forge
 	// should produce the complete scorecard without a human remembering six
 	// flags. `--minimal` keeps only the deterministic, browser-free gates (the
@@ -4646,6 +4674,37 @@ program
 	.option( '--runtime <mode>', 'static | managed — applied to the emitted pipeline (Proposal 135)', 'static' )
 	.action( async ( profileRef, options ) => {
 		await runDeploy( profileRef, options );
+	} );
+
+program
+	.command( 'regen' )
+	.description( 'rewrite the generated modules from the profile — no re-scaffold, no template swap' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'an existing forge project directory' )
+	.option(
+		'--only <list>',
+		`comma-separated modules (default: all of ${ REGEN_MODULES.join( ',' ) })`
+	)
+	.action( async ( profileRef, options ) => {
+		const profile = await loadProfile( profileRef );
+		const target = resolve( options.target );
+		const only = String( options.only ?? '' )
+			.split( ',' )
+			.map( ( value ) => value.trim() )
+			.filter( Boolean );
+		const result = await regenGenerated( profile, target, only );
+		if ( result.written.length > 0 ) {
+			console.log( `✓ Rewrote ${ result.written.length } module(s) in ${ target }:` );
+			for ( const name of result.written ) {
+				console.log( `  · ${ name }` );
+			}
+		}
+		if ( result.skipped.length > 0 ) {
+			console.log( `  – not shipped by this project: ${ result.skipped.join( ', ' ) }` );
+		}
+		if ( result.written.length === 0 ) {
+			console.log( 'Nothing to write — is --target a forge project?' );
+		}
 	} );
 
 program
