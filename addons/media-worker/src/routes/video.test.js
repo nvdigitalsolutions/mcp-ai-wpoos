@@ -25,6 +25,8 @@ import {
 	atempoChain,
 	resolveCodec,
 	resolveBitrate,
+	resolvePosition,
+	positionExpression,
 	VIDEO_CODECS,
 	AUDIO_CODECS,
 	PROCESS_FORMATS,
@@ -72,6 +74,36 @@ test( 'the format list is small and contains no traversal characters', () => {
 	for ( const format of PROCESS_FORMATS ) {
 		assert.match( format, /^[a-z0-9]+$/, `${ format } must be a bare extension` );
 	}
+} );
+
+test( 'a watermark position is an allowlist', () => {
+	assert.equal( resolvePosition( 'top-left' ), 'top-left' );
+	assert.equal( resolvePosition( 'BOTTOM-RIGHT' ), 'bottom-right' );
+	assert.equal( resolvePosition( undefined ), 'bottom-right' );
+	assert.equal( resolvePosition( '' ), 'bottom-right' );
+
+	// The value becomes part of an overlay expression.
+	assert.equal( resolvePosition( 'middle' ), null );
+	assert.equal( resolvePosition( 'x=0:y=0' ), null );
+} );
+
+test( 'each corner gets its own overlay expression', () => {
+	const margin = 20;
+
+	assert.equal( positionExpression( 'top-left', margin ), 'x=20:y=20' );
+	assert.equal( positionExpression( 'top-right', margin ), 'x=main_w-overlay_w-20:y=20' );
+	assert.equal( positionExpression( 'bottom-left', margin ), 'x=20:y=main_h-overlay_h-20' );
+	assert.equal(
+		positionExpression( 'bottom-right', margin ),
+		'x=main_w-overlay_w-20:y=main_h-overlay_h-20'
+	);
+	assert.equal( positionExpression( 'center', margin ), 'x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2' );
+
+	// All five must differ, or a caller asking for one corner silently gets another.
+	const expressions = [ 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'center' ].map(
+		( position ) => positionExpression( position, margin )
+	);
+	assert.equal( new Set( expressions ).size, 5 );
 } );
 
 test( 'a codec name is an allowlist, not a passthrough', () => {

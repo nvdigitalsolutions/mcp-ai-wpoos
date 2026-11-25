@@ -217,7 +217,7 @@ final class MediaWorkerVideo implements VideoProcessingInterface
 
         $remote = (string) ($body['output_file'] ?? '');
 
-        if (! $this->safeRemoteName($remote)) {
+        if (! MediaWorkerRemoteName::isSafe($remote)) {
             throw new \RuntimeException(
                 'The media worker answered an output name this host will not fetch: '.($remote ?: '(empty)')
             );
@@ -270,34 +270,6 @@ final class MediaWorkerVideo implements VideoProcessingInterface
         $slug = \strtolower(\trim((string) $value));
 
         return \in_array($slug, self::FORMATS, true) ? $slug : 'mp4';
-    }
-
-    /**
-     * Whether the worker's answer is a relative name this host will fetch.
-     *
-     * A charset check alone is not enough: `..` is made entirely of allowed
-     * characters, so `../../etc/passwd` would pass a regex and the built URL
-     * would climb out of `/api/video/download/` when the client normalises it.
-     * Each segment is therefore validated by name, and dot segments — which
-     * have no legitimate use in an output filename — are refused outright.
-     */
-    private function safeRemoteName(string $name): bool
-    {
-        if ('' === $name || \strlen($name) > 255) {
-            return false;
-        }
-
-        foreach (\explode('/', $name) as $segment) {
-            if ('' === $segment || '.' === $segment || '..' === $segment) {
-                return false;
-            }
-
-            if (1 !== \preg_match('/^[A-Za-z0-9._-]+$/', $segment)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

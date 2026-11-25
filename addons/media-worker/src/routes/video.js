@@ -255,19 +255,102 @@ async function probeAudioStream( inputPath ) {
 	}
 }
 
+/**
+ * Allowlist a watermark position.
+ *
+ * @param {*} value Raw field value.
+ * @return {string|null} A known position, or null when unknown.
+ */
+function resolvePosition( value ) {
+	const slug = String( value || 'bottom-right' ).toLowerCase();
+
+	return [ 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'center' ].includes( slug )
+		? slug
+		: null;
+}
+
+/**
+ * The `overlay` x/y expression for a position.
+ *
+ * `main_w` / `main_h` are the video's dimensions and `overlay_w` /
+ * `overlay_h` the mark's, so the expression stays correct whatever the two
+ * happen to be. Only the gutter is computed here, which is why a 4K source and
+ * a 720p one get the same visual margin.
+ *
+ * @param {string} position Known position.
+ * @param {number} margin Gutter in pixels.
+ * @return {string} `x=…:y=…`
+ */
+function positionExpression( position, margin ) {
+	switch ( position ) {
+		case 'top-left':
+			return `x=${ margin }:y=${ margin }`;
+		case 'top-right':
+			return `x=main_w-overlay_w-${ margin }:y=${ margin }`;
+		case 'bottom-left':
+			return `x=${ margin }:y=main_h-overlay_h-${ margin }`;
+		case 'center':
+			return 'x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2';
+		case 'bottom-right':
+		default:
+			return `x=main_w-overlay_w-${ margin }:y=main_h-overlay_h-${ margin }`;
+	}
+}
+
+/**
+ * The first video stream's width, or null.
+ *
+ * The watermark is a fraction of the video's width, so the pixel size has to
+ * be resolved before the graph is built — `overlay` can compute positions from
+ * its own inputs, but not the `scale` before it.
+ *
+ * @param {string} inputPath Uploaded file.
+ * @return {Promise<number|null>}
+ */
+async function probeVideoWidth( inputPath ) {
+	try {
+		const { stdout } = await execFileAsync(
+			'ffprobe',
+			[
+				'-v', 'quiet',
+				'-print_format', 'json',
+				'-select_streams', 'v:0',
+				'-show_entries', 'stream=width',
+				inputPath,
+			],
+			{ timeout: 30000 }
+		);
+		const width = parseInt( JSON.parse( stdout )?.streams?.[ 0 ]?.width, 10 );
+
+		return Number.isFinite( width ) && width > 0 ? width : null;
+	} catch {
+		return null;
+	}
+}
+
 // Uploads land in the caller's site namespace (multi-tenant) or the system
 // temp dir (single-tenant, legacy behavior).
+const uploadStorage = multer.diskStorage({
+	destination: ( req, _file, cb ) => {
+		try {
+			cb( null, siteUploadDir( req.site ) );
+		} catch ( err ) {
+			cb( err );
+		}
+	},
+});
+
 const upload = multer({
-	storage: multer.diskStorage({
-		destination: ( req, _file, cb ) => {
-			try {
-				cb( null, siteUploadDir( req.site ) );
-			} catch ( err ) {
-				cb( err );
-			}
-		},
-	}),
+	storage: uploadStorage,
 	limits: { fileSize: 500 * 1024 * 1024 },
+});
+
+// Two inputs today (a video and a watermark), eight allowed so a `merge`
+// operation can reuse this endpoint rather than inventing a third contract.
+// `files` is explicit: multer caps nothing by default.
+const composeUpload = multer({
+	storage: uploadStorage,
+	limits: { fileSize: 500 * 1024 * 1024, files: 8 },
 });
 
 // ── Replicate model version map ──────────────────────────
@@ -821,6 +904,150 @@ router.post('/process', upload.single('file'), async (req, res) => {
   }
 });
 
+// ── Compose two or more inputs ────────────────────────────
+//
+// The single-input `/process` route cannot watermark: an overlay needs the
+// video and the mark as separate inputs. This endpoint takes them as an
+// ordered `files` array so one contract covers every multi-input operation —
+// `watermark` today, `merge` later — rather than one bespoke route per filter.
+router.post('/compose', composeUpload.any(), async (req, res) => {
+	const uploaded = Array.isArray(req.files) ? req.files : [];
+	const cleanup = () => {
+		for (const file of uploaded) {
+			try { fs.unlinkSync(file.path); } catch {}
+		}
+	};
+
+	// `MediaWorkerClient::uploadFiles()` sends `files[0]`, `files[1]`, … and a
+	// hand-written client may send `files` twice. Ordering is carried in the
+	// field name rather than trusted to arrival order — the video has to be
+	// first, and a swapped pair would overlay the video onto the mark.
+	const files = uploaded
+		.filter( ( file ) => 'files' === file.fieldname || 0 === file.fieldname.indexOf( 'files[' ) )
+		.sort( ( a, b ) => {
+			const ai = parseInt( ( a.fieldname.match( /\[(\d+)\]/ ) || [ 0, 0 ] )[ 1 ], 10 );
+			const bi = parseInt( ( b.fieldname.match( /\[(\d+)\]/ ) || [ 0, 0 ] )[ 1 ], 10 );
+
+			return ai - bi;
+		} );
+
+	try {
+		const caps = await detectCapabilities();
+		if (!caps.ffmpeg) {
+			cleanup();
+			return res.status(503).json({ error: 'capability_unavailable', capability: 'video', message: 'ffmpeg is not installed on this server.' });
+		}
+
+		const {
+			operation = 'watermark',
+			position: rawPosition,
+			opacity: rawOpacity,
+			scale: rawScale,
+			format: rawFormat,
+		} = req.body;
+		const videoDir = siteDirFor(req.site, 'video');
+
+		let opacity;
+		let scaleFactor;
+		let position;
+		let format;
+
+		try {
+			opacity = boundedNumber(rawOpacity, 0, 1, 'opacity');
+			scaleFactor = boundedNumber(rawScale, 0.01, 1, 'scale');
+			position = resolvePosition(rawPosition);
+			format = resolveFormat(rawFormat);
+		} catch (argErr) {
+			cleanup();
+			return res.status(400).json({ error: argErr.message });
+		}
+
+		if (!position) {
+			cleanup();
+			return res.status(400).json({ error: 'position must be one of top-left, top-right, bottom-left, bottom-right, center' });
+		}
+
+		if (!format) {
+			cleanup();
+			return res.status(400).json({ error: `Unknown output format: ${rawFormat}` });
+		}
+
+		if ('watermark' !== operation) {
+			cleanup();
+			return res.status(400).json({ error: `Unknown compose operation: ${operation}` });
+		}
+
+		const video = files[0];
+		const mark = files[1];
+
+		if (!video || !mark) {
+			cleanup();
+			return res.status(400).json({ error: 'watermark needs two files under the "files" field: the video first, then the watermark image.' });
+		}
+
+		const videoWidth = await probeVideoWidth(video.path);
+
+		if (!videoWidth) {
+			cleanup();
+			return res.status(400).json({ error: 'The video width could not be read, so the watermark cannot be sized.' });
+		}
+
+		// The mark is a fraction of the video's width and the gutter a smaller
+		// one, so a 4K source and a 720p one get the same visual weight.
+		const markWidth = Math.max(2, Math.round(videoWidth * (scaleFactor ?? 0.2)));
+		const margin = Math.max(2, Math.round(videoWidth * 0.02));
+
+		// `format=rgba` first because a JPEG mark has no alpha channel and
+		// `colorchannelmixer` would have nothing to multiply.
+		const graph =
+			`[1:v]format=rgba,scale=${markWidth}:-2,colorchannelmixer=aa=${opacity ?? 0.7}[wm];` +
+			`[0:v][wm]overlay=${positionExpression(position, margin)}:format=auto[v]`;
+
+		const outputName = `processed_${Date.now()}.${format}`;
+		const outputPath = path.join(videoDir, outputName);
+
+		const args = [
+			'-i', video.path,
+			'-i', mark.path,
+			'-filter_complex', graph,
+			'-map', '[v]',
+			// `0:a?` maps the audio when there is one and stays quiet when not;
+			// without the `?` a silent video fails the whole run.
+			'-map', '0:a?',
+			'-c:v', 'libx264',
+			'-crf', '20',
+			'-pix_fmt', 'yuv420p',
+			'-c:a', 'webm' === format ? 'libopus' : 'aac',
+		];
+
+		if (FASTSTART_FORMATS.has(format)) {
+			args.push('-movflags', '+faststart');
+		}
+
+		args.push('-y', outputPath);
+
+		console.log(`[FFmpeg] ffmpeg ${args.join(' ')}`);
+		await execFileAsync('ffmpeg', args, { timeout: 300000 });
+
+		const stats = fs.statSync(outputPath);
+
+		res.json({
+			success: true,
+			operation,
+			position,
+			output_size: stats.size,
+			output_file: outputName,
+		});
+
+		cleanup();
+		setTimeout(() => { try { fs.unlinkSync(outputPath); } catch {} }, 60000);
+	} catch (err) {
+		console.error('[Video Compose]', err.message);
+		cleanup();
+		res.status(500).json({ error: err.message });
+	}
+});
+
 // ── Download processed output ──────────────────────────────
 // Express 4 wildcard (*) so multi-segment names (frames_*/frame_000.jpg)
 // match too; the strict regex below re-validates the whole name.
@@ -917,6 +1144,8 @@ export {
 	resolveFit,
 	resolveCodec,
 	resolveBitrate,
+	resolvePosition,
+	positionExpression,
 	parseRational,
 	boolField,
 	atempoChain,
