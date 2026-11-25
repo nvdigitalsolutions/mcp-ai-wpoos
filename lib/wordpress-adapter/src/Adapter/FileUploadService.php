@@ -1,4 +1,5 @@
 <?php
+
 /**
  * WordPress Adapter — File Upload Service.
  *
@@ -36,7 +37,7 @@ final class FileUploadService implements FileUploadServiceInterface
      * Constructor.
      *
      * @param int                $maxFileSize      Maximum file size in bytes (default 10 MiB).
-     * @param array<int, string> $allowedMimeTypes Allowed MIME types (default = common document/image types).
+     * @param array<int, string> $allowedMimeTypes Allowed MIME types (default = the shared document, image, audio and video list).
      */
     public function __construct(
         int $maxFileSize = self::DEFAULT_MAX_FILE_SIZE,

@@ -2074,3 +2074,106 @@ also unchanged.
 `lib/core` **2,510 / 17,679** (was 2,500 / 17,658); adapter **359 / 1,929**
 (unchanged); `VideoAndAudioToolsTest` **+10 tests**; one new test in
 `FileStoreVisibilityTest`.
+
+## 164.29 — The library could not accept the media the tools produce (2026-11-25)
+
+§164.28 fixed the registry so an `extract_audio` result in m4a or aac could be
+*stored*. It did not fix the other half: `FileUploadServiceInterface::DEFAULT_ALLOWED_TYPES`
+was images and documents only, so **a user could not upload an mp3 or a video at
+all** — the console's own guidance said so ("Images, PDFs, plain text, CSV, JSON
+and Word documents"). Every audio file in the library could only arrive from a
+tool, which made `transcribe_openai_audio`'s `file_id` path unreachable for a
+human and left the media library short of the one thing WordPress does out of
+the box.
+
+### Two lists decide, and they had drifted
+
+| list | question it answers |
+|---|---|
+| `DEFAULT_ALLOWED_TYPES` | what a caller may pick |
+| `FileStore::TYPES` | what can actually be filed |
+
+They drifted in *both* directions during this arc: the allowlist carried no audio
+or video at all, while the registry learned `audio/x-m4a` and
+`audio/x-hx-aac-adts` only when §164.28 measured them. Each asymmetry is a
+different defect — validation passes and the write fails, or the library can
+serve a file nobody can add — so both are now asserted rather than described:
+
+`FileUploadAllowlistTest` checks that the allowlist is a subset of
+`FileStore::acceptedTypes()`, that **every** audio and video type the registry
+files is uploadable, and that every uploadable type has an extension (a host with
+no registry bound would otherwise store `.bin`).
+
+That needed two accessors that did not exist: `FileStore::acceptedTypes()` and
+`FileUploadService::extensionFor()`. Both are thin, both are about a map that was
+private, and both exist so the two lists cannot drift again silently.
+
+### Thirteen types, by sniff and not by family
+
+Ten audio and three video types were added, and the reason they are listed
+individually is the measurement from §164.28: libmagic answers `audio/x-m4a` for
+an m4a and `audio/x-hx-aac-adts` for an ADTS AAC — **not** `audio/mp4` or
+`audio/aac`. A family wildcard in this allowlist would be a promise the sniff
+cannot keep, so every type the registry files is named.
+
+| fixture | libmagic |
+|---|---|
+| MP3 frame header (`fffb9064`) | `audio/mpeg` |
+| RIFF/WAVE header | `audio/x-wav` |
+| ISO-BMFF `ftyp` `M4A ` | `audio/x-m4a` |
+| ADTS frame header | `audio/x-hx-aac-adts` |
+| ISO-BMFF `ftyp` `isom` | `video/mp4` |
+| ISO-BMFF `ftyp` `qt  ` | `video/quicktime` |
+
+An audio-only WebM still sniffs as `video/webm`, which is in the list and stores
+as `.webm` — the right extension either way.
+
+`Phase3dTest` now uploads an mp3 and an mp4 through `/api/v1/media` and asserts
+the stored type and extension, that `media_type=audio` filters to it, and that a
+video reports `width: 0` rather than being handed to `getimagesize()`.
+
+### The console had to stop lying too
+
+The page delegates validation to the service (§162.7 — one writer, no weaker
+second gate), so no gate changed in the panel. What changed is that its guidance
+now names audio and video, and its filter gained `All video` and `All audio`:
+the filter is a `mime_type LIKE 'audio%'` prefix, so a user who uploads an mp3
+can now find it.
+
+### The size ceiling did not move, deliberately
+
+`DEFAULT_MAX_FILE_SIZE` (10 MiB) is a **request-size** limit applied before the
+type is known, not a per-type cap, and this slice leaves it alone. The
+consequence is stated rather than hidden: an audio upload is generous at that
+size (about eleven minutes at 128 kbps), and a **video** upload is not — raising
+`oos.upload_max_bytes` is the operator's decision, and the registry's group caps
+(audio 100 MiB, video 512 MiB) and PHP's `upload_max_filesize` / `post_max_size`
+are the hard ceilings above it. The contract docblock now says all of that, so
+the next person to hit the limit finds the lever instead of guessing.
+
+### One policy, two adapters
+
+The constant is shared, so the WordPress adapter inherits the wider list. That is
+consistent rather than risky: WordPress's own media library accepts audio and
+video natively, and that adapter validates against the **declared** type
+(`$file['type']`) with `wp_handle_upload` as the real gate — widening a list it
+never sniffed against adds no new weakness. Its constructor docblock was updated
+to describe the list it now gets.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/FileUploadServiceInterface.php` | ten audio and three video types; the two invariants documented on the constant |
+| `lib/laravel-adapter/src/Adapter/FileUploadService.php` | the same types in the no-registry extension map; `extensionFor()` |
+| `lib/laravel-adapter/src/Adapter/FileStore.php` | `acceptedTypes()` |
+| `docker/laravel/app-skeleton/app/Filament/Admin/Pages/MediaLibraryPage.php` | the video and audio filters |
+| `docker/laravel/app-skeleton/resources/views/filament/admin/media-library.blade.php` | the guidance sentence |
+| `lib/wordpress-adapter/src/Adapter/FileUploadService.php` | docblock only |
+
+### Measurement
+
+`lib/core` **2,510 / 17,679** (unchanged — the contract change is data, and its
+parse is covered by the adapter test); adapter **363 / 1,957** (was 359 / 1,929 —
+the four allowlist assertions); `Phase3dTest` **+2 tests**. Audit and parity are
+untouched: **286 / 267 / 0** and **64 of 854** — the allowlist is not a tool.

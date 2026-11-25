@@ -118,6 +118,21 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 	/** Used when a caller passes an explicit cap and no group applies. */
 	public const DEFAULT_MAX_BYTES = 26214400;
 
+	/**
+	 * The sniffed types this registry accepts.
+	 *
+	 * The authority on what can actually be filed, exposed so an allowlist
+	 * elsewhere can be checked against it. A type a caller may pick but this map
+	 * refuses is a half-wired feature: validation passes and the write then fails
+	 * with "File type is not accepted". `FileUploadAllowlistTest` asserts the
+	 * upload allowlist is a subset of this.
+	 *
+	 * @return list<string>
+	 */
+	public static function acceptedTypes(): array {
+		return \array_keys( self::TYPES );
+	}
+
 	private string $publicDisk;
 
 	private string $privateDisk;

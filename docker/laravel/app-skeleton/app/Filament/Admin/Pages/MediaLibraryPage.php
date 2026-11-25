@@ -163,6 +163,8 @@ class MediaLibraryPage extends Page
             'image/png' => 'PNG',
             'image/webp' => 'WebP',
             'image/avif' => 'AVIF',
+            'video' => 'All video',
+            'audio' => 'All audio',
             'application/pdf' => 'PDF',
         );
     }

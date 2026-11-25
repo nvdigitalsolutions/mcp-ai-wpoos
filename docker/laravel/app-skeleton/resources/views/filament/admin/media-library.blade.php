@@ -61,7 +61,7 @@
     <div style="padding: 1rem; border: 1px solid rgba(127, 127, 127, 0.25); border-radius: 0.5rem; margin-bottom: 1.25rem;">
         <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.35rem;">Add files</h2>
         <p style="font-size: 0.8rem; opacity: 0.8; margin: 0 0 0.75rem;">
-            Images, PDFs, plain text, CSV, JSON and Word documents, up to
+            Images, audio, video, PDFs, plain text, CSV, JSON and Word documents, up to
             {{ $this->humanBytes($this->maxBytes()) }} each. The type is sniffed
             from the content, not trusted from the filename.
         </p>
