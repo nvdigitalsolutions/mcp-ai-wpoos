@@ -264,6 +264,23 @@ final class ProBatchOcrToolTest extends TestCase
         $this->assertSame('validation_failed', $result['error']['code']);
     }
 
+    /**
+     * The route clamps a budget to 50, so a larger request must not be passed on
+     * as though it meant something.
+     */
+    public function test_a_budget_over_the_route_ceiling_is_clamped(): void
+    {
+        $files = $this->registry(array(1 => '/srv/a.pdf'));
+        $ocr = $this->ocr();
+
+        $this->tool($ocr, $files)->execute(array(
+            'file_ids' => array(1),
+            'max_pages' => 500,
+        ));
+
+        $this->assertSame(ProBatchOcrTool::MAX_PAGES, $ocr->calls[0][1]['max_pages']);
+    }
+
     public function test_it_refuses_an_empty_batch(): void
     {
         $result = $this->tool()->execute(array('file_ids' => array()));

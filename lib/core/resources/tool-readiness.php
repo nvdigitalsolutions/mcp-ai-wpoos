@@ -1870,6 +1870,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/ProBatchOcrToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'pro_document_ocr' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ProDocumentOcrTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Reads the PDF text layer first through `PdfTextExtractorInterface` (`POST /api/pdf/extract`) and falls through to `MediaWorkerPdfOcr` (`POST /api/pdf/ocr`) only when the layer carries fewer than 32 characters per page. That ladder is the port: the WordPress tool dispatches six providers plus two self-hosted vLLM models, and this host runs one, so a provider chain would be seven names for one engine. The hosted vision providers and the vLLM models are refused by name, because vision-model OCR of a PDF needs a page renderer this runtime does not expose (Proposal 164 section 164.40).',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProDocumentOcrToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'pro_excel_document' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ProExcelDocumentTool',
 			'readiness' => 'ready',
@@ -1887,6 +1896,15 @@ return array(
 			'reason' => 'Three operations (generate, structure, format) over the same pure HtmlFormatter + HtmlToPdfInterface + FileVisibilityStoreInterface path as `generate_pdf`. `generate` accepts `content`, unlike the WordPress tool whose `generate` required the `description` it was never sent; a description-only call is refused with the named `no_content_generator` error because the worker is a deterministic formatter and this host has no model to expand it (Proposal 164 section 164.31).',
 			'evidence' => 'lib/core/tests/Unit/Tool/ProPdfDocumentToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
+		'pro_unlimited_ocr' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ProUnlimitedOcrTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'A whole document across successive calls over `MediaWorkerPdfOcr`: `start_page` in, `next_page` out. The name describes the document, not one request — the worker\'s `clampPageBudget` caps a call at 50 pages and OCR runs at seconds per page behind one timeout, so the schema says 50 rather than promising a number the route silently reduces, and a longer document is finished by following `next_page`. No `model_type`, `image_mode`, `output_format`, `preserve_layout` or `extract_tables`: those describe the vLLM models\' `<|det|>` structured output, which tesseract does not produce (Proposal 164 section 164.40).',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProUnlimitedOcrToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'pro_word_document' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ProWordDocumentTool',

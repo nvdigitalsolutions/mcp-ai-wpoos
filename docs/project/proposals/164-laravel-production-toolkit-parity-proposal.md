@@ -3213,3 +3213,160 @@ Six:
 | `docgen_capture_style_memory` | a store — corpus frontmatter is the likely home, to be decided before coding |
 | `generate_invoice_pdf`, `generate_invoice_batch` | a re-scope to accept invoice data as arguments; the worker renders, the order source is the gap, and that is a product decision |
 | `get_uninvoiced_orders` | order data — genuinely blocked, recorded and unported |
+
+## 164.40 — The page window was a lie, and the rest of the OCR family (2026-11-25)
+
+§164.39 left six tools and a claim that the OCR family needed no worker change.
+The claim held. Reading the route to build the last two found that one of the
+OCR parameters had never worked at all.
+
+### The parameter that did nothing
+
+`ocr_pdf_text` has accepted `pages` since §164.7, documented as "explicit
+1-based page numbers to read". It never took effect.
+
+`MediaWorkerPdfOcr` sends multipart text fields, so `pages` reaches the worker as
+the string `"1,2,3"`. The route tested `Array.isArray( body.pages )`, which is
+false for a string, and fell through to the empty list — which the route reads as
+"every page". A caller asking for pages 51–60 got the first *budget* pages
+instead, silently, with plausible text and no error. That is the
+accepted-then-ignored defect in its purest form, and it had been live since the
+contract landed.
+
+It was found only because `pro_unlimited_ocr` needs a resume protocol, and a
+resume protocol built on an ignored parameter would have re-read page 1 forever.
+
+The fix is a pure helper. `parsePageList()` accepts an array, a comma-joined
+string, or a single number, keeps the caller's order, and collapses duplicates
+(recognising one page twice is paid work for one answer). The route applies the
+document bound itself, because that needs the page count and the helper
+deliberately does not. Six worker tests pin it, and an adapter test pins that the
+adapter really does send `"51,52,53"` for a three-page window.
+
+### The ceiling is 50 pages, not unlimited
+
+`clampPageBudget( value, fallback = 20, max = 50 )` is the route's real limit,
+and OCR runs at seconds per page behind one request timeout. So "parse 500 pages
+in a single pass" — the WordPress tool's premise, on a GPU vLLM box — is not
+reachable by raising a schema number. A tool that accepted 500 would have the
+worker read 50 and let the caller believe otherwise.
+
+`pro_unlimited_ocr` keeps the name and changes what it means, plainly: **the
+document is unlimited, the call is not.**
+
+| field | meaning |
+|---|---|
+| `start_page` | first page of this window (pass the previous `next_page`) |
+| `pages_read` / `total_pages` | what this window covered, and how long the document is |
+| `next_page` | where to continue, or `null` when finished |
+| `complete` | `next_page` is `null` |
+
+`next_page` is derived from the **last page actually read**, not from the budget:
+a window that failed part-way must not tell the caller to skip the pages it never
+got.
+
+There is deliberately no `truncated`. The route's `truncated` means "this response
+is not the whole document", which is true of *every* window of a long document,
+including the last one — beside `complete: true` it reads as a contradiction. One
+truth, in the caller's terms.
+
+None of the WordPress tool's `model_type`, `image_mode`, `output_format`,
+`preserve_layout` or `extract_tables` appear in the schema. They describe the
+vLLM models' `<|det|>` block markers, gundam tiling and bounding boxes, and
+tesseract produces none of them.
+
+### For `pro_document_ocr`, the ladder is the port
+
+The WordPress tool dispatches OpenAI, Gemini, Anthropic, Ollama, tesseract and two
+vLLM models with a circuit breaker and a fallback chain. This host has one of
+those, so a provider chain would be eight names resolving to the same engine.
+
+What is worth porting is the part that is a *decision*: **a PDF with a text layer
+should never be OCRed.** Reading a text layer is effectively free and exact;
+rendering and recognising is seconds per page and probabilistic. The guidance
+converges on checking for extractable text first and reaching for OCR only on
+scans, and this tool does it automatically rather than making the caller choose
+between `extract_pdf_text` and `ocr_pdf_text` and know which they need.
+
+`source` reports which rung answered — `text_layer` or `ocr` — so an exact read is
+distinguishable from a recognised one. The threshold is 32 characters per page: a
+scanned page carries a stamp, a header or the scanner's own watermark; a
+born-digital page carries hundreds. It is a constant rather than a parameter, so
+callers do not have to tune it per document.
+
+Two consequences fall out of the ordering, and both are tested:
+
+- **A rich text layer on a host with no OCR engine still succeeds.** `no_ocr_engine`
+  is raised only after the layer has been tried and found wanting, because OCR
+  being absent only matters when OCR is needed.
+- **A failing or unavailable extractor is not a failure of the tool.** It means
+  "try the next rung", and the next rung is OCR — which is exactly the case OCR
+  exists for.
+
+The hosted providers are refused by name with a reason. Vision-model OCR of a PDF
+needs a page renderer this runtime does not expose — `/api/pdf/render` returns
+paths on the *worker's* filesystem, which the calling host cannot read — so it is
+a future slice with a new contract, not a rename.
+
+### Two smaller corrections, both surfaced by this slice
+
+- **`pro_batch_ocr` declared no upper bound** on `max_pages`, which §164.39 left
+  open-ended. It now says 50 and clamps, matching what the route will actually
+  read.
+- **A half-built canvas was a 500.** Both PDF routes map `ERR_MODULE_NOT_FOUND`
+  and `ERR_DLOPEN_FAILED` to the named `capability_unavailable` refusal, but a
+  canvas that was installed without a build toolchain throws `MODULE_NOT_FOUND`
+  for its own `canvas.node` — a plausible production state after an upgrade
+  without a rebuild — and fell through to a generic 500. Both routes now treat it
+  as unavailable, which is what it is.
+
+### Research grounding
+
+| finding | source | where it landed |
+|---|---|---|
+| 300 DPI is the working default for OCR; below ~200 accuracy falls off; very high densities hit engine pixel caps | Tesseract documentation, *Improving the quality of the output* | the `dpi` default and its 150–600 range, unchanged from §164.7 |
+| large-document OCR is bounded by a timeout and a page/megapixel guard, not by document length | OCRmyPDF *Advanced features* (`--tesseract-timeout`, `--skip-big`) | the 50-page window plus `next_page` protocol |
+| check for a text layer first; send page images to vision models only for scans | *Document Intelligence with LLMs*; *Using LLMs for OCR* | the `pro_document_ocr` ladder |
+| vision-model OCR is per page, then synthesised | *Process Documents with Vision Models* | recorded as the shape of the deferred renderer slice |
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `addons/media-worker/src/utils/pdf-style.js` | `parsePageList()` — arrays, comma strings, single numbers |
+| `addons/media-worker/src/routes/pdf.js` | the OCR route parses a page window; both routes name a half-built canvas |
+| `addons/media-worker/src/utils/pdf-style.test.js` | six parser tests |
+| `lib/core/src/Tool/ProUnlimitedOcrTool.php` | new; the window protocol |
+| `lib/core/src/Tool/ProDocumentOcrTool.php` | new; the text-layer-first ladder |
+| `lib/core/src/Tool/ProBatchOcrTool.php` | `MAX_PAGES`, schema maximum, clamp |
+| `lib/core/resources/tool-readiness.php` | two rows |
+| `docker/laravel/app-skeleton/tests/Feature/TabularAndOcrAdapterTest.php` | one test pinning the `pages` field |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+### Measurement
+
+`lib/core` **2,757 / 18,543** (was 2,721 / 18,406; +32 from the three test files,
++4 from catalogue-driven provider cases); adapter **444 / 2,128** (was 444 /
+2,126); app-skeleton OCR adapter tests **13** (was 12); worker **19** in the two
+touched files (was 13); audit **311 / 311, servable 292**; toolkit parity **89 of
+854**; `document-generation` **34 of 38**.
+
+The new tests cover: the first window and its `next_page`; a resume sending an
+explicit `range()`; the final window reporting `complete`; a document that fits
+one budget; a `start_page` past the end reading nothing and saying so; the
+per-page array only on request; the budget clamped to 50; a rich text layer read
+without OCR; a scan falling through; `prefer_text_layer: false` forcing OCR; a
+rich layer succeeding with no OCR engine; a thin layer with no OCR engine
+refused by name; an unavailable and a throwing extractor both falling through;
+and all six hosted/vLLM provider names refused without reaching either engine.
+
+### What is left
+
+Four, and one recorded follow-up:
+
+| item | what it needs |
+|---|---|
+| `docgen_capture_style_memory` | a store — corpus frontmatter is the likely home, to be decided before coding |
+| `generate_invoice_pdf`, `generate_invoice_batch` | a re-scope to accept invoice data as arguments; the worker renders, the order source is the gap, and that is a product decision |
+| `get_uninvoiced_orders` | order data — genuinely blocked, recorded and unported |
+| *follow-up* | vision-model document OCR: a `PdfPageRendererInterface` plus a worker render route that returns bytes, then a per-page vision loop |

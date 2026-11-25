@@ -23,7 +23,7 @@ import path from 'path';
 import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
 import { siteDirFor, siteUploadDir, pathGuard } from '../utils/site-paths.js';
-import { clampDpi, clampOpacity, clampPageBudget, watermarkPlacement } from '../utils/pdf-style.js';
+import { clampDpi, clampOpacity, clampPageBudget, parsePageList, watermarkPlacement } from '../utils/pdf-style.js';
 
 export const pdfRouter = Router();
 
@@ -111,7 +111,16 @@ pdfRouter.post( '/render', upload.single( 'file' ), async ( req, res ) => {
 		try {
 			canvasModule = await import( 'canvas' );
 		} catch ( err ) {
-			if ( 'ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code ) {
+			// A canvas that was installed but whose native binary was never
+			// built (a plain `npm install` without a toolchain, or an upgrade
+			// without a rebuild) throws MODULE_NOT_FOUND for its own
+			// `canvas.node`. That is the same operational state as not having
+			// canvas at all — the route cannot rasterise — so it gets the same
+			// named refusal instead of a 500 that reads like a crash.
+			const missingBinary =
+				'MODULE_NOT_FOUND' === err.code && String( err.message ).includes( 'canvas.node' );
+
+			if ( 'ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code || missingBinary ) {
 				return res.status( 503 ).json( {
 					error: 'capability_unavailable',
 					capability: 'pdf-rasterization',
@@ -379,7 +388,12 @@ pdfRouter.post( '/ocr', upload.single( 'file' ), async ( req, res ) => {
 		try {
 			canvasModule = await import( 'canvas' );
 		} catch ( err ) {
-			if ( 'ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code ) {
+			// Same half-built case as the render route above: an installed but
+			// unbuilt canvas is unavailable, not a crash.
+			const missingBinary =
+				'MODULE_NOT_FOUND' === err.code && String( err.message ).includes( 'canvas.node' );
+
+			if ( 'ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code || missingBinary ) {
 				return res.status( 503 ).json( {
 					error: 'capability_unavailable',
 					capability: 'pdf-ocr',
@@ -409,11 +423,7 @@ pdfRouter.post( '/ocr', upload.single( 'file' ), async ( req, res ) => {
 		const data = new Uint8Array( fs.readFileSync( source ) );
 		const doc = await pdfjsLib.getDocument( { data } ).promise;
 
-		const requested = Array.isArray( body.pages )
-			? body.pages
-				.map( ( n ) => Number( n ) )
-				.filter( ( n ) => Number.isInteger( n ) && n >= 1 && n <= doc.numPages )
-			: [];
+		const requested = parsePageList( body.pages ).filter( ( n ) => n <= doc.numPages );
 
 		const selected = ( requested.length ? requested : Array.from( { length: doc.numPages }, ( _, i ) => i + 1 ) )
 			.slice( 0, budget );

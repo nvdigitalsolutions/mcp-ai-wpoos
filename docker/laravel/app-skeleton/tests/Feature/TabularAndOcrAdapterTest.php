@@ -245,6 +245,49 @@ final class TabularAndOcrAdapterTest extends TestCase
         $this->assertSame(91.5, $result['pages'][0]['confidence']);
     }
 
+    /**
+     * The worker reads `pages` from a multipart text field, so it arrives as a
+     * comma-joined string. Before the route learned to parse one, this field was
+     * dropped and the request read the first N pages instead of the window asked
+     * for: a parameter that was accepted and did nothing.
+     */
+    public function test_ocr_forwards_an_explicit_page_window_as_a_comma_list(): void
+    {
+        $this->fakeCapabilities(['pdf_ocr' => true]);
+
+        $captured = null;
+
+        Http::fake(function (ClientRequest $request) use (&$captured) {
+            if (str_contains($request->url(), '/api/health')) {
+                return Http::response([
+                    'status' => 'ok',
+                    'version' => '3.5.0',
+                    'capabilities' => ['pdf_ocr' => true],
+                ]);
+            }
+
+            $captured = ['parts' => $request->data()];
+
+            return Http::response([
+                'success' => true,
+                'text' => 'Page 51',
+                'pages' => [['page' => 51, 'text' => 'Page 51', 'confidence' => 90.0]],
+                'count' => 1,
+                'total_pages' => 120,
+                'truncated' => true,
+                'dpi' => 300,
+                'language' => 'eng',
+            ]);
+        });
+
+        $this->app->make(PdfOcrInterface::class)->recognize(
+            $this->workDir.'/scan.pdf',
+            ['pages' => [51, 52, 53]]
+        );
+
+        $this->assertSame('51,52,53', $this->part($captured, 'pages'));
+    }
+
     public function test_ocr_pdf_text_runs_end_to_end(): void
     {
         $this->bindRegistry([1 => $this->workDir.'/scan.pdf']);

@@ -72,6 +72,14 @@ class ProBatchOcrTool extends AbstractTool implements ToolCapabilityFlagsInterfa
     public const DEFAULT_MAX_PAGES = 20;
 
     /**
+     * The OCR route's per-request ceiling (`clampPageBudget( value, 20, 50 )`).
+     *
+     * A larger number in the schema would be a promise the worker silently
+     * reduces, so the ceiling is stated where the caller can see it.
+     */
+    public const MAX_PAGES = 50;
+
+    /**
      * Providers the WordPress tool names that this host does not run.
      *
      * Refused by name rather than remapped: a caller that asked for DeepSeek-OCR
@@ -130,8 +138,9 @@ class ProBatchOcrTool extends AbstractTool implements ToolCapabilityFlagsInterfa
                 ),
                 'max_pages' => array(
                     'type' => 'integer',
-                    'description' => 'Pages per file. Default ' . self::DEFAULT_MAX_PAGES . '. The result reports total_pages and whether it truncated.',
+                    'description' => 'Pages per file. Default ' . self::DEFAULT_MAX_PAGES . '; the OCR route clamps to ' . self::MAX_PAGES . '. The result reports total_pages and whether it truncated.',
                     'minimum' => 1,
+                    'maximum' => self::MAX_PAGES,
                 ),
                 'language' => array(
                     'type' => 'string',
@@ -213,7 +222,7 @@ class ProBatchOcrTool extends AbstractTool implements ToolCapabilityFlagsInterfa
         $continue = $this->boolParam($arguments, 'continue_on_error', true);
         $options = array(
             'dpi' => $this->intParam($arguments, 'dpi', self::DEFAULT_DPI),
-            'max_pages' => $this->intParam($arguments, 'max_pages', self::DEFAULT_MAX_PAGES),
+            'max_pages' => min(self::MAX_PAGES, max(1, $this->intParam($arguments, 'max_pages', self::DEFAULT_MAX_PAGES))),
             'language' => $this->stringParam($arguments, 'language', 'eng'),
         );
 

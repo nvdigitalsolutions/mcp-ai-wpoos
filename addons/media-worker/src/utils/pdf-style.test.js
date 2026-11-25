@@ -16,6 +16,7 @@ import {
 	clampDpi,
 	clampOpacity,
 	clampPageBudget,
+	parsePageList,
 	estimateTextWidth,
 	watermarkPlacement,
 } from './pdf-style.js';
@@ -47,6 +48,40 @@ test( 'the page budget defaults to 20 and caps at 50', () => {
 	assert.equal( clampPageBudget( 3 ), 3 );
 	assert.equal( clampPageBudget( 500 ), 50 );
 	assert.equal( clampPageBudget( 2.9 ), 2, 'truncated, not rounded up' );
+} );
+
+test( 'a comma-joined page list is understood, not dropped', () => {
+	// The Laravel adapter sends multipart text fields, so `pages` arrives as a
+	// string. The route used to require an array, which discarded the value and
+	// returned every page instead of the window asked for.
+	assert.deepEqual( parsePageList( '3,1,2' ), [ 3, 1, 2 ] );
+	assert.deepEqual( parsePageList( ' 2 , 4 ' ), [ 2, 4 ] );
+} );
+
+test( 'an array page list is understood', () => {
+	assert.deepEqual( parsePageList( [ 1, 2 ] ), [ 1, 2 ] );
+	assert.deepEqual( parsePageList( [ '1', '2' ] ), [ 1, 2 ] );
+} );
+
+test( 'a single page number is understood', () => {
+	assert.deepEqual( parsePageList( 7 ), [ 7 ] );
+	assert.deepEqual( parsePageList( '7' ), [ 7 ] );
+} );
+
+test( 'zero, negative, fractional and non-numeric pages are dropped', () => {
+	assert.deepEqual( parsePageList( '0,-1,2.5,abc' ), [] );
+	assert.deepEqual( parsePageList( '1,,3' ), [ 1, 3 ] );
+} );
+
+test( 'duplicate pages collapse to their first occurrence', () => {
+	assert.deepEqual( parsePageList( '2,1,2,1,3' ), [ 2, 1, 3 ] );
+} );
+
+test( 'an absent page list means every page, not page zero', () => {
+	assert.deepEqual( parsePageList( undefined ), [] );
+	assert.deepEqual( parsePageList( null ), [] );
+	assert.deepEqual( parsePageList( '' ), [] );
+	assert.deepEqual( parsePageList( '   ' ), [] );
 } );
 
 test( 'the diagonal mark reproduces the original hard-coded coordinates', () => {

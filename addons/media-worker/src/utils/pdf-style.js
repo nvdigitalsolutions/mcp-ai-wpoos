@@ -95,6 +95,56 @@ export function clampPageBudget( value, fallback = 20, max = 50 ) {
 }
 
 /**
+ * Normalise a page selection into a list of 1-based page numbers.
+ *
+ * The Laravel adapter sends `pages` as a comma-joined string inside a
+ * multipart form, while a JSON caller sends an array; both mean the same
+ * thing. The `/ocr` route used to accept only an array, so the adapter's
+ * comma-joined value was silently dropped and the request read every page up
+ * to the budget instead of the window asked for — a parameter that was
+ * accepted and did nothing.
+ *
+ * Order is preserved, because a caller may want page 9 before page 2, and
+ * duplicates collapse to their first occurrence: recognising the same page
+ * twice is paid work for one answer.
+ *
+ * The upper bound is not applied here — that needs the document's page count,
+ * which the route knows and this helper deliberately does not.
+ *
+ * @param {unknown} value Array, comma-joined string, single number or null.
+ * @return {number[]} Positive integers in the caller's order.
+ */
+export function parsePageList( value ) {
+	let raw;
+
+	if ( Array.isArray( value ) ) {
+		raw = value;
+	} else if ( 'string' === typeof value ) {
+		raw = value.split( ',' );
+	} else if ( null === value || undefined === value ) {
+		raw = [];
+	} else {
+		raw = [ value ];
+	}
+
+	const pages = [];
+	const seen = new Set();
+
+	for ( const entry of raw ) {
+		const page = Number( entry );
+
+		if ( ! Number.isInteger( page ) || page < 1 || seen.has( page ) ) {
+			continue;
+		}
+
+		seen.add( page );
+		pages.push( page );
+	}
+
+	return pages;
+}
+
+/**
  * Rough rendered width of a string in Helvetica, in points.
  *
  * Helvetica averages a little under half an em per glyph. This is an estimate
