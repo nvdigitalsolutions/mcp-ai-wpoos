@@ -474,6 +474,50 @@ source. When you add a field to `ForgeSectionColumn`, carry it through
 `measuredLaneColumns` **and** the measured emission, or it never reaches the
 renderer.
 
+## A sub-page has no design facts
+
+The homepage runs two passes — the browser one (`measurePageBands`: geometry,
+band facts, region colours) and the design one (`analyzeSections`: surfaces,
+panels, layout, media). Sub-pages used to get only the first, so
+`pageBands[slug].sections` held an id and a column list and the rebuild lost the
+band's backgrounds, media and split. `forge page-design` closes that: same
+extractor, merged **by id**, with `id`/`vendorId`/`columns` owned by the browser
+pass. It also only names bands that STATE a fact — two of about-us's four bands
+say nothing at section level, so their surfaces live on inner elements.
+
+## A background image is not a fact without its BOX
+
+`bgImage` alone paints at native scale: storing `bg-01.png` on eca.directory's
+hero and stats bands covered both with a giant checkerboard and made white text
+unreadable. The source declares
+`background-size:cover; background-repeat:no-repeat; background-position:top center`
+beside the URL, and `bgSize` / `bgRepeat` / `bgPosition` now ride the same fact
+(extracted from the band-scoped rule, emitted on `SectionTheme`, applied by
+`wrapStyle` with `cover` / `no-repeat` / `center` as the fallback).
+
+**The box is necessary but not sufficient.** With the box applied the build
+still showed the halftone at full strength, because Elementor renders that
+image on a `::before` LAYER whose `opacity` and `--background-overlay` fade it.
+We capture the image and its box but not the layer's opacity, so the band is
+100% pattern where the source is a faint texture. Do not apply a page band's
+background image until the layer (opacity + overlay) is on the same channel —
+at full strength it is worse than no image at all.
+
+## A gate must check EFFECT, not presence
+
+`fact consumption` passed while every band background was being dropped: the
+module emitted `bg`, so the fact was "rendered" — but `background:background-color:rgb(…)`
+is invalid CSS and the browser discarded it. Likewise the colour gate reported
+the missing surfaces as **not comparable (transparent)** rather than failed.
+When a gate asks "was the fact present?", a wrong rendering is invisible. Ask
+"did the page paint it?". `forge surfaces` is that check for the two signals
+that are never a page default: a band image (a bare URL, or the older
+`background-image:` declaration in `bgGradient`/`bgColor`) and a panel. It reads
+`dist/**/index.html`, finds the band's wrapper (the LAST `data-section-id`, since
+the scoped `<style>` comes first) and accepts an image on the wrapper **or** on a
+scoped `::before` layer. Colours are deliberately excluded — a band that shares
+the page background paints nothing and is still right.
+
 ## Lane visibility is `nth-child`, never a reorder
 
 A lane the source hides per device is emitted as

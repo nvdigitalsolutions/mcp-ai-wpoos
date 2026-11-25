@@ -322,6 +322,137 @@ const mediaFromElementFacts = ( theme: SectionTheme | undefined ): Array< { src:
 	return painted.length > 0 ? [ { src: painted[ 0 ].src, alt: '' } ] : undefined;
 };
 
+/** Any `property:` prefix — the shape that makes a value a DECLARATION. */
+const CSS_DECLARATION_RE = /^[a-z-]+\s*:/i;
+
+/**
+ * A band's background fact, as a CSS declaration.
+ *
+ * `bg` is usually a VALUE (`#fff`, `linear-gradient(…)`). The per-page pass also
+ * records some surfaces as a full DECLARATION, and prefixing those produced
+ * `background:background-image:url(…)` — invalid CSS, silently dropped, so the
+ * band rendered flat. eca.directory's about-us "Why choose" band lost its blob
+ * photo this way.
+ *
+ * A `background-image`/`background` declaration is passed through verbatim. A
+ * bare `background-color:` declaration is NOT trusted as a BAND surface: the
+ * page pass also hoists a lane's slab, and painting the whole band with one
+ * lane's colour is worse than leaving it — colours arrive via `bgColor`.
+ */
+/**
+ * The band image's BOX, as declarations.
+ *
+ * Elementor always declares all three beside the URL; the extracted value wins.
+ * When a band states none, `cover` / `no-repeat` / `center` is the sane band
+ * default — the CSS initial values paint a pattern at NATIVE scale, which is
+ * how eca.directory's dot pattern became a checkerboard over two bands
+ * (2026-11-25).
+ */
+const backgroundBox = ( theme: SectionTheme ): string[] => [
+	`background-size:${ theme.bgSize ?? 'cover' }`,
+	`background-repeat:${ theme.bgRepeat ?? 'no-repeat' }`,
+	`background-position:${ theme.bgPosition ?? 'center' }`,
+];
+
+/**
+ * The band image's LAYER (`bgLayerOpacity`).
+ *
+ * Elementor paints a band image on a `::before` layer faded by
+ * `--overlay-opacity` (0.05 on eca.directory's hero, 0.2 on its stats band,
+ * blended `lighten`). Painting the image on the band itself shows it at full
+ * strength over the copy. A layer band keeps the image OUT of `wrapStyle` and
+ * gets a scoped `::before` here instead; the band's own colour stays on the
+ * wrap, which is the order the source paints.
+ */
+const bandLayerCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ! theme?.bgImage || theme.bgLayerOpacity === undefined ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const blend = theme.bgBlendMode ? `;mix-blend-mode:${ theme.bgBlendMode }` : '';
+		return (
+			`${ scoped }{position:relative;isolation:isolate}` +
+			`${ scoped }::before{content:"";position:absolute;inset:0;background-color:transparent;background-image:url('${ theme.bgImage }');${ backgroundBox( theme ).join( ';' ) };opacity:${ theme.bgLayerOpacity }${ blend };pointer-events:none;z-index:0}` +
+			`${ scoped }>*{position:relative;z-index:1}`
+		);
+	} )
+	.join( '' );
+
+function bandBackground( value: string ): string | undefined {
+	const trimmed = value.trim();
+	if ( trimmed === '' ) {
+		return undefined;
+	}
+	if ( /^background(?:-image)?\s*:/i.test( trimmed ) ) {
+		return trimmed;
+	}
+	if ( CSS_DECLARATION_RE.test( trimmed ) ) {
+		return undefined;
+	}
+	return `background:${ trimmed }`;
+}
+
+/**
+ * Is a background fact a LIGHT surface?
+ *
+ * Only used to decide whether a hero keeps the template's white ink (the photo
+ * assumption) or takes its measured body ink. Unparseable values say no, so an
+ * unknown surface keeps the old behaviour.
+ */
+const lightSurface = ( value?: string ): boolean => {
+	if ( ! value ) {
+		return false;
+	}
+	const text = value.trim();
+	const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec( text );
+	const rgb = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i.exec( text );
+	let r: number;
+	let g: number;
+	let b: number;
+	if ( hex ) {
+		const digits = hex[ 1 ].length === 3 ? hex[ 1 ].replace( /(.)/g, '$1$1' ) : hex[ 1 ];
+		r = parseInt( digits.slice( 0, 2 ), 16 );
+		g = parseInt( digits.slice( 2, 4 ), 16 );
+		b = parseInt( digits.slice( 4, 6 ), 16 );
+	} else if ( rgb ) {
+		r = Number( rgb[ 1 ] );
+		g = Number( rgb[ 2 ] );
+		b = Number( rgb[ 3 ] );
+	} else {
+		return false;
+	}
+	return 0.299 * r + 0.587 * g + 0.114 * b > 140;
+};
+
+/**
+ * A LIGHT hero's measured ink.
+ *
+ * `.ds-section-wrap--hero > *` paints the whole band white because the template
+ * assumes a PHOTO hero. On a measured LIGHT band with no overlay that is
+ * unreadable (eca.directory about-us: #747474 body on #F7F7F7). A scoped rule on
+ * the paragraphs beats inheritance without touching the shared template CSS
+ * (which is drift-tracked). Hero-only on purpose: a card band manages its own
+ * ink.
+ */
+const bandInkCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const ink = theme?.type?.body?.color;
+		if ( ! id || ! ink || theme?.theme !== 'hero' || theme?.overlay || ! lightSurface( theme?.bg ) ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		// `!important` on purpose: the hero template paints the subtree white through
+		// a class rule, and this is the one measurement that must beat it. Scoped to
+		// the band and only for a MEASURED light hero with no overlay.
+		return `${ scoped } p,${ scoped } li,${ scoped } span{color:${ ink }!important}`;
+	} )
+	.join( '' );
+
 const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string, desktopCols?: number, collapsed = false ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
@@ -504,12 +635,29 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		parts.push( '--ds-hero-justify:flex-start' );
 	}
 	if ( theme.theme === 'hero' ) {
-		if ( theme.bgImage ) {
+		if ( theme.bgImage && theme.bgLayerOpacity === undefined ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
+			parts.push( ...backgroundBox( theme ) );
+		}
+		// A hero's ink is only white because the template assumes a PHOTO band.
+		// When the source band is LIGHT and carries no overlay, the measured body
+		// ink wins (eca.directory about-us: #747474 on #F7F7F7).
+		const measuredInk = theme.type?.body?.color;
+		if ( ! theme.overlay && lightSurface( theme.bg ) ) {
+			parts.push( '--ds-overlay:transparent' );
+			if ( measuredInk ) {
+				parts.push( `--ds-hero-ink:${ measuredInk }` );
+			}
 		}
 		// A color alongside the photo is the source's UNDERLAY (invisible
-		// beneath an opaque image) — never paint it over the photo.
-		if ( theme.bg && ! theme.bgImage ) {
+		// beneath an opaque image) — never paint it over the photo. On a LAYER
+		// band the image is a faded `::before`, so the colour IS the base and
+		// must be painted.
+		if (
+			theme.bg &&
+			! CSS_DECLARATION_RE.test( theme.bg ) &&
+			( ! theme.bgImage || theme.bgLayerOpacity !== undefined )
+		) {
 			parts.push( `background-color:${ theme.bg }` );
 		}
 		if ( theme.overlay ) {
@@ -518,7 +666,16 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		return parts.length > 0 ? parts.join( ';' ) : undefined;
 	}
 	if ( theme.bg ) {
-		parts.push( `background:${ theme.bg }` );
+		const declaration = bandBackground( theme.bg );
+		const isImage = declaration ? /background(?:-image)?\s*:/i.test( declaration ) : false;
+		// A LAYER image is emitted by `bandLayerCss` instead — painting it here
+		// would put the full-strength image under the copy as well.
+		if ( declaration && ! ( isImage && theme.bgLayerOpacity !== undefined ) ) {
+			parts.push( declaration );
+			if ( isImage ) {
+				parts.push( ...backgroundBox( theme ) );
+			}
+		}
 	}
 	// Section-level pull facts (124 §4): negative margins overlap the
 	// neighbor band; z-index stacks the overlap.
@@ -1278,6 +1435,7 @@ const bandLaneCss = sections
 		// rule could outrank.
 		(
 			[
+				[ 'desktop', '(min-width: 1025px)' ],
 				[ 'tablet', '(min-width: 768px) and (max-width: 1024px)' ],
 				[ 'mobile', '(max-width: 767px)' ],
 			] as const
@@ -1537,8 +1695,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
@@ -1550,13 +1708,25 @@ const bandParallaxCss = sections
 			// kinds that actually RENDER their html can own it: a component band
 			// keeps `section.html` but never emits it, so suppressing there would
 			// drop the anchor entirely.
-			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
 			// A band whose measured columns say "copy beside media" renders as the
 			// SPLIT HERO even when its classified kind is something else: the photo
 			// is a background-image the semantic pass cannot see, so the kind's own
 			// component would drop the media column and its lane split entirely.
-			const splitHero = theme?.layout === 'split' && section.kind !== 'text' && section.kind !== 'raw';
+			const splitMedia = theme ? mediaFromElementFacts( theme ) : undefined;
+			// A LEADING band whose measured row is copy beside a photo IS the hero,
+			// whatever the classifier called it: a page-title + text + breadcrumb band
+			// classifies as `text`, and its raw markup cannot lay the picture out at
+			// all (eca.directory's about-us hero had no photo, 2026-11-25).
+			const leadingHero =
+				index === 0 && theme?.layout === 'split' && ( splitMedia?.length ?? 0 ) > 0;
+			const splitHero = Boolean(
+				theme?.layout === 'split' &&
+					( leadingHero || ( section.kind !== 'text' && section.kind !== 'raw' ) )
+			);
 			const kind = splitHero ? 'hero' : section.kind;
+			// A band that RENDERS its html can own the anchor; a component band keeps
+			// `section.html` but never emits it, so suppressing there would drop it.
+			const renderedHtml = kind === 'text' || kind === 'raw' ? section.html : undefined;
 			// A query loop with nothing published has no cards to show. The band's own
 			// copy is real content and stays; the band goes only when the loop WAS the
 			// band — no title, no lede, nothing else to frame (see
@@ -1573,7 +1743,6 @@ const bandParallaxCss = sections
 			if ( dropBand ) {
 				return null;
 			}
-			const splitMedia = splitHero ? mediaFromElementFacts( theme ) : undefined;
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
 				<div data-section={kind} data-section-id={section.id ?? theme?.id} data-section-collapsed={foldsAway(section, theme) ? 'grid' : undefined} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop, foldsAway(section, theme)), parallaxStyle(behavior)].filter(Boolean).join(';')}>

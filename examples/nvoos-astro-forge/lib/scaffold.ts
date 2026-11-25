@@ -1508,7 +1508,8 @@ function contentlessBand( facts: ForgeBandFacts | undefined ): boolean {
  */
 function measuredLaneColumns(
 	bandFacts: ForgeBandFacts | undefined,
-	declared: ForgeSectionColumn[] | undefined
+	declared: ForgeSectionColumn[] | undefined,
+	contentWidth?: number
 ): ForgeSectionColumn[] | undefined {
 	const lanes = bandFacts?.columns?.desktop;
 	if ( ! lanes || lanes.length < 2 ) {
@@ -1522,13 +1523,23 @@ function measuredLaneColumns(
 		return undefined;
 	}
 	const total = lanes.reduce( ( sum, lane ) => sum + ( lane.width ?? 0 ), 0 );
+	// A lane set where EVERY lane fills the content column is a STACK, not a row:
+	// eca.directory's about-us CTA measures two 1280px lanes inside a 1280px
+	// content column. Normalising those to 50/50 laid them side by side; recording
+	// each as 100% lets the renderer derive ONE track (see lib/lane-tracks.ts).
+	const stacked =
+		contentWidth !== undefined &&
+		contentWidth > 0 &&
+		lanes.every( ( lane ) => ( lane.width ?? 0 ) >= contentWidth * 0.95 );
 	const declaredImages = ( declared ?? [] )
 		.map( ( column ) => column.bgImage )
 		.filter( ( url ): url is string => Boolean( url ) );
 	const used = new Set< string >();
 	return lanes.map( ( lane, index ) => {
 		const column: ForgeSectionColumn = {};
-		if ( lane.width && total > 0 ) {
+		if ( stacked ) {
+			column.width = 100;
+		} else if ( lane.width && total > 0 ) {
 			// A one-decimal share keeps the lanes summing to 100.
 			column.width = Math.round( ( lane.width / total ) * 1000 ) / 10;
 		}
@@ -1858,6 +1869,26 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		if ( bg && bg !== 'transparent' ) {
 			entry.push( `bg: ${ tsString( bg ) }` );
 		}
+		// A LAYER image rides a non-hero band too (`bandLayerCss` renders it on a
+		// faded `::before`, and `wrapStyle` leaves it off the wrap). A full-strength
+		// band photo stays hero-only, as before.
+		if ( section.bgImage && section.bgLayerOpacity !== undefined ) {
+			entry.push( `bgImage: ${ tsString( section.bgImage ) }` );
+		}
+	}
+	// The image's BOX (`ForgeSection.bgSize`). Emitted for every theme, hero or
+	// not: an image without it paints at native scale.
+	for ( const key of [ 'bgSize', 'bgRepeat', 'bgPosition' ] as const ) {
+		const value = section[ key ];
+		if ( value ) {
+			entry.push( `${ key }: ${ tsString( value ) }` );
+		}
+	}
+	if ( section.bgLayerOpacity !== undefined ) {
+		entry.push( `bgLayerOpacity: ${ section.bgLayerOpacity }` );
+	}
+	if ( section.bgBlendMode ) {
+		entry.push( `bgBlendMode: ${ tsString( section.bgBlendMode ) }` );
 	}
 	// The band's MARK STRIP (analyzer-measured logo wall — see
 	// `ForgeSection.logos`). Emitted for every theme: a logo wall is as often a
@@ -2282,7 +2313,7 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// services row is 432 / 432 / 571, not equal thirds) and the surfaces only a
 	// browser can see — a builder scopes the slab to a nested wrapper, which is
 	// how the black third column and its photo column went unrecorded.
-	const measuredColumns = measuredLaneColumns( bandFacts, section.columns );
+	const measuredColumns = measuredLaneColumns( bandFacts, section.columns, box?.desktop?.content?.width );
 	if ( measuredColumns ) {
 		const lanes = measuredColumns.map( ( column ) => {
 			const parts: string[] = [];
@@ -2397,6 +2428,9 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// type, backdrop shape, per-photo offsets, body columns.
 	if ( section.layout ) {
 		entry.push( `layout: ${ tsString( section.layout ) }` );
+	}
+	if ( section.mediaSide ) {
+		entry.push( `mediaSide: ${ tsString( section.mediaSide ) }` );
 	}
 	// The page HERO, derived from MEASURED facts rather than markup: the band
 	// that owns the h1 and splits into a copy column beside a media column.
@@ -2658,6 +2692,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbg?: string;',
 		'\t/** The hero photo (hero sections only). */',
 		'\tbgImage?: string;',
+		'\tbgSize?: string;',
+		'\tbgRepeat?: string;',
+		'\tbgPosition?: string;',
+		'\tbgLayerOpacity?: number;',
+		'\tbgBlendMode?: string;',
 		'\t/** The overlay tint over the hero photo. */',
 		'\toverlay?: string;',
 		'\t/** The band\u2019s MARK STRIP \u2014 logos the source publishes as carousel',
@@ -2811,6 +2850,9 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t/** The content rhythm (125 §1) — \'split\' = a copy column beside a',
 		'\t * media collage column (the source\'s two-column hero bands). */',
 		"\tlayout?: 'split';",
+		'\t/** Which side of the split holds the media (`left` | `right`) — measured',
+		'\t * from the lane order, so a mirror-image design is not rebuilt flipped. */',
+		"\tmediaSide?: 'left' | 'right';",
 		'\t/** The heading\'s underline divider facts (width/height/background/shadow). */',
 		'\ttitleDivider?: { width: string; height: string; background: string; shadow?: string };',
 		'\t/** The heading typography (size/weight/line-height/letter-spacing). */',

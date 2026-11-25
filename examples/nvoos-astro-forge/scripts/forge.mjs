@@ -74,6 +74,8 @@ import { auditFormBands, describeFormProblems } from '../lib/forms-gate.ts';
 import { describeHealth, fetchFormsHealth, sendFormProbe } from '../lib/forms-check.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { parseStructureCache, runStructurePass, serializeStructureCache, STRUCTURE_DEVICES } from '../lib/structure-pass.ts';
+import { analyzePageDesigns } from '../lib/page-design.ts';
+import { auditSurfaces, describeSurfaceCoverage } from '../lib/surface-coverage.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
@@ -4812,6 +4814,113 @@ program
 		await runColors( profileRef, options );
 	} );
 
+/**
+ * `forge page-design` — give every measured sub-page the design facts the
+ * homepage already has.
+ *
+ * The homepage runs two passes: the browser pass (geometry, band facts, region
+ * colours) and the design pass (`analyzeSections`). Sub-pages only got the
+ * first, so `pageBands[slug].sections` carried an id and a column list and the
+ * rebuild lost the band's surfaces, media and layout — eca.directory's about-us
+ * and contact-us (2026-11-25).
+ */
+async function runPageDesign( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const pages = Object.keys( profile.pageBands ?? {} );
+	if ( pages.length === 0 ) {
+		console.error( 'This profile has no pageBands \u2014 run `analyze <url> --geometry --pages` first.' );
+		process.exitCode = 1;
+		return;
+	}
+	const slugs = options.slugs
+		? String( options.slugs )
+				.split( ',' )
+				.map( ( slug ) => slug.trim() )
+				.filter( Boolean )
+		: undefined;
+	const gate = await openGate( profile, {} );
+	console.log( `\u2713 Page design \u2014 ${ profile.url } (gate ${ gate.probe.state })` );
+	if ( gate.blocked ) {
+		console.error( 'The source is still gated \u2014 refusing to measure the holding page.' );
+		gate.close();
+		process.exitCode = 2;
+		return;
+	}
+	try {
+		const { profile: next, reports } = await analyzePageDesigns( profile, {
+			slugs,
+			fetchImpl: gate.fetch,
+			onPage: ( report ) => {
+				if ( report.error ) {
+					console.log( `  ! ${ report.slug.padEnd( 18 ) } ${ report.error }` );
+					return;
+				}
+				const added = report.added.length > 0 ? ` \u00b7 added ${ report.added.join( ', ' ) }` : '';
+				const unnamed = report.unnamed.length > 0 ? ` \u00b7 unnamed ${ report.unnamed.join( ', ' ) }` : '';
+				console.log(
+					`  \u2022 ${ report.slug.padEnd( 18 ) } ${ report.bands } band(s) \u00b7 ${ report.matched } matched${ added }${ unnamed }`
+				);
+			},
+		} );
+		if ( options.json ) {
+			console.log( JSON.stringify( reports, null, 2 ) );
+		}
+		if ( ! options.write ) {
+			console.log( '\n(dry run \u2014 pass --write to store the page design facts)' );
+			return;
+		}
+		const profilePath = profilePathOf( profileRef );
+		if ( ! profilePath ) {
+			console.error( 'Cannot write: pass a site.json path (not a registered name) or run from the forge root.' );
+			process.exitCode = 1;
+			return;
+		}
+		await writeFile( profilePath, `${ JSON.stringify( next, null, '\t' ) }\n`, 'utf8' );
+		const total = reports.reduce( ( sum, report ) => sum + report.matched, 0 );
+		console.log( `\n\u2713 ${ total } section(s) updated in ${ reports.length } page(s) \u2014 ${ profilePath }` );
+		console.log( '  Next: `forge regen <profile> --target <dir> --only pages`, then rebuild.' );
+	} finally {
+		gate.close();
+	}
+}
+
+/**
+ * `forge surfaces` — did the build PAINT the surfaces the profile declares?
+ *
+ * The gate the pipeline was missing: every other check asked whether a fact was
+ * present, so a dropped band image (or an invalid declaration the browser
+ * discards) kept the scorecard green. Deterministic and browser-free.
+ */
+async function runSurfaces( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const target = resolve( options.target );
+	const dist = existsSync( join( target, 'dist', 'index.html' ) )
+		? join( target, 'dist' )
+		: join( target, 'dist', 'client' );
+	const readPage = ( page ) => {
+		const file = page === '/' ? join( dist, 'index.html' ) : join( dist, page, 'index.html' );
+		try {
+			return readFileSync( file, 'utf8' );
+		} catch {
+			return undefined;
+		}
+	};
+	const report = auditSurfaces( profile, readPage );
+	console.log( `\u2713 Surface coverage \u2014 ${ profile.url } (${ dist })` );
+	for ( const line of describeSurfaceCoverage( report ) ) {
+		console.log( line );
+	}
+	if ( report.checked === 0 ) {
+		console.log( '  no band image or panel is declared \u2014 nothing to check' );
+		return;
+	}
+	const painted = report.checked - report.gaps.length;
+	console.log( `\n${ painted }/${ report.checked } declared surface(s) painted` );
+	if ( report.gaps.length > 0 ) {
+		process.exitCode = 1;
+	}
+}
+
 program
 	.command( 'structure' )
 	.description(
@@ -4827,6 +4936,28 @@ program
 	.option( '--json', 'print the machine-readable report' )
 	.action( async ( profileRef, options ) => {
 		await runStructure( profileRef, options );
+	} );
+
+program
+	.command( 'page-design' )
+	.description(
+		'give measured sub-pages the design facts the homepage already has (surfaces, media, layout)'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name (must carry pageBands)' )
+	.option( '--slugs <list>', 'only these page slugs, comma-separated' )
+	.option( '--write', 'store the facts in the profile (default: dry run)' )
+	.option( '--json', 'print the machine-readable report' )
+	.action( async ( profileRef, options ) => {
+		await runPageDesign( profileRef, options );
+	} );
+
+program
+	.command( 'surfaces' )
+	.description( 'check that every band image / panel the profile declares is actually PAINTED in the build' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.action( async ( profileRef, options ) => {
+		await runSurfaces( profileRef, options );
 	} );
 
 program

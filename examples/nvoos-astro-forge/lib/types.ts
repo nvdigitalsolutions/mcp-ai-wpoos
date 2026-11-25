@@ -1826,6 +1826,25 @@ export interface ForgeMark {
 	 */
 	spacer?: boolean;
 	bgImage?: string;
+	/**
+	 * The band image's BOX — Elementor declares all three beside the URL
+	 * (`background-size: cover; background-repeat: no-repeat;
+	 * background-position: top center`). An image without its box paints at
+	 * NATIVE scale: eca.directory's dot pattern covered the hero and stats bands
+	 * and made white text unreadable (2026-11-25).
+	 */
+	bgSize?: string;
+	bgRepeat?: string;
+	bgPosition?: string;
+	/**
+	 * The LAYER the image is painted on. Elementor renders a band image on a
+	 * `::before` layer faded by `--overlay-opacity` and sometimes blended
+	 * (`mix-blend-mode: lighten`). Painting the image on the band instead shows a
+	 * 5%-opacity halftone at full strength (eca.directory about-us, 2026-11-25).
+	 * Absent = paint on the band.
+	 */
+	bgLayerOpacity?: number;
+	bgBlendMode?: string;
 	bgColor?: string;
 	bgGradient?: string;
 	/** The background-overlay tint (Elementor's overlay layer). */
@@ -1978,6 +1997,15 @@ export interface ForgeMark {
 	 * two-column hero band: a copy column (heading + divider + body +
 	 * links) beside a media collage column (jayainc's about band). */
 	layout?: 'split';
+	/**
+	 * Which SIDE of a split band holds the media.
+	 *
+	 * A split is not always copy-then-media: eca.directory's about-us benefits
+	 * band puts the photo on the LEFT and the copy on the right, and a rebuild
+	 * that always renders copy first mirrors the design (2026-11-25). Measured
+	 * from the lane order, never assumed.
+	 */
+	mediaSide?: 'left' | 'right';
 	/** The heading's underline divider (aux-modern-heading-divider) —
 	 * width/height/background/shadow facts the rebuild re-applies under
 	 * the split hero's title. */

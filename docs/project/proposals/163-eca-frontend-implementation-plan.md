@@ -1069,6 +1069,51 @@ small open VLM for a 12 GB GPU, and the alternatives at that size (InternVL 2.5
 32B+ checkpoint or a paid API. So the dry run is the product at this size: read
 the labels, then decide about `--write`.
 
+## Pass — page design facts (diagnostic, write blocked)
+
+The homepage is measured TWICE: the browser pass (`measurePageBands` →
+geometry, band facts, region colours) and the design pass (`analyzeSections` →
+surfaces, panels, layout, media). Sub-pages only ever got the first half, so
+`pageBands[slug].sections` carried an id and a column list and nothing else.
+That is why eca.directory's about-us and contact-us rebuilt with no hero photo,
+no band backgrounds and a collapsed split, while the contact-us FAQ band —
+whose facts happen to be structural — looked right.
+
+`lib/page-design.ts` + `forge page-design <profile> --slugs a,b` close the
+asymmetry: fetch each page, run the same extractor, merge the design facts onto
+that page's sections **by id**, never replacing `id`/`vendorId`/`columns` (the
+browser pass owns those). Unmatched work is reported, not guessed.
+
+**The write path is blocked on the LAYER, not the box.** `bgImage` alone paints
+at native scale, so `background-size` / `repeat` / `position` now ride the same
+fact (`bgSize`/`bgRepeat`/`bgPosition`, extracted from the band-scoped rule and
+applied by `wrapStyle`). With the box the build is still wrong: Elementor renders
+`bg-01.png` on a `::before` layer faded by `opacity` + `--background-overlay`, so
+at full strength a faint texture becomes a 100% halftone that swallows the white
+text. Capture the layer (opacity, overlay) before enabling `--write`.
+
+So the next piece is small and precise: record the layer's `opacity` and
+`overlay` beside the image, render it on a pseudo-element rather than the wrap,
+and only then store page band images.
+
+### The gate: `forge surfaces`
+
+`lib/surface-coverage.ts` answers the question every other gate was missing —
+**did the page PAINT it?** For each band declaring an image (a bare URL, or the
+older declaration shape in `bgGradient`/`bgColor`) or a panel, it reads the
+built page and fails when nothing carries it. Deterministic, browser-free, and
+narrow on purpose: a band COLOUR is not checked, because a band that shares the
+page background legitimately paints nothing.
+
+It is inert until the facts exist — on eca.directory today no band stores a
+surface in a shape it reads — which is exactly why it pairs with `page-design`:
+the moment those facts are written, the gate bites.
+
+Still missing after that, on this site: the stats band's dark purple COLOUR (no
+fact is recorded at all), the lane image URLs (`image: true` with no URL to pair,
+so the photo lane is dropped), the stat value/unit concatenation, and the eyebrow
+rendered as a bar rather than a pill.
+
 ## Pass — lane-level per-device facts (container model)
 
 `ForgeSectionColumn` has carried `widthTablet` / `widthMobile` /
