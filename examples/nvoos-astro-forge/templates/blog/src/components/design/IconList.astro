@@ -16,7 +16,7 @@ import ItemTitle from './ItemTitle.astro';
 import SmartImage from '../SmartImage.astro';
 import IconMarker from './IconMarker.astro';
 import SectionTitle from './SectionTitle.astro';
-import { bandParagraphs } from '../../lib/band-copy.ts';
+import { bandParagraphs, titleEchoItems } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -25,8 +25,12 @@ interface Props {
 }
 
 const { section, columns, theme } = Astro.props;
-const { title, body, items, media } = section.slots;
-const list = items ?? [];
+const { title: parsedTitle, body, items, media } = section.slots;
+// The measured `titleText` stands in when the semantic pass could not pick the
+// heading — the echo fold below needs it to recognise the lead icon-box.
+const title = parsedTitle ?? theme?.titleText;
+const echoes = new Set( titleEchoItems( items, title, theme, theme?.columns ) );
+const list = ( items ?? [] ).filter( ( item ) => ! echoes.has( item ) );
 const rows = list.length > 0 && list.every((item) => item.layout === 'row');
 const desktop = columns ? Math.min(columns.desktop ?? 4, Math.max(list.length, 1)) : undefined;
 const gridStyle = !rows && columns && desktop

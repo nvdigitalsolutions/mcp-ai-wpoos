@@ -1751,7 +1751,14 @@ function measuredContainer(
 			// A partial slab reports the SLAB, and constraining a band to it would
 			// re-centre a surface the source paints flush; `theme.panel` already
 			// carries that case. Below 60% of the row it is a slab, not a container.
-			if ( available > 0 && contentWidth >= available * 0.6 && contentWidth <= available + 1 ) {
+			//
+			// POSITION is the other half of the test: a container is CENTRED in its
+			// band, a slab is not. eca.directory's contact form is a 924px white slab
+			// starting at x=516 (not the 258 a centred 924 box would start at), and
+			// constraining the band to it squeezed the photo lane away (2026-11-25).
+			const offset = typeof box.content?.x === 'number' ? box.content.x : 0;
+			const centred = Math.abs( offset - ( box.width - contentWidth ) / 2 ) <= 8;
+			if ( available > 0 && centred && contentWidth >= available * 0.6 && contentWidth <= available + 1 ) {
 				return { measure: `${ Math.round( contentWidth ) }px`, padX: '0px' };
 			}
 		}

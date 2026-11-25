@@ -13377,8 +13377,8 @@
 		},
 		"contact-us": {
 			"url": "https://eca.directory/contact-us/",
-			"measuredAt": "2026-11-25T15:49:55.193Z",
-			"sourceHash": "ee4bf7b2a3393457",
+			"measuredAt": "2026-11-25T16:19:37.110Z",
+			"sourceHash": "61835633a882fcc7",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -13430,7 +13430,11 @@
 						"columnWidths": [
 							250,
 							1440
-						]
+						],
+						"content": {
+							"width": 1280,
+							"x": 80
+						}
 					},
 					"tablet": {
 						"height": 420,
@@ -13448,7 +13452,11 @@
 						"columnWidths": [
 							180,
 							834
-						]
+						],
+						"content": {
+							"width": 774,
+							"x": 30
+						}
 					},
 					"mobile": {
 						"height": 544,
@@ -13466,7 +13474,11 @@
 						"columnWidths": [
 							180,
 							390
-						]
+						],
+						"content": {
+							"width": 330,
+							"x": 30
+						}
 					}
 				},
 				"9c2d1fa": {
@@ -14586,8 +14598,8 @@
 		},
 		"about-us": {
 			"url": "https://eca.directory/about-us/",
-			"measuredAt": "2026-11-25T15:49:15.495Z",
-			"sourceHash": "5a8b83827a4b5397",
+			"measuredAt": "2026-11-25T16:18:43.270Z",
+			"sourceHash": "94f9f3833f5ce283",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -14661,7 +14673,11 @@
 						"columnWidths": [
 							250,
 							1440
-						]
+						],
+						"content": {
+							"width": 1280,
+							"x": 80
+						}
 					},
 					"tablet": {
 						"height": 420,
@@ -14679,7 +14695,11 @@
 						"columnWidths": [
 							180,
 							834
-						]
+						],
+						"content": {
+							"width": 774,
+							"x": 30
+						}
 					},
 					"mobile": {
 						"height": 795,
@@ -14697,7 +14717,11 @@
 						"columnWidths": [
 							180,
 							390
-						]
+						],
+						"content": {
+							"width": 330,
+							"x": 30
+						}
 					}
 				},
 				"49146de0": {

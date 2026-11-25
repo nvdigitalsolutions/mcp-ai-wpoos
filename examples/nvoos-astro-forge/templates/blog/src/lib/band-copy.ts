@@ -42,6 +42,36 @@ export interface BandLaneSurface {
 	bgImage?: string;
 }
 
+/**
+ * The band's media LANE, when its measured row is one picture beside content.
+ *
+ * A builder puts a photo in its own column (`e-child`) and the copy in the
+ * other; the rebuild's component kinds (form, icon list, feature grid, stats,
+ * CTA) render the copy full-width and drop the column entirely. The measured
+ * lane list is the proof the column exists, so the renderer can put the
+ * component beside the picture instead of pretending the band is one column.
+ *
+ * Deliberately narrow: exactly TWO lanes with exactly ONE painted. A card row
+ * where a single card happens to carry a background photo still has three or
+ * more lanes (or two painted), and is left to its own component.
+ */
+export function mediaLane(
+	theme?: { columns?: readonly ( BandLaneSurface | undefined )[] }
+): { src: string; side: 'left' | 'right' } | undefined {
+	const lanes = theme?.columns;
+	if ( ! Array.isArray( lanes ) || lanes.length !== 2 ) {
+		return undefined;
+	}
+	const painted = lanes
+		.map( ( lane, index ) => ( lane?.bgImage ? index : -1 ) )
+		.filter( ( index ) => index >= 0 );
+	if ( painted.length !== 1 ) {
+		return undefined;
+	}
+	const src = lanes[ painted[ 0 ] ]?.bgImage;
+	return src ? { src, side: painted[ 0 ] === 0 ? 'left' : 'right' } : undefined;
+}
+
 /** The band's paragraphs, minus any text its title or eyebrow already renders. */
 export function bandParagraphs(
 	body: string[] | undefined,
