@@ -16,7 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  * rather than in each query.
  *
  * No casts on `content`: it is free text and every consumer wants the raw string.
- * `tags` is the exception — the column is JSON and the page renders a list.
+ * `tags` and `metadata` are the exceptions — both columns are JSON, and a
+ * half-written value must not 500 the page.
  */
 class Memory extends Model
 {
@@ -65,6 +66,22 @@ class Memory extends Model
         }
 
         return array_values(array_map('strval', $decoded));
+    }
+
+    /**
+     * `metadata` is a JSON column, decoded to the map the store reports.
+     *
+     * Returns an empty map rather than null so a reader never has to tell
+     * "absent" from "empty", which is what `MemoryStoreInterface::get()` promises
+     * on the domain side.
+     *
+     * @return array<string, mixed>
+     */
+    public function getMetadataAttribute(mixed $value): array
+    {
+        $decoded = json_decode((string) $value, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**
