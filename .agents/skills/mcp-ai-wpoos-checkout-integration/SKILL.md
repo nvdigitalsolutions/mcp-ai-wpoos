@@ -55,6 +55,53 @@ keeps the release-page fallback). Two independent throttles exist: client
 transients (5 session / 15 verify attempts per 10 min per user) and vendor
 per-IP limits — when debugging "Too many checkout attempts", check both.
 
+## The licence read side (`/api/licenses/check|activate`)
+
+`/verify` **issues** a key; validating it later is a **different contract** on
+the same server:
+
+```
+POST https://nvdigitalsolutions.com/api/licenses/check      (form-encoded)
+POST https://nvdigitalsolutions.com/api/licenses/activate
+  license_key = <40 hex chars, bin2hex(random_bytes(20))>
+  site_url    = <site URL, or a stable instance id for the Laravel runtime>
+  product     = mcp-ai-wpoos-pro          (both clients send the internal slug)
+
+check    -> { status: "valid"|"invalid", plan?, expires? }
+activate -> { success: bool, status, plan?, expires? }
+```
+
+Who calls it:
+
+| Client | Path | Reads | Failure policy |
+|---|---|---|---|
+| WP Pro plugin (`includes/admin/class-wp-mcp-ai-pro-license.php`, base URL filterable via `wp_mcp_ai_license_server_url`) | `/activate`, `/check` | `success`, `status`, `expires` | keeps the last state on transport error |
+| Laravel runtime (`lib/laravel-adapter/src/Adapter/LicensedProEntitlement.php`) | `/check` only | `status`, `plan`, `expires` | fails closed; 4xx = definitive denial, 5xx/429 = transient; caches 12 h valid / 5 min denied / 7 d grace |
+
+The Laravel side maps the returned `plan` onto `ProPlanCatalog`
+(`compliance` | `professional` | `enterprise`) — an unrecognised plan is a
+denial (`license-unknown-plan:<plan>`), so the server must only return a
+catalogue value.
+
+**Where it lives (PR #8234):** `addons/checkout-api` serves it, so the store
+that issues keys also validates them —
+`/wp-json/nvoos-checkout/v1/license/check|activate` plus rewrites for the two
+legacy `/api/licenses/*` paths. Policy worth knowing before debugging:
+
+- Unknown, revoked, wrong-product and wrong-site keys all return the **same**
+  `{status:invalid}` with HTTP 200 (no key oracle). A 404/500 there is a
+  routing/deploy problem, not a bad key.
+- `mcp-ai-wpoos-pro` aliases the sold product `nvoos-oos-complete`; the stored
+  row's product is what the response reports.
+- Site binding compares hosts (scheme/path/port ignored, `www.` not folded) and
+  **never re-binds** — a mismatch means the key belongs to another install.
+- Plan is a server decision (`nvoos_checkout_license_plan`); the table has no
+  plan column — and no expiry column either (absent = perpetual).
+- Issuing deliberately has no unauthenticated endpoint: mint with a verified
+  Stripe intent, or on the server via
+  `NVOOS_Checkout_API_License_Store::create([...])` (use a unique
+  `stripe_payment_intent` placeholder — the column is `UNIQUE NOT NULL`).
+
 ## Where the clients live
 
 | Plugin | Version | Notes |
