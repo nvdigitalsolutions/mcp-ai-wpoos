@@ -34,6 +34,34 @@ describe( 'band background box', () => {
 		expect( band.bgPosition ).toBe( 'top center' );
 	} );
 
+	it( 'records the LAYER a band image is painted on', () => {
+		const [ band ] = analyzeSections( {
+			url: 'https://eca.example',
+			html: section(),
+			css: [
+				'.elementor-element-a1b2c3d{--overlay-opacity:0.2}',
+				'.elementor-element-a1b2c3d::before{background-image:url("https://eca.example/bg.png");background-size:cover;mix-blend-mode:lighten}',
+			],
+		} );
+		expect( band.bgLayerOpacity ).toBe( 0.2 );
+		expect( band.bgBlendMode ).toBe( 'lighten' );
+	} );
+
+	it( 'keeps the band COLOUR under a layer image', () => {
+		// The colour is the base a faded layer sits on, not an underlay beneath an
+		// opaque photo. Dropping it left white text on white.
+		const [ band ] = analyzeSections( {
+			url: 'https://eca.example',
+			html: section(),
+			css: [
+				':root{--brand: #27104A}',
+				'.elementor-element-a1b2c3d{--overlay-opacity:0.2;background-color:var(--brand)}',
+				'.elementor-element-a1b2c3d::before{background-image:url("https://eca.example/bg.png")}',
+			],
+		} );
+		expect( band.bgColor ).toBe( '#27104A' );
+	} );
+
 	it( 'leaves the box absent when the source declares none', () => {
 		// The renderer's default then applies; fabricating a value here would hide
 		// a band whose source really does paint at native scale.

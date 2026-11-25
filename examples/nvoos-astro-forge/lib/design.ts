@@ -2286,6 +2286,20 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			if ( position && ! fact.bgPosition ) {
 				fact.bgPosition = position[ 1 ].trim();
 			}
+			// The LAYER. Elementor fades a band image through `--overlay-opacity` on
+			// the element and may blend the `::before` layer over the band colour.
+			// Without both, the image paints at full strength over the copy.
+			const layerOpacity = body.match( /--overlay-opacity\s*:\s*([\d.]+)/i );
+			if ( layerOpacity && fact.bgLayerOpacity === undefined ) {
+				const value = parseFloat( layerOpacity[ 1 ] );
+				if ( Number.isFinite( value ) && value >= 0 && value < 1 ) {
+					fact.bgLayerOpacity = value;
+				}
+			}
+			const blend = selector.includes( '::before' ) ? body.match( /mix-blend-mode\s*:\s*([a-z-]+)/i ) : null;
+			if ( blend && ! fact.bgBlendMode ) {
+				fact.bgBlendMode = blend[ 1 ].trim();
+			}
 			const color = body.match( BG_COLOR_RE );
 			// The overlay rule's color belongs to the overlay layer — it must
 			// never become the band's own background color.
@@ -2294,7 +2308,13 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 					fact.overlay = color[ 1 ].trim();
 				}
 			} else if ( color && ! fact.bgColor ) {
-				fact.bgColor = color[ 1 ].trim();
+				// Elementor names its palette through a global var; the rebuild never
+				// ships that stylesheet, so an unresolved token is not a fact. The
+				// stats band's dark purple is exactly this case.
+				const resolved = resolveCssVars( color[ 1 ].trim(), cssText );
+				if ( /^(?:#[0-9a-f]{3,8}|rgba?|hsla?)/i.test( resolved ) ) {
+					fact.bgColor = resolved;
+				}
 			}
 			const padding = body.match( PADDING_RE );
 			if ( padding && ! fact.padding ) {
@@ -2394,6 +2414,23 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			const lanes = containerLaneFactsOf( section, scopedRules );
 			if ( lanes ) {
 				fact.columns = lanes;
+			}
+		}
+		// A band whose colour is declared through Elementor's global palette
+		// (`background-color: var(--e-global-color-secondary)`) can sit inside a
+		// block the top-level rule scan drops — the token still resolves, so read
+		// it from the raw sheet as a last resort. Without the colour the band's ink
+		// assumes a surface that is never painted (white text on white, 2026-11-25).
+		if ( ! fact.bgColor ) {
+			const fallback = new RegExp(
+				`elementor-element-${ id }[^{}]*\\{[^{}]*background-color\\s*:\\s*([^;}]+)`,
+				'i'
+			).exec( cssText );
+			if ( fallback ) {
+				const resolved = resolveCssVars( fallback[ 1 ].trim(), cssText );
+				if ( /^(?:#[0-9a-f]{3,8}|rgba?|hsla?)/i.test( resolved ) ) {
+					fact.bgColor = resolved;
+				}
 			}
 		}
 		// The band's MARK STRIP (a logo wall / partner row). A builder
@@ -2760,7 +2797,12 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		// invisibly (jayainc's hero: rgba(8,26,67,0.9) under jaya-3-1.jpg).
 		// Storing it as the band color makes the rebuilt hero paint the tint
 		// OVER the photo — the opposite of the source. Drop it.
-		if ( fact.bgImage ) {
+		//
+		// EXCEPT on a LAYER band: the image there is a `::before` at partial
+		// opacity, so the colour is the BASE the layer sits on, not an underlay.
+		// eca.directory's stats band is 20% halftone over #27104A; dropping the
+		// colour left white text on white (2026-11-25).
+		if ( fact.bgImage && fact.bgLayerOpacity === undefined ) {
 			delete fact.bgColor;
 		}
 		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog || fact.logos || fact.comparison || fact.panel ) {

@@ -1869,6 +1869,12 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		if ( bg && bg !== 'transparent' ) {
 			entry.push( `bg: ${ tsString( bg ) }` );
 		}
+		// A LAYER image rides a non-hero band too (`bandLayerCss` renders it on a
+		// faded `::before`, and `wrapStyle` leaves it off the wrap). A full-strength
+		// band photo stays hero-only, as before.
+		if ( section.bgImage && section.bgLayerOpacity !== undefined ) {
+			entry.push( `bgImage: ${ tsString( section.bgImage ) }` );
+		}
 	}
 	// The image's BOX (`ForgeSection.bgSize`). Emitted for every theme, hero or
 	// not: an image without it paints at native scale.
@@ -1877,6 +1883,12 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		if ( value ) {
 			entry.push( `${ key }: ${ tsString( value ) }` );
 		}
+	}
+	if ( section.bgLayerOpacity !== undefined ) {
+		entry.push( `bgLayerOpacity: ${ section.bgLayerOpacity }` );
+	}
+	if ( section.bgBlendMode ) {
+		entry.push( `bgBlendMode: ${ tsString( section.bgBlendMode ) }` );
 	}
 	// The band's MARK STRIP (analyzer-measured logo wall — see
 	// `ForgeSection.logos`). Emitted for every theme: a logo wall is as often a
@@ -2680,6 +2692,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbgSize?: string;',
 		'\tbgRepeat?: string;',
 		'\tbgPosition?: string;',
+		'\tbgLayerOpacity?: number;',
+		'\tbgBlendMode?: string;',
 		'\t/** The overlay tint over the hero photo. */',
 		'\toverlay?: string;',
 		'\t/** The band\u2019s MARK STRIP \u2014 logos the source publishes as carousel',
