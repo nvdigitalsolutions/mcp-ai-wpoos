@@ -2030,14 +2030,17 @@ async function runStructure( profileRef, options ) {
 		console.log( `  model ${ outcome.model } \u00b7 ${ outcome.shots } screenshot(s)` );
 		for ( const band of outcome.bands ) {
 			if ( band.skipped ) {
-				console.log( `  = ${ band.id.padEnd( 10 ) } already measured (detector wins)` );
+				console.log( `  = ${ band.id.padEnd( 10 ) } already measured${ band.type ? ` (${ band.type })` : '' } \u2014 detector wins` );
 				continue;
 			}
 			const label = band.type === 'unknown' ? 'unknown' : `${ band.type } ${ Math.round( band.confidence * 100 ) }%`;
-			console.log( `  ${ band.type === 'unknown' ? '?' : '\u2022' } ${ band.id.padEnd( 10 ) } ${ band.device.padEnd( 8 ) } ${ label }${ band.cached ? ' (cached)' : '' }` );
+			// The model's own evidence, so a human can judge a label without
+			// re-running the pass — the dry run is the product here.
+			const note = band.note ? ` — ${ band.note.slice( 0, 90 ) }` : '';
+			console.log( `  ${ band.type === 'unknown' ? '?' : '\u2022' } ${ band.id.padEnd( 10 ) } ${ band.device.padEnd( 8 ) } ${ label }${ band.cached ? ' (cached)' : '' }${ note }` );
 		}
 		console.log(
-			`  ${ outcome.labelled } labelled \u00b7 ${ outcome.unknown } unnamed \u00b7 ${ outcome.asked } asked \u00b7 ${ outcome.cached } cached \u00b7 ${ outcome.failed } failed`
+			`  ${ outcome.labelled } labelled \u00b7 ${ outcome.unknown } unnamed \u00b7 ${ outcome.asked } asked \u00b7 ${ outcome.cached } cached \u00b7 ${ outcome.failed } failed${ outcome.conflicts > 0 ? ` \u00b7 ${ outcome.conflicts } conflicted` : '' }`
 		);
 	}
 	if ( ! options.write ) {
