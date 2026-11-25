@@ -4864,14 +4864,13 @@ async function runPageDesign( profileRef, options ) {
 		if ( options.json ) {
 			console.log( JSON.stringify( reports, null, 2 ) );
 		}
-		// DELIBERATELY NO --write YET. The extraction names a band's background
-		// IMAGE but not its box (`background-size`/`repeat`/`position`), and the
-		// rebuild has no band default for those. Storing the fact alone painted
-		// eca.directory's dot pattern at NATIVE SCALE over the hero and stats bands
-		// and made white text unreadable (2026-11-25). The write path returns once
-		// the box facts ride the same channel.
+		// DIAGNOSTIC ONLY. The image's box now rides the fact (`bgSize` etc.), but
+		// Elementor fades the image on a `::before` LAYER via opacity +
+		// --background-overlay, and that is not captured. Storing the image made
+		// eca.directory's faint halftone render at 100% over the hero and stats
+		// bands. The write path returns with the layer.
 		console.log(
-			'\n(diagnostic only \u2014 the write path is blocked on background box facts: size/repeat/position)'
+			'\n(diagnostic only \u2014 storing band images needs the background LAYER: opacity + overlay)'
 		);
 	} finally {
 		gate.close();

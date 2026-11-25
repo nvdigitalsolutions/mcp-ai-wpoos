@@ -339,6 +339,21 @@ const CSS_DECLARATION_RE = /^[a-z-]+\s*:/i;
  * page pass also hoists a lane's slab, and painting the whole band with one
  * lane's colour is worse than leaving it — colours arrive via `bgColor`.
  */
+/**
+ * The band image's BOX, as declarations.
+ *
+ * Elementor always declares all three beside the URL; the extracted value wins.
+ * When a band states none, `cover` / `no-repeat` / `center` is the sane band
+ * default — the CSS initial values paint a pattern at NATIVE scale, which is
+ * how eca.directory's dot pattern became a checkerboard over two bands
+ * (2026-11-25).
+ */
+const backgroundBox = ( theme: SectionTheme ): string[] => [
+	`background-size:${ theme.bgSize ?? 'cover' }`,
+	`background-repeat:${ theme.bgRepeat ?? 'no-repeat' }`,
+	`background-position:${ theme.bgPosition ?? 'center' }`,
+];
+
 function bandBackground( value: string ): string | undefined {
 	const trimmed = value.trim();
 	if ( trimmed === '' ) {
@@ -537,6 +552,7 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
+			parts.push( ...backgroundBox( theme ) );
 		}
 		// A color alongside the photo is the source's UNDERLAY (invisible
 		// beneath an opaque image) — never paint it over the photo.
@@ -552,6 +568,10 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		const declaration = bandBackground( theme.bg );
 		if ( declaration ) {
 			parts.push( declaration );
+			// An image declaration needs its box, or it paints at native scale.
+			if ( /background(?:-image)?\s*:/i.test( declaration ) ) {
+				parts.push( ...backgroundBox( theme ) );
+			}
 		}
 	}
 	// Section-level pull facts (124 §4): negative margins overlap the
