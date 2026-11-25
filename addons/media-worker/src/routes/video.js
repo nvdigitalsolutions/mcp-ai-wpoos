@@ -16,13 +16,17 @@ const router = Router();
 // of `1; rm -rf /` was a command. Every argument is now an argv element handed
 // to execFile, which never involves a shell; the values are still bounded so a
 // malformed one is a 400 with a reason rather than an ffmpeg stack trace.
-const PROCESS_FORMATS = new Set( [ 'mp4', 'webm', 'mov', 'mkv', 'gif', 'mp3', 'm4a', 'aac', 'jpg', 'jpeg', 'png' ] );
+const PROCESS_FORMATS = new Set( [ 'mp4', 'webm', 'mov', 'mkv', 'gif', 'mp3', 'm4a', 'aac', 'jpg', 'jpeg', 'png', 'avi', 'flv' ] );
 const MAX_DIMENSION = 8192;
 const MAX_SECONDS = 24 * 60 * 60;
 // Matches the `adjust_video_speed` tool's range, so the route refuses exactly
 // what the tool refuses and a caller sees one consistent boundary.
 const MIN_SPEED = 0.25;
 const MAX_SPEED = 4;
+// Encoders an agent may name. Anything outside these lists is refused rather
+// than passed to ffmpeg as an `-c:v` argument.
+const VIDEO_CODECS = new Set( [ 'libx264', 'libx265', 'libvpx', 'libvpx-vp9' ] );
+const AUDIO_CODECS = new Set( [ 'aac', 'libmp3lame', 'libvorbis', 'libopus' ] );
 // Without `-movflags +faststart` the moov atom lands at the end of the file and
 // a browser must download the whole thing before the first frame paints.
 const FASTSTART_FORMATS = new Set( [ 'mp4', 'mov' ] );
@@ -75,6 +79,59 @@ function resolveFormat( value ) {
 	const slug = String( value || 'mp4' ).toLowerCase();
 
 	return PROCESS_FORMATS.has( slug ) ? slug : null;
+}
+
+/**
+ * Allowlist a codec name.
+ *
+ * The value ends up in `-c:v` / `-c:a`, so an unknown one is not a typo to
+ * relay — it is an argument. Absent is null (the route keeps the source
+ * codec); unknown is refused.
+ *
+ * @param {*}          value   Raw field value.
+ * @param {Set<string>} allowed Permitted names.
+ * @param {string}     label   Field name for the message.
+ * @return {string|null}
+ * @throws {Error} When present and not allowed.
+ */
+function resolveCodec( value, allowed, label ) {
+	if ( undefined === value || null === value || '' === value ) {
+		return null;
+	}
+
+	const slug = String( value ).trim().toLowerCase();
+
+	if ( ! allowed.has( slug ) ) {
+		throw new Error( `${ label } must be one of ${ [ ...allowed ].join( ', ' ) }.` );
+	}
+
+	return slug;
+}
+
+/**
+ * Allowlist a bitrate such as `2000k` or `5m`.
+ *
+ * A permissive string here would reach ffmpeg as an argument value, so the
+ * shape is fixed: digits with an optional k/m suffix and nothing else. A
+ * leading dash — the shape that could be read as another flag — cannot match.
+ *
+ * @param {*}      value Raw field value.
+ * @param {string} label Field name for the message.
+ * @return {string|null}
+ * @throws {Error} When present and malformed.
+ */
+function resolveBitrate( value, label ) {
+	if ( undefined === value || null === value || '' === value ) {
+		return null;
+	}
+
+	const slug = String( value ).trim().toLowerCase();
+
+	if ( ! /^[0-9]{1,6}[km]?$/.test( slug ) ) {
+		throw new Error( `${ label } must look like 2000k or 5m.` );
+	}
+
+	return slug;
 }
 
 /**
@@ -443,6 +500,11 @@ router.post('/process', upload.single('file'), async (req, res) => {
 	      speed: rawSpeed,
 	      maintain_pitch: rawMaintainPitch,
 	      fit: rawFit,
+	      vcodec: rawVcodec,
+	      acodec: rawAcodec,
+	      video_bitrate: rawVideoBitrate,
+	      audio_bitrate: rawAudioBitrate,
+	      remove_audio: rawRemoveAudio,
 	    } = req.body;
     const inputPath = req.file.path;
     const videoDir = siteDirFor(req.site, 'video');
@@ -455,6 +517,10 @@ router.post('/process', upload.single('file'), async (req, res) => {
 	    let format;
 	    let speed;
 	    let fit;
+	    let vcodec;
+	    let acodec;
+	    let videoBitrate;
+	    let audioBitrate;
 
     try {
       width = boundedDimension(rawWidth, 'width');
@@ -464,6 +530,10 @@ router.post('/process', upload.single('file'), async (req, res) => {
 	      fps = boundedNumber(rawFps, 0.1, 120, 'fps');
 	      speed = boundedNumber(rawSpeed, MIN_SPEED, MAX_SPEED, 'speed');
 	      fit = resolveFit(rawFit);
+	      vcodec = resolveCodec(rawVcodec, VIDEO_CODECS, 'video_codec');
+	      acodec = resolveCodec(rawAcodec, AUDIO_CODECS, 'audio_codec');
+	      videoBitrate = resolveBitrate(rawVideoBitrate, 'video_bitrate');
+	      audioBitrate = resolveBitrate(rawAudioBitrate, 'audio_bitrate');
 	      format = resolveFormat(rawFormat);
     } catch (argErr) {
       cleanupUpload();
@@ -647,6 +717,45 @@ router.post('/process', upload.single('file'), async (req, res) => {
 	        break;
 	      }
 
+	      case 'transcode': {
+	        // Every value here was allowlisted above; this case only decides
+	        // which of them reaches argv.
+	        if (vcodec) {
+	          args.push('-c:v', vcodec);
+	        }
+
+	        if (videoBitrate) {
+	          args.push('-b:v', videoBitrate);
+	        }
+
+	        if (fps) {
+	          args.push('-r', String(fps));
+	        }
+
+	        // `-2` rather than `-1` keeps the derived side even, which x264 and
+	        // x265 require; an odd width is a hard encoder failure.
+	        if (width && height) {
+	          args.push('-vf', `scale=${width}:${height}`);
+	        } else if (height) {
+	          args.push('-vf', `scale=-2:${height}`);
+	        } else if (width) {
+	          args.push('-vf', `scale=${width}:-2`);
+	        }
+
+	        if (boolField(rawRemoveAudio, false)) {
+	          args.push('-an');
+	        } else {
+	          if (acodec) {
+	            args.push('-c:a', acodec);
+	          }
+
+	          if (audioBitrate) {
+	            args.push('-b:a', audioBitrate);
+	          }
+	        }
+	        break;
+	      }
+
 	      case 'speed': {
 	        if ( null === speed ) {
 	          cleanupUpload();
@@ -806,8 +915,12 @@ export {
 	boundedDimension,
 	resolveFormat,
 	resolveFit,
+	resolveCodec,
+	resolveBitrate,
 	parseRational,
 	boolField,
 	atempoChain,
+	VIDEO_CODECS,
+	AUDIO_CODECS,
 	PROCESS_FORMATS,
 };

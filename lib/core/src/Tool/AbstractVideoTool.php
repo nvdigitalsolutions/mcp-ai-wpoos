@@ -127,6 +127,8 @@ abstract class AbstractVideoTool extends AbstractTool
             'mp3' => 'audio/mpeg',
             'm4a' => 'audio/mp4',
             'aac' => 'audio/aac',
+            'avi' => 'video/x-msvideo',
+            'flv' => 'video/x-flv',
             'jpg' => 'image/jpeg',
             'jpeg' => 'image/jpeg',
             'png' => 'image/png',

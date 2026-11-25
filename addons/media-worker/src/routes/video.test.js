@@ -23,6 +23,10 @@ import {
 	parseRational,
 	boolField,
 	atempoChain,
+	resolveCodec,
+	resolveBitrate,
+	VIDEO_CODECS,
+	AUDIO_CODECS,
 	PROCESS_FORMATS,
 } from './video.js';
 
@@ -68,6 +72,35 @@ test( 'the format list is small and contains no traversal characters', () => {
 	for ( const format of PROCESS_FORMATS ) {
 		assert.match( format, /^[a-z0-9]+$/, `${ format } must be a bare extension` );
 	}
+} );
+
+test( 'a codec name is an allowlist, not a passthrough', () => {
+	assert.equal( resolveCodec( 'libx264', VIDEO_CODECS, 'video_codec' ), 'libx264' );
+	assert.equal( resolveCodec( 'LIBX265', VIDEO_CODECS, 'video_codec' ), 'libx265' );
+	assert.equal( resolveCodec( 'libvpx-vp9', VIDEO_CODECS, 'video_codec' ), 'libvpx-vp9' );
+	assert.equal( resolveCodec( undefined, VIDEO_CODECS, 'video_codec' ), null );
+	assert.equal( resolveCodec( '', VIDEO_CODECS, 'video_codec' ), null );
+
+	// The value reaches `-c:v`, so an unknown one is refused rather than relayed.
+	assert.throws( () => resolveCodec( 'h264', VIDEO_CODECS, 'video_codec' ), /must be one of/ );
+	assert.throws( () => resolveCodec( 'libx264 -y', VIDEO_CODECS, 'video_codec' ), /must be one of/ );
+	assert.throws( () => resolveCodec( 'aac', VIDEO_CODECS, 'video_codec' ), /must be one of/ );
+
+	assert.equal( resolveCodec( 'aac', AUDIO_CODECS, 'audio_codec' ), 'aac' );
+	assert.throws( () => resolveCodec( 'libx264', AUDIO_CODECS, 'audio_codec' ), /must be one of/ );
+} );
+
+test( 'a bitrate is shaped, so it cannot arrive as a flag', () => {
+	assert.equal( resolveBitrate( '2000k', 'video_bitrate' ), '2000k' );
+	assert.equal( resolveBitrate( '5M', 'video_bitrate' ), '5m' );
+	assert.equal( resolveBitrate( 2000, 'video_bitrate' ), '2000' );
+	assert.equal( resolveBitrate( undefined, 'video_bitrate' ), null );
+	assert.equal( resolveBitrate( '', 'video_bitrate' ), null );
+
+	// The shape that would be read as another ffmpeg option.
+	assert.throws( () => resolveBitrate( '-y', 'video_bitrate' ), /must look like/ );
+	assert.throws( () => resolveBitrate( '2000k -y', 'video_bitrate' ), /must look like/ );
+	assert.throws( () => resolveBitrate( '2.5m', 'video_bitrate' ), /must look like/ );
 } );
 
 test( 'a fit is an allowlist of two behaviours', () => {

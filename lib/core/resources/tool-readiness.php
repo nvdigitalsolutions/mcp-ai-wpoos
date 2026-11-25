@@ -2038,6 +2038,15 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'transcode_video' => array(
+			'class' => 'Nvoos\\Core\\Tool\\TranscodeVideoTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerVideo over `POST /api/video/process` (operation `transcode`: allowlisted codecs reach `-c:v`/`-c:a`, shaped bitrates reach `-b:v`/`-b:a`, `-r` for frame rate, `scale=-2:H` for height) then `GET /api/video/download`. The WordPress tool is a real fluent-ffmpeg implementation; `preset` is deliberately not carried because `optimize_for_platform` owns platform frames.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoProcessingAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'transcribe_openai_audio' => array(
 			'class' => 'Nvoos\\Core\\Tool\\TranscribeOpenAIAudioTool',
 			'readiness' => 'ready',
