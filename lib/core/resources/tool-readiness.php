@@ -853,6 +853,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/PdfDocumentAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'generate_pdf' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GeneratePdfTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Composes HTML through HtmlFormatter and renders it with the bound HtmlToPdfInterface (the media worker `POST /api/pdf/generate`), then stores through FileVisibilityStoreInterface. Deterministic formatter, so no model is involved despite the WordPress flagship declaring `requires-model`; the WordPress tool also could not have worked, because it delegated `content` to an operation that required `description` (Proposal 164 section 164.31).',
+			'evidence' => 'lib/core/tests/Unit/Tool/GeneratePdfToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'generate_gemini_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateGeminiImageTool',
 			'readiness' => 'ready',
@@ -1779,6 +1788,15 @@ return array(
 			'readiness' => 'pure',
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'pro_pdf_document' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ProPdfDocumentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Three operations (generate, structure, format) over the same pure HtmlFormatter + HtmlToPdfInterface + FileVisibilityStoreInterface path as `generate_pdf`. `generate` accepts `content`, unlike the WordPress tool whose `generate` required the `description` it was never sent; a description-only call is refused with the named `no_content_generator` error because the worker is a deterministic formatter and this host has no model to expand it (Proposal 164 section 164.31).',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProPdfDocumentToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
 		'probe_remote_mcp' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ProbeRemoteMcpTool',

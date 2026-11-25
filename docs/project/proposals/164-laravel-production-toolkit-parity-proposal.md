@@ -2292,3 +2292,153 @@ A 12-byte mp3 in three 4-byte chunks becomes a media row with `audio/mpeg`, and
 the chunk directory is gone afterwards; a wrong offset answers 409 with the
 offset the server holds and writes nothing; an SVG is refused at completion with
 its chunks retained.
+
+## 164.31 — The document cluster, and a tool that could not have worked (2026-11-25)
+
+§164.30 gave the runtime somewhere trustworthy to put bytes. The next largest
+block of unported tools is the one that *makes* them: `document-generation`
+declares **38** tools and serves **9**, so 29 are open — more than any other
+toolkit, and the only cluster whose work was blocked on the file layer rather
+than on an endpoint choice.
+
+Reading them before porting any turned up something that changes the order.
+
+### `generate_pdf` could never have worked
+
+The WordPress tool is four lines of delegation:
+
+```php
+$pro_arguments = array(
+    'operation' => 'generate',
+    'content'   => $arguments['content'] ?? '',
+    'title'     => $arguments['title'] ?? 'Document',
+);
+return $this->pro_pdf_tool->execute( $pro_arguments, $context );
+```
+
+But `pro_pdf_document`'s `generate` operation opens with:
+
+```php
+if ( empty( $arguments['description'] ) ) {
+    return new WP_Error( 'wp_mcp_ai_missing_description', … );
+}
+```
+
+It requires `description`. It is sent `content`. So every call to `generate_pdf`
+returns `wp_mcp_ai_missing_description` — the slug whose whole purpose is
+"content in, PDF out" has never produced a PDF. `format` has the same shape but
+accepts *either* field, which is why the error went unnoticed: the sibling
+operation works when you call it directly.
+
+The port does not reproduce that. `pro_pdf_document` accepts `content` for
+`generate`, because content is what the operation actually renders; and a call
+that supplies only `description` is refused with a named error rather than
+silently doing nothing.
+
+### The renderer is deterministic, so no model is claimed
+
+`pro_pdf_document` declares `consumes-tokens` and `requires-model` in WordPress
+because `generate` and `format` can hand a one-line description to a model and
+ask it to write the document body.
+
+This runtime will not do that, for the reason already recorded on
+`GenerateWordTool`: the bound engine is the media worker's `POST
+/api/pdf/generate` — puppeteer rendering HTML — which is a **deterministic
+formatter**. Declaring a model dependency would route every call through a cost
+gate for a cost it never incurs, and a `description`-only call cannot be honoured
+without inventing copy.
+
+So the port refuses `description`-only input with `no_content_generator`, naming
+the fix (send `content`, or bind a model writer). The `model` parameter is
+accepted and ignored rather than silently dropped, and the tool declares
+`requires-capability`/`write`/`state-changing` — not `requires-model`.
+
+That divergence is recorded here because it is the third time the WordPress
+flags have over-declared a dependency (§164.4.8, and `generate_word` /
+`generate_excel` before it). The pattern is: **port the behaviour that renders,
+not the flag that describes the intent.**
+
+### The composition is pure, so it goes in core
+
+`convert_to_html()` in the WordPress tool does no I/O: it takes `sections` or
+`content`, hands them to `WP_MCP_AI_Html_Formatter`, and wraps the result in a
+complete document with base CSS, meta tags, a page-width table and print
+rules. That formatter (543 lines) is pure except for three WordPress helpers —
+`wp_parse_args`, `esc_attr`, `absint` — all of which have trivial equivalents.
+
+So `HtmlFormatter` is ported to `Nvoos\Core\Domain\Service\Document` and both
+tools share it. A renderer receives a self-contained HTML document and knows
+nothing about sections, headings or page widths.
+
+The writer contract is not new: `HtmlToPdfInterface` already exists and
+`MediaWorkerHtmlToPdf` already implements it over the worker route the
+WordPress `pro_pdf` tool has used since before this port. Page-size names are
+resolved against `getSupportedPageFormats()` so an unsupported size is a
+validation error rather than a silently wrong page — the rule `HtmlToPdfTool`
+already follows.
+
+Persistence reuses `GeneratedMediaPersister::attachFile()`, which takes the
+renderer's **path** (not a base64 payload) and hands it to the registry, so a
+generated PDF gets an id, an owner and a visibility exactly like an uploaded one.
+
+### The remaining 29, sequenced
+
+A cluster this size is not one port. The slices are ordered so each one stands
+alone and none depends on a later decision:
+
+| # | slice | tools | why in this position |
+|---|---|---|---|
+| A | PDF write path | `pro_pdf_document`, `generate_pdf` | The linchpin: `generate_pdf` delegates to the former, and both are served by a route that already exists. |
+| B | Tabular export | `excel_data_export` | Pairs with the already-ported `excel_data_import`; rows in, workbook out, no new engine. |
+| C | Archive | `archive_documents` | Needs a zip writer over registry files; the only new low-level capability in the cluster. |
+| D | Docs Hub | `docs_hub_*` (5) | A content store with read/write/list/delete/rebuild — a subsystem, not a formatter. |
+| E | QMS control | `qms_*` (10) | A document lifecycle (draft → review → approve → release → supersede) with signatures and an audit trail. The largest single slice and the only one that needs a state machine. |
+| F | Office/OCR variants | `pro_word_document`, `pro_excel_document`, `pro_pdf_document`… (6) | Thin variants of B and A; several are the same call with different defaults, so they are cheap *after* A and B and expensive before. |
+| G | Data-dependent | `get_expired_documents`, `get_uninvoiced_orders`, `generate_invoice_pdf`, `generate_invoice_batch`, `docgen_capture_style_memory` | Each needs a data source this host may not have (orders, expiry policy, style memory). Same class as `run_openai_external_action` in §164.27: a decision about a source, not a port. |
+
+Slice **A** ships here. The rest are recorded so the next session does not have
+to re-derive the order.
+
+### Where the work lives (slice A)
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Service/Document/HtmlFormatter.php` | new; the ported pure formatter |
+| `lib/core/src/Application/Document/PdfDocumentComposer.php` | new; compose → render → persist, shared by both tools |
+| `lib/core/src/Tool/ProPdfDocumentTool.php` | new; `generate`, `structure`, `format` |
+| `lib/core/src/Tool/GeneratePdfTool.php` | new; the two-parameter wrapper, working this time |
+| `lib/core/resources/tool-readiness.php` | two rows |
+| `lib/core/tests/Unit/Domain/Service/Document/HtmlFormatterTest.php` | new; the formatter, including the stylesheet refusals |
+| `lib/core/tests/Unit/Tool/GeneratePdfToolTest.php` | new; the tool that could not have worked |
+| `lib/core/tests/Unit/Tool/ProPdfDocumentToolTest.php` | new; three operations, page geometry, formatting |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+No new contract, no new adapter, no new worker route: the engine and the store
+both already exist, which is the point of doing this slice after §164.29/§164.30
+rather than before them.
+
+### Measurement (slice A)
+
+| suite | before | after |
+|---|---|---|
+| `lib/core` | 2,510 / 17,679 | **2,574 / 17,863** |
+| adapter | 363 / 1,958 | **363 / 1,959** |
+| audit | 286 / 267 / 0 | **288 / 288, servable 269** |
+| toolkit parity | 64 of 854 | **66 of 854** |
+| `document-generation` | 9 of 38 | **11 of 38** |
+
+The adapter gain is a single assertion, not a test: the two manifest rows resolve
+from the container, which is what `ToolReadinessRegistrationTest` proves. Sixty of
+the sixty-four new core tests are the formatter, the composer and the two tools;
+the remaining four are the schema and flag assertions.
+
+`generate_pdf` renders text into a stored PDF and reports
+`attachment_id`; `pro_pdf_document` renders sections, applies colour and line
+height, and refuses a `description`-only call with `no_content_generator`. A
+`font_family` of `Arial} body{display:none` falls back to the default instead of
+closing the rule.
+
+Not attempted here, and deliberately: slices B–G in the table above. Slice D
+(Docs Hub) and slice E (QMS) are each larger than this one and are subsystems
+rather than formatters — a content store and a signed document lifecycle
+respectively — so neither belongs in a PDF PR.
