@@ -55,6 +55,34 @@ const cards = lanes
 	  ]
 	: ( items ?? [] ).map( ( item ) => ( { item, surface: undefined } ) );
 
+// A card whose heading IS the band's own title is not a card — it is the band's
+// sub-heading. A builder publishes the pair as two widgets (eca.directory's
+// updates band: a 14px `h2` "Our Updates" and a 33px icon-box "News &
+// Insights" whose body is the band's lede), and the measured eyebrow/title pair
+// then promotes the icon-box heading to the band title. Rendering the card too
+// printed the same string twice, with an empty-looking one-card "grid" under
+// it. Fold a copy-only card's body into the lede and keep the grid for cards
+// that say something the title does not.
+//
+// Never folded when the card carries media or its own link: those are its
+// content, and dropping them would delete a picture or a destination.
+const normalise = ( value: string | undefined ): string =>
+	( value ?? '' ).trim().replace( /\s+/g, ' ' ).toLowerCase();
+const shownTitle = theme?.eyebrow && theme?.titleText ? theme.titleText : title;
+const titleEchoes = shownTitle
+	? cards.filter(
+			( card ) =>
+				normalise( card.item?.title ) === normalise( shownTitle ) &&
+				! card.item?.media &&
+				! ( card.item?.links?.length ?? 0 )
+	  )
+	: [];
+const visibleCards = titleEchoes.length > 0 ? cards.filter( ( card ) => ! titleEchoes.includes( card ) ) : cards;
+const ledeBody = [
+	...( body ?? [] ),
+	...titleEchoes.flatMap( ( card ) => card.item?.paragraphs ?? ( card.item?.body ? [ card.item.body ] : [] ) ),
+];
+
 const titleVars = [
 	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
 	theme?.titleStyle?.weight && `--ds-title-weight:${ theme.titleStyle.weight }`,
@@ -81,16 +109,16 @@ const dividerStyle = theme?.titleDivider
 <section class:list={['ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center']}>
 	{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 	{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-	{bandParagraphs(body, theme).length > 0 && (
+	{bandParagraphs( ledeBody, theme ).length > 0 && (
 		<div class="ds-lede">
-			{bandParagraphs(body, theme).map((paragraph) => (
+			{bandParagraphs( ledeBody, theme ).map((paragraph) => (
 				<p>{paragraph}</p>
 			))}
 		</div>
 	)}
-	{items && items.length > 0 && (
+	{visibleCards.length > 0 && (
 		<div class="ds-grid" style={gridStyle}>
-			{cards.map(({ item, surface }) => {
+			{visibleCards.map(({ item, surface }) => {
 				const surfaceStyle = [
 					surface?.bgColor && `background-color:${ surface.bgColor }`,
 					surface?.bgImage &&
