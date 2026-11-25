@@ -230,8 +230,47 @@ Architectural details of the MCP adapter were not included in the Nov 2025 annou
 
 The default in 2026 for new "operation surface" code in a WP plugin is: try as an Ability first.
 
+## Registration cost — the hook fires on every REST request
+
+`wp_abilities_api_init` does **not** mean "an ability is about to be used". It
+fires from `WP_Abilities_Registry::get_instance()`, and the Abilities REST
+controller calls that while registering its routes. So it runs on **every REST
+request** — including core routes such as `/wp/v2/users/me` and the `/wp-json/`
+index — and again in admin, AJAX, cron and CLI contexts.
+
+Whatever your callback enumerates is therefore paid on every one of those
+requests. Measured on a real site (14 apps on one 8 GB server, 2026-11): a bridge
+that called a tool registry's `get_all_tools()` loaded **999 PHP files and
+~56 MB** to serve a `401` on a core route that could never expose an ability.
+
+- Register a **static** list; do not enumerate a large runtime registry.
+- If you must enumerate, gate the work by namespace and make it filterable.
+- Prove the cost with a before/after on a core REST route — count
+  `get_included_files()` and peak `memory_get_peak_usage()`, don't infer it from
+  reading code.
+
+```php
+$route = isset( $GLOBALS['wp']->query_vars['rest_route'] )
+	? '/' . trim( (string) $GLOBALS['wp']->query_vars['rest_route'], '/' ) . '/'
+	: '';
+
+// Core routes ('' is "unresolved" → keep the safe default) never expose abilities.
+$register = ( '' === $route
+	|| 0 === strpos( $route, '/wp-abilities/' )
+	|| 0 === strpos( $route, '/mcp-ai/' ) );
+
+if ( ! apply_filters( 'myplugin_register_abilities', $register, $route ) ) {
+	return;
+}
+```
+
+The filter doubles as a kill switch, so a host can disable the bridge without a
+code change.
+
 ## Critical rules
 
+- **`wp_abilities_api_init` runs on every REST request.** Keep the callback
+  cheap; never enumerate a large registry there (see above).
 - **Register on `wp_abilities_api_init`** for abilities, `wp_abilities_api_categories_init` for categories. Don't register on `init` directly.
 - **Categories are prerequisite.** Register categories before abilities.
 - **Identifier `namespace/ability-name` is a public contract** — treat it like a versioned API.
@@ -247,6 +286,12 @@ The default in 2026 for new "operation surface" code in a WP plugin is: try as a
 // WRONG — registering on 'init' instead of 'wp_abilities_api_init'
 add_action( 'init', function () {
     wp_register_ability( 'myplugin/foo', /* ... */ );
+} );
+
+// WRONG — enumerating a large registry on every REST request; this loads every
+// class in the registry to serve a core route that can never use an ability
+add_action( 'wp_abilities_api_init', function () {
+    foreach ( My_Plugin_Registry::all() as $item ) { /* ... */ }
 } );
 
 // WRONG — no category registered, ability registration returns null
