@@ -882,3 +882,60 @@ change to `lib/eca.ts` / `templates/blog/src/**` does not reach the built site
 until the copy is refreshed (`cp` the file, or re-scaffold). Building `days28`
 from a stale `src/forge/eca.ts` re-introduced the day-range type error that #8236
 had already fixed.
+
+## Pass — the comparison matrix, measured where the SVGs still exist (2026-11-25, seventh pass)
+
+### What shipped
+
+`77f4271d` carries a **"Compare User Roles"** matrix (Student / Parent / Teacher
+against four features, a check or a cross in every value cell). The rebuild
+rendered it as loose text inside a three-card feature grid, and the build-time
+classifier could never do better: the marks are `<svg>`, and `sanitizeHtml`
+strips every one (52 raw → 0 sanitised; the pipeline reports
+`kind feature-grid items 3 cmp no`).
+
+The fact is now measured at **analyze** time from the raw HTML, exactly as the
+fifth pass prescribed:
+
+| Piece | Where |
+|---|---|
+| `comparisonOf()` — structural detector (equal rows of equal cells, text header, label + icon-only cells, one mark per cell) | `lib/design.ts` |
+| `comparisonFactsById()` — the same facts keyed by section id | `lib/design.ts` |
+| emission on the section entry + the generated `SectionTheme` field | `lib/scaffold.ts` |
+| `<Comparison>` appended **after** the band's own component, heading/links suppressed | `DesignRenderer.astro` |
+
+The marks are stored as **text** (`✓` / `✗`), so nothing downstream depends on an
+icon font.
+
+### Why the id-keyed merge was needed
+
+`comparisonOf()` first ran inside `analyzeSections()`, and the fact never
+appeared in the profile. The reason: the band MODEL is chosen after the section
+pass, and eca's profile is **`bandSource: outline`** — the Elementor section list
+(fewer bands than the outline) is discarded and the outline bands, which carry no
+comparison, are used. Recording by id lets either model pick the fact up. A
+detector inside a pass whose output can be discarded is invisible, not wrong.
+
+### Result (build `days32`)
+
+- the band renders a real `<table class="ds-compare">` with `<caption>Compare
+  User Roles</caption>`, `scope="col"` role headers and `scope="row"` feature
+  labels — `✓ ✓ ✓ / ✓ ✗ ✓ / ✓ ✓ ✓ / ✓ ✓ ✓`
+- **text parity 85.1 % → 85.6 %**, colour 0 fail / 1 warn (unchanged), page bands
+  8 fail / 10 warn (unchanged)
+- tests **2237 passed / 140 files**, typecheck clean
+
+### Hazard found — `analyze --design --write` can flip the band model
+
+The refresh that recorded the fact also flipped this profile from `elementor`
+bands to `outline` bands, and **silently dropped**:
+
+- three `chrome` facts (`footerBrand`, `mobileNav`, `footerInk`) — `diffDesignFacts`
+  warns about these;
+- every section `bgColor` / `bgGradient`, including `77f4271d`'s
+  `linear-gradient(#27104a 30%, #ffffff 0%)` — the fix an earlier pass existed
+  to make. **Nothing warns about this at all.**
+
+The profile committed here is therefore the PREVIOUS profile plus the verified
+fact, not the refresh's output. Until the flip is reported (or pinned), treat a
+design refresh on this site as "re-verify every band surface afterwards".
