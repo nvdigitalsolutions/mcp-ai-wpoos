@@ -346,3 +346,26 @@ the forge repo. Editing `lib/eca.ts` and rebuilding the existing project re-ran 
 bug that had already been fixed upstream, because `src/forge/eca.ts` was stale.
 Either copy each changed file into the project or re-scaffold; then run the
 project's own `npm run check` before building.
+
+## A fact recorded inside a pass whose output can be DISCARDED is invisible
+
+`analyzeSections()` keeps only bands that state a fact, and the design pass then
+chooses the band MODEL: when the section list is shorter than the vendor-agnostic
+outline, the outline wins (`bandSource: outline`). A detector written inside
+`analyzeSections()` therefore produces nothing on such a site — eca.directory's
+comparison matrix was measured correctly and thrown away.
+
+Record per-section facts **keyed by section id** (`comparisonFactsById`) and merge
+them onto whichever band list wins, so the fact survives the model decision.
+
+## A design refresh can flip the band model and drop every band surface
+
+`analyze --design --write` replaces `profile.design` wholesale. On eca.directory it
+flipped `elementor` → `outline` bands and silently dropped every
+`bgColor`/`bgGradient`, including a gradient an earlier pass existed to capture.
+`diffDesignFacts` reports dropped CHROME facts and says nothing about this.
+
+After any design refresh on an outline-builder site, diff `bandSource` and the
+section background facts against the previous profile before building. If they
+regressed, apply the one fact you came for to the OLD profile instead of shipping
+the refresh.
