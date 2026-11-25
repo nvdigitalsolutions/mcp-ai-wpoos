@@ -13377,8 +13377,8 @@
 		},
 		"contact-us": {
 			"url": "https://eca.directory/contact-us/",
-			"measuredAt": "2026-11-25T16:19:37.110Z",
-			"sourceHash": "61835633a882fcc7",
+			"measuredAt": "2026-11-25T17:06:59.693Z",
+			"sourceHash": "050534e90b3b679d",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -13557,7 +13557,9 @@
 						"marginBottom": 0,
 						"content": {
 							"width": 1280,
-							"x": 80
+							"x": 80,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					},
 					"tablet": {
@@ -13571,7 +13573,9 @@
 						"marginBottom": 0,
 						"content": {
 							"width": 774,
-							"x": 30
+							"x": 30,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					},
 					"mobile": {
@@ -13585,7 +13589,9 @@
 						"marginBottom": 0,
 						"content": {
 							"width": 330,
-							"x": 30
+							"x": 30,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					}
 				}
@@ -14598,8 +14604,8 @@
 		},
 		"about-us": {
 			"url": "https://eca.directory/about-us/",
-			"measuredAt": "2026-11-25T16:18:43.270Z",
-			"sourceHash": "94f9f3833f5ce283",
+			"measuredAt": "2026-11-25T17:06:23.673Z",
+			"sourceHash": "61171ddf5e6b0c52",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -14744,7 +14750,9 @@
 						],
 						"content": {
 							"width": 1280,
-							"x": 80
+							"x": 80,
+							"padTop": 80,
+							"padBottom": 0
 						}
 					},
 					"tablet": {
@@ -14766,7 +14774,9 @@
 						],
 						"content": {
 							"width": 774,
-							"x": 30
+							"x": 30,
+							"padTop": 60,
+							"padBottom": 0
 						}
 					},
 					"mobile": {
@@ -14788,7 +14798,9 @@
 						],
 						"content": {
 							"width": 330,
-							"x": 30
+							"x": 30,
+							"padTop": 60,
+							"padBottom": 0
 						}
 					}
 				},
@@ -14804,7 +14816,9 @@
 						"marginBottom": 0,
 						"content": {
 							"width": 1100,
-							"x": 170
+							"x": 170,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					},
 					"tablet": {
@@ -14818,7 +14832,9 @@
 						"marginBottom": 0,
 						"content": {
 							"width": 774,
-							"x": 30
+							"x": 30,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					},
 					"mobile": {
@@ -14832,7 +14848,9 @@
 						"marginBottom": 0,
 						"content": {
 							"width": 330,
-							"x": 30
+							"x": 30,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					}
 				},
@@ -14856,7 +14874,9 @@
 						],
 						"content": {
 							"width": 1280,
-							"x": 80
+							"x": 80,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					},
 					"tablet": {
@@ -14878,7 +14898,9 @@
 						],
 						"content": {
 							"width": 774,
-							"x": 30
+							"x": 30,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					},
 					"mobile": {
@@ -14900,7 +14922,9 @@
 						],
 						"content": {
 							"width": 330,
-							"x": 30
+							"x": 30,
+							"padTop": 60,
+							"padBottom": 60
 						}
 					}
 				}
