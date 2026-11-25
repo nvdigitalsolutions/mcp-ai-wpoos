@@ -555,8 +555,8 @@ export function parseDays( raw: unknown ): string[] {
 		const from = canonicalDay( range[ 1 ] );
 		const to = canonicalDay( range[ 2 ] );
 		if ( from && to ) {
-			const start = ECA_DAY_ORDER.indexOf( from );
-			const end = ECA_DAY_ORDER.indexOf( to );
+			const start = ECA_DAY_ORDER.indexOf( from as ( typeof ECA_DAY_ORDER )[ number ] );
+			const end = ECA_DAY_ORDER.indexOf( to as ( typeof ECA_DAY_ORDER )[ number ] );
 			if ( start >= 0 && end >= 0 ) {
 				// Inclusive, and wrapping (`Friday to Monday` is a weekend run).
 				for ( let index = start; ; index = ( index + 1 ) % ECA_DAY_ORDER.length ) {
