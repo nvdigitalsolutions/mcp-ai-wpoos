@@ -1039,10 +1039,35 @@ into the band's `structure` channel. Rules, all enforced by the module:
   a bad classification is attributable and removable;
 - the model never writes markup or copy — it picks a label.
 
-The first confident device wins (the desktop render carries the full structure;
-a phone render legitimately collapses a matrix to a stack — the same trap
-`hiddenAt` guards). Capture is injected, so the pass is unit-tested without a
-browser.
+Three precision rules were added after running it against eca.directory:
+
+1. **A rendered form is measured.** The enquiry band's heading (`Questions? Get a
+   quick reply by sending your message`) reads as an FAQ, and the local model
+   answered `faq` at 0.9 on **both** device ends. A band whose render contains a
+   `<form>` is skipped, not asked.
+2. **The two device reads must AGREE.** An abstention is not a contradiction (a
+   matrix legitimately collapses on a phone), but two different labels mean the
+   band is ambiguous at this model's resolution — nothing is stored.
+3. **The heading rides along as evidence.** It is read from the measured render
+   (`h1`–`h4` inside the band), capped at 140 chars, and appended to the prompt.
+   Without it the model answered `text` for a hero; with it, `team` for a band
+   headed *Meet the Project Team* — which is correct.
+
+The prompt was also calibrated: the model must name a concrete visual cue first,
+and a confidence of 0.9 is reserved for an unmistakable cue (below 0.5 if it is
+choosing between labels). That turned four confident `text` answers into
+abstentions.
+
+Capture is injected, so the pass is unit-tested without a browser.
+
+### What the local model can and cannot do (2026-11-25)
+
+`qwen2.5vl:7b` over Ollama, 7 bands × 2 devices: 2 labels (one correct, one
+harmless), 7 abstentions, 2 measured skips, 0 failures. It is the recommended
+small open VLM for a 12 GB GPU, and the alternatives at that size (InternVL 2.5
+8B, MiniCPM-V 2.6 8B) are comparable rather than better; a step change needs a
+32B+ checkpoint or a paid API. So the dry run is the product at this size: read
+the labels, then decide about `--write`.
 
 ## Pass — lane-level per-device facts (container model)
 
@@ -1077,7 +1102,14 @@ Four pieces now line up:
    queries. Never a reorder: the hidden lane keeps its slot in the source's
    reading order and stays in the DOM for crawlers.
 
-**Not done, deliberately.** A lane's per-device *width* is recorded in the
-profile but not emitted: honouring it needs a per-device track template
-(`--ds-cols-template-*`), which is a layout change to verify on real sites
-rather than guess at. The fact is there for that pass.
+**Per-device widths *are* emitted — as a track COUNT.** Elementor's responsive
+lane width is a flex basis: a row wraps when the running total passes 100%.
+`lib/lane-tracks.ts` derives the first row's track count for tablet and mobile
+(`[50,100] → 1`, `[50,50,50] → 2`), skipping lanes the source hides there and
+inheriting a lane's desktop width when it states none (Elementor's own cascade).
+It refuses to answer when the device is not addressed explicitly, or when a
+visible lane has no basis at all. Emitted as `grid-template-columns` scoped to
+the band, because `columnsFor` writes its count INLINE and no stylesheet rule
+could outrank it. Verified on the built ECA page with a temporary fact: three
+33.3% lanes whose last goes 100% on mobile emitted `repeat(2, …)` at ≤767 and
+**no** tablet rule — the explicit-only rule holding.

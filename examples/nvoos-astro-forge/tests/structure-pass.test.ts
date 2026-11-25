@@ -164,6 +164,93 @@ describe( 'vision structure pass', () => {
 		expect( second.labelled ).toBe( 1 );
 	} );
 
+	it( 'sends the measured heading as evidence, not just the pixels', async () => {
+		const bodies: string[] = [];
+		const fetchImpl = vi.fn( async ( _url: unknown, init: { body?: unknown } ) => {
+			bodies.push( String( init.body ?? '' ) );
+			return {
+				ok: true,
+				json: async () => ( {
+					choices: [ { message: { content: JSON.stringify( { type: 'comparison', confidence: 0.9 } ) } } ],
+				} ),
+			} as unknown as Response;
+		} );
+		await run(
+			profileWith(),
+			[ { ...shot( 'abc1234', 'desktop', 'a' ), title: 'Compare User Roles' } ],
+			fetchImpl as unknown as typeof fetch
+		);
+		expect( bodies[ 0 ] ).toContain( 'Compare User Roles' );
+	} );
+
+	it( 'sends the plain prompt when the band has no heading', async () => {
+		const bodies: string[] = [];
+		const fetchImpl = vi.fn( async ( _url: unknown, init: { body?: unknown } ) => {
+			bodies.push( String( init.body ?? '' ) );
+			return {
+				ok: true,
+				json: async () => ( { choices: [ { message: { content: '{"type":"text","confidence":0.8}' } } ] } ),
+			} as unknown as Response;
+		} );
+		await run( profileWith(), [ shot( 'abc1234', 'desktop', 'a' ) ], fetchImpl as unknown as typeof fetch );
+		expect( bodies[ 0 ] ).not.toContain( 'measured from the page' );
+	} );
+
+	it( 'never asks about a band that renders a form', async () => {
+		const fetchImpl = answering( { type: 'faq', confidence: 0.9 } );
+		const outcome = await run(
+			profileWith(),
+			[ { ...shot( 'abc1234', 'desktop', 'a' ), hasForm: true } ],
+			fetchImpl as unknown as typeof fetch
+		);
+		expect( fetchImpl ).not.toHaveBeenCalled();
+		expect( outcome.asked ).toBe( 0 );
+		expect( outcome.bands[ 0 ] ).toMatchObject( { skipped: true, type: 'form' } );
+		expect( outcome.profile.design?.sections?.[ 0 ]?.structure ).toBeUndefined();
+	} );
+
+	it( 'stores nothing when the two device reads disagree', async () => {
+		const answers = [
+			{ type: 'team', confidence: 0.9 },
+			{ type: 'faq', confidence: 0.9 },
+		];
+		let index = 0;
+		const fetchImpl = vi.fn( async () => ( {
+			ok: true,
+			json: async () => ( { choices: [ { message: { content: JSON.stringify( answers[ index++ ] ) } } ] } ),
+		} ) as unknown as Response );
+		const outcome = await run(
+			profileWith(),
+			[ shot( 'abc1234', 'desktop', 'd' ), shot( 'abc1234', 'mobile', 'm' ) ],
+			fetchImpl as unknown as typeof fetch
+		);
+		expect( outcome.conflicts ).toBe( 1 );
+		expect( outcome.labelled ).toBe( 0 );
+		expect( outcome.profile.design?.sections?.[ 0 ]?.structure ).toBeUndefined();
+	} );
+
+	it( 'accepts one confident read when the other end abstains', async () => {
+		// A matrix legitimately collapses to cards on a phone, so an abstention is
+		// not a contradiction.
+		const answers = [
+			{ type: 'unknown', confidence: 0 },
+			{ type: 'form', confidence: 0.9 },
+		];
+		let index = 0;
+		const fetchImpl = vi.fn( async () => ( {
+			ok: true,
+			json: async () => ( { choices: [ { message: { content: JSON.stringify( answers[ index++ ] ) } } ] } ),
+		} ) as unknown as Response );
+		const outcome = await run(
+			profileWith(),
+			[ shot( 'abc1234', 'desktop', 'd' ), shot( 'abc1234', 'mobile', 'm' ) ],
+			fetchImpl as unknown as typeof fetch
+		);
+		expect( outcome.conflicts ).toBe( 0 );
+		expect( outcome.labelled ).toBe( 1 );
+		expect( outcome.profile.design?.sections?.[ 0 ]?.structure?.[ 0 ]?.type ).toBe( 'form' );
+	} );
+
 	it( 'keys the cache by band AND screenshot content', () => {
 		expect( structureCacheKey( 'abc1234', new Uint8Array( Buffer.from( 'a' ) ) ) ).not.toBe(
 			structureCacheKey( 'abc1234', new Uint8Array( Buffer.from( 'b' ) ) )

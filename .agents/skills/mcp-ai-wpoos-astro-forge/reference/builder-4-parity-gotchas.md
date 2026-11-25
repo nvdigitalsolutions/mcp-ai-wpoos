@@ -441,10 +441,15 @@ Two traps found by actually running the pass on eca.directory:
 - `builtStaticRoot` takes the **dist** path (`join(target, 'dist')`). Passing the
   project root serves the project directory, answers 404, and captures nothing —
   an empty capture must report `skipped`, never a tidy row of zeros.
-- A small local VLM (qwen2.5vl:7b) answered `0.9` for every band and mislabelled
-  a hero as `text` and a three-panel services row as `team`. Confidence from a
-  model that is always confident is not evidence: run the pass dry, read the
-  labels, and only then decide about `--write`.
+- **Precision comes from the page, not the model.** A local 7B VLM answers with a
+  flat `0.9` for everything, so three rules decide what is storable: a band whose
+  render contains a `<form>` is measured (it called the enquiry band `faq` at 0.9
+  on *both* ends); the two device reads must AGREE (an abstention is not a
+  contradiction); and the band's measured heading is appended to the prompt
+  (without it a hero reads as `text`; with it, *Meet the Project Team* → `team`).
+  Calibrate the prompt as well — reserve 0.9 for an unmistakable cue. Most bands
+  then abstain, which is the right answer for a small model: run the pass dry,
+  read the notes, and only then decide about `--write`.
 
 ## A responsive class changes a container's SHAPE
 
@@ -476,5 +481,10 @@ A lane the source hides per device is emitted as
 media queries. The rebuilt cards follow the source's document order, so lane *i*
 is the grid's *i*-th child — that is the whole contract. Do not compact the grid
 or reorder children: the hidden lane keeps its slot in the source's reading
-order (and in the DOM, for crawlers). A lane's per-device *width* is recorded
-but not emitted; that needs a per-device track template, not an inline value.
+order (and in the DOM, for crawlers).
+
+A lane's per-device **width** rides the same block, but as a track COUNT
+(`lib/lane-tracks.ts`), never a per-lane width: Elementor's width is a flex basis
+and a row wraps past 100%, so the faithful grid fact is the first row's count.
+Only when a lane states that device's width, and only with hidden lanes excluded
+— an implicit basis is the desktop split and must not be applied at 390px.

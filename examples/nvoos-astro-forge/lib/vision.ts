@@ -256,6 +256,8 @@ export interface StructureVerdict {
 export const STRUCTURE_PROMPT = [
 	'You are a web-structure classifier. One screenshot of a single website BAND is attached.',
 	'Name the band’s STRUCTURE — what it IS, not what it looks like.',
+	'Work in this order: (1) find ONE concrete visual cue in the screenshot, (2) name the structure that cue implies, (3) set a confidence that reflects how unambiguous that cue is.',
+	'A confidence of 0.9 means the cue is unmistakable. If you are choosing between two labels, answer below 0.5 — a wrong label is worse than none.',
 	'Answer as strict JSON:',
 	'{',
 	'  "type": "comparison" | "pricing" | "stats" | "steps" | "timeline" | "team" | "testimonials" | "faq" | "gallery" | "logos" | "hero" | "cards" | "form" | "text" | "unknown",',

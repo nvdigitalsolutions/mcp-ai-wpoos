@@ -25,6 +25,7 @@ import { hoverComponentVars } from '../../forge/hover-vars.ts';
 import { wrapperAnchor } from '../../lib/anchor.ts';
 import { titleEchoItems } from '../../lib/band-copy.ts';
 import { parallaxBandCss } from '../../lib/motion.ts';
+import { laneTracks } from '../../lib/lane-tracks.ts';
 import Cta from './Cta.astro';
 import Catalog from './Catalog.astro';
 import Comparison from './Comparison.astro';
@@ -1268,6 +1269,24 @@ const bandLaneCss = sections
 			if ( lane.hiddenMobile ) {
 				rules.push( `@media (max-width: 767px){${ selector }{display:none}}` );
 			}
+		} );
+		// The same lanes also state a per-device WIDTH. Elementor wraps a row when
+		// the running total passes 100%, so the faithful grid fact is the first
+		// row's TRACK COUNT — not a per-lane width, which would fight the grid
+		// (see `lib/lane-tracks.ts`). Emitted as a property rather than a custom
+		// property because `columnsFor` writes its count INLINE, which no stylesheet
+		// rule could outrank.
+		(
+			[
+				[ 'tablet', '(min-width: 768px) and (max-width: 1024px)' ],
+				[ 'mobile', '(max-width: 767px)' ],
+			] as const
+		).forEach( ( [ device, media ] ) => {
+			const tracks = laneTracks( lanes, device );
+			if ( tracks === undefined ) {
+				return;
+			}
+			rules.push( `@media ${ media }{${ scoped } .ds-grid{grid-template-columns:repeat(${ tracks },minmax(0,1fr))}}` );
 		} );
 		return rules.join( '' );
 	} )
