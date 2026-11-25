@@ -1271,14 +1271,24 @@ re-encode operation with its own preconditions, so it is recorded as the
 follow-up rather than half-built. The default here is `none`; asking for a fade
 is refused **with the reason**, not silently ignored.
 
-### Errors now carry the right class
+### Errors now carry the right class — without moving the old one
 
-`decodeFileResponse()` split its non-2xx handling: **400 and 422** become
-`InvalidArgumentException` — the caller can fix the request, and a refused
-option or mismatched input is such a case — while auth failures and 5xx stay
-`RuntimeException`. Without that split a mismatch refusal reached the caller as
-a 500, which says the worker is broken when it is being precise. Only the upload
-path changed; the base64 decode path is untouched.
+A first attempt made **400 and 422** an `InvalidArgumentException` outright. CI
+caught what that broke: `ImageProcessingAdapterTest` expects a `RuntimeException`
+with the `Media worker error:` prefix, and it is right to — that has been the
+contract for every media adapter.
+
+The refusal is therefore `MediaWorkerRefusedException`, a **subclass** of
+`RuntimeException` carrying the identical message, so nothing that catches the
+base class changes. The composition adapter translates it to
+`InvalidArgumentException`, which is what `VideoCompositionInterface` documents
+and what lets merge and watermark answer 422 rather than reporting a bad
+argument as a broken worker.
+
+The lesson is the one §164.16 recorded about filenames, one layer up: a rule
+that is right for the caller you are working on is not automatically right for
+every caller of a shared helper. The base class stayed; the refinement is
+opt-in.
 
 ### Measurement
 
