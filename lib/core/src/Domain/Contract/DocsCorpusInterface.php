@@ -98,6 +98,25 @@ interface DocsCorpusInterface
     public function delete(string $path): bool;
 
     /**
+     * Merge fields into a document's frontmatter, leaving the body untouched.
+     *
+     * The primitive behind every lifecycle write: an implementation reads the
+     * existing block, merges the given keys, and writes both back. A `null`
+     * value removes a key, which is how a caller clears a due date.
+     *
+     * Fields the caller did not mention survive, because a lifecycle write that
+     * dropped a document's title would be a rewrite rather than a record.
+     *
+     * @param array<string, string|int|null> $fields
+     *
+     * @return array{path: string, fields: array<string, string>, title: string}
+     *
+     * @throws \InvalidArgumentException When the path is refused.
+     * @throws NotFoundException         When the path names nothing.
+     */
+    public function setFields(string $path, array $fields): array;
+
+    /**
      * Mark a document obsolete without removing it.
      *
      * ISO 9001 §7.5.3 requires obsolete documented information to be clearly

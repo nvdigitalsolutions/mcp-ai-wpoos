@@ -46,6 +46,7 @@ use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
+use Nvoos\Core\Domain\Contract\ControlledDocumentInterface;
 use Nvoos\Core\Domain\Contract\DocsCorpusInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
@@ -128,6 +129,7 @@ use Nvoos\Laravel\Adapter\ErrorFactory;
 use Nvoos\Laravel\Adapter\EmailService;
 use Nvoos\Laravel\Adapter\EventDispatcher;
 use Nvoos\Laravel\Adapter\FileStore;
+use Nvoos\Laravel\Adapter\FilesystemControlledDocuments;
 use Nvoos\Laravel\Adapter\FilesystemDocsCorpus;
 use Nvoos\Laravel\Adapter\FileUploadService;
 use Nvoos\Laravel\Adapter\DatabaseTraceStore;
@@ -293,6 +295,19 @@ class NvoosServiceProvider extends ServiceProvider {
 				(string) $app['config']->get( 'oos.docs.corpus.root', '' ),
 				(int) $app['config']->get( 'oos.docs.corpus.max_bytes', 2097152 ),
 				(array) $app['config']->get( 'oos.docs.corpus.extensions', array( 'md', 'txt' ) ),
+			)
+		);
+
+		// The controlled-document register composes the corpus rather than
+		// re-deriving its path guard (Proposal 164 section 164.37): the corpus owns
+		// sanitisation and containment, this owns the lifecycle and the
+		// append-only trail. Both roots empty disables the ten qms_* tools with
+		// `no_qms_register`.
+		$this->app->singleton(
+			ControlledDocumentInterface::class,
+			static fn ( $app ) => new FilesystemControlledDocuments(
+				$app->make( DocsCorpusInterface::class ),
+				(string) $app['config']->get( 'oos.qms.audit_root', '' ),
 			)
 		);
 

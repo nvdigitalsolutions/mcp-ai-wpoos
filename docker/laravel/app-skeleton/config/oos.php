@@ -362,4 +362,20 @@ return array(
         ),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Controlled-document register (QMS)
+    |--------------------------------------------------------------------------
+    |
+    | Where the append-only audit trails live, one JSONL file per document.
+    | Controlled records live in the docs corpus above; this is only the evidence.
+    |
+    | Empty (or an empty corpus root) disables the ten `qms_*` tools with a named
+    | `no_qms_register` error rather than letting them report an empty register.
+    |
+    */
+    'qms' => array(
+        'audit_root' => env('NVOOS_QMS_AUDIT_ROOT', ''),
+    ),
+
 );

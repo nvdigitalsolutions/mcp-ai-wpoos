@@ -238,6 +238,11 @@ final class ArchiveDocumentsToolTest extends TestCase
                 return true;
             }
 
+            public function setFields(string $path, array $fields): array
+            {
+                return array('path' => $path, 'fields' => array(), 'title' => 'A');
+            }
+
             public function archive(string $path, array $meta = array()): array
             {
                 $this->deny($path);
