@@ -342,6 +342,11 @@ final class DocsHubToolsTest extends TestCase
                 return true;
             }
 
+            public function expiring(string $asOf, int $limit = 100): array
+            {
+                return array('documents' => array(), 'total' => 0);
+            }
+
             public function setFields(string $path, array $fields): array
             {
                 $this->calls[] = array('set_fields' => $path, 'fields' => $fields);

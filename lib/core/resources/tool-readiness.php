@@ -1255,6 +1255,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/GetEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_expired_documents' => array(
+			'class' => 'Nvoos\Core\Tool\GetExpiredDocumentsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Read-only retention report over DocsCorpusInterface. ISO 15489 counts retention from a trigger event, so the corpus understands both a stated expires_at and retention_months measured from the record own lifecycle stamp, and reports which it used. Detection is deliberately separate from disposal: this tool never deletes or archives, because ISO 15489 keeps disposal approval, execution and verification apart and a report that disposed as a side effect would collapse all three.',
+			'evidence' => 'lib/laravel-adapter/tests/FilesystemDocsCorpusTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_file_info' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetFileInfoTool',
 			'readiness' => 'ready',

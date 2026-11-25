@@ -238,6 +238,11 @@ final class ArchiveDocumentsToolTest extends TestCase
                 return true;
             }
 
+            public function expiring(string $asOf, int $limit = 100): array
+            {
+                return array('documents' => array(), 'total' => 0);
+            }
+
             public function setFields(string $path, array $fields): array
             {
                 return array('path' => $path, 'fields' => array(), 'title' => 'A');
