@@ -1,5 +1,11 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Fixed — DeepSeek V4.1 Flash rejected the research-tool token budget
+
+- **`research_product` no longer fails on `deepseek-flash`** with `Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.` The DeepSeek client now writes the budget under the key the resolved model accepts (`deepseek-flash`, `deepseek-v4-flash*` and `deepseek-v4.1*` use `max_completion_tokens`; `deepseek-v4-pro` and legacy ids keep `max_tokens`), and a 400 naming the offending parameter is retried once with the corrected key so proxy/model ids not yet in the list self-heal. The rule covers the buffered and real-time streaming paths, the Pro research completion ladder (which now scales the key actually sent, and also handles OpenAI o-series / gpt-5), the `lib/core` `DeepSeekClient` / `OpenAiCompatibleClient` used by the Laravel runtime, and the Settings → Diagnostics connection probe. Filters: `wp_mcp_ai_deepseek_requires_max_completion_tokens`, `wp_mcp_ai_research_completion_requires_max_completion_tokens`.
+
 ## [1.2.23] - 2026-11-25
 
 ### Added — Machine principals and scoped credentials (Proposal 159)

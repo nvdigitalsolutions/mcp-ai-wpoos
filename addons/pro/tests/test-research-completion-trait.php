@@ -260,9 +260,13 @@ class Test_Research_Completion_Trait extends WP_UnitTestCase {
 		$this->assertSame( '{"ok":true}', $result['content'] );
 		$this->assertArrayNotHasKey( 'used_reasoning_fallback', $result );
 		$this->assertSame( 2, count( $client->calls ) );
-		$this->assertSame( 2000, $client->calls[0]['options']['max_tokens'] );
+		// deepseek-flash rejects `max_tokens`, so the trait renames the budget
+		// and the retry ladder scales the key that is actually on the wire.
+		$this->assertArrayNotHasKey( 'max_tokens', $client->calls[0]['options'] );
+		$this->assertSame( 2000, $client->calls[0]['options']['max_completion_tokens'] );
 		// Default budget multiplier of 4.
-		$this->assertSame( 8000, $client->calls[1]['options']['max_tokens'] );
+		$this->assertArrayNotHasKey( 'max_tokens', $client->calls[1]['options'] );
+		$this->assertSame( 8000, $client->calls[1]['options']['max_completion_tokens'] );
 	}
 
 	/**
