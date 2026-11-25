@@ -1959,3 +1959,118 @@ parity theatre:
 | `get_videos_without_transcripts` | the same, plus the transcription queue above |
 | `upload_video_batch` | WordPress attachment creation at batch scale |
 | `extract_video_metadata` | a deliberate duplicate of `get_video_metadata`, which is already `ready` |
+
+## 164.28 — `attachment_id` never resolved, and the audio the store could not type (2026-11-25)
+
+§164.27 left one defect named and unfixed: `transcribe_openai_audio`
+advertised `attachment_id` and never resolved it. The argument was read only to
+decide whether *something* had been supplied, so this path
+
+```php
+execute( array( 'attachment_id' => 7 ) )
+```
+
+built a multipart body with **no `file` part at all** and the provider answered
+400. Every call that passed an id without a URL failed, and nothing in the tests
+covered it: the one test for the tool used `audio_url`.
+
+A grep for the whole class of bug found exactly one instance — `attachment_id`
+is a schema key in one tool, and the other two files that mention it do so in
+prose — so this is a single fix rather than a sweep.
+
+### It now resolves, and it resolves the way images do
+
+`AudioInput` (Proposal 162's registry, 164's audio) reads the file and returns
+bytes, type and name, or an error value. The rules are the ones the vision tools
+already enforce, because they are the same question:
+
+- **Ownership.** `userCanAccess()` is the registry's own rule, not a second copy.
+  A caller who cannot download a file must not be able to send it to a provider.
+  A refused file answers **not-found**, exactly like a missing one, so the response
+  cannot be used to learn whether a row exists.
+- **Type.** The registry sniffed it; a non-audio file is refused, and a *video*
+  is refused with a pointer to `transcribe_video`, which extracts the track.
+- **Size.** The endpoint's 25 MB ceiling is checked before the bytes are read.
+- **Readability.** A row whose bytes have gone is `file_unreadable`, not an empty
+  upload.
+
+`file_id` joins `attachment_id` in the schema: they are the same id, and the
+WordPress name is kept because it is published. Supplying two *different* values
+is refused rather than resolved by a hidden precedence, the same way
+`ImageInput` refuses `file_id` together with `image_data`.
+
+### The part had to start describing the bytes
+
+The filename and type were the literals `audio.mp3` and `audio/mpeg` on every
+call. A `.wav` URL was therefore posted as an mp3, and a stored `.m4a` had no
+correct answer available at all. Both now come from the source: the registry's
+sniffed type for a stored file, the URL's own extension for a fetched one — with
+the old `audio.mp3` default kept only for a signed link that carries no extension.
+
+### The store could not type two of `extract_audio`'s three formats
+
+§164.26 shipped `extract_audio` with `mp3`, `m4a` and `aac`. The registry's type
+map knew `audio/mpeg`, `audio/wav`, `audio/x-wav` and `audio/ogg` — so a result
+in **m4a or aac could not be stored at all**, and the tool reported `media_failed`
+for two of its own documented options. Measured with ffmpeg 8.1.2 output rather
+than assumed:
+
+| file | libmagic | in the map before | after |
+|---|---|---|---|
+| `.m4a` | `audio/x-m4a` | no — refused | `m4a` |
+| `.aac` (ADTS) | `audio/x-hx-aac-adts` | no — refused | `aac` |
+| `.flac` | `audio/flac` | no — refused | `flac` |
+| `.webm` (audio only) | `video/webm` | yes | `webm` — already correct |
+
+Both new sniff results and `audio/flac` were added; `audio/mp4` and `audio/aac`
+went in beside them because other libmagic builds answer those for the same
+bytes. The `audio` group already had a 100 MiB ceiling, so no cap changed.
+
+The fixture in `FileStoreVisibilityTest` is a handful of hex bytes — the `ftyp`
+box for an m4a, an ADTS frame header, a FLAC magic block — because libmagic keys
+on exactly those signatures. A real recording would prove nothing further.
+
+### `isAudio()` joined `isImage()` and `isPdf()`
+
+Three tools ask the same question and two of them use the answer to decide
+whether a file needs an extraction step. `StoredFile::isAudio()` replaced three
+`str_starts_with( 'audio/mime' )` copies.
+
+### Deliberately not done
+
+- **`audio_url` is still fetched by this host**, which is an SSRF surface:
+  `HttpClientInterface::send()` exposes no redirect or size controls, so a
+  redirect into a private range walks past any guard. That is pre-existing
+  behaviour with a published test, and removing it is a breaking change that
+  belongs in its own decision. What this slice adds is the size ceiling, so an
+  oversized body is refused before it is uploaded.
+- **The upload allowlist still has no audio or video.** `FileUploadServiceInterface::DEFAULT_ALLOWED_TYPES`
+  is images and documents only, so a user cannot upload an mp3 or a video through
+  the media library even though the registry would file and serve one. Widening
+  that changes what a browser may push into the estate and deserves its own
+  review; the store-side gap was the half that broke a tool, so it was the half
+  fixed here.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Application/Media/AudioInput.php` | new; the 25 MB ceiling, the extension → type map, and registry resolution with ownership |
+| `lib/core/src/Tool/TranscribeOpenAIAudioTool.php` | `file_id` + `attachment_id` resolution, a real filename and type on the part, a size ceiling on the fetched body |
+| `lib/core/src/Tool/TranscribeOpenAIAudioValidatedTool.php` | passes the new collaborator through |
+| `lib/core/src/Domain/Entity/StoredFile.php` | `isAudio()` |
+| `lib/core/src/Tool/TranscribeVideoTool.php`, `GenerateVideoCaptionsTool.php` | use `isAudio()` |
+| `lib/laravel-adapter/src/Adapter/OpenAiTranscription.php` | shares `AudioInput::MAX_BYTES` and `mimeFor()` instead of a second copy |
+| `lib/laravel-adapter/src/Adapter/FileStore.php` | the measured audio types |
+| `lib/core/resources/tool-readiness.php` | the row's `reason` now says what it does |
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **286 rows / 267 servable / 0 violations** —
+unchanged, which is the point of a correctness fix.
+`bin/toolkit-parity.php --check`: **64 of 854**, `video-production` **15 of 21** —
+also unchanged.
+
+`lib/core` **2,510 / 17,679** (was 2,500 / 17,658); adapter **359 / 1,929**
+(unchanged); `VideoAndAudioToolsTest` **+10 tests**; one new test in
+`FileStoreVisibilityTest`.

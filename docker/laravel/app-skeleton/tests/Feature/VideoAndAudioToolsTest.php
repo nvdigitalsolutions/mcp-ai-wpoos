@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Http;
+use Nvoos\Core\Application\Media\AudioInput;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Entity\JobStatus;
+use Nvoos\Core\Domain\Entity\StoredFile;
 use Nvoos\Core\Tool\CheckVideoStatusTool;
 use Nvoos\Core\Tool\EditOmniVideoTool;
 use Nvoos\Core\Tool\GenerateHiggsfieldVideoTool;
@@ -14,6 +17,7 @@ use Nvoos\Core\Tool\GenerateOpenAISpeechTool;
 use Nvoos\Core\Tool\GenerateSoraVideoTool;
 use Nvoos\Core\Tool\GenerateVeoVideoTool;
 use Nvoos\Core\Tool\TranscribeOpenAIAudioTool;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -259,5 +263,240 @@ class VideoAndAudioToolsTest extends TestCase
         $this->assertSame('completed', $result['data']['status']);
         $this->assertSame(2, $result['data']['attempts']);
         $this->assertSame(array('video_url' => 'https://cdn.test/1.mp4'), $result['data']['result']);
+    }
+
+    // ─── Transcription sources ───────────────────────────────────────────
+
+    /** @var array{url: string, body: string, parts: mixed}|null */
+    private ?array $posted = null;
+
+    public function test_a_stored_file_is_posted_with_its_own_name_and_type(): void
+    {
+        $this->registry(array(7 => array(
+            'name' => 'memo.m4a',
+            'mime' => 'audio/mp4',
+            'bytes' => 'M4A-BYTES',
+        )));
+
+        $this->fakeTranscription();
+
+        $result = $this->execute(TranscribeOpenAIAudioTool::class, array('file_id' => 7));
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('hello world', $result['data']['text']);
+        $this->assertSame('memo.m4a', $result['data']['filename']);
+
+        // The bug this replaces: no file part at all, so the provider answered 400.
+        $body = (string) ($this->posted['body'] ?? '');
+
+        $this->assertStringContainsString('name="file"; filename="memo.m4a"', $body);
+        $this->assertStringContainsString("Content-Type: audio/mp4\r\n\r\nM4A-BYTES", $body);
+    }
+
+    public function test_the_wordpress_attachment_id_is_the_same_id(): void
+    {
+        $this->registry(array(
+            7 => array('name' => 'memo.mp3', 'mime' => 'audio/mpeg', 'bytes' => 'MP3'),
+            8 => array('name' => 'other.mp3', 'mime' => 'audio/mpeg', 'bytes' => 'MP3'),
+        ));
+
+        $this->fakeTranscription();
+
+        $result = $this->execute(TranscribeOpenAIAudioTool::class, array('attachment_id' => 7));
+
+        $this->assertTrue($result['success']);
+        $this->assertStringContainsString(
+            'filename="memo.mp3"',
+            (string) ($this->posted['body'] ?? ''),
+            'The WordPress parameter name resolved to a different file.',
+        );
+    }
+
+    public function test_two_different_ids_are_refused_rather_than_resolved_by_precedence(): void
+    {
+        $this->registry(array(
+            7 => array('name' => 'a.mp3', 'mime' => 'audio/mpeg', 'bytes' => 'A'),
+            8 => array('name' => 'b.mp3', 'mime' => 'audio/mpeg', 'bytes' => 'B'),
+        ));
+
+        Http::fake();
+
+        $result = $this->app->make(TranscribeOpenAIAudioTool::class)
+            ->execute(array('file_id' => 7, 'attachment_id' => 8));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('supply one', $result->getMessage());
+    }
+
+    public function test_a_url_and_an_id_together_are_refused(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(TranscribeOpenAIAudioTool::class)
+            ->execute(array('audio_url' => 'https://audio.test/clip.mp3', 'file_id' => 7));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('not both', $result->getMessage());
+    }
+
+    public function test_a_video_points_at_the_tool_that_extracts_audio(): void
+    {
+        $this->registry(array(7 => array(
+            'name' => 'clip.mp4',
+            'mime' => 'video/mp4',
+            'bytes' => 'MP4-BYTES',
+        )));
+
+        Http::fake();
+
+        $result = $this->app->make(TranscribeOpenAIAudioTool::class)->execute(array('file_id' => 7));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertStringContainsString('transcribe_video', $result->getMessage());
+    }
+
+    public function test_an_unknown_id_is_not_found(): void
+    {
+        $this->registry(array());
+
+        Http::fake();
+
+        $result = $this->app->make(TranscribeOpenAIAudioTool::class)->execute(array('file_id' => 99));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertStringContainsString('No file with that id exists.', $result->getMessage());
+    }
+
+    public function test_no_source_at_all_is_a_validation_failure(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(TranscribeOpenAIAudioTool::class)->execute(array());
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('audio_url, file_id or attachment_id', $result->getMessage());
+    }
+
+    public function test_a_fetched_file_is_named_from_its_url(): void
+    {
+        Http::fake(array(
+            'https://audio.test/*' => Http::response('WAV-BYTES'),
+            'api.openai.com/v1/audio/transcriptions' => Http::response(array('text' => 'ok')),
+        ));
+
+        $result = $this->execute(TranscribeOpenAIAudioTool::class, array(
+            'audio_url' => 'https://audio.test/clip.wav',
+        ));
+
+        // The part used to say audio.mp3 whatever the source was.
+        $this->assertSame('clip.wav', $result['data']['filename']);
+    }
+
+    public function test_a_fetched_body_over_the_ceiling_is_refused_before_the_upload(): void
+    {
+        Http::fake(array(
+            'https://audio.test/*' => Http::response(str_repeat('a', AudioInput::MAX_BYTES + 1)),
+        ));
+
+        $result = $this->app->make(TranscribeOpenAIAudioTool::class)
+            ->execute(array('audio_url' => 'https://audio.test/huge.mp3'));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString((string) AudioInput::MAX_BYTES, $result->getMessage());
+
+        Http::assertNotSent(static fn ($request): bool => str_contains($request->url(), 'api.openai.com'));
+    }
+
+    // ─── Helpers for the registry and provider fakes ─────────────────────
+
+    /**
+     * Bind a file registry the tool can resolve ids from.
+     *
+     * @param array<int, array{name: string, mime: string, bytes: string}> $map
+     */
+    private function registry(array $map): void
+    {
+        $this->app->instance(FileStoreInterface::class, new class($map) implements FileStoreInterface {
+            /**
+             * @param array<int, array{name: string, mime: string, bytes: string}> $map
+             */
+            public function __construct(private readonly array $map)
+            {
+            }
+
+            public function store(string $localPath, string $filename, string $mimeType, int $userId): StoredFile
+            {
+                throw new \RuntimeException('not used');
+            }
+
+            public function getPath(int $fileId): ?string
+            {
+                return $this->getMetadata($fileId)?->localPath;
+            }
+
+            public function getMetadata(int $fileId): ?StoredFile
+            {
+                $row = $this->map[$fileId] ?? null;
+
+                if (null === $row) {
+                    return null;
+                }
+
+                $path = sys_get_temp_dir().'/oos-audio-'.bin2hex(random_bytes(5));
+
+                file_put_contents($path, $row['bytes']);
+
+                return new StoredFile(
+                    id: $fileId,
+                    filename: $row['name'],
+                    mimeType: $row['mime'],
+                    sizeBytes: strlen($row['bytes']),
+                    localPath: $path,
+                    ownerId: 7,
+                    createdAt: new \DateTimeImmutable('2026-01-01T00:00:00+00:00'),
+                );
+            }
+
+            public function userCanAccess(int $fileId, int $userId): bool
+            {
+                return isset($this->map[$fileId]);
+            }
+
+            public function delete(int $fileId): void
+            {
+            }
+
+            public function findByMetadata(array $criteria, int $limit = 50): array
+            {
+                return array();
+            }
+        });
+    }
+
+    /**
+     * Fake the transcription endpoint and capture the next POST.
+     *
+     * The tool sends a hand-built multipart body through `HttpClientInterface`,
+     * so `Request::data()` is empty here — the parts only exist in the raw body
+     * Laravel was handed. Asserting on those bytes is also a stronger claim:
+     * the filename and the type are on the wire, not merely in the envelope.
+     */
+    private function fakeTranscription(): void
+    {
+        $this->posted = null;
+
+        Http::fake(function ($request) {
+            $this->posted = array(
+                'url'   => $request->url(),
+                'body'  => (string) $request->body(),
+                'parts' => $request->data(),
+            );
+
+            return Http::response(array('text' => 'hello world'));
+        });
     }
 }

@@ -22,8 +22,9 @@ class TranscribeOpenAIAudioValidatedTool extends TranscribeOpenAIAudioTool
         \Nvoos\Core\Domain\Contract\ErrorFactoryInterface $errors,
         \Nvoos\Core\Domain\Contract\SettingsStoreInterface $settings,
         \Nvoos\Core\Domain\Contract\HttpClientInterface $http,
+        ?\Nvoos\Core\Domain\Contract\FileStoreInterface $files = null,
     ) {
-        parent::__construct($errors, $settings, $http);
+        parent::__construct($errors, $settings, $http, $files);
     }
 
     public function getSlug(): string

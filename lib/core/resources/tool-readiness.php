@@ -2106,6 +2106,7 @@ return array(
 			'readiness' => 'ready',
 			'parity' => 'port',
 			'probe' => 'call',
+			'reason' => 'Two sources and one request: `audio_url` is fetched and posted as the file part, and a stored file (`file_id`, or the WordPress `attachment_id`, which is the same id) is read through AudioInput — ownership checked against the registry, type checked as audio, and capped at the endpoint 25 MB ceiling before the bytes are read. The part now carries the source real filename and type instead of the literal audio.mp3/audio-mpeg it used to declare for every call: a `.wav` URL was being posted as an mp3, and a stored `.m4a` had no correct answer available at all. The `audio_url` fetch is a pre-existing SSRF surface (`HttpClientInterface` carries no redirect or size controls); §164.28 records it as out of scope rather than silently widened.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoAndAudioToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),

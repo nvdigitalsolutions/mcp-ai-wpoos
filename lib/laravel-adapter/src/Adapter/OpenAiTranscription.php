@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace Nvoos\Laravel\Adapter;
 
 use Illuminate\Support\Facades\Http;
+use Nvoos\Core\Application\Media\AudioInput;
 use Nvoos\Core\Domain\Contract\AudioTranscriptionInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use RuntimeException;
@@ -58,29 +59,6 @@ class OpenAiTranscription implements AudioTranscriptionInterface {
 	 * is told why it cannot serve a timed transcript.
 	 */
 	private const MODEL = 'whisper-1';
-
-	/**
-	 * OpenAI's per-request audio ceiling, in bytes (25 MB).
-	 */
-	private const MAX_BYTES = 26214400;
-
-	/**
-	 * Sniffed extension → declared MIME for the upload part.
-	 *
-	 * The bytes are what the provider decodes; the header only has to not lie.
-	 *
-	 * @var array<string, string>
-	 */
-	private const MIME = array(
-		'mp3'  => 'audio/mpeg',
-		'm4a'  => 'audio/mp4',
-		'mp4'  => 'audio/mp4',
-		'aac'  => 'audio/aac',
-		'wav'  => 'audio/wav',
-		'flac' => 'audio/flac',
-		'ogg'  => 'audio/ogg',
-		'webm' => 'audio/webm',
-	);
 
 	public function __construct(
 		private readonly SettingsStoreInterface $settings,
@@ -115,12 +93,12 @@ class OpenAiTranscription implements AudioTranscriptionInterface {
 
 		$bytes = \filesize( $localPath );
 
-		if ( false !== $bytes && $bytes > self::MAX_BYTES ) {
+		if ( false !== $bytes && $bytes > AudioInput::MAX_BYTES ) {
 			throw new RuntimeException(
 				\sprintf(
 					'The audio is %s; OpenAI accepts at most %s per transcription request. Transcribe a shorter clip.',
 					self::human( $bytes ),
-					self::human( self::MAX_BYTES ),
+					self::human( AudioInput::MAX_BYTES ),
 				),
 			);
 		}
@@ -145,7 +123,7 @@ class OpenAiTranscription implements AudioTranscriptionInterface {
 			$response = Http::timeout( \max( 1, (int) config( 'oos.transcription_timeout', 300 ) ) )
 				->withToken( $key )
 				->attach( 'file', $payload, \basename( $localPath ), array(
-					'Content-Type' => self::mime( $localPath ),
+					'Content-Type' => AudioInput::mimeFor( \basename( $localPath ) ),
 				) )
 				->post( self::ENDPOINT, $fields );
 		} catch ( \Throwable $error ) {
@@ -198,12 +176,6 @@ class OpenAiTranscription implements AudioTranscriptionInterface {
 			'model'    => $model,
 			'segments' => $segments,
 		);
-	}
-
-	private static function mime( string $path ): string {
-		$extension = \strtolower( (string) \pathinfo( $path, PATHINFO_EXTENSION ) );
-
-		return self::MIME[ $extension ] ?? 'audio/mpeg';
 	}
 
 	private static function human( int $bytes ): string {

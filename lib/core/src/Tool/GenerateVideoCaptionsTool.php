@@ -186,7 +186,7 @@ class GenerateVideoCaptionsTool extends AbstractVideoTool
         }
 
         $meta      = $this->files?->getMetadata($id);
-        $isAudio   = null !== $meta && \str_starts_with($meta->mimeType, 'audio/');
+        $isAudio   = null !== $meta && $meta->isAudio();
         $language  = $this->language($arguments);
         $extracted = null;
 

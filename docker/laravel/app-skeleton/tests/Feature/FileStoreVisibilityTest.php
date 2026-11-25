@@ -441,6 +441,41 @@ final class FileStoreVisibilityTest extends TestCase
             ->assertNotFound();
     }
 
+    /**
+     * The audio containers this runtime writes are typed from their bytes.
+     *
+     * An `extract_audio` result in m4a or aac could not be stored at all before
+     * this: the map had `audio/mpeg`, `audio/wav` and `audio/ogg` only, and
+     * libmagic does not answer `audio/mp4` for an m4a. Each header below is the
+     * signature libmagic keys on, which is why the fixture can be a handful of
+     * bytes rather than a recording.
+     */
+    public function test_audio_containers_are_typed_from_their_bytes_and_keep_their_extension(): void
+    {
+        $cases = array(
+            'm4a'  => array('00000020667479704d344120000000004d34412069736f6d6d70343100000000', 'audio/x-m4a'),
+            'aac'  => array('fff15080001fc0'.str_repeat('00', 20), 'audio/x-hx-aac-adts'),
+            'flac' => array('664c614300000022'.str_repeat('00', 30), 'audio/flac'),
+        );
+
+        foreach ($cases as $extension => $case) {
+            [$hex, $mime] = $case;
+
+            $file = $this->store()->storeWithVisibility(
+                $this->source(hex2bin($hex), $extension),
+                'take',
+                'audio/mpeg',
+                1,
+                'public',
+            );
+
+            // The declared type is a hint; the sniff decides, and the extension
+            // follows the sniff so a player opens the file.
+            $this->assertSame($mime, $file->mimeType, $extension.' was typed wrong.');
+            $this->assertStringEndsWith('.'.$extension, $file->filename, $extension.' lost its extension.');
+        }
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────
 
     private function store(): FileStore

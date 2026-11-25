@@ -70,6 +70,19 @@ final readonly class StoredFile implements \JsonSerializable
     }
 
     /**
+     * Whether the registry sniffed this file as audio.
+     *
+     * The transcription tools all need this question, and each was about to
+     * write `str_starts_with( 'audio/' )` itself. Two of them decide whether a
+     * file needs an extraction step or can be sent to a provider as it is, so a
+     * single answer is worth naming.
+     */
+    public function isAudio(): bool
+    {
+        return str_starts_with($this->mimeType, 'audio/');
+    }
+
+    /**
      * Get the file extension from the filename.
      */
     public function getExtension(): string
