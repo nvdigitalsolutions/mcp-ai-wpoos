@@ -474,6 +474,35 @@ source. When you add a field to `ForgeSectionColumn`, carry it through
 `measuredLaneColumns` **and** the measured emission, or it never reaches the
 renderer.
 
+## A sub-page has no design facts
+
+The homepage runs two passes — the browser one (`measurePageBands`: geometry,
+band facts, region colours) and the design one (`analyzeSections`: surfaces,
+panels, layout, media). Sub-pages used to get only the first, so
+`pageBands[slug].sections` held an id and a column list and the rebuild lost the
+band's backgrounds, media and split. `forge page-design` closes that: same
+extractor, merged **by id**, with `id`/`vendorId`/`columns` owned by the browser
+pass. It also only names bands that STATE a fact — two of about-us's four bands
+say nothing at section level, so their surfaces live on inner elements.
+
+## A background image is not a fact without its BOX
+
+`bgImage` alone paints at native scale: storing `bg-01.png` on eca.directory's
+hero and stats bands covered both with a giant checkerboard and made white text
+unreadable. Hero bands survive because their CSS sets `cover`; a plain band has
+no such default. Capture `background-size` / `background-repeat` /
+`background-position` beside the image before emitting one — and until then the
+page-design write path stays blocked (dry-run diagnostic only).
+
+## A gate must check EFFECT, not presence
+
+`fact consumption` passed while every band background was being dropped: the
+module emitted `bg`, so the fact was "rendered" — but `background:background-color:rgb(…)`
+is invalid CSS and the browser discarded it. Likewise the colour gate reported
+the missing surfaces as **not comparable (transparent)** rather than failed.
+When a gate asks "was the fact present?", a wrong rendering is invisible. Ask
+"did the page paint it?".
+
 ## Lane visibility is `nth-child`, never a reorder
 
 A lane the source hides per device is emitted as

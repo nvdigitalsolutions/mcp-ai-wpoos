@@ -1069,6 +1069,38 @@ small open VLM for a 12 GB GPU, and the alternatives at that size (InternVL 2.5
 32B+ checkpoint or a paid API. So the dry run is the product at this size: read
 the labels, then decide about `--write`.
 
+## Pass — page design facts (diagnostic, write blocked)
+
+The homepage is measured TWICE: the browser pass (`measurePageBands` →
+geometry, band facts, region colours) and the design pass (`analyzeSections` →
+surfaces, panels, layout, media). Sub-pages only ever got the first half, so
+`pageBands[slug].sections` carried an id and a column list and nothing else.
+That is why eca.directory's about-us and contact-us rebuilt with no hero photo,
+no band backgrounds and a collapsed split, while the contact-us FAQ band —
+whose facts happen to be structural — looked right.
+
+`lib/page-design.ts` + `forge page-design <profile> --slugs a,b` close the
+asymmetry: fetch each page, run the same extractor, merge the design facts onto
+that page's sections **by id**, never replacing `id`/`vendorId`/`columns` (the
+browser pass owns those). Unmatched work is reported, not guessed.
+
+**The write path is deliberately blocked.** On about-us the extractor named the
+hero and the stats band and added `bgImage: bg-01.png` to both — the dot pattern
+is real. Storing it made the rebuild WORSE: the forge has no band defaults for
+`background-size`/`repeat`/`position`, so the browser painted the pattern at
+native scale over the whole band and white text became unreadable. A background
+image is not a fact without its box.
+
+So the next piece is small and precise: capture `background-size`,
+`background-repeat` and `background-position` beside the image (inline style or
+CSS rule scoped to the band), emit them on `SectionTheme`, and apply them in
+`wrapStyle`. Only then does a page band image render at its source scale.
+
+Still missing after that, on this site: the stats band's dark purple COLOUR (no
+fact is recorded at all), the lane image URLs (`image: true` with no URL to pair,
+so the photo lane is dropped), the stat value/unit concatenation, and the eyebrow
+rendered as a bar rather than a pill.
+
 ## Pass — lane-level per-device facts (container model)
 
 `ForgeSectionColumn` has carried `widthTablet` / `widthMobile` /
