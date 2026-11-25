@@ -70,6 +70,8 @@ const MAX_TRANSITION_SECONDS = 5;
 // than that reads as a push rather than a move.
 const KEN_BURNS_MAX_ZOOM = 1.12;
 const KEN_BURNS_UPSCALE_BUDGET = 8500000;
+// Each extracted frame is its own ffmpeg invocation, so the list is bounded.
+const MAX_EXTRACT_FRAMES = 120;
 
 /**
  * Parse an optional bounded number from a request field.
@@ -529,6 +531,54 @@ function videoEncoder( format ) {
 }
 
 /**
+ * The timestamps an `extract_frames` run will seek to.
+ *
+ * Three modes, in precedence order.
+ *
+ *  - Explicit `timestamps` win outright: a caller who named the moments meant
+ *    them.
+ *  - A regular `interval` needs the duration, so it is only usable when ffprobe
+ *    answered one. It starts at 0 — a contact sheet wants the first frame — and
+ *    stops before the duration, because a seek past the end is an ffmpeg error
+ *    rather than an empty frame.
+ *  - Otherwise nothing is returned, and the caller spreads `count` frames across
+ *    the duration with the `fps` filter in one pass.
+ *
+ * Every stamp is its own ffmpeg invocation, so the list is capped. The cap is
+ * the same 120 the count mode already allowed.
+ *
+ * @param {object}      options
+ * @param {number[]}    options.timestamps Explicit seconds.
+ * @param {number|null} options.interval   Seconds between frames.
+ * @param {number}      options.duration   Source length in seconds, 0 if unknown.
+ * @return {number[]} Ordered, de-duplicated timestamps, or an empty list.
+ */
+function frameTimestamps( { timestamps = [], interval = null, duration = 0 } = {} ) {
+	const explicit = timestamps
+		.map( Number )
+		.filter( ( value ) => Number.isFinite( value ) && value >= 0 )
+		.slice( 0, MAX_EXTRACT_FRAMES );
+
+	if ( explicit.length ) {
+		return explicit;
+	}
+
+	if ( ! ( interval > 0 ) || ! ( duration > 0 ) ) {
+		return [];
+	}
+
+	const stamps = [];
+
+	for ( let index = 0; index * interval < duration && stamps.length < MAX_EXTRACT_FRAMES; index++ ) {
+		// Multiplication rather than accumulation: 0.1 + 0.2 + 0.3 drifts, and
+		// a seek time that drifts is a frame at the wrong moment.
+		stamps.push( Number( ( index * interval ).toFixed( 3 ) ) );
+	}
+
+	return stamps;
+}
+
+/**
  * How much a branch is upscaled before `zoompan`, as an integer factor.
  *
  * `zoompan` computes `x` and `y` in integer source pixels, so a source the same
@@ -863,6 +913,8 @@ router.post('/process', upload.single('file'), async (req, res) => {
       duration: rawDuration,
 	      timestamps,
 	      count,
+	      quality: rawQuality,
+	      interval: rawInterval,
 	      speed: rawSpeed,
 	      maintain_pitch: rawMaintainPitch,
 	      fit: rawFit,
@@ -918,10 +970,29 @@ router.post('/process', upload.single('file'), async (req, res) => {
 
     // ── extract_frames (multi-output) — handled separately ──
     if ('extract_frames' === operation) {
-      const stamps = String(timestamps || '')
+      const requested = String(timestamps || '')
         .split(',')
         .map((s) => parseFloat(String(s).trim()))
         .filter((n) => Number.isFinite(n) && n >= 0);
+      let quality;
+      let interval;
+
+      try {
+        // The WordPress tool declares both of these, so the route reads them
+        // rather than silently overriding them with its own defaults.
+        quality = boundedNumber(rawQuality, 1, 31, 'quality') ?? 2;
+        interval = boundedNumber(rawInterval, 0.1, 3600, 'interval');
+      } catch (argErr) {
+        cleanupUpload();
+        return res.status(400).json({ error: argErr.message });
+      }
+
+      // One probe answers both questions: whether `interval` can expand into
+      // stamps, and the rate at which the `count` mode spreads frames.
+      const probe = await probeMedia(inputPath);
+      const sourceDuration = probe ? probe.duration : 0;
+      const stamps = frameTimestamps({ timestamps: requested, interval, duration: sourceDuration });
+
       const frameDirName = `frames_${Date.now()}`;
       const frameDir = path.join(videoDir, frameDirName);
       fs.mkdirSync(frameDir, { recursive: true });
@@ -932,7 +1003,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
         for (let i = 0; i < stamps.length; i++) {
           const name = `frame_${String(i).padStart(3, '0')}.jpg`;
           const out = path.join(frameDir, name);
-          const args = ['-ss', String(stamps[i]), '-i', inputPath, '-frames:v', '1', '-q:v', '2'];
+          const args = ['-ss', String(stamps[i]), '-i', inputPath, '-frames:v', '1', '-q:v', String(quality)];
 
           if (scale) {
             args.push('-vf', scale);
@@ -943,27 +1014,15 @@ router.post('/process', upload.single('file'), async (req, res) => {
           files.push(`${frameDirName}/${name}`);
         }
       } else {
-        const frameCount = Math.max(1, Math.min(120, parseInt(count, 10) || 10));
-        let fpsFilter = 'fps=1';
-        try {
-          const { stdout } = await execFileAsync(
-            'ffprobe',
-            ['-v', 'quiet', '-print_format', 'json', '-show_format', inputPath],
-            { timeout: 30000 }
-          );
-          const meta = JSON.parse(stdout);
-          const videoDuration = parseFloat(meta?.format?.duration || 0);
-          if (videoDuration > 0) {
-            fpsFilter = `fps=${Math.max(0.01, frameCount / videoDuration)}`;
-          }
-        } catch {
-          // Duration unknown — fall back to 1 fps.
-        }
+        const frameCount = Math.max(1, Math.min(MAX_EXTRACT_FRAMES, parseInt(count, 10) || 10));
+        const fpsFilter = sourceDuration > 0
+          ? `fps=${Math.max(0.01, frameCount / sourceDuration)}`
+          : 'fps=1';
         const filters = [fpsFilter, scale].filter(Boolean).join(',');
         const outPattern = path.join(frameDir, 'frame_%03d.jpg');
         await execFileAsync(
           'ffmpeg',
-          ['-i', inputPath, '-vf', filters, '-q:v', '2', '-y', outPattern],
+          ['-i', inputPath, '-vf', filters, '-q:v', String(quality), '-y', outPattern],
           { timeout: 300000 }
         );
         for (let i = 1; i <= frameCount; i++) {
@@ -979,6 +1038,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
         success: true,
         operation,
         frame_count: files.length,
+        source_duration: sourceDuration,
         output_files: files,
       });
     }
@@ -1842,6 +1902,7 @@ export {
 	videoEncoder,
 	kenBurnsUpscale,
 	kenBurnsZoompan,
+	frameTimestamps,
 	parseRational,
 	boolField,
 	atempoChain,

@@ -23,6 +23,7 @@ use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
+use Nvoos\Core\Domain\Contract\VideoFrameExtractionInterface;
 use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
@@ -42,6 +43,7 @@ final class ServiceProviderTest extends TestCase {
 			SchemaStoreInterface::class,
 			ProfessionRepositoryInterface::class,
 			HttpClientInterface::class,
+			VideoFrameExtractionInterface::class,
 		);
 
 		foreach ( $bindings as $binding ) {
