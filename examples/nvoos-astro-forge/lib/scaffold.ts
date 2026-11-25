@@ -1549,6 +1549,35 @@ function measuredLaneColumns(
 				column.bgImage = url;
 			}
 		}
+		// The measurement knows GEOMETRY, the declaration knows per-device INTENT.
+		// A responsive visibility class (`elementor-hidden-mobile`) is still in the
+		// desktop DOM and a width override lives in a media block, so neither is
+		// measurable from the desktop render — and dropping them here silently
+		// un-hid a lane the source hides. Carry them across positionally.
+		const declaredAt = declared?.[ index ];
+		if ( declaredAt ) {
+			if ( declaredAt.widthTablet !== undefined ) {
+				column.widthTablet = declaredAt.widthTablet;
+			}
+			if ( declaredAt.widthMobile !== undefined ) {
+				column.widthMobile = declaredAt.widthMobile;
+			}
+			if ( declaredAt.reverseMobile ) {
+				column.reverseMobile = true;
+			}
+			if ( declaredAt.reverseTablet ) {
+				column.reverseTablet = true;
+			}
+			if ( declaredAt.hiddenMobile ) {
+				column.hiddenMobile = true;
+			}
+			if ( declaredAt.hiddenTablet ) {
+				column.hiddenTablet = true;
+			}
+			if ( declaredAt.hiddenDesktop ) {
+				column.hiddenDesktop = true;
+			}
+		}
 		return column;
 	} );
 }
@@ -2269,6 +2298,27 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			if ( column.ink ) {
 				parts.push( `ink: ${ tsString( column.ink ) }` );
 			}
+			if ( column.widthTablet !== undefined ) {
+				parts.push( `widthTablet: ${ column.widthTablet }` );
+			}
+			if ( column.widthMobile !== undefined ) {
+				parts.push( `widthMobile: ${ column.widthMobile }` );
+			}
+			if ( column.reverseMobile ) {
+				parts.push( 'reverseMobile: true' );
+			}
+			if ( column.reverseTablet ) {
+				parts.push( 'reverseTablet: true' );
+			}
+			if ( column.hiddenMobile ) {
+				parts.push( 'hiddenMobile: true' );
+			}
+			if ( column.hiddenTablet ) {
+				parts.push( 'hiddenTablet: true' );
+			}
+			if ( column.hiddenDesktop ) {
+				parts.push( 'hiddenDesktop: true' );
+			}
 			return `{ ${ parts.join( ', ' ) } }`;
 		} );
 		entry.push( `columns: [${ lanes.join( ', ' ) }]` );
@@ -2617,7 +2667,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'/\*\* The band\u2019s COMPARISON MATRIX \u2014 role columns against feature rows,\n			 * recorded at analyze time from the raw HTML because sanitisation strips\n			 * the check/cross `<svg>` the build-time classifier would need. Rendered\n			 * as a real table AFTER the band\u2019s own component (the band usually holds\n			 * cards too). */',
 		'\tcomparison?: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string; hiddenAt?: Array<"tablet" | "mobile"> };',
 		'/\*\* MEASURED STRUCTURE (see `ForgeSection.structure`). One entry per\n			 * measured structure; rendered IN ADDITION to the band\u2019s classified kind,\n			 * never instead of it. `comparison` above is the typed fast path. */',
-		'\tstructure?: Array<{ type: "comparison"; data: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string; hiddenAt?: Array<"tablet" | "mobile"> } }>;',
+		'\tstructure?: Array<{ type: string; data?: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string; hiddenAt?: Array<"tablet" | "mobile"> }; source?: "vision"; model?: string; confidence?: number; note?: string }>;',
 		'\t/** The band\u2019s measured PAGED carousel (`bandFacts[].carousel`) \u2014',
 		'\t * slides-per-view and the gutter the source renders. A logo wall is as',
 		'\t * often a slider as a static row, and the difference is only measurable',

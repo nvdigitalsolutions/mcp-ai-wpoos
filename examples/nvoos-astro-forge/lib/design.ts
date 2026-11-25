@@ -29,6 +29,7 @@ import { extractBandsFromHtml } from './bands.ts';
 import { extractElementCss } from './element-css.ts';
 import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
+import { containerRows, isCardContainer, isContainerNode } from './semantic.ts';
 import type { ComparisonRow, ForgeChrome, ForgeChromeAction, ForgeChromeGeometry, ForgeChromeStyle, ForgeDesign, ForgeMark, ForgeMeasuredHeaderAction, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
@@ -1817,6 +1818,128 @@ function columnFactsOf( node: HNodeLike ): ForgeSectionColumn | undefined {
 	return Object.keys( facts ).length > 0 ? facts : undefined;
 }
 
+/**
+ * The LANE facts of a container-mode band.
+ *
+ * Elementor 4's container model has no `.elementor-column` at all: a row of
+ * cards is a group of sibling `e-con` elements, so the legacy read above finds
+ * no container and the band records NO lane facts. That silently disabled the
+ * whole per-device lane contract (visibility, width overrides) on every
+ * container-built site — eca.directory among them.
+ *
+ * The lane set is the band's biggest card row (a card = a heading plus a list);
+ * when nothing is card-shaped the biggest sibling row is still the row the
+ * source lays out as lanes. Lanes are returned in DOCUMENT order, which is the
+ * order the classifier emits the rebuilt cards in — that is what lets the
+ * renderer address lane *i* as the grid's *i*-th child without ever reordering.
+ *
+ * EXPLICIT ONLY. An implicit `--width` is the desktop split, and applying it as
+ * a per-device override squeezes the rebuilt grid (the 3589820 lane drift:
+ * 286/954 -> 273/907). A lane set is a fact only when the source STATES a
+ * per-device intent: a `elementor-hidden-*` class (still in the DOM) or a
+ * media-scoped `--width` on the lane's own `elementor-element-<id>` selector.
+ */
+function containerLaneFactsOf(
+	section: HNodeLike,
+	rules: Array<{ selector: string; body: string; media?: string }>
+): ForgeSectionColumn[] | undefined {
+	type SemanticNode = Parameters< typeof containerRows >[ 0 ];
+	const seeds = containerRows( section as unknown as SemanticNode ) as unknown as HNodeLike[][];
+	// `containerRows` groups siblings by SHAPE, and a lane carrying a per-device
+	// class (`elementor-hidden-mobile`) has a different shape from its peers — so
+	// the hidden lane is split out of its own row and the lane set loses exactly
+	// the lane the fact is about. Re-group the parent with the responsive
+	// vocabulary normalised away. Local on purpose: `containerShape` is shared
+	// with the card/comparison readers, and changing it would relayout bands that
+	// are already verified byte-identical.
+	const normalisedShape = ( node: HNodeLike ): string =>
+		sectionClasses( node )
+			.filter(
+				( token ) =>
+					! /^elementor-element-/.test( token ) &&
+					! /^elementor-(?:hidden|reverse|col-|md-|sm-|widget-)/.test( token )
+			)
+			.join( ' ' );
+	const rows: HNodeLike[][] = [];
+	const seenParents = new Set< HNodeLike >();
+	for ( const seed of seeds ) {
+		const parent = seed[ 0 ]?.parent;
+		if ( ! parent || seenParents.has( parent ) ) {
+			rows.push( seed );
+			continue;
+		}
+		seenParents.add( parent );
+		const groups = new Map< string, HNodeLike[] >();
+		for ( const child of parent.children ?? [] ) {
+			if ( child.type !== 'tag' || ! isContainerNode( child as unknown as SemanticNode ) ) {
+				continue;
+			}
+			const shape = normalisedShape( child );
+			if ( shape === '' ) {
+				continue;
+			}
+			groups.set( shape, [ ...( groups.get( shape ) ?? [] ), child ] );
+		}
+		for ( const group of groups.values() ) {
+			if ( group.length >= 2 ) {
+				rows.push( group );
+			}
+		}
+	}
+	const cardRows = rows.filter( ( row ) =>
+		row.every( ( node ) => isCardContainer( node as unknown as SemanticNode ) )
+	);
+	const pool = cardRows.length > 0 ? cardRows : rows;
+	const lanes = pool.reduce< HNodeLike[] >( ( best, row ) => ( row.length > best.length ? row : best ), [] );
+	if ( lanes.length < 2 ) {
+		return undefined;
+	}
+	const widthAt = ( widths: ReturnType< typeof responsiveLength >, device: 'tablet' | 'mobile' ): number | undefined => {
+		const value = widths && typeof widths === 'object' ? widths[ device ] : undefined;
+		const match = value ? /^(\d+(?:\.\d+)?)%$/.exec( value.trim() ) : null;
+		return match ? parseFloat( match[ 1 ] ) : undefined;
+	};
+	const facts = lanes.map( ( lane ) => {
+		const fact: ForgeSectionColumn = {};
+		for ( const device of hiddenAt( lane ) ) {
+			if ( device === 'mobile' ) {
+				fact.hiddenMobile = true;
+			} else {
+				fact.hiddenTablet = true;
+			}
+		}
+		const id = sectionClasses( lane )
+			.map( ( token ) => SECTION_ID_RE.exec( token ) )
+			.find( Boolean )?.[ 1 ];
+		if ( id ) {
+			// Elementor's container width is a `--width` custom property, re-declared
+			// inside the breakpoint's media block (never an inline style).
+			const widths = responsiveLength( rules, `elementor-element-${ id }`, '--width' );
+			const tablet = widthAt( widths, 'tablet' );
+			const mobile = widthAt( widths, 'mobile' );
+			if ( tablet !== undefined ) {
+				fact.widthTablet = tablet;
+			}
+			if ( mobile !== undefined ) {
+				fact.widthMobile = mobile;
+			}
+		}
+		return fact;
+	} );
+	if (
+		! facts.some(
+			( fact ) =>
+				fact.hiddenMobile ||
+				fact.hiddenTablet ||
+				fact.widthTablet !== undefined ||
+				fact.widthMobile !== undefined
+		)
+	) {
+		return undefined;
+	}
+	return facts;
+}
+
 /** Elementor's column-gap class → the side padding it adds to the column
  * (the container's inner gutter — `gap-wider` = 30px, the default 10px). */
 const ELEMENTOR_COLUMN_GAPS: Record<string, string> = {
@@ -2236,6 +2359,15 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 						fact.panel = { bg, ink: inkForSurface( bg ) };
 					}
 				}
+			}
+		}
+		// Container-mode bands (`e-con`) have no `.elementor-container`, so the
+		// legacy read above sees nothing and the per-device contract goes dark.
+		// Their lanes are the sibling `e-con` row (see `containerLaneFactsOf`).
+		if ( ! fact.columns ) {
+			const lanes = containerLaneFactsOf( section, scopedRules );
+			if ( lanes ) {
+				fact.columns = lanes;
 			}
 		}
 		// The band's MARK STRIP (a logo wall / partner row). A builder

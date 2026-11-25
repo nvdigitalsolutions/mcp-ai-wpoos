@@ -115,7 +115,7 @@ describe( 'comparison visibility facts', () => {
 		} );
 		expect( band.comparison?.hiddenAt ).toEqual( [ 'mobile' ] );
 		// The same fact rides the generic channel.
-		expect( band.structure?.[ 0 ]?.data.hiddenAt ).toEqual( [ 'mobile' ] );
+		expect( band.structure?.[ 0 ]?.data?.hiddenAt ).toEqual( [ 'mobile' ] );
 	} );
 
 	it( 'maps the extra Elementor breakpoints onto the ends the template renders', () => {

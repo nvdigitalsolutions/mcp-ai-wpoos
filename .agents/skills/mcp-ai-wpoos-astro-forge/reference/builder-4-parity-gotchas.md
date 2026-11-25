@@ -422,3 +422,44 @@ the `structure` entry from it, so an old profile still renders.
 `unknown`), a deterministic detector always wins, and a stored verdict carries
 `source: 'vision'` plus the model id. Never let vision overrule a measured fact,
 and never let it emit markup or copy.
+
+`forge structure <profile> --target <dir> [--write]` is the wiring
+(`lib/structure-pass.ts`): serve `dist/`, screenshot each `[data-section-id]` at
+1440 and 390, and merge. It is opt-in and fail-soft (no endpoint → a printed
+skip, exit 0), it skips a band that already carries a measured structure
+*without a model call*, and it stores nothing without `--write`. The cache is
+keyed `section id + sha256(screenshot)`, so an unchanged band costs nothing and
+a changed one is re-asked. Never wire it into the build.
+
+## A responsive class changes a container's SHAPE
+
+`containerShape` (and therefore `containerRows`) groups siblings by their class
+tokens, and `elementor-hidden-mobile` is one of them. So a card row where one
+lane carries a per-device class is grouped as *two+one*, and the hidden lane is
+split out of its own row — exactly the lane a lane-fact pass is about. If you
+need the true lane set, re-group the parent with the responsive vocabulary
+(`elementor-hidden-*`, `elementor-reverse-*`, `elementor-col-*`, `elementor-md-*`,
+`elementor-sm-*`, `elementor-widget-*`) normalised away, locally. Changing
+`containerShape` itself relayouts every band already verified byte-identical.
+
+## A measured lane list silently drops per-device facts
+
+`measuredLaneColumns` in `lib/scaffold.ts` prefers the geometry pass's real
+widths over the declared split — correctly. But it builds each lane from
+scratch, so `hiddenMobile` / `hiddenTablet` / `widthTablet` / `reverse*` were
+discarded, and the emitted `columns` lost them even when the profile had them.
+A visibility class is not measurable from the desktop render (it is still in the
+DOM) and a width override lives in a media block, so the DECLARATION is the only
+source. When you add a field to `ForgeSectionColumn`, carry it through
+`measuredLaneColumns` **and** the measured emission, or it never reaches the
+renderer.
+
+## Lane visibility is `nth-child`, never a reorder
+
+A lane the source hides per device is emitted as
+`[data-section-id="…"] .ds-grid > :nth-child(i){display:none}` under the band's
+media queries. The rebuilt cards follow the source's document order, so lane *i*
+is the grid's *i*-th child — that is the whole contract. Do not compact the grid
+or reorder children: the hidden lane keeps its slot in the source's reading
+order (and in the DOM, for crawlers). A lane's per-device *width* is recorded
+but not emitted; that needs a per-device track template, not an inline value.

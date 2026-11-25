@@ -1014,23 +1014,67 @@ child whose computed background is not transparent. Per-device facts
 (`elementor-widget-tablet_extra__width-initial`, `elementor-hidden-mobile`) then
 attach to the same node instead of being re-derived from class strings.
 
-### Design note — a vision STRUCTURE pass (not yet built)
+### A vision STRUCTURE pass (built: `forge structure`)
 
 `lib/vision.ts` already runs a VLM for **pixel** comparison and
 `visionConfigFromLocal` already targets a local model (Ollama / LM Studio), so
-the plumbing exists; what does not is a structural role.
+the plumbing exists; what did not was a structural role.
 
 For a band that resists markup classification (an oddly-built table, a timeline,
-a phase row), screenshot it at 1440 and 390, ask the model to name **one**
-structure from a closed vocabulary, and store the answer as a `structure` entry
-(the channel above). Rules:
+a phase row), `lib/structure-pass.ts` screenshots it at 1440 and 390, asks the
+model to name **one** structure from a closed vocabulary, and merges the answer
+into the band's `structure` channel. Rules, all enforced by the module:
 
-- **opt-in**, and cached by `section id + screenshot hash`;
-- **never authoritative** over a deterministic detector — it fills gaps, it does
-  not overrule the comparison extractor;
-- **provenance recorded** in the fact (`source: 'vision'`, model id), so a bad
-  classification is attributable and removable;
+- **opt-in and fail-soft** — no reachable endpoint prints
+  `structure pass skipped (…)` and exits 0;
+- **nothing is stored without `--write`** — the pass returns a merged copy;
+- **cached** by `section id + sha256(screenshot)`, so a re-run costs nothing for
+  an unchanged band, and a changed band is re-asked;
+- **never authoritative** over a deterministic detector — a band that already
+  carries a measured structure is skipped *without a model call*;
+- **provenance recorded** (`source: 'vision'`, `model`, `confidence`, `note`), so
+  a bad classification is attributable and removable;
 - the model never writes markup or copy — it picks a label.
 
-This is the highest-leverage item for unnamed builders, and the last one I would
-build: it is only useful once the `structure` channel exists to receive it.
+The first confident device wins (the desktop render carries the full structure;
+a phone render legitimately collapses a matrix to a stack — the same trap
+`hiddenAt` guards). Capture is injected, so the pass is unit-tested without a
+browser.
+
+## Pass — lane-level per-device facts (container model)
+
+`ForgeSectionColumn` has carried `widthTablet` / `widthMobile` /
+`hiddenMobile` / `hiddenTablet` for releases, but on an Elementor 4
+container-built site the fact list was **always empty**: the lane read looked
+only for `.elementor-container > .elementor-column`, and the container model
+has no such nodes. So `elementor-hidden-mobile` on a card lane was recorded
+nowhere, and the rebuild showed a lane the source hides.
+
+Four pieces now line up:
+
+1. **Extraction** (`containerLaneFactsOf`, `lib/design.ts`). The lane set is the
+   band's biggest card row of sibling `e-con` nodes. **Explicit only**: a lane
+   set is a fact only when at least one lane states a per-device intent — a
+   `elementor-hidden-*` class, or a media-scoped `--width` on the lane's own
+   `elementor-element-<id>` selector. An implicit `--width` is the desktop
+   split; applying it per device squeezes the grid (the 3589820 lane drift).
+2. **Shape normalisation.** `containerRows` groups siblings by class shape, and
+   a lane carrying `elementor-hidden-mobile` has a *different* shape — so the
+   hidden lane was split out of its own row and the lane set lost exactly the
+   lane the fact is about. The pass re-groups the parent with the responsive
+   vocabulary normalised away. This is local on purpose: `containerShape` is
+   shared with the card and comparison readers, and changing it would relayout
+   bands already verified byte-identical.
+3. **Persistence.** `measuredLaneColumns` replaces the declared lane list with
+   the measured one (real widths beat the declared split) — and used to drop
+   every responsive field doing so. It now carries `hidden*` / `reverse*` /
+   `width*` across positionally, and the measured emission writes them.
+4. **Emission** (`bandLaneCss`, `DesignRenderer.astro`). `display:none` scoped to
+   `[data-section-id] .ds-grid > :nth-child(i)` under the template's band media
+   queries. Never a reorder: the hidden lane keeps its slot in the source's
+   reading order and stays in the DOM for crawlers.
+
+**Not done, deliberately.** A lane's per-device *width* is recorded in the
+profile but not emitted: honouring it needs a per-device track template
+(`--ds-cols-template-*`), which is a layout change to verify on real sites
+rather than guess at. The fact is there for that pass.
