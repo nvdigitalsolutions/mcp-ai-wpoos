@@ -23,10 +23,11 @@ import { animationCss } from '../../lib/animations.generated.ts';
 import { classifyBody } from '../../lib/classify.ts';
 import { hoverComponentVars } from '../../forge/hover-vars.ts';
 import { wrapperAnchor } from '../../lib/anchor.ts';
-import { titleEchoItems } from '../../lib/band-copy.ts';
+import { titleEchoItems, mediaLane } from '../../lib/band-copy.ts';
 import { parallaxBandCss } from '../../lib/motion.ts';
 import { laneTracks } from '../../lib/lane-tracks.ts';
 import Cta from './Cta.astro';
+import BandBody from './BandBody.astro';
 import Catalog from './Catalog.astro';
 import Comparison from './Comparison.astro';
 import FeatureGrid from './FeatureGrid.astro';
@@ -1451,6 +1452,48 @@ const bandLaneCss = sections
 	.join( '' );
 
 /**
+ * A component band beside its measured media lane (`mediaLane`).
+ *
+ * Elementor puts the picture in one column and the copy in the other; the
+ * component kinds render the copy full-width and the photo column disappears
+ * (eca.directory's "Get in touch" form and "Why … makes a difference" benefits
+ * row, 2026-11-25). One rule set for every such band, emitted once.
+ *
+ * On a phone the two columns STACK with the copy FIRST — the industry rule for
+ * split sections is "message first, picture second" — so the media keeps DOM
+ * order (content, then media) and is only re-ordered on the wide layout.
+ */
+const anySplitLane = sections.some( ( section, index ) => Boolean( mediaLane( themeFor( section, index ) ) ) );
+const bandSplitCss =
+	( anySplitLane
+		? '.ds-band-split{display:grid;grid-template-columns:var(--ds-split-ratio,minmax(0,1fr) minmax(0,1fr));gap:var(--ds-split-gap,clamp(1.5rem,3vw,3rem));align-items:stretch}' +
+		  '.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:-1}' +
+		  '.ds-band-split>.ds-section{max-width:none;padding-block:0}' +
+		  '.ds-band-split__media{margin:0;min-height:0;overflow:hidden}' +
+		  '.ds-band-split__media img{display:block;width:100%;height:100%;object-fit:cover}' +
+		  // Stacked, the picture needs a box of its own: `height:100%` against an
+		  // indefinite grid row resolves to auto, which collapsed the photo to its
+		  // line box (invisible) on a phone (2026-11-25).
+		  '@media (max-width:767px){.ds-band-split{grid-template-columns:minmax(0,1fr)}.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:0}.ds-band-split__media{aspect-ratio:4/3}}'
+		: '' );
+
+/**
+ * The hero BREADCRUMB (`Hero.astro` renders it when the band's only link is
+ * Home). Emitted only when a page can show one, and shaped per the WAI pattern:
+ * a nav landmark, an ordered list, and `aria-current="page"` on the last crumb.
+ */
+const anyHeroBand = sections.some( ( section, index ) => section.kind === 'hero' || themeFor( section, index )?.layout === 'split' );
+const breadcrumbCss = anyHeroBand
+	? '.ds-breadcrumb{margin:0 0 .75rem;font-size:.875rem;color:var(--forge-muted,currentColor)}' +
+	  '.ds-breadcrumb ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}' +
+	  '.ds-breadcrumb li{display:inline-flex;align-items:center;gap:.5rem}' +
+	  '.ds-breadcrumb li+li::before{content:"|";opacity:.4}' +
+	  '.ds-breadcrumb a{color:inherit;text-decoration:none}' +
+	  '.ds-breadcrumb a:hover{text-decoration:underline}' +
+	  '.ds-breadcrumb [aria-current="page"]{color:inherit;font-weight:500}'
+	: '';
+
+/**
  * The band's measured CAROUSELS (`bandFacts[id].carousel`).
  *
  * A vendor slider keeps its geometry in JS options — `items: 5`,
@@ -1695,8 +1738,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandSplitCss || breadcrumbCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandSplitCss }${ breadcrumbCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
@@ -1719,11 +1762,19 @@ const bandParallaxCss = sections
 			// all (eca.directory's about-us hero had no photo, 2026-11-25).
 			const leadingHero =
 				index === 0 && theme?.layout === 'split' && ( splitMedia?.length ?? 0 ) > 0;
+			// Only a LEADING band (or one the classifier itself called a hero) becomes
+			// the split hero. A content band that happens to place a picture beside its
+			// copy keeps its own component — the cards ARE the content, and Hero renders
+			// them as stat pairs (eca.directory's benefits band, 2026-11-25). The lane
+			// is rendered by `ds-band-split` below instead.
 			const splitHero = Boolean(
-				theme?.layout === 'split' &&
-					( leadingHero || ( section.kind !== 'text' && section.kind !== 'raw' ) )
+				theme?.layout === 'split' && ( leadingHero || section.kind === 'hero' )
 			);
 			const kind = splitHero ? 'hero' : section.kind;
+			// A component band with a measured media lane (`mediaLane`).
+			const lane = splitHero ? undefined : mediaLane( theme );
+			const laneKinds = new Set( [ 'form', 'feature-grid', 'icon-list', 'stats', 'cta' ] );
+			const bandLane = lane && laneKinds.has( kind ) ? lane : undefined;
 			// A band that RENDERS its html can own the anchor; a component band keeps
 			// `section.html` but never emits it, so suppressing there would drop it.
 			const renderedHtml = kind === 'text' || kind === 'raw' ? section.html : undefined;
@@ -1748,26 +1799,31 @@ const bandParallaxCss = sections
 				<div data-section={kind} data-section-id={section.id ?? theme?.id} data-section-collapsed={foldsAway(section, theme) ? 'grid' : undefined} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop, foldsAway(section, theme)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
+					) : bandLane ? (
+						<div class="ds-band-split" data-media-side={bandLane.side}>
+							<BandBody
+								section={section}
+								kind={kind}
+								theme={theme}
+								columns={columnsFor(index, theme)}
+								media={splitMedia}
+								uid={section.id ?? String(index)}
+							/>
+							<figure class="ds-band-split__media">
+								{/* Decorative by construction: the source paints it as a CSS background
+								 * behind no text, so a null alt is the accessible choice (WAI). */}
+								<img src={bandLane.src} alt="" loading="lazy" decoding="async" />
+							</figure>
+						</div>
 					) : (
-						<>
-							{kind === 'hero' && <Hero section={section} theme={theme} media={splitMedia} />}
-							{kind === 'accordion' && <Accordion section={section} theme={theme} />}
-							{kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index, theme)} theme={theme} />}
-							{kind === 'icon-list' && <IconList section={section} columns={columnsFor(index, theme)} theme={theme} />}
-							{kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
-							{kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
-							{kind === 'cta' && <Cta section={section} theme={theme} />}
-							{kind === 'gallery' && <Gallery section={section} theme={theme} />}
-							{kind === 'form' && <Form section={section} theme={theme} />}
-							{kind === 'pricing' && <Pricing section={section} theme={theme} />}
-							{kind === 'stats' && <Stats section={section} theme={theme} />}
-							{kind === 'steps' && <Steps section={section} theme={theme} />}
-							{kind === 'team' && <Team section={section} theme={theme} />}
-							{kind === 'marquee' && <Marquee section={section} uid={section.id ?? index} />}
-							{kind === 'comparison' && <Comparison section={section} theme={theme} />}
-							{kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
-							{kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
-						</>
+						<BandBody
+							section={section}
+							kind={kind}
+							theme={theme}
+							columns={columnsFor(index, theme)}
+							media={splitMedia}
+							uid={section.id ?? String(index)}
+						/>
 					)}
 					{/* The band's MARK STRIP. A builder carousel publishes each logo as a
 					 * `background-image` DIV, so no classifier (<img> only, and on

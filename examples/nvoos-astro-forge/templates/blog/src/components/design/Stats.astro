@@ -23,9 +23,9 @@ const headingId = section.id ? `ds-stats-${ section.id }` : undefined;
 {items.length > 0 && (
 	<section
 		class:list={['ds-section', 'ds-body', 'ds-stats-band', theme?.titleAlign === 'center' && 'ds-body--center']}
-		aria-labelledby={section.slots.title ? headingId : undefined}
+		aria-labelledby={section.slots.title || theme?.titleText ? headingId : undefined}
 	>
-		<SectionHeading title={section.slots.title} theme={theme} headingId={headingId} />
+		<SectionHeading title={section.slots.title ?? theme?.titleText} theme={theme} headingId={headingId} />
 		<dl class="ds-stats">
 			{items.map((item) => (
 				<div class="ds-stat">

@@ -11,7 +11,7 @@ import type { SectionTheme } from '../../lib/sections.generated.ts';
 import { itemTitleTag } from '../../lib/title-tag.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
-import { bandParagraphs, titleEchoItems } from '../../lib/band-copy.ts';
+import { bandParagraphs, titleEchoItems, mediaLane } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -20,7 +20,12 @@ interface Props {
 }
 
 const { section, columns, theme } = Astro.props;
-const { title, body, items } = section.slots;
+const { title: parsedTitle, body, items } = section.slots;
+// The measured `titleText` is the band's heading even when the semantic pass
+// could not pick it out of the builder markup — and the echo fold below depends
+// on knowing it, or the lead icon-box renders as a card whose title repeats the
+// heading (eca.directory's benefits band, 2026-11-25).
+const title = parsedTitle ?? theme?.titleText;
 // A grid never declares more tracks than it has items: the source's authored
 // column count (3 in a services band, 4 in a logo wall) can exceed what the
 // classifier rebuilt after merging or skipping an empty column.
@@ -43,17 +48,23 @@ const gridStyle = desktop
 // comparison table that shares a band with a card row, for instance. Rendering
 // the extras keeps their copy on the page; the laned path alone silently dropped
 // it (eca.directory's 77f4271d, 2026-11-24).
-const cards = lanes
-	? [
-			...Array.from( { length: lanes }, ( _, index ) => ( {
-				item: ( items ?? [] ).find( ( entry ) => entry.columnIndex === index ),
-				surface: sourceColumns[ index ],
-			} ) ),
-			...( items ?? [] )
-				.filter( ( entry ) => entry.columnIndex === undefined )
-				.map( ( item ) => ( { item, surface: undefined } ) ),
-	  ]
-	: ( items ?? [] ).map( ( item ) => ( { item, surface: undefined } ) );
+// The band's media LANE, when its measured row is one picture beside content.
+// The renderer then lays the grid beside that picture (`ds-band-split`), so the
+// lane-derived cards would duplicate the split itself — a photo card AND an
+// empty card above the real grid (eca.directory's benefits band, 2026-11-25).
+const splitLane = mediaLane( theme );
+const cards =
+	lanes && ! splitLane
+		? [
+				...Array.from( { length: lanes }, ( _, index ) => ( {
+					item: ( items ?? [] ).find( ( entry ) => entry.columnIndex === index ),
+					surface: sourceColumns[ index ],
+				} ) ),
+				...( items ?? [] )
+					.filter( ( entry ) => entry.columnIndex === undefined )
+					.map( ( item ) => ( { item, surface: undefined } ) ),
+		  ]
+		: ( items ?? [] ).map( ( item ) => ( { item, surface: undefined } ) );
 
 // A card whose heading IS the band's own title is not a card — it is the band's
 // sub-heading. The rule (and its media/link/lane guards) lives in
