@@ -1748,6 +1748,23 @@ export type {
 };
 
 /**
+ * One measured structure inside a band (see `ForgeSection.structure`).
+ *
+ * `type` names the renderer component's contract; `data` is the detector's own
+ * shape for that type (see `ForgeComparisonStructure`). Deliberately untyped at
+ * the channel level: adding a structure type must not require touching the
+ * channel, only adding a detector and a renderer entry.
+ */
+export interface ForgeStructureEntry {
+	type: 'comparison';
+	data: {
+		columns: string[];
+		rows: ComparisonRow[];
+		caption?: string;
+	};
+}
+
+/**
  * One mark in a band's logo / partner strip (see `ForgeSection.logos`).
  */
 export interface ForgeMark {
@@ -2034,6 +2051,23 @@ export interface ForgeMark {
 	marquee?: { items: MarqueeItem[]; speed?: string };
 	/** Comparison band: columns then rows; `values` align to the columns. */
 	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string };
+	/**
+	 * MEASURED STRUCTURE — the generic channel behind `comparison`.
+	 *
+	 * A builder expresses a lot of semantics through icons and per-element CSS
+	 * that `sanitizeHtml` removes before the build-time classifier runs (Elementor's
+	 * comparison matrix is 52 `<svg>`s raw and none sanitised). Every such
+	 * structure needs the same three things: a detector on the RAW html, a slot in
+	 * the profile, and an emission — so they share the slot.
+	 *
+	 * `comparison` stays as the typed fast path for one release (profiles in the
+	 * wild carry it); a reader prefers `structure` and falls back.
+	 *
+	 * ORDERING RULE: a structure renders IN ADDITION to the band's classified
+	 * kind, never instead of it — the band that carries a matrix also carries
+	 * three phase cards, and an override deletes them.
+	 */
+	structure?: ForgeStructureEntry[];
 }
 
 /** One top-level column's responsive facts (Elementor's per-device
