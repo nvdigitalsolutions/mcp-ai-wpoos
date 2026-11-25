@@ -202,6 +202,11 @@ class MergeVideosTool extends AbstractVideoTool
                 'reencoded' => (bool) ($result['reencoded'] ?? false),
                 'transition' => (string) ($result['transition'] ?? $transition),
             );
+
+            // Absent for a copy, which has no overlap to describe.
+            if (isset($result['transition_duration'])) {
+                $envelope['data'] += array('transition_duration' => (float) $result['transition_duration']);
+            }
         }
 
         return $envelope;

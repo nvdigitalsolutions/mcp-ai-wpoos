@@ -30,7 +30,10 @@
  *
  *     offset_i = (d₁ + … + d_i) − i × T
  *
- * Three 2 s stills with a 0.5 s transition are therefore 5 s, not 6.
+ * Three 2 s stills with a 0.5 s transition are therefore 5 s, not 6. The
+ * overlap is a caller's choice (`transition_duration`, 0.05–5 s); it defaults
+ * to 0.5 s because the WordPress contract has no such field and a half-second
+ * reads better against a 2–3 s still than the merge default of 1 s.
  *
  * **`zoom` is refused, not approximated.** Ken Burns motion is `zoompan`
  * applied *within* each still, which is a different filter and a different
@@ -127,6 +130,13 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
                     'enum' => self::TRANSITIONS,
                     'default' => 'none',
                 ),
+                'transition_duration' => array(
+                    'type' => 'number',
+                    'description' => 'Seconds each cross-fade or slide lasts. Only read when transition is not "none", and it has to be shorter than duration_per_image.',
+                    'minimum' => 0.05,
+                    'maximum' => 5,
+                    'default' => 0.5,
+                ),
                 'output_format' => array(
                     'type' => 'string',
                     'description' => 'Output container.',
@@ -185,6 +195,17 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
             );
         }
 
+        if ('none' !== $transition) {
+            $crossFade = $this->floatParam($arguments, 'transition_duration', 0.5);
+
+            if ($crossFade < 0.05 || $crossFade > 5.0) {
+                return $this->errors->validationFailed(
+                    'transition_duration must be between 0.05 and 5 seconds.',
+                    array('transition_duration' => array('Got ' . $crossFade . '.')),
+                );
+            }
+        }
+
         $resolution = \strtolower(\trim($this->stringParam($arguments, 'resolution', '1080p')));
 
         if (! isset(self::FRAMES[$resolution])) {
@@ -208,14 +229,22 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
 
         [$width, $height] = self::FRAMES[$resolution];
 
+        $options = array(
+            'width' => $width,
+            'height' => $height,
+            'duration' => $seconds,
+            'format' => $this->stringParam($arguments, 'output_format', 'mp4'),
+            'transition' => $transition,
+        );
+
+        // A still has no boundary to cross-fade on its own, and a plain
+        // slideshow carries no overlap, so the duration only travels with one.
+        if ('none' !== $transition) {
+            $options['transition_duration'] = $this->floatParam($arguments, 'transition_duration', 0.5);
+        }
+
         try {
-            $result = $this->composition->compose('images', $inputs, array(
-                'width' => $width,
-                'height' => $height,
-                'duration' => $seconds,
-                'format' => $this->stringParam($arguments, 'output_format', 'mp4'),
-                'transition' => $transition,
-            ));
+            $result = $this->composition->compose('images', $inputs, $options);
         } catch (\InvalidArgumentException $e) {
             return $this->errors->validationFailed($e->getMessage());
         } catch (\Throwable $e) {
@@ -243,6 +272,11 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
                 'resolution' => $resolution,
                 'transition' => (string) ($result['transition'] ?? $transition),
             );
+
+            // Absent for a plain slideshow, which has no overlap to describe.
+            if (isset($result['transition_duration'])) {
+                $envelope['data'] += array('transition_duration' => (float) $result['transition_duration']);
+            }
         }
 
         return $envelope;

@@ -1436,6 +1436,7 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			let frameRate;
 			let imagesFormat;
 			let transition;
+			let transitionDuration = IMAGES_TRANSITION_SECONDS;
 
 			try {
 				perImage = boundedNumber( rawDuration, 0.1, 60, 'duration' ) ?? 3;
@@ -1444,6 +1445,9 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 				frameRate = boundedNumber( rawFps, 1, 120, 'fps' ) ?? 25;
 				imagesFormat = resolveFormat( rawFormat );
 				transition = resolveTransition( rawTransition, 'images' );
+				transitionDuration =
+					boundedNumber( rawTransitionDuration, 0.05, MAX_TRANSITION_SECONDS, 'transition_duration' ) ??
+					IMAGES_TRANSITION_SECONDS;
 			} catch ( argErr ) {
 				cleanup();
 				return res.status(400).json({ error: argErr.message });
@@ -1463,7 +1467,6 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			// transition only has an effect from the second image onward.
 			const boundaries = Math.max( 0, files.length - 1 );
 			const usedTransition = boundaries > 0 ? transition : 'none';
-			const transitionDuration = IMAGES_TRANSITION_SECONDS;
 
 			if ( 'none' !== usedTransition && transitionDuration >= perImage ) {
 				cleanup();

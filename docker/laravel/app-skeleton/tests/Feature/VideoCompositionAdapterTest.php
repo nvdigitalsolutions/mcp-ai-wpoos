@@ -532,6 +532,48 @@ final class VideoCompositionAdapterTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_a_slideshow_transition_duration_is_forwarded(): void
+    {
+        $captured = null;
+        $this->fakeWorker($captured, self::CAPABILITIES, array(
+            'operation' => 'images',
+            'transition' => 'slide',
+            'duration' => 5.0,
+        ));
+
+        $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video(), $this->mark(), $this->video()),
+            'duration_per_image' => 2,
+            'transition' => 'slide',
+            'transition_duration' => 0.25,
+            'save_to_media' => false,
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertSame('0.25', $this->field($captured, 'transition_duration'));
+
+        // Reported back so the caller can check the length arithmetic without
+        // having to infer the overlap.
+        $this->assertSame(0.25, $result['data']['transition_duration']);
+    }
+
+    public function test_a_slideshow_transition_duration_outside_the_range_is_refused_before_a_request(): void
+    {
+        Http::fake();
+
+        $result = $this->app->make(CreateVideoFromImagesTool::class)->execute(array(
+            'image_urls' => array($this->video(), $this->mark()),
+            'transition' => 'fade',
+            'transition_duration' => 8,
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertSame(422, $result->getCode());
+        $this->assertStringContainsString('transition_duration must be between', $result->getMessage());
+
+        Http::assertNothingSent();
+    }
+
     public function test_a_slideshow_with_no_transition_still_says_none(): void
     {
         $captured = null;
@@ -543,6 +585,10 @@ final class VideoCompositionAdapterTest extends TestCase
         ));
 
         $this->assertSame('none', $this->field($captured, 'transition'));
+        $this->assertNull(
+            $this->field($captured, 'transition_duration'),
+            'a plain slideshow has no overlap, so there is no duration to send'
+        );
     }
 
     public function test_an_unknown_slideshow_resolution_is_refused_with_the_supported_ones(): void

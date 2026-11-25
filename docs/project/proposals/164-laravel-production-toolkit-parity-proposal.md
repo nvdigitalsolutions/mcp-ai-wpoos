@@ -1463,6 +1463,14 @@ Per-operation allowlists, because the two WordPress enums differ:
 - `merge` → `none`, `fade`, `dissolve`
 - `images` → `none`, `fade`, `slide`
 
+The overlap is a caller's knob on both operations: `transition_duration`,
+bounded to 0.05–5 s. `merge` defaults to the 1 s its WordPress schema declares.
+`create_video_from_images` has no such field in its WordPress contract, so the
+tool adds one and defaults it to 0.5 s — a half second reads better against a
+2–3 s still than a merge's 1 s. The field only travels when a transition is
+asked for, so a copy-merge and a plain slideshow send exactly the field set they
+always sent, and it is reported back in the envelope only when it applied.
+
 ### A latent WebM bug fell out of this
 
 The §164.22 slideshow path hardcoded `-c:v libx264` while `resolveFormat()`
@@ -1477,8 +1485,8 @@ handler smoke asserts a `webm` merge really is `vp9`.
 |---|---|
 | `addons/media-worker/src/routes/video.js` | `XFADE`, `TRANSITIONS`, `resolveTransition()`, `xfadeOffsets()`, `videoEncoder()`; `probeMedia()` now reports `duration`; merge split into copy and transition paths; slideshow gained the chain |
 | `lib/core/src/Tool/MergeVideosTool.php` | `transition_duration` added to the schema; the refusal removed; transition reported in `data` |
-| `lib/core/src/Tool/CreateVideoFromImagesTool.php` | `fade`/`slide` accepted; `zoom` refused with the `zoompan` reason |
-| `lib/laravel-adapter/src/Adapter/MediaWorkerVideoComposition.php` | per-operation transition allowlist; `transition`/`transition_duration` fields; `transition` surfaced in the result |
+| `lib/core/src/Tool/CreateVideoFromImagesTool.php` | `fade`/`slide` accepted; `transition_duration` added (default 0.5 s); `zoom` refused with the `zoompan` reason |
+| `lib/laravel-adapter/src/Adapter/MediaWorkerVideoComposition.php` | per-operation transition allowlist; `transition`/`transition_duration` fields; both surfaced in the result |
 | `lib/core/resources/tool-readiness.php` | both `reason` entries describe the two paths |
 
 ### Measurement
@@ -1489,14 +1497,17 @@ handler smoke asserts a `webm` merge really is `vp9`.
 those tools already advertised, they do not add tools).
 
 `lib/core` 2,466 / 17,575 (unchanged); adapter 359 / 1,923 (unchanged);
-`VideoCompositionAdapterTest` **27** (was 20 — two refusal tests replaced by
-nine that pin the new behaviour); worker pure tests **30** (was 20).
+`VideoCompositionAdapterTest` **29** (was 20 — two refusal tests replaced by
+nine that pin the new behaviour, plus two for the slideshow duration knob);
+worker pure tests **30** (was 20).
 
 On top of those, a handler-level smoke boots the real router, posts real
-multipart bodies and probes real output with ffmpeg 8.1.2 — **25 checks**, in
+multipart bodies and probes real output with ffmpeg 8.1.2 — **29 checks**, in
 one container, covering: merge-with-fade duration and frame, dissolve with the
 default 1 s, the `slide`-on-merge refusal, the copy path still refusing a
 mismatch and still copying, mixed audio, a transition longer than the shortest
 clip, `webm` → VP9, a `slide` slideshow at 5.000 s, the plain slideshow
 unchanged at 6 s, `zoom` refused, a 0.4 s image too short for a 0.5 s
-transition, and a single still reporting `none`.
+transition, a 0.25 s transition making three 2 s stills 5.5 s, an explicit
+duration equal to the image length refused, an out-of-range duration refused,
+and a single still reporting `none`.

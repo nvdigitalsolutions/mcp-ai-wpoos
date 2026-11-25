@@ -116,6 +116,15 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
             $fields['duration'] = $this->number($options['duration'] ?? 3, 0.1, 60.0, 'duration');
             $fields['fps'] = $this->number($options['fps'] ?? 25, 1, 120, 'fps');
             $fields['transition'] = $this->transition($options['transition'] ?? 'none', 'images');
+
+            if ('none' !== $fields['transition']) {
+                $fields['transition_duration'] = $this->number(
+                    $options['transition_duration'] ?? 0.5,
+                    0.05,
+                    5.0,
+                    'transition_duration',
+                );
+            }
         }
 
         if ('merge' === $operation) {
@@ -204,6 +213,13 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
 
         if (isset($body['transition'])) {
             $result['transition'] = (string) $body['transition'];
+        }
+
+        // The route applies no fallback the adapter did not send, so this is the
+        // overlap it was asked for — reported so a caller can check the length
+        // arithmetic without subtracting from `duration`.
+        if (isset($fields['transition_duration'])) {
+            $result['transition_duration'] = (float) $fields['transition_duration'];
         }
 
         return $result;
