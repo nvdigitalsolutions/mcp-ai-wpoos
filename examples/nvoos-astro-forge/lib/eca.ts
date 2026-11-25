@@ -526,23 +526,52 @@ export function canonicalDay( raw: unknown ): string | null {
 }
 
 /**
- * Every day named in a separated run — `Wednesday & Thursday`, `Mon/Tue`.
+ * Every day named in a separated run — `Wednesday & Thursday`, `Mon/Tue` — and
+ * every day inside a RANGE — `Monday to Friday`, `Mon–Fri`.
  *
  * The source booklet's schedule tables carry two-day rows, and a single-day
- * model silently drops half the timetable.
+ * model silently drops half the timetable. A range is the same failure one
+ * level down: `ECA Day & Time: Monday to Friday` is the record for
+ * `SS Lion's Mane` (id 11153) in the live CMS, and reading its leading word
+ * alone put a five-day newsletter on the Monday page only — the splitter below
+ * cuts on `& , / + and`, none of which appear in `Monday to Friday`.
  */
 export function parseDays( raw: unknown ): string[] {
 	if ( raw === null || raw === undefined ) return [];
 	const text = String( raw ).trim();
 	if ( ! text ) return [];
 
-	const parts = text.split( /\s*(?:&|,|\/|\+|\band\b)\s*/i );
 	const out: string[] = [];
+	const add = ( day: string | null ): void => {
+		if ( day && ! out.includes( day ) ) out.push( day );
+	};
+
+	// A RANGE first, so `Monday to Friday` expands to the run rather than to its
+	// first word. Two day words with only whitespace and a range word between
+	// them — a time (`Tuesday 2:45 p.m. – 3:30 p.m.`) never matches, because the
+	// clock digits break the pattern.
+	const range = /\b([A-Za-z]+)\s*(?:to|through|thru|until|till|[–—-])\s*([A-Za-z]+)\b/i.exec( text );
+	if ( range ) {
+		const from = canonicalDay( range[ 1 ] );
+		const to = canonicalDay( range[ 2 ] );
+		if ( from && to ) {
+			const start = ECA_DAY_ORDER.indexOf( from as ( typeof ECA_DAY_ORDER )[ number ] );
+			const end = ECA_DAY_ORDER.indexOf( to as ( typeof ECA_DAY_ORDER )[ number ] );
+			if ( start >= 0 && end >= 0 ) {
+				// Inclusive, and wrapping (`Friday to Monday` is a weekend run).
+				for ( let index = start; ; index = ( index + 1 ) % ECA_DAY_ORDER.length ) {
+					add( ECA_DAY_ORDER[ index ] );
+					if ( index === end ) break;
+				}
+			}
+		}
+	}
+
+	const parts = text.split( /\s*(?:&|,|\/|\+|\band\b)\s*/i );
 	for ( const part of parts ) {
 		// A part may be a whole run (`Tuesday 2:45 p.m.`) — take the leading word.
 		const word = part.replace( /\s.*$/, '' ).replace( /[^A-Za-z].*$/, '' );
-		const day = canonicalDay( word );
-		if ( day && ! out.includes( day ) ) out.push( day );
+		add( canonicalDay( word ) );
 	}
 	return out;
 }

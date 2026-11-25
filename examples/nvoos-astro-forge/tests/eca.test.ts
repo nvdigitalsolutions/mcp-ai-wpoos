@@ -912,6 +912,25 @@ describe( 'parseDays', () => {
 		expect( parseDays( 'Tuesday 2:45 p.m. – 3:30 p.m.' ) ).toEqual( [ 'Tuesday' ] );
 	} );
 
+	it( 'expands a RANGE to every day it covers', () => {
+		// `ECA Day & Time: Monday to Friday` is a real record in the live CMS
+		// (SS Lion's Mane, id 11153). Reading its leading word put a five-day
+		// activity on the Monday page alone.
+		expect( parseDays( 'Monday to Friday' ) ).toEqual( [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday' ] );
+		expect( parseDays( 'Mon–Fri' ) ).toEqual( [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday' ] );
+		expect( parseDays( 'Tue - Thurs' ) ).toEqual( [ 'Tuesday', 'Wednesday', 'Thursday' ] );
+	} );
+
+	it( 'wraps a range that crosses the weekend', () => {
+		expect( parseDays( 'Friday to Monday' ) ).toEqual( [ 'Friday', 'Saturday', 'Sunday', 'Monday' ] );
+	} );
+
+	it( 'does not read a clock range as a day range', () => {
+		expect( parseDays( 'Tuesday 2:45 p.m. - 3:30 p.m.' ) ).toEqual( [ 'Tuesday' ] );
+		// A hyphenated word that merely starts with a day name is not a range.
+		expect( parseDays( 'Monday- Junior School' ) ).toEqual( [ 'Monday' ] );
+	} );
+
 	it( 'deduplicates and ignores noise', () => {
 		expect( parseDays( 'Tuesday & Tuesday' ) ).toEqual( [ 'Tuesday' ] );
 		expect( parseDays( '' ) ).toEqual( [] );
