@@ -1997,6 +1997,15 @@ export interface ForgeMark {
 	 * two-column hero band: a copy column (heading + divider + body +
 	 * links) beside a media collage column (jayainc's about band). */
 	layout?: 'split';
+	/**
+	 * Which SIDE of a split band holds the media.
+	 *
+	 * A split is not always copy-then-media: eca.directory's about-us benefits
+	 * band puts the photo on the LEFT and the copy on the right, and a rebuild
+	 * that always renders copy first mirrors the design (2026-11-25). Measured
+	 * from the lane order, never assumed.
+	 */
+	mediaSide?: 'left' | 'right';
 	/** The heading's underline divider (aux-modern-heading-divider) —
 	 * width/height/background/shadow facts the rebuild re-applies under
 	 * the split hero's title. */

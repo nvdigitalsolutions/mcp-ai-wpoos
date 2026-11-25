@@ -13,7 +13,7 @@ import type { SemanticSection } from '../../forge/semantic.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
-import { bandParagraphs } from '../../lib/band-copy.ts';
+import { bandParagraphs, titleEchoItems } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -30,8 +30,14 @@ interface Props {
 }
 
 const { section, theme } = Astro.props;
-const { title, body, items, links } = section.slots;
+const { body, items, links } = section.slots;
+const title = section.slots.title ?? theme?.titleText;
 const media = Astro.props.media ?? section.slots.media;
+// The source's lead icon-box often repeats the band title. Rendering it as a
+// stat pair printed the heading twice (eca.directory's about-us benefits band,
+// 2026-11-25) — the echo belongs to the heading, not to the list.
+const echoes = new Set( titleEchoItems( items, title, theme, theme?.columns ) );
+const heroItems = ( items ?? [] ).filter( ( item ) => ! echoes.has( item ) );
 
 /**
  * The collage, as measured LAYERS.
@@ -118,7 +124,9 @@ const offsetVars = ( index: number ): string | undefined => {
 
 {theme?.layout === 'split' ? (
 	<section class="ds-section ds-hero ds-hero-split">
-		<div class="ds-hero-copy">
+		{/* The source's own side. Rendered as grid ORDER, not extra CSS: the two
+		    columns are the grid's only children, so order is the whole change. */}
+		<div class="ds-hero-copy" style={theme.mediaSide === 'left' ? 'order:2' : undefined}>
 			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 			{theme.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 			{bandParagraphs(body, theme).length > 0 && (
@@ -128,9 +136,9 @@ const offsetVars = ( index: number ): string | undefined => {
 					))}
 				</div>
 			)}
-			{( items?.length ?? 0 ) > 0 && (
+			{( heroItems?.length ?? 0 ) > 0 && (
 				<dl class="ds-hero-stats">
-					{items?.map( ( item ) => (
+					{heroItems?.map( ( item ) => (
 						<div class="ds-hero-stat">
 							{ item.title && <dt class="ds-hero-stat__value">{ item.title }</dt> }
 							{ item.body && <dd class="ds-hero-stat__label">{ item.body }</dd> }
@@ -149,7 +157,10 @@ const offsetVars = ( index: number ): string | undefined => {
 			)}
 		</div>
 		{layers.length > 0 ? (
-			<div class="ds-hero-collage ds-hero-collage--layered" style={collageStyle}>
+			<div
+				class="ds-hero-collage ds-hero-collage--layered"
+				style={[collageStyle, theme.mediaSide === 'left' ? 'order:1' : ''].filter(Boolean).join(';') || undefined}
+			>
 				{layers.map( ( layer, index ) => (
 					<img
 						class="ds-collage-layer"
@@ -162,7 +173,7 @@ const offsetVars = ( index: number ): string | undefined => {
 				) )}
 			</div>
 		) : media && media.length > 0 && (
-			<div class="ds-hero-collage">
+			<div class="ds-hero-collage" style={theme.mediaSide === 'left' ? 'order:1' : undefined}>
 				{theme?.mediaShape && (
 					<span
 						class="ds-collage-shape"

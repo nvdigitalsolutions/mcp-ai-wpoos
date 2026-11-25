@@ -2429,6 +2429,9 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	if ( section.layout ) {
 		entry.push( `layout: ${ tsString( section.layout ) }` );
 	}
+	if ( section.mediaSide ) {
+		entry.push( `mediaSide: ${ tsString( section.mediaSide ) }` );
+	}
 	// The page HERO, derived from MEASURED facts rather than markup: the band
 	// that owns the h1 and splits into a copy column beside a media column.
 	//
@@ -2847,6 +2850,9 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t/** The content rhythm (125 §1) — \'split\' = a copy column beside a',
 		'\t * media collage column (the source\'s two-column hero bands). */',
 		"\tlayout?: 'split';",
+		'\t/** Which side of the split holds the media (`left` | `right`) — measured',
+		'\t * from the lane order, so a mirror-image design is not rebuilt flipped. */',
+		"\tmediaSide?: 'left' | 'right';",
 		'\t/** The heading\'s underline divider facts (width/height/background/shadow). */',
 		'\ttitleDivider?: { width: string; height: string; background: string; shadow?: string };',
 		'\t/** The heading typography (size/weight/line-height/letter-spacing). */',

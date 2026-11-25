@@ -109,6 +109,8 @@ export interface SectionTheme {
 	/** The content rhythm (125 §1) — 'split' = a copy column beside a
 	 * media collage column (the source's two-column hero bands). */
 	layout?: 'split';
+	/** Which side of the split holds the media — measured from the lane order. */
+	mediaSide?: 'left' | 'right';
 	/** The heading's underline divider facts (width/height/background/shadow). */
 	titleDivider?: { width: string; height: string; background: string; shadow?: string };
 	/** The heading typography (size/weight/line-height/letter-spacing). */
