@@ -1852,6 +1852,15 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'pro_excel_document' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ProExcelDocumentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Three operations (generate, table, multi_sheet) over MediaWorkerOfficeWriter (`POST /api/document/excel`, exceljs) and FileVisibilityStoreInterface. The worker gained `views`, `autoFilter` and a validated formula map in Proposal 164 section 164.36, so `freeze_header`, `auto_filter`, `formatting.header_bg` and `formulas` are honoured rather than inert. `chart` is not offered: the route draws none. Formulas are an explicit channel; a data value that looks like one stays a string, which is the OWASP-recommended typed-output boundary.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProExcelDocumentToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'pro_pdf_document' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ProPdfDocumentTool',
 			'readiness' => 'ready',

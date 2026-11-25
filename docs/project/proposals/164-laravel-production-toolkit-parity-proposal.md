@@ -2820,3 +2820,76 @@ touched.
 | `qms_*` (10) | **next** — needs the lifecycle data model; Part 11 attribution shape is settled above |
 | `pro_excel_document` | worker first: freeze panes, `autoFilter`, formulas — all native to ExcelJS |
 | six service-dependent | recorded and not portable |
+
+## 164.36 — The Excel route grows the three things it was missing (2026-11-25)
+
+§164.35 found that §164.33's reason for deferring `pro_excel_document` was wrong:
+the worker wrote values only, but ExcelJS supports freeze panes, auto-filter and
+formulas natively. So the worker changed first and the tool followed, which is the
+order that keeps the tool's parameters real.
+
+### The route now applies three things
+
+| argument | ExcelJS |
+|---|---|
+| `sheetDef.views` | `worksheet.views = [{ state: 'frozen', ySplit: 1, topLeftCell: 'A2' }]` |
+| `sheetDef.autoFilter` | `worksheet.autoFilter = 'A1:D1'` (or `{from, to}`) |
+| `sheetDef.formulas` | `cell.value = { formula: '…' }` |
+
+Each is optional, so a caller that sends none gets the workbook it always got.
+
+### Formulas are a separate channel, and that is a security decision
+
+OWASP's spreadsheet guidance puts its strongest recommendation on **typed output**:
+a string cell cannot become a formula, so writing data as strings avoids the class
+entirely. The other half of the guidance is that a formula must be something the
+caller asked for.
+
+Both halves are implemented. A value arrives through `rows` and ExcelJS writes it
+as a string cell, so `=1+1` in a data cell is the *text* `=1+1`. A formula exists
+only in `sheetDef.formulas`, addressed by cell reference, which the route
+validates against `/^[A-Z]{1,3}[1-9][0-9]{0,6}$/` before use, refuses when empty or
+carrying control characters, and writes with a leading `=` stripped so both
+spellings work.
+
+`document.test.js` decodes the written workbook rather than asserting on the
+request, because "this cell is a string" is a property of the file. Seven tests:
+a `=1+1` data value stays a string, `+SUM(A1)` and `@cmd` likewise, the explicit
+channel produces a real formula, an invalid reference and a control-character
+formula are both `400`, a frozen view round-trips, an auto-filter round-trips, and
+a sheet with none of the new arguments still writes.
+
+### The tool, and the one operation still absent
+
+`pro_excel_document` offers `generate`, `table` and `multi_sheet`. `chart` is
+**not** offered: the route draws none, and accepting it would be the
+accepted-then-ignored defect this cluster has now corrected five times. A caller
+that asks for `chart` gets a validation error that lists the three supported
+operations, which is louder than a silent no-op and cheaper than a redundant
+`generate_excel`.
+
+`freeze_header`, `auto_filter`, `formatting.header_bg` and `formulas` are now
+honoured. `header_bg` is validated as 6–8 hex digits before it reaches the
+stylesheet, the same rule §164.31 and §164.33 applied elsewhere.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `addons/media-worker/src/routes/document.js` | `views`, `autoFilter`, validated `formulas` |
+| `addons/media-worker/src/routes/document.test.js` | new; 7 tests, workbook decoded |
+| `lib/core/src/Tool/ProExcelDocumentTool.php` | new; three operations |
+| `lib/core/resources/tool-readiness.php` | one row |
+| `lib/core/tests/Unit/Tool/ProExcelDocumentToolTest.php` | new; 16 tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+### Measurement
+
+`lib/core` **2,682 / 18,222** (was 2,664 / 18,161); adapter **411 / 2,051**;
+worker `document.test.js` **7 / 7**; audit **297 / 297, servable 278**; toolkit
+parity **75 of 854**; `document-generation` **20 of 38**.
+
+A data cell reading `=1+1` is written as text and carries no formula; `D2` with
+`SUM(A2:B2)` in the formula map is a live formula after a round-trip; `not-a-ref`
+is a `400`; and `freeze_header` with `auto_filter` over two columns produces
+`views[0].state === 'frozen'` and `A1:B1`.

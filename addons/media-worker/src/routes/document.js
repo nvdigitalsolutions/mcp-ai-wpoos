@@ -18,6 +18,11 @@ function tempFile( req, ext ) {
 }
 
 // ── POST /excel — generate Excel spreadsheet ───────────────
+
+/** A1-notation cell reference: A1, D2, AB12 — bounded so a typo cannot address
+ *  a cell a spreadsheet has no room for. */
+const CELL_REF = /^[A-Z]{1,3}[1-9][0-9]{0,6}$/;
+
 documentRouter.post('/excel', async (req, res) => {
   try {
     const { sheets, outputPath, options } = req.body || {};
@@ -47,6 +52,48 @@ documentRouter.post('/excel', async (req, res) => {
       if (sheetDef.rows) {
         for (const row of sheetDef.rows) {
           ws.addRow(Array.isArray(row) ? row : row);
+        }
+      }
+
+      // Freeze panes. `views` is ExcelJS's own shape, passed through
+      // unchanged: [{ state: 'frozen', xSplit: 0, ySplit: 1, topLeftCell: 'A2' }]
+      if (Array.isArray(sheetDef.views) && sheetDef.views.length > 0) {
+        ws.views = sheetDef.views;
+      }
+
+      // Auto-filter. ExcelJS takes a range string ('A1:D1') or {from, to}.
+      if (sheetDef.autoFilter) {
+        ws.autoFilter = sheetDef.autoFilter;
+      }
+
+      // Formulas are an explicit channel, never inferred from a value.
+      //
+      // This is the injection boundary. OWASP's CSV-injection guidance and the
+      // XLSX guidance both land on the same rule: a caller's *data* must be
+      // written as a typed string, and a formula must be something the caller
+      // asked for by name. Values arrive through `rows` above and are written
+      // by ExcelJS as string cells, so `=1+1` in a data cell stays the text
+      // `=1+1`. Anything in this map is deliberately executable, which is why
+      // it is a separate argument and why the reference is validated.
+      if (sheetDef.formulas && typeof sheetDef.formulas === 'object') {
+        for (const [ref, formula] of Object.entries(sheetDef.formulas)) {
+          if (!CELL_REF.test(String(ref))) {
+            return res.status(400).json({
+              success: false,
+              error: `Invalid cell reference: ${ref}`,
+            });
+          }
+
+          const body = String(formula == null ? '' : formula).replace(/^=/, '');
+
+          if ('' === body || /[\x00-\x1f]/.test(body)) {
+            return res.status(400).json({
+              success: false,
+              error: `Invalid formula at ${ref}`,
+            });
+          }
+
+          ws.getCell(String(ref)).value = { formula: body };
         }
       }
 
