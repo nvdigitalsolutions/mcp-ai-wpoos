@@ -1031,7 +1031,10 @@ into the band's `structure` channel. Rules, all enforced by the module:
 - **cached** by `section id + sha256(screenshot)`, so a re-run costs nothing for
   an unchanged band, and a changed band is re-asked;
 - **never authoritative** over a deterministic detector — a band that already
-  carries a measured structure is skipped *without a model call*;
+  carries a measured structure is skipped *without a model call*. That includes
+  the typed `comparison` fast path: the renderer falls back to it only while
+  `structure` is empty, so a vision label there would suppress the table it was
+  meant to complement;
 - **provenance recorded** (`source: 'vision'`, `model`, `confidence`, `note`), so
   a bad classification is attributable and removable;
 - the model never writes markup or copy — it picks a label.
