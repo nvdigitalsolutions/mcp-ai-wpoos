@@ -20,6 +20,7 @@
         "dj-management": [],
         "document-generation": [
             "add_watermark_to_pdf",
+            "archive_documents",
             "docs_hub_delete_doc",
             "docs_hub_list_docs",
             "docs_hub_read_doc",

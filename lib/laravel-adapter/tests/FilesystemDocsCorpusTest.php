@@ -366,6 +366,109 @@ final class FilesystemDocsCorpusTest extends TestCase {
 		$this->assertInstanceOf( DocsCorpusInterface::class, $this->corpus() );
 	}
 
+	// ── Archiving ───────────────────────────────────────────────────────
+
+	/**
+	 * ISO 9001 §7.5.3: obsolete information is marked and prevented from
+	 * unintended use, but retained. The body must survive untouched.
+	 */
+	public function test_archiving_marks_the_document_and_keeps_the_body(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'guides/old.md', "# Old Guide\n\nBody text.\n" );
+
+		$result = $corpus->archive( 'guides/old.md', array( 'reason' => 'Superseded by v2', 'user_id' => 7 ) );
+
+		$this->assertFalse( $result['already_archived'] );
+		$this->assertSame( 'archived', $result['status'] );
+		$this->assertSame( 7, $result['archived_by'] );
+
+		$content = $corpus->read( 'guides/old.md' )['content'];
+
+		$this->assertStringContainsString( 'status: archived', $content );
+		$this->assertStringContainsString( 'archived_by: 7', $content );
+		$this->assertStringContainsString( 'archive_reason: Superseded by v2', $content );
+		$this->assertStringContainsString( "Body text.\n", $content, 'The body must survive an archive.' );
+	}
+
+	public function test_archiving_records_an_iso_timestamp(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x' );
+		$result = $corpus->archive( 'a.md' );
+
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2}T/', $result['archived_at'] );
+	}
+
+	/**
+	 * Re-stamping would destroy the only thing the record exists to prove.
+	 */
+	public function test_archiving_twice_changes_nothing(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'body' );
+		$first = $corpus->archive( 'a.md', array( 'reason' => 'first', 'user_id' => 3 ) );
+
+		\usleep( 1100000 ); // Ensure a naive re-stamp would produce a different second.
+
+		$second = $corpus->archive( 'a.md', array( 'reason' => 'second', 'user_id' => 9 ) );
+
+		$this->assertTrue( $second['already_archived'] );
+		$this->assertSame( $first['archived_at'], $second['archived_at'], 'The withdrawal time must not move.' );
+		$this->assertSame( 3, $second['archived_by'], 'The original signer must not be replaced.' );
+		$this->assertSame( 'first', $second['archive_reason'] );
+	}
+
+	public function test_archiving_preserves_existing_frontmatter(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'body', array( 'title' => 'Keep Me', 'slug' => 'keep', 'order' => 5 ) );
+		$corpus->archive( 'a.md' );
+
+		$content = $corpus->read( 'a.md' )['content'];
+
+		$this->assertStringContainsString( 'title: Keep Me', $content );
+		$this->assertStringContainsString( 'slug: keep', $content );
+		$this->assertStringContainsString( 'order: 5', $content );
+		$this->assertStringContainsString( 'status: archived', $content );
+	}
+
+	public function test_archiving_a_missing_document_is_not_found(): void {
+		$this->expectException( NotFoundException::class );
+
+		$this->corpus()->archive( 'absent.md' );
+	}
+
+	public function test_archiving_an_escaping_path_is_refused(): void {
+		$this->expectException( \InvalidArgumentException::class );
+
+		$this->corpus()->archive( '../victim.md' );
+	}
+
+	public function test_archiving_a_document_without_frontmatter_adds_one(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', "# Heading\n\nBody.\n" );
+		$corpus->archive( 'a.md' );
+
+		$read = $corpus->read( 'a.md' );
+
+		$this->assertStringStartsWith( "---\n", $read['content'] );
+		$this->assertSame( 'Heading', $read['title'], 'The heading must still supply the title.' );
+		$this->assertStringContainsString( 'Body.', $read['content'] );
+	}
+
+	public function test_an_archived_document_is_still_listed_and_readable(): void {
+		$corpus = $this->corpus();
+
+		$corpus->write( 'a.md', 'x' );
+		$corpus->archive( 'a.md' );
+
+		$this->assertSame( 1, $corpus->list()['total'], 'Retention means it stays in the corpus.' );
+		$this->assertStringContainsString( 'x', $corpus->read( 'a.md' )['content'], 'The body is still readable after withdrawal.' );
+		$this->assertStringContainsString( 'status: archived', $corpus->read( 'a.md' )['content'] );
+	}
+
 	// ── Helpers ────────────────────────────────────────────────────────
 
 	private function corpus(): FilesystemDocsCorpus {

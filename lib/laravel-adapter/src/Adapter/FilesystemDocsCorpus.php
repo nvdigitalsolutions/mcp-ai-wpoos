@@ -225,6 +225,71 @@ final class FilesystemDocsCorpus implements DocsCorpusInterface
     /**
      * {@inheritDoc}
      */
+    public function archive(string $path, array $meta = array()): array {
+        $this->assertActive();
+
+        $relative = $this->sanitize($path);
+        $absolute = $this->resolve($relative);
+
+        if ('' === $absolute || !\is_file($absolute)) {
+            throw new NotFoundException(\sprintf('No document at "%s".', $relative));
+        }
+
+        $raw = \file_get_contents($absolute);
+
+        if (false === $raw) {
+            throw new \RuntimeException(\sprintf('Could not read "%s".', $relative));
+        }
+
+        [$fields, $body] = $this->split($raw);
+
+        // Already withdrawn: report what the first archive recorded rather than
+        // re-stamping it. An archive record exists to prove *when* a document
+        // was withdrawn, and rewriting that would destroy the evidence.
+        if (isset($fields['status']) && 'archived' === \strtolower($fields['status'])) {
+            return array(
+                'path' => $relative,
+                'title' => $fields['title'] ?? $this->title($body, $relative),
+                'status' => 'archived',
+                'archived_at' => (string) ( $fields['archived_at'] ?? '' ),
+                'archived_by' => (int) ( $fields['archived_by'] ?? 0 ),
+                'archive_reason' => (string) ( $fields['archive_reason'] ?? '' ),
+                'already_archived' => true,
+            );
+        }
+
+        $reason = isset($meta['reason']) && \is_string($meta['reason']) ? \trim($meta['reason']) : '';
+        $userId = isset($meta['user_id']) && \is_numeric($meta['user_id']) ? (int) $meta['user_id'] : 0;
+        $now = \gmdate('c');
+
+        $fields['status'] = 'archived';
+        $fields['archived_at'] = $now;
+        $fields['archived_by'] = (string) $userId;
+
+        if ('' !== $reason) {
+            $fields['archive_reason'] = $reason;
+        }
+
+        $written = $this->frontmatterFrom($fields).$body;
+
+        if (false === \file_put_contents($absolute, $written)) {
+            throw new \RuntimeException(\sprintf('Could not archive "%s".', $relative));
+        }
+
+        return array(
+            'path' => $relative,
+            'title' => $fields['title'] ?? $this->title($body, $relative),
+            'status' => 'archived',
+            'archived_at' => $now,
+            'archived_by' => $userId,
+            'archive_reason' => $reason,
+            'already_archived' => false,
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function rebuild(): array {
         $this->assertActive();
 
@@ -421,6 +486,73 @@ final class FilesystemDocsCorpus implements DocsCorpusInterface
         return $resolved === $realRoot
             || 0 === \strncmp($resolved, $realRoot.DIRECTORY_SEPARATOR, \strlen($realRoot) + 1)
             || 0 === \strncmp($resolved, $realRoot.'/', \strlen($realRoot) + 1);
+    }
+
+    /**
+     * Split a document into its frontmatter fields and its body.
+     *
+     * Understands the subset this corpus writes: single-line `key: value`
+     * scalars between two `---` fences. Anything it does not understand stays in
+     * the body untouched, which is the safe direction — a document with nested
+     * YAML is not silently rewritten into something else.
+     *
+     * @return array{0: array<string, string>, 1: string}
+     */
+    private function split(string $raw): array {
+        if (1 !== \preg_match('/^---\R(.*?)\R---\R+/s', $raw, $match)) {
+            return array(array(), $raw);
+        }
+
+        $fields = array();
+
+        foreach (\preg_split('/\R/', $match[1]) ?: array() as $line) {
+            if (1 === \preg_match('/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*)$/', $line, $pair)) {
+                $value = \trim($pair[2]);
+
+                if (\strlen($value) > 1 && (
+                    ("'" === $value[0] && "'" === $value[\strlen($value) - 1])
+                    || ('"' === $value[0] && '"' === $value[\strlen($value) - 1])
+                )) {
+                    $value = \substr($value, 1, -1);
+                }
+
+                $fields[\strtolower($pair[1])] = \str_replace('\\"', '"', $value);
+            }
+        }
+
+        return array($fields, \substr($raw, \strlen($match[0])));
+    }
+
+    /**
+     * Render frontmatter from a field map.
+     *
+     * Known keys are emitted first in a stable order so a document archived twice
+     * for different reasons still diffs cleanly; the rest keep their own order.
+     *
+     * @param array<string, string> $fields Field map.
+     */
+    private function frontmatterFrom(array $fields): string {
+        if (array() === $fields) {
+            return '';
+        }
+
+        $order = array('title', 'slug', 'order', 'status', 'archived_at', 'archived_by', 'archive_reason');
+        $lines = array();
+
+        foreach ($order as $key) {
+            if (isset($fields[$key]) && '' !== $fields[$key]) {
+                $lines[] = $key.': '.$this->yaml($fields[$key]);
+                unset($fields[$key]);
+            }
+        }
+
+        foreach ($fields as $key => $value) {
+            if ('' !== $value) {
+                $lines[] = $key.': '.$this->yaml($value);
+            }
+        }
+
+        return array() === $lines ? '' : "---\n".\implode("\n", $lines)."\n---\n\n";
     }
 
     /**

@@ -150,6 +150,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProductionToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'archive_documents' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ArchiveDocumentsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Withdraws documents from current use through DocsCorpusInterface by setting `status: archived` plus `archived_at`, `archived_by` and `archive_reason` in frontmatter. ISO 9001 section 7.5.3 requires obsolete information to be marked and prevented from unintended use while being retained, so the body is never deleted. Archiving an already-archived document changes nothing rather than re-stamping the withdrawal time. Takes corpus `paths` instead of the WordPress post ids, because there is no post type here (Proposal 164 section 164.35).',
+			'evidence' => 'lib/laravel-adapter/tests/FilesystemDocsCorpusTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'auto_categorize_content' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AutoCategorizeContentCompletionTool',
 			'readiness' => 'ready',

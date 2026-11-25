@@ -98,6 +98,29 @@ interface DocsCorpusInterface
     public function delete(string $path): bool;
 
     /**
+     * Mark a document obsolete without removing it.
+     *
+     * ISO 9001 §7.5.3 requires obsolete documented information to be clearly
+     * marked and prevented from unintended use, and retained so it can still
+     * answer an audit. So this is a **state**, not a delete: the body is
+     * untouched and the frontmatter gains `status: archived`, `archived_at`,
+     * `archived_by` and `archive_reason`.
+     *
+     * Archiving an already-archived document changes nothing and reports
+     * `already_archived`. Rewriting the original timestamp would obscure when the
+     * document was actually withdrawn, which is the one thing an archive record
+     * exists to prove.
+     *
+     * @param array{reason?: string, user_id?: int} $meta
+     *
+     * @return array{path: string, title: string, status: string, archived_at: string, archived_by: int, archive_reason: string, already_archived: bool}
+     *
+     * @throws \InvalidArgumentException When the path is refused.
+     * @throws NotFoundException         When the path names nothing.
+     */
+    public function archive(string $path, array $meta = array()): array;
+
+    /**
      * Scan the corpus and report what it holds.
      *
      * The WordPress tool queues a rebuild job that regenerates the docs-hub
