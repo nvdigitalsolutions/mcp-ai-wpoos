@@ -189,6 +189,16 @@ final class MediaWorkerVideo implements VideoProcessingInterface
             }
         }
 
+        if ('extract_audio' === $operation) {
+            // Only used when the route has to encode; a lossless copy has no
+            // bitrate, and the route drops it in that case.
+            $audioBitrate = $this->bitrate($options['audio_bitrate'] ?? null, 'audio_bitrate');
+
+            if (null !== $audioBitrate) {
+                $fields['audio_bitrate'] = $audioBitrate;
+            }
+        }
+
         if ('resize' === $operation && null === $width && null === $height) {
             throw new \InvalidArgumentException('Resize needs a width, a height, or both.');
         }
@@ -235,7 +245,7 @@ final class MediaWorkerVideo implements VideoProcessingInterface
             $localPath.'|'.$operation.'|'.$format.'|'.\json_encode($fields),
         );
 
-        return array(
+        $result = array(
             'path' => $path,
             'operation' => $operation,
             'format' => $format,
@@ -243,6 +253,13 @@ final class MediaWorkerVideo implements VideoProcessingInterface
             'original_bytes' => (int) ($body['original_size'] ?? 0),
             'savings_percent' => (float) \rtrim((string) ($body['savings_percent'] ?? '0'), '%'),
         );
+
+        // Only extraction answers this, because only extraction can copy.
+        if (isset($body['reencoded'])) {
+            $result['reencoded'] = (bool) $body['reencoded'];
+        }
+
+        return $result;
     }
 
     /**

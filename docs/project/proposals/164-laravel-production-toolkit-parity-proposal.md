@@ -1701,3 +1701,99 @@ Eight, not nine:
 `extract_audio` — which no WordPress slug requests — remains the one additive
 tool §164.19 called "available": the route has the operation, so it needs a tool
 and nothing else.
+
+## 164.26 — `extract_audio`, and copying instead of re-encoding (2026-11-25)
+
+That last line is now done. `extract_audio` ships as an **additive** tool: no
+WordPress slug in the toolkit requests it (§164.17), so `video-production` stays
+at 13 of 21 and the total stays at 62 of 854. It is the first slug in this arc
+that moves no parity number at all.
+
+### The route was throwing away quality
+
+Before this slice the codec was chosen from the **output container**:
+
+```js
+const codec = 'mp3' === format ? 'libmp3lame'
+  : ('m4a' === format || 'aac' === format ? 'aac' : 'copy');
+```
+
+So extracting an AAC track into `m4a` — the one case where a copy is blindingly
+obvious — re-encoded it. Every m4a extraction was a generation loss for nothing.
+The codec now comes from the **source** stream, which the route probes:
+
+| source | target | codec | `reencoded` |
+|---|---|---|---|
+| AAC | `m4a` | copy | **false** |
+| AAC | `aac` | copy | **false** |
+| MP3 | `mp3` | copy | **false** |
+| AAC | `mp3` | libmp3lame | true |
+| anything | anything else | encode | true |
+
+The rule is `audioExtractionCodec()` — a pure function, because a decision this
+consequential should be tested without an encoder.
+
+### `probeMedia()` could not answer it
+
+`probeMedia()` returns null when a file has no **video** stream, and an
+audio-only file is a legitimate input to an extraction tool. Reusing it would
+have meant silently re-encoding every MP3 → MP3 request. `probeAudioCodec()`
+probes `a:0` alone and distinguishes three answers that matter:
+
+- a codec name — the stream exists and may be copied;
+- `''` — the probe succeeded and there is no audio, which is a **400**
+  ("This file has no audio track to extract.") instead of an ffmpeg failure
+  four steps later;
+- `null` — the probe could not be read, so nothing is claimed, and the route
+  encodes rather than copying something ffmpeg would reject.
+
+### `reencoded`, and why it is in the envelope
+
+A caller of an extraction tool has one question: *did this cost me a
+generation?* The route answers `reencoded` only for this operation — every other
+operation re-encodes by definition — and the tool lifts it into the envelope
+alongside a `lossless` boolean. When the engine does not say, the tool reports
+`reencoded: true`: "it did not say" is not the same as "it was lossless".
+
+`audio_bitrate` (128k by default) travels only when a copy is not possible; the
+route drops it otherwise, because a bitrate describes an encoder.
+
+Containers are limited to `mp3`, `m4a` and `aac`. The route can write others,
+but a video container cannot carry an extracted track, and `wav` is not in the
+route's format allowlist — so both are refused with the list rather than left to
+the muxer.
+
+### Measured
+
+A handler smoke with real ffmpeg 8.1.2, **12 checks**:
+
+| request | result |
+|---|---|
+| AAC video → `m4a` | `reencoded: false`, codec `aac`, no video stream, 39.5% smaller |
+| AAC video → `mp3` @128k | `reencoded: true`, codec `mp3` |
+| same, @320k | stream bitrate **320000 vs 128000** — the field reaches `-b:a` |
+| **audio-only** MP3 → `mp3` | `reencoded: false`, **73,395 bytes in, 73,395 out** |
+| silent video → any | 400, "no audio track to extract" |
+| `format: wav` | 400, "Unknown output format" |
+
+The byte-identical MP3 case is the one that proves the audio-only probe: with
+`probeMedia()` the source would have looked unreadable and been re-encoded.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Tool/ExtractAudioTool.php` | new tool; containers, bitrate, `reencoded`/`lossless` |
+| `lib/laravel-adapter/src/Adapter/MediaWorkerVideo.php` | sends `audio_bitrate` for the operation; forwards `reencoded` |
+| `addons/media-worker/src/routes/video.js` | `audioExtractionCodec()`, `probeAudioCodec()`, the copy rule, `reencoded` in the answer |
+| `lib/core/resources/tool-readiness.php` | 284th row |
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **284 rows / 265 servable / 0 violations** (was
+283 / 264). `bin/toolkit-parity.php`: **62 of 854**, `video-production` **13 of
+21** — both unchanged, which is the point of an additive tool.
+
+`lib/core` **2,470 / 17,595** (was 2,468 / 17,585); adapter **359 / 1,926**;
+the video group **80 / 306** (was 75 / 285 — five new tests in
+`VideoProcessingAdapterTest`); worker pure tests **43** (was 40).

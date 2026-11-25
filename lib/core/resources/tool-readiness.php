@@ -745,6 +745,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ExportAssistantToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'extract_audio' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ExtractAudioTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerVideo over the media-worker `POST /api/video/process` route (operation `extract_audio`: `-vn` plus a codec chosen from the **source** stream) then `GET /api/video/download`. No WordPress slug in the toolkit requests this (§164.17), so it is additive rather than parity. The route copies instead of re-encoding whenever the container already speaks the source codec — AAC into m4a/aac, MP3 into mp3 — and reports `reencoded`, because extraction is the one operation where a caller can be given a lossless result; a source with no audio track is a 400 rather than an ffmpeg failure, and `audio_bitrate` (128k by default) is used only when the track has to be encoded. Containers are limited to mp3, m4a and aac: the route can write others, but a video container cannot carry an extracted track.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoProcessingAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'extract_domain' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExtractDomainTool',
 			'readiness' => 'pure',

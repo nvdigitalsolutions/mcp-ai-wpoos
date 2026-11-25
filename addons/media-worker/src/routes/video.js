@@ -579,6 +579,31 @@ function frameTimestamps( { timestamps = [], interval = null, duration = 0 } = {
 }
 
 /**
+ * The audio codec an extraction run should use.
+ *
+ * A copy is lossless, so it is chosen whenever the target container already
+ * speaks the source codec — AAC into `m4a`/`aac`, MP3 into `mp3`. Re-encoding an
+ * AAC track into an m4a costs a generation for nothing, which is the whole bug
+ * this rule exists to avoid.
+ *
+ * An unreadable or unknown source codec falls through to an encode rather than
+ * to a copy ffmpeg would reject.
+ *
+ * @param {string} format      Resolved container: mp3, m4a or aac.
+ * @param {string} sourceCodec The first audio stream's `codec_name`, or ''.
+ * @return {{codec: string, copy: boolean}} An ffmpeg `-c:a` value.
+ */
+function audioExtractionCodec( format, sourceCodec ) {
+	const wanted = 'mp3' === format ? 'mp3' : 'aac';
+
+	if ( String( sourceCodec || '' ) === wanted ) {
+		return { codec: 'copy', copy: true };
+	}
+
+	return { codec: 'mp3' === wanted ? 'libmp3lame' : 'aac', copy: false };
+}
+
+/**
  * How much a branch is upscaled before `zoompan`, as an integer factor.
  *
  * `zoompan` computes `x` and `y` in integer source pixels, so a source the same
@@ -628,6 +653,44 @@ function kenBurnsZoompan( width, height, frameRate, seconds ) {
 		`:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'` +
 		`:d=1:s=${ width }x${ height }:fps=${ frameRate }`
 	);
+}
+
+/**
+ * The first audio stream's codec name.
+ *
+ * Three answers, because they mean three different things:
+ *
+ *  - a name (`aac`, `mp3`) — the stream exists and can be copied into a
+ *    container that speaks it;
+ *  - `''` — the probe succeeded and there is **no** audio stream, which is a
+ *    400 rather than an ffmpeg failure four steps later;
+ *  - `null` — the probe could not be read, so nothing is claimed about the file.
+ *
+ * `probeMedia()` cannot answer this: it returns null for a source with no video
+ * stream, and an audio-only file is a legitimate input here.
+ *
+ * @param {string} inputPath Uploaded file.
+ * @return {Promise<string|null>}
+ */
+async function probeAudioCodec( inputPath ) {
+	try {
+		const { stdout } = await execFileAsync(
+			'ffprobe',
+			[
+				'-v', 'quiet',
+				'-print_format', 'json',
+				'-select_streams', 'a:0',
+				'-show_entries', 'stream=codec_name',
+				inputPath,
+			],
+			{ timeout: 30000 }
+		);
+		const streams = JSON.parse( stdout )?.streams;
+
+		return Array.isArray( streams ) ? String( streams[ 0 ]?.codec_name || '' ) : null;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -939,6 +1002,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
 	    let acodec;
 	    let videoBitrate;
 	    let audioBitrate;
+	    let reencoded = null;
 
     try {
       width = boundedDimension(rawWidth, 'width');
@@ -1138,8 +1202,26 @@ router.post('/process', upload.single('file'), async (req, res) => {
         break;
 
 	      case 'extract_audio': {
-	        const codec = 'mp3' === format ? 'libmp3lame' : ('m4a' === format || 'aac' === format ? 'aac' : 'copy');
-	        args.push('-vn', '-c:a', codec);
+	        // `-vn` drops the video. The codec is a copy whenever the container
+	        // already speaks the source audio, so an m4a out of an AAC track is
+	        // lossless instead of a second generation.
+	        const sourceCodec = await probeAudioCodec( inputPath );
+
+	        if ( '' === sourceCodec ) {
+	          cleanupUpload();
+	          return res.status(400).json({ error: 'This file has no audio track to extract.' });
+	        }
+
+	        const choice = audioExtractionCodec( format, sourceCodec || '' );
+
+	        args.push('-vn', '-c:a', choice.codec);
+
+	        // A bitrate describes an encoder, and a copy has none.
+	        if (!choice.copy && audioBitrate) {
+	          args.push('-b:a', audioBitrate);
+	        }
+
+	        reencoded = !choice.copy;
 	        break;
 	      }
 
@@ -1234,6 +1316,10 @@ router.post('/process', upload.single('file'), async (req, res) => {
       original_size: originalStats.size,
       output_size: stats.size,
       savings_percent: ((originalStats.size - stats.size) / originalStats.size * 100).toFixed(1) + '%',
+      // Only extraction reports this: every other operation re-encodes by
+      // definition, and a copy that says it is a copy is how a caller learns
+      // the result is lossless.
+      ...(null === reencoded ? {} : { reencoded }),
       output_file: outputName,
     });
 
@@ -1903,6 +1989,7 @@ export {
 	kenBurnsUpscale,
 	kenBurnsZoompan,
 	frameTimestamps,
+	audioExtractionCodec,
 	parseRational,
 	boolField,
 	atempoChain,
