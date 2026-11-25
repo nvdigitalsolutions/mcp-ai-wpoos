@@ -109,6 +109,22 @@ describe( 'vision structure pass', () => {
 		expect( outcome.profile.design?.sections?.[ 0 ]?.structure?.[ 0 ].type ).toBe( 'comparison' );
 	} );
 
+	it( 'treats the typed `comparison` fast path as measured', async () => {
+		// A profile recorded before the `structure` channel carries the matrix in
+		// `comparison`, and the renderer falls back to it ONLY while `structure` is
+		// empty — so a vision label here would suppress the table it complements.
+		const profile = profileWith();
+		( profile.design!.sections![ 0 ] as Record< string, unknown > ).comparison = {
+			columns: [ 'Student', 'Parent' ],
+			rows: [ { label: 'Catalogue', values: [ '✓', '✓' ] } ],
+		};
+		const fetchImpl = answering( { type: 'steps', confidence: 0.9 } );
+		const outcome = await run( profile, [ shot( 'abc1234', 'desktop', 'a' ) ], fetchImpl as unknown as typeof fetch );
+		expect( fetchImpl ).not.toHaveBeenCalled();
+		expect( outcome.bands[ 0 ].skipped ).toBe( true );
+		expect( outcome.profile.design?.sections?.[ 0 ]?.structure ).toBeUndefined();
+	} );
+
 	it( 'stores nothing for an unknown answer', async () => {
 		const outcome = await run(
 			profileWith(),

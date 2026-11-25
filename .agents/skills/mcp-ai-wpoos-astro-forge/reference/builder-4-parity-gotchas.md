@@ -431,6 +431,21 @@ skip, exit 0), it skips a band that already carries a measured structure
 keyed `section id + sha256(screenshot)`, so an unchanged band costs nothing and
 a changed one is re-asked. Never wire it into the build.
 
+A band whose matrix lives in the typed `comparison` field (a profile recorded
+before the `structure` channel) counts as measured: the renderer falls back to
+`comparison` only while `structure` is empty, so a label there would suppress
+the table.
+
+Two traps found by actually running the pass on eca.directory:
+
+- `builtStaticRoot` takes the **dist** path (`join(target, 'dist')`). Passing the
+  project root serves the project directory, answers 404, and captures nothing —
+  an empty capture must report `skipped`, never a tidy row of zeros.
+- A small local VLM (qwen2.5vl:7b) answered `0.9` for every band and mislabelled
+  a hero as `text` and a three-panel services row as `team`. Confidence from a
+  model that is always confident is not evidence: run the pass dry, read the
+  labels, and only then decide about `--write`.
+
 ## A responsive class changes a container's SHAPE
 
 `containerShape` (and therefore `containerRows`) groups siblings by their class

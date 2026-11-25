@@ -26,6 +26,7 @@
 // ---------------------------------------------------------------------------
 
 import { createHash } from 'node:crypto';
+import { join } from 'node:path';
 
 import type { SiteProfile } from './types.ts';
 import { mergeStructureVerdicts, resolveVisionConfig, visionStructure, type StructureVerdict, type VisionConfig, type VisionImage } from './vision.ts';
@@ -108,7 +109,17 @@ export function structureCacheKey( id: string, png: Uint8Array ): string {
 }
 
 /** `true` when the band already carries a deterministic (non-vision) label. */
-function hasMeasuredStructure( section: { structure?: Array< { source?: string } > } ): boolean {
+function hasMeasuredStructure( section: {
+	structure?: Array< { source?: string } >;
+	comparison?: unknown;
+} ): boolean {
+	// The typed `comparison` fast path is a measurement too. A profile recorded
+	// before the `structure` channel carries the matrix there, and the renderer
+	// falls back to it ONLY while `structure` is empty — so a vision label added
+	// to such a band would suppress the table it was meant to complement.
+	if ( section.comparison ) {
+		return true;
+	}
 	return ( section.structure ?? [] ).some( ( entry ) => entry.source !== 'vision' );
 }
 
@@ -129,7 +140,10 @@ async function captureBands( options: StructurePassOptions ): Promise< BandShot[
 		throw new Error( 'structure pass needs Playwright (npm i -D playwright)' );
 	}
 	// A SERVER-output build keeps its prerendered HTML under dist/client/.
-	const served = await serveDir( await builtStaticRoot( options.target ) );
+	// `builtStaticRoot` takes the DIST path (every other caller passes
+	// `join(target, 'dist')`) — passing the project root serves the project
+	// directory, answers 404, and captures nothing.
+	const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
 	const shots: BandShot[] = [];
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
@@ -231,6 +245,17 @@ export async function runStructurePass(
 			...base,
 			model: config.model,
 			skipped: error instanceof Error ? error.message : String( error ),
+		};
+	}
+
+	// An empty capture is a FAILURE to read the page, not a clean result: the
+	// first version of this pass served the project root instead of `dist/`,
+	// captured nothing, and reported a tidy row of zeros.
+	if ( shots.length === 0 ) {
+		return {
+			...base,
+			model: config.model,
+			skipped: 'no bands found (does dist/ contain [data-section-id]?)',
 		};
 	}
 
