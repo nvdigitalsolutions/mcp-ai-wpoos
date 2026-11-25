@@ -70,6 +70,10 @@
 
 - **Cognition gains hand-gesture input** (#8071) with its implementation record, research and plan (Proposal 153), staying at 0.4.0. The Complete console gains magic-link sign-in (#7995, #7999) and estate budget views; astro-forge moves **0.2.0 → 0.3.0**; forge-bridge moves **0.3.1 → 0.3.4** for its wp.org resubmission with the gate route and the 18-point sign-off (#8108). The DJ toolkit's `WP_Error` envelopes are ported to Content Graph (#8112).
 
+### Added — The checkout addon serves the license checks (#8234)
+
+- **An estate can finally be licensed.** The WordPress Pro plugin and the Laravel runtime post form data to `/api/licenses/check` and `/api/licenses/activate`, but nothing answered those paths. The checkout addon owns the license store, so it now serves the read side: namespaced `/license/check` and `/license/activate` routes plus rewrites for the legacy paths both clients already use (`class-nvoos-checkout-api-license-resolver.php` + the REST controller). Validation **binds a key to the site it was issued to**, aliases the internal `mcp-ai-wpoos-pro` slug to the sold bundle product, and answers one uniform `{status:invalid}` for unknown, revoked, wrong-product and wrong-site keys so the route cannot be used as a key oracle. The plan comes from a **filterable map instead of a column**, so re-tiering needs neither a migration nor a reissue. Tests cover the valid path, the alias, site normalisation, revocation, activation, the plan filter and the per-IP limiter.
+
 ### Added — CI
 
 - **The shared suites run in CI:** `lib-suites.yml` runs the shared packages' suites (#7981, #7983), `media-worker-tests.yml` runs the worker, the phpcs ratchet enforces the budget (#8110), the capability-flag catalogue is gated (#8090), the parity inventory is gated (#8096), the changed-files step in the compat job is bounded (#8041), and dev-container fixture drift is fixed (#8049).
