@@ -402,3 +402,23 @@ Emit `data-section-collapsed` on the wrapper (the renderer does this when a grid
 folds away) and `diffGeometry` skips the band. Without it, a correct decision
 scores as geometry drift: eca.directory's updates band read 478 → 239 and
 counted three fails.
+
+## Add a structural widget as a DETECTOR, not a pipeline
+
+`ForgeSection.structure` (emitted as `SectionTheme.structure`) is the shared
+channel for anything the build-time classifier cannot see. To add one: write a
+detector on the RAW html, push `{ type, data }` onto the section's `structure`,
+and add a branch in the renderer. A measured structure renders **in addition to**
+the band's classified kind — the band that carries a matrix also carries cards.
+
+`comparison` is the first entry and the worked example. Its typed
+`ForgeSection.comparison` field stays for one release; the scaffold synthesises
+the `structure` entry from it, so an old profile still renders.
+
+## A vision verdict may only FILL a gap
+
+`lib/vision.ts` has `STRUCTURE_PROMPT`, `parseStructureVerdict` and
+`mergeStructureVerdicts`. The vocabulary is closed (an invented label becomes
+`unknown`), a deterministic detector always wins, and a stored verdict carries
+`source: 'vision'` plus the model id. Never let vision overrule a measured fact,
+and never let it emit markup or copy.
