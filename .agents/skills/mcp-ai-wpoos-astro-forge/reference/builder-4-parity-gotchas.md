@@ -274,3 +274,40 @@ A builder's card often publishes a small label (`h3 "Phase 1"`) above its title
 heading; the label is a **kicker** rendered above it. Printing the label after
 the title reorders the copy and the band's text shingles stop matching — the
 coverage report says "phase 1 pilot" is missing even though both words render.
+
+## A listing page's SLICE can live in its TITLE, not its slug
+
+`eca.directory/eca-days/` lists the Monday activities and is titled
+**"Monday- Junior School"**. Nothing in the slug says "Monday", so a preset that
+claims listing pages by slug convention replays the builder's widgets and ships
+the page's stale 14th row (lorem-ipsum demo copy the record set does not contain;
+Monday has 13 records).
+
+Record the CMS page **titles** with the inventory (`_fields=slug,link,title` — the
+same request) and derive the claim from the title as well as the slug. A claim
+must come from what the site SAYS; a slug is a convention, a title is data. A
+chooser page (`select-list`: teaser lanes, no rows) still must not be claimed —
+"names a slice" is not "renders the slice".
+
+## The classifier sees SANITISED HTML — no SVGs, no inline styles
+
+`sanitizeHtml` runs before section classification and strips every `<svg>`. A
+"Compare User Roles" matrix whose cells are check/cross **icons** looks empty to
+every markup detector: on eca.directory band `77f4271d` the raw REST HTML has 52
+SVGs and `e-fas-check` classes, the sanitised HTML has 0, and the pipeline reports
+`kind feature-grid items 3 cmp no` even though the values are plainly there in a
+browser.
+
+Do not write a detector that depends on markup the sanitizer drops, and do not
+"fix" it by loosening the sanitizer. A structure carried by imagery needs an
+**analyzer-measured fact** (captured in the browser, stored in `bandFacts`, emitted
+by the renderer) — same contract as measured box geometry and interaction states.
+
+## Count every slot you render in the fidelity guard
+
+The guard demotes a band to raw text when its rebuilt slots carry < 50 % of the
+band's words. `slotWordCount()` must therefore count **every** string the renderer
+prints: `title`, `body`, `author`… and `kicker` and `bullets`. Adding a slot
+without adding it to the count makes a correct band look lossy and silently
+disappears from the page — the symptom reads as "the section type was not
+detected", not "the guard miscounted".

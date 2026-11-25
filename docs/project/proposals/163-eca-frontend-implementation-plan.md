@@ -679,3 +679,79 @@ repeat of the measured heading ink (`[data-section-id].ds-section-wrap .ds-grid
   also carries a card row — a compound section, which the model does not have.
 - The source's buttons are `href="#"`; the rebuild renders the links but they go
   nowhere (the source's own do too).
+
+## Pass — the listing's SLICE is in its TITLE, and the classifier sees sanitised HTML (2026-11-25, fifth pass)
+
+### Finding 1 — `eca-days` is a Monday listing, and its slug says nothing
+
+`eca-days` was excluded from `ecaDataPages()` because nothing in the slug names a
+weekday, so the page replayed the builder's widgets and shipped its 14th row — a
+lorem-ipsum demo entry nothing in the record set reproduces. The page's own title
+is **"Monday- Junior School"**, and the Monday slice is **13** records
+(`_eca_day` counts — Tue 29, Wed 12, Thu 25, Fri 16, Mon 13, Sat 2, Sun 1, 2 empty).
+
+A claim must be derived from what the site **says**, not from a slug convention a
+builder happened to choose. The inventory now records each CMS page title
+(`coveredPaths` adds `title` to the `_fields` term — no extra request), and
+`titleWeekday()` claims any page whose title starts with a weekday:
+
+```ts
+const wpTitle = profile.inventory?.titles?.[ `/${ slug }/` ] ?? '';
+const titleDay = titleWeekday( wpTitle );   // "Monday- Junior School" → Monday
+```
+
+`select-list` stays unclaimed: it is a chooser (two 2-lane teaser bands, no rows),
+so "a weekday in the title" and "a `-list` suffix with rendered rows" remain the
+only two claims.
+
+### Finding 2 — the fidelity guard under-counted kickers and bullets
+
+`slotWordCount()` decided whether a band's rebuilt slots carry ≥50 % of the band's
+words. It counted `item.title`, `item.body` and `item.author` but not `item.kicker`
+or `item.bullets` — both of which the renderer draws. A card-heavy band whose copy
+lives mostly in a list could therefore be demoted to raw text and **disappear**.
+Every slot the renderer emits must be counted, or the guard reads its own output
+as lossy.
+
+### Finding 3 — the classifier never sees an SVG (why the comparison table waits)
+
+`77f4271d` also carries a "Compare User Roles" matrix (Student/Parent/Teacher × 4
+features). Detection was written against the **raw** REST HTML and worked:
+
+```json
+{ "columns": ["Student","Parent","Teacher"],
+  "rows": [{ "label": "Live ECA Catalogue", "values": ["✓","✓","✓"] }, …] }
+```
+
+but the build classifies **sanitised** HTML, and `sanitizeHtml` strips every
+`<svg>` (`raw e-fas-check: true | clean: false`; `raw svg: 52 | clean svg: 0`).
+The check/cross marks therefore never reach the classifier: the real pipeline
+reports `kind feature-grid items 3 cmp no`.
+
+This is not a heuristic to tune — it needs an **analyzer-measured fact**
+(`bandFacts.comparison`, captured in the browser where the SVGs exist), which is a
+new fact + profile field + emitter. All Part-A classifier code was reverted.
+
+### Result (build `days25`)
+
+| Metric | before | after |
+|---|---|---|
+| `/eca-days/` | replayed builder widgets, 14th row is demo copy | claimed data view, title `Monday- Junior School`, **15 rows** (13 records + header/controls) |
+| page-band fails | 13 | **8** |
+| colour system | 0 fail / 1 warn | **0 fail / 1 warn** (unchanged) |
+| text parity | 85.1 % | **85.1 %** (unchanged) |
+| tests | — | **2229 passed / 139 files**, typecheck clean |
+
+Deployed to `site/eca`; staging verified `live release days25 matches this build`,
+`/eca-days/` renders 118 row markers.
+
+### Still open
+
+- The `comparison` fact above (compound section: card row + matrix in one band).
+- `77f4271d`'s last 15 % of text (the matrix labels now ride the band, the values
+  do not).
+- `319dfe29` at 69 % — the CMS's only post is `hello-world`; a client site should
+  hide a "latest articles" band with no real posts rather than render it.
+- Home-band geometry (`3589820` lanes 286/954 → 273/907, tablet stacking 766 →
+  1638) — pre-existing, untouched by this pass.
+- `href="#"` sweep: the source's own buttons go nowhere.
