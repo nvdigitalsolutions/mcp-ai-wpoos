@@ -1044,9 +1044,12 @@ const title = day + ' activities';
  * The claim is derived from the site's own inventory + measured pages, so it is
  * driven by what the site HAS, not by a hardcoded slug list:
  *   - a slug that IS a weekday → that day's timetable, in rows;
+ *   - a page whose TITLE names a weekday → that day's timetable (the slug is
+ *     opaque: `eca-days` is titled “Monday- Junior School” and lists the Monday
+ *     activities; the source's 14th row is lorem-ipsum demo content, the record
+ *     set has 13);
  *   - a slug ending in `-list` → the full catalogue, in rows, day shown.
- * `select-list` (a chooser page with no rows) and `eca-days` (a 14-row subset
- * nothing in the record set reproduces) are deliberately NOT claimed.
+ * `select-list` (a chooser page with no rows) is deliberately NOT claimed.
  */
 export interface EcaDataPage {
 	/** The page slug (also the route segment). */
@@ -1068,6 +1071,19 @@ function titleFromSlug( slug: string ): string {
 		.filter( Boolean )
 		.map( ( word ) => word.charAt( 0 ).toUpperCase() + word.slice( 1 ) )
 		.join( ' ' );
+}
+
+/**
+ * The weekday a page TITLE names, title-cased (`Monday- Junior School` →
+ * `Monday`). Only the first word counts: a builder's listing page names the
+ * slice it renders up front, and an opaque slug (`eca-days`) says nothing.
+ */
+function titleWeekday( title: string ): string | null {
+	const word = /^\s*([a-z]+)/i.exec( title )?.[ 1 ]?.toLowerCase();
+	if ( ! word || ! ECA_WEEKDAYS.includes( word ) ) {
+		return null;
+	}
+	return word.charAt( 0 ).toUpperCase() + word.slice( 1 );
 }
 
 /** The CMS pages this preset takes over (see `EcaDataPage`). */
@@ -1099,6 +1115,14 @@ export function ecaDataPages( profile: SiteProfile ): EcaDataPage[] {
 		if ( ECA_WEEKDAYS.includes( slug ) ) {
 			const day = slug.charAt( 0 ).toUpperCase() + slug.slice( 1 );
 			out.push( { slug, day, title: measuredTitle ?? `${ day } activities`, showDay: false } );
+			continue;
+		}
+		// A page whose own TITLE names a weekday is that day's listing, whatever its
+		// slug says — see `titleWeekday`.
+		const wpTitle = profile.inventory?.titles?.[ `/${ slug }/` ] ?? '';
+		const titleDay = titleWeekday( wpTitle );
+		if ( titleDay ) {
+			out.push( { slug, day: titleDay, title: measuredTitle ?? wpTitle, showDay: false } );
 			continue;
 		}
 		if ( /-list$/.test( slug ) ) {
