@@ -1836,6 +1836,13 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	if ( section.logos && section.logos.length > 0 ) {
 		entry.push( `logos: ${ JSON.stringify( section.logos ) }` );
 	}
+	// The band's COMPARISON MATRIX (analyzer-measured from the RAW html — see
+	// `ForgeSection.comparison`). The build-time classifier cannot see it because
+	// sanitisation strips the check/cross `<svg>`, so the renderer appends it from
+	// this fact instead of trying to detect it.
+	if ( section.comparison && section.comparison.rows.length > 0 ) {
+		entry.push( `comparison: ${ JSON.stringify( section.comparison ) }` );
+	}
 	// The band's PANEL surface (`ForgeSection.panel`) — a literal colour + its
 	// legible ink, so the item group renders on the source's slab.
 	// The band's padding: an explicit profile fact wins — but only for the
@@ -2595,6 +2602,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * `background-image` slides, which the classifier (reading `<img>` only)',
 		'\t * cannot see. Rendered as a `.ds-logos` row inside the band. */',
 		'\tlogos?: Array<{ src: string; alt?: string }>;',
+		'/\*\* The band\u2019s COMPARISON MATRIX \u2014 role columns against feature rows,\n			 * recorded at analyze time from the raw HTML because sanitisation strips\n			 * the check/cross `<svg>` the build-time classifier would need. Rendered\n			 * as a real table AFTER the band\u2019s own component (the band usually holds\n			 * cards too). */',
+		'\tcomparison?: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string };',
 		'\t/** The band\u2019s measured PAGED carousel (`bandFacts[].carousel`) \u2014',
 		'\t * slides-per-view and the gutter the source renders. A logo wall is as',
 		'\t * often a slider as a static row, and the difference is only measurable',

@@ -1521,6 +1521,26 @@ const bandParallaxCss = sections
 							</section>
 						);
 					})()}
+					{/* The band's COMPARISON MATRIX (Proposal 136 §4.1). A builder
+					 * publishes each check and cross as an `<svg>`, and sanitisation strips
+					 * every one — so the classifier can never see the table and this fact is
+					 * measured at analyze time (eca.directory's "Compare User Roles": 52
+					 * SVGs raw, 0 sanitised, classified as a 3-card feature grid).
+					 *
+					 * Rendered IN ADDITION to the band's own component, never instead of it:
+					 * that band also carries three phase cards, and swapping the kind would
+					 * delete them. The heading and links are the band's own — they already
+					 * rendered above, so the table renders without them. */}
+					{theme?.comparison && section.kind !== 'comparison' && (
+						<Comparison
+							section={{
+								...section,
+								slots: { ...section.slots, title: undefined, links: undefined },
+								comparison: theme.comparison,
+							}}
+							theme={theme}
+						/>
+					)}
 				</div>
 			);
 		})}

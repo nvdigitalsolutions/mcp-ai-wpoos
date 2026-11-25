@@ -29,7 +29,7 @@ import { extractBandsFromHtml } from './bands.ts';
 import { extractElementCss } from './element-css.ts';
 import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
-import type { ForgeChrome, ForgeChromeAction, ForgeChromeGeometry, ForgeChromeStyle, ForgeDesign, ForgeMark, ForgeMeasuredHeaderAction, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import type { ComparisonRow, ForgeChrome, ForgeChromeAction, ForgeChromeGeometry, ForgeChromeStyle, ForgeDesign, ForgeMark, ForgeMeasuredHeaderAction, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
 
@@ -1493,6 +1493,159 @@ function markStripOf( section: HNodeLike ): ForgeMark[] | undefined {
 	return prose || marks.length < MARK_STRIP_MIN ? undefined : marks;
 }
 
+/** A comparison matrix never carries more of either. */
+const COMPARISON_MAX_COLUMNS = 8;
+const COMPARISON_MAX_ROWS = 24;
+
+/** Every class token in a subtree (a cell's mark lives on an `<i>`/`<svg>` deep inside). */
+function classTokens( node: HNodeLike ): string[] {
+	const out: string[] = [];
+	const visit = ( current: HNodeLike ): void => {
+		if ( current.attribs?.class ) {
+			out.push( ...current.attribs.class.split( /\s+/ ).filter( Boolean ) );
+		}
+		for ( const child of childNodes( current ) ) {
+			if ( child.type === 'tag' ) {
+				visit( child );
+			}
+		}
+	};
+	visit( node );
+	return out;
+}
+
+/**
+ * The band's COMPARISON MATRIX — role columns against feature rows (see
+ * `ForgeSection.comparison`).
+ *
+ * The build-time classifier can NEVER see this: a builder publishes each check
+ * and cross as an `<svg>`, and `sanitizeHtml` strips every `<svg>` before
+ * classification runs (eca.directory's "Compare User Roles": 52 SVGs raw, 0
+ * sanitised). The fact is therefore recorded at ANALYZE time against the raw
+ * HTML, and as TEXT (`✓` / `✗`), so nothing downstream depends on an icon font.
+ *
+ * The structural contract, checked strictly because a false positive invents a
+ * table the source does not have:
+ *   - a container of ≥3 sibling ROW containers, every row with the SAME ≥3 cells;
+ *   - row 0 is the header: an empty first cell, then one text label per column;
+ *   - every body row: a text LABEL in cell 0, then icon-only value cells;
+ *   - every value cell carries exactly one recognised mark and no text.
+ *
+ * A cell that carries both text and a mark is not a value cell — that is a
+ * feature list with ticks, not a matrix.
+ */
+export function comparisonOf( section: HNodeLike ): ForgeSection[ 'comparison' ] | undefined {
+	const MARK_CHECK = /(?:^|[\s-])(?:check|checkmark|check-circle|circle-check)(?:$|[\s-])/i;
+	const MARK_CROSS = /(?:^|[\s-])(?:times|times-circle|circle-xmark|xmark|close|cross)(?:$|[\s-])/i;
+	const tagChildren = ( node: HNodeLike ): HNodeLike[] =>
+		childNodes( node ).filter( ( child ) => child.type === 'tag' );
+	const markOf = ( cell: HNodeLike ): '✓' | '✗' | undefined => {
+		if ( nodeText( cell ).trim() ) {
+			return undefined;
+		}
+		const tokens = classTokens( cell ).join( ' ' );
+		// A cell carrying BOTH is ambiguous (a minus next to a check) — refuse it.
+		const check = MARK_CHECK.test( tokens );
+		const cross = MARK_CROSS.test( tokens );
+		if ( check === cross ) {
+			return undefined;
+		}
+		return check ? '✓' : '✗';
+	};
+
+	let found: ForgeSection[ 'comparison' ] | undefined;
+	const visit = ( node: HNodeLike ): void => {
+		if ( found ) {
+			return;
+		}
+		const rows = tagChildren( node );
+		const width = rows[ 0 ] ? tagChildren( rows[ 0 ] ).length : 0;
+		if (
+			rows.length >= 3 &&
+			rows.length <= COMPARISON_MAX_ROWS + 1 &&
+			width >= 3 &&
+			width <= COMPARISON_MAX_COLUMNS + 1 &&
+			rows.every( ( row ) => tagChildren( row ).length === width )
+		) {
+			const header = tagChildren( rows[ 0 ] );
+			const columns = header.slice( 1 ).map( ( cell ) => nodeText( cell ).trim().replace( /\s+/g, ' ' ) );
+			const leadEmpty = nodeText( header[ 0 ] ).trim() === '';
+			if ( leadEmpty && columns.every( Boolean ) ) {
+				const body: ComparisonRow[] = [];
+				let valid = true;
+				for ( const row of rows.slice( 1 ) ) {
+					const cells = tagChildren( row );
+					const label = nodeText( cells[ 0 ] ).trim().replace( /\s+/g, ' ' );
+					const values = cells.slice( 1 ).map( markOf );
+					if ( ! label || values.some( ( value ) => ! value ) ) {
+						valid = false;
+						break;
+					}
+					body.push( { label, values: values as string[] } );
+				}
+				if ( valid && body.length >= 2 ) {
+					const caption = comparisonCaption( section, node );
+					found = {
+						columns: columns as string[],
+						rows: body,
+						...( caption ? { caption } : {} ),
+					};
+					return;
+				}
+			}
+		}
+		for ( const child of rows ) {
+			visit( child );
+		}
+	};
+	visit( section );
+	return found;
+}
+
+/**
+ * The matrix's own heading, from the container that holds it.
+ *
+ * A builder puts the label (`Compare User Roles`) in a heading widget beside the
+ * grid, so it never reaches the classifier's slots — and without it the rebuilt
+ * table has no caption and its label rides the band as loose body copy.
+ */
+function comparisonCaption( section: HNodeLike, grid: HNodeLike ): string | undefined {
+	const headings = ( node: HNodeLike, skip: HNodeLike ): string[] => {
+		const out: string[] = [];
+		const walk = ( current: HNodeLike ): void => {
+			if ( current === skip || out.length > 0 ) {
+				return;
+			}
+			if ( current.type === 'tag' && /^h[1-6]$/i.test( current.name ?? '' ) ) {
+				const text = nodeText( current ).trim().replace( /\s+/g, ' ' );
+				if ( text && text.length <= 80 ) {
+					out.push( text );
+				}
+				return;
+			}
+			for ( const child of childNodes( current ) ) {
+				if ( child.type === 'tag' ) {
+					walk( child );
+				}
+			}
+		};
+		walk( node );
+		return out;
+	};
+	// The NEAREST ancestor that carries a heading which is not inside the grid.
+	// A builder nests the label in a widget wrapper beside the grid, and the band
+	// itself may carry other headings (the phase cards), so distance matters:
+	// walking from the band would caption the matrix "Phase 1".
+	let node: HNodeLike | undefined = grid.parent ?? undefined;
+	for ( let depth = 0; node && depth < 4 && node !== section.parent; depth++, node = node.parent ?? undefined ) {
+		const found = headings( node, grid );
+		if ( found.length > 0 ) {
+			return found[ found.length - 1 ];
+		}
+	}
+	return undefined;
+}
+
 /**
  * Resolve `var(--token[, fallback])` against the source's own custom-property
  * declarations. Elementor paints a coloured panel with
@@ -1834,6 +1987,43 @@ function inlineStyle( node: HNodeLike, name: string, regex: RegExp ): string | u
  * Extract the ordered source-section backgrounds from the fetched homepage
  * + stylesheets. Deterministic; an empty html yields an empty list.
  */
+/**
+ * The COMPARISON MATRIX per section id, from the raw html (see
+ * `ForgeSection.comparison`).
+ *
+ * Kept separate from `analyzeSections` because the band MODEL a profile uses is
+ * decided LATER: a builder page whose section pass keeps fewer bands than the
+ * vendor-agnostic outline falls back to the outline (eca.directory is exactly
+ * that case, `bandSource: outline`), and the outline bands carry no comparison
+ * of their own. Recording by ID lets either model pick the fact up.
+ */
+export function comparisonFactsById( html: string ): Record< string, NonNullable< ForgeSection[ 'comparison' ] > > {
+	const out: Record< string, NonNullable< ForgeSection[ 'comparison' ] > > = {};
+	if ( ! html.trim() ) {
+		return out;
+	}
+	const handler = new DomHandler( undefined, {} );
+	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
+	parser.write( html );
+	parser.end();
+	const sections: HNodeLike[] = [];
+	allSectionNodes( handler.root as unknown as HNodeLike, sections );
+	for ( const section of sections ) {
+		const idMatch = sectionClasses( section )
+			.map( ( className ) => SECTION_ID_RE.exec( className ) )
+			.find( Boolean );
+		const id = idMatch?.[ 1 ];
+		if ( ! id || out[ id ] ) {
+			continue;
+		}
+		const comparison = comparisonOf( section );
+		if ( comparison ) {
+			out[ id ] = comparison;
+		}
+	}
+	return out;
+}
+
 export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 	const handler = new DomHandler( undefined, {} );
 	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
@@ -2023,6 +2213,13 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		const logos = markStripOf( section );
 		if ( logos ) {
 			fact.logos = logos;
+		}
+		// The band's COMPARISON MATRIX (see `comparisonOf`). Recorded here, against
+		// the RAW html, because the check/cross marks are `<svg>` — and sanitisation
+		// strips every one of them before the build-time classifier runs.
+		const comparison = comparisonOf( section );
+		if ( comparison ) {
+			fact.comparison = comparison;
 		}
 		// The boxed container's measure + column gap (124 §3): boxed sections
 		// constrain their CONTENT (the band bg stays full-width) — the rebuilt
@@ -2373,7 +2570,7 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		if ( fact.bgImage ) {
 			delete fact.bgColor;
 		}
-		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog || fact.logos || fact.panel ) {
+		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog || fact.logos || fact.comparison || fact.panel ) {
 			facts.push( fact );
 		}
 	}
@@ -4124,6 +4321,7 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	// out #f5f5f4, 2026-11-09). The renderer maps outline bands positionally,
 	// which `bandSource` tells it to do.
 	const elementorSections = input.html ? analyzeSections( input ) : undefined;
+	const comparisonById = input.html ? comparisonFactsById( input.html ) : {};
 	const outline = input.html ? bandOutline( input ) : {};
 	const outlineBands = promoteOutlineBands( outline.outline );
 	// A TRUNCATED Elementor list is worse than the outline: the renderer themes
@@ -4136,7 +4334,12 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		elementorSections !== undefined &&
 		elementorSections.length > 0 &&
 		( outlineBands.length === 0 || elementorSections.length >= outlineBands.length );
-	const sections = useElementorSections ? elementorSections : outlineBands;
+	const sections = ( useElementorSections ? elementorSections : outlineBands ).map( ( section ) => {
+		// The comparison matrix is recorded per ID so it reaches BOTH band models
+		// (see `comparisonFactsById`) — the outline bands never see it otherwise.
+		const comparison = section.id ? comparisonById[ section.id ] : undefined;
+		return comparison && ! section.comparison ? { ...section, comparison } : section;
+	} );
 	const bandSource = useElementorSections
 		? 'sections'
 		: sections.length > 0

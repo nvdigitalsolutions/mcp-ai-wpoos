@@ -288,7 +288,49 @@
 						"width": 33.33
 					}
 				],
-				"bgGradient": "linear-gradient(rgb(39, 16, 74) 30%, rgb(255, 255, 255) 0%)"
+				"bgGradient": "linear-gradient(rgb(39, 16, 74) 30%, rgb(255, 255, 255) 0%)",
+				"comparison": {
+					"columns": [
+						"Student",
+						"Parent",
+						"Teacher"
+					],
+					"rows": [
+						{
+							"label": "Live ECA Catalogue",
+							"values": [
+								"✓",
+								"✓",
+								"✓"
+							]
+						},
+						{
+							"label": "Enrolment & Allocation",
+							"values": [
+								"✓",
+								"✗",
+								"✓"
+							]
+						},
+						{
+							"label": "Instant Notifications",
+							"values": [
+								"✓",
+								"✓",
+								"✓"
+							]
+						},
+						{
+							"label": "Dashboards",
+							"values": [
+								"✓",
+								"✓",
+								"✓"
+							]
+						}
+					],
+					"caption": "Compare User Roles"
+				}
 			},
 			{
 				"id": "3589820",
