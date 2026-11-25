@@ -239,7 +239,7 @@ class TranscribeVideoTool extends AbstractVideoTool
 
             // A stored audio file is transcribed as it is: extracting it would
             // copy the same track into a temporary file for no gain.
-            $isAudio = null !== $meta && \str_starts_with($meta->mimeType, 'audio/');
+            $isAudio = null !== $meta && $meta->isAudio();
 
             if ($isAudio) {
                 $audioPath = $path;
@@ -293,7 +293,7 @@ class TranscribeVideoTool extends AbstractVideoTool
      */
     private function preview(int $id, string $path, ?StoredFile $meta, string $language): array
     {
-        $isAudio = null !== $meta && \str_starts_with($meta->mimeType, 'audio/');
+        $isAudio = null !== $meta && $meta->isAudio();
 
         $entry = array(
             'video_id'            => $id,
@@ -338,7 +338,7 @@ class TranscribeVideoTool extends AbstractVideoTool
         foreach ($ids as $id) {
             $meta = $this->files?->getMetadata($id);
 
-            if (null === $meta || \str_starts_with($meta->mimeType, 'audio/')) {
+            if (null === $meta || $meta->isAudio()) {
                 continue;
             }
 

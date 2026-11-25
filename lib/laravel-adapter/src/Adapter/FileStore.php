@@ -88,6 +88,18 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 		'audio/wav'       => array( 'wav', 'audio' ),
 		'audio/x-wav'     => array( 'wav', 'audio' ),
 		'audio/ogg'       => array( 'ogg', 'audio' ),
+		// What libmagic actually reports for the containers this runtime writes,
+		// measured with ffmpeg 8.1.2 output rather than guessed: an M4A sniffs as
+		// `audio/x-m4a` (not `audio/mp4`), an ADTS AAC as `audio/x-hx-aac-adts`,
+		// and an audio-only WebM still as `video/webm` — which is already above
+		// and stores it as `.webm`, the right extension. Without these an
+		// `extract_audio` result in m4a or aac could not be stored at all.
+		'audio/x-m4a'     => array( 'm4a', 'audio' ),
+		'audio/mp4'       => array( 'm4a', 'audio' ),
+		'audio/x-hx-aac-adts' => array( 'aac', 'audio' ),
+		'audio/aac'       => array( 'aac', 'audio' ),
+		'audio/flac'      => array( 'flac', 'audio' ),
+		'audio/webm'      => array( 'webm', 'audio' ),
 	);
 
 	/**
