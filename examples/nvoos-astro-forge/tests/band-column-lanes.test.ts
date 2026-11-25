@@ -115,4 +115,40 @@ describe( 'sections.generated — measured lanes', () => {
 		expect( module ).toContain( 'hiddenMobile: true' );
 		expect( module ).toContain( 'widthTablet: 100' );
 	} );
+
+	it( 'treats lanes that each FILL the content column as a stack', () => {
+		// eca.directory's about-us CTA measures two 1280px lanes inside a 1280px
+		// content column: normalising them to 50/50 laid them side by side.
+		const profile = profileWith( {
+			columns: {
+				desktop: [
+					{ selector: 'a', width: 1280 },
+					{ selector: 'b', width: 1280 },
+				],
+			},
+		} );
+		( profile as unknown as { geometry: Record< string, unknown > } ).geometry = {
+			abc1234: { desktop: { content: { width: 1280 } } },
+		};
+		const module = entriesOf( renderSectionsGenerated( profile ) );
+		expect( module ).toContain( 'columns: [{ width: 100 }, { width: 100 }]' );
+	} );
+
+	it( 'keeps the normalised share for a real row', () => {
+		const profile = profileWith( {
+			columns: {
+				desktop: [
+					{ selector: 'a', width: 432 },
+					{ selector: 'b', width: 432 },
+					{ selector: 'c', width: 571 },
+				],
+			},
+		} );
+		( profile as unknown as { geometry: Record< string, unknown > } ).geometry = {
+			abc1234: { desktop: { content: { width: 1435 } } },
+		};
+		const module = entriesOf( renderSectionsGenerated( profile ) );
+		expect( module ).toContain( 'width: 30.1' );
+		expect( module ).not.toContain( 'width: 100' );
+	} );
 } );
