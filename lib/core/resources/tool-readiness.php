@@ -775,6 +775,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/PdfDocumentAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'extract_video_frames' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ExtractVideoFramesTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerVideoFrames implements VideoFrameExtractionInterface over the media worker `POST /api/video/process` (operation `extract_frames`) then one `GET /api/video/download/<frames_…/frame_….jpg>` per frame. Its own contract because `process()` is one file in, one file out and four tools read that meaning; this answers many files. Three modes are alternatives, not additions — `timestamps`, `interval` (expanded from the probed duration), or `frame_count` spread with the `fps` filter — and sending the first two together is refused rather than resolved by a hidden precedence. `quality` (1–31) and `interval` are read by the route instead of being overridden by its defaults. Frames are scratch files unless `save_to_media` asks for them, which matches the WordPress default.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoFramesAdapterTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'format_bytes' => array(
 			'class' => 'Nvoos\\Core\\Tool\\FormatBytesTool',
 			'readiness' => 'pure',

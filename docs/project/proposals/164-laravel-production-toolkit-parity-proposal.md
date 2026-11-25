@@ -1598,3 +1598,106 @@ proven rather than described: two 2 s stills with `zoom` are 100 frames and
 4.000 s, frame 0 against frame 49 reads 7.27 dB, the second still starts its own
 drift, 1080p and 4K both keep their frame, WebM still encodes VP9, and a single
 still reports `none` because one still has no boundary — and no motion to add.
+
+## 164.25 — `extract_video_frames`, and the many-file return shape (2026-11-25)
+
+§164.19 grouped this slug under "the route has the operation and no slug asks for
+it". That was half right: the route had the operation since it was written, but
+nothing could return its answer. `/process` is one file in, one file out, and
+four tools read that meaning. A contact sheet is N files.
+
+### A contract, not a widened return type
+
+```php
+VideoFrameExtractionInterface::extract( string $localPath, array $options ): array
+// { frames: list<{path, bytes}>, frame_count: int, source_duration: float }
+```
+
+The same reasoning that gave composition its own contract for N *inputs*
+(§164.20) gives extraction one for N *outputs*. Widening `process()` would have
+changed a return shape that eight tools destructure — `trim_video`,
+`compress_video`, `transcode_video`, `resize_video_resolution`,
+`convert_video_format`, `adjust_video_speed`, `optimize_for_platform` and
+`generate_video_thumbnails`.
+
+### The three modes are alternatives
+
+`timestamps` names the moments, `interval` asks for a cadence, `frame_count`
+asks for an even spread. They are not additive — "every 5 s and also at these
+moments" is a list, and the list is `timestamps`. Sending `timestamps` and
+`interval` together is **refused** rather than resolved by a precedence the
+caller has to guess; a contact sheet at the wrong moments looks exactly like one
+at the right ones.
+
+### What the route was missing
+
+The operation existed, but it overrode two fields the WordPress tool declares:
+`-q:v` was hardcoded to 2, and `interval` was not read at all. Silently ignoring
+a declared parameter is the one thing this family refuses to do, so the route now
+reads both. `interval` is expanded to stamps from the duration ffprobe reports —
+multiplication rather than accumulation, because `0.1 + 0.2 + 0.3` is
+`0.6000000000000001` and a seek time that drifts is a frame at the wrong moment.
+
+Two details fell out of writing it:
+
+- the route was probing the duration **inside** the count branch; one probe now
+  answers both questions;
+- the answer gained `source_duration`, which the tool reports so a caller can
+  reason about `interval` without a second call.
+
+### Measured, not assumed
+
+A handler smoke posts real multipart bodies and inspects the files:
+
+| request | result |
+|---|---|
+| `interval: 2` on a 10 s clip | **5 frames**, `source_duration: 10` |
+| `timestamps: 1,5,9` | 3 frames |
+| `quality: 31` vs `2` at the same timestamp | **3,254 B vs 9,190 B** — the field reaches `-q:v` |
+| `width: 160` | a 160×120 frame |
+| `count: 4` | 4 names, 4 files |
+| `interval: 0.01` | 400, "between 0.1 and 3600" |
+
+The first answered name downloads with JPEG magic bytes `ffd8`, and
+`MediaWorkerRemoteName` validates the nested `frames_<ts>/frame_000.jpg`
+per segment — a single-filename regex would have passed `../../etc/passwd`.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/VideoFrameExtractionInterface.php` | new contract |
+| `lib/core/src/Tool/ExtractVideoFramesTool.php` | new tool; three modes refused when combined |
+| `lib/laravel-adapter/src/Adapter/MediaWorkerVideoFrames.php` | upload once, download N times, write content-addressed frames |
+| `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` | binding |
+| `addons/media-worker/src/routes/video.js` | `frameTimestamps()`, `quality`, `interval`, `source_duration` |
+| `lib/core/resources/tool-readiness.php` | 283rd row |
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **283 rows / 264 servable / 0 violations** (was
+282 / 263). `bin/toolkit-parity.php`: **62 of 854** (was 61); `video-production`
+is **13 of 21** (was 12) — the baseline records the new slug.
+
+`lib/core` 2,468 / 17,585 (was 2,466 — the class-derived tests pick the tool up
+on their own); adapter 359 / 1,925; the app gains `VideoFramesAdapterTest`
+(**13** tests / 61 assertions); worker pure tests **40** (was 35).
+
+### What is left, and why each stays
+
+Eight, not nine:
+
+- **A renderer.** `create_remotion_video` is React rendering, not ffmpeg.
+- **Speech models.** `transcribe_video` and `generate_video_captions` are
+  provider calls with no worker route to wrap.
+- **A table that does not exist.** `get_queued_videos`,
+  `get_videos_without_thumbnails`, `get_videos_without_transcripts` and
+  `upload_video_batch` read WordPress's attachment and queue tables. Inventing
+  one so a slug can answer `[]` is parity theatre, the objection §164.18 raised
+  to porting a stub.
+- **A duplicate.** `extract_video_metadata` is the same ffprobe report as
+  `get_video_metadata` behind different flags, and its row already says so.
+
+`extract_audio` — which no WordPress slug requests — remains the one additive
+tool §164.19 called "available": the route has the operation, so it needs a tool
+and nothing else.

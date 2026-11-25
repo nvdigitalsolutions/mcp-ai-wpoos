@@ -34,6 +34,7 @@ import {
 	videoEncoder,
 	kenBurnsUpscale,
 	kenBurnsZoompan,
+	frameTimestamps,
 	VIDEO_CODECS,
 	AUDIO_CODECS,
 	PROCESS_FORMATS,
@@ -411,6 +412,43 @@ test( 'the zoompan output frame and rate are the frame every branch shares', () 
 test( 'a duration too short to fill two frames still yields a usable expression', () => {
 	// `frames - 1` is a denominator, and a single frame has no motion.
 	assert.match( kenBurnsZoompan( 320, 240, 1, 0.1 ), /\/1\)/ );
+} );
+
+// ── Frame extraction ────────────────────────────────────────
+
+test( 'explicit timestamps win over a cadence', () => {
+	assert.deepEqual(
+		frameTimestamps( { timestamps: [ 1.5, 4 ], interval: 2, duration: 10 } ),
+		[ 1.5, 4 ]
+	);
+} );
+
+test( 'an interval expands from zero and stops before the duration', () => {
+	// 10 s at 5 s: frames at 0 and 5. A seek at 10 would be past the end.
+	assert.deepEqual( frameTimestamps( { interval: 5, duration: 10 } ), [ 0, 5 ] );
+
+	// 0.1 is not representable exactly, so this also pins multiplication over
+	// accumulation: 0.1 added three times is 0.30000000000000004.
+	assert.deepEqual( frameTimestamps( { interval: 0.1, duration: 0.35 } ), [ 0, 0.1, 0.2, 0.3 ] );
+} );
+
+test( 'an interval without a duration yields nothing, so the count mode runs', () => {
+	// A duration ffprobe could not read is 0, and an interval that cannot be
+	// expanded must not silently become one frame at 0.
+	assert.deepEqual( frameTimestamps( { interval: 2, duration: 0 } ), [] );
+	assert.deepEqual( frameTimestamps( { duration: 10 } ), [] );
+} );
+
+test( 'negative and non-numeric timestamps are dropped, not sought to', () => {
+	assert.deepEqual( frameTimestamps( { timestamps: [ -1, 'x', 2, Number.NaN ] } ), [ 2 ] );
+} );
+
+test( 'the timestamp list is capped, because each one is a separate process', () => {
+	const many = Array.from( { length: 200 }, ( _value, index ) => index );
+
+	assert.equal( frameTimestamps( { timestamps: many } ).length, 120 );
+	// The interval mode is capped by the same ceiling.
+	assert.equal( frameTimestamps( { interval: 0.01, duration: 600 } ).length, 120 );
 } );
 
 test( 'the encoder follows the container, because H.264 cannot go in webm', () => {
