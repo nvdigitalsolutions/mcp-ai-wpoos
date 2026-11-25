@@ -371,18 +371,11 @@ const bandLayerCss = sections
 		if ( ! id || ! theme?.bgImage || theme.bgLayerOpacity === undefined ) {
 			return '';
 		}
-		// A hero already owns a photo/overlay treatment (and its own stacking); a
-		// faded `::before` under that content washed the copy out on
-		// eca.directory's about-us hero. Layers are for BANDS, not heroes, until
-		// the hero overlay is re-measured against this one.
-		if ( theme.theme === 'hero' ) {
-			return '';
-		}
 		const scoped = `[data-section-id="${ id }"]`;
 		const blend = theme.bgBlendMode ? `;mix-blend-mode:${ theme.bgBlendMode }` : '';
 		return (
 			`${ scoped }{position:relative;isolation:isolate}` +
-			`${ scoped }::before{content:"";position:absolute;inset:0;background-image:url('${ theme.bgImage }');${ backgroundBox( theme ).join( ';' ) };opacity:${ theme.bgLayerOpacity }${ blend };pointer-events:none;z-index:0}` +
+			`${ scoped }::before{content:"";position:absolute;inset:0;background-color:transparent;background-image:url('${ theme.bgImage }');${ backgroundBox( theme ).join( ';' ) };opacity:${ theme.bgLayerOpacity }${ blend };pointer-events:none;z-index:0}` +
 			`${ scoped }>*{position:relative;z-index:1}`
 		);
 	} )
@@ -401,6 +394,64 @@ function bandBackground( value: string ): string | undefined {
 	}
 	return `background:${ trimmed }`;
 }
+
+/**
+ * Is a background fact a LIGHT surface?
+ *
+ * Only used to decide whether a hero keeps the template's white ink (the photo
+ * assumption) or takes its measured body ink. Unparseable values say no, so an
+ * unknown surface keeps the old behaviour.
+ */
+const lightSurface = ( value?: string ): boolean => {
+	if ( ! value ) {
+		return false;
+	}
+	const text = value.trim();
+	const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec( text );
+	const rgb = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i.exec( text );
+	let r: number;
+	let g: number;
+	let b: number;
+	if ( hex ) {
+		const digits = hex[ 1 ].length === 3 ? hex[ 1 ].replace( /(.)/g, '$1$1' ) : hex[ 1 ];
+		r = parseInt( digits.slice( 0, 2 ), 16 );
+		g = parseInt( digits.slice( 2, 4 ), 16 );
+		b = parseInt( digits.slice( 4, 6 ), 16 );
+	} else if ( rgb ) {
+		r = Number( rgb[ 1 ] );
+		g = Number( rgb[ 2 ] );
+		b = Number( rgb[ 3 ] );
+	} else {
+		return false;
+	}
+	return 0.299 * r + 0.587 * g + 0.114 * b > 140;
+};
+
+/**
+ * A LIGHT hero's measured ink.
+ *
+ * `.ds-section-wrap--hero > *` paints the whole band white because the template
+ * assumes a PHOTO hero. On a measured LIGHT band with no overlay that is
+ * unreadable (eca.directory about-us: #747474 body on #F7F7F7). A scoped rule on
+ * the paragraphs beats inheritance without touching the shared template CSS
+ * (which is drift-tracked). Hero-only on purpose: a card band manages its own
+ * ink.
+ */
+const bandInkCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const ink = theme?.type?.body?.color;
+		if ( ! id || ! ink || theme?.theme !== 'hero' || theme?.overlay || ! lightSurface( theme?.bg ) ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		// `!important` on purpose: the hero template paints the subtree white through
+		// a class rule, and this is the one measurement that must beat it. Scoped to
+		// the band and only for a MEASURED light hero with no overlay.
+		return `${ scoped } p,${ scoped } li,${ scoped } span{color:${ ink }!important}`;
+	} )
+	.join( '' );
 
 const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string, desktopCols?: number, collapsed = false ): string | undefined => {
 	if ( ! theme ) {
@@ -588,9 +639,25 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 			parts.push( `background-image:url('${ theme.bgImage }')` );
 			parts.push( ...backgroundBox( theme ) );
 		}
+		// A hero's ink is only white because the template assumes a PHOTO band.
+		// When the source band is LIGHT and carries no overlay, the measured body
+		// ink wins (eca.directory about-us: #747474 on #F7F7F7).
+		const measuredInk = theme.type?.body?.color;
+		if ( ! theme.overlay && lightSurface( theme.bg ) ) {
+			parts.push( '--ds-overlay:transparent' );
+			if ( measuredInk ) {
+				parts.push( `--ds-hero-ink:${ measuredInk }` );
+			}
+		}
 		// A color alongside the photo is the source's UNDERLAY (invisible
-		// beneath an opaque image) — never paint it over the photo.
-		if ( theme.bg && ! theme.bgImage && ! CSS_DECLARATION_RE.test( theme.bg ) ) {
+		// beneath an opaque image) — never paint it over the photo. On a LAYER
+		// band the image is a faded `::before`, so the colour IS the base and
+		// must be painted.
+		if (
+			theme.bg &&
+			! CSS_DECLARATION_RE.test( theme.bg ) &&
+			( ! theme.bgImage || theme.bgLayerOpacity !== undefined )
+		) {
 			parts.push( `background-color:${ theme.bg }` );
 		}
 		if ( theme.overlay ) {
@@ -1628,8 +1695,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandLayerCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandLayerCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
