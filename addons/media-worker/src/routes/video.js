@@ -39,6 +39,29 @@ const COPY_CONTAINERS = {
 // Without `-movflags +faststart` the moov atom lands at the end of the file and
 // a browser must download the whole thing before the first frame paints.
 const FASTSTART_FORMATS = new Set( [ 'mp4', 'mov' ] );
+// A transition name is interpolated into a filter argument, so it is looked up
+// in a table and never relayed. `slide` is the tool's name for what ffmpeg
+// calls `slideleft`. `zoom` is deliberately absent: Ken Burns motion is
+// `zoompan` applied to each still, not an xfade between two of them, so there
+// is no entry a caller could ask for and get something else.
+const XFADE = {
+	fade: 'fade',
+	dissolve: 'dissolve',
+	slide: 'slideleft',
+};
+// The WordPress tools declare these enums, so the route refuses exactly what
+// the tool refuses. `merge` copies by default, so its only transitions are the
+// two that re-encode; `images` has no copy path at all.
+const TRANSITIONS = {
+	merge: [ 'none', 'fade', 'dissolve' ],
+	images: [ 'none', 'fade', 'slide' ],
+};
+// The WordPress `merge_videos` schema declares a 1 s default. `images` has no
+// transition-duration parameter, so a shorter built-in suits stills that may be
+// shown for only a second or two.
+const DEFAULT_MERGE_TRANSITION_SECONDS = 1;
+const IMAGES_TRANSITION_SECONDS = 0.5;
+const MAX_TRANSITION_SECONDS = 5;
 
 /**
  * Parse an optional bounded number from a request field.
@@ -159,6 +182,34 @@ function resolveFit( value ) {
 	const slug = String( value || 'cover' ).toLowerCase();
 
 	return [ 'cover', 'contain' ].includes( slug ) ? slug : null;
+}
+
+/**
+ * Allowlist a transition per operation.
+ *
+ * An absent field means `none`, which is the operation's copy/plain path. A
+ * value outside the operation's list is refused rather than defaulted, because
+ * the name selects a filter argument: `zoom` on a merge has no meaning, and
+ * silently fading instead would be a different video from the one asked for.
+ *
+ * @param {*}      value     Raw field value.
+ * @param {string} operation `merge` or `images`.
+ * @return {string} The transition name.
+ * @throws {Error} When the name is not offered by that operation.
+ */
+function resolveTransition( value, operation ) {
+	const allowed = TRANSITIONS[ operation ] || [ 'none' ];
+	const slug = String( value ?? 'none' ).trim().toLowerCase();
+
+	if ( ! slug ) {
+		return 'none';
+	}
+
+	if ( ! allowed.includes( slug ) ) {
+		throw new Error( `transition must be one of ${ allowed.join( ', ' ) } for ${ operation }; got "${ slug }".` );
+	}
+
+	return slug;
 }
 
 /**
@@ -336,6 +387,11 @@ async function probeMedia( inputPath ) {
 			hasAudio: Boolean( audio ),
 			acodec: audio ? String( audio.codec_name || '' ) : '',
 			sampleRate: audio ? parseInt( audio.sample_rate, 10 ) || 0 : 0,
+			// A transition cut is placed by seconds, so the probe has to carry
+			// one. `format.duration` is the container's own figure and the only
+			// one already in seconds; a stream's `duration` is in its time base,
+			// which is not.
+			duration: parseFloat( parsed?.format?.duration ) || 0,
 		};
 	} catch {
 		return null;
@@ -404,6 +460,64 @@ function mergeMismatch( probes ) {
 	}
 
 	return null;
+}
+
+/**
+ * The `offset` of each xfade in a chain, or null when they would overlap.
+ *
+ * `offset` is measured on the **first** input's timeline, and after chaining the
+ * first input is the previous result — so each offset is the running sum of the
+ * clips behind it, less the overlap every earlier transition already removed:
+ *
+ *     offset_i = (d₁ + … + d_i) − i × T
+ *
+ * Verified against ffmpeg 8.1.2: clips of 2 + 3 + 4 s with T = 0.5 give
+ * `[ 1.5, 4 ]`, and the encoded result is 8.000000 s — the 9 s of input less
+ * the two half-second overlaps. With audio the container reads 8.024 s, because
+ * AAC primes its first frame.
+ *
+ * A non-positive offset means a clip is shorter than the transition: the cross-
+ * fade would have to start before that clip has a frame, so the chain would
+ * either fail or silently drop it. That is reported rather than clamped.
+ *
+ * @param {number[]} durations          Clip lengths, in order.
+ * @param {number}   transitionDuration Overlap per boundary.
+ * @return {number[]|null} One offset per boundary, or null on overlap.
+ */
+function xfadeOffsets( durations, transitionDuration ) {
+	const offsets = [];
+	let elapsed = 0;
+
+	for ( let index = 0; index < durations.length - 1; index++ ) {
+		elapsed += durations[ index ];
+		const offset = elapsed - ( index + 1 ) * transitionDuration;
+
+		if ( ! Number.isFinite( offset ) || offset <= 0 ) {
+			return null;
+		}
+
+		// Three decimals is one frame at 1000 fps and keeps `0.1 + 0.2`
+		// artefacts out of the filter argument.
+		offsets.push( Number( offset.toFixed( 3 ) ) );
+	}
+
+	return offsets;
+}
+
+/**
+ * The encoder arguments that suit a container.
+ *
+ * The transition paths re-encode, so — unlike the copy path — they both choose
+ * an encoder rather than inheriting one. H.264 is the default; VP9 is the only
+ * one of these that a WebM container accepts.
+ *
+ * @param {string} format Resolved output format.
+ * @return {string[]} Arguments for `-c:v` and its rate control.
+ */
+function videoEncoder( format ) {
+	return 'webm' === format
+		? [ '-c:v', 'libvpx-vp9', '-crf', '32', '-b:v', '0', '-row-mt', '1' ]
+		: [ '-c:v', 'libx264', '-crf', '20' ];
 }
 
 /**
@@ -1057,12 +1171,17 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			width: rawWidth,
 			height: rawHeight,
 			fps: rawFps,
+			transition: rawTransition,
+			transition_duration: rawTransitionDuration,
 		} = req.body;
 		const videoDir = siteDirFor(req.site, 'video');
 
 		// ── merge ──
-		// A copy-based join: nothing is re-encoded, so nothing is lost. The price
-		// is the precondition, and it is enforced because ffmpeg will not.
+		// By default a copy-based join: nothing is re-encoded, so nothing is lost.
+		// The price is the precondition, and it is enforced because ffmpeg will
+		// not. A transition cannot copy — every frame emitted during the overlap
+		// is a blend of two frames — so asking for one switches to a re-encoding
+		// path that normalises the clips instead of refusing them.
 		if ( 'merge' === operation ) {
 			if ( files.length < 2 ) {
 				cleanup();
@@ -1076,65 +1195,221 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 				return res.status(400).json({ error: `Unknown output format: ${ rawFormat }` });
 			}
 
+			let transition;
+			let transitionDuration = DEFAULT_MERGE_TRANSITION_SECONDS;
+
+			try {
+				transition = resolveTransition( rawTransition, 'merge' );
+				transitionDuration =
+					boundedNumber( rawTransitionDuration, 0.05, MAX_TRANSITION_SECONDS, 'transition_duration' ) ??
+					DEFAULT_MERGE_TRANSITION_SECONDS;
+			} catch ( argErr ) {
+				cleanup();
+				return res.status( 400 ).json({ error: argErr.message });
+			}
+
 			const probes = [];
 
 			for ( const file of files ) {
 				probes.push( await probeMedia( file.path ) );
 			}
 
-			const mismatch = mergeMismatch( probes );
+			if ( 'none' === transition ) {
+				const mismatch = mergeMismatch( probes );
 
-			if ( mismatch ) {
-				cleanup();
-				return res.status(400).json({
-					error: `${ mismatch }. A merge copies the streams, so every clip has to match; normalise the outliers first (the transcode operation does that).`,
+				if ( mismatch ) {
+					cleanup();
+					return res.status(400).json({
+						error: `${ mismatch }. A merge copies the streams, so every clip has to match; normalise the outliers first (the transcode operation does that), or ask for a fade, which re-encodes.`,
+					});
+				}
+
+				const containers = COPY_CONTAINERS[ probes[ 0 ].vcodec ] || [ 'mkv' ];
+
+				if ( ! containers.includes( mergeFormat ) ) {
+					cleanup();
+					return res.status(400).json({
+						error: `A ${ probes[ 0 ].vcodec } stream cannot be copied into ${ mergeFormat }. Use one of: ${ containers.join( ', ' ) }.`,
+					});
+				}
+
+				// The demuxer reads its list from disk, so the quoting is ffmpeg's
+				// (single quotes, escaped), not a shell's.
+				const listName = `concat_${ Date.now() }.txt`;
+				const listPath = path.join( videoDir, listName );
+				const lines = files.map(
+					( file ) => `file '${ path.resolve( file.path ).replace( /'/g, "'\\''" ) }'`
+				);
+
+				fs.writeFileSync( listPath, lines.join( '\n' ) + '\n' );
+
+				const copyOutputName = `processed_${ Date.now() }.${ mergeFormat }`;
+				const copyOutputPath = path.join( videoDir, copyOutputName );
+
+				try {
+					const copyArgs = [ '-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy' ];
+
+					if ( FASTSTART_FORMATS.has( mergeFormat ) ) {
+						copyArgs.push( '-movflags', '+faststart' );
+					}
+
+					copyArgs.push( '-y', copyOutputPath );
+
+					console.log( `[FFmpeg] ffmpeg ${ copyArgs.join( ' ' ) }` );
+					await execFileAsync( 'ffmpeg', copyArgs, { timeout: 300000 } );
+				} finally {
+					try { fs.unlinkSync( listPath ); } catch {}
+				}
+
+				const copyStats = fs.statSync( copyOutputPath );
+
+				res.json({
+					success: true,
+					operation,
+					transition,
+					source_count: files.length,
+					reencoded: false,
+					output_size: copyStats.size,
+					output_file: copyOutputName,
 				});
+
+				cleanup();
+				setTimeout(() => { try { fs.unlinkSync( copyOutputPath ); } catch {} }, 60000);
+
+				return;
 			}
 
-			const containers = COPY_CONTAINERS[ probes[ 0 ].vcodec ] || [ 'mkv' ];
+			// ── merge with a transition ──
+			// xfade re-encodes, so the copy preconditions no longer apply — but the
+			// inputs must still agree on a frame, a rate and a sample format, and
+			// every clip needs a readable duration to place its cut.
+			const unreadable = probes.findIndex( ( probe ) => ! probe );
 
-			if ( ! containers.includes( mergeFormat ) ) {
+			if ( -1 !== unreadable ) {
 				cleanup();
-				return res.status(400).json({
-					error: `A ${ probes[ 0 ].vcodec } stream cannot be copied into ${ mergeFormat }. Use one of: ${ containers.join( ', ' ) }.`,
-				});
+				return res.status(400).json({ error: `clip ${ unreadable + 1 } has no readable video stream, so a transition cannot be placed. Merge with transition "none", or re-encode it first.` });
 			}
 
-			// The demuxer reads its list from disk, so the quoting is ffmpeg's
-			// (single quotes, escaped), not a shell's.
-			const listName = `concat_${ Date.now() }.txt`;
-			const listPath = path.join( videoDir, listName );
-			const lines = files.map(
-				( file ) => `file '${ path.resolve( file.path ).replace( /'/g, "'\\''" ) }'`
-			);
+			const withAudio = probes.every( ( probe ) => probe.hasAudio );
 
-			fs.writeFileSync( listPath, lines.join( '\n' ) + '\n' );
+			// `acrossfade` needs audio on both sides of every boundary, so a set
+			// that is only partly scored has no correct answer here. Dropping the
+			// tracks and inventing silence are both decisions the caller should
+			// make, not ones the route should make for them.
+			if ( ! withAudio && probes.some( ( probe ) => probe.hasAudio ) ) {
+				cleanup();
+				return res.status(400).json({ error: 'A transition needs every clip to agree on audio: some clips have a track and some do not. Transcode the silent ones with a silent track first, or merge with transition "none".' });
+			}
+
+			const shortest = Math.min( ...probes.map( ( probe ) => probe.duration ) );
+
+			if ( ! ( shortest > 0 ) ) {
+				cleanup();
+				return res.status(400).json({ error: 'A clip has no readable duration, so the transition cannot be placed. Merge with transition "none", or re-encode the clip first.' });
+			}
+
+			if ( transitionDuration >= shortest ) {
+				cleanup();
+				return res.status(400).json({ error: `The transition (${ transitionDuration } s) has to be shorter than the shortest clip (${ shortest.toFixed( 2 ) } s).` });
+			}
+
+			const offsets = xfadeOffsets( probes.map( ( probe ) => probe.duration ), transitionDuration );
+
+			if ( ! offsets ) {
+				cleanup();
+				return res.status(400).json({ error: 'The transitions would overlap: the clips are too short for that transition duration.' });
+			}
+
+			const first = probes[ 0 ];
+			const frameWidth = first.width;
+			const frameHeight = first.height;
+			const frameRate = first.fps > 0 ? first.fps : 25;
+			const filter = XFADE[ transition ];
+			const branches = [];
+
+			// xfade refuses inputs that differ rather than adapting them, so each
+			// clip is forced into the first clip's frame, rate and pixel format
+			// before it reaches the filter. `decrease` + `pad` is `contain`: the
+			// whole frame survives, where a crop would silently lose the edges.
+			for ( let index = 0; index < files.length; index++ ) {
+				branches.push(
+					`[${ index }:v]scale=${ frameWidth }:${ frameHeight }:force_original_aspect_ratio=decrease,` +
+					`pad=${ frameWidth }:${ frameHeight }:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${ frameRate },format=yuv420p[v${ index }]`
+				);
+			}
+
+			if ( withAudio ) {
+				for ( let index = 0; index < files.length; index++ ) {
+					branches.push(
+						`[${ index }:a]aformat=sample_fmts=fltp:channel_layouts=stereo:sample_rates=48000[a${ index }]`
+					);
+				}
+			}
+
+			// Chain left to right: each xfade takes the previous result as its
+			// first input, which is why the offsets are cumulative.
+			let video = 'v0';
+
+			for ( let index = 1; index < files.length; index++ ) {
+				const output = index === files.length - 1 ? 'v' : `vx${ index }`;
+
+				branches.push(
+					`[${ video }][v${ index }]xfade=transition=${ filter }:duration=${ transitionDuration }:offset=${ offsets[ index - 1 ] }[${ output }]`
+				);
+
+				video = output;
+			}
+
+			if ( withAudio ) {
+				let audio = 'a0';
+
+				for ( let index = 1; index < files.length; index++ ) {
+					const output = index === files.length - 1 ? 'a' : `ax${ index }`;
+
+					branches.push(
+						`[${ audio }][a${ index }]acrossfade=d=${ transitionDuration }:c1=tri:c2=tri[${ output }]`
+					);
+
+					audio = output;
+				}
+			}
 
 			const mergeOutputName = `processed_${ Date.now() }.${ mergeFormat }`;
 			const mergeOutputPath = path.join( videoDir, mergeOutputName );
+			const args = [];
 
-			try {
-				const args = [ '-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy' ];
-
-				if ( FASTSTART_FORMATS.has( mergeFormat ) ) {
-					args.push( '-movflags', '+faststart' );
-				}
-
-				args.push( '-y', mergeOutputPath );
-
-				console.log( `[FFmpeg] ffmpeg ${ args.join( ' ' ) }` );
-				await execFileAsync( 'ffmpeg', args, { timeout: 300000 } );
-			} finally {
-				try { fs.unlinkSync( listPath ); } catch {}
+			for ( const file of files ) {
+				args.push( '-i', file.path );
 			}
 
+			args.push( '-filter_complex', branches.join( ';' ), '-map', '[v]' );
+
+			if ( withAudio ) {
+				args.push( '-map', '[a]', '-c:a', 'webm' === mergeFormat ? 'libopus' : 'aac' );
+			}
+
+			args.push( ...videoEncoder( mergeFormat ), '-pix_fmt', 'yuv420p' );
+
+			if ( FASTSTART_FORMATS.has( mergeFormat ) ) {
+				args.push( '-movflags', '+faststart' );
+			}
+
+			args.push( '-y', mergeOutputPath );
+
+			console.log( `[FFmpeg] ffmpeg ${ args.join( ' ' ) }` );
+			await execFileAsync( 'ffmpeg', args, { timeout: 300000 } );
+
 			const mergeStats = fs.statSync( mergeOutputPath );
+			const total = probes.reduce( ( sum, probe ) => sum + probe.duration, 0 );
 
 			res.json({
 				success: true,
 				operation,
+				transition,
 				source_count: files.length,
-				reencoded: false,
+				reencoded: true,
+				// The overlaps every boundary removes from the running length.
+				duration: Number( ( total - ( files.length - 1 ) * transitionDuration ).toFixed( 3 ) ),
 				output_size: mergeStats.size,
 				output_file: mergeOutputName,
 			});
@@ -1160,6 +1435,8 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			let frameHeight;
 			let frameRate;
 			let imagesFormat;
+			let transition;
+			let transitionDuration = IMAGES_TRANSITION_SECONDS;
 
 			try {
 				perImage = boundedNumber( rawDuration, 0.1, 60, 'duration' ) ?? 3;
@@ -1167,6 +1444,10 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 				frameHeight = boundedDimension( rawHeight, 'height' );
 				frameRate = boundedNumber( rawFps, 1, 120, 'fps' ) ?? 25;
 				imagesFormat = resolveFormat( rawFormat );
+				transition = resolveTransition( rawTransition, 'images' );
+				transitionDuration =
+					boundedNumber( rawTransitionDuration, 0.05, MAX_TRANSITION_SECONDS, 'transition_duration' ) ??
+					IMAGES_TRANSITION_SECONDS;
 			} catch ( argErr ) {
 				cleanup();
 				return res.status(400).json({ error: argErr.message });
@@ -1180,6 +1461,23 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			if ( ! frameWidth || ! frameHeight ) {
 				cleanup();
 				return res.status(400).json({ error: 'width and height are required: the frame every still is fitted into.' });
+			}
+
+			// One still has no boundary to put a transition on, so the requested
+			// transition only has an effect from the second image onward.
+			const boundaries = Math.max( 0, files.length - 1 );
+			const usedTransition = boundaries > 0 ? transition : 'none';
+
+			if ( 'none' !== usedTransition && transitionDuration >= perImage ) {
+				cleanup();
+				return res.status(400).json({ error: `A ${ usedTransition } transition lasts ${ transitionDuration } s, so each image has to be shown for longer than that; got ${ perImage } s.` });
+			}
+
+			const offsets = 'none' === usedTransition ? null : xfadeOffsets( files.map( () => perImage ), transitionDuration );
+
+			if ( 'none' !== usedTransition && ! offsets ) {
+				cleanup();
+				return res.status(400).json({ error: 'The transitions would overlap: the images are too short for that transition duration.' });
 			}
 
 			const args = [];
@@ -1196,17 +1494,40 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 					`pad=${ frameWidth }:${ frameHeight }:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${ frameRate },format=yuv420p[v${ index }]`
 			);
 
-			const joined = files.map( ( _file, index ) => `[v${ index }]` ).join( '' );
-			const graph = `${ branches.join( ';' ) };${ joined }concat=n=${ files.length }:v=1:a=0[v]`;
+			let graph;
+
+			if ( offsets && offsets.length ) {
+				// The same chain a transitioning merge uses, over stills: each
+				// branch is already the same frame, rate and SAR, so the only thing
+				// left to decide is where each cut lands.
+				const filter = XFADE[ usedTransition ];
+				let video = 'v0';
+
+				for ( let index = 1; index < files.length; index++ ) {
+					const output = index === files.length - 1 ? 'v' : `vx${ index }`;
+
+					branches.push(
+						`[${ video }][v${ index }]xfade=transition=${ filter }:duration=${ transitionDuration }:offset=${ offsets[ index - 1 ] }[${ output }]`
+					);
+
+					video = output;
+				}
+
+				graph = branches.join( ';' );
+			} else {
+				const joined = files.map( ( _file, index ) => `[v${ index }]` ).join( '' );
+				graph = `${ branches.join( ';' ) };${ joined }concat=n=${ files.length }:v=1:a=0[v]`;
+			}
 
 			const imagesOutputName = `processed_${ Date.now() }.${ imagesFormat }`;
 			const imagesOutputPath = path.join( videoDir, imagesOutputName );
 
+			// `videoEncoder()` rather than a hardcoded libx264: `webm` is one of the
+			// formats the route accepts, and H.264 cannot be written into it.
 			args.push(
 				'-filter_complex', graph,
 				'-map', '[v]',
-				'-c:v', 'libx264',
-				'-crf', '20',
+				...videoEncoder( imagesFormat ),
 				'-pix_fmt', 'yuv420p'
 			);
 
@@ -1224,8 +1545,10 @@ router.post('/compose', composeUpload.any(), async (req, res) => {
 			res.json({
 				success: true,
 				operation,
+				transition: usedTransition,
 				source_count: files.length,
-				duration: files.length * perImage,
+				// Every overlap shortens the running length by one transition.
+				duration: files.length * perImage - ( offsets && offsets.length ? boundaries * transitionDuration : 0 ),
 				output_size: imagesStats.size,
 				output_file: imagesOutputName,
 			});
@@ -1431,16 +1754,21 @@ export {
 	boundedDimension,
 	resolveFormat,
 	resolveFit,
+	resolveTransition,
 	resolveCodec,
 	resolveBitrate,
 	resolvePosition,
 	positionExpression,
 	firstDifference,
 	mergeMismatch,
+	xfadeOffsets,
+	videoEncoder,
 	parseRational,
 	boolField,
 	atempoChain,
 	VIDEO_CODECS,
 	AUDIO_CODECS,
 	PROCESS_FORMATS,
+	XFADE,
+	TRANSITIONS,
 };

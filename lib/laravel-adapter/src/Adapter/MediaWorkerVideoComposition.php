@@ -36,6 +36,16 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
 
     private const POSITIONS = array('top-left', 'top-right', 'bottom-left', 'bottom-right', 'center');
 
+    /**
+     * The transitions each operation offers. `zoom` is absent from `images`
+     * because it is `zoompan` — per-still motion, not a transition — and the
+     * route would answer a cross-fade instead of the video that was asked for.
+     */
+    private const TRANSITIONS = array(
+        'merge' => array('none', 'fade', 'dissolve'),
+        'images' => array('none', 'fade', 'slide'),
+    );
+
     private const FORMATS = array('mp4', 'webm', 'mov', 'mkv');
 
     public function __construct(
@@ -105,6 +115,31 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
             $fields['height'] = $this->even($options['height'] ?? 1080, 'height');
             $fields['duration'] = $this->number($options['duration'] ?? 3, 0.1, 60.0, 'duration');
             $fields['fps'] = $this->number($options['fps'] ?? 25, 1, 120, 'fps');
+            $fields['transition'] = $this->transition($options['transition'] ?? 'none', 'images');
+
+            if ('none' !== $fields['transition']) {
+                $fields['transition_duration'] = $this->number(
+                    $options['transition_duration'] ?? 0.5,
+                    0.05,
+                    5.0,
+                    'transition_duration',
+                );
+            }
+        }
+
+        if ('merge' === $operation) {
+            $fields['transition'] = $this->transition($options['transition'] ?? 'none', 'merge');
+
+            // Only a transition reads a duration; a copy-merge sends exactly the
+            // fields it always sent.
+            if ('none' !== $fields['transition']) {
+                $fields['transition_duration'] = $this->number(
+                    $options['transition_duration'] ?? 1,
+                    0.05,
+                    5.0,
+                    'transition_duration',
+                );
+            }
         }
 
         try {
@@ -176,7 +211,44 @@ final class MediaWorkerVideoComposition implements VideoCompositionInterface
             $result['duration'] = (float) $body['duration'];
         }
 
+        if (isset($body['transition'])) {
+            $result['transition'] = (string) $body['transition'];
+        }
+
+        // The route applies no fallback the adapter did not send, so this is the
+        // overlap it was asked for — reported so a caller can check the length
+        // arithmetic without subtracting from `duration`.
+        if (isset($fields['transition_duration'])) {
+            $result['transition_duration'] = (float) $fields['transition_duration'];
+        }
+
         return $result;
+    }
+
+    /**
+     * A transition the operation actually offers.
+     */
+    private function transition(mixed $value, string $operation): string
+    {
+        $allowed = self::TRANSITIONS[$operation];
+        $slug = \strtolower(\trim((string) $value));
+
+        if ('' === $slug) {
+            return 'none';
+        }
+
+        if (! \in_array($slug, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                \sprintf(
+                    'A %s transition must be one of: %s. Got: %s.',
+                    $operation,
+                    \implode(', ', $allowed),
+                    $slug,
+                )
+            );
+        }
+
+        return $slug;
     }
 
     /**

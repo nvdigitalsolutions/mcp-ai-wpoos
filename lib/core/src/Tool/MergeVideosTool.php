@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Join several videos, in order, without re-encoding.
+ * Join several videos, in order — by copying, or with a cross-fade.
  *
  * Proposal 164 §164.19. The WordPress tool with this slug is a stub — `// TODO`
  * then a success envelope — so this one does the work.
@@ -19,13 +19,21 @@
  * wrong output is worse than a refusal, so the route probes every input and
  * names the first property that differs.
  *
- * ## Transitions are deliberately absent
+ * ## Two ways to join
  *
- * `transition: fade`/`dissolve` would need `xfade` and `acrossfade`, which
- * re-encode and need cumulative offsets computed from each clip's duration —
- * a different operation, not a flag on this one. The WordPress tool declares
- * `fade` as its **default** and then does nothing at all, so the default here
- * is `none`; asking for a fade is refused with the reason.
+ * `transition: none` copies: no quality loss, and it finishes in well under a
+ * second for clips that fit in memory. `fade`/`dissolve` cannot copy — every
+ * frame `xfade` emits during the overlap is a blend of two frames — so they
+ * re-encode instead, normalising each clip into the first clip's frame, rate
+ * and sample format. The cuts are placed cumulatively:
+ *
+ *     offset_i = (d₁ + … + d_i) − i × T
+ *
+ * which is why 2 + 3 + 4 s clips with a 0.5 s fade are 8 s, not 9.
+ *
+ * The WordPress tool declares `fade` as its default. The default here stays
+ * `none`: a default that silently re-encodes would change the output of every
+ * existing pipeline, and opting in costs one argument.
  *
  * @package Nvoos\Core
  * @since   2.5.0
@@ -43,7 +51,8 @@ use Nvoos\Core\Application\Media\GeneratedMediaPersister;
 class MergeVideosTool extends AbstractVideoTool
 {
     /**
-     * What the contract offers, against what is implemented.
+     * The WordPress enum. All three are implemented now; the constant is the
+     * allowlist that both the schema and the refusal message read.
      */
     private const TRANSITIONS = array('none', 'fade', 'dissolve');
 
@@ -59,7 +68,7 @@ class MergeVideosTool extends AbstractVideoTool
 
     public function getDescription(): string
     {
-        return 'Join two or more videos end to end, in the order given, by copying their streams. Every clip must share the same frame size, frame rate, video codec and audio layout; a clip that differs is named rather than joined, because a copy-merge of mismatched clips produces a file with the wrong duration. No transitions: ask for transition "none".';
+        return 'Join two or more videos end to end, in the order given. By default the streams are copied, so every clip must share the same frame size, frame rate, video codec and audio layout; a clip that differs is named rather than joined, because a copy-merge of mismatched clips produces a file with the wrong duration. A "fade" or "dissolve" transition re-encodes and cross-fades instead, normalising every clip into the first clip\'s frame.';
     }
 
     public function getParametersSchema(): array
@@ -81,9 +90,16 @@ class MergeVideosTool extends AbstractVideoTool
                 ),
                 'transition' => array(
                     'type' => 'string',
-                    'description' => 'Only "none" is implemented. Fades need xfade, which re-encodes; merge copies.',
+                    'description' => 'How each clip meets the next. "none" copies the streams, so the clips must match; "fade" and "dissolve" cross-fade and re-encode.',
                     'enum' => self::TRANSITIONS,
                     'default' => 'none',
+                ),
+                'transition_duration' => array(
+                    'type' => 'number',
+                    'description' => 'Seconds each cross-fade lasts. Only read when transition is not "none", and it has to be shorter than the shortest clip.',
+                    'minimum' => 0.05,
+                    'maximum' => 5,
+                    'default' => 1,
                 ),
                 'output_format' => array(
                     'type' => 'string',
@@ -134,23 +150,33 @@ class MergeVideosTool extends AbstractVideoTool
         }
 
         if ('none' !== $transition) {
-            return $this->errors->validationFailed(
-                \sprintf(
-                    'A "%s" transition is not implemented. A merge copies the streams; a cross-fade has to re-encode both clips (ffmpeg xfade/acrossfade with cumulative offsets). Merge with transition "none".',
-                    $transition,
-                ),
-                array('transition' => array('Implemented: none.')),
-            );
+            $seconds = $this->floatParam($arguments, 'transition_duration', 1.0);
+
+            if ($seconds < 0.05 || $seconds > 5.0) {
+                return $this->errors->validationFailed(
+                    'transition_duration must be between 0.05 and 5 seconds.',
+                    array('transition_duration' => array('Got ' . $seconds . '.')),
+                );
+            }
         }
 
         if (null === $this->composition || ! $this->composition->supports('merge')) {
             return $this->engineRefusalMessage('join videos');
         }
 
+        $options = array(
+            'format' => $this->stringParam($arguments, 'output_format', 'mp4'),
+            'transition' => $transition,
+        );
+
+        // Only a transition reads a duration, so a copy-merge keeps sending the
+        // field set it always sent.
+        if ('none' !== $transition) {
+            $options['transition_duration'] = $this->floatParam($arguments, 'transition_duration', 1.0);
+        }
+
         try {
-            $result = $this->composition->compose('merge', $inputs, array(
-                'format' => $this->stringParam($arguments, 'output_format', 'mp4'),
-            ));
+            $result = $this->composition->compose('merge', $inputs, $options);
         } catch (\InvalidArgumentException $e) {
             return $this->errors->validationFailed($e->getMessage());
         } catch (\Throwable $e) {
@@ -174,7 +200,13 @@ class MergeVideosTool extends AbstractVideoTool
             $envelope['data'] += array(
                 'source_count' => (int) ($result['source_count'] ?? \count($inputs)),
                 'reencoded' => (bool) ($result['reencoded'] ?? false),
+                'transition' => (string) ($result['transition'] ?? $transition),
             );
+
+            // Absent for a copy, which has no overlap to describe.
+            if (isset($result['transition_duration'])) {
+                $envelope['data'] += array('transition_duration' => (float) $result['transition_duration']);
+            }
         }
 
         return $envelope;

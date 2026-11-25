@@ -22,13 +22,24 @@
  * about the shape mismatch. `optimize_for_platform` is the tool for filling a
  * frame.
  *
- * ## Two deliberate omissions
+ * ## Transitions
  *
- * **`transition` accepts only `none`.** `fade`/`slide`/`zoom` are `xfade`/
- * `zoompan`: a chain that re-encodes and needs cumulative offsets from every
- * segment's duration. The WordPress tool declares `fade` as its default and
- * then does nothing at all, so `none` is the default here and the others are
- * refused with the reason.
+ * `fade` and `slide` are an `xfade` chain over the stills. Every branch is
+ * already forced into the same frame, rate and SAR, so the only thing left to
+ * place is each cut — by the same cumulative offset a transitioning merge uses:
+ *
+ *     offset_i = (d₁ + … + d_i) − i × T
+ *
+ * Three 2 s stills with a 0.5 s transition are therefore 5 s, not 6. The
+ * overlap is a caller's choice (`transition_duration`, 0.05–5 s); it defaults
+ * to 0.5 s because the WordPress contract has no such field and a half-second
+ * reads better against a 2–3 s still than the merge default of 1 s.
+ *
+ * **`zoom` is refused, not approximated.** Ken Burns motion is `zoompan`
+ * applied *within* each still, which is a different filter and a different
+ * timeline; answering it with a cross-fade would be a different video from the
+ * one asked for. The WordPress tool lists `zoom` in its enum and then does
+ * nothing at all, so naming the gap is more honest than silently sliding.
  *
  * **There is no background audio argument.** The worker's compose route reads
  * an ordered list of files, and mixing "N images then a track" into one list
@@ -63,6 +74,11 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
 
     private const TRANSITIONS = array('fade', 'slide', 'zoom', 'none');
 
+    /**
+     * What this tool actually implements, which is the contract less `zoom`.
+     */
+    private const IMPLEMENTED = array('fade', 'slide', 'none');
+
     public function getSlug(): string
     {
         return 'create_video_from_images';
@@ -75,7 +91,7 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
 
     public function getDescription(): string
     {
-        return 'Turn a list of images into a slideshow video, each shown for a fixed number of seconds, fitted into one frame without cropping. No transitions: ask for transition "none". The result is silent.';
+        return 'Turn a list of images into a slideshow video, each shown for a fixed number of seconds, fitted into one frame without cropping. "fade" and "slide" cross-fade or push between images; "zoom" is not a transition and is refused. The result is silent.';
     }
 
     public function getParametersSchema(): array
@@ -110,9 +126,16 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
                 ),
                 'transition' => array(
                     'type' => 'string',
-                    'description' => 'Only "none" is implemented; the others need xfade/zoompan, which re-encode.',
+                    'description' => 'How each image meets the next. "zoom" (Ken Burns) is not implemented: it is a per-image motion, not a transition between images.',
                     'enum' => self::TRANSITIONS,
                     'default' => 'none',
+                ),
+                'transition_duration' => array(
+                    'type' => 'number',
+                    'description' => 'Seconds each cross-fade or slide lasts. Only read when transition is not "none", and it has to be shorter than duration_per_image.',
+                    'minimum' => 0.05,
+                    'maximum' => 5,
+                    'default' => 0.5,
                 ),
                 'output_format' => array(
                     'type' => 'string',
@@ -162,15 +185,25 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
             );
         }
 
-        if ('none' !== $transition) {
+        if (! \in_array($transition, self::IMPLEMENTED, true)) {
             return $this->errors->validationFailed(
                 \sprintf(
-                    'A "%s" transition is not implemented. Each still is looped and joined; a %s needs xfade/zoompan with cumulative offsets, which re-encodes every segment. Use transition "none".',
-                    $transition,
+                    'A "%s" transition is not implemented. Ken Burns motion is ffmpeg zoompan applied within each still — a different filter on a different timeline — so answering it with a cross-fade would be a different video. Use "fade", "slide", or "none".',
                     $transition,
                 ),
-                array('transition' => array('Implemented: none.')),
+                array('transition' => array('Implemented: ' . \implode(', ', self::IMPLEMENTED) . '.')),
             );
+        }
+
+        if ('none' !== $transition) {
+            $crossFade = $this->floatParam($arguments, 'transition_duration', 0.5);
+
+            if ($crossFade < 0.05 || $crossFade > 5.0) {
+                return $this->errors->validationFailed(
+                    'transition_duration must be between 0.05 and 5 seconds.',
+                    array('transition_duration' => array('Got ' . $crossFade . '.')),
+                );
+            }
         }
 
         $resolution = \strtolower(\trim($this->stringParam($arguments, 'resolution', '1080p')));
@@ -196,13 +229,22 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
 
         [$width, $height] = self::FRAMES[$resolution];
 
+        $options = array(
+            'width' => $width,
+            'height' => $height,
+            'duration' => $seconds,
+            'format' => $this->stringParam($arguments, 'output_format', 'mp4'),
+            'transition' => $transition,
+        );
+
+        // A still has no boundary to cross-fade on its own, and a plain
+        // slideshow carries no overlap, so the duration only travels with one.
+        if ('none' !== $transition) {
+            $options['transition_duration'] = $this->floatParam($arguments, 'transition_duration', 0.5);
+        }
+
         try {
-            $result = $this->composition->compose('images', $inputs, array(
-                'width' => $width,
-                'height' => $height,
-                'duration' => $seconds,
-                'format' => $this->stringParam($arguments, 'output_format', 'mp4'),
-            ));
+            $result = $this->composition->compose('images', $inputs, $options);
         } catch (\InvalidArgumentException $e) {
             return $this->errors->validationFailed($e->getMessage());
         } catch (\Throwable $e) {
@@ -228,7 +270,13 @@ class CreateVideoFromImagesTool extends AbstractVideoTool
                 'source_count' => (int) ($result['source_count'] ?? \count($inputs)),
                 'duration' => (float) ($result['duration'] ?? \count($inputs) * $seconds),
                 'resolution' => $resolution,
+                'transition' => (string) ($result['transition'] ?? $transition),
             );
+
+            // Absent for a plain slideshow, which has no overlap to describe.
+            if (isset($result['transition_duration'])) {
+                $envelope['data'] += array('transition_duration' => (float) $result['transition_duration']);
+            }
         }
 
         return $envelope;

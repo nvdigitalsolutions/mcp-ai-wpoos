@@ -20,6 +20,7 @@ import {
 	boundedDimension,
 	resolveFormat,
 	resolveFit,
+	resolveTransition,
 	parseRational,
 	boolField,
 	atempoChain,
@@ -29,9 +30,13 @@ import {
 	positionExpression,
 	firstDifference,
 	mergeMismatch,
+	xfadeOffsets,
+	videoEncoder,
 	VIDEO_CODECS,
 	AUDIO_CODECS,
 	PROCESS_FORMATS,
+	XFADE,
+	TRANSITIONS,
 } from './video.js';
 
 test( 'an absent numeric field is null rather than zero', () => {
@@ -256,4 +261,107 @@ test( 'a speed outside the tool range is refused with the field name', () => {
 	assert.throws( () => boundedNumber( 0.1, 0.25, 4, 'speed' ), /speed must be a number between 0.25 and 4/ );
 	assert.throws( () => boundedNumber( 5, 0.25, 4, 'speed' ), /speed must be a number/ );
 	assert.throws( () => boundedNumber( '2; rm -rf /', 0.25, 4, 'speed' ), /speed must be a number/ );
+} );
+
+// ── Transitions ─────────────────────────────────────────────
+//
+// The offsets are the whole difficulty: `offset` is measured on the first
+// input's timeline, and after chaining the first input is the previous result.
+
+test( 'each xfade offset is the running sum less every overlap so far', () => {
+	// Verified against ffmpeg 8.1.2: 2 + 3 + 4 s with a 0.5 s transition is an
+	// 8.000 s result. The published formula is the same one.
+	assert.deepEqual( xfadeOffsets( [ 2, 3, 4 ], 0.5 ), [ 1.5, 4 ] );
+
+	// 10 + 10 + 10 with a 1 s transition: 9, then 18, and 29 s of output.
+	assert.deepEqual( xfadeOffsets( [ 10, 10, 10 ], 1 ), [ 9, 18 ] );
+} );
+
+test( 'a chain of two clips has a single offset', () => {
+	assert.deepEqual( xfadeOffsets( [ 5, 5 ], 2 ), [ 3 ] );
+} );
+
+test( 'a single clip has no boundary, so no offset', () => {
+	assert.deepEqual( xfadeOffsets( [ 5 ], 1 ), [] );
+	assert.deepEqual( xfadeOffsets( [], 1 ), [] );
+} );
+
+test( 'a clip shorter than the transition is reported, not clamped', () => {
+	// The cut would have to start before the clip has a frame.
+	assert.equal( xfadeOffsets( [ 1.5, 10 ], 2 ), null );
+	assert.equal( xfadeOffsets( [ 0.2, 0.2, 10 ], 1 ), null );
+
+	// Only the clips *before* a boundary enter its offset, so a long trailing
+	// clip does not rescue a short opener — but a short trailing clip is not an
+	// error either, because nothing is placed on it. The route refuses the
+	// former with `transition_duration >= shortest`, and this is the second
+	// line of that defence.
+	assert.deepEqual( xfadeOffsets( [ 10, 0.1 ], 1 ), [ 9 ] );
+
+	// A zero transition is not a transition; the route bounds it above zero, and
+	// the arithmetic stays sane even if it did not.
+	assert.deepEqual( xfadeOffsets( [ 2, 2 ], 0 ), [ 2 ] );
+} );
+
+test( 'offsets are rounded so float artefacts never reach the filter argument', () => {
+	const offsets = xfadeOffsets( [ 0.1, 0.2, 0.3 ], 0.05 );
+
+	assert.deepEqual( offsets, [ 0.05, 0.2 ] );
+
+	for ( const offset of offsets ) {
+		assert.match( String( offset ), /^\d+(\.\d{1,3})?$/ );
+	}
+} );
+
+test( 'a transition name is an allowlist per operation', () => {
+	assert.equal( resolveTransition( undefined, 'merge' ), 'none' );
+	assert.equal( resolveTransition( '', 'images' ), 'none' );
+	assert.equal( resolveTransition( 'FADE', 'merge' ), 'fade' );
+	assert.equal( resolveTransition( ' dissolve ', 'merge' ), 'dissolve' );
+	assert.equal( resolveTransition( 'slide', 'images' ), 'slide' );
+} );
+
+test( 'a transition one operation does not offer is refused there', () => {
+	// `slide` is a slideshow transition; a merge has no such enum member.
+	assert.throws( () => resolveTransition( 'slide', 'merge' ), /none, fade, dissolve/ );
+	assert.throws( () => resolveTransition( 'dissolve', 'images' ), /none, fade, slide/ );
+
+	// The WordPress enum lists `zoom`; it is `zoompan`, not an xfade.
+	assert.throws( () => resolveTransition( 'zoom', 'images' ), /zoom/ );
+
+	// The value reaches a filter argument, so an injection attempt is refused.
+	assert.throws( () => resolveTransition( 'fade; rm -rf /', 'merge' ), /must be one of/ );
+	assert.throws( () => resolveTransition( 'fade=1', 'merge' ), /must be one of/ );
+} );
+
+test( 'the transition table only maps names ffmpeg knows', () => {
+	// `slide` is the tool's word; ffmpeg calls the filter `slideleft`.
+	assert.equal( XFADE.slide, 'slideleft' );
+	assert.equal( XFADE.fade, 'fade' );
+	assert.equal( XFADE.dissolve, 'dissolve' );
+	assert.equal( XFADE.zoom, undefined, 'zoom is zoompan, not a transition' );
+} );
+
+test( 'no operation offers a transition that cannot be mapped', () => {
+	for ( const [ operation, names ] of Object.entries( TRANSITIONS ) ) {
+		for ( const name of names ) {
+			if ( 'none' === name ) {
+				continue;
+			}
+
+			assert.ok( XFADE[ name ], `${ operation } offers ${ name } but XFADE has no filter for it` );
+		}
+	}
+} );
+
+test( 'the encoder follows the container, because H.264 cannot go in webm', () => {
+	assert.deepEqual( videoEncoder( 'mp4' ), [ '-c:v', 'libx264', '-crf', '20' ] );
+	assert.deepEqual( videoEncoder( 'mov' ), [ '-c:v', 'libx264', '-crf', '20' ] );
+	assert.deepEqual( videoEncoder( 'mkv' ), [ '-c:v', 'libx264', '-crf', '20' ] );
+
+	const webm = videoEncoder( 'webm' );
+
+	assert.equal( webm[ 1 ], 'libvpx-vp9' );
+	// Constant quality: a `-crf` without `-b:v 0` is ignored by libvpx.
+	assert.ok( webm.includes( '-b:v' ), 'VP9 needs -b:v 0 for CRF to mean anything' );
 } );
