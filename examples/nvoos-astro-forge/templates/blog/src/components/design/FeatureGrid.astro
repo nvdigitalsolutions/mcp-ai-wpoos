@@ -11,7 +11,7 @@ import type { SectionTheme } from '../../lib/sections.generated.ts';
 import { itemTitleTag } from '../../lib/title-tag.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
-import { bandParagraphs } from '../../lib/band-copy.ts';
+import { bandParagraphs, titleEchoItems } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -56,31 +56,18 @@ const cards = lanes
 	: ( items ?? [] ).map( ( item ) => ( { item, surface: undefined } ) );
 
 // A card whose heading IS the band's own title is not a card — it is the band's
-// sub-heading. A builder publishes the pair as two widgets (eca.directory's
-// updates band: a 14px `h2` "Our Updates" and a 33px icon-box "News &
-// Insights" whose body is the band's lede), and the measured eyebrow/title pair
-// then promotes the icon-box heading to the band title. Rendering the card too
-// printed the same string twice, with an empty-looking one-card "grid" under
-// it. Fold a copy-only card's body into the lede and keep the grid for cards
-// that say something the title does not.
-//
-// Never folded when the card carries media or its own link: those are its
-// content, and dropping them would delete a picture or a destination.
-const normalise = ( value: string | undefined ): string =>
-	( value ?? '' ).trim().replace( /\s+/g, ' ' ).toLowerCase();
-const shownTitle = theme?.eyebrow && theme?.titleText ? theme.titleText : title;
-const titleEchoes = shownTitle
-	? cards.filter(
-			( card ) =>
-				normalise( card.item?.title ) === normalise( shownTitle ) &&
-				! card.item?.media &&
-				! ( card.item?.links?.length ?? 0 )
-	  )
-	: [];
-const visibleCards = titleEchoes.length > 0 ? cards.filter( ( card ) => ! titleEchoes.includes( card ) ) : cards;
+// sub-heading. The rule (and its media/link/lane guards) lives in
+// `titleEchoItems`, because `DesignRenderer` needs the same answer to decide
+// whether the band's measured `min-height` still applies once the grid folds
+// away entirely.
+const titleEchoes = titleEchoItems( items, title, theme, sourceColumns );
+const visibleCards =
+	titleEchoes.length > 0
+		? cards.filter( ( card ) => ! card.item || ! titleEchoes.includes( card.item ) )
+		: cards;
 const ledeBody = [
 	...( body ?? [] ),
-	...titleEchoes.flatMap( ( card ) => card.item?.paragraphs ?? ( card.item?.body ? [ card.item.body ] : [] ) ),
+	...titleEchoes.flatMap( ( item ) => item.paragraphs ?? ( item.body ? [ item.body ] : [] ) ),
 ];
 
 const titleVars = [
