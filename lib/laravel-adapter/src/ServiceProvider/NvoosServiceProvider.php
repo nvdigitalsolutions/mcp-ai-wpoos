@@ -46,6 +46,7 @@ use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
+use Nvoos\Core\Domain\Contract\DocsCorpusInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HealthReportInterface;
@@ -127,6 +128,7 @@ use Nvoos\Laravel\Adapter\ErrorFactory;
 use Nvoos\Laravel\Adapter\EmailService;
 use Nvoos\Laravel\Adapter\EventDispatcher;
 use Nvoos\Laravel\Adapter\FileStore;
+use Nvoos\Laravel\Adapter\FilesystemDocsCorpus;
 use Nvoos\Laravel\Adapter\FileUploadService;
 use Nvoos\Laravel\Adapter\DatabaseTraceStore;
 use Nvoos\Laravel\Adapter\HarnessProfileProvider;
@@ -280,6 +282,19 @@ class NvoosServiceProvider extends ServiceProvider {
 		// matrix before claiming availability: a configured worker may predate
 		// the `/api/pdf/ocr` route, and a named refusal beats a 404 mid-run.
 		$this->app->bind( PdfOcrInterface::class, MediaWorkerPdfOcr::class );
+
+		// The docs corpus is a directory, not a service (Proposal 164 section
+		// 164.34). `oos.docs.corpus.root` empty means the five `docs_hub_*` tools
+		// answer `no_docs_corpus`; a configured root makes the adapter the only
+		// thing that decides whether a path is inside it.
+		$this->app->singleton(
+			DocsCorpusInterface::class,
+			static fn ( $app ) => new FilesystemDocsCorpus(
+				(string) $app['config']->get( 'oos.docs.corpus.root', '' ),
+				(int) $app['config']->get( 'oos.docs.corpus.max_bytes', 2097152 ),
+				(array) $app['config']->get( 'oos.docs.corpus.extensions', array( 'md', 'txt' ) ),
+			)
+		);
 
 		// Spreadsheet reading: the worker already parses xlsx/csv/json with
 		// ExcelJS, so `excel_data_import` needs an adapter, not a PHP library.
