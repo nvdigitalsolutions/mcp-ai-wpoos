@@ -1836,6 +1836,15 @@ export interface ForgeMark {
 	bgSize?: string;
 	bgRepeat?: string;
 	bgPosition?: string;
+	/**
+	 * The LAYER the image is painted on. Elementor renders a band image on a
+	 * `::before` layer faded by `--overlay-opacity` and sometimes blended
+	 * (`mix-blend-mode: lighten`). Painting the image on the band instead shows a
+	 * 5%-opacity halftone at full strength (eca.directory about-us, 2026-11-25).
+	 * Absent = paint on the band.
+	 */
+	bgLayerOpacity?: number;
+	bgBlendMode?: string;
 	bgColor?: string;
 	bgGradient?: string;
 	/** The background-overlay tint (Elementor's overlay layer). */

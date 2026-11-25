@@ -4864,13 +4864,14 @@ async function runPageDesign( profileRef, options ) {
 		if ( options.json ) {
 			console.log( JSON.stringify( reports, null, 2 ) );
 		}
-		// DIAGNOSTIC ONLY. The image's box now rides the fact (`bgSize` etc.), but
-		// Elementor fades the image on a `::before` LAYER via opacity +
-		// --background-overlay, and that is not captured. Storing the image made
-		// eca.directory's faint halftone render at 100% over the hero and stats
-		// bands. The write path returns with the layer.
+		// DIAGNOSTIC ONLY. The image, its box, its layer opacity and the band
+		// colour are all extracted now (and the stats band renders correctly with
+		// them). The remaining interference is the HERO: its own overlay/panel
+		// facts paint over the result, and until those are re-measured against the
+		// layer a write flips the hero between unreadable and grey. Re-open when
+		// the hero overlay is on the same channel.
 		console.log(
-			'\n(diagnostic only \u2014 storing band images needs the background LAYER: opacity + overlay)'
+			'\n(diagnostic only \u2014 the hero overlay/panel is not yet measured against the layer)'
 		);
 	} finally {
 		gate.close();

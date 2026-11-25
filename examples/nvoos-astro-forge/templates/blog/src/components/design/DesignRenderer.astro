@@ -354,6 +354,40 @@ const backgroundBox = ( theme: SectionTheme ): string[] => [
 	`background-position:${ theme.bgPosition ?? 'center' }`,
 ];
 
+/**
+ * The band image's LAYER (`bgLayerOpacity`).
+ *
+ * Elementor paints a band image on a `::before` layer faded by
+ * `--overlay-opacity` (0.05 on eca.directory's hero, 0.2 on its stats band,
+ * blended `lighten`). Painting the image on the band itself shows it at full
+ * strength over the copy. A layer band keeps the image OUT of `wrapStyle` and
+ * gets a scoped `::before` here instead; the band's own colour stays on the
+ * wrap, which is the order the source paints.
+ */
+const bandLayerCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ! theme?.bgImage || theme.bgLayerOpacity === undefined ) {
+			return '';
+		}
+		// A hero already owns a photo/overlay treatment (and its own stacking); a
+		// faded `::before` under that content washed the copy out on
+		// eca.directory's about-us hero. Layers are for BANDS, not heroes, until
+		// the hero overlay is re-measured against this one.
+		if ( theme.theme === 'hero' ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const blend = theme.bgBlendMode ? `;mix-blend-mode:${ theme.bgBlendMode }` : '';
+		return (
+			`${ scoped }{position:relative;isolation:isolate}` +
+			`${ scoped }::before{content:"";position:absolute;inset:0;background-image:url('${ theme.bgImage }');${ backgroundBox( theme ).join( ';' ) };opacity:${ theme.bgLayerOpacity }${ blend };pointer-events:none;z-index:0}` +
+			`${ scoped }>*{position:relative;z-index:1}`
+		);
+	} )
+	.join( '' );
+
 function bandBackground( value: string ): string | undefined {
 	const trimmed = value.trim();
 	if ( trimmed === '' ) {
@@ -550,7 +584,7 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 		parts.push( '--ds-hero-justify:flex-start' );
 	}
 	if ( theme.theme === 'hero' ) {
-		if ( theme.bgImage ) {
+		if ( theme.bgImage && theme.bgLayerOpacity === undefined ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
 			parts.push( ...backgroundBox( theme ) );
 		}
@@ -566,10 +600,12 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFall
 	}
 	if ( theme.bg ) {
 		const declaration = bandBackground( theme.bg );
-		if ( declaration ) {
+		const isImage = declaration ? /background(?:-image)?\s*:/i.test( declaration ) : false;
+		// A LAYER image is emitted by `bandLayerCss` instead — painting it here
+		// would put the full-strength image under the copy as well.
+		if ( declaration && ! ( isImage && theme.bgLayerOpacity !== undefined ) ) {
 			parts.push( declaration );
-			// An image declaration needs its box, or it paints at native scale.
-			if ( /background(?:-image)?\s*:/i.test( declaration ) ) {
+			if ( isImage ) {
 				parts.push( ...backgroundBox( theme ) );
 			}
 		}
@@ -1592,8 +1628,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandLayerCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandLayerCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
