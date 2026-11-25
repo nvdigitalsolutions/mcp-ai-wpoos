@@ -259,6 +259,33 @@ class FileUploadService implements FileUploadServiceInterface {
 	}
 
 	/**
+	 * The sniff this host trusts, exposed for the resumable path.
+	 *
+	 * The chunked upload assembles a file on disk and has to ask the same two
+	 * questions the single-request path asks — what is it, and is it allowed —
+	 * before handing the bytes to the registry. Answering "what is it" twice, with
+	 * two sniffs, would let the two paths disagree about the same bytes.
+	 *
+	 * @return string|null The sniffed type, or null when it cannot be read.
+	 */
+	public static function detectMimeType( string $path ): ?string {
+		if ( \function_exists( 'finfo_open' ) ) {
+			$handle = \finfo_open( FILEINFO_MIME_TYPE );
+			$mime   = false === $handle ? false : \finfo_file( $handle, $path );
+
+			if ( false !== $handle ) {
+				\finfo_close( $handle );
+			}
+
+			return \is_string( $mime ) && '' !== $mime ? $mime : null;
+		}
+
+		$mime = \function_exists( 'mime_content_type' ) ? \mime_content_type( $path ) : false;
+
+		return \is_string( $mime ) && '' !== $mime ? $mime : null;
+	}
+
+	/**
 	 * The extension this host would give a sniffed type.
 	 *
 	 * Exposed so the allowlist can be checked against it: a type in the allowlist
@@ -288,19 +315,6 @@ class FileUploadService implements FileUploadServiceInterface {
 	}
 
 	private function detectMime( string $path ): ?string {
-		if ( \function_exists( 'finfo_open' ) ) {
-			$handle = \finfo_open( FILEINFO_MIME_TYPE );
-			$mime   = false === $handle ? false : \finfo_file( $handle, $path );
-
-			if ( false !== $handle ) {
-				\finfo_close( $handle );
-			}
-
-			return \is_string( $mime ) && '' !== $mime ? $mime : null;
-		}
-
-		$mime = \function_exists( 'mime_content_type' ) ? \mime_content_type( $path ) : false;
-
-		return \is_string( $mime ) && '' !== $mime ? $mime : null;
+		return self::detectMimeType( $path );
 	}
 }

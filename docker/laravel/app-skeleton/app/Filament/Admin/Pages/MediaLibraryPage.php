@@ -177,14 +177,66 @@ class MediaLibraryPage extends Page
     }
 
     /**
-     * The per-file ceiling, for the upload guidance.
+     * The per-file ceiling for one request, for the upload guidance.
      *
-     * Read from the same config the upload service is constructed with, so the
-     * sentence beside the input cannot promise a size the service refuses.
+     * `min()` of three numbers, because two of them are not the application's to
+     * choose: PHP refuses a file over `upload_max_filesize` and a request over
+     * `post_max_size`, and in the shipped image those are **2 MB** and **8 MB**.
+     * The page used to print the configured 10 MiB regardless, which was a promise
+     * the interpreter would not keep.
      */
     public function maxBytes(): int
     {
-        return (int) config('oos.upload_max_bytes', FileUploadServiceInterface::DEFAULT_MAX_FILE_SIZE);
+        return min(
+            (int) config('oos.upload_max_bytes', FileUploadServiceInterface::DEFAULT_MAX_FILE_SIZE),
+            $this->iniBytes('upload_max_filesize'),
+            $this->iniBytes('post_max_size'),
+        );
+    }
+
+    /**
+     * The chunk size the resumable path sends, for the guidance and the script.
+     */
+    public function chunkBytes(): int
+    {
+        return max(1, (int) config('oos.chunked_uploads.chunk_bytes', 4194304));
+    }
+
+    /**
+     * The largest file the resumable path accepts.
+     */
+    public function chunkedMaxBytes(): int
+    {
+        return max(1, (int) config('oos.chunked_uploads.max_bytes', 536870912));
+    }
+
+    /**
+     * An `ini_get()` size (`2M`, `512K`, `1G`) as bytes.
+     *
+     * `0` and `-1` mean "no limit" in php.ini, and reporting them as zero would
+     * make `maxBytes()` zero — so an unlimited directive answers `PHP_INT_MAX`
+     * and lets the next number in the `min()` decide.
+     */
+    private function iniBytes(string $directive): int
+    {
+        $raw = trim((string) ini_get($directive));
+
+        if ('' === $raw) {
+            return PHP_INT_MAX;
+        }
+
+        $value = (int) $raw;
+
+        if ($value <= 0) {
+            return PHP_INT_MAX;
+        }
+
+        return match (strtolower(substr($raw, -1))) {
+            'g' => $value * 1024 * 1024 * 1024,
+            'm' => $value * 1024 * 1024,
+            'k' => $value * 1024,
+            default => $value,
+        };
     }
 
     /**

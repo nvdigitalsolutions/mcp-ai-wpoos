@@ -36,6 +36,7 @@ use Nvoos\Core\Domain\Contract\AudioTranscriptionInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
+use Nvoos\Core\Domain\Contract\ChunkedUploadInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EmailServiceInterface;
@@ -119,6 +120,7 @@ use Nvoos\Laravel\Tool\ManifestToolRegistrar;
 use Nvoos\Laravel\Adapter\AgentOrchestration;
 use Nvoos\Laravel\Adapter\AuthProvider;
 use Nvoos\Laravel\Adapter\CacheStore;
+use Nvoos\Laravel\Adapter\ChunkedUploadService;
 use Nvoos\Laravel\Adapter\ChatProfileResolver;
 use Nvoos\Laravel\Adapter\ContentStore;
 use Nvoos\Laravel\Adapter\ErrorFactory;
@@ -325,6 +327,21 @@ class NvoosServiceProvider extends ServiceProvider {
 				// file registry, so an upload and a toolkit artifact share an id scheme,
 				// a path convention and a checksum.
 				store: $app->make( FileVisibilityStoreInterface::class ),
+			);
+		} );
+
+		// 164.30 — resumable uploads. `upload_max_filesize` is 2 MB in the shipped
+		// image, so the single-request path cannot carry a real file whatever
+		// `upload_max_bytes` says; this keeps every request small and moves the
+		// per-file ceiling to the registry's group caps (video 512 MiB).
+		$this->app->bind( ChunkedUploadInterface::class, function ( $app ) {
+			return new ChunkedUploadService(
+				disk: (string) $app['config']->get( 'oos.chunked_uploads.disk', 'local' ),
+				maxTotalBytes: (int) $app['config']->get( 'oos.chunked_uploads.max_bytes', 536870912 ),
+				maxChunkBytes: (int) $app['config']->get( 'oos.chunked_uploads.chunk_bytes', 4194304 ),
+				expiresHours: (int) $app['config']->get( 'oos.chunked_uploads.expires_hours', 24 ),
+				store: $app->make( FileVisibilityStoreInterface::class ),
+				uploads: $app->make( FileUploadServiceInterface::class ),
 			);
 		} );
 		$this->app->bind( QueueClientInterface::class, QueueClient::class );
