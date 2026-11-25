@@ -5331,6 +5331,7 @@ export async function regenGenerated(
 		eca: () => ( { file: path.join( targetDir, ECA_CONFIG_PATH ), contents: renderEcaGenerated( profile ) } ),
 	};
 	const result: RegenResult = { written: [], skipped: [] };
+	const writtenFiles: string[] = [];
 	for ( const name of requested as RegenModule[] ) {
 		const { file, contents } = renderers[ name ]();
 		// Only rewrite a module this project actually ships: the minimal preset has
@@ -5344,6 +5345,29 @@ export async function regenGenerated(
 		}
 		await writeFile( file, contents, 'utf8' );
 		result.written.push( name );
+		writtenFiles.push( file );
+	}
+	// Keep the DRIFT GATE honest: a regenerated module is not a hand edit, and
+	// `check-generated.mjs` would fail the next build on the stale hash. The
+	// manifest is the scaffold's, so only its entries are touched.
+	if ( writtenFiles.length > 0 ) {
+		const manifestPath = path.join( targetDir, 'nvoos.generated.json' );
+		try {
+			const manifest = JSON.parse( await readFile( manifestPath, 'utf8' ) ) as {
+				regeneratedAt?: string;
+				files?: Record< string, string >;
+			};
+			manifest.files ??= {};
+			for ( const file of writtenFiles ) {
+				const relative = path.relative( targetDir, file ).split( path.sep ).join( '/' );
+				const contents = await readFile( file, 'utf8' );
+				manifest.files[ relative ] = createHash( 'sha256' ).update( contents ).digest( 'hex' );
+			}
+			manifest.regeneratedAt = new Date().toISOString();
+			await writeFile( manifestPath, JSON.stringify( manifest, null, 2 ) + '\n', 'utf8' );
+		} catch {
+			// No manifest (a LOCKED or minimal project) — nothing to keep honest.
+		}
 	}
 	return result;
 }
