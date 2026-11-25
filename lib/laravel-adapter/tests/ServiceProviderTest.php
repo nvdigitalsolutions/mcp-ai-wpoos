@@ -18,6 +18,7 @@ use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\AudioTranscriptionInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
@@ -44,6 +45,7 @@ final class ServiceProviderTest extends TestCase {
 			ProfessionRepositoryInterface::class,
 			HttpClientInterface::class,
 			VideoFrameExtractionInterface::class,
+			AudioTranscriptionInterface::class,
 		);
 
 		foreach ( $bindings as $binding ) {

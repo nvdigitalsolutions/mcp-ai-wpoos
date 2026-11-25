@@ -1797,3 +1797,165 @@ The byte-identical MP3 case is the one that proves the audio-only probe: with
 `lib/core` **2,470 / 17,595** (was 2,468 / 17,585); adapter **359 / 1,926**;
 the video group **80 / 306** (was 75 / 285 — five new tests in
 `VideoProcessingAdapterTest`); worker pure tests **43** (was 40).
+
+## 164.27 — `transcribe_video` and `generate_video_captions`, and what a stub was hiding (2026-11-25)
+
+The two slugs that were left are the two that looked like they needed a service.
+They did not: `transcribe_openai_audio` was already `ready`, and `extract_audio`
+(§164.26) supplied the missing half — a video becomes audio, audio becomes text.
+So `video-production` moves **13 → 15 of 21** and the total **62 → 64 of 854**.
+
+### Neither WordPress tool does the work
+
+This is the part worth recording, because "port" was the wrong verb for both.
+
+| slug | what the WordPress tool actually does |
+|---|---|
+| `transcribe_video` | stamps `_mcp_video_transcribe_status = pending` on each attachment and answers "queued" |
+| `generate_video_captions` | `return array( 'success' => true, 'message' => '… executed successfully. Note: Video processing requires FFmpeg.' )` |
+
+There is no transcription queue in this runtime and no attachment meta to stamp,
+so a faithful port of the first would be a tool that takes money-shaped arguments
+and does nothing, and the second was already doing nothing in WordPress. The
+ports do the work instead. That is a **capability** port, not a behaviour port,
+and the manifest `reason` for each says so.
+
+### `verbose_json`, and the model constraint that follows
+
+OpenAI can format subtitles itself — `whisper-1` accepts `srt` and `vtt`. It is
+the *only* model that can: `gpt-4o-transcribe` and `gpt-4o-mini-transcribe`
+answer `json` and `text` only, and no model emits ASS. Asking the provider to
+format would therefore have locked captions to one model and left `ass`
+unserved forever.
+
+The provider is asked for `verbose_json` — `{text, language, duration,
+segments[]}` — and every format is built locally from the segments. Two
+consequences:
+
+- `OpenAiTranscription` refuses any model but `whisper-1` **up front**, naming
+  the reason, instead of letting the provider answer 400 after the upload;
+- `CaptionFormatter` is a pure function over a cue list, so SRT, VTT and ASS are
+  tested to the character with no network and no disk.
+
+### The formats disagree about escaping, so the formatter does not share one
+
+- **SRT** has no escaping rules; text is text.
+- **WebVTT** cue text may not contain `&`, `<` or `>`, and may not contain
+  `-->`. All three are written as character references, which also neutralises
+  `-->` because it contains `>`. A transcript that says "R&D" produced a file
+  parsers disagreed about before this.
+- **ASS** treats `{…}` as an override block, so a transcript containing braces
+  could otherwise inject `\pos` or a drawing command into a player. Braces are
+  escaped and a real line break becomes `\N`, because a literal newline would end
+  the `Dialogue:` record and lose the rest of the cue.
+
+A blank line inside a cue is the cue separator in SRT and VTT, so a paragraph
+break in a transcript is collapsed rather than allowed to split one cue into two.
+A zero-length cue is widened by a millisecond and a backwards cue is swapped:
+players drop both, and the words are the part worth keeping.
+
+### `dry_run` defaults to false — a deliberate deviation
+
+WordPress defaults `transcribe_video`'s `dry_run` to **true**. That default
+exists because the tool cannot process anything, so "do nothing" is the only
+honest default it has. Here the work is real, and a default that silently
+performs no work reads as success to an agent: it passes `video_ids`, gets
+`success: true`, and believes it has transcripts.
+
+The parameter is still honoured, and a dry run is now worth running: it probes
+each source and reports duration, size and whether an audio track exists,
+without uploading to a provider or extracting anything. A stored **audio** file
+is describable on a host with no media worker at all, so the probe is skipped
+there and `duration` is honestly `null` rather than invented.
+
+### `auto_sync` means something in both positions
+
+- `true` uses the provider's segment boundaries — the cues land on the words.
+- `false` ignores them and re-flows the transcript one sentence per cue, each
+  given a share of the measured duration **proportional to its length**. That is
+  a reading pace, not speech alignment, and it is documented as such. The cost
+  is that `Mr. Smith` splits into two cues.
+
+The envelope reports `timings: "provider" | "proportional"`, so a caller never
+has to guess which one it got. `"proportional"` is also the honest answer when
+`auto_sync` is true but the provider returned no segments.
+
+### The 25 MB ceiling is the provider's
+
+OpenAI refuses an audio file over 25 MB. The extraction runs at **64 kbps**, which
+keeps roughly fifty minutes inside the limit; speech is downmixed to 16 kHz mono
+by the provider anyway, so a higher bitrate buys nothing and costs headroom. The
+size is still checked before the upload, because a lossless copy of a high-bitrate
+MP3 can exceed it — and a caller deserves the limit rather than a finished
+transfer followed by a rejection.
+
+### A stored subtitle needs a type the registry will believe
+
+Measured, not assumed — `finfo` inside the app container:
+
+| file | libmagic says | in `FileStore::TYPES` before | stored as |
+|---|---|---|---|
+| `.srt` | `application/x-subrip` | no | refused |
+| `.vtt` | `text/vtt` | no | refused |
+| `.ass` | `text/plain` | yes | **`.txt`** |
+
+So SRT and WebVTT were unstorable, and ASS was storable only under an extension
+no player treats as a subtitle. `application/x-subrip` → `srt` and `text/vtt` →
+`vtt` were added to the map (both `document`, so the 25 MiB cap applies). ASS is
+**not** added: an ASS file is byte-indistinguishable from plain text, and the
+registry types a file from its bytes rather than trusting a caller's extension —
+teaching it otherwise to serve one format would break the rule that makes the
+rest of it safe. `generate_video_captions` therefore returns ASS in `captions`
+and reports `media_skipped` with that reason.
+
+### One multipart builder, not two
+
+`OpenAiTranscription` is an adapter, so it uses the framework client (it needs a
+per-call timeout the `HttpClientInterface` contract does not carry — the same
+precedent `MediaWorkerClient` set; `oos.transcription_timeout`, 300 s). The
+core-side tool `transcribe_openai_audio` still has to build multipart by hand,
+and it had that logic inline. It now calls `MultipartBody`, which also closes a
+real hole: the file *name* and *filename* are header-interpolated, so a `"` or a
+CRLF in either could inject a header into a request signed with a provider key.
+Field *values* are sent verbatim — escaping them would corrupt the transcript.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/AudioTranscriptionInterface.php` | new contract: `isAvailable()`, `transcribe()` returning text plus timed segments |
+| `lib/core/src/Application/Media/CaptionFormatter.php` | new; pure SRT / WebVTT / ASS writer |
+| `lib/core/src/Infrastructure/Http/MultipartBody.php` | new; one multipart builder, with header sanitisation |
+| `lib/core/src/Tool/TranscribeVideoTool.php` | new tool; batch contract, per-item failures, `dry_run` preview |
+| `lib/core/src/Tool/GenerateVideoCaptionsTool.php` | new tool; provider or proportional cues, optional storage |
+| `lib/core/src/Tool/TranscribeOpenAIAudioTool.php` | inline multipart replaced by `MultipartBody` |
+| `lib/core/src/Tool/AbstractVideoTool.php` | `srt`, `vtt`, `ass` in the container → MIME map |
+| `lib/laravel-adapter/src/Adapter/OpenAiTranscription.php` | new; `verbose_json`, model and size refusals |
+| `lib/laravel-adapter/src/Adapter/FileStore.php` | the two sniffable subtitle types |
+| `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` | binds `AudioTranscriptionInterface` |
+| `lib/core/resources/tool-readiness.php` | rows 285 and 286 |
+
+### Measurement
+
+`bin/audit-tool-readiness.php`: **286 rows / 267 servable / 0 violations** (was
+284 / 265). `bin/toolkit-parity.php --check`: **64 of 854**, `video-production`
+**15 of 21** — both moved, and the baseline diff is the two slugs and nothing else.
+
+`lib/core` **2,500 / 17,658** (was 2,470 / 17,595); adapter **359 / 1,929** (was
+359 / 1,926); the new `VideoTranscriptionTest` **17 / 85**; worker pure tests
+**43** (unchanged — the route did not change).
+
+### What is left in this toolkit
+
+`video-production` is **done as far as this runtime can take it**. The six
+remaining slugs need things that do not exist here, and inventing them would be
+parity theatre:
+
+| slug | why not |
+|---|---|
+| `create_remotion_video` | a React/Remotion renderer, not an ffmpeg call |
+| `get_queued_videos` | a WordPress attachment queue |
+| `get_videos_without_thumbnails` | attachment queries over a media library this host does not index that way |
+| `get_videos_without_transcripts` | the same, plus the transcription queue above |
+| `upload_video_batch` | WordPress attachment creation at batch scale |
+| `extract_video_metadata` | a deliberate duplicate of `get_video_metadata`, which is already `ready` |

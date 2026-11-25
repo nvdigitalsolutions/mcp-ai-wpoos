@@ -1111,6 +1111,15 @@ return array(
 			'replaced_by' => 'generate_video_caption',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'generate_video_captions' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GenerateVideoCaptionsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'The WordPress tool is a stub that returns success and produces nothing, so the behaviour is new rather than reproduced. Extracts the audio (64 kbps, which keeps about fifty minutes inside OpenAI the 25 MB upload ceiling) then transcribes it for `verbose_json` segments. Every format is built locally by CaptionFormatter instead of asking the provider to format: only whisper-1 can answer srt and vtt, the gpt-4o-transcribe family answers json without timings, and no model emits ASS. `auto_sync` is honoured both ways — true uses the provider segment boundaries, false re-flows one sentence per cue in proportion to length, and `timings` reports which happened. SRT and WebVTT are stored through the file registry (the registry now types `application/x-subrip` and `text/vtt` from the bytes); ASS is returned as text with `media_skipped` because libmagic reports it as plain text, which would file it as `.txt`.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoTranscriptionTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'generate_video_thumbnails' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateVideoThumbnailsTool',
 			'readiness' => 'ready',
@@ -2108,6 +2117,15 @@ return array(
 			'reason' => 'Extends TranscribeOpenAIAudioTool, so it shares the same request path and evidence.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoAndAudioToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'transcribe_video' => array(
+			'class' => 'Nvoos\\Core\\Tool\\TranscribeVideoTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'The WordPress tool does not transcribe: it stamps `_mcp_video_transcribe_status = pending` on each attachment and answers "queued", and this host has neither attachment meta nor a transcription queue. This one does the work instead — extracts the audio at 64 kbps through MediaWorkerVideo, then calls AudioTranscriptionInterface (OpenAiTranscription, `verbose_json`) — keeping the published batch contract: `video_ids` in, `processed[]` and `errors[]` out, so one video without an audio track cannot lose the rest of the batch. A stored audio file is transcribed without the worker. `dry_run` is accepted but defaults to false, a deliberate deviation: the WordPress default of true exists because that tool cannot process anything, and a default that silently performs no work reads as success to an agent. The extracted track is scratch and is removed in `finally`. Capability is `upload_files` rather than the WordPress `edit_posts`, because nothing here touches a post.',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoTranscriptionTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'trim_video' => array(
 			'class' => 'Nvoos\\Core\\Tool\\TrimVideoTool',
