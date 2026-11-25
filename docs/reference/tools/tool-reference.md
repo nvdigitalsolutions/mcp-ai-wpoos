@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ UPDATED - November 2026 (v1.2.22)
-**Tool Count:** ~360 base tools + ~1,388 Pro tools = ~1,747 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; **zero registrations in v1.2.22** — `includes/class-wp-mcp-ai-tool-registry.php` has no diff. The window's only new tool is `wifi_health_check`, registered by the standalone `addons/nvoos-wifi` through the `wp_mcp_ai_default_tools` filter: it is addon-registered and described, never counted in the base/Pro totals — the algorave/embedded/graphify precedent. The Laravel runtime's `/ops/models` catalogue, routing export and token-usage rollup are runtime surfaces, not tools.)
-**Last Updated:** November 19, 2026 (v1.2.22 — zero plugin-registry registrations in-window; ~360 base + ~1,388 Pro, ~1,747 total unchanged)
+**Status:** ✅ UPDATED - November 2026 (v1.2.23)
+**Tool Count:** ~360 base tools + ~1,388 Pro tools = ~1,747 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; **zero registrations in v1.2.23** — `includes/class-wp-mcp-ai-tool-registry.php` has no diff. The window adds **62 `lib/core` Tool classes** (59 concrete + 3 abstract) for the image pipeline, video, document and completion-seam families plus assistant portability and discovery: they are served by the package's own registry and are **described, not counted** (dual-layer rule). The media worker's image/document/video **routes** are worker surfaces, not plugin tools, and `publish_to_social` is human-gated).
+**Last Updated:** November 25, 2026 (v1.2.23 — zero plugin-registry registrations in-window; ~360 base + ~1,388 Pro, ~1,747 total unchanged)
 
 ## Data contracts (ID handoffs between tools)
 
