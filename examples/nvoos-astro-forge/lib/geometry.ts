@@ -348,9 +348,26 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 									child.getBoundingClientRect().width > best.getBoundingClientRect().width ? child : best
 								);
 								const box = widest.getBoundingClientRect();
-								return box.width > 0 && box.width < bandRect.width - 2
-									? { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ) }
-									: undefined;
+								if ( box.width > 0 && box.width < bandRect.width - 2 ) {
+									return { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ) };
+								}
+								// A FULL-BLEED stage is a WRAPPER, not the content box: Elementor's
+								// `e-con-boxed` spans the band and insets with padding, and its single
+								// `e-con-inner` is the container the copy sits in. The probe used to
+								// give up here, so an `e-con` hero recorded no content box at all and
+								// rebuilt flush to the viewport edge (eca.directory's about-us hero,
+								// 2026-11-25). Descend only through a single-stage wrapper — anything
+								// else is ambiguous and stays unreported.
+								const stage = [ ...widest.children ].filter(
+									( child ) =>
+										! /^(style|script|link|template|noscript)$/i.test( child.tagName ) &&
+										getComputedStyle( child ).display !== 'none'
+								);
+								if ( stage.length !== 1 ) {
+									return undefined;
+								}
+								node = widest;
+								continue;
 							}
 							const box = next[ 0 ].getBoundingClientRect();
 							if ( box.height < 8 ) {

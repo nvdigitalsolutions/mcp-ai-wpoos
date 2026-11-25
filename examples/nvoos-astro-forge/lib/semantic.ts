@@ -1555,7 +1555,22 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		{ kind: 'testimonial', reason: items.length > 0 && items.some( ( item ) => Boolean( item.body ) ) && ! slots.title && ! items.some( ( item ) => Boolean( item.title ) ) },
 		{ kind: 'icon-list', reason: items.length >= 2 && items.every( ( item ) => Boolean( item.icon ) ) },
 		{ kind: 'feature-grid', reason: items.length >= 2 },
-		{ kind: 'cta', reason: Boolean( slots.title ) && links.length > 0 && ! hasBody && media.length === 0 },
+		{
+			// A single item is the band's own copy (a lone icon-box carrying the
+			// heading and lede), not a card row. Requiring ZERO items kept every CTA
+			// with a supporting sentence out of the `cta` kind, and raw builder markup
+			// ships no vendor CSS (eca.directory's blog CTA, 2026-11-25).
+			//
+			// A LEADING band that also states copy is the page's hero, which keeps the
+			// h1 and its media; a leading title + button with no copy is still a CTA.
+			kind: 'cta',
+			reason:
+				Boolean( slots.title ) &&
+				links.length > 0 &&
+				items.length <= 1 &&
+				media.length === 0 &&
+				( index > 0 || ! hasBody ),
+		},
 		{ kind: 'hero', reason: Boolean( slots.title ) && ( hasBody || media.length > 0 ) && ( index === 0 || ( links.length > 0 && media.length > 0 ) ) },
 		{ kind: 'text', reason: true },
 	];
