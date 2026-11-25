@@ -2893,3 +2893,132 @@ A data cell reading `=1+1` is written as text and carries no formula; `D2` with
 `SUM(A2:B2)` in the formula map is a live formula after a round-trip; `not-a-ref`
 is a `400`; and `freeze_header` with `auto_filter` over two columns produces
 `views[0].state === 'frozen'` and `A1:B1`.
+
+## 164.37 — Controlled documents: the lifecycle, and what a signature can honestly say (2026-11-25)
+
+The last ten tools of `document-generation`, and the only slice that is a
+*record* system rather than a formatter. §164.35 established what the standards
+require; this is the implementation.
+
+### The lifecycle is a closed table
+
+ISO 9001 §7.5.2 requires review and approval "for suitability and adequacy", and
+§7.5.3 requires control of version, availability and the prevention of unintended
+use. Together those describe a state machine, and it lives in one place
+(`DocumentLifecycle`) rather than being re-derived in ten tools:
+
+```
+draft ──▶ review ──▶ approved ──▶ released ──▶ superseded ──▶ obsolete
+  ▲          │                                        │
+  └──────────┘  (rejected)                            ▼
+                                                    obsolete
+```
+
+Three decisions are load-bearing:
+
+- **Approval is not release.** Only a *released* document is current. Separating
+  them is what lets an organisation approve a revision now and issue it later — or
+  not at all — without the register claiming it is in use.
+- **Rejection is a transition, not a deletion.** `review → draft` records the
+  reason, so a rejected revision has a history rather than a gap.
+- **`obsolete` is terminal.** A document that must return is a new revision, not a
+  reopened record. Reopening one would let a withdrawn document re-enter use, which
+  is precisely what §7.5.3 forbids — so `obsolete → released` is refused by the
+  table, and the test suite asserts it.
+
+An unlisted transition is refused with the states that *would* have worked, which
+is a bad request (`validation_failed`), not a system error.
+
+### The audit trail is append-only, and the contract has no way to change that
+
+21 CFR Part 11 §11.10(e) requires a computer-generated, time-stamped trail, and
+that changes "shall not obscure previously recorded information". So the trail is
+JSONL, one file per document under the audit root, appended with
+`FILE_APPEND | LOCK_EX` — and `ControlledDocumentInterface` offers no update and
+no delete. A trail you can edit proves nothing, so the operation does not exist
+rather than being discouraged.
+
+Every entry carries `event`, `at` (ISO 8601 UTC), `actor`, `from`, `to` and the
+reason or meaning as applicable. The registration test asserts the stronger
+property: after a further transition, **every earlier entry is byte-identical**.
+
+### What a signature can honestly say
+
+§11.50 requires a signature to carry the signer, the date and time, and **the
+meaning** — so `qms_sign_document` takes a meaning from a closed list (authored,
+reviewed, approved, released, witnessed, withdrawn) and a signature never changes
+the lifecycle state. Evidence attached to a state, not a lever on it.
+
+§11.100/§11.200 require two distinct components — identification plus a re-entered
+credential — and this runtime has no re-authentication ceremony. So the record is
+an **attributed action**, the payload says `attributed: true`, and nothing in the
+schema describes it as a Part 11 e-signature. §164.35 recorded the reasoning; this
+is where it is enforced.
+
+### Periodic review is a date, not a state
+
+§7.5.2 expects review at planned intervals. A pending review is not a lifecycle
+state — a released document stays current while its review is outstanding — so
+`qms_schedule_review` writes `qms_review_due` and leaves the state alone. Release
+*clears* the date, because the review just happened as part of approval and a
+stale date would misreport the next obligation. An unparseable date is refused:
+it would make "is this overdue?" unanswerable, which is the field's only purpose.
+
+### `qms_status`, not `status`
+
+`archive_documents` (§164.36) already writes `status: archived`, meaning "withdrawn
+from the content corpus". A controlled record's lifecycle is a different question —
+an *approved* document can be archived as content and still be an approved record —
+so sharing one key would let the two subsystems overwrite each other's meaning.
+This one is namespaced.
+
+### Composition, not duplication
+
+`FilesystemControlledDocuments` takes a `DocsCorpusInterface` rather than
+re-implementing read/write/paths. The corpus owns sanitisation, containment and the
+frontmatter reader, so the ten tools inherit §164.34's hardened guard instead of
+restating it. One primitive was added to that contract — `setFields()`, which merges
+frontmatter fields and leaves the body alone — because every lifecycle write needs
+it and `archive()` was already doing it privately.
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Qms/DocumentLifecycle.php` | new; the closed state machine |
+| `lib/core/src/Domain/Contract/ControlledDocumentInterface.php` | new; the register |
+| `lib/core/src/Domain/Contract/DocsCorpusInterface.php` | `setFields()` added |
+| `lib/laravel-adapter/src/Adapter/FilesystemDocsCorpus.php` | implements `setFields()` |
+| `lib/laravel-adapter/src/Adapter/FilesystemControlledDocuments.php` | new; lifecycle + JSONL trail |
+| `lib/core/src/Tool/AbstractQmsTransitionTool.php` | new; the five transitions share it |
+| `lib/core/src/Tool/Qms*.php` (10) | new; the ten tools |
+| `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` | singleton binding on `oos.qms.audit_root` |
+| `docker/laravel/app-skeleton/config/oos.php` | `qms.audit_root` |
+| `lib/core/resources/tool-readiness.php` | ten rows |
+| `lib/laravel-adapter/tests/FilesystemControlledDocumentsTest.php` | new; 24 tests |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+An empty `oos.qms.audit_root` — or an empty corpus root — disables all ten with the
+named `no_qms_register` error rather than reporting an empty register.
+
+### Measurement
+
+`lib/core` **2,702 / 18,322** (was 2,682 / 18,222); adapter **435 / 2,108** (was
+411 / 2,051 — the register suite and the new binding); audit **307 / 307, servable
+288**; toolkit parity **85 of 854**; `document-generation` **30 of 38**.
+
+A draft cannot be released; `obsolete → released` is refused with the states that
+would have worked; a rejected revision returns to draft carrying its reason; the
+trail grows with earlier entries byte-identical; a signature records its meaning
+and leaves the state alone; releasing clears a stale review date; and a corpus file
+that was never created through the register is not listed as a controlled record.
+
+### What is left
+
+Eight `document-generation` tools, all of them service-dependent:
+`pro_unlimited_ocr` and `pro_batch_ocr` need the Unlimited OCR / DeepSeek-OCR
+services,`pro_document_ocr` can only partially port (tesseract is available, the
+hosted providers are not), and `generate_invoice_pdf`, `generate_invoice_batch`,
+`get_uninvoiced_orders`, `get_expired_documents` and `docgen_capture_style_memory`
+need order or document data this runtime does not have. None of them is a
+formatter; each is a service to stand up or a source to connect.

@@ -225,6 +225,51 @@ final class FilesystemDocsCorpus implements DocsCorpusInterface
     /**
      * {@inheritDoc}
      */
+    public function setFields(string $path, array $fields): array {
+        $this->assertActive();
+
+        $relative = $this->sanitize($path);
+        $absolute = $this->resolve($relative);
+
+        if ('' === $absolute || !\is_file($absolute)) {
+            throw new NotFoundException(\sprintf('No document at "%s".', $relative));
+        }
+
+        $raw = \file_get_contents($absolute);
+
+        if (false === $raw) {
+            throw new \RuntimeException(\sprintf('Could not read "%s".', $relative));
+        }
+
+        [$current, $body] = $this->split($raw);
+
+        foreach ($fields as $key => $value) {
+            $normalised = \strtolower((string) $key);
+
+            if (null === $value || '' === \trim((string) $value)) {
+                unset($current[$normalised]);
+                continue;
+            }
+
+            $current[$normalised] = (string) $value;
+        }
+
+        $written = $this->frontmatterFrom($current).$body;
+
+        if (false === \file_put_contents($absolute, $written)) {
+            throw new \RuntimeException(\sprintf('Could not write "%s".', $relative));
+        }
+
+        return array(
+            'path' => $relative,
+            'fields' => $current,
+            'title' => $current['title'] ?? $this->title($body, $relative),
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function archive(string $path, array $meta = array()): array {
         $this->assertActive();
 

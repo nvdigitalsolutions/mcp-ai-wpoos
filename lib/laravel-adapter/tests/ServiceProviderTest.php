@@ -20,6 +20,7 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\AudioTranscriptionInterface;
 use Nvoos\Core\Domain\Contract\ChunkedUploadInterface;
+use Nvoos\Core\Domain\Contract\ControlledDocumentInterface;
 use Nvoos\Core\Domain\Contract\DocsCorpusInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
@@ -50,6 +51,7 @@ final class ServiceProviderTest extends TestCase {
 			AudioTranscriptionInterface::class,
 			ChunkedUploadInterface::class,
 			DocsCorpusInterface::class,
+			ControlledDocumentInterface::class,
 		);
 
 		foreach ( $bindings as $binding ) {

@@ -38,7 +38,17 @@
             "ocr_pdf_text",
             "pro_excel_document",
             "pro_pdf_document",
-            "pro_word_document"
+            "pro_word_document",
+            "qms_approve_document",
+            "qms_create_controlled_document",
+            "qms_get_audit_trail",
+            "qms_list_controlled_documents",
+            "qms_mark_obsolete",
+            "qms_release_document",
+            "qms_schedule_review",
+            "qms_sign_document",
+            "qms_submit_for_review",
+            "qms_supersede_document"
         ],
         "eca-management": [
             "bulk_enroll_students",

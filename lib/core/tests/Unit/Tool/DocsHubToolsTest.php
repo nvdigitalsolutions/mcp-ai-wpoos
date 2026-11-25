@@ -342,6 +342,13 @@ final class DocsHubToolsTest extends TestCase
                 return true;
             }
 
+            public function setFields(string $path, array $fields): array
+            {
+                $this->calls[] = array('set_fields' => $path, 'fields' => $fields);
+
+                return array('path' => $path, 'fields' => array(), 'title' => 'A');
+            }
+
             public function archive(string $path, array $meta = array()): array
             {
                 $this->archived[] = array('path' => $path, 'meta' => $meta);
