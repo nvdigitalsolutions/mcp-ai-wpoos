@@ -955,29 +955,48 @@ Elementor forge cheaper, in three PRs.
 | #8244 | `SiteProfile.gateProbe` + a `verify` warning | A gated source analysed without credentials yields the holding page and a plausible, wrong design block, with no trace afterwards. |
 | #8244 | `BandGeometry.collapsed` + `data-section-collapsed` + a `diffGeometry` skip | A band the build deliberately renders shorter is a **decision**, not drift. eca's geometry fails went back from 8 to 5. |
 
-### Design note — the `structure` channel (not yet built)
+### Shipped — the `structure` channel
 
 `comparison` needed its own fact, its own detector, its own emitted field and its
-own renderer branch. So will the next structural widget. That is the wrong shape.
+own renderer branch. So will the next structural widget. That is the wrong shape,
+and it is now fixed:
 
-**Contract.** One `structure` map, keyed by section id, populated at analyze time
-from the RAW html, consumed by the renderer as a per-section list of
-`{ type, data }` entries. `comparison` becomes its first entry rather than its own
-pipeline; the rating, stats, timeline and tabs detectors join it.
-
-**Why one channel.** The build-time classifier runs on sanitised HTML and is
-blind to anything an icon carries (52 SVGs raw → 0 clean). Facts measured before
-sanitisation are the only general answer, and every one of them needs the same
-three things: a detector, a profile slot, an emission. Sharing the slot and the
-emission turns the third structural widget from a pipeline into a detector.
+- **one channel**: `ForgeSection.structure?: ForgeStructureEntry[]` — `{ type, data }`
+  per measured structure, emitted on the section entry as `SectionTheme.structure`;
+- **`comparison` is its first entry**, still written to `ForgeSection.comparison`
+  for one release (profiles in the wild carry it); the scaffold synthesises the
+  `structure` entry from it, so an un-regenerated project still renders;
+- **adding the next structure is a detector**, not a pipeline: call
+  `detect` → push `{ type, data }` → add one branch in the renderer.
 
 **Ordering rule (do not re-litigate).** A measured structure renders **in
 addition to** the classified kind, never instead of it — the band that carries a
 comparison matrix also carries three phase cards, and an override deletes them.
 `theme.logos` is the existing precedent.
 
-**Migration.** `ForgeSection.comparison` stays as the first key of `structure`
-for one release (profiles in the wild carry it), then the reader switches.
+**Query loops.** `SemanticSection.dynamicList` is now recorded, and the renderer
+drops a loop band only when the loop *was* the band — no title, no lede, nothing
+else to frame. A band with copy keeps it (eca's updates band is exactly that
+case), so the rule cannot delete a client's words.
+
+### Shipped — the vision STRUCTURE verdict (unwired)
+
+`lib/vision.ts` already ran a model for **pixel** comparison; it now also has the
+structural role:
+
+- `STRUCTURE_PROMPT` + `STRUCTURE_VOCABULARY` — a **closed** list, because the
+  model's job is to pick a label the renderer already has a component for;
+- `parseStructureVerdict()` — tolerates a fenced answer, refuses an invented
+  label (`carousel-grid` → `unknown`), clamps confidence, and treats prose as
+  `unknown` rather than guessing;
+- `mergeStructureVerdicts()` — a deterministic detector always wins; vision may
+  only fill a gap, above a confidence floor, and the entry carries
+  `source: 'vision'` + the model id so a wrong label is attributable.
+
+**Not wired to the CLI yet**, deliberately: it needs a model endpoint and a
+per-band screenshot pass, and a half-wired vision path that silently returns
+`unknown` is worse than none. The contract and its tests are in place so the
+wiring is a small change.
 
 ### Design note — `e-con` as a named concept (not yet built)
 
