@@ -74,6 +74,7 @@ import { auditFormBands, describeFormProblems } from '../lib/forms-gate.ts';
 import { describeHealth, fetchFormsHealth, sendFormProbe } from '../lib/forms-check.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { parseStructureCache, runStructurePass, serializeStructureCache, STRUCTURE_DEVICES } from '../lib/structure-pass.ts';
+import { analyzePageDesigns } from '../lib/page-design.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
@@ -4812,6 +4813,71 @@ program
 		await runColors( profileRef, options );
 	} );
 
+/**
+ * `forge page-design` — give every measured sub-page the design facts the
+ * homepage already has.
+ *
+ * The homepage runs two passes: the browser pass (geometry, band facts, region
+ * colours) and the design pass (`analyzeSections`). Sub-pages only got the
+ * first, so `pageBands[slug].sections` carried an id and a column list and the
+ * rebuild lost the band's surfaces, media and layout — eca.directory's about-us
+ * and contact-us (2026-11-25).
+ */
+async function runPageDesign( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const pages = Object.keys( profile.pageBands ?? {} );
+	if ( pages.length === 0 ) {
+		console.error( 'This profile has no pageBands \u2014 run `analyze <url> --geometry --pages` first.' );
+		process.exitCode = 1;
+		return;
+	}
+	const slugs = options.slugs
+		? String( options.slugs )
+				.split( ',' )
+				.map( ( slug ) => slug.trim() )
+				.filter( Boolean )
+		: undefined;
+	const gate = await openGate( profile, {} );
+	console.log( `\u2713 Page design \u2014 ${ profile.url } (gate ${ gate.probe.state })` );
+	if ( gate.blocked ) {
+		console.error( 'The source is still gated \u2014 refusing to measure the holding page.' );
+		gate.close();
+		process.exitCode = 2;
+		return;
+	}
+	try {
+		const { reports } = await analyzePageDesigns( profile, {
+			slugs,
+			fetchImpl: gate.fetch,
+			onPage: ( report ) => {
+				if ( report.error ) {
+					console.log( `  ! ${ report.slug.padEnd( 18 ) } ${ report.error }` );
+					return;
+				}
+				const added = report.added.length > 0 ? ` \u00b7 added ${ report.added.join( ', ' ) }` : '';
+				const unnamed = report.unnamed.length > 0 ? ` \u00b7 unnamed ${ report.unnamed.join( ', ' ) }` : '';
+				console.log(
+					`  \u2022 ${ report.slug.padEnd( 18 ) } ${ report.bands } band(s) \u00b7 ${ report.matched } matched${ added }${ unnamed }`
+				);
+			},
+		} );
+		if ( options.json ) {
+			console.log( JSON.stringify( reports, null, 2 ) );
+		}
+		// DELIBERATELY NO --write YET. The extraction names a band's background
+		// IMAGE but not its box (`background-size`/`repeat`/`position`), and the
+		// rebuild has no band default for those. Storing the fact alone painted
+		// eca.directory's dot pattern at NATIVE SCALE over the hero and stats bands
+		// and made white text unreadable (2026-11-25). The write path returns once
+		// the box facts ride the same channel.
+		console.log(
+			'\n(diagnostic only \u2014 the write path is blocked on background box facts: size/repeat/position)'
+		);
+	} finally {
+		gate.close();
+	}
+}
+
 program
 	.command( 'structure' )
 	.description(
@@ -4827,6 +4893,18 @@ program
 	.option( '--json', 'print the machine-readable report' )
 	.action( async ( profileRef, options ) => {
 		await runStructure( profileRef, options );
+	} );
+
+program
+	.command( 'page-design' )
+	.description(
+		'give measured sub-pages the design facts the homepage already has (surfaces, media, layout)'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name (must carry pageBands)' )
+	.option( '--slugs <list>', 'only these page slugs, comma-separated' )
+	.option( '--json', 'print the machine-readable report' )
+	.action( async ( profileRef, options ) => {
+		await runPageDesign( profileRef, options );
 	} );
 
 program
