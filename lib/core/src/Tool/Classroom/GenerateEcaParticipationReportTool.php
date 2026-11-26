@@ -323,7 +323,7 @@ class GenerateEcaParticipationReportTool extends AbstractTool
                 'enrolled'        => \count(EcaRow::enrollments($eca)),
                 'capacity'        => (int) ($eca->meta['_eca_max_students'] ?? 0),
                 'records'         => $stats['records'],
-       
+
                 'attendance_rate' => $stats['attendance_rate'],
             );
         }
