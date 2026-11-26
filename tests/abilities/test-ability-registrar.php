@@ -250,7 +250,7 @@ class WP_MCP_AI_Ability_Registrar_Test extends WP_UnitTestCase {
 	 * This is the documented kill switch for the change that stops core REST
 	 * requests from enumerating the entire tool registry.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 * @return void
 	 */
 	public function test_register_all_respects_kill_switch_filter() {
@@ -288,7 +288,7 @@ class WP_MCP_AI_Ability_Registrar_Test extends WP_UnitTestCase {
 	 * namespaces, and both namespaces must match with or without leading and
 	 * trailing slashes in the raw query var.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 * @return void
 	 */
 	public function test_current_rest_route_is_normalised() {

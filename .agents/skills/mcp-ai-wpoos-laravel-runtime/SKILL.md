@@ -1232,3 +1232,14 @@ gate lives in `SettingsService::write()` rather than middleware, the `nvoos_file
 visibility/owner/slug model with `GET /api/v1/files/{id}`, the skill manager's write
 rules, per-tool quotas, the estate-overlay profession catalogue, magic-link/Auth0
 identity, and the media worker's two-step video contract with path-segment validation.
+
+## 21. Production-toolkit parity (Proposal 164, v1.2.24)
+
+Moved to `reference/laravel-toolkit-parity-164.md` — how a Pro toolkit is ported to
+this runtime rather than to Content Graph: the honest-serving rules, the document
+family's tiered renderer and declared fidelity class, the QMS lifecycle, the
+docs-corpus/OKF/file-registry seams, the audio/video contracts, the **tus** upload
+session model, and the toolkit-parity register that separates a **declined** slug
+(not ported, not intended) from a **deferred** one (blocked on a named
+prerequisite). Read it before adding a tool to `lib/core` or claiming a toolkit is
+"ported"; the register — not the tracker prose — is the authority.

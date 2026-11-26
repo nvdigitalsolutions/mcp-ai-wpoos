@@ -1,7 +1,7 @@
 # NV oOS Coding Conventions
 
 > **GSD Context File** — Load this at the start of every AI development session.
-> Keep this file under 500 lines. Last reviewed: August 2026.
+> Keep this file under 500 lines. Last reviewed: November 2026 (v1.2.24).
 
 ---
 

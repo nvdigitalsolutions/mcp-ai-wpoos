@@ -166,7 +166,7 @@ class WP_MCP_AI_Ability_Registrar {
 	 * the decision can be overridden with the
 	 * `wp_mcp_ai_register_tool_abilities` filter.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @return bool True when abilities should be registered.
 	 */
@@ -191,7 +191,7 @@ class WP_MCP_AI_Ability_Registrar {
 		 * Runs in every context, so returning false is a complete kill switch
 		 * for the tool-to-ability bridge.
 		 *
-		 * @since 1.2.23
+		 * @since 1.2.24
 		 *
 		 * @param bool   $register Whether to register abilities.
 		 * @param string $route    Normalised REST route, or an empty string outside REST.
@@ -205,7 +205,7 @@ class WP_MCP_AI_Ability_Registrar {
 	 * Reads `WP::$query_vars['rest_route']`, which core populates before
 	 * `rest_api_init` fires, so it is available from `wp_abilities_api_init`.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @return string Route with a leading and trailing slash, or an empty string.
 	 */

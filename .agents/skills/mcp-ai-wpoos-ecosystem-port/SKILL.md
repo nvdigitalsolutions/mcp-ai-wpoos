@@ -13,6 +13,22 @@ then self-merges after the two `PHPUnit Pro Addon` CI checks pass. Distilled
 from the Wave F2 toolkit clusters (CRM through comic-creation, ending at
 #6508) and the Wave F3 RF-DETR cluster (#6825, sub-cluster 1 complete).
 
+## Not this loop: Pro → Laravel toolkit parity (Proposal 164)
+
+The v1.2.24 window ports Pro toolkits to the **Laravel runtime** (`lib/core` +
+`lib/laravel-adapter`), not to Content Graph. Those PRs are not byte-identity
+copies: there is no port-note header, no text-domain swap, and no
+`NVOOS_CONTENT_GRAPH_PRO_PATH`. A capability is re-expressed against a `lib/core`
+contract, served from the package registry, and tracked in
+`lib/core/resources/toolkit-parity-baseline.json` (served set) and
+`toolkit-parity-decisions.json` (**declined** = not intended and subtracted;
+**deferred** = blocked on a named prerequisite and still remaining).
+`bin/toolkit-parity.php` fails only when a served slug disappears. Before
+editing a `lib/core/src/Tool/` class or claiming a toolkit is "ported", read
+`mcp-ai-wpoos-laravel-runtime/reference/laravel-toolkit-parity-164.md`.
+The two loops meet only at the source: fix a defect in the base Pro file first,
+then move it into each destination track.
+
 ## Canonical references (read before starting a wave)
 
 - **Plan**: `docs/project/plans/base-pro-ecosystem-port-plan.md` (wave slicing,
