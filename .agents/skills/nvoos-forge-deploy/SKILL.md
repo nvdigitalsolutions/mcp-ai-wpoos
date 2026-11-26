@@ -615,6 +615,33 @@ flood, the token/provenance checks stop a single crafted request.
     (MalCare here) returning an HTML 403 to the app's egress appears as
     `basic=403:-`; whitelist the app server IP or exclude `/wp-json/*`.
 
+22. **A slow forged site is almost always the CMS bootstrap — and two commands
+    prove it.** ECA measured 3-4 s per REST call while Redis showed 99% hits,
+    OPcache was On, Cloudflare added 60 ms and MySQL logged no slow queries.
+    Attribution came from stock WP-CLI, no profiling package needed:
+
+    ```sh
+    time wp eval 'echo 1;'                    # 4.23 s
+    time wp --skip-plugins eval 'echo 1;'     # 0.57 s  -> the plugins
+    time wp --skip-plugins=woocommerce eval 'echo 1;'   # 2.68 s -> 1.55 s alone
+    ```
+
+    Two traps cost real time:
+    - `curl http://127.0.0.1/wp-json/` answers 301/404 in **0.5 ms** because the
+      Host header matches no vhost — it looks blazing fast and means nothing.
+      Always send `-H "Host: <public host>"` and hit the PHP port directly
+      (8080 on Cloudways) to bypass Varnish.
+    - `wp package install` fails against a root-owned `~/.wp-cli`; either set
+      `WP_CLI_PACKAGES_DIR=/tmp/wp-cli-pkgs` or skip it — `--skip-plugins`
+      answers the same question.
+
+    Redis needs measuring, not guessing: `wp cache type`,
+    `ls wp-content/object-cache.php`, and `redis-cli info stats` for the hit
+    rate. And do **not** "optimise" the collection fetch by dropping `_embed`:
+    it is the only way to get author bylines once `/wp/v2/users` is
+    enumeration-blocked (`rest_user_enum_blocked`), and it measured no faster
+    (4.1 s vs 3.7 s).
+
 ## Mirror-push mechanics (verified 2026-11-24)
 
 - **`forge deploy --mirror-repo` is self-sufficient.** It emits

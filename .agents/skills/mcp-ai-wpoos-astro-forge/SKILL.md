@@ -385,6 +385,12 @@ Doors, the key-provisioning rule, the `allowedDomains` + `x-forwarded-host` fix
 and why the bridge needs no new endpoint:
 [`reference/manage-sign-in.md`](reference/manage-sign-in.md).
 
+**`scripts/doctor.mjs` ships with every managed deploy.** Run it on the server
+with `DOCTOR_EMAIL` / `DOCTOR_PASSWORD` set: it probes the CMS REST index, the
+gate, the contract and the local health route, prints a PASS/FAIL line per layer
+with timings, and exits non-zero. From a laptop it cannot see a WAF block on the
+app's egress, which is exactly the failure it exists to catch.
+
 ## Shared-mirror deploy (branch per site, 2026-11-06)
 
 Moved to [`reference/shared-mirror-deploy.md`](reference/shared-mirror-deploy.md)
