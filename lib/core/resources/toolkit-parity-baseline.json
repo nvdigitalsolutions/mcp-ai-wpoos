@@ -110,7 +110,10 @@
         "math": [],
         "media": [],
         "multilingual": [],
-        "okf": [],
+        "okf": [
+            "okf_enrich_site_content",
+            "route_knowledge_query"
+        ],
         "orchestration": [
             "verify_information"
         ],

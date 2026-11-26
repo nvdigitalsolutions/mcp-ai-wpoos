@@ -4290,6 +4290,104 @@ recorded deferrals, which is the arithmetic the register is designed to make
 visible: a deferred slug stays counted until someone builds the prerequisite, and
 these three are now documented rather than merely unexamined.
 
+## 164.50 OKF gains a locator, an enrichment writer and a router
+
+**On the numbering:** §164.49 (`toolkit_cpt`) merged ahead of this one and
+§164.51 (`capture`/`vault`/`remote-connections`) after it; the three are
+independent, so this section keeps the number it was written with and sits
+between them.
+
+### A stale finding, corrected
+
+An earlier note on this programme said "OKF has no writer". That is no longer true
+and had not been for a while: `OkfWriter` exists with `writeConcept()`,
+`deleteConcept()`, `appendLog()` and `regenerateIndex()`, and `OkfReader` parses
+what it writes. What was actually missing was smaller and structural: **nothing
+maps a bundle *name* to a bundle *root*.** On WordPress that mapping belongs to
+`WP_MCP_AI_OKF_Bundle_Manager`; here every caller would have had to know that a
+bundle is a directory under some base.
+
+So the slice is three pieces and a binding:
+
+| piece | why |
+|---|---|
+| `OkfBundleLocatorInterface` + `FilesystemBundleLocator` | the name → root seam, with bundle names validated as one path segment |
+| `OkfEnrichSiteContentTool` | crawl published records, write one concept each |
+| `HybridKnowledgeRouter` + `RouteKnowledgeQueryTool` | decide which store answers a knowledge question first |
+
+### Creating a bundle is explicit
+
+`rootFor( $bundle, $create )` creates a directory only when the write path asks.
+A read path that silently created an empty bundle would answer "no matches" for a
+typo — the same failure the Paper Store export avoids — so a missing bundle is
+`null` on the read path and a directory on the write path.
+
+### Enrichment: identity is the idempotence
+
+A concept's id is `{type}/{slug}`, so re-running the tool overwrites the same file.
+That is the whole of the reference's idempotence claim; there is no diff and no
+merge, and a changed description simply wins.
+
+**The one thing this host cannot supply is a URL.** WordPress fills `resource` and
+`sources[].resource` from `get_permalink()`. A `ContentItem` here carries a slug
+but no public URL, and a guessed permalink shape would put a wrong link in an
+authoritative document. So the caller may pass a `resource_template`
+(`https://example.com/{type}/{slug}`, with `{type}`, `{slug}` and `{id}`
+substituted), and when it does not, both the `resource` key and the `# Related`
+section are **omitted** and the summary reports `resource_links: false`. Related
+links are omitted with it rather than written pointing at nothing.
+
+Descriptions are deterministic — the excerpt, or the first 40 words of the body.
+The WordPress tool exposes a filter that replaces it with a model summary; that is
+a deliberate absence here rather than a missing feature, because one model call per
+record is a different cost profile and a caller who wants it can summarise first.
+
+Taxonomy terms follow the reference's shape (`terms/{taxonomy}/{slug}`, `type:
+Term`), enumerated through `SchemaStoreInterface::listTaxonomies()` and
+`ContentStoreInterface::listTaxonomyTerms()`.
+
+### Routing: a keyword table, not a model
+
+`HybridKnowledgeRouter::classify()` is the WordPress signal table ported
+literally: three lists of substrings, matched against the lowercased query, then an
+ordered plan. Routing happens on every knowledge turn, so spending a completion to
+decide where to spend a completion is the wrong trade; a caller that wants a
+smarter decision can implement its own router.
+
+The order matters and is not alphabetical: matched sources come first in
+`okf, paper, vector` precedence, then the unmatched ones fill in as
+`okf, vector, paper`. When nothing matches, the plan is still produced — curated
+knowledge first, semantic second, structured last — and `signals` is empty, which
+says "nothing fired" rather than hiding it.
+
+**A missing bundle is a note, not a failure.** If the plan says OKF and the bundle
+does not exist, the routing decision the caller asked for is still correct. The
+tool returns the plan intact with the empty `results` explained, instead of
+discarding the useful half.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **2,980 / 19,331** (15 tests, plus 4 manifest data sets) |
+| adapter PHPUnit | **448 / 2,148**, OK — both new rows construct |
+| tool readiness audit | **322 / 322**, servable **303** (+2), no violations |
+| toolkit parity | **101 of 854**; `okf` **2 of 2**, 0 remaining |
+| licence boundary / phpcs | intact / clean |
+
+Re-measured on the rebased tree, after §164.49 and §164.51 merged: the parity
+figure now includes `toolkit_cpt`, and the suite counts include its rows and
+tests. The `(+2)` and the 15 tests are this slice's own delta; §164.51 changes
+no runtime code, so it moves none of these gates.
+
+### What is still queued from the same recommendation
+
+`capture` (2 slugs) needs a browser contract — the media worker already exposes
+`/api/browser`, but nothing in core can reach it. `vault` (2) needs an encrypted
+store; there is no vault backend of any kind here. `remote-connections` (2) is the
+largest of the four and has a partial analogue already (`query_remote_site` plus
+`RemoteSiteStore`), so it needs a coverage comparison before a port or a decline.
+
 ## 164.51 The last three near-closed toolkits, and where they actually stop
 
 **On the numbering:** §164.49 (`toolkit_cpt`) merged ahead of this one, and §164.50

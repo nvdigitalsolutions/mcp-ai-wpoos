@@ -1865,6 +1865,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/TabularAndOcrAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'okf_enrich_site_content' => array(
+			'class' => 'Nvoos\\Core\\Tool\\OkfEnrichSiteContentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Writes one OKF concept per published content item through OkfWriter, keyed by {type}/{slug} so a re-run overwrites rather than duplicates. WordPress fills the `resource` link from get_permalink(); a ContentItem here has a slug but no public URL, so the caller passes a `resource_template` and the link is omitted — and reported — when it does not. Descriptions are deterministic (excerpt, or the first 40 words) rather than a model summary, and taxonomy terms are written under terms/{taxonomy}/{slug} when include_terms is set.',
+			'evidence' => 'lib/core/tests/Unit/Tool/OkfToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'open_openai_logs' => array(
 			'class' => 'Nvoos\\Core\\Tool\\OpenOpenAILogsTool',
 			'readiness' => 'ready',
@@ -2185,6 +2194,15 @@ return array(
 			'reason' => 'Nvoos\\Laravel\\Adapter\\MediaWorkerImageProcessing implements ImageProcessingInterface over the media-worker `/api/image/transform` endpoint, bound in NvoosServiceProvider; needs `oos.media_worker.url` at runtime, and the worker is faked in the evidence test (Proposal 149 section 160).',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProcessingAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'route_knowledge_query' => array(
+			'class' => 'Nvoos\\Core\\Tool\\RouteKnowledgeQueryTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Classifies a query into an ordered plan across OKF, Paper Store and the vector store using HybridKnowledgeRouter, a deterministic keyword table rather than a model call, then runs the OKF lookup when curated knowledge is primary. The plan reports the patterns that fired so a surprising route can be traced. A missing bundle does not invalidate the plan: the empty result set is explained in a note instead of failing the call.',
+			'evidence' => 'lib/core/tests/Unit/Tool/OkfToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'run_crawl4ai_job' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RunCrawl4AiJobTool',

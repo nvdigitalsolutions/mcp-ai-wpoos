@@ -26,6 +26,7 @@ use Nvoos\Core\Application\Tool\NecessityGuard;
 use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Infrastructure\Okf\FilesystemBundleLocator;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 use Nvoos\Core\Domain\Contract\AgentOrchestrationInterface;
@@ -66,6 +67,7 @@ use Nvoos\Core\Domain\Contract\PdfPageRendererInterface;
 use Nvoos\Core\Domain\Contract\PdfTextExtractorInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
+use Nvoos\Core\Domain\Contract\OkfBundleLocatorInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\ProfessionOverlayInterface;
@@ -463,6 +465,20 @@ class NvoosServiceProvider extends ServiceProvider {
 			}
 
 			return new JsonPaperStore( $root );
+		} );
+
+		// OKF bundles — one directory per bundle under a configured base (Proposal 164
+		// section 164.50). The locator maps a bundle name to a root; the engine's
+		// reader and writer take it from there, so this binding is only about where
+		// the bundles live.
+		$this->app->singleton( OkfBundleLocatorInterface::class, function ( $app ) {
+			$base = (string) ( $app['config']->get( 'oos.okf_root' ) ?? '' );
+
+			if ( '' === trim( $base ) ) {
+				$base = $app->storagePath( 'okf' );
+			}
+
+			return new FilesystemBundleLocator( $base );
 		} );
 
 		// Durable job status rows (driver-agnostic).
