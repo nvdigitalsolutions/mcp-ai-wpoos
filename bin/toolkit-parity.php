@@ -15,17 +15,29 @@
  * tool badly to move a number. §164.4.8 already forbids the shape that would
  * produce; this gate exists to stop the opposite, silent loss.
  *
- * ## Where the two sides come from
+ * ## Where the three sides come from
  *
  * - **Declared**: `get_slug()` in `addons/pro/includes/tools/<toolkit>/*.php`,
  *   extracted statically (the classes cannot be loaded outside WordPress).
  * - **Served**: `lib/core/resources/tool-readiness.php`, counting only the
  *   servable readiness classes (`ready`, `pure`, `delegated`) — the same
  *   authority `bin/audit-tool-readiness.php` uses.
+ * - **Decided**: `lib/core/resources/toolkit-parity-decisions.json`, the slugs
+ *   this programme has chosen not to port. `declined` is subtracted from
+ *   `remaining` because it is not work; `deferred` stays because it is work
+ *   once a named prerequisite lands.
  *
  * A toolkit with no manifest still appears here if it has tools: the console
  * axis and the tool axis are separate, and `site-creator-toolkit` is the case
  * that is missing on both.
+ *
+ * ## Read `remaining`, not `wp − ported`
+ *
+ * Without the register the only way to shrink this count was to port a tool,
+ * so "not built yet" and "will never be built" read identically. A register is
+ * only worth having if it is checked, so `--check` also fails when a decision
+ * is inconsistent with the tree: an unknown decision word, a missing reason, a
+ * slug no toolkit declares, or a slug recorded as not-ported that is served.
  *
  * ## Usage
  *
@@ -41,7 +53,14 @@
 
 declare(strict_types=1);
 
+use Nvoos\Core\Application\Tool\ToolkitParityDecisions;
+
 $root = dirname(__DIR__);
+
+// The register has no dependencies of its own, so it is required directly
+// rather than through an autoloader this script does not otherwise need
+// (`lib/core/vendor` is a dev dependency and absent in CI's checkout).
+require_once $root . '/lib/core/src/Application/Tool/ToolkitParityDecisions.php';
 
 /**
  * Read one option that takes a value, e.g. `--baseline=path`.
@@ -119,13 +138,22 @@ function declared_slugs(string $file): array
 /**
  * Measure every toolkit directory.
  *
+ * A slug is counted once, in this order: served (the manifest decides), then
+ * declined (never to be ported), then deferred (blocked). `remaining` is what
+ * is left over, and it is the column to read.
+ *
  * @param array<string, bool> $servable
- * @return array{toolkits: array<string, array{wp: int, ported: int, slugs: list<string>}>, unreadable: list<string>}
+ * @return array{
+ *     toolkits: array<string, array{wp: int, ported: int, declined: int, deferred: int, remaining: int, slugs: list<string>, declined_slugs: list<string>, deferred_slugs: list<string>}>,
+ *     declared: array<string, bool>,
+ *     unreadable: list<string>
+ * }
  */
-function measure(string $toolkitRoot, array $servable): array
+function measure(string $toolkitRoot, array $servable, ToolkitParityDecisions $decisions): array
 {
-	$toolkits   = array();
-	$unreadable = array();
+	$toolkits    = array();
+	$unreadable  = array();
+	$declaredAll = array();
 
 	foreach (glob($toolkitRoot.'/*', GLOB_ONLYDIR) ?: array() as $directory) {
 		$toolkit = basename($directory);
@@ -151,18 +179,43 @@ function measure(string $toolkitRoot, array $servable): array
 		$all = array_keys($slugs);
 		sort($all);
 
-		$ported = array_values(array_filter($all, static fn (string $slug): bool => isset($servable[$slug])));
+		$ported   = array();
+		$declined = array();
+		$deferred = array();
+
+		foreach ($all as $slug) {
+			$declaredAll[$slug] = true;
+
+			if (isset($servable[$slug])) {
+				$ported[] = $slug;
+				continue;
+			}
+
+			if ($decisions->isDeclined($slug)) {
+				$declined[] = $slug;
+				continue;
+			}
+
+			if ($decisions->isDeferred($slug)) {
+				$deferred[] = $slug;
+			}
+		}
 
 		$toolkits[$toolkit] = array(
-			'wp'     => count($all),
-			'ported' => count($ported),
-			'slugs'  => $ported,
+			'wp'             => count($all),
+			'ported'         => count($ported),
+			'declined'       => count($declined),
+			'deferred'       => count($deferred),
+			'remaining'      => count($all) - count($ported) - count($declined) - count($deferred),
+			'slugs'          => $ported,
+			'declined_slugs' => $declined,
+			'deferred_slugs' => $deferred,
 		);
 	}
 
 	ksort($toolkits);
 
-	return array('toolkits' => $toolkits, 'unreadable' => $unreadable);
+	return array('toolkits' => $toolkits, 'declared' => $declaredAll, 'unreadable' => $unreadable);
 }
 
 /**
@@ -185,7 +238,7 @@ function load_baseline(string $path): array
  * Slugs the baseline records as served but that are served no longer.
  *
  * @param array<string, list<string>> $baseline
- * @param array<string, array{wp: int, ported: int, slugs: list<string>}> $measured
+ * @param array<string, array{slugs: list<string>}> $measured Only `slugs` is read.
  * @return list<string>
  */
 function regressions(array $baseline, array $measured): array
@@ -210,19 +263,31 @@ function regressions(array $baseline, array $measured): array
 	return $lost;
 }
 
-$servable = servable_slugs($root.'/lib/core/resources/tool-readiness.php');
-$result   = measure($root.'/addons/pro/includes/tools', $servable);
-$baseline = load_baseline(option_value('baseline') ?? $root.'/lib/core/resources/toolkit-parity-baseline.json');
+$decisions = new ToolkitParityDecisions();
+$servable  = servable_slugs($root.'/lib/core/resources/tool-readiness.php');
+$result    = measure($root.'/addons/pro/includes/tools', $servable, $decisions);
+$baseline  = load_baseline(option_value('baseline') ?? $root.'/lib/core/resources/toolkit-parity-baseline.json');
 
-$totalDeclared = array_sum(array_column($result['toolkits'], 'wp'));
-$totalPorted   = array_sum(array_column($result['toolkits'], 'ported'));
+$totalDeclared  = array_sum(array_column($result['toolkits'], 'wp'));
+$totalPorted    = array_sum(array_column($result['toolkits'], 'ported'));
+$totalDeclined  = array_sum(array_column($result['toolkits'], 'declined'));
+$totalDeferred  = array_sum(array_column($result['toolkits'], 'deferred'));
+$totalRemaining = array_sum(array_column($result['toolkits'], 'remaining'));
+
+$violations = $decisions->violations($result['declared'], $servable);
 
 if (in_array('--json', $_SERVER['argv'] ?? array(), true)) {
 	echo json_encode(
 		array(
 			'toolkits' => $result['toolkits'],
 			'unreadable' => $result['unreadable'],
-			'totals' => array('declared' => $totalDeclared, 'ported' => $totalPorted),
+			'totals' => array(
+				'declared'  => $totalDeclared,
+				'ported'    => $totalPorted,
+				'declined'  => $totalDeclined,
+				'deferred'  => $totalDeferred,
+				'remaining' => $totalRemaining,
+			),
 		),
 		JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
 	)."\n";
@@ -264,6 +329,16 @@ if ($check) {
 		exit(1);
 	}
 
+	if (array() !== $violations) {
+		fwrite(STDERR, "Toolkit parity decisions are inconsistent with the tree:\n");
+		foreach ($violations as $violation) {
+			fwrite(STDERR, "  - {$violation}\n");
+		}
+		fwrite(STDERR, "\nFix lib/core/resources/toolkit-parity-decisions.json. A register that lies is worse than none.\n");
+
+		exit(1);
+	}
+
 	if (array() !== $lost) {
 		fwrite(STDERR, "Toolkit parity regression — these were served and are not:\n");
 		foreach ($lost as $slug) {
@@ -274,21 +349,31 @@ if ($check) {
 		exit(1);
 	}
 
-	echo "Toolkit parity: no regression across ".count($result['toolkits'])." toolkits.\n";
+	echo "Toolkit parity: no regression across ".count($result['toolkits'])." toolkits ({$totalPorted} ported, {$totalDeclined} declined, {$totalDeferred} deferred, {$totalRemaining} remaining).\n";
 	exit(0);
 }
 
-echo "\n| Toolkit | WP tools | Ported |\n";
-echo "|---|---:|---:|\n";
+echo "\n| Toolkit | WP tools | Ported | Declined | Deferred | Remaining |\n";
+echo "|---|---:|---:|---:|---:|---:|\n";
 
 foreach ($result['toolkits'] as $toolkit => $row) {
-	printf("| `%s` | %d | %d |\n", $toolkit, $row['wp'], $row['ported']);
+	printf("| `%s` | %d | %d | %d | %d | %d |\n", $toolkit, $row['wp'], $row['ported'], $row['declined'], $row['deferred'], $row['remaining']);
 }
 
-printf("| **Total** | **%d** | **%d** |\n\n", $totalDeclared, $totalPorted);
+printf("| **Total** | **%d** | **%d** | **%d** | **%d** | **%d** |\n\n", $totalDeclared, $totalPorted, $totalDeclined, $totalDeferred, $totalRemaining);
+
+if (array() !== $violations) {
+	echo "Decision register inconsistencies (the `--check` gate fails on these):\n";
+
+	foreach ($violations as $violation) {
+		echo "  - {$violation}\n";
+	}
+
+	echo "\n";
+}
 
 if (array() !== $result['unreadable']) {
 	echo "Unreadable tool classes: ".implode(', ', $result['unreadable'])."\n\n";
 }
 
-echo "A ratio is not a gate: this table is measured, and `--check` fails only on regression.\n";
+echo "A ratio is not a gate: this table is measured and `--check` fails only on regression. `Remaining` subtracts what the register says will never be ported and keeps what is merely blocked.\n";
