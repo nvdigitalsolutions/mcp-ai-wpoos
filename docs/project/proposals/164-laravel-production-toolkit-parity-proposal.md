@@ -7920,3 +7920,136 @@ The calendar-booking queue is now empty: every declared tool is either served or
 registered against the prerequisite that would unblock it. The next work in this
 family is the prerequisites themselves — the Jet booking client and the OAuth
 credential and sync-state stores — not more slugs.
+
+## 164.90 `gtmetrix`, slice 0 — the measurement, before the first port
+
+The gtmetrix toolkit declares **23** tools and serves **0**. This is the
+measurement §8298 asks for before the first slug is built: what each tool calls,
+which contracts the runtime already has, and which defects the port must carry a
+fix for.
+
+### The API is live, v2.0, and matches the client
+
+Checked against the published documentation on 2026-11-27 (its changelog runs to
+2026-11-18, so the surface is maintained, not frozen):
+
+- **Base URL** `https://gtmetrix.com/api/2.0/`, HTTPS only, JSON:API v1.1
+  envelopes, errors as `{errors: [{status, code, title, detail}]}`.
+- **Auth** HTTP Basic with the API key as the username and a blank password
+  (`curl -u KEY:`). `401/E40100` is a bad key, `403/E40300` an unvalidated
+  e-mail, `403/E40301` a role that may not write.
+- **Credits** are spent per test: lighthouse `1`, legacy `0.7`, both `1.1`,
+  metrics-only `0.6`; retention of 6/12/24 months adds `0.4/0.9/1.8`; video adds
+  `0.9`. The local `Scheduler::COSTS` matches these exactly.
+- **Rate limits**: `240` requests per 60 s on Basic, `960` on PRO, reported in
+  `X-RateLimit-Limit/Remaining/Reset`; `429/E42901` blocks until the window
+  resets. Test concurrency is `2` on Basic and `8` on PRO (`429/E42900`).
+- **Retention**: tests are kept 24 hours; reports default to 1 month and can be
+  bought to 6/12/24. A caller that treats a report id as durable will be wrong.
+- **Completion is a redirect**: `GET /tests/{id}` returns `303 See Other` with
+  `Location: /reports/{id}` when the test finishes, and `Retry-After: 3` while it
+  runs.
+
+The client's endpoint map, error taxonomy and header handling already match that
+document, so the port is a re-expression rather than a redesign.
+
+### The tool → endpoint map
+
+| group | tools | endpoint |
+|---|---|---|
+| account and options | `gtmetrix_account_status`, `gtmetrix_list_locations`, `gtmetrix_list_browsers`, `gtmetrix_list_simulated_devices` | `GET /status`, `/locations`, `/browsers`, `/simulated-devices` |
+| tests | `gtmetrix_start_test`, `gtmetrix_get_test_status`, `gtmetrix_list_tests` | `POST /tests`, `GET /tests/{id}`, `GET /tests` |
+| reports | `gtmetrix_get_report`, `gtmetrix_get_lighthouse_audits`, `gtmetrix_get_resource_summary`, `gtmetrix_list_report_resources` | `GET /reports/{id}`, its `lighthouse.json` and `resource-summary` resources, and the report's `links` |
+| analysis | `gtmetrix_analyze_report`, `gtmetrix_compare_reports` | none of its own: fetch one or two reports, then the score engine |
+| code generation | `gtmetrix_generate_wpcode_snippet`, `gtmetrix_install_wpcode_fix` | none: the fix engine, then (for install) the WPCode repository |
+| pages | `gtmetrix_list_pages`, `gtmetrix_get_page`, `gtmetrix_retest_page` | `GET /pages`, `GET /pages/{id}`, `POST /pages/{id}/retest` |
+| monitoring and alerts | `gtmetrix_set_monitoring`, `gtmetrix_get_alert_conditions`, `gtmetrix_set_alert_conditions`, `gtmetrix_get_alert_events` | `POST /pages/{id}/performance_monitor`, `GET`/`POST`/`DELETE …/performance_alert_conditions`, `GET …/performance_alert_events` |
+| tags | `gtmetrix_manage_page_tags` | `GET`/`POST /page_tags`, `POST /page_tags/{id}`, `…/attach`, `…/detach` |
+
+### What the runtime already has
+
+| seam | contract | use |
+|---|---|---|
+| outbound HTTP | `HttpClientInterface` (+ `HttpResponse`) | every call; the WordPress client's `wp_remote_request` becomes this |
+| API key | `SettingsStoreInterface::getApiKey( 'gtmetrix' )` | replaces `wp_mcp_ai_get_api_key( 'gtmetrix_api_key' )` |
+| toolkit config | `SettingsStoreInterface` | credit budget, retention, allowlist, default location and browser, poll cadence |
+| credit counter | `CacheStoreInterface::getValue`/`increment` with a 24 h TTL | replaces the `gtmetrix_credits_used_today` transient |
+| default allowed host | `RuntimeIdentityInterface::identity()['site_url']` | replaces `home_url()` in the allowlist default |
+| snapshots (optional) | `ContentStoreInterface` | only if a later slice stores report snapshots; no tool requires it |
+
+Two pieces have no core seam and do not need one for the tool contract: the
+WP-Cron poller and the CPT snapshot store. `start_test` already returns `test_id`
+and a `next` instruction; a host schedules the follow-up as a workflow step.
+
+### Corrections the port must carry
+
+These were found by reading the client against the documentation, not by
+porting:
+
+1. **`request()` drops the JSON:API `meta` block.** It returns `$decoded['data']`
+   only, so `start_test()`'s wiring of `meta.credits_left` and
+   `meta.credits_used` can never fire: the reported `credits_left` is always
+   `null` and `credits_used` is the local estimate. The API does return both.
+2. **`get_test_status` cannot see a completed test.** Completion is `303` plus
+   `Location: /reports/{id}`; `wp_remote_request` follows redirects by default,
+   so the client receives the *report*, finds no `state` attribute, and answers
+   `state: unknown` with no `report_id`. The port must treat `303` as the
+   completion signal and read the report id from the `Location` header.
+3. **The retry sleeps inside the request.** `E42901` is retried after 1, 2 and 4
+   seconds inside `request()`, holding the worker for up to 7 s. The port should
+   surface a retryable error with the server's `Retry-After` or
+   `X-RateLimit-Reset` and let the caller decide.
+4. **Fixture mode is a compile-time constant**
+   (`WP_MCP_AI_GTMETRIX_USE_FIXTURES`). The port injects `HttpClientInterface`,
+   and the 19 committed JSON fixtures become the tests' oracle instead of a
+   runtime branch.
+5. **Credit accounting can overspend.** `preflight_budget()` checks the account
+   balance and a rolling 24 h local counter, then `record_charge()` runs after
+   the API call, so two concurrent tests both pass the check first. The port
+   should reserve before the call and reconcile with the response.
+6. **`install_wpcode_fix` needs the WPCode plugin.** It resolves the shared
+   `WP_MCP_AI_Pro_WPCode_Snippet_Repository` and refuses when the plugin is
+   absent. This runtime has no code-snippet store.
+
+Capabilities are already right: reads use `read`, and every credit-spending or
+account-writing tool (`start_test`, `retest_page`, `set_monitoring`,
+`set_alert_conditions`, `manage_page_tags`) overrides to `manage_options`;
+`install_wpcode_fix` requires `wpcode_edit_snippets`. The port keeps them.
+
+### Portability
+
+**22 of 23 are portable** against the seams above; **1 is a register decision**:
+
+- `gtmetrix_install_wpcode_fix` → `deferred` on a code-snippet store contract
+  (create an inactive draft, return its id and edit target). Deferred rather
+  than declined because the capability — turning an audit into a reviewable
+  draft — is real, and `generate_wpcode_snippet` already produces the code; only
+  the destination is missing. This decision is not yet written to the register,
+  and changes no count until it is.
+
+### The slice plan
+
+| slice | tools | why grouped |
+|---|---|---|
+| 1 | `account_status`, `list_locations`, `list_browsers`, `list_simulated_devices`, `list_tests` | the client plus the five credit-free reads; no writes, no report parsing |
+| 2 | `start_test`, `get_test_status` | the credit path and the `303` correction |
+| 3 | `get_report`, `get_lighthouse_audits`, `get_resource_summary`, `list_report_resources` | report payloads and resources |
+| 4 | `analyze_report`, `compare_reports` | the score engine, ported once |
+| 5 | `generate_wpcode_snippet` | the fix engine |
+| 6 | `list_pages`, `get_page`, `retest_page` | the page registry and its retest |
+| 7 | `set_monitoring`, `get_alert_conditions`, `set_alert_conditions`, `get_alert_events` | account writes and alert history |
+| 8 | `manage_page_tags` | the five-action tag surface |
+
+### Measurements
+
+| gate | value |
+|---|---|
+| declared | **23** |
+| served | **0** |
+| likely deferred | **1** (`install_wpcode_fix`) |
+| planned slices | **8** |
+| fixture JSON files available as test oracles | **19** |
+| readiness | unchanged, **440 / 440**, servable **421** |
+| parity | **219 ported, 8 declined, 45 deferred, 627 remaining**; `gtmetrix` **0 / 0 / 0 / 23** |
+
+No code changes in this slice: measurement only.
