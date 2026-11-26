@@ -1,5 +1,5 @@
 {
-	"url": "https://eca.directory",
+	"url": "https://cms.eca.directory",
 	"name": "ECA Directory",
 	"fetch": {
 		"timeoutMs": 60000
