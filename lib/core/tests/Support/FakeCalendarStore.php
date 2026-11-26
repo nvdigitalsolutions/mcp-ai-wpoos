@@ -48,6 +48,9 @@ final class FakeCalendarStore implements ContentStoreInterface
     /** @var list<ContentQuery> */
     public array $queries = array();
 
+    /** @var array<string, list<string>> Taxonomy vocabularies. */
+    public array $terms = array();
+
     private int $nextId = 5000;
 
     /**
@@ -61,6 +64,7 @@ final class FakeCalendarStore implements ContentStoreInterface
         string $content = '',
         string $status = 'publish',
         int $authorId = 1,
+        array $taxonomy = array(),
     ): ContentItem {
         $stamp = new DateTimeImmutable('2026-01-01 00:00:00', new DateTimeZone('UTC'));
 
@@ -74,6 +78,7 @@ final class FakeCalendarStore implements ContentStoreInterface
             createdAt: $stamp,
             updatedAt: $stamp,
             meta: $meta,
+            taxonomy: $taxonomy,
         );
 
         $this->items[ $id ] = $item;
@@ -152,6 +157,7 @@ final class FakeCalendarStore implements ContentStoreInterface
             createdAt: $stamp,
             updatedAt: $stamp,
             meta: $command->meta,
+            taxonomy: $command->taxonomyInput,
         );
 
         $this->items[ $id ] = $item;
@@ -172,6 +178,12 @@ final class FakeCalendarStore implements ContentStoreInterface
             throw new AccessDeniedException('Edit not allowed.');
         }
 
+        $taxonomy = $item->taxonomy;
+
+        foreach ($command->taxonomyInput as $name => $names) {
+            $taxonomy[ $name ] = array_values($names);
+        }
+
         $item = new ContentItem(
             id: $item->id,
             title: $command->title ?? $item->title,
@@ -182,7 +194,7 @@ final class FakeCalendarStore implements ContentStoreInterface
             createdAt: $item->createdAt,
             updatedAt: new DateTimeImmutable('2026-01-03 00:00:00', new DateTimeZone('UTC')),
             meta: array_merge($item->meta, $command->meta),
-            taxonomy: $item->taxonomy,
+            taxonomy: $taxonomy,
             excerpt: $item->excerpt,
             slug: $item->slug,
         );
@@ -219,7 +231,19 @@ final class FakeCalendarStore implements ContentStoreInterface
 
     public function listTaxonomyTerms(string $taxonomy, int $limit = 200): array
     {
-        return array();
+        $names = $this->terms[ $taxonomy ] ?? array();
+        $terms = array();
+
+        foreach (array_slice($names, 0, max(1, min(500, $limit))) as $index => $name) {
+            $terms[] = array(
+                'id'    => $index + 1,
+                'name'  => (string) $name,
+                'slug'  => strtolower((string) $name),
+                'count' => 0,
+            );
+        }
+
+        return $terms;
     }
 
     public function userCanAccess(int $id, int $userId, string $operation = 'read'): bool
