@@ -576,6 +576,21 @@ flood, the token/provenance checks stop a single crafted request.
     a routing fact, not a content, gate or build failure (SSR routes such as
     `/manage` and `/api/*` match both forms and mask the pattern).
 
+20. **Branch a deploy from CURRENT `alpha-working`, or it silently reverts merged
+    scaffold fixes.** The scaffold is generated from the forging worktree's
+    `templates/` and `lib/`, so whatever commit you build from is exactly what
+    the artifact ships — nothing warns that the tree is behind. A trailing-slash
+    fix deployed from a branch five PRs old silently dropped
+    `security.allowedDomains` from `astro.config.mjs`; every browser login POST
+    then returned 403 `Cross-site POST form submissions are forbidden` while
+    `/manage/` still rendered 200 and a `curl` POST with no `Origin` still
+    passed — so it read like a credential bug, not a stale build. Guard before
+    scaffolding: `git fetch origin alpha-working` then
+    `git merge-base --is-ancestor origin/alpha-working HEAD && echo current`
+    (or branch straight off `origin/alpha-working`). When a merged fix
+    “disappears” in production, diff the built artifact against the template at
+    `origin/alpha-working` before debugging the code.
+
 ## Mirror-push mechanics (verified 2026-11-24)
 
 - **`forge deploy --mirror-repo` is self-sufficient.** It emits
