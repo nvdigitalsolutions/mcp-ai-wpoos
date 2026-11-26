@@ -8126,3 +8126,111 @@ network, once the client is injectable in the probe host.
 
 Next: slice 2, the test lifecycle — `start_test` with the credit budget and the
 origin allowlist, and `get_test_status` with the `303` reading.
+
+## 164.92 `gtmetrix`, slice 2 — the test lifecycle, the budget and the `303`
+
+The two tools that spend the account: `gtmetrix_start_test` and
+`gtmetrix_get_test_status`. The toolkit moves from 5 to **7 of 23**.
+
+### What a test costs, and who decides
+
+`GtmetrixConfig` holds the three tables the API charges by — report type
+(1.0 Lighthouse, 0.7 legacy, 1.1 both, 0.6 neither), retention (1 month free,
+6 +0.4, 12 +0.9, 24 +1.8) and video (+0.9) — copied from the WordPress
+`Scheduler::COSTS`, which matched the published table. The table lives outside
+the tool because the later sweeps price the same configurations, and two copies
+would eventually disagree. `retention` is an enumerated parameter, so a value
+the table has no price for cannot reach `cost()`.
+
+The budget key is `gtmetrix_credit_budget_daily` (default 25, the WordPress
+default) and the host list is `gtmetrix_allowed_test_hosts`. The allowlist is
+the configured entries plus the deployment's own host from
+`RuntimeIdentityInterface::identity()['site_url']`; WordPress appended
+`home_url()`. There is no `home_url()` in the core, so with no identity bound
+and no configured hosts **every URL is refused**: an account key must not become
+a probe for arbitrary third-party pages just because the runtime cannot say who
+it is.
+
+### Corrections
+
+1. **Credits come from the response.** The WordPress client returned
+   `$decoded['data']` and dropped `meta`, so `credits_used` was the local
+   estimate and `credits_left` was always `null`. The contract returns `meta`;
+   both figures are now the server's, with the estimate only as a fallback when
+   a response omits the block.
+2. **The budget is reserved before the call.** WordPress checked the balance and
+   the counter, started the test, then recorded the charge, so two concurrent
+   calls both passed the same check and one of them was unaccounted for. The
+   port increments the counter first, compares the result against the budget,
+   and restores the previous value if the reservation overshoots or the POST is
+   refused or returns no test id.
+3. **The counter is in hundredths.** A fractional cost (0.7, 1.1, 2.5) cannot
+   be added to an integer credit counter without drift. The key is
+   `gtmetrix:credits_cents:YYYYMMDD` and every comparison is in cents; the
+   figure a caller sees is divided back to credits. The 2-day TTL lets
+   yesterday's key expire without a cleanup job.
+4. **Optional values are validated, not silently dropped.** WordPress ran
+   `sanitize_key()` over `location`, `browser` and `simulate_device`, and
+   `sanitize_text_field()` over `throttle`, dropping whatever did not survive.
+   A test then ran with different options than the caller asked for, and the
+   reply said nothing. An unknown `report`, `retention`, `location`, `browser`,
+   `simulate_device` or malformed `throttle` is now refused by field name.
+5. **A completed test is recognised.** This is the correction the slice exists
+   for: completion is `303 See Other` with `Location: /api/2.0/reports/{id}`.
+   `wp_remote_request` followed the redirect, the tool received the report,
+   found no `state`, and answered `state: unknown` with an empty `report_id` —
+   the single transition a poller exists to detect. The port reads the status
+   and the `Location`, and also accepts a `200` whose attributes carry
+   `report`, for a client or proxy that flattened the transition. The failing
+   state carries the API's own `error` message.
+6. **No poll is scheduled.** WordPress scheduled a WP-Cron poll that
+   snapshotted the result into a post type. The core has no cron, and a poll
+   that owns storage would be a second snapshot store; the tool returns
+   `test_id` and names the next call, and scheduling belongs to the host.
+
+### Adaptations
+
+- `daily_budget` is a port addition: WordPress returned no budget figures at
+  all. `limit` and `used` are two-decimal floats so the field has one shape,
+  whether the charge was whole or fractional.
+- Capabilities follow what WordPress enforced: `start_test` requires
+  `manage_options` (as the WordPress tool declared), `get_test_status` requires
+  the base `read`. `start_test` is flagged
+  `external-api, network-dependent, requires-credentials, state-changing,
+  write`; the status tool inherits the read flag set.
+- Error codes are named rather than prose: `gtmetrix_not_configured` (no key),
+  `gtmetrix_host_denied` (the URL, not a 404 from gtmetrix.com),
+  `gtmetrix_insufficient_credits`, `gtmetrix_budget_exhausted` (with required,
+  limit and used), and the classified API failures with `status`, `api_code`
+  and `retry_after`.
+- `test_id` is validated against `[A-Za-z0-9_-]+` before it reaches a path, so
+  a crafted id cannot walk out of `/tests/`.
+- Tests are retained for 24 hours, which the description says: a listed report
+  id may already be gone, and an old `test_id` answers a not-found error rather
+  than a state.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,857 / 22,915** (15 tests and 57 assertions added) |
+| adapter `ToolProbesTest` | **227 / 1,578**, 2 skipped, 0 failures — two new probes |
+| tool readiness audit | **447 / 447**, servable **428** (+2), no violations |
+| toolkit parity | **226 of 854**; `gtmetrix` **7 ported**, 0 declined, 0 deferred, **16 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+Both probes answer the not-configured refusal, because the guard runs before
+any credit work and the probe host binds no API key. The status probe still
+passes a valid id, so the refusal is the guard rather than the id validator.
+Payload shapes and the refusal paths are pinned in `lib/core` against
+fixture-shaped responses.
+
+Two fixture defects were found and fixed in this slice, both in the test rather
+than the code: a budget assertion compared credits with the counter's cents
+(2.5 against 250), and the `getValue` stub captured the counter array **by
+value** inside an arrow function, so reads never saw the increments. The second
+is the more instructive: it made a correct reserve-and-read cycle look broken.
+
+Next: slice 3, the reports — `gtmetrix_get_report`,
+`gtmetrix_get_lighthouse_audits`, `gtmetrix_get_resource_summary` and
+`gtmetrix_list_report_resources`.

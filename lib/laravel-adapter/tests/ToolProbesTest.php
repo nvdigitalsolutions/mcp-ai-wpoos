@@ -391,6 +391,13 @@ Probe Club,club
 			array( 'gtmetrix_list_browsers', array(), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_list_simulated_devices', array(), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_list_tests', array(), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.92 — the test lifecycle. The guard runs before any credit work,
+			// so both answer not-configured on this keyless probe host; the status
+			// probe still passes a valid id so the refusal is the guard and not
+			// the id validator.
+			array( 'gtmetrix_start_test', array( 'url' => 'https://example.test/' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_get_test_status', array( 'test_id' => 'probe-test' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
