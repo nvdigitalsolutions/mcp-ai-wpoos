@@ -184,6 +184,10 @@ Probe Club,club
 			// §164.67 — the lead email search. The working invocation is
 			// lead_status=all with a date sort; the defaults find nothing by design.
 			array( 'crm_email_search_leads', array( 'lead_status' => 'all', 'orderby' => 'date' ), 'success', array( 'leads', 'total', 'filters', 'scoring' ), array( 'user_id' => 1 ) ),
+
+			// §164.68 — the accounting search. Defaults are benign here: all
+			// filters plus a date sort, so an empty corpus is a clean success.
+			array( 'crm_email_search_accounting', array(), 'success', array( 'records', 'total', 'filters', 'summary' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
