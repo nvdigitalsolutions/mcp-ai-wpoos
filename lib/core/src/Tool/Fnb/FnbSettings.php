@@ -46,6 +46,44 @@ final class FnbSettings
     /** Currencies whose ISO 4217 minor unit is zero. */
     public const ZERO_DECIMAL_CURRENCIES = array('JPY', 'KRW', 'VND', 'LKR');
 
+    /**
+     * The symbols `WP_MCP_AI_Fnb_Tenant_Profile::currency_symbol()` returns.
+     *
+     * A code that is not listed is its own symbol, which is why an operator's
+     * unlisted currency still produces a labelled figure rather than a bare
+     * number.
+     */
+    public const CURRENCY_SYMBOLS = array(
+        'LKR' => 'Rs',
+        'USD' => '$',
+        'EUR' => '€',
+        'GBP' => '£',
+        'JPY' => '¥',
+        'INR' => '₹',
+        'AUD' => 'A$',
+        'CAD' => 'C$',
+        'NZD' => 'NZ$',
+        'SGD' => 'S$',
+        'AED' => 'AED',
+        'SAR' => 'SAR',
+        'ZAR' => 'R',
+        'BRL' => 'R$',
+        'MXN' => 'MX$',
+        'CHF' => 'CHF',
+        'SEK' => 'kr',
+        'DKK' => 'kr',
+        'NOK' => 'kr',
+        'HKD' => 'HK$',
+        'CNY' => '¥',
+        'KRW' => '₩',
+        'VND' => '₫',
+        'IDR' => 'Rp',
+        'TRY' => '₺',
+        'RUB' => '₽',
+        'PLN' => 'zł',
+        'THB' => '฿',
+    );
+
     public function __construct(
         private readonly ?SettingsStoreInterface $settings = null,
     ) {
@@ -93,5 +131,38 @@ final class FnbSettings
     public function currencyDecimals(): int
     {
         return in_array($this->currency(), self::ZERO_DECIMAL_CURRENCIES, true) ? 0 : 2;
+    }
+
+    /**
+     * The configured currency's symbol, or `''` when no currency is configured.
+     *
+     * An unlisted code answers with the code itself, as the tenant profile does.
+     */
+    public function currencySymbol(): string
+    {
+        $code = $this->currency();
+
+        if ('' === $code) {
+            return '';
+        }
+
+        return self::CURRENCY_SYMBOLS[ $code ] ?? $code;
+    }
+
+    /**
+     * A money figure as the reports print it: symbol, space, grouped amount.
+     *
+     * `WP_MCP_AI_Fnb_Report_Builder::money()` delegates to the tenant profile,
+     * whose decimals come from the currency (not from the report). The docblock
+     * there claims whole units; the code does not round to them, and the code is
+     * what this port follows. No currency configured means no symbol, so a fresh
+     * install never asserts the wrong one.
+     */
+    public function formatMoney(float $amount): string
+    {
+        $formatted = number_format($amount, $this->currencyDecimals(), '.', ',');
+        $symbol    = $this->currencySymbol();
+
+        return '' === $symbol ? $formatted : $symbol . ' ' . $formatted;
     }
 }
