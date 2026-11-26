@@ -196,14 +196,4 @@ class FnbSearchTableTool extends FnbTool
 
         return $limit > 0 ? $limit : self::DEFAULT_LIMIT;
     }
-
-    /**
-     * @param array<string, mixed> $arguments
-     */
-    private function scalar(array $arguments, string $key): string
-    {
-        $value = $arguments[ $key ] ?? null;
-
-        return is_scalar($value) ? (string) $value : '';
-    }
 }

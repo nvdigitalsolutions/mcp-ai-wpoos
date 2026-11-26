@@ -207,6 +207,29 @@ Probe Club,club
 			// the comparison degrades to its two split rows, as WordPress does.
 			array( 'fnb_calculate_metric', array( 'metric_id' => 'M-01', 'month' => '2026-09' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'fnb_compare_periods', array( 'month' => '2026-09', 'prev_month' => '2026-08' ), 'success', array( 'month', 'prev_month', 'metrics' ), array( 'user_id' => 1 ) ),
+
+			// §164.73 — the three table-reading tools. M-14 and M-12 answer zeros
+			// on an unmapped corpus (the engine does not surface a table error for
+			// them); the ledger scan refuses.
+			array( 'fnb_days_of_cover', array( 'ingredient_id' => 'ING-1' ), 'success', array( 'ingredient_id', 'shelf_life_days', 'over_ordering_flag', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_weekend_demand', array( 'friday' => '2026-09-25' ), 'success', array( 'weekend', 'per_day', 'supplier_cutoffs' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_duplicate_invoice_scan', array(), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.74 — the ten metric wrappers. None surfaces the unmapped table as
+			// a tool error: each metric answers a zeroed or empty shape carrying its
+			// own `error`, and the wrapper merges it, exactly as WordPress does.
+			// The probe therefore asserts the shape the wrapper assembles, which is
+			// the wrapper's own work.
+			array( 'fnb_budget_variance', array( 'month' => '2026-09' ), 'success', array( 'month', 'rows', 'source' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_dish_margin', array( 'item_id' => 'IT-1', 'month' => '2026-09' ), 'success', array( 'item_id', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_expected_use', array( 'ingredient_id' => 'ING-1', 'month' => '2026-09' ), 'success', array( 'ingredient_id', 'month', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_labour_analysis', array( 'month' => '2026-09' ), 'success', array( 'total_payroll', 'm09_overtime_per_100', 'm10_labour_pct' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_price_change_impact', array( 'month' => '2026-09' ), 'success', array( 'month', 'value', 'changes' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_stock_used', array( 'ingredient_id' => 'ING-1' ), 'success', array( 'ingredient_id', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_stock_variance', array( 'ingredient_id' => 'ING-1' ), 'success', array( 'ingredient_id', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_utilities_per_cover', array( 'month' => '2026-09' ), 'success', array( 'meters', 'costed', 'per_cover', 'covers' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_variance_split', array( 'month' => '2026-09', 'prev_month' => '2026-08' ), 'success', array( 'month', 'prev_month', 'total_change', 'lines' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_waste_analysis', array( 'month' => '2026-09' ), 'success', array( 'month', 'value', 'waste_value', 'by_reason' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
