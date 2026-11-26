@@ -6805,9 +6805,122 @@ overridable with `NVOOS_AUTONOMOUS_SESSIONS_ROOT` and
 `NVOOS_EXECUTION_HISTORY_ROOT`. The start probe writes through the real store,
 so the storage convention is proven end to end rather than mocked.
 
-Next is the templates and task plans group: `list_templates`,
-`create_template`, `instantiate_template`, `seed_template_library`,
-`create_task_plan`, `get_task_plan`, `update_task_plan` and
-`create_execution_prompt` — which needs a template/plan store, and which is the
-prerequisite for the two loop keys left inactive: `get_session_status`'s
-`include_plan` and `detect_completion_indicators`' `plan_id`.
+## 164.79 `orchestration`, slice 3 — templates and task plans
+
+The remaining eight declared tools are two families over two WordPress post
+types: `mcp_task_plan` (`create_task_plan`, `get_task_plan`,
+`update_task_plan`, `instantiate_template`, `create_execution_prompt`) and
+`mcp_task_template` (`create_template`, `list_templates`,
+`instantiate_template`, `seed_template_library`). **Both are CPTs, so both map
+to `ContentStoreInterface`** — the classroom pattern — and this slice adds no
+store contract at all.
+
+### The shared format, in one place
+
+`TaskPlanMarkdown` renders, parses, checks/unchecks and appends the checkbox
+list, so the six tools that touch it cannot drift. Two parse dialects are kept
+and named: the strict `^- \[([ x])\] (.+)$` the plan readers use, and the loose
+`/^\s*-\s*\[ \]\s*(.+)$/` the prompt builder uses for hand-indented lists.
+CRLF is normalised on entry. `TaskTemplateCategory` is the single category
+vocabulary; `TaskTemplateLibrary` is the fourteen template bodies, extracted
+verbatim from the WordPress seeder and verified byte-identical.
+
+### Twelve measured behaviours, fixed or pinned
+
+**Fixed**
+
+1. **`new_tasks` destroyed the plan.** The pattern's non-capturing group had
+   been mangled to `( ? ( :`, so `preg_replace` returned null and
+   `wp_update_post` stored an empty body. Appending is line surgery now, which
+   also removes `$1` replacement semantics from caller text. A test appends a
+   fourth task and asserts the first three and the goal survive.
+2. **The template validator rejected its own library.** Six categories were
+   accepted and fourteen declared, so eight of the fourteen failed on an empty
+   host. `TaskTemplateCategory` serves create, list and seed.
+3. **An instantiated plan lost its goal and status.** `instantiate_template`
+   wrote *unprefixed* meta (`status`, `task_count`, `progress`, `project_id`)
+   while every reader used `_`-prefixed keys, and it never wrote `goal` at all.
+   The port writes one schema, so `get_task_plan` and `create_execution_prompt`
+   see the same plan.
+4. **`update_task_plan` had no authorisation check.** Any user with
+   `edit_posts` could mark tasks on anyone's plan. The content store's edit rule
+   now applies — the same rule `create_task_plan` already applied on its update
+   path.
+5. **The prompt was HTML-escaped.** `esc_html()` turned `Client's` into
+   `Client&#039;s` and `&` into `&amp;` inside the instructions sent to the
+   model. A prompt is plain text; escaping belongs to the transport envelope.
+6. **`overwrite` duplicated the library.** WordPress skipped the existence
+   check and called create without an id, adding a second copy of all fourteen.
+   Overwrite now updates the existing template by name.
+7. **`usage_count` increments bypassed edit rules.** Instantiating another
+   user's published template wrote its meta unconditionally. The counter is
+   incremented only when the caller may edit the template; the plan is still
+   created and the counter is reported as it stands.
+8. **`list_templates` did not sort by the field it named.**
+   `orderby => meta_value_num` without a `meta_key` ordered by neither
+   `usage_count` nor `success_rate`. The filtered set is fetched (at most 200)
+   and sorted in PHP; `truncated` marks the ceiling. `total_count` is the
+   matching total, not the page size.
+
+**Pinned**
+
+9. **A new plan stores status `draft` while the item is published**, which is
+   the WordPress lifecycle. One correction rides with it: an update that
+   regenerates the body resets `completed_count` and `progress` to 0, because
+   the new body has nothing checked, where WordPress left the old counters
+   stale. The status is left alone.
+10. **An out-of-range `task_index` is silently ignored**, and new tasks are
+    appended rather than merged by text. The recomputed counts in the response
+    are the signal that nothing applied.
+11. **`include_history` is accepted and inert**, and `success_criteria` is read
+    by the prompt builder without any plan tool writing it.
+12. **The prompt's progress comes from the stored counters, not the markdown.**
+    It is the one reader that can disagree with `get_task_plan` after a hand
+    edit; kept because changing it would alter what a running loop is told
+    mid-session.
+
+### Per-tool notes
+
+`get_task_plan` derives everything from the markdown and reports `project_id`
+only when set; an empty `completed_at` is `null` rather than `''`, and
+timestamps are ISO 8601 UTC.
+
+`create_template` creates a draft and reports `storage_type: content_store`;
+the duplicate `status` meta row WordPress wrote beside `post_status` is
+dropped, because only the item status was ever read back.
+
+`seed_template_library` checks existence with one query over up to 200 existing
+templates and matches titles exactly and case-insensitively. One failed
+template is reported in `errors` while the rest are attempted, as WordPress
+does. It is gated on `manage_options` (WordPress declared no capability), and a
+second run is a no-op.
+
+`instantiate_template` requires every placeholder to be supplied and lists the
+missing names; a non-scalar variable is skipped rather than cast to `Array`;
+the merged `config` is returned but not stored, as WordPress did.
+
+`create_execution_prompt` honours a `tasks_parsed` JSON list when a host writes
+one and falls back to the loose markdown parse otherwise; `prompt_length` is a
+byte count.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,525 / 21,365** (46 tests and 233 assertions added) |
+| adapter `ToolProbesTest` | **180 / 1,282**, 2 skipped, 0 failures — eight new probes |
+| tool readiness audit | **400 / 400**, servable **381** (+8), no violations |
+| toolkit parity | **179 of 854**; `orchestration` **21 ported**, 0 declined, 0 deferred, **15 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The adapter's probe host now defines `read_content`, `edit_content` and
+`delete_content` permissively in `ToolProbesTest`, matching the dedicated
+content-store suites; per-user policy remains covered there.
+
+Next is the **schedules** group (10 tools): `create_pro_schedule`,
+`list_pro_schedules`, `update_pro_schedule`, `delete_pro_schedule`,
+`dry_run_pro_schedule`, `get_schedule_run_history`,
+`get_schedule_latest_result`, `plan_schedules_from_workflow`,
+`render_schedule_result` and `configure_schedule_widget_defaults` — which needs
+a schedule store and runner contract over the machinery the Laravel app
+skeleton already carries. After that, `research and content` (5).
