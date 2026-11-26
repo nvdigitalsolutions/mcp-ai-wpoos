@@ -713,8 +713,14 @@ function new_files( string $root, string $base = '' ): array {
 	$out = array();
 
 	if ( '' !== $base ) {
-		$cmd = 'git -C ' . escapeshellarg( $root ) . ' diff --name-only --diff-filter=A -z ' . escapeshellarg( $base . '...HEAD' );
-		$raw = shell_exec( $cmd );
+		// A three-dot diff needs a merge base. CI checks out at depth 1 because
+		// the pack is ~39 GB, so compare the two tips directly there.
+		$shallow = 'true' === trim( (string) shell_exec( 'git -C ' . escapeshellarg( $root ) . ' rev-parse --is-shallow-repository' ) );
+		$range   = $shallow
+			? escapeshellarg( $base ) . ' ' . escapeshellarg( 'HEAD' )
+			: escapeshellarg( $base . '...HEAD' );
+		$cmd     = 'git -C ' . escapeshellarg( $root ) . ' diff --name-only --diff-filter=A --no-renames -z ' . $range;
+		$raw     = shell_exec( $cmd );
 		if ( is_string( $raw ) && '' !== $raw ) {
 			$out = array_merge( $out, array_filter( explode( "\0", $raw ) ) );
 		}

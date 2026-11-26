@@ -54,8 +54,9 @@ The identifier is the SPDX expression of the nearest manifest. `UNLICENSED`,
 | PHP | inside the file docblock (`@license` + `SPDX-License-Identifier`) |
 
 `bin/add-spdx-headers.php` inserts or normalises the line. It never writes prose
-and is idempotent. Generated bundles (`*.min.js`, `*.min.css`), vendored trees
-and build output are excluded by `.github/docs-scopes.json`.
+and is idempotent. Generated bundles (`*.min.js`, `*.min.css`), vendored trees,
+build output and the intentionally non-compliant header fixtures under
+`tests/fixtures/headers/**` are excluded by `.github/docs-scopes.json`.
 
 ---
 
