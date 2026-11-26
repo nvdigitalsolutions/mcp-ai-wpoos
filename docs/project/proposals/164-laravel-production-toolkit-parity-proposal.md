@@ -3517,3 +3517,123 @@ And two recorded follow-ups, both of which are their own slice:
 |---|---|
 | memory metadata | a metadata column on the memory store, so provenance (`subject_refs`, `attachments`) and bi-temporal validity can be carried rather than dropped |
 | vision OCR | a `PdfPageRendererInterface` and a worker render route returning bytes, then a per-page vision loop |
+
+## 164.42 — Memory provenance had nowhere to live (2026-11-25)
+
+The previous section added those tools; this one changes the store they
+write to. The two touch disjoint code.
+
+### What was being dropped in silence
+
+The WordPress capture base exposes ten fields the `nvoos_memories` columns cannot
+express — `subject_refs`, `attachments`, `recorded_at`, `valid_from`,
+`valid_until`, `verbatim`, `sensitivity`, `consent_basis` and two more. On
+WordPress they reach a capture service with its own tables, so they work. On this
+runtime the record reached `MemoryStore::store()`, the columns it had were
+written, and the rest vanished — under `success: true`.
+
+That is worse than refusing. A caller that reads `success` believes its
+provenance was recorded, and nothing later contradicts it.
+
+Reading the contract while fixing it turned up a second, smaller version of the
+same problem: `MemoryStoreInterface::search()` documents a `metadata` key in
+each result, and `record()` never returned one. The contract promised a field the
+implementation did not have.
+
+### One column, not one per concept
+
+Provenance vocabulary is open: Zep's `valid_at`/`invalid_at`, mem0's `metadata`
+dict, a host's own keys, a toolkit's capture policy. A column per concept would
+mean a migration per concept. So the column is a single nullable JSON map.
+
+Nullable and with no default, so a record with no provenance stores `NULL` rather
+than `{}` — "nothing was recorded" is then visible in the database instead of
+looking like an empty answer. It reads back as an empty array either way, so a
+caller still never has to tell "absent" from "empty".
+
+### Merge, not replace
+
+`update()` treats `metadata` as a JSON Merge Patch, RFC 7386:
+
+| patch value | effect |
+|---|---|
+| a scalar or an array | replaces the key |
+| an object | merges recursively |
+| `null` | **removes** the key |
+
+The reason is when it is used. Provenance is added later — set `valid_until` when
+a record is superseded, append a `subject_ref` when a document is attached. A
+replace would force every caller into a read-modify-write to keep the keys it did
+not mean to touch, which is a race, not a feature.
+
+Every other field is still replaced outright, `tags` included. That asymmetry is
+deliberate and is stated in the contract rather than left to be discovered.
+
+### A ceiling that belongs to the contract
+
+`MAX_METADATA_BYTES = 65536`. An unbounded JSON column is how a memory store
+quietly becomes a file store, so the limit sits on the interface where both
+adapters inherit it, not in one adapter's head. `store()` and `update()` refuse
+with a message that says where bytes belong instead: the file registry,
+referenced from here by id.
+
+### A no-op patch is not a missing record
+
+`update()` used to derive success from the affected-row count. A database reports
+zero rows changed when a patch writes the values already present, so re-sending a
+record's own content answered `Memory not found.` for a record that was right
+there. Existence is now checked before the write, and "nothing to do" is
+reported as success because that is what it is.
+
+### The WordPress adapter needed nothing
+
+It forwards the whole `$record` to `WP_MCP_AI_Memory_Capture_Service::store()`,
+which already persists these fields. Only the fixed-column adapter dropped them
+— which is a useful reminder that "the contract has a field" and "every adapter
+stores it" are different claims, and only the second one is testable.
+
+### Research grounding
+
+| finding | source | landed as |
+|---|---|---|
+| a merge patch removes a member by setting it to null; objects merge, arrays replace | RFC 7386, *JSON Merge Patch* | the `update()` semantics for `metadata` |
+| memory systems separate the searchable representation from provenance and validity | the mem0 / Zep models already cited in §164.40 and §164.41 | an open map rather than a fixed vocabulary of columns |
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Domain/Contract/MemoryStoreInterface.php` | `metadata` in the record shape, `MAX_METADATA_BYTES`, merge-patch semantics |
+| `lib/laravel-adapter/database/migrations/2026_11_25_130000_add_metadata_to_memories.php` | new; one nullable JSON column |
+| `lib/laravel-adapter/src/Adapter/MemoryStore.php` | write, merge-patch, read back; existence-based `update()` |
+| `docker/laravel/app-skeleton/app/Models/Memory.php` | a `metadata` accessor, so the read-only browser is handed a map |
+| `docker/laravel/app-skeleton/tests/Feature/MemoryMetadataTest.php` | fifteen tests |
+
+### Measurement
+
+`lib/core` **2,757 / 18,543**, unchanged: the contract extension is additive, so
+no existing implementor or test had to move. Adapter **444 / 2,128**. The new
+app-skeleton tests are **15**; the memory consumers together (`AdminMemory*`,
+`MemorySettings`, and the eight memory tools) are **32**, all passing.
+
+One honest gap: the full app-skeleton suite could not be completed in this
+environment. Two attempts — the second with nothing else running and a 40-minute
+budget — produced no result, where the same suite has taken a couple of minutes.
+Every slice that touches this change passes, and CI runs the whole thing; the
+timeout is recorded rather than papered over.
+
+The tests cover: a map surviving a round trip including a stored `null`;
+absent metadata reading back as an empty map; the column storing `NULL` rather
+than `{}`; `search()` and `listByAgent()` carrying the map; the Eloquent accessor
+decoding it; a patch adding a key without disturbing the others; `null` removing
+exactly one key; a nested object merging; an array replacing wholesale; a
+non-metadata patch leaving metadata alone; a no-op patch succeeding while an
+unknown id still fails; and the ceiling enforced on both `store()` and `update()`
+without writing anything.
+
+### What is left
+
+| item | what it needs |
+|---|---|
+| wiring the capture tool | `docgen_capture_style_memory` (in #8270) still offers only the fields it could store when it was written; once both land, a small PR adds `subject_refs`, `attachments`, `recorded_at`, `valid_from`, `valid_until` and `verbatim` as a metadata map |
+| vision OCR | a `PdfPageRendererInterface` and a worker render route returning bytes, then a per-page vision loop |
