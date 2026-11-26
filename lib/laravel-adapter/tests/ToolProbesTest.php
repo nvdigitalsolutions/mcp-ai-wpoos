@@ -416,6 +416,12 @@ Probe Club,club
 			// §164.95 — the snippet emitter. It fetches the report before it can
 			// generate anything, so it answers the guard on this keyless host.
 			array( 'gtmetrix_generate_wpcode_snippet', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.96 — the pages. All three answer the guard on this keyless
+			// host; retest needs the id because the budget check follows validation.
+			array( 'gtmetrix_get_page', array( 'page_id' => 'probe-page' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_list_pages', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_retest_page', array( 'page_id' => 'probe-page' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
