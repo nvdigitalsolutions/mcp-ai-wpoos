@@ -71,6 +71,10 @@ const config = {
 	jsxImportSource: isStandalone ? 'react' : '@wordpress/element',
 	minify: isProd,
 	sourcemap: !isProd,
+	// The synced copy under examples/.../public/manage-assets/ is in the docs
+	// contract's ts:examples scope, so the emitted bundle must carry the SPDX
+	// line the committed copy has — otherwise the staleness gate reports drift.
+	banner: isStandalone ? { js: '// SPDX-License-Identifier: MIT' } : undefined,
 	loader: isStandalone ? { '.css': 'css' } : undefined,
 	define: {
 		'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development'),
