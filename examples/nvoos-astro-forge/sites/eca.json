@@ -7,6 +7,12 @@
 	"forms": {
 		"delivery": "bridge"
 	},
+	"deploy": {
+		"runtime": "managed",
+		"publicOrigin": "https://eca.directory",
+		"revalidate": true,
+		"forms": "bff-proxied"
+	},
 	"eca": {
 		"basePath": "/activities",
 		"schoolName": "The British School in Colombo",

@@ -125,6 +125,22 @@ Symptom-to-cause table when a Velocity deploy fails at "Starting application":
 | missing dependency manifest | managed tree without `dependencies`/lockfile | `sync-deploy-tree.mjs`; `mirror-push` refuses it |
 | `Port detected from .env: N` vs the DNS record's port | mismatch | align the record |
 
+### You can diagnose the app settings but not write them
+
+`velocity_build_config_get` reads the whole Deployment Settings tab (framework,
+`app_mode`, Entry File, Output Directory, commands, port, Node runtime), and
+`velocity_vcs_repo_tree_get` on `site/<name>` proves which tier the branch
+actually carries — a static tree lists `index.html` + `_astro/` and a ~157-byte
+`package.json`, and has **no `server.js`**. Together those two reads settle the
+tier mismatch above without touching the app.
+
+**`velocity_build_config_update` 403s** (`insufficient_scope`) with the fleet
+Cloudways token, as does `velocity_domain_add`/`velocity_env_vars_upsert`. So an
+app whose framework disagrees with its artifact cannot be repaired over the MCP:
+report the exact target settings and have the operator change them in the
+Cloudways panel, then redeploy. Do not retry the write or conclude the app is
+broken — the token is read-only on that endpoint, nothing was saved.
+
 ## The step everyone forgets
 
 **A mirror push does not always redeploy the app — check `auto_deploy` first.**
