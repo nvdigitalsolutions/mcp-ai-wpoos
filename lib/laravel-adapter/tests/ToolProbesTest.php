@@ -180,6 +180,10 @@ Probe Club,club
 			// reports on an empty corpus and the scorer refuses an unknown contact.
 			array( 'archive_stale_contacts', array(), 'success', array( 'archived_count', 'skipped_count', 'contacts' ), array( 'user_id' => 1 ) ),
 			array( 'recalculate_engagement_scores', array( 'contact_ids' => array( 999999 ) ), 'success', array( 'scored_count', 'failed_count', 'contacts' ), array( 'user_id' => 1 ) ),
+
+			// §164.67 — the lead email search. The working invocation is
+			// lead_status=all with a date sort; the defaults find nothing by design.
+			array( 'crm_email_search_leads', array( 'lead_status' => 'all', 'orderby' => 'date' ), 'success', array( 'leads', 'total', 'filters', 'scoring' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
