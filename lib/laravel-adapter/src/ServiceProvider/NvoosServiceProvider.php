@@ -29,12 +29,15 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Infrastructure\Cloudways\CloudwaysClient;
 use Nvoos\Core\Infrastructure\Okf\FilesystemBundleLocator;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
+use Nvoos\Core\Infrastructure\Session\JsonAutonomousSessionStore;
+use Nvoos\Core\Infrastructure\Session\JsonExecutionHistoryStore;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 use Nvoos\Core\Domain\Contract\AgentOrchestrationInterface;
 use Nvoos\Core\Domain\Contract\AgentRunnerInterface;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\AudioTranscriptionInterface;
+use Nvoos\Core\Domain\Contract\AutonomousSessionStoreInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
@@ -43,6 +46,7 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EmailServiceInterface;
 use Nvoos\Core\Domain\Contract\ErlangCInterface;
+use Nvoos\Core\Domain\Contract\ExecutionHistoryStoreInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
@@ -490,6 +494,30 @@ class NvoosServiceProvider extends ServiceProvider {
 			}
 
 			return new JsonPaperStore( $root );
+		} );
+
+		// Autonomous orchestration state (Proposal 164 section 164.78). Sessions are
+		// one JSON file per id; the call log is one append-only JSON-lines file per
+		// id. Both are framework-agnostic stores, so these bindings only decide
+		// where the roots live — the loop tools never see a storage path.
+		$this->app->singleton( AutonomousSessionStoreInterface::class, function ( $app ) {
+			$root = (string) ( $app['config']->get( 'oos.autonomous_sessions_root' ) ?? '' );
+
+			if ( '' === trim( $root ) ) {
+				$root = $app->storagePath( 'autonomous-sessions' );
+			}
+
+			return new JsonAutonomousSessionStore( $root );
+		} );
+
+		$this->app->singleton( ExecutionHistoryStoreInterface::class, function ( $app ) {
+			$root = (string) ( $app['config']->get( 'oos.execution_history_root' ) ?? '' );
+
+			if ( '' === trim( $root ) ) {
+				$root = $app->storagePath( 'execution-history' );
+			}
+
+			return new JsonExecutionHistoryStore( $root );
 		} );
 
 		// OKF bundles — one directory per bundle under a configured base (Proposal 164

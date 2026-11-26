@@ -1005,6 +1005,20 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Autonomous orchestration state
+	|--------------------------------------------------------------------------
+	|
+	| The loop tools share a session record and an append-only call log
+	| (Proposal 164 section 164.78): one JSON file per session id, and one
+	| JSON-lines file per session id for the calls. Null means
+	| `storage_path('autonomous-sessions')` and `storage_path('execution-history')`.
+	|
+	*/
+	'autonomous_sessions_root' => env( 'NVOOS_AUTONOMOUS_SESSIONS_ROOT' ),
+	'execution_history_root'   => env( 'NVOOS_EXECUTION_HISTORY_ROOT' ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Console Feature Map
 	|--------------------------------------------------------------------------
 	|

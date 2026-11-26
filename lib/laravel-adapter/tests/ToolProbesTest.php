@@ -251,6 +251,20 @@ Probe Club,club
 			array( 'convert_html_to_markdown', array( 'html' => '<h1>Hi</h1><p>There</p>' ), 'success', array( 'markdown', 'original_length', 'markdown_length' ), array( 'user_id' => 1 ) ),
 			array( 'extract_structured_data', array( 'content' => '<h1>Title</h1>', 'selectors' => array( 'title' => 'h1' ) ), 'success', array( 'extracted_data', 'fields_extracted' ), array( 'user_id' => 1 ) ),
 			array( 'generate_password', array( 'length' => 12 ), 'success', array( 'password', 'strength', 'length' ), array( 'user_id' => 1 ) ),
+
+			// §164.78 — the autonomous loop. `start` writes a session through the
+			// bound store; the three reads with an impossible id prove the refusal
+			// path. `get_loop_metrics` answers a zeroed payload for that id, because
+			// a missing history is not an error. The breaker configuration is read
+			// by the same probe user the manage_options gate accepts in the host.
+			array( 'manage_autonomous_session', array( 'action' => 'start', 'plan_id' => 1 ), 'success', array( 'session_id', 'status' ), array( 'user_id' => 1 ) ),
+			array( 'get_session_status', array( 'session_id' => 'probe-no-such-session' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'check_exit_conditions', array( 'session_id' => 'probe-no-such-session' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'analyze_loop_health', array( 'session_id' => 'probe-no-such-session' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_loop_metrics', array( 'session_id' => 'probe-no-such-session' ), 'success', array( 'metrics' ), array( 'user_id' => 1 ) ),
+			array( 'detect_completion_indicators', array( 'text' => 'All requirements met. Objective achieved.' ), 'success', array( 'indicator_count', 'completion_met' ), array( 'user_id' => 1 ) ),
+			array( 'configure_circuit_breaker', array( 'action' => 'view' ), 'success', array( 'settings', 'defaults' ), array( 'user_id' => 1 ) ),
+			array( 'calculate_orchestration_capacity', array( 'mode' => 'calculate_capacity', 'arrival_rate' => 2, 'service_time' => 1 ), 'success', array( 'littles_law', 'capacity', 'recommendations' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
