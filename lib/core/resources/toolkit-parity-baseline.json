@@ -112,7 +112,10 @@
         "orchestration": [
             "verify_information"
         ],
-        "paper-store": [],
+        "paper-store": [
+            "paper_store_export",
+            "paper_store_import"
+        ],
         "places": [],
         "project-management": [
             "create_project",
