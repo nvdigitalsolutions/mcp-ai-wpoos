@@ -21,15 +21,24 @@
  * bytes would double the storage to reproduce a distinction that does not exist
  * in that case.
  *
- * ## What is deliberately absent
+ * ## Provenance travels in the metadata map
  *
- * `verbatim`, `allow_summarisation`, `sensitivity`, `consent_basis`,
- * `subject_refs`, `attachments`, `recorded_at`, `valid_from` and `valid_until`
- * are all accepted by the WordPress tool. `MemoryStoreInterface::store()` writes
- * fixed columns and drops unknown keys, so offering them here would be the
- * accepted-then-ignored defect: the caller would believe provenance and validity
- * were recorded when nothing was. Carrying them honestly needs a metadata column
- * on the store, which is a slice of its own.
+ * `subject_refs`, `attachments`, `recorded_at`, `valid_from`, `valid_until`,
+ * `sensitivity` and `consent_basis` are carried in the record's `metadata` map,
+ * which `MemoryStoreInterface` has held since §164.42. Only what the caller
+ * supplies is written, so a record without provenance has an empty map rather
+ * than a map full of empty values.
+ *
+ * `verbatim` is **derived, not asserted**. The archival record holds the original
+ * so it says `true`; a recall record holding a summary says `false`. A caller-
+ * supplied flag would let the record claim something the tool knows better than
+ * the caller does.
+ *
+ * `recorded_at` is written only when supplied, because the row's own `created_at`
+ * already records when the capture happened — the field earns its place when the
+ * event occurred earlier than that. `allow_summarisation` is absent entirely:
+ * there is no model here to summarise with, so the flag would describe a
+ * behaviour this tool does not have.
  *
  * `tier` is not a parameter either: the verbatim record is `archival` and the
  * representative is `recall` by construction. A knob that let a caller move the
@@ -59,12 +68,20 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
 
     public const DEFAULT_IMPORTANCE = 0.55;
 
-    /**
-     * The two rooms the WordPress tool recognises, and what they mean.
+    /** The two rooms the WordPress tool recognises, and what they mean.
      *
      * @var list<string>
      */
     public const ROOMS = array('style', 'drafts');
+
+    /** References one record may cite. */
+    public const MAX_REFS = 50;
+
+    /** Attachments one record may cite. */
+    public const MAX_ATTACHMENTS = 25;
+
+    /** Characters in a classification label such as `sensitivity`. */
+    public const MAX_LABEL = 64;
 
     public function __construct(
         ErrorFactoryInterface $e,
@@ -126,6 +143,38 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
                     'description' => 'Extra tags for filtering. "docgen" and the kind are always added.',
                     'items' => array('type' => 'string'),
                 ),
+                'subject_refs' => array(
+                    'type' => 'array',
+                    'description' => 'Where the sample came from — URLs, document ids, message ids. Recorded as provenance. At most ' . self::MAX_REFS . '.',
+                    'items' => array('type' => 'string'),
+                    'maxItems' => self::MAX_REFS,
+                ),
+                'attachments' => array(
+                    'type' => 'array',
+                    'description' => 'Supporting attachments as objects, e.g. {"sha256", "url", "mime", "file_id"}. Ids and hashes, not bytes. At most ' . self::MAX_ATTACHMENTS . '.',
+                    'items' => array('type' => 'object'),
+                    'maxItems' => self::MAX_ATTACHMENTS,
+                ),
+                'recorded_at' => array(
+                    'type' => 'string',
+                    'description' => 'When the event actually happened, if earlier than the capture. ISO 8601 date or date-time. Omitted means now, which the record already timestamps.',
+                ),
+                'valid_from' => array(
+                    'type' => 'string',
+                    'description' => 'Start of the window in which this was true, YYYY-MM-DD.',
+                ),
+                'valid_until' => array(
+                    'type' => 'string',
+                    'description' => 'End of that window, YYYY-MM-DD. Set it on the record being superseded rather than overwriting the text.',
+                ),
+                'sensitivity' => array(
+                    'type' => 'string',
+                    'description' => 'Classification label, e.g. "pii" or "internal". Recorded as given.',
+                ),
+                'consent_basis' => array(
+                    'type' => 'string',
+                    'description' => 'Why this may be stored, e.g. "consent" or "contract". Recorded as given.',
+                ),
                 'ttl' => array(
                     'type' => 'integer',
                     'description' => 'Seconds before the memory expires. Default ' . self::DEFAULT_TTL . ' (two years).',
@@ -186,6 +235,25 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
 
         $wantsRepresentative = '' !== trim($summary) && trim($summary) !== trim($content);
 
+        try {
+            $provenance = $this->provenance($arguments);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errors->validationFailed($e->getMessage());
+        }
+
+        // `verbatim` describes what the record holds, which the tool knows and
+        // the caller does not: the archival record is the original, and a recall
+        // record holding a summary is not.
+        $archivalMetadata = array(
+            'source' => 'docgen_capture_style_memory',
+            'verbatim' => true,
+        ) + $provenance;
+
+        $recallMetadata = array(
+            'source' => 'docgen_capture_style_memory',
+            'verbatim' => !$wantsRepresentative,
+        ) + $provenance;
+
         $archival = array('id' => null, 'error' => null);
 
         // The verbatim record goes first: a summary without its original breaks
@@ -202,6 +270,7 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
                 $wing,
                 $kind,
                 $ttl,
+                $archivalMetadata,
             );
 
             if (null !== $archival['error']) {
@@ -219,6 +288,7 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
             $wing,
             $kind,
             $ttl,
+            $recallMetadata,
         );
 
         if (null !== $representative['error']) {
@@ -242,7 +312,8 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
     /**
      * Write one record, or the error to return.
      *
-     * @param list<string> $tags
+     * @param list<string>         $tags
+     * @param array<string, mixed> $metadata
      *
      * @return array{id: string|null, error: mixed}
      */
@@ -256,6 +327,7 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
         string $wing,
         string $room,
         int $ttl,
+        array $metadata,
     ): array {
         try {
             $result = $this->memory->store(array(
@@ -268,6 +340,7 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
                 'wing' => $wing,
                 'room' => $room,
                 'ttl' => $ttl,
+                'metadata' => $metadata,
             ));
         } catch (\Throwable $e) {
             return array(
@@ -346,5 +419,145 @@ class DocgenCaptureStyleMemoryTool extends AbstractTool implements ToolCapabilit
         $value = $arguments[$key] ?? '';
 
         return is_string($value) ? $value : '';
+    }
+
+    /**
+     * The caller's provenance, validated, for the metadata map.
+     *
+     * Only what was supplied is included. A record with no provenance gets an
+     * empty map rather than a map of empty values, so a reader can tell "nothing
+     * recorded" from "recorded as empty".
+     *
+     * @return array<string, mixed>
+     *
+     * @throws \InvalidArgumentException When a value cannot be recorded as stated.
+     */
+    private function provenance(array $arguments): array
+    {
+        $meta = array();
+
+        $refs = $this->refs($arguments);
+
+        if (array() !== $refs) {
+            $meta['subject_refs'] = $refs;
+        }
+
+        $attachments = $this->attachmentList($arguments);
+
+        if (array() !== $attachments) {
+            $meta['attachments'] = $attachments;
+        }
+
+        foreach (array('recorded_at', 'valid_from', 'valid_until') as $key) {
+            $instant = $this->instant($arguments[$key] ?? '', $key);
+
+            if ('' !== $instant) {
+                $meta[$key] = $instant;
+            }
+        }
+
+        foreach (array('sensitivity', 'consent_basis') as $key) {
+            $label = $this->label($arguments[$key] ?? '', $key);
+
+            if ('' !== $label) {
+                $meta[$key] = $label;
+            }
+        }
+
+        return $meta;
+    }
+
+    /**
+     * The references, trimmed, de-duplicated and capped.
+     *
+     * @return list<string>
+     *
+     * @throws \InvalidArgumentException When there are too many.
+     */
+    private function refs(array $arguments): array
+    {
+        $refs = array();
+
+        foreach ($this->stringListParam($arguments, 'subject_refs') as $ref) {
+            $ref = trim($ref);
+
+            if ('' !== $ref && !in_array($ref, $refs, true)) {
+                $refs[] = $ref;
+            }
+        }
+
+        if (count($refs) > self::MAX_REFS) {
+            throw new \InvalidArgumentException('subject_refs carries at most ' . self::MAX_REFS . ' references.');
+        }
+
+        return $refs;
+    }
+
+    /**
+     * The attachments, each of which must be an object rather than a blob.
+     *
+     * @return list<array<string, mixed>>
+     *
+     * @throws \InvalidArgumentException When an entry is not an object or there are too many.
+     */
+    private function attachmentList(array $arguments): array
+    {
+        $attachments = array();
+
+        foreach (array_values($this->arrayParam($arguments, 'attachments')) as $index => $attachment) {
+            if (!is_array($attachment)) {
+                throw new \InvalidArgumentException('Attachment ' . ($index + 1) . ' is not an object.');
+            }
+
+            $attachments[] = $attachment;
+        }
+
+        if (count($attachments) > self::MAX_ATTACHMENTS) {
+            throw new \InvalidArgumentException('attachments carries at most ' . self::MAX_ATTACHMENTS . ' entries.');
+        }
+
+        return $attachments;
+    }
+
+    /**
+     * A date, or a date and time with an optional zone.
+     *
+     * Deliberately not a full RFC 3339 parser. The point is to stop a value that
+     * is obviously not a date from being stored as permanent provenance, not to
+     * normalise every spelling a caller might use.
+     *
+     * @throws \InvalidArgumentException When the value is not a date.
+     */
+    private function instant(mixed $value, string $label): string
+    {
+        $raw = is_scalar($value) ? trim((string) $value) : '';
+
+        if ('' === $raw) {
+            return '';
+        }
+
+        if (1 !== preg_match('/^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$/', $raw)) {
+            throw new \InvalidArgumentException(
+                $label . ' must be a date or date-time, e.g. 2026-11-25 or 2026-11-25T10:00:00Z.',
+            );
+        }
+
+        return $raw;
+    }
+
+    /**
+     * A short classification label.
+     *
+     * @throws \InvalidArgumentException When it is too long.
+     */
+    private function label(mixed $value, string $name): string
+    {
+        $raw = is_scalar($value) ? trim((string) $value) : '';
+
+        if (mb_strlen($raw) > self::MAX_LABEL) {
+            throw new \InvalidArgumentException($name . ' is at most ' . self::MAX_LABEL . ' characters.');
+        }
+
+        return $raw;
     }
 }

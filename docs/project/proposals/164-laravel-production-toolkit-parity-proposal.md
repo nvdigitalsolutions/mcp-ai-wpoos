@@ -3637,3 +3637,73 @@ without writing anything.
 |---|---|
 | wiring the capture tool | `docgen_capture_style_memory` (in #8270) still offers only the fields it could store when it was written; once both land, a small PR adds `subject_refs`, `attachments`, `recorded_at`, `valid_from`, `valid_until` and `verbatim` as a metadata map |
 | vision OCR | a `PdfPageRendererInterface` and a worker render route returning bytes, then a per-page vision loop |
+
+## 164.43 — The capture tool can finally carry what it was told (2026-11-25)
+
+§164.42 gave the store a `metadata` map. §164.41's `docgen_capture_style_memory`
+was written against the store that could not hold one, so it refused seven
+WordPress fields rather than pretend to keep them. This closes that loop, and it
+is the last item in the `document-generation` cluster.
+
+### Seven parameters that now reach storage
+
+`subject_refs`, `attachments`, `recorded_at`, `valid_from`, `valid_until`,
+`sensitivity` and `consent_basis`. Each is written **only when supplied**, so a
+capture with no provenance stores `{source, verbatim}` rather than a map of empty
+values — the same "nothing recorded is not recorded as empty" rule the store's
+column follows.
+
+### `verbatim` is derived, not asserted
+
+The WordPress tool takes `verbatim` as a parameter. Here it is computed per
+record, because the tool knows which record holds what:
+
+| record | `verbatim` | why |
+|---|---|---|
+| archival, holding the original | `true` | it is the exact text |
+| recall, holding a summary | `false` | it is not |
+| lone recall, holding the original | `true` | there was no summary to stand in |
+
+A caller-supplied flag would let a record claim something the tool knows better
+than the caller does. `tier` stays derived for the same reason, and
+`allow_summarisation` stays absent because there is no model here to summarise
+with — a flag describing behaviour the host does not have is the same defect in
+the other direction.
+
+### Validated before it becomes permanent
+
+Provenance is hard to correct once stored, so the obvious mistakes are refused at
+the edge:
+
+| field | rule |
+|---|---|
+| `recorded_at`, `valid_from`, `valid_until` | a date or a date-time with an optional zone |
+| `subject_refs` | trimmed, de-duplicated, at most 50 |
+| `attachments` | each must be an **object** — ids and hashes, not blobs — at most 25 |
+| `sensitivity`, `consent_basis` | at most 64 characters |
+
+The date check is a regex rather than an RFC 3339 parser on purpose: the job is
+to stop `next Tuesday` from becoming permanent provenance, not to normalise every
+spelling. The store's 64 KiB ceiling remains the backstop for total size, and its
+refusal already says where bytes belong.
+
+### Measurement
+
+`lib/core` **2,840 / 18,793** (was 2,829 / 18,771; +11 tests). Audit **314 / 314,
+servable 295** and toolkit parity **93 of 854**, both unchanged: this slice adds no
+tool, it makes an existing one whole. phpcs clean on all three touched files.
+
+The new tests cover: every record naming its source; `verbatim` derived across the
+three record shapes; the caller's seven fields reaching `metadata` intact; both
+records sharing the same provenance; a capture with nothing supplied producing
+`{source, verbatim}` and nothing else; and the four refusals — a bad date
+(store untouched), too many refs, an attachment that is not an object, and an
+over-long label.
+
+### What is left
+
+One recorded follow-up, and no unported tool in this cluster:
+
+| item | what it needs |
+|---|---|
+| vision OCR | a `PdfPageRendererInterface` plus a worker render route returning bytes, then a per-page vision loop |
