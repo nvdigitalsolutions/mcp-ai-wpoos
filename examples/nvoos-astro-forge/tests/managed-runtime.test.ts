@@ -71,6 +71,19 @@ describe( 'managed runtime — proxy helper', () => {
 		expect( src ).toContain( "responseHeaders.delete('set-cookie')" );
 	} );
 
+	it( 'strips the upstream framing it has already decoded', () => {
+		// The runtime decodes a compressed body but leaves upstream's
+		// Content-Encoding/Length on the response. Relayed untouched, they label
+		// plain bytes as gzip — and a browser then decodes the file to nothing
+		// (eca's logo loaded at 0px while curl showed a healthy 43 KB).
+		expect( src ).toContain( 'DECODED_BY_FETCH' );
+		expect( src ).toContain( "responseHeaders.delete('content-encoding')" );
+		expect( src ).toContain( "responseHeaders.delete('content-length')" );
+		expect( src ).toContain( "responseHeaders.delete('transfer-encoding')" );
+		// …and the hop asks for identity, so the common case needs no strip.
+		expect( src ).toContain( "headers.set('accept-encoding', 'identity')" );
+	} );
+
 	it( 'forwards an allowlist instead of the inbound header set', () => {
 		// Copied wholesale, the inbound request drags hop-by-hop headers and the
 		// edge's own cf-* / x-forwarded-* markers upstream, which a CDN can read
@@ -313,6 +326,16 @@ describe( 'managed runtime — deploy-tree boot gate', () => {
 	it( 'treats any HTTP answer as booted (the CMS may be unreachable from the runner)', () => {
 		expect( src ).toContain( 'res.statusCode' );
 		expect( src ).toContain( 'no HTTP response on port' );
+	} );
+
+	it( 'refuses a 2xx that names an encoding the body does not carry', () => {
+		// The one failure a status-and-bytes check cannot see: the runtime decodes
+		// the CMS response, the proxy relays upstream's content-encoding anyway,
+		// and the browser decodes plain bytes to nothing. Every probe stayed green
+		// while eca's logo rendered at 0px.
+		expect( src ).toContain( 'const MAGIC = { gzip: "1f8b"' );
+		expect( src ).toContain( 'answer.head.startsWith(magic)' );
+		expect( src ).toContain( 'so a browser loads it as 0 bytes' );
 	} );
 
 	it( 'never fails a passing gate on Windows temp cleanup', () => {

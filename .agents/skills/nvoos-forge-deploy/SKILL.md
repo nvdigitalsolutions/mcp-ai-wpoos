@@ -509,6 +509,32 @@ flood, the token/provenance checks stop a single crafted request.
     `grep -o 'href="https://<production-host>[^"]*"' dist/index.html | sort -u`.
     The fix belongs in sanitisation (same-origin absolute → path), so every site
     becomes host-independent at once.
+15. **A 200 that a browser cannot decode passes every check you have.** Node's
+    `fetch` decodes a compressed CMS response but leaves upstream's
+    `content-encoding` on the response object, so a proxy relaying
+    `new Headers(upstream.headers)` labels plain bytes as `gzip`. The browser then
+    decodes plain text, fails, and renders **nothing** — status `200`, 43 KB on
+    the wire, `naturalWidth: 0` in the DOM, and all six `/media` URLs returning
+    `200 image/svg+xml` to `curl`. Diagnose in the page, not in the shell:
+    `const r = await fetch(p); const t = await r.text(); ({ e: r.headers.get('content-encoding'), bytes: t.length })`
+    — `gzip` with `bytes: 0` is this bug. `curl -w '%{size_download}'` reports the
+    raw transfer and does **not** decode, so it reports a healthy size for a
+    response the browser throws away; add `--compressed` to see the truth. Fix in
+    the proxy: strip `content-encoding`/`content-length`/`transfer-encoding` from
+    the relayed response and ask upstream for `accept-encoding: identity`. The
+    boot gate now fails a 2xx whose body lacks the magic number of the encoding
+    it claims.
+16. **A `materialized` site must never use the `/media/<uploads path>` proxy
+    form.** Its uploads are mirrored under hashed names
+    (`/media/<hash>-<name>.webp`) and only the post-build localizer knows that
+    mapping. Rewriting to the proxy path first (a) names a path nothing serves —
+    there is no CMS to proxy to — and (b) hides the URL from the localizer's
+    report, so the JSON-LD logo and the header logo are never repaired and the
+    `retired cms` gate fires. `mediaUrl()` therefore returns the CMS URL
+    untouched when `contentSource === 'materialized'`, and the localizer does the
+    mapping. Related blind spot: a ROOT-RELATIVE `/wp-content/…` is invisible to
+    that gate (it matches `//host/wp-content/`), so the post-build pass rescues
+    those from the same report.
 
 ## Mirror-push mechanics (verified 2026-11-24)
 
