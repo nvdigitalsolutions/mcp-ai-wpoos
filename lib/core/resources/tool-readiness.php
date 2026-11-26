@@ -1979,6 +1979,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/MemorySettingsAndEventToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'manage_crm_contact' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\ManageCrmContactTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the six-action contact manager over ContentStoreInterface (Proposal 164 section 164.65): create, read, update, delete, list and search against mcp_crm_contacts, with the unprefixed contact meta family and the store markers so an export round-trips. Measured correction: the WordPress tool holds one store and does not dispatch across mcp_ai_lead; the dual store lives in the CPT store slug map, and a lead id is not a contact id. Two quirks are pinned: a created contact has no title unless contact_data carries one, and an update through first_name / last_name leaves the title unchanged. Phone validation uses the toolkit heuristic (seven digits) because the core has no libphonenumber.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmContactToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'manage_eca_term' => array(
 			'class' => 'Nvoos\Core\Tool\Classroom\\ManageEcaTermTool',
 			'readiness' => 'ready',
@@ -2473,6 +2482,15 @@ return array(
 			'readiness' => 'ready',
 			'probe' => 'call',
 			'evidence' => 'lib/laravel-adapter/tests/CoreToolCatalogueTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'scan_duplicate_contacts' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\ScanDuplicateContactsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the duplicate scanner over ContentStoreInterface (Proposal 164 section 164.65): the three matchers, exact-match confidence 100, Levenshtein name scoring with the 80 default, the masked phone label, and group deduplication. Deviation: the WordPress original reads _contact_email / _contact_phone, which nothing in the toolkit writes; the port reads the legacy keys first and the live email / phone keys second, so two of the three matchers are not dead. Scope is pinned to leads and customers, as WordPress scans them; toolkit contacts are out of scope and a test holds that. The corpus is paged in 200-row chunks because the core has no all-rows idiom, then compared O(n squared) as WordPress does.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmContactToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'search_attachments' => array(

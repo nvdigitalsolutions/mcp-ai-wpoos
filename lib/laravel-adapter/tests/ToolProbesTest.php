@@ -170,6 +170,11 @@ Probe Club,club
 			// unknown deal rather than assembling a bundle with no subject.
 			array( 'get_contact_interactions', array( 'contact_id' => 999999 ), 'success', array( 'contact_id', 'total_count', 'interactions' ), array( 'user_id' => 1 ) ),
 			array( 'get_crm_handover', array( 'entity' => 'deal', 'entity_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.65 — the contact pair. The manager refuses an id that is not a
+			// toolkit contact; the scanner answers on an empty corpus.
+			array( 'manage_crm_contact', array( 'action' => 'read', 'contact_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'scan_duplicate_contacts', array(), 'success', array( 'match_field', 'total_contacts', 'duplicate_groups', 'duplicates' ), array( 'user_id' => 1 ) ),
 		);
 	}
 

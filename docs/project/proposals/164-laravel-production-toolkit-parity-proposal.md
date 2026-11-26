@@ -5299,10 +5299,14 @@ Every entity is a custom post type, so the family maps to
 Two things that are not obvious from the folder:
 
 - **There are two contact stores.** `mcp_crm_contacts` is the toolkit CPT and
-  `mcp_ai_lead` is the older lead CPT, and `manage_crm_contact` dispatches to
-  whichever the id belongs to (its `get_storage_type` branch calls
-  `*_contact` methods for one and `*_item` for the other). The port has to keep
-  both type strings reachable, or a migrated contact becomes invisible.
+  `mcp_ai_lead` is the older lead CPT, and they are separate stores: the CPT
+  data store's canonical slug map sends `contacts` to `mcp_crm_contacts` and
+  `leads` to `mcp_ai_lead`. **Corrected in §164.65:** an earlier draft of this
+  bullet claimed `manage_crm_contact` dispatches across both through a
+  `get_storage_type` branch. It does not. The tool holds one store and calls
+  `*_item` methods on it, so a lead id is not a contact id. Both type strings
+  still have to stay reachable, but through the tools that own them, not
+  through a dispatch inside this one.
 - **The signals table is not on any tool's path.** The toolkit ships a
   `$wpdb` table for signals, but no declared tool reads it; the only `$wpdb` use
   in the thirteen is `esc_like` inside one email search. An earlier draft of
@@ -5461,3 +5465,101 @@ contact. That is the dual-store problem from §164.63 one level down: the same
 
 Next is slice 3, the contact pair: `manage_crm_contact` (the dual-store
 dispatch) and `scan_duplicate_contacts`.
+
+## 164.65 The contact pair, a wrong dispatch, and two dead vocabularies
+
+Slice 3 is `manage_crm_contact` and `scan_duplicate_contacts`. Reading them
+corrected the measurement §164.63 committed.
+
+### Correction: there is no dispatch inside `manage_crm_contact`
+
+§164.63 described `manage_crm_contact` as branching on storage type and calling
+`*_contact` methods for one store and `*_item` methods for the other. It does
+not. The tool holds one store —
+`WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'contacts' )` —
+and calls `create_item` / `get_item` / `update_item` / `delete_item` /
+`query_items` on it. The dual store lives one level down, in
+`WP_MCP_AI_Toolkit_CPT_Store::generate_post_type_slug()`:
+
+```php
+'crm' => array(
+    'leads'      => 'mcp_ai_lead',
+    'contacts'   => 'mcp_crm_contacts',
+    'deals'      => 'mcp_ai_deal',
+    'activities' => 'mcp_ai_crm_activity',
+),
+```
+
+So a lead id is **not** a contact id: the manager returns `item_not_found` for
+one. That is also WordPress' behaviour, and a test pins it. A legacy lead is
+reachable through `get_crm_handover`, `get_contact_interactions` and the lead
+tools — not through this one.
+
+### The dead vocabulary, again
+
+`scan_duplicate_contacts` reads `_contact_email` and `_contact_phone`. Across
+`addons/pro/includes/tools/crm/` there are **zero writers** of either key;
+`create_lead` and `create_customer` store `email` and `phone` unprefixed
+through the data store. Ported literally, two of the tool's three matchers
+would be dead and it would compare names only.
+
+This is the third instance of the same defect class (§164.64 found it for
+`_activity_*`, and the dead key family there also had three readers and no
+writer). The port reads the legacy key first, then the live key, and a test
+proves both.
+
+### Two more pinned quirks
+
+- **A created contact has no title.** `create_item()` only sets a post title
+  when the data carries `title`, and the declared `contact_data` schema has
+  none. WordPress therefore writes untitled contacts, which `search` (a
+  title/content/excerpt query) cannot find by name and the dedupe scanner (a
+  title comparison) cannot match. The port keeps it, and honours a `title`
+  supplied inside `contact_data` the way the store does.
+- **An update never changes the title.** `update_item()` receives
+  `contact_data`, which has no title, so renaming through `first_name` /
+  `last_name` leaves the stored title alone.
+
+Both are upstream bug candidates; either fix would change records WordPress
+already writes.
+
+### Decisions
+
+- **The manager writes `mcp_crm_contacts` with the unprefixed meta family**
+  (`first_name`, `last_name`, `email`, `phone`, `company`, `job_title`,
+  `tags`) plus the store's `_toolkit_slug` / `_entity_type` markers, so a
+  WordPress export round-trips. `storage_type` stays in every payload with
+  WordPress' `cpt` value for shape compatibility; the core has one store, so
+  the key does not distinguish backends here.
+- **`tags` stays an array.** WordPress stores it serialised and
+  `maybe_unserialize()`s it on read; the core stores typed meta, so the array
+  survives as an array.
+- **Phone validation is the toolkit's own heuristic** — at least seven digits,
+  the rule `normalize_phone()` already applies — because the core has no
+  libphonenumber. Email validation is `filter_var()`, which accepts the same
+  ordinary addresses as `is_email()`.
+- **List and search clamp to 1–200**, the adapter's documented range, with 20
+  as the default. WordPress passes `per_page` straight to `WP_Query`.
+- **The scanner keeps WordPress' scope**: `mcp_ai_lead` and
+  `mcp_ai_customer`. It does **not** scan `mcp_crm_contacts`, so the two tools
+  in this slice do not share a store. Widening the scan would report groups
+  WordPress never reports; it is left to the owner as a follow-up, and a test
+  holds the current scope.
+- **The corpus is paged, not fetched "all".** `posts_per_page => -1` has no
+  core equivalent (`perPage` must be non-negative and the adapter caps it at
+  200), so the scanner reads 200-row pages and then performs the same O(n²)
+  comparison. A large CRM costs what it costs in WordPress.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,149 / 20,028** (21 tests added) |
+| adapter PHPUnit | **131**, 914 assertions — both new probes pass; the same unrelated `export_eca_data` host-MIME failure remains |
+| tool readiness audit | **351 / 351**, servable **332** (+2), no violations |
+| toolkit parity | **130 of 854**; `crm` **6 ported**, 0 declined, 0 deferred, **7 remaining** |
+| phpcs | clean, no fixes needed |
+
+Next is slice 4, the hygiene pair: `archive_stale_contacts` and
+`recalculate_engagement_scores` — both readers of `_activity_*`, so the
+vocabulary found in §164.64 is now on the critical path.
