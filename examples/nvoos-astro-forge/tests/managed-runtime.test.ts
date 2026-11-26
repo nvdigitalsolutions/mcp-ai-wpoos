@@ -71,10 +71,13 @@ describe( 'managed runtime — proxy helper', () => {
 		expect( src ).toContain( "responseHeaders.delete('set-cookie')" );
 	} );
 
-	it( 'sends a same-origin request server-to-server', () => {
+	it( 'forwards an allowlist instead of the inbound header set', () => {
+		// Copied wholesale, the inbound request drags hop-by-hop headers and the
+		// edge's own cf-* / x-forwarded-* markers upstream, which a CDN can read
+		// as a spoofed request. Only the headers the CMS actually needs cross.
 		expect( src ).toContain( 'process.env.ASTRO_SITE' );
-		expect( src ).toContain( "headers.delete('host')" );
-		expect( src ).toContain( "headers.delete('origin')" );
+		expect( src ).toContain( 'FORWARDED_HEADERS' );
+		expect( src ).not.toContain( 'new Headers(request.headers)' );
 		expect( src ).toContain( "headers.set('origin', PUBLIC_ORIGIN)" );
 	} );
 
