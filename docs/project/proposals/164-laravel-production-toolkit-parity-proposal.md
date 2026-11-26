@@ -4289,3 +4289,83 @@ to do less.
 recorded deferrals, which is the arithmetic the register is designed to make
 visible: a deferred slug stays counted until someone builds the prerequisite, and
 these three are now documented rather than merely unexamined.
+
+## 164.51 The last three near-closed toolkits, and where they actually stop
+
+**On the numbering:** §164.49 (`toolkit_cpt`) merged ahead of this one, and §164.50
+(OKF) is open in its own change. This section takes the next free number rather
+than waiting.
+
+### A delivery gap that looks like a capability gap
+
+`capture` was the most promising of the three, because the media worker already
+renders pages: `/api/browser/screenshot` is a hardened Puppeteer call behind
+`validatePublicUrl()` — a real SSRF guard — and it accepts a URL, a viewport,
+`fullPage` and a format. That is the whole of `capture_webpage_screenshot`.
+
+What it does not do is hand the bytes back. The route writes the image on the
+worker's own volume and answers `{output_path, size, format}`, while every other
+binary route in the worker (`/api/image/*`, `/api/pdf/*`) returns `b64`, and there
+is **no download route for `/browser`**. A tool built on it today would return a
+path that its own host cannot open.
+
+That is worth recording precisely, because it is a small fix wearing the costume
+of a large one: either `b64` on the response or a `/api/browser/download/:name`
+route, plus a `BrowserCaptureInterface` over it. Until then the slug is deferred
+rather than built into a lie.
+
+`web_browser` stops one step earlier still: six of its seven actions are a
+*sequence* on one page (`navigate` then `click`, `type`, `submit`, `extract`), and
+the worker's route is a one-shot render with no session. A scripted step list the
+worker executes inside one request would satisfy it; nothing today can.
+
+### The connection store exists, but not where a tool can reach it
+
+`remote_wp_connection` looked like the largest job of the three — 2,900 lines and
+14+ named queries. The substrate is better than expected:
+`App\Support\RemoteSites\RemoteSiteStore` already has `all()`, `find()`,
+`create()`, `update()`, `delete()`, `credentialsFor()` and `recordTest()`, and
+`query_remote_site` is already served.
+
+The gap is a seam and a vocabulary. That store is **app-local**, not a core
+contract, so a portable tool cannot depend on it; and `query_remote_site` takes a
+site URL and an endpoint *per call*, so it offers neither the named queries
+(`get_posts`, `get_wc_orders`, …) nor stored credentials — an agent must already
+know each REST path. A port needs a core contract over that store plus an
+action-to-endpoint map; the transport is the only part already done.
+
+`remote_shopify_connection` has no analogue at all: nothing here speaks Shopify.
+
+### `vault` has nothing to port onto
+
+Both `vault_access` and `vault_manage` read and write encrypted records — passwords,
+secure notes, cards, identities — in folders. Core has no vault contract, the app
+skeleton registers no vault model or table, and there is no key-management story.
+Building the tool on plain options would defeat the point of the tool, so the pair
+is deferred together: management without a store has nothing to manage.
+
+### What this closes, and what it does not
+
+All three toolkits now read **0 remaining** — through deferral, which the register
+counts while still showing it in its own column. That is the distinction the
+`Remaining` column exists to make: these slugs are *dispositioned*, not *done*, and
+each carries the prerequisite that would unblock it.
+
+| toolkit | slugs | disposition |
+|---|---|---|
+| `capture` | `capture_webpage_screenshot`, `web_browser` | deferred — bytes never reach the host; no browser session |
+| `vault` | `vault_access`, `vault_manage` | deferred — no encrypted store |
+| `remote-connections` | `remote_wp_connection`, `remote_shopify_connection` | deferred — app-local store, no core contract; no Shopify client |
+
+### Measurements
+
+| gate | value |
+|---|---|
+| toolkit parity | **99 of 854**; 7 declined, **16 deferred**, **732 remaining** |
+| tool readiness audit | **320 / 320**, servable **301**, no violations (unchanged: this slice adds no tools) |
+| `lib/core` / adapter PHPUnit | **2,961 / 19,254** and **448 / 2,146**, unchanged (two register files, no runtime code) |
+| licence boundary | intact |
+
+The parity gate was exercised again after the edit: an unknown decision word still
+fails the check, so these six rows are being read by the same machinery that
+validates the rest.

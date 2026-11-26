@@ -9,6 +9,10 @@
             "decision": "declined",
             "reason": "It would be a chain of convert, resize and compress, and ImageProcessingInterface::resize/crop/rotate/convert each take a source path and return a persisted path, so a chain is one worker round trip and one intermediate file per step. A real batch needs a multi-operation `/transform` call, which is a worker contract change rather than a tool. The three served tools (optimise_images_batch, generate_responsive_images, compress_image) already cover the jobs this slug names, so there is nothing left to build behind the name."
         },
+        "capture_webpage_screenshot": {
+            "decision": "deferred",
+            "reason": "The media worker already renders pages: `/api/browser/screenshot` is a hardened Puppeteer call behind an SSRF guard that accepts a URL, a viewport, `fullPage` and a format. The blocker is delivery, not capture — the route writes the image on the worker's own volume and answers `{output_path, size, format}`, while every other binary route (`/api/image/*`, `/api/pdf/*`) returns `b64` and the worker exposes no download route for `/browser`. A host therefore cannot retrieve the bytes, and a tool that returned a path it cannot open would be a lie. Prerequisite: `b64` on the screenshot response (or a `/api/browser/download/:name` route) plus a `BrowserCaptureInterface` over it."
+        },
         "create_remotion_video": {
             "decision": "deferred",
             "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
@@ -53,6 +57,14 @@
             "decision": "deferred",
             "reason": "It converts CSV, XLSX and PPTX into PDF or structured text, OCRs scanned PDFs and repairs encoding before ingest. The runtime has the OCR half (OcrServiceInterface, PdfOcrInterface, PdfTextExtractorInterface) and PDF mutation, but nothing reads a spreadsheet or a slide deck: the media worker generates office documents, it does not parse them. Prerequisite: an office-document reader that exposes rows and sheets as text."
         },
+        "remote_shopify_connection": {
+            "decision": "deferred",
+            "reason": "Reads a Shopify store through the Admin API using stored credentials. Nothing in this runtime speaks Shopify: there is no Shopify client, no credential store for it, and no Shopify-shaped entity. Prerequisite: an Admin API client plus credentials in the connection store."
+        },
+        "remote_wp_connection": {
+            "decision": "deferred",
+            "reason": "A 2,900-line convenience layer over 14+ named queries (`get_posts`, `get_media`, `get_wc_products`, `get_wc_orders`, …) against a *stored* connection. This runtime is closer than it looks: `App\\Support\\RemoteSites\\RemoteSiteStore` already has all, find, create, update, delete, credentialsFor and recordTest, and `query_remote_site` covers the transport. What is missing is the seam and the semantics — the store is app-local rather than a core contract, and `query_remote_site` takes a URL and an endpoint per call, so it offers neither the named queries nor stored credentials. Prerequisite: a core contract over that store plus the action-to-endpoint map."
+        },
         "remove_background": {
             "decision": "deferred",
             "reason": "Background removal needs either a Python `rembg` sidecar or a paid remove.bg key, and neither is bound on this runtime: the media worker advertises no matting capability, so the tool could only refuse at call time. Prerequisite: a matting capability on the media worker or a configured removebg_api_key."
@@ -68,6 +80,18 @@
         "upload_video_batch": {
             "decision": "deferred",
             "reason": "Uploads a batch to YouTube or Vimeo, and platform must be one of those two. No video-platform uploader is bound here: the media worker composes and publishes to the social channels, not to video platforms. Its dry_run mode only previews the queue that get_queued_videos reads, so the pair lands together or not at all. Prerequisite: a YouTube/Vimeo uploader plus the job model above."
+        },
+        "vault_access": {
+            "decision": "deferred",
+            "reason": "Reads items from an encrypted vault: passwords, secure notes, cards and identities, organised in folders. Core has no vault contract and the app skeleton has no vault model or table, so there is neither an encrypted store nor a key-management story to read from. A port built on plain options would be the opposite of the tool's purpose. Prerequisite: a vault contract with an encrypted backing store and a key source."
+        },
+        "vault_manage": {
+            "decision": "deferred",
+            "reason": "The write half of the same vault: folder and item creation, updates, moves and deletion. It shares the prerequisite of `vault_access` — there is no encrypted store — and splitting the pair would leave management without anything to manage. Prerequisite: a vault contract with an encrypted backing store and a key source."
+        },
+        "web_browser": {
+            "decision": "deferred",
+            "reason": "Six of its seven actions are a stateful sequence: `click`, `type` and `submit` act on one page after a `navigate`, and `extract` reads the result of that sequence. The worker's browser route is a one-shot render (URL or HTML in, one file out) with no session and no step list, so there is nothing to hold the page between calls. Prerequisite: a session-capable browser route, or a scripted step list the worker executes inside one request. The same delivery gap as `capture_webpage_screenshot` applies to its screenshot and PDF actions."
         }
     }
 }
