@@ -138,6 +138,7 @@ final class DeleteEcaToolTest extends TestCase
         $meta = $store->items[10]->meta;
 
         $this->assertSame('cancelled', $meta['_eca_status']);
+        $this->assertSame(array(), $meta['_eca_student_enrollments']);
         $this->assertSame(array(), $meta['_eca_enrollments']);
         $this->assertSame(0, $meta['_eca_current_enrollment']);
         $this->assertSame(7, $meta['_eca_cancelled_by']);
@@ -161,6 +162,33 @@ final class DeleteEcaToolTest extends TestCase
         $this->assertStringContainsString('after 1 student', $result['error']['message']);
         $this->assertArrayHasKey(10, $store->items);
         $this->assertSame('active', $store->items[10]->meta['_eca_status'] ?? null);
+    }
+
+    /**
+     * `_eca_enrollments` is the older name: WordPress's `list` tool reads it and
+     * nothing in this family writes it, but an imported row may carry it and
+     * deleting such an activity must still unenroll the students it names.
+     */
+    public function test_a_legacy_roster_key_is_still_unenrolled(): void
+    {
+        $store = $this->store(array(
+            10 => $this->item(10, 'mcp_ai_eca', array(
+                '_eca_enrollments' => array(20 => array('student_id' => 20)),
+                '_eca_current_enrollment' => 1,
+            )),
+            20 => $this->item(20, 'mcp_ai_student', array(
+                '_student_eca_enrollments' => array(10 => array('eca_id' => 10)),
+            )),
+        ));
+
+        $result = $this->tool($store)->execute(
+            array('eca_id' => 10, 'confirm_delete' => true),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(1, $result['data']['students_affected']);
+        $this->assertSame(array(), $store->items[20]->meta['_student_eca_enrollments']);
     }
 
     public function test_an_empty_roster_needs_no_confirmation(): void
@@ -217,7 +245,7 @@ final class DeleteEcaToolTest extends TestCase
     {
         return array(
             10 => $this->item(10, 'mcp_ai_eca', array(
-                '_eca_enrollments' => array(
+                '_eca_student_enrollments' => array(
                     20 => array('student_id' => 20),
                     21 => array('student_id' => 21),
                 ),
