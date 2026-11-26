@@ -24,7 +24,9 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Application\Media\GeneratedMediaPersister;
+use Nvoos\Core\Application\Media\MediaDerivative;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
@@ -32,6 +34,18 @@ use Nvoos\Core\Domain\Contract\VideoProcessingInterface;
 
 abstract class AbstractVideoTool extends AbstractTool
 {
+    /**
+     * Which operations produce a linkable derivative, and under which role.
+     *
+     * Only output that is *about* the source is listed. A transcoded copy is the
+     * same content in another container, not a rendition of it, so calling that a
+     * derivative would make the role meaningless — an inventory asking for
+     * posters would start matching whole films.
+     */
+    private const DERIVATIVE_ROLES = array(
+        'video-thumbnail' => FileDerivativeStoreInterface::ROLE_POSTER,
+    );
+
     public function __construct(
         ErrorFactoryInterface $e,
         protected readonly VideoProcessingInterface $video,
@@ -59,6 +73,26 @@ abstract class AbstractVideoTool extends AbstractTool
         $url = $this->stringParam($arguments, 'video_url');
 
         return '' !== $url ? $url : null;
+    }
+
+    /**
+     * The stored video this operation read, or 0 when the caller gave a URL.
+     *
+     * A URL input was never in this registry, so there is no id to link a
+     * derivative to. 0 is the honest answer; `MediaDerivative::forSource()` turns
+     * it into "record nothing", which is the whole reason it takes an int rather
+     * than a nullable one. `video_id` is accepted because the caption tools name
+     * the input that way.
+     */
+    protected function sourceFileId(array $arguments): int
+    {
+        $fileId = $this->intParam($arguments, 'file_id');
+
+        if ($fileId > 0) {
+            return $fileId;
+        }
+
+        return \max(0, $this->intParam($arguments, 'video_id'));
     }
 
     /**
@@ -121,6 +155,10 @@ abstract class AbstractVideoTool extends AbstractTool
                 GeneratedMediaPersister::displayName($arguments, $context, $prefix),
                 $this->stringParam($arguments, 'visibility', FileVisibilityStoreInterface::VISIBILITY_PUBLIC),
                 self::mime($format),
+                MediaDerivative::forSource(
+                    $this->sourceFileId($arguments),
+                    self::DERIVATIVE_ROLES[$prefix] ?? '',
+                ),
             );
         }
 

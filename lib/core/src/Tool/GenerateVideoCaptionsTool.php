@@ -46,8 +46,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Application\Media\CaptionFormatter;
 use Nvoos\Core\Application\Media\GeneratedMediaPersister;
+use Nvoos\Core\Application\Media\MediaDerivative;
 use Nvoos\Core\Domain\Contract\AudioTranscriptionInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
@@ -291,6 +293,10 @@ class GenerateVideoCaptionsTool extends AbstractVideoTool
                 GeneratedMediaPersister::displayName($arguments, $context, 'captions'),
                 $this->stringParam($arguments, 'visibility', FileVisibilityStoreInterface::VISIBILITY_PUBLIC),
                 self::mime($format),
+                MediaDerivative::forSource(
+                    $this->sourceFileId($arguments),
+                    FileDerivativeStoreInterface::ROLE_CAPTION,
+                ),
             );
         } finally {
             if (\is_file($temporary)) {

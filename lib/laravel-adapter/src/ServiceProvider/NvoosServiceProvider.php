@@ -44,6 +44,7 @@ use Nvoos\Core\Domain\Contract\ErlangCInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
+use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
 use Nvoos\Core\Domain\Contract\ControlledDocumentInterface;
@@ -355,6 +356,14 @@ class NvoosServiceProvider extends ServiceProvider {
 		// is one writer, and a host that only knows `FileStoreInterface` keeps working.
 		$this->app->bind(
 			FileVisibilityStoreInterface::class,
+			static fn ( $app ) => $app->make( FileStoreInterface::class ),
+		);
+		// Proposal 164 section 164.46 — the same store once more, through the optional
+		// derivative capability. A file produced from another records the relationship
+		// in `nvoos_files.metadata`, which is what lets an inventory find a video from
+		// its poster instead of guessing from a filename.
+		$this->app->bind(
+			FileDerivativeStoreInterface::class,
 			static fn ( $app ) => $app->make( FileStoreInterface::class ),
 		);
 		$this->app->bind( FileUploadServiceInterface::class, function ( $app ) {

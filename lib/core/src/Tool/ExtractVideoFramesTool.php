@@ -36,6 +36,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Application\Media\GeneratedMediaPersister;
+use Nvoos\Core\Application\Media\MediaDerivative;
+use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
@@ -330,6 +332,10 @@ class ExtractVideoFramesTool extends AbstractVideoTool
                     GeneratedMediaPersister::displayName($arguments, $context, 'frame-' . ( (int) $index + 1 )),
                     $visibility,
                     self::mime('jpg'),
+                    MediaDerivative::forSource(
+                        $this->sourceFileId($arguments),
+                        FileDerivativeStoreInterface::ROLE_FRAME,
+                    ),
                 ) + $entry;
             } else {
                 $entry['path'] = $frame['path'];

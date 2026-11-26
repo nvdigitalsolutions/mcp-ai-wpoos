@@ -14,7 +14,7 @@
  * now has the equivalent row (§162), so the missing half is a single place that
  * turns payload bytes into that row rather than one copy of the logic per tool.
  *
- * Three rules make it safe to put in front of a paid API call:
+ * Four rules make it safe to put in front of a paid API call:
  *
  *  - **Bytes only.** It stores base64 payload data. Fetching the provider's
  *    temporary URL would mean a second network hop to a link the caller does not
@@ -25,6 +25,14 @@
  *  - **The store decides the type.** The MIME hint is only a hint; the registry
  *    sniffs the bytes and refuses what it cannot serve (§162.7). This class does
  *    not repeat that policy.
+ *  - **A relationship is reported, not thrown.** When a caller says what the
+ *    file was made from, the link is recorded after the bytes land (§164.46).
+ *    If the host advertises the capability and the write fails, the payload says
+ *    so — an unlinked poster is one the inventory asks for again, and "stored
+ *    but unlinked" is a different fact from "stored". A host that does not
+ *    advertise the capability is silent here on purpose: it cannot link anything,
+ *    and a warning nobody can action on every generated poster is noise. The
+ *    inventory tools are where that absence is named.
  *
  * Two provider dialects are understood, because normalising them here is what
  * keeps the tools thin: OpenAI's images API returns `b64_json`, and Google's
@@ -41,6 +49,7 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Media;
 
+use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Entity\StoredFile;
 
@@ -265,6 +274,9 @@ final class GeneratedMediaPersister
      * @param string               $baseName
      * @param string               $visibility
      * @param string               $mimeHint
+     * @param MediaDerivative|null $relation   What this file was made from, when the
+     *                                         caller knows. Null records nothing, which is
+     *                                         the normal case for a URL input.
      *
      * @return array<string, mixed>
      */
@@ -275,11 +287,20 @@ final class GeneratedMediaPersister
         string $baseName,
         string $visibility,
         string $mimeHint = 'image/png',
+        ?MediaDerivative $relation = null,
     ): array {
         $outcome = $this->storeFile($localPath, $context, $visibility, $baseName, $mimeHint);
 
         if (null !== $outcome['media']) {
             $payload['media'] = array( $outcome['media'] );
+
+            if (null !== $relation) {
+                $failure = $this->link((int) ( $outcome['media']['attachment_id'] ?? 0 ), $relation);
+
+                if (null !== $failure) {
+                    $payload['media_relationship_failed'] = array( $failure );
+                }
+            }
         }
 
         if (null !== $outcome['error']) {
@@ -287,6 +308,37 @@ final class GeneratedMediaPersister
         }
 
         return $payload;
+    }
+
+    /**
+     * Record the derivative relationship, or say why it could not be.
+     *
+     * The file is already stored and already reported, so this never throws: the
+     * relationship is secondary to the bytes.
+     *
+     * A host without the capability records nothing and is *not* told off. It
+     * cannot link anything, so a permanent, unfixable warning on every generated
+     * poster is noise; the tools that need the relationship refuse by name
+     * instead, which is a place an operator can act on. A host that *has* the
+     * capability and fails to write is different: that is a real loss, and the
+     * payload reports it.
+     *
+     * @return string|null The reason it could not be recorded, or null on success
+     *                     or when the host does not advertise the capability.
+     */
+    private function link(int $fileId, MediaDerivative $relation): ?string
+    {
+        if (!$this->files instanceof FileDerivativeStoreInterface) {
+            return null;
+        }
+
+        try {
+            $this->files->recordDerivative($fileId, $relation->sourceFileId, $relation->role);
+        } catch (\Throwable $error) {
+            return $error->getMessage();
+        }
+
+        return null;
     }
 
     /**
