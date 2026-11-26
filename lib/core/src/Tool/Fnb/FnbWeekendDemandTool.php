@@ -155,14 +155,4 @@ class FnbWeekendDemandTool extends FnbTool
 
         return (string) gmdate('Y-m-d', (int) strtotime($today . ' +' . $offset . ' days'));
     }
-
-    /**
-     * @param array<string, mixed> $arguments
-     */
-    private function scalar(array $arguments, string $key): string
-    {
-        $value = $arguments[ $key ] ?? null;
-
-        return is_scalar($value) ? (string) $value : '';
-    }
 }

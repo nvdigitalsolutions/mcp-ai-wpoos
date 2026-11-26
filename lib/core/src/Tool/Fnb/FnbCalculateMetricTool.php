@@ -140,14 +140,4 @@ class FnbCalculateMetricTool extends FnbTool
     {
         return FnbMetrics::METRICS[ $metricId ] ?? 'metric';
     }
-
-    /**
-     * @param array<string, mixed> $arguments
-     */
-    private function scalar(array $arguments, string $key): string
-    {
-        $value = $arguments[ $key ] ?? null;
-
-        return is_scalar($value) ? (string) $value : '';
-    }
 }

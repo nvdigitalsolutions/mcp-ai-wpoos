@@ -175,14 +175,4 @@ class FnbDuplicateInvoiceScanTool extends FnbTool
 
         return $lines;
     }
-
-    /**
-     * @param array<string, mixed> $arguments
-     */
-    private function scalar(array $arguments, string $key): string
-    {
-        $value = $arguments[ $key ] ?? null;
-
-        return is_scalar($value) ? (string) $value : '';
-    }
 }
