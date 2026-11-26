@@ -279,6 +279,13 @@ export interface Customer {
 	capabilities?: string[];
 	/** Collections the backend mode marks read-only (e.g. woo statuses). */
 	readOnlyCollections?: string[];
+	/**
+	 * Optional surfaces this site actually has (server-computed on /auth/me).
+	 * Today `'eca'` — the Pro toolkit's activity catalogue, whose post type only
+	 * registers while the toolkit's own setting is on. Never inferred from a
+	 * capability: a capability says what the user may do, not what exists.
+	 */
+	features?: string[];
 }
 
 export interface NonceResponse {

@@ -70,6 +70,10 @@ export interface BridgeGateState {
 	mode: string;
 	/** `core` | `elementor` | `wp-maintenance-mode` | another plugin slug | null. */
 	plugin: string | null;
+	/** Seconds the CMS asked crawlers to wait (`Retry-After`), when it says. */
+	retryAfter?: number;
+	/** When the bridge read the state (ISO 8601). */
+	checkedAt?: string;
 }
 
 /** The probe result — everything a caller needs to decide, with no secrets. */
@@ -471,19 +475,53 @@ async function fetchBridgeState(
 			await response.body?.cancel();
 			return undefined;
 		}
-		const body = ( await response.json() ) as { maintenance?: unknown; mode?: unknown; plugin?: unknown };
+		const body = ( await response.json() ) as {
+			maintenance?: unknown;
+			mode?: unknown;
+			plugin?: unknown;
+			retryAfter?: unknown;
+			checkedAt?: unknown;
+		};
 		if ( ! body || typeof body.maintenance !== 'boolean' ) {
 			return undefined;
 		}
+		const retryAfter =
+			typeof body.retryAfter === 'number' && Number.isFinite( body.retryAfter ) && body.retryAfter > 0
+				? body.retryAfter
+				: undefined;
+		const checkedAt = typeof body.checkedAt === 'string' && body.checkedAt ? body.checkedAt : undefined;
 		return {
 			maintenance: body.maintenance,
 			mode: typeof body.mode === 'string' && body.mode ? body.mode : body.maintenance ? 'maintenance' : 'off',
 			plugin: typeof body.plugin === 'string' && body.plugin ? body.plugin : null,
+			...( retryAfter !== undefined ? { retryAfter } : {} ),
+			...( checkedAt ? { checkedAt } : {} ),
 		};
 	} catch {
 		// Route absent (404), network error, timeout — the HTML verdict stands.
 		return undefined;
 	}
+}
+
+/**
+ * Read the bridge's publication state without opening a session.
+ *
+ * Publication is a public fact — the gate already answers visitors with it —
+ * so this read needs no credentials. It is deliberately separate from
+ * `openGate()`: deciding what a BUILT site publishes must never require
+ * logging in to the source.
+ *
+ * Returns null when the bridge is absent, unreachable, or answers garbage.
+ * The caller decides what that means (Proposal 165: fail open).
+ */
+export async function readBridgeGateState(
+	profile: Pick< SiteProfile, 'url' >,
+	options: { fetchImpl?: typeof fetch; timeoutMs?: number; allowLoopback?: boolean } = {}
+): Promise< BridgeGateState | null > {
+	assertSafeHttpUrl( profile.url, { allowLoopback: options.allowLoopback === true } );
+	const base = profile.url.replace( /\/+$/, '' );
+	const state = await fetchBridgeState( base, options.fetchImpl ?? fetch, options.timeoutMs ?? DEFAULT_TIMEOUT_MS );
+	return state ?? null;
 }
 
 function fingerprintForPlugin( plugin: string | null ): GateFingerprint {

@@ -50,6 +50,7 @@ import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, w
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveRuntime, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { openGate } from '../lib/gate.ts';
+import { offPublication, resolveLivePublication } from '../lib/gate-publish.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureHeaderActions, measureMobileNav, loadChromium, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
@@ -1641,6 +1642,11 @@ async function runScaffold( profileRef, options ) {
 			profilePath: profilePathOf( profileRef ),
 			explicit: options.mediaSnapshot,
 		} );
+	// Proposal 165 — resolve the CMS's publication state into the artifact.
+	// Offline unless the profile opted in (`gatePublish`) or `--gate` was given;
+	// a bridge failure publishes the real site rather than blocking a build.
+	const gate = await resolveGateForScaffold( profile, options.gate );
+
 	const result = await scaffold( {
 		profile,
 		targetDir: options.target,
@@ -1658,6 +1664,7 @@ async function runScaffold( profileRef, options ) {
 		contentDir: contentDirFor(),
 		mediaDir: mediaDirFor(),
 		siteSlug,
+		gate,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 	const materialized = isMaterializedContent( profile );
@@ -1674,6 +1681,28 @@ async function runScaffold( profileRef, options ) {
 		console.warn( `\u26a0 ${ warning }` );
 	}
 	console.log( 'Next: cd into the project, `npm install`, `npm run dev` (or `npm run build`).' );
+}
+
+/**
+ * Proposal 165 — the publication verdict for a scaffold.
+ *
+ * Only a profile that opted in (`gatePublish`) or an explicit `--gate` reads
+ * the bridge. Everything else stays offline and publishes the real site, so a
+ * legacy profile costs no network call and no behaviour change.
+ */
+async function resolveGateForScaffold( profile, override ) {
+	const allowed = new Set( [ 'auto', 'off', 'maintenance', 'coming_soon' ] );
+	const explicit = typeof override === 'string' && override !== '' ? override : 'auto';
+	if ( ! allowed.has( explicit ) ) {
+		fail( `--gate must be auto | off | maintenance | coming_soon (got "${ explicit }").` );
+	}
+	if ( ! profile.gatePublish && explicit === 'auto' ) {
+		return offPublication();
+	}
+	return resolveLivePublication( {
+		profile,
+		override: explicit === 'auto' ? 'auto' : explicit,
+	} );
 }
 
 async function checkProfile( profile ) {
@@ -5409,6 +5438,7 @@ function scaffoldOptions( cmd ) {
 		.option( '--media-snapshot <dir>', 'committed media snapshot copied into media-snapshot/ (default: sites/<name>.media when media.snapshot is true)' )
 		.option( '--unlock', 're-forge a target that is LOCKED for hand-editing (destroys custom work)' )
 		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )
+		.option( '--gate <mode>', 'publication gate: auto | off | maintenance | coming_soon (default: auto when the profile has gatePublish)' )
 		.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
 		.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
 		.option( '--demo-content', 'keep the template placeholder post/page (off by default: a real site must not ship them)' );

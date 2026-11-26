@@ -13,6 +13,7 @@ describe('buildAdminConfig', () => {
 			adminUrl: '',
 			capabilities: ['manage_astro', 'edit_posts'],
 			readOnlyCollections: ['statuses'],
+			features: ['eca'],
 		};
 
 		expect(buildAdminConfig(customer, 'nonce-abc', '/api')).toEqual({
@@ -23,6 +24,9 @@ describe('buildAdminConfig', () => {
 				canManage: true,
 				capabilities: ['manage_astro', 'edit_posts'],
 				readOnlyCollections: ['statuses'],
+				// The bundle gates its Activities nav on this list; dropping it here
+				// silently hides a surface the manager can legitimately use.
+				features: ['eca'],
 			},
 		});
 	});
@@ -32,6 +36,7 @@ describe('buildAdminConfig', () => {
 			canManage: false,
 			capabilities: [],
 			readOnlyCollections: [],
+			features: [],
 		});
 	});
 });

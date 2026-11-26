@@ -164,6 +164,7 @@ describe('scaffold — production blog template', () => {
 			'src/lib/tracking.generated.ts',
 			'src/lib/managed.generated.ts',
 			'public/tokens.dtcg.json',
+			'gate.generated.json',
 		]);
 	});
 

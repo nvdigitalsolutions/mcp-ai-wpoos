@@ -59,4 +59,20 @@ export const en = {
 		noResults: 'No results.',
 		unavailable: 'Search is unavailable.',
 	},
+	// Proposal 165 — the maintenance / coming-soon pages. Never a timer: the
+	// retry affordance is a link the visitor activates (WCAG 2.2.1 / 2.2.4).
+	gate: {
+		maintenance: {
+			title: "We'll be back shortly",
+			body: 'The site is temporarily unavailable while we make some changes. Please check back soon.',
+			retry: 'Try again',
+		},
+		comingSoon: {
+			title: 'Coming soon',
+			body: 'Something is taking shape here. Check back shortly.',
+			retry: 'Try again',
+		},
+		contact: 'Contact us',
+		statusLabel: 'Site status',
+	},
 };

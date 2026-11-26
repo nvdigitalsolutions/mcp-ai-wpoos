@@ -11,7 +11,16 @@
 		"runtime": "managed",
 		"publicOrigin": "https://eca.directory",
 		"revalidate": true,
+		"manage": true,
+		"manageBundle": true,
 		"forms": "bff-proxied"
+	},
+	"gatePublish": {
+		"honor": "auto",
+		"session": {
+			"bypass": true,
+			"cookieName": "nvoos_forge_session"
+		}
 	},
 	"eca": {
 		"basePath": "/activities",

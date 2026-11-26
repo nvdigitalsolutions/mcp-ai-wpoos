@@ -349,6 +349,17 @@ describe( 'the committed ECA profile', () => {
 		// never reach it.
 		expect( ecaScaffoldWarnings( profile ) ).toEqual( [] );
 	} );
+
+	it( 'keeps the CMS origin split and the manager-session bypass', async () => {
+		const profile = await load();
+		expect( profile.url ).toBe( 'https://cms.eca.directory' );
+		expect( profile.deploy?.publicOrigin ).toBe( 'https://eca.directory' );
+		expect( profile.deploy?.manage ).toBe( true );
+		expect( profile.gatePublish?.session ).toEqual( {
+			bypass: true,
+			cookieName: 'nvoos_forge_session',
+		} );
+	} );
 } );
 
 // ---------------------------------------------------------------------------

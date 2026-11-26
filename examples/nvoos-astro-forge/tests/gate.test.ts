@@ -354,7 +354,12 @@ describe( 'bridge corroboration (Proposal 152 P4)', () => {
 			const probe = await probeGate( profileFor( primary.base ), { allowLoopback: true } );
 			expect( probe.state ).toBe( 'gated' );
 			expect( probe.fingerprint ).toBe( 'elementor-maintenance' );
-			expect( probe.bridge ).toEqual( { maintenance: true, mode: 'coming_soon', plugin: 'elementor' } );
+			expect( probe.bridge ).toEqual( {
+				maintenance: true,
+				mode: 'coming_soon',
+				plugin: 'elementor',
+				checkedAt: '2026-11-20T00:00:00+00:00',
+			} );
 			expect( probe.evidence.join( ' ' ) ).toContain( 'bridge' );
 		} );
 	} );
@@ -371,7 +376,12 @@ describe( 'bridge corroboration (Proposal 152 P4)', () => {
 		await withEnv( { WP_FIXTURE_GATE: '503', WP_FIXTURE_BRIDGE_GATE: 'off' }, async () => {
 			const probe = await probeGate( profileFor( primary.base ), { allowLoopback: true } );
 			expect( probe.state ).toBe( 'gated' );
-			expect( probe.bridge ).toEqual( { maintenance: false, mode: 'off', plugin: null } );
+			expect( probe.bridge ).toEqual( {
+				maintenance: false,
+				mode: 'off',
+				plugin: null,
+				checkedAt: '2026-11-20T00:00:00+00:00',
+			} );
 			expect( probe.evidence.join( ' ' ) ).toContain( 'NOT gated' );
 		} );
 	} );

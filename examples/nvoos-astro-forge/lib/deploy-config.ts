@@ -65,7 +65,7 @@ export function assertRuntime( runtime: unknown ): asserts runtime is DeployRunt
  * gate without building a complete profile.
  */
 export interface RuntimeProfile {
-	deploy?: { runtime?: unknown };
+	deploy?: { runtime?: unknown; manage?: boolean };
 	forms?: { delivery?: string; fallback?: string };
 }
 
@@ -85,8 +85,9 @@ export interface RuntimeRequirement {
  *
  * Precedence is most-restrictive first:
  * 1. `deploy.runtime: "managed"` — explicit.
- * 2. `forms.delivery: "direct"` — the provider key lives on the server.
- * 3. `forms.fallback: "direct"` — re-delivery needs the same runtime.
+ * 2. `deploy.manage: true` — `/manage` is a server-rendered surface.
+ * 3. `forms.delivery: "direct"` — the provider key lives on the server.
+ * 4. `forms.fallback: "direct"` — re-delivery needs the same runtime.
  *
  * Everything else (including `forms.delivery: "bridge"`, which POSTs from the
  * browser to WordPress, and `eca.booking.mode: "external"`) is static-safe.
@@ -99,6 +100,13 @@ export function requiredRuntime( profile: RuntimeProfile ): RuntimeRequirement {
 
 	if ( profile.deploy?.runtime === 'managed' ) {
 		return { runtime: 'managed', reason: 'deploy.runtime is "managed"' };
+	}
+
+	if ( profile.deploy?.manage === true ) {
+		return {
+			runtime: 'managed',
+			reason: 'deploy.manage serves /manage from the managed runtime (a static tree has no server routes)',
+		};
 	}
 
 	if ( profile.forms?.delivery === 'direct' ) {

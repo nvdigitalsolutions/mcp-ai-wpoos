@@ -284,6 +284,106 @@ anonymous page". The bridge reports what an **anonymous** visitor sees, so a
 successful `WP_GATE_*` login always wins over a `maintenance: true` verdict.
 No bridge → `404` on that route → the probe falls back to its HTML table.
 
+### Publication gate parity — the built site honours Elementor (165)
+
+`gate` (152) is how the forge gets *in* to a gated source. `gatePublish` is how
+the **built** site behaves while the CMS is gated:
+
+```jsonc
+// site.json
+{
+  "deploy": { "runtime": "managed", "manage": true },
+  "gatePublish": {
+    "honor": "auto",              // auto | coming_soon-only | off
+    "trust": "bridge",             // bridge (default) | probe (HTML inference)
+    "retryAfterSeconds": 600,      // 503 hint, capped at 86400
+    "static": { "policy": "replace" }, // replace the artifact | keep it
+    "bypass": { "ttlSeconds": 43200, "cookieName": "nvoos_gate" },
+    "session": { "bypass": true, "cookieName": "nvoos_forge_session" }
+  }
+}
+```
+
+| Tier | Behaviour |
+|---|---|
+| managed | the emitted `server.js` front controller answers `503 + Retry-After` (maintenance) or `200 + noindex` (coming soon) **before** the Astro router; `/api/*`, `/manage`, `/media/*`, `robots.txt` and `_astro/*` stay reachable |
+| static | the post-build pass replaces the artifact with the gate page (or keeps it when `policy: "keep"`), empties the sitemap, sets `noindex` + `no-store` |
+
+**A signed-in manager sees the real site — the Elementor behaviour.** With
+`deploy.manage: true` the scaffold emits `/manage` (a vanilla, server-rendered
+form; no React island) and `POST /api/manage/login`, which verifies a WordPress
+**Application Password** server-to-server via `wp/v2/users/me?context=edit` and
+mints a host-only HMAC session. The gate verifies that session **locally**, so
+preview keeps working while the CMS is in maintenance (or unreachable).
+
+```text
+NVOOS_TARGET_SITE=https://cms.example.com   # the CMS origin
+NVOOS_MANAGE_SECRET=<random>                # signs the /manage session (falls back to the gate secret)
+NVOOS_FORGE_GATE_SECRET=<random>            # operator bypass links: /?nvoos-gate=<token>
+```
+
+Flow: open `/manage` → sign in → the staff panel links to the real site,
+WP admin and (on an ECA profile) the Activities screen → the same browser sees
+the real site; every other visitor still gets the gate. The sign-in requires
+`edit_posts` (or `manage_options`); a subscriber is refused. No secret means
+fail-closed sign-in, and the operator `?nvoos-gate=` link remains the
+zero-dependency fallback.
+
+**The editor can be embedded instead of linked (`deploy.manageBundle: true`).**
+With the bridge's standalone bundle present, the scaffold **vendors**
+`astro-admin.{js,css}` into `public/manage-assets/` and `/manage` becomes the
+same Astro CMS the velocity app serves — posts, pages, products **and**
+activities in one editor, on the site's own origin.
+
+| `deploy.manageBundle` | `/manage` renders |
+|---|---|
+| absent / `false` | §7a — the staff panel, linking to wp-admin (+ the ECA screen) |
+| `true` | §7b — the embedded editor; the panel stays as the fallback when the bridge is absent, the account lacks `manage_astro`, or the CMS is unreachable |
+
+How it stays safe:
+
+- **The Application Password never reaches the browser.** Sign-in seals it into
+  a second host-only, `HttpOnly` cookie (`nvoos_forge_cred`, AES-256-GCM keyed
+  by HKDF from the manage secret, with the session uid as associated data).
+  Only `/api/*` — the BFF — decrypts it, per request.
+- **A credential-scoped response is never shared.** The proxy forces
+  `Cache-Control: private, no-store` whenever it attaches the credential, so an
+  edge cache cannot hand a manager's draft listing to the next visitor.
+- **SRI pins the bundle.** The page emits `integrity="sha384-…"` on both files
+  (the tokens are also recorded in `nvoos.json` → `admin.bundle` and
+  `src/lib/manage.generated.ts`), so a stale or substituted bundle is **refused
+  by the browser** instead of silently running mismatched code.
+- **`/manage` ships no inline script.** The session config travels as a
+  `type="application/json"` data block and
+  `public/manage-assets/manage-boot.js` does the injection, so the page keeps
+  working under `script-src 'self'` and never depends on `'unsafe-inline'` —
+  the CSP standard the velocity app enforces. The bundle is also preloaded
+  (`fetchpriority="high"`) on the signed-in render only.
+- **Fail closed at scaffold time.** A profile that opts in without a usable
+  bridge checkout aborts with a named error (`npm run build:standalone` in
+  `addons/nvoos-astro-bridge`, or point `NVOOS_FORGE_BRIDGE_DIR` at the addon
+  root) rather than emit a `/manage` page whose bundle 404s.
+- **The bundle lands in the CUSTOMER project only** — never in
+  `templates/blog/`, which is mirrored to the public forge repo.
+
+Rebuild the bundle after any bridge SPA change, then re-scaffold so the SRI
+hash and the vendored bytes move together; a hand-edited copy fails the
+`npm run check` drift gate because both generated modules are manifested.
+
+**Activities (ECAs) are editable from the CMS admin, not only wp-admin.** Bridge
+`1.2.0` serves `content/ecas` + `content/eca-categories`, and the Astro CMS
+bundle carries both collections (posts, pages, products **and** activities in
+one editor). The nav entry is gated on the server-authored
+`user.features` list — present only while the Pro toolkit's
+`enable_eca_management` setting is on — so a site without the feature never
+offers a route that would answer `eca_disabled`. Deleting an activity trashes
+it (activities with enrolments are never hard-deleted without an explicit
+`?force=1`). See the 165 runbook's "Open items".
+
+Gate pages ship at `/maintenance/` and `/coming-soon/` (no JS, no third-party
+assets, one `h1`, `noindex`). Design, acceptance criteria and the ECA first-run
+runbook live in `docs/project/proposals/165-forge-maintenance-mode-parity-*.md`.
+
 ### Forms — JetFormBuilder + Elementor submissions (114 §3.9)
 
 Forms integrate the way WooCommerce did: **content at build time, behavior

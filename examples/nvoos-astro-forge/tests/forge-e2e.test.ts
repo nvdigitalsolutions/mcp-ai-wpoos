@@ -438,6 +438,20 @@ describe('forge e2e — emitted site', () => {
 
 		const robots = await readFile(path.join(workDir, 'dist', 'robots.txt'), 'utf8');
 		expect(robots).toContain(`Sitemap: ${origin}/sitemap.xml`);
+
+		// Proposal 165 — the gate pages are always compiled; with the verdict off
+		// they are NOT published. They must be self-contained and noindex, so the
+		// gate never depends on the site's own stylesheet or scripts.
+		for (const route of ['maintenance', 'coming-soon']) {
+			const page = await readFile(path.join(workDir, 'dist', route, 'index.html'), 'utf8');
+			expect(page).toContain('<meta name="robots" content="noindex, nofollow"');
+			expect(page).not.toContain('<script');
+			expect(page).not.toContain('<link');
+			expect(page).not.toContain('http-equiv="refresh"');
+			expect(page.match(/<h1[\s>]/g)?.length ?? 0).toBe(1);
+		}
+		// ...and with the verdict off the real site is the published document.
+		expect(index).not.toContain("We'll be back shortly");
 	});
 
 	it('renders the storefront listing with prices, sales and categories', async () => {

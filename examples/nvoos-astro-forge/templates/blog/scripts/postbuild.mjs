@@ -236,6 +236,134 @@ function localizeRootRelativeAssets() {
 
 localizeRootRelativeAssets();
 
+// ---------------------------------------------------------------------------
+// Proposal 165 — publication gate.
+//
+// The scaffold writes `gate.generated.json` from the bridge's verdict. When the
+// CMS is gated, a STATIC artifact cannot answer a dynamic status code, so the
+// honest options are: replace the documents with the gate page (default), or
+// keep the site live and stage the page for an edge that can 503 (`keep`).
+// A pre-launch site always replaces — a placeholder must never be published.
+// ---------------------------------------------------------------------------
+function applyPublicationGate() {
+	const manifestPath = resolve(process.cwd(), 'gate.generated.json');
+	if (!existsSync(manifestPath)) {
+		return;
+	}
+
+	let gate;
+	try {
+		gate = JSON.parse(readFileSync(manifestPath, 'utf8'));
+	} catch (error) {
+		console.error(`[forge-postbuild] gate.generated.json is unreadable: ${error instanceof Error ? error.message : error}`);
+		process.exit(1);
+	}
+
+	const mode = gate?.mode;
+	if (mode !== 'maintenance' && mode !== 'coming_soon') {
+		return;
+	}
+
+	// Static builds emit into dist/; a server build keeps the prerendered
+	// documents under dist/client/ — the same split `_redirects` follows.
+	const docRoot = existsSync(resolve(distDir, 'client', 'index.html')) ? resolve(distDir, 'client') : distDir;
+	const page = mode === 'coming_soon' ? 'coming-soon' : 'maintenance';
+	const pageFile = resolve(docRoot, page, 'index.html');
+	const replace = gate.policy !== 'keep' || mode === 'coming_soon';
+
+	if (!existsSync(pageFile)) {
+		if (replace) {
+			console.error(`[forge-postbuild] gate=${mode} but ${page}/index.html is missing — refusing to publish the real site.`);
+			process.exit(1);
+		}
+		console.warn(`[forge-postbuild] gate=${mode} policy=keep but ${page}/index.html is missing; nothing staged.`);
+		return;
+	}
+
+	const gateHtml = readFileSync(pageFile, 'utf8');
+
+	if (replace) {
+		const documents = [];
+		const walk = (dir) => {
+			for (const entry of readdirSync(dir, { withFileTypes: true })) {
+				const path = resolve(dir, entry.name);
+				if (entry.isDirectory()) {
+					walk(path);
+				} else if (entry.name.endsWith('.html')) {
+					documents.push(path);
+				}
+			}
+		};
+		if (existsSync(docRoot)) {
+			walk(docRoot);
+		}
+
+		const keep = new Set([resolve(docRoot, 'maintenance', 'index.html'), resolve(docRoot, 'coming-soon', 'index.html')]);
+		let replaced = 0;
+		for (const document of documents) {
+			if (keep.has(document)) {
+				continue;
+			}
+			writeFileSync(document, gateHtml, 'utf8');
+			replaced += 1;
+		}
+
+		// Advertising the replaced URLs (or the CMS's own sitemap) is a soft-404
+		// signal, so the map is emptied and robots stays crawlable: a `Disallow`
+		// would hide the page's `noindex` from the crawler.
+		writeFileSync(resolve(docRoot, 'robots.txt'), 'User-agent: *\nAllow: /\n', 'utf8');
+		writeFileSync(
+			resolve(docRoot, 'sitemap.xml'),
+			'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>\n',
+			'utf8'
+		);
+		if (existsSync(resolve(docRoot, 'feed.xml'))) {
+			writeFileSync(
+				resolve(docRoot, 'feed.xml'),
+				'<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>Maintenance</title><link>/</link><description></description></channel></rss>\n',
+				'utf8'
+			);
+		}
+
+		const headerPath = resolve(docRoot, '_headers');
+		const headerBlock = '/*\n  Cache-Control: no-store, no-cache, must-revalidate, max-age=0\n  CDN-Cache-Control: no-store\n';
+		const existing = existsSync(headerPath) ? readFileSync(headerPath, 'utf8').trimEnd() : '';
+		writeFileSync(headerPath, `${existing ? `${existing}\n\n` : ''}${headerBlock}`, 'utf8');
+
+		console.log(
+			`[forge-postbuild] gate=${mode} source=${gate.source ?? 'build'} policy=replace — replaced ${replaced} document(s).`
+		);
+		if (mode === 'maintenance') {
+			console.log('[forge-postbuild] a static host cannot return 503; indexed URLs now see a 200 holding page. Prefer policy "keep" + the edge rule for long windows.');
+		}
+	} else {
+		console.log(`[forge-postbuild] gate=${mode} source=${gate.source ?? 'build'} policy=keep — the site stays live; ${page}/index.html is staged.`);
+	}
+
+	// Diagnostic, secret-free (the managed runtime reads the same document).
+	writeFileSync(
+		resolve(distDir, 'gate.json'),
+		JSON.stringify(
+			{
+				version: gate.version ?? 1,
+				mode,
+				source: gate.source ?? 'build',
+				plugin: gate.plugin ?? null,
+				retryAfter: gate.retryAfter ?? null,
+				checkedAt: gate.checkedAt ?? null,
+				policy: gate.policy ?? 'replace',
+				page,
+				buildId: process.env.FORGE_BUILD_ID ?? '',
+			},
+			null,
+			2
+		) + '\n',
+		'utf8'
+	);
+}
+
+applyPublicationGate();
+
 if (!targetPath) {
 	console.log('[forge-postbuild] no redirects.json — skipping _redirects.');
 	process.exit(0);
