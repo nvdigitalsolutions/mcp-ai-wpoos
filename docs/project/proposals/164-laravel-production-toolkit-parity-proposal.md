@@ -7278,3 +7278,95 @@ refusal path is probed with an impossible id for the other four tools.
 
 Next in the queue: **availability** (4), then **events** (6), **services** (2),
 **booking links and optimisation** (2), **notifications** (4) and **triage** (2).
+
+## 164.83 `calendar-booking`, slice 2 — the availability rules
+
+This slice ports the four availability tools: `set_availability_rules` and
+`block_time_slot` write, `check_availability` and `get_available_slots` read,
+and all four share one definition of what a working day is.
+
+### Where the rules and the blocks live
+
+WordPress kept the weekly rules in the `wp_mcp_ai_business_hours` option as
+`{monday: {enabled, start_time, end_time, slot_duration, buffer_time}, …}`. The
+port writes the same shape under the `business_hours` key of
+`SettingsStoreInterface`; the adapter settings store is already namespaced, so
+the key does not repeat the prefix and no migration is needed.
+
+Blocked ranges are `mcp_blocked_time` records with the same `_start_time` /
+`_end_time` pair appointments use, plus `_reason` and `_blocked_by`, read
+through `ContentStoreInterface`. One overlap test therefore serves both record
+types, and a block is visible to both readers without a second query shape.
+
+### Corrections
+
+1. **Business hours were only a weekday test.** `check_business_hours()`
+   returned true as soon as the day was `enabled`, so a 22:00 booking on an
+   enabled Monday was reported as within hours. `withinHours()` requires the
+   whole span to sit inside the day `start_time` to `end_time` window now; no
+   stored rules at all still means always open, which is what an empty option
+   returned.
+2. **`get_available_slots` ignored blocked ranges and `buffer_time`.** The tool
+   guidance promised blocked ranges would be respected, and the rules stored a
+   buffer, but neither was read. A slot overlapping a block is omitted, and the
+   cursor advances by `slot_duration + buffer_time`.
+3. **The weekday came from the server timezone.** `gmdate( 'l', strtotime(
+   $date ) )` parses midnight in the PHP default zone and formats in UTC, which
+   is the previous day west of Greenwich. The port reads the date as UTC and
+   rejects an impossible one.
+4. **The duration was unbounded.** `absint` went straight into the loop, so `0`
+   produced zero-length slots and a huge value produced none. It is clamped to
+   15–480 minutes.
+5. **`set_availability_rules` stored any string.** `9am` became a rule no
+   reader could parse, and a reversed window produced a day with zero bookable
+   slots. Only `HH:MM` is accepted, and the closing time must be after the
+   opening time.
+6. **`block_time_slot` accepted reversed or unparseable spans.** It checked
+   only that both strings were non-empty. The port requires a real calendar
+   span, stored in UTC, with the end after the start.
+7. **`check_availability` carried the contained-appointment bug.** It now uses
+   the shared `AppointmentDefinition::conflicts()`, so the half-open
+   `start < new_end AND end > new_start` test catches an appointment that sits
+   entirely inside the window, as the writers do.
+
+### Adaptations
+
+- **A day is replaced, not merged.** One call writes one weekday and leaves the
+  other six alone; omitted fields take the documented defaults. WordPress did
+  the same, and because the schema documents the defaults the caller can see
+  exactly what will be written.
+- **Overnight windows are unsupported.** `end_time` is a same-day clock value
+  and must be after `start_time`; `set_availability_rules` refuses rather than
+  storing a rule no reader can interpret.
+- **A block never refuses a write.** `create_appointment` does not consult
+  blocks; only the two readers do. That is the WordPress division and it is
+  deliberate: refusing a write on a block would need an override rule that
+  neither runtime has.
+- **The buffer is a grid step, not a write rule.** `create_appointment` still
+  accepts a back-to-back booking.
+- **`per_system` keeps a single `nvoos` entry.** Only the native booking system
+  exists here; the map is kept because clients read it and a host that routes
+  bookings elsewhere may add keys.
+- **Capabilities.** `set_availability_rules` and `block_time_slot` declare
+  `manage_options`; the two readers declare `edit_posts`, which WordPress
+  declared and never checked. Both are enforced now.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,663 / 21,829** (22 tests and 68 assertions added) |
+| adapter `ToolProbesTest` | **204 / 1,433**, 2 skipped, 0 failures — four new probes |
+| tool readiness audit | **424 / 424**, servable **405** (+4), no violations |
+| toolkit parity | **203 of 854**; `calendar-booking` **9 ported**, 0 declined, 0 deferred, **25 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide (1,737 files) |
+
+The rule-writer probe proves the settings upsert against the bound store, and the
+block writer proves a second content type reaches the same store. Both readers
+are probed with no stored rules, so an empty grid is still a success envelope
+and the schema keys are pinned.
+
+Next in the queue: **events** (6), **services** (2), **booking links and
+optimisation** (2), **notifications** (4) and **triage** (2). The final **9**
+need a register decision: the seven Jet tools on a booking-adapter contract and
+the two external syncs on an OAuth credential store.

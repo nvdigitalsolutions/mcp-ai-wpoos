@@ -333,6 +333,15 @@ Probe Club,club
 			array( 'update_appointment', array( 'appointment_id' => 999999, 'location' => 'Nowhere' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'cancel_appointment', array( 'appointment_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'reschedule_appointment', array( 'appointment_id' => 999999, 'new_start_time' => '2099-01-02 09:00:00' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.83 — the availability rules. The rule writer proves the settings
+			// store upsert; the block writer proves a second content type reaches the
+			// same store. Both readers are probed without stored rules, so an empty
+			// grid is a success envelope and the schema keys are still pinned.
+			array( 'set_availability_rules', array( 'day_of_week' => 'monday', 'start_time' => '09:00', 'end_time' => '17:00' ), 'success', array( 'day_of_week', 'rules' ), array( 'user_id' => 1 ) ),
+			array( 'block_time_slot', array( 'start_time' => '2099-01-01 12:00:00', 'end_time' => '2099-01-01 13:00:00', 'reason' => 'probe' ), 'success', array( 'blocked_id', 'start_time' ), array( 'user_id' => 1 ) ),
+			array( 'check_availability', array( 'start_time' => '2099-01-03 10:00:00', 'end_time' => '2099-01-03 11:00:00' ), 'success', array( 'available', 'reasons' ), array( 'user_id' => 1 ) ),
+			array( 'get_available_slots', array( 'date' => '2099-01-05', 'duration_minutes' => 60 ), 'success', array( 'available_slots', 'total_slots' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
