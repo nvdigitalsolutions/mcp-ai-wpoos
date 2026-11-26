@@ -7072,3 +7072,107 @@ both the success and refusal paths run against the bound implementation.
 
 Next is **research and content** (5 tools), the last of the declared
 `orchestration` group.
+
+## 164.81 `orchestration`, slice 5 — research and content, and the group closes
+
+The five remaining declared tools are not one family; they are what was left
+over: two research producers (`aggregate_research_data`,
+`generate_research_report`), one research consumer (`create_post_from_research`),
+one schedule wrapper (`schedule_channel_broadcast`) and one portability surface
+(`export_assistant_blueprint`). With them the toolkit reaches **36/36**.
+
+### What each one needed
+
+| tool | collaborators | notes |
+|---|---|---|
+| `aggregate_research_data` | none | pure: dedupe, extract, render markdown/JSON/HTML |
+| `generate_research_report` | `WebSearchTool`, `ProviderRouter`, `PaperStoreInterface`, `ContentStoreInterface` | all optional; each absence is named |
+| `create_post_from_research` | `PaperStoreInterface`, `ContentStoreInterface` | source read, content written |
+| `schedule_channel_broadcast` | `CreateProScheduleTool` + `ScheduleStoreInterface` | delegation, not duplication |
+| `export_assistant_blueprint` | `AssistantExportInterface`, `FileStoreInterface` | one export engine, two dialects |
+
+### The generator is the whole pipeline, not a plan
+
+The core's own `deep_research` tool returns a framework for the agentic loop to
+execute. This Pro tool did the work itself, and the port keeps that: it builds
+the query plan, runs `WebSearchTool` per query, builds the WordPress prompt
+verbatim (report-type instructions, source list capped at five, JSON output
+contract), asks the router for a completion at WordPress's 4,000-token budget,
+strips the fence, parses the JSON, and assembles the document with the table of
+contents and references. `ProviderRouter` is bound in the adapter, so the whole
+path is live; a host without one gets `completion_unavailable`, the same refusal
+every completion tool gives.
+
+Two parameter differences matter and are mapped rather than passed through: the
+core search tool reads `count` where WordPress read `max_results`, and its items
+carry `description` where the WordPress pipeline read `snippet`. The port passes
+`count` and maps `description` → `snippet` when building sources.
+
+### Five corrections
+
+1. **`aggregate_research_data` reported defaults it had not applied.** An
+   unknown `deduplication_mode` or `output_format` was echoed back while the
+   tool behaved as `moderate`/`markdown`. The port normalises and reports the
+   effective value.
+2. **Every excerpt got an ellipsis**, including a ten-character one. It is
+   appended only when the 200-character excerpt actually truncated.
+3. **Marking a research record published erased it.** `create_post_from_research`
+   saved a fresh record with id/title/type/status/description/meta and no
+   `body`, so the report it had just published disappeared from the store. The
+   port merges status and meta into the record it read.
+4. **A failed side effect vanished.** WordPress dropped a failed Paper Store
+   save or draft creation without a word. The port returns the report and adds
+   `paper_store_error` / `draft_post_error`.
+5. **`export_assistant_blueprint` called itself read-only** while offering
+   `save_to_media`, which writes an attachment. The port declares the write it
+   can perform; a read-only profile is right to gate it.
+
+### Adaptations with no WordPress counterpart
+
+- **The category.** `create_post_from_research` took a `category_id` and handed
+  the integer to `wp_insert_post`. The core content contract names terms, so the
+  id is resolved through `listTaxonomyTerms('category')` and an unknown id is a
+  validation error — passing it through would create a term named "12".
+- **The body and kses.** WordPress ran `wp_kses_post()`. The core has no kses;
+  the research body is stored as supplied, exactly as `create_post` already does.
+  Content policy belongs to the store and the renderer, and a block or shortcode
+  body must not be tag-stripped on the way in.
+- **Similarity cost.** `similar_text()` is super-linear, so deduplication
+  compares at most the first 2,000 characters of each source and short-circuits
+  on an exact content hash. Same verdicts for the syndicated-article case, a
+  bounded worker cost for every case.
+- **The blueprint dialect.** `export_assistant_blueprint` reads the canonical
+  `nvoos-assistant` bundle through `AssistantExportInterface` — the same engine
+  `export_assistant`, the REST controller and the admin page share — and renames
+  the entry into the blueprint shape (`name`, `description`, `meta.instructions`,
+  `meta.available_tools`, provider/model/temperature). A host with no file store
+  gets an explicit `media_store_unavailable` refusal instead of a success with
+  no file.
+
+### Not ported
+
+The three optional **Jev** passes in the generator — relevance filtering of
+sources, citation verification, and the capped revision of flagged claims — are
+absent. They are gated on a WordPress setting and call the TypeSafe Jev client,
+which the core has no counterpart for, and every one of them was fail-open: on
+error or absence the sources and the report passed through untouched. Their
+absence therefore changes no required output; it removes an optimisation, not a
+behaviour. The readiness row names it rather than implying the passes ran.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,607 / 21,634** (32 tests and 112 assertions added) |
+| adapter `ToolProbesTest` | **195 / 1,375**, 2 skipped, 0 failures — five new probes |
+| tool readiness audit | **415 / 415**, servable **396** (+5), no violations |
+| toolkit parity | **194 of 854**; `orchestration` **36 ported**, 0 declined, 0 deferred, **0 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The blueprint probe expects a refusal in this host on purpose: the probe suite
+registers only the package provider, while `AssistantExportInterface` is bound
+by the app skeleton. That is the same split `export_assistant` already has, and
+the probe still proves the tool is registered and refuses honestly.
+
+`orchestration` is complete. Next in the queue is **`calendar-booking`**
+(34 declared), then **`gtmetrix`** (23).
