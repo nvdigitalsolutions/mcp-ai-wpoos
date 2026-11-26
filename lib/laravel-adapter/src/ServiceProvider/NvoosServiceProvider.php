@@ -27,6 +27,7 @@ use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Infrastructure\Cloudways\CloudwaysClient;
+use Nvoos\Core\Infrastructure\Gtmetrix\GtmetrixClient;
 use Nvoos\Core\Infrastructure\Okf\FilesystemBundleLocator;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
 use Nvoos\Core\Infrastructure\Schedule\JsonScheduleStore;
@@ -61,6 +62,7 @@ use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HealthReportInterface;
 use Nvoos\Laravel\Health\PackageHealthReport;
 use Nvoos\Core\Domain\Contract\CloudwaysClientInterface;
+use Nvoos\Core\Domain\Contract\GtmetrixClientInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\BrowserCaptureInterface;
@@ -455,6 +457,20 @@ class NvoosServiceProvider extends ServiceProvider {
 			CloudwaysClientInterface::class,
 			static function ( $app ) {
 				return new CloudwaysClient(
+					$app->make( SettingsStoreInterface::class ),
+					$app->make( HttpClientInterface::class ),
+				);
+			}
+		);
+		// GTmetrix needs no token exchange: the API key is the credential, read
+		// from the settings store on every call, so the singleton exists only to
+		// keep the base URL override in one place. The key uses the same provider
+		// slug as the WordPress toolkit (`gtmetrix`), so a migrated install keeps
+		// its key.
+		$this->app->singleton(
+			GtmetrixClientInterface::class,
+			static function ( $app ) {
+				return new GtmetrixClient(
 					$app->make( SettingsStoreInterface::class ),
 					$app->make( HttpClientInterface::class ),
 				);

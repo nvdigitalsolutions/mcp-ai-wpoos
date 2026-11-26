@@ -174,7 +174,13 @@
             "search_drive",
             "search_gmail"
         ],
-        "gtmetrix": [],
+        "gtmetrix": [
+            "gtmetrix_account_status",
+            "gtmetrix_list_browsers",
+            "gtmetrix_list_locations",
+            "gtmetrix_list_simulated_devices",
+            "gtmetrix_list_tests"
+        ],
         "healthcare": [],
         "image-production": [
             "apply_artistic_style",

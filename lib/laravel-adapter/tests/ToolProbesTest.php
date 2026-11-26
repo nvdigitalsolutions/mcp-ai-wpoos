@@ -382,6 +382,15 @@ Probe Club,club
 			array( 'send_appointment_reminder', array( 'appointment_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'send_booking_confirmations', array( 'booking_ids' => array( 999999 ) ), 'success', array( 'total', 'skipped', 'recipients' ), array( 'user_id' => 1 ) ),
 			array( 'send_reschedule_invitation', array( 'appointment_ids' => array( 999999 ) ), 'success', array( 'total', 'skipped', 'recipients' ), array( 'user_id' => 1 ) ),
+
+			// §164.91 — the five credit-free GTmetrix reads. The probe host binds
+			// no API key, so each answers the not-configured refusal; the payload
+			// shapes are pinned in lib/core against fixture-shaped responses.
+			array( 'gtmetrix_account_status', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_list_locations', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_list_browsers', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_list_simulated_devices', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_list_tests', array(), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

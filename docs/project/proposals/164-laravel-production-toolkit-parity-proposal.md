@@ -8053,3 +8053,76 @@ account-writing tool (`start_test`, `retest_page`, `set_monitoring`,
 | parity | **219 ported, 8 declined, 45 deferred, 627 remaining**; `gtmetrix` **0 / 0 / 0 / 23** |
 
 No code changes in this slice: measurement only.
+
+## 164.91 `gtmetrix`, slice 1 — the transport and the five credit-free reads
+
+The client and the five reads that cost no credits: `gtmetrix_account_status`,
+`gtmetrix_list_locations`, `gtmetrix_list_browsers`,
+`gtmetrix_list_simulated_devices`, `gtmetrix_list_tests`. The toolkit moves from
+0 to **5 of 23**.
+
+### The transport
+
+`GtmetrixClientInterface` is one verb over a path, like the Cloudways contract,
+because a client method per endpoint is a second copy of the API surface that
+drifts. `GtmetrixClient` implements it over `HttpClientInterface` with the API
+key from `SettingsStoreInterface::getApiKey( 'gtmetrix' )`, and the provider
+binds it as a singleton. The response shape is
+`{status, data, meta, links, location, rate_limit}` — the `meta` block is part of
+the contract because it is where credits are reported, and `location` because
+completion is a redirect.
+
+`GtmetrixApiException` keeps the core code, the HTTP status, the API's own
+`E4xxxx`/`E5xxxx` code and the server's `retry_after` apart. The WordPress client
+flattened them into a message, which is why a rate limit and a rejected
+parameter read the same.
+
+### Corrections
+
+1. **`meta` survives.** WordPress returned `$decoded['data']` only, so
+   `start_test` could never read `meta.credits_left` / `meta.credits_used` and
+   reported its own estimate.
+2. **A `303` is reported, not followed.** Completion is `303` plus
+   `Location: /reports/{id}`; `wp_remote_request` followed it, so
+   `get_test_status` received a report and answered `state: unknown`. The client
+   returns the status and location; slice 2 interprets them.
+3. **No sleeping retry.** `E42901` was retried after 1, 2 and 4 seconds inside
+   the request. The exception carries `retry_after` (from `Retry-After`, or
+   `X-RateLimit-Reset` for a rate limit) and the tool surfaces it.
+4. **The fixture switch is gone.** Tests inject `HttpClientInterface`; the 19
+   committed JSON fixtures remain the oracle for payload shapes.
+5. **`list_tests` sends its limit.** WordPress applied `absint()` and sliced
+   after the fetch, so `limit: 1000` returned the first page. The port bounds it
+   to 1–100 and sends `page[size]`.
+6. **Unknown enum values are refused.** An unknown device `category` or test
+   `state` returned an empty list in WordPress, which reads as "none exist".
+7. **Absent numbers stay `null`.** A missing balance is not `0`.
+8. **Reads are not `cacheable`.** The WordPress base declared it for all 23
+   tools; a live balance and a 24-hour test list are not.
+
+### Adaptations
+
+- Reads keep the WordPress capability (`read`); the credit-spending and
+  account-writing tools keep their `manage_options` overrides in later slices.
+- Error classification adds `gtmetrix_invalid_request` for unmapped `E4xxxx`
+  codes, so a caller can tell "fix the request" from "retry later".
+- The rate-limit headers are read and returned; no tool surfaces them yet.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,842 / 22,858** (21 tests and 80 assertions added) |
+| adapter `ToolProbesTest` | **225 / 1,570**, 2 skipped, 0 failures — five new probes |
+| tool readiness audit | **445 / 445**, servable **426** (+5), no violations |
+| toolkit parity | **224 of 854**; `gtmetrix` **5 ported**, 0 declined, 0 deferred, **18 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The five probes answer the not-configured refusal, because the probe host binds
+no API key and a probe that called gtmetrix.com would be a network test. The
+payload shapes are pinned in `lib/core` against fixture-shaped responses; slice 2
+adds the first probe that exercises a real request path, still without the
+network, once the client is injectable in the probe host.
+
+Next: slice 2, the test lifecycle — `start_test` with the credit budget and the
+origin allowlist, and `get_test_status` with the `303` reading.
