@@ -1,0 +1,21 @@
+{
+    "$comment": "Declared-and-not-ported decisions for the Pro toolkits (Proposal 164 section 164.6). Read by bin/toolkit-parity.php. declined = not ported and not intended, subtracted from remaining. deferred = not ported, blocked on a named prerequisite, stays in remaining. The rationale, and the boundary against the readiness manifest's parity:declined, live in Nvoos\\Core\\Application\\Tool\\ToolkitParityDecisions.",
+    "decisions": {
+        "create_remotion_video": {
+            "decision": "deferred",
+            "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
+        },
+        "extract_video_metadata": {
+            "decision": "declined",
+            "reason": "Superseded by get_video_metadata, which is served: it returns the container, duration and bitrate plus the video and audio streams (codec, dimensions, frame rate, channels), and accepts file_id or a URL where this tool accepts only video_id. Its analyze_audio flag asks for the audio-stream detail the served tool already returns, so a port would be a second slug for one answer. Declined rather than deferred because there is nothing left to build."
+        },
+        "get_queued_videos": {
+            "decision": "deferred",
+            "reason": "Lists media-library attachments filtered by _mcp_video_status and _mcp_video_target_platform. Nothing on this runtime writes either: the only writer in WordPress is upload_video_batch, which is itself unported. A port today could only answer with an empty list, and an empty list reads as a finding rather than as a missing model. Prerequisite: a video processing and upload job model. Deferred, not declined, because the query is sound once something writes the status."
+        },
+        "upload_video_batch": {
+            "decision": "deferred",
+            "reason": "Uploads a batch to YouTube or Vimeo, and platform must be one of those two. No video-platform uploader is bound here: the media worker composes and publishes to the social channels, not to video platforms. Its dry_run mode only previews the queue that get_queued_videos reads, so the pair lands together or not at all. Prerequisite: a YouTube/Vimeo uploader plus the job model above."
+        }
+    }
+}
