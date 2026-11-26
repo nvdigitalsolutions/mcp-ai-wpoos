@@ -37,6 +37,13 @@ final class FakeGtmetrixClient implements GtmetrixClientInterface
 
     public ?GtmetrixApiException $fail = null;
 
+    /**
+     * Per-path failures, keyed by the path before any query.
+     *
+     * @var array<string, GtmetrixApiException>
+     */
+    public array $failOn = array();
+
     public function isConfigured(): bool
     {
         return $this->configured;
@@ -51,6 +58,11 @@ final class FakeGtmetrixClient implements GtmetrixClientInterface
         }
 
         $base = explode('?', $path, 2)[0];
+
+        if (isset($this->failOn[ $base ])) {
+            throw $this->failOn[ $base ];
+        }
+
         $row  = $this->responses[ $path ] ?? $this->responses[ $base ] ?? array();
 
         return array(

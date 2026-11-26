@@ -2316,6 +2316,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixReadToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'gtmetrix_get_test_status' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixGetTestStatusTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the test poller (Proposal 164 section 164.92). One credit-free GET /tests/{id}. The correction that matters: a completed test answers 303 See Other with Location: /reports/{id}, and the WordPress client followed the redirect into the report, found no state attribute and answered state unknown with an empty report_id - the one transition a poller exists to detect. The port reads the status and the Location as completion and also accepts a flattened 200 carrying a report attribute; queued and started states return the tested url, an error state carries the API message, and a missing test is classified not-found because tests are retained for 24 hours. Gated on read.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixTestLifecycleToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'gtmetrix_list_browsers' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixListBrowsersTool',
 			'readiness' => 'ready',
@@ -2351,6 +2360,15 @@ return array(
 			'reason' => 'Ports the recent-test reader (Proposal 164 section 164.91). One credit-free GET /tests with the state filter and a 1-100 limit sent as page[size]: WordPress applied absint and sliced after fetching, so the limit described a page size it never asked for. The description and the message state the 24-hour test retention, because a report id listed here may already be gone. Costs no credits.',
 			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixReadToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'gtmetrix_start_test' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixStartTestTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the credit-spending test starter (Proposal 164 section 164.92). Four corrections: credits are read from the response meta, which the WordPress client discarded so credits_left was always null and credits_used was a local estimate; the site daily budget is reserved in hundredths before the POST and released when the call is refused or returns no test id, where WordPress checked, started and only then recorded the charge so two concurrent calls both passed; an unknown report, retention, location, browser, device or throttle is refused by name instead of being silently dropped by sanitize_key, which ran tests with options the caller did not ask for; and no WP-Cron poll is scheduled, the tool returns test_id and the next step. The host allowlist still defaults to the site host plus configured extras and fails closed when no host is known. The cost table (report, retention, video) is shared with the later sweeps so no two tools disagree about a price. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixTestLifecycleToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'hash_string' => array(
 			'class' => 'Nvoos\\Core\\Tool\\HashStringTool',
