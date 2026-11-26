@@ -192,6 +192,10 @@ Probe Club,club
 			// §164.69 — the correspondence search. The default mode plus the meta
 			// sort answers an empty corpus with an empty list.
 			array( 'crm_email_search_correspondence', array(), 'success', array( 'contacts', 'total', 'filters' ), array( 'user_id' => 1 ) ),
+
+			// §164.70 — the capture writes through the bound memory store. The
+			// wing slug proves the sanitize_key step: Acme Corp is account/acmecorp.
+			array( 'crm_capture_interaction', array( 'account_id' => 'Acme Corp', 'room' => 'interactions', 'content' => 'Probe capture.' ), 'success', array( 'wing', 'room', 'tier', 'memory_id', 'expires_at' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
