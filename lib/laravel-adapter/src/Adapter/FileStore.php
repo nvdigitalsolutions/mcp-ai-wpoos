@@ -40,6 +40,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Entity\StoredFile;
@@ -47,7 +48,7 @@ use Nvoos\Core\Domain\Error\NotFoundException;
 use Nvoos\Core\Domain\Error\ValidationException;
 use Throwable;
 
-class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
+class FileStore implements FileStoreInterface, FileVisibilityStoreInterface, FileDerivativeStoreInterface
 {
 	/**
 	 * Sniffed MIME → [extension, policy group].
@@ -468,6 +469,80 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface
 		}
 
 		return $matches;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * A derivative records two metadata keys, so a later reader can find it
+	 * without knowing which tool produced it: `derived_from` (the immediate
+	 * source id, an integer) and `derived_role`. XMP calls the first
+	 * `xmpMM:DerivedFrom`; asset management calls the result a rendition.
+	 *
+	 * The write merges rather than replaces: a file may already carry sniffed
+	 * metadata, and a relationship is not a reason to drop it.
+	 */
+	public function recordDerivative( int $fileId, int $sourceFileId, string $role ): StoredFile {
+		if ( $fileId <= 0 || $sourceFileId <= 0 ) {
+			throw new ValidationException( 'Both file ids must be positive.' );
+		}
+
+		if ( $fileId === $sourceFileId ) {
+			throw new ValidationException( 'A file cannot derive from itself.' );
+		}
+
+		if ( ! \in_array( $role, FileDerivativeStoreInterface::ROLES, true ) ) {
+			throw new ValidationException(
+				sprintf(
+					'Unknown derivative role "%s"; expected one of: %s.',
+					$role,
+					\implode( ', ', FileDerivativeStoreInterface::ROLES ),
+				),
+			);
+		}
+
+		$row = $this->row( $fileId );
+
+		if ( null === $row ) {
+			throw new NotFoundException( "There is no stored file with id {$fileId}." );
+		}
+
+		if ( null === $this->row( $sourceFileId ) ) {
+			throw new NotFoundException( "There is no stored file with id {$sourceFileId}." );
+		}
+
+		// The column arrived with the visibility migration; an installation that
+		// has not migrated cannot record a relationship, and silently dropping it
+		// would make every inventory read "none".
+		if ( ! Schema::hasColumn( 'nvoos_files', 'metadata' ) ) {
+			throw new ValidationException( 'This installation has no nvoos_files.metadata column; run the migrations.' );
+		}
+
+		$metadata = $this->decodeMetadata( $row->metadata ?? null );
+
+		$metadata[ FileDerivativeStoreInterface::META_SOURCE ] = $sourceFileId;
+		$metadata[ FileDerivativeStoreInterface::META_ROLE ]   = $role;
+
+		$encoded = \json_encode( $metadata );
+
+		if ( false === $encoded ) {
+			throw new ValidationException( 'Could not encode the derivative metadata.' );
+		}
+
+		DB::table( 'nvoos_files' )->where( 'id', $fileId )->update(
+			array(
+				'metadata'   => $encoded,
+				'updated_at' => now(),
+			),
+		);
+
+		$stored = $this->getMetadata( $fileId );
+
+		if ( null === $stored ) {
+			throw new NotFoundException( "The stored file with id {$fileId} disappeared while it was being linked." );
+		}
+
+		return $stored;
 	}
 
 	/**
