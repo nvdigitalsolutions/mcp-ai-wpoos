@@ -6661,8 +6661,153 @@ non-array selector is a different error from an empty map.
 | toolkit parity | **163 of 854**; `orchestration` **5 ported**, 0 declined, 0 deferred, **31 remaining** |
 | phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
 
-Next is the autonomous-loop group: `calculate_orchestration_capacity`,
-`get_loop_metrics`, `check_exit_conditions`, `detect_completion_indicators`,
-`analyze_loop_health`, `configure_circuit_breaker`,
-`manage_autonomous_session` and `get_session_status` — which needs the
-session-state contract the loop tools share.
+## 164.78 `orchestration`, slice 2 — the autonomous loop
+
+The eight loop tools describe one object: a session with a lifecycle status, an
+iteration count against a cap, a token spend against a budget, a health verdict
+and a breaker state. WordPress keeps it in an option transient with a CCT behind
+it and reads it back in four different ways. The port keeps the shape and makes
+the seam explicit.
+
+### The contracts
+
+`AutonomousSessionStoreInterface` is the session object: `create`, `find`,
+`update`, `query`, with the documented statuses, health values and defaults.
+`JsonAutonomousSessionStore` is one JSON file per id, atomic rename, a strict
+single-segment id rule, and **hydration on read** — every reader can assume a
+field exists, so a host that stores only what changed still satisfies the tools.
+`ExecutionHistoryStoreInterface` is the append-only call log behind
+`get_loop_metrics`: one JSON-lines file per session under `LOCK_EX`, read with a
+cap, because an unbounded read of a runaway loop is a second bug on top of the
+first. A host that records no history is not broken: the metrics tool binds the
+contract optionally and answers the WordPress "no execution history" payload.
+
+### The breaker, at industry defaults
+
+The canonical three states — **closed / open / half-open** — are Fowler's, and
+the defaults follow the production guidance collected for this slice (the
+"Agent Circuit Breaker Specification"): open at a **50% error rate over a volume
+window** (5 calls), a **consecutive-failure trip** (3), a **cooldown** (300 s)
+before **one probe**, and **no fallback** — the caller decides what an open
+breaker means. Retries belong *inside* the breaker; this class counts the final
+outcome it is told about and does not retry.
+
+The state lives on the session, not on the object, so a different process can
+inspect it and a restart does not forget the verdict.
+
+### The termination gate
+
+`check_exit_conditions` implements the two-key rule: exit requires the completion
+score at threshold **and** an explicit `exit_signal`, with hard limits
+(iterations, tokens, expiry, breaker) able to force a guarded exit. That is the
+shape the current guidance recommends — an independent signal plus a cap, never
+a model's self-report alone ("Evidence-Carrying Termination"; agentpatterns
+"Premature Completion"). `detect_completion_indicators` only *scores* text; it
+never decides an exit.
+
+### Twelve measured behaviours, fixed or pinned
+
+**Fixed**
+
+1. **Eight of ten completion regexes did not compile.** A non-capturing `(?:`
+   was mangled to `( ? ( :` in the WordPress source, so `preg_match()` failed
+   and the indicator never fired. The groups are restored; the test proves the
+   corrupted literal does not compile and the restored one matches.
+2. **The breaker opened one failure late.** `record_failure()` incremented the
+   stored counter and then re-read the *stale* session to compare it with the
+   threshold, so with `max_consecutive_errors = 3` it opened on the fourth. The
+   port compares the incremented value and opens on the third.
+3. **The `WP_Error` marker could not match.** The check lowercased the output
+   and then searched for the literal `WP_Error`; the port searches `wp_error`.
+4. **`analyze_current` counted sessions with a `$wpdb` scan** of
+   `_transient_mcp_ai_session_*`. It is re-based on
+   `AutonomousSessionStoreInterface`: active sessions from
+   `query(statuses: [active])`, and λ/W from completed sessions whose
+   `completed_at` is inside the last 24 hours — the window the transient TTL
+   used to imply.
+5. **`analyze_loop_health` used `ReflectionMethod` into the management tool** to
+   read and write the session. The port uses the store and the breaker; a tool
+   reaching into another tool's private methods is not a seam a second host can
+   honour.
+6. **The health analyser left the breaker half-written.** WordPress wrote the
+   bare `circuit_breaker = 'open'` string, leaving `circuit_breaker_open` and
+   `circuit_opened_at` stale, so the next `allowExecution()` half-opened
+   immediately. `forceOpen()` writes the state, the flag and the stamp together.
+
+**Pinned**
+
+7. **A missing `circuit_opened_at` counts as elapsed.** Records written before
+   the stamp existed must not block forever; kept.
+8. **`completion_met` ignores the plan bonus** while `total_score` includes it,
+   so the gate can read `false` beside a score at threshold. The plan reader is
+   a later slice; the ordering is kept for it.
+9. **`force_check` is read and never used.** Accepted and inert, and the schema
+   says so rather than dropping a parameter callers send.
+10. **Transitions are permissive.** `resume` turns a completed session back into
+    `active`, `pause` and `stop` accept any state, and only an expired session
+    is refused. A strict machine belongs in the store; changing it here would be
+    a silent behaviour change. The readiness row names the gap.
+11. **`update` writes only six metric keys** and always stamps `last_activity`.
+    An invented key is ignored rather than stored, and the stamp keeps a running
+    session out of the expiry sweep.
+12. **The stuck-with-5-errors breaker rule cannot fire on its own.** A stuck
+    pattern already makes health `critical`, which opens the breaker; the second
+    test is subsumed. Kept for parity and named rather than quietly deleted.
+
+### Per-tool notes
+
+`get_session_status` derives everything and writes nothing; `include_plan` is
+accepted but `task_plan` is omitted until a plan reader exists — an absent key
+says "no reader", an empty object would say "the plan is empty".
+
+`manage_autonomous_session` does not log itself to the history: the loop runner
+writes `ExecutionHistoryStoreInterface`, so a management call does not
+double-count the calls `get_loop_metrics` is measuring.
+
+`get_loop_metrics` keeps three WordPress arithmetic quirks: the average duration
+divides by **every** call (untimed records count as zero), a missing `success`
+key counts as success (older rows predate the field), and the frequency and
+error maps cap at 10 while the totals do not.
+
+`configure_circuit_breaker` reports the values the breaker will actually use, so
+a hand-edited 0% threshold shows as the 10% floor; `update` rejects unknown and
+out-of-range keys **by name** without aborting the accepted ones; `reset` deletes
+the row so the defaults come from code.
+
+`analyze_loop_health` adds three guards the source did not have: a zero
+`max_iterations` or `token_budget` reads as 0% pressure when nothing was used and
+100% when something was, instead of dividing by zero; `error_rate` is always
+present (WordPress omits it on short lists); and an action without a tool name
+contributes nothing to the repetition or stuck tests rather than warning. One
+quirk is kept: a session analysed with no actions reports `warning`, because a
+0% velocity reads as "poor". Nothing acts on it — `should_pause` stays false and
+the recommendation still says the loop is good.
+
+`calculate_orchestration_capacity` guards the divisions the source trusted: a
+zero cap falls back to 10, negative queue counts become their magnitudes (a
+queue cannot be negative, and WordPress would have produced a negative wait),
+and the "can handle Nx more load" line is omitted when L is 0, which float
+underflow can reach even though positive λ and W cannot.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,479 / 21,132** (52 tests and 243 assertions added) |
+| adapter `ToolProbesTest` | **172 / 1,230**, 2 skipped, 0 failures — eight new probes |
+| tool readiness audit | **392 / 392**, servable **373** (+8), no violations |
+| toolkit parity | **170 of 854**; `orchestration` **13 ported**, 0 declined, 0 deferred, **23 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The session and history stores are bound in the adapter to
+`storage_path('autonomous-sessions')` and `storage_path('execution-history')`,
+overridable with `NVOOS_AUTONOMOUS_SESSIONS_ROOT` and
+`NVOOS_EXECUTION_HISTORY_ROOT`. The start probe writes through the real store,
+so the storage convention is proven end to end rather than mocked.
+
+Next is the templates and task plans group: `list_templates`,
+`create_template`, `instantiate_template`, `seed_template_library`,
+`create_task_plan`, `get_task_plan`, `update_task_plan` and
+`create_execution_prompt` — which needs a template/plan store, and which is the
+prerequisite for the two loop keys left inactive: `get_session_status`'s
+`include_plan` and `detect_completion_indicators`' `plan_id`.
