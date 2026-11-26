@@ -218,5 +218,4 @@ class GetStudentParticipationSummaryTool extends AbstractTool
             $payload
         );
     }
-
 }
