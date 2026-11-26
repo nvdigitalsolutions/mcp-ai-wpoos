@@ -5146,3 +5146,59 @@ restarts land before anything that deletes.
 | tool readiness audit | **341 / 341**, servable **322** (+4), no violations |
 | toolkit parity | **120 of 854**; `cloudways` **4 ported**, 0 declined, 0 deferred, **56 remaining** |
 | phpcs | clean (11 files) |
+
+
+## 164.61 Services, operations and labels — four tools, no client change
+
+The second `cloudways` slice is the first that needed **nothing added to the
+client**: four tools, four paths, the shared base. That is the shape the rest of
+the toolkit should have, and it is why the client landed first.
+
+| slug | verb and path |
+|---|---|
+| `cloudways_service_status` | `GET /service/{server_id}` |
+| `cloudways_restart_service` | `POST /service/{server_id}/restart` |
+| `cloudways_get_operation_status` | `GET /operation/{operation_id}` |
+| `cloudways_update_server_label` | `PUT /server/{server_id}/label` |
+
+### Decisions
+
+- **A service keeps its status string.** WordPress projects `name` and `status`,
+  not a boolean. A restarting service is a state a caller polls through, and
+  `running: false` would not distinguish "stopped" from "coming back".
+- **The five restartable services are a closed list**, as in WordPress, and the
+  refusal names all five. The API accepts other names on some stacks; a caller
+  that needs `apache2` is on a stack this toolkit does not manage, and forwarding
+  an unlisted name turns a capability question into a 500. The name is lowercased
+  before the check, so `MySQL` restarts mysql; WordPress refuses the capitalised
+  form, which is a spelling test rather than a capability one.
+- **The restart payload is the API answer, unchanged.** The restart is
+  asynchronous, and the body naming the operation is the only handle a caller has
+  to poll. Projecting it into a fixed shape would risk dropping that id if
+  Cloudways renames a key.
+- **`is_completed` is added to the operation projection.** The v2 payload reports
+  it as a tri-state integer — `0` running, `1` finished, `-1` failed — and the
+  WordPress tool drops it, leaving a polling caller to string-match `status` with
+  no way to see the failure flag. The port adds it as `?int`: the integer when
+  reported, `null` when not. Every existing key keeps its meaning.
+- **`progress` stays 0 when the API does not report it**, exactly as WordPress.
+  The description points a caller at `status` and `is_completed` rather than at
+  the number, because zero is "not reported" as often as it is "not started".
+- **The operation id is a string and is url-encoded into the path.** Cloudways
+  ids are not integers (`flex-79648230`), and an id containing a slash would
+  otherwise become two path segments.
+- **The label length rule is the API's.** WordPress declares only `minLength: 1`;
+  guessing the endpoint's actual bound would refuse a name Cloudways accepts. An
+  out-of-range label comes back as the API message with its status. Whitespace is
+  trimmed first, so a label of spaces is refused locally instead of stored as a
+  blank name.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,101 / 19,828** (11 tests added) |
+| adapter PHPUnit | **94 / 918** on the two affected files, OK (4 probes added) |
+| tool readiness audit | **345 / 345**, servable **326** (+4), no violations |
+| toolkit parity | **124 of 854**; `cloudways` **8 ported**, 0 declined, 0 deferred, **52 remaining** |
+| phpcs | clean, no fixes needed |
