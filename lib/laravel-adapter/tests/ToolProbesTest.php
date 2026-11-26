@@ -145,6 +145,13 @@ Probe Club,club
 ", 'dry_run' => true ), 'success', array( 'total_rows', 'created_count', 'dry_run' ), array( 'user_id' => 1 ) ),
 			array( 'send_eca_notification', array( 'eca_id' => 999999, 'notification_type' => 'reminder', 'recipients' => 'all_enrolled' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'send_eca_parent_report', array( 'student_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.60 — the Cloudways reads. No credentials in this environment, so
+			// each proves it reaches the client and the client refuses cleanly.
+			array( 'cloudways_list_servers', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_get_server', array( 'server_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_list_apps', array( 'server_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_get_app', array( 'server_id' => 1, 'app_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
