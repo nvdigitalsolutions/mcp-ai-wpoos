@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Forge Bridge 0.3.2\n"
+"Project-Id-Version: NV oOS Forge Bridge 0.3.4\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-forge-bridge\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-22T16:08:43+00:00\n"
+"POT-Creation-Date: 2026-11-26T14:17:43+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-forge-bridge\n"
@@ -240,32 +240,36 @@ msgid "Too many form fields."
 msgstr ""
 
 #: includes/rest/class-nvoos-forge-bridge-forms.php:534
-#: includes/rest/class-nvoos-forge-bridge-forms.php:540
+#: includes/rest/class-nvoos-forge-bridge-forms.php:549
 msgid "The form does not exist on this site."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:542
+#: includes/rest/class-nvoos-forge-bridge-forms.php:543
+msgid "The Elementor form needs the post_id of the page that carries it."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:551
 msgid "No form handler (JetFormBuilder or Elementor Pro) is active on this site."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:689
+#: includes/rest/class-nvoos-forge-bridge-forms.php:698
 msgid "The JetFormBuilder handler is not available."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:725
+#: includes/rest/class-nvoos-forge-bridge-forms.php:742
 msgid "The JetFormBuilder handler did not produce a response."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:778
+#: includes/rest/class-nvoos-forge-bridge-forms.php:840
 msgid "The Elementor Pro form handler is not available."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:795
+#: includes/rest/class-nvoos-forge-bridge-forms.php:855
 msgid "The Elementor Pro handler did not produce a response."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-forms.php:839
-#: includes/rest/class-nvoos-forge-bridge-forms.php:868
+#: includes/rest/class-nvoos-forge-bridge-forms.php:899
+#: includes/rest/class-nvoos-forge-bridge-forms.php:928
 msgid "The form handler returned an unrecognized response."
 msgstr ""
 

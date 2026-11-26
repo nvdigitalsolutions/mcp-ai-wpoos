@@ -327,3 +327,75 @@ it also carries the `GET /gate` route and the packaging corrections below.
    (Stored redirects) and `screenshot-4.png` (revalidate fields), captured by
    `bin/capture-nvoos-forge-bridge-sections.js`; `readme.txt` and
    `.wordpress-org/README.md` updated in the same commit.
+
+## 0.3.4 upload — initial SVN release (2026-11-26)
+
+The wp.org review approved the 0.3.2 submission (`nvoos-forge-bridge-v0.3.2.zip`,
+submitted 2026-11-24). SVN access was granted the same week and the initial
+directory release is **0.3.4**, because two user-visible form-dispatch fixes
+merged after the submission ZIP was built. Shipping 0.3.2 would have published
+a known-broken Elementor path to the directory.
+
+### Changes since the reviewed 0.3.2 ZIP
+
+- **0.3.3 — Elementor dispatch action.** The in-process ajax emulation sent
+  `$_POST['action'] = 'elementor_pro_forms'` (the nonce action), but
+  `Ajax_Handler::is_form_submitted()` gates on `elementor_pro_forms_send_form`.
+  Every Elementor Pro form submission answered "the form is invalid" and
+  recorded nothing. The payload is now built by `elementor_request()`.
+- **0.3.3 — JetFormBuilder native `form_fields` map.** PHP nests
+  `form_fields[name]` keys from a real POST; the bridge's flat JSON/urlencoded
+  payload left `$_POST['form_fields']` empty, so JFB saw the submission but not
+  its values. `bracket_fields()` mirrors the native shape.
+- **0.3.4 — typed 400 for a missing Elementor carrier post.** An Elementor
+  submission without `post_id` could never dispatch (the handler resolves the
+  widget inside the carrier document); it now returns
+  `400 nvoos_forge_form_post_id_required` instead of forwarding the handler's
+  generic rejection.
+
+### Packaging corrections made in this pass
+
+| Item | Before | After |
+|---|---|---|
+| `languages/nvoos-forge-bridge.pot` | `Project-Id-Version` 0.3.2; the 0.3.4 error string missing | Regenerated at 0.3.4 — 66 msgids, 0 lost, 1 added |
+| `readme.txt` 0.3.3 entry | omitted the JetFormBuilder `form_fields` fix | bullet added |
+| `tests/test-forms.php` | `test_bracket_fields_rebuild_the_native_form_fields_map` called a protected helper → 1 error (83 tests) | reflection-based test; suite green |
+| `.wordpress-org/README.md` runbook | examples said 0.3.2 | 0.3.4 |
+
+### Version sweep (all 0.3.4)
+
+| Location | Value |
+|---|---|
+| `nvoos-forge-bridge.php` header `Version:` | 0.3.4 |
+| `NVOOS_FORGE_BRIDGE_VERSION` constant | 0.3.4 |
+| `readme.txt` `Stable tag:` | 0.3.4 |
+| `readme.txt` changelog | 0.3.4 + 0.3.3 entries; 0.3.2 down kept |
+| `languages/nvoos-forge-bridge.pot` `Project-Id-Version` | NV oOS Forge Bridge 0.3.4 |
+| `.wordpress-org/README.md` SVN runbook examples | 0.3.4 |
+| ZIP | `build/nvoos-forge-bridge-v0.3.4.zip` — 16 files, matches the tree byte-for-byte |
+
+### Validation run (2026-11-26)
+
+| Gate | Result |
+|---|---|
+| `php -l` on every shipped PHP file | No syntax errors |
+| `vendor/bin/phpcs --standard=phpcs.xml.dist .` | 0 violations (exit 0) |
+| PHPUnit (own config, wp-phpunit, WP 7.1.5 / PHP 8.2) | **83/83 tests, 239 assertions, OK** |
+| `.github/scripts/check-public-write-routes.php` | Exit 0 — every public write route reviewed |
+| `wp plugin check` (PCP) against the built ZIP, full severity | **0 errors, 0 warnings** (`PCP_EXIT:0`, plain success line) |
+| Clean install from the ZIP with `WP_DEBUG`/`WP_DEBUG_LOG` on | Activated; 8 `nvoos-forge/v1` routes registered; `/health` + `/gate` 200; no `debug.log` |
+| POT msgid set diff | 0 lost, 1 added (`nvoos_forge_form_post_id_required` message) |
+| Directory ZIP parity | 16/16 files identical after download from downloads.wordpress.org |
+
+### SVN record
+
+| Step | Revision |
+|---|---|
+| `trunk/` — initial release (16 files) | r3827294 |
+| `tags/0.3.4/` — server-side copy of trunk | r3827296 |
+| `assets/` — icon-128/256, banner-772/1544, screenshot-1…4 | r3827301 |
+
+Public URL: https://wordpress.org/plugins/nvoos-forge-bridge/ (HTTP 200;
+version 0.3.4; all four screenshots served by ps.w.org). The listing page is
+cached from the trunk commit and picks up the screenshot section on the next
+cache refresh — an assets-only commit does not change visibility.

@@ -94,6 +94,7 @@ The uncompiled source of this plugin lives in the public repository at https://g
 
 = 0.3.3 =
 * Fix: every Elementor Pro form submission answered "Your submission failed because the form is invalid." and recorded nothing. The in-process ajax emulation sent `$_POST['action'] = 'elementor_pro_forms'` (the NONCE action), but `Ajax_Handler::is_form_submitted()` gates the dispatch on the action the handler is registered under — `elementor_pro_forms_send_form`. The request payload is now built by a single testable `elementor_request()` method so the contract cannot drift again.
+* Fix: JetFormBuilder submissions now populate the native `form_fields` map as well as the flat field keys. PHP's own POST parsing turns bracket keys such as `form_fields[email]` into a nested map, and JetFormBuilder's request reads that map; the bridge's flat payload left it empty, so the handler saw the submission but not its values.
 
 = 0.3.2 =
 * New: `GET /wp-json/nvoos-forge/v1/gate` — the front-end gate state (maintenance / coming soon) for the Astro Forge's page-session probe (Proposal 152). Detects WordPress core `.maintenance`, Elementor Maintenance Mode, and WP Maintenance Mode; `nvoos_forge_bridge_gate_state` lets any other gate plugin declare itself. Read-only: booleans, a mode keyword and a plugin slug.
