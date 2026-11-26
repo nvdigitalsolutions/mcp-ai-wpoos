@@ -342,6 +342,18 @@ Probe Club,club
 			array( 'block_time_slot', array( 'start_time' => '2099-01-01 12:00:00', 'end_time' => '2099-01-01 13:00:00', 'reason' => 'probe' ), 'success', array( 'blocked_id', 'start_time' ), array( 'user_id' => 1 ) ),
 			array( 'check_availability', array( 'start_time' => '2099-01-03 10:00:00', 'end_time' => '2099-01-03 11:00:00' ), 'success', array( 'available', 'reasons' ), array( 'user_id' => 1 ) ),
 			array( 'get_available_slots', array( 'date' => '2099-01-05', 'duration_minutes' => 60 ), 'success', array( 'available_slots', 'total_slots' ), array( 'user_id' => 1 ) ),
+
+			// §164.84 — the event family. The create writes through the bound
+			// content store, the two readers answer an empty store, and the two
+			// id-taking writers are probed with an impossible id to prove the
+			// refusal path. The ICS export is probed as a refusal because a fresh
+			// database has no project to export.
+			array( 'create_event', array( 'title' => 'Probe event', 'start_date' => '2099-01-01' ), 'success', array( 'event_id', 'event' ), array( 'user_id' => 1 ) ),
+			array( 'update_event', array( 'event_id' => 999999, 'title' => 'Probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'delete_event', array( 'event_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'list_events', array(), 'success', array( 'count', 'total', 'events' ), array( 'user_id' => 1 ) ),
+			array( 'get_calendar_view', array( 'start_date' => '2099-01-01', 'end_date' => '2099-01-31' ), 'success', array( 'count', 'calendar' ), array( 'user_id' => 1 ) ),
+			array( 'export_calendar_ics', array( 'project_id' => 999999, 'download_file' => false ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

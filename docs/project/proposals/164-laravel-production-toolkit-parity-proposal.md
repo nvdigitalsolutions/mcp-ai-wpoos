@@ -7370,3 +7370,99 @@ Next in the queue: **events** (6), **services** (2), **booking links and
 optimisation** (2), **notifications** (4) and **triage** (2). The final **9**
 need a register decision: the seven Jet tools on a booking-adapter contract and
 the two external syncs on an OAuth credential store.
+
+## 164.84 `calendar-booking`, slice 3 — events
+
+This slice ports the six event tools: `create_event`, `update_event`,
+`delete_event`, `list_events`, `get_calendar_view` and `export_calendar_ics`.
+They are the first tools in this toolkit that also read the project-management
+types (`mcp_ai_project`, `mcp_ai_task`), because a calendar view and a project
+export are meaningless without them.
+
+### Storage and the event shape
+
+An event is an `mcp_ai_event` record with the WordPress `_event_*` meta family:
+start and end date as `Y-m-d`, start and end time as `HH:MM` in UTC (both empty
+means all-day), the type, the location, the project id and the attendee list.
+An event is either all-day or timed, and the writers keep `_event_all_day` in
+step with the pair of clock times.
+
+Attendee IDs are stored as **strings**, the encoding `_project_assigned_to`
+already uses (see `ProjectRow` and `list_projects`), so membership is a quoted
+JSON/PHP LIKE that behaves the same on both runtimes. WordPress stored integers
+and filtered against the PHP-serialised array, which cannot be ported to a store
+that compares JSON.
+
+### Corrections
+
+1. **A replace clears what it omits.** WordPress offered an update path on
+   `create_event` and wrote only the fields it was given, so clearing a time
+   left the old value in meta while `_event_all_day` flipped to 1. The port
+   writes every key on create and on replace, using `''` or `[]` to clear.
+2. **An update is validated.** `update_event` wrote any string into a date or a
+   time, never recomputed `_event_all_day` and never checked the result. The
+   port merges the stored and supplied values, validates the effective record
+   and recomputes the flag whenever a time is touched. Moving the start past the
+   end is refused with the field that has to change.
+3. **A record that spans the window is visible.** The calendar view asked
+   whether the start **or** the end fell inside the range, so a project running
+   all year disappeared from a January view. Projects and events use the
+   half-open overlap test, the same correction the appointment query needed.
+4. **The delete tool honours the record rule.** WordPress deleted any id
+   carrying the event type. The port keeps the declaration (`edit_posts`) and
+   the check (`delete_posts`) and adds the store delete rule, which is what
+   actually protects another author record.
+5. **`list_events` validates and sorts deterministically.** A reversed range
+   returned an empty list with no explanation and an unknown type matched
+   nothing. Both are refused now, and events are ordered by start date, then
+   start time, then id.
+6. **The export reads what the writers write.** WordPress required the post
+   type `project`, collected tasks and events by `post_parent` and read
+   `_event_date`. The port reads `_task_project_id` / `_event_project_id` and
+   the date meta the writers store, so the export is no longer empty by
+   construction.
+7. **The export no longer needs a sidecar.** WordPress required a media worker
+   route or a filter to generate anything. `IcsWriter` builds the document in
+   PHP.
+
+### Adaptations
+
+- The store cannot order by meta, so `list_events` and the view read a bounded
+  window (1,000 rows per collection) and sort in PHP; `truncated` says when the
+  window held fewer rows than the collection.
+- `get_calendar_view` does not merge external bookings. The WordPress argument
+  that enabled them was absent from its own schema, and this runtime binds no
+  booking adapter.
+- The ICS document is emitted in UTC with `Z` times and `VALUE=DATE` all-day
+  entries, so no `VTIMEZONE` component is needed. `timezone` is validated and
+  written as `X-WR-TIMEZONE` for the display of all-day dates; stored values are
+  already UTC and are not shifted twice.
+- The stored calendar file is private by default (the WordPress copy was public
+  in the uploads directory). `download_file: false` returns the content inline
+  and needs no file registry.
+- `delete_event` declares `edit_posts` and checks `delete_posts`, as WordPress
+  did; the effective protection is the store delete rule.
+- The adapter file registry gained `text/calendar` to `.ics`, because libmagic
+  types a document that starts with `BEGIN:VCALENDAR`; without the entry the
+  store would refuse the file or file it as `.txt`.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,692 / 22,009** (29 tests and 180 assertions added) |
+| adapter `ToolProbesTest` | **210 / 1,470**, 2 skipped, 0 failures — six new probes |
+| tool readiness audit | **430 / 430**, servable **411** (+6), no violations |
+| toolkit parity | **209 of 854**; `calendar-booking` **15 ported**, 0 declined, 0 deferred, **19 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The create probe writes through the bound content store; the two readers answer
+an empty store; the two id-taking writers and the export are probed with an
+impossible id to pin the refusal path. The ICS file path is proven in `lib/core`
+against a fake registry, because this host cannot sniff a file without
+`ext-fileinfo`.
+
+Next in the queue: **services** (2), **booking links and optimisation** (2),
+**notifications** (4) and **triage** (2). The final **9** need a register
+decision: the seven Jet tools on a booking-adapter contract and the two external
+syncs on an OAuth credential store.
