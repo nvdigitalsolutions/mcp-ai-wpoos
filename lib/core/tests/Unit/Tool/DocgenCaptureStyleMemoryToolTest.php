@@ -6,8 +6,9 @@
  * The behaviour worth pinning is the verbatim discipline: the exact text is
  * always recoverable, a summary is a second record rather than a replacement,
  * and a failure to keep the original stops before anything shorter is written.
- * Also that the fields `MemoryStoreInterface` cannot hold are absent from the
- * schema rather than silently dropped.
+ * Then the provenance: what the caller supplied reaches `metadata`, and what the
+ * tool knows better than the caller — `verbatim`, `tier` — is derived rather than
+ * accepted as a parameter.
  *
  * @package Nvoos\Core\Tests
  * @since   2.5.0
@@ -58,28 +59,37 @@ final class DocgenCaptureStyleMemoryToolTest extends TestCase
     }
 
     /**
-     * `MemoryStoreInterface::store()` writes fixed columns and drops unknown
-     * keys. Offering these would let a caller believe provenance and validity
-     * were recorded when nothing was.
+     * Since §164.42 the store holds a `metadata` map, so the provenance the
+     * WordPress tool offers can be carried rather than refused.
      */
-    public function test_fields_the_store_cannot_hold_are_not_offered(): void
+    public function test_the_provenance_fields_are_offered(): void
     {
         $properties = $this->tool()->getParametersSchema()['properties'];
 
         foreach (
             array(
-            'verbatim',
-            'allow_summarisation',
-            'sensitivity',
-            'consent_basis',
-            'subject_refs',
-            'attachments',
-            'recorded_at',
-            'valid_from',
-            'valid_until',
-            'tier',
-            ) as $absent
+                'subject_refs',
+                'attachments',
+                'recorded_at',
+                'valid_from',
+                'valid_until',
+                'sensitivity',
+                'consent_basis',
+            ) as $offered
         ) {
+            $this->assertArrayHasKey($offered, $properties);
+        }
+    }
+
+    /**
+     * `verbatim` and `tier` describe what the record holds, which the tool decides
+     * — and `allow_summarisation` describes a model this host does not have.
+     */
+    public function test_flags_the_tool_decides_are_not_parameters(): void
+    {
+        $properties = $this->tool()->getParametersSchema()['properties'];
+
+        foreach (array('verbatim', 'tier', 'allow_summarisation') as $absent) {
             $this->assertArrayNotHasKey($absent, $properties);
         }
     }
@@ -244,6 +254,165 @@ final class DocgenCaptureStyleMemoryToolTest extends TestCase
         $this->tool($memory)->execute(array('agent_id' => 'u1', 'content' => $content));
 
         $this->assertSame($content, $memory->records[0]['content']);
+    }
+
+    // ─── Provenance ────────────────────────────────────────────────────────
+
+    public function test_every_record_carries_its_source(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array('agent_id' => 'u1', 'content' => 'x'));
+
+        $this->assertSame('docgen_capture_style_memory', $memory->records[0]['metadata']['source']);
+    }
+
+    /**
+     * The archival record holds the original, so it says `true`; a recall record
+     * holding a summary is not the original and says `false`.
+     */
+    public function test_verbatim_is_derived_from_which_record_holds_what(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array(
+            'agent_id' => 'u1',
+            'content' => 'The original words, at length.',
+            'summary' => 'Short.',
+        ));
+
+        $this->assertTrue($memory->records[0]['metadata']['verbatim'], 'The archival record is the original.');
+        $this->assertFalse($memory->records[1]['metadata']['verbatim'], 'The recall record is a summary.');
+    }
+
+    public function test_a_lone_record_holding_the_original_is_verbatim(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array('agent_id' => 'u1', 'content' => 'The original.'));
+
+        $this->assertTrue($memory->records[0]['metadata']['verbatim']);
+    }
+
+    public function test_the_callers_provenance_reaches_the_metadata(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array(
+            'agent_id' => 'u1',
+            'content' => 'x',
+            'subject_refs' => array('https://example.test/brief', 'doc-42'),
+            'attachments' => array(array('sha256' => 'abc', 'mime' => 'application/pdf')),
+            'recorded_at' => '2026-11-25T10:00:00Z',
+            'valid_from' => '2026-11-25',
+            'valid_until' => '2027-11-25',
+            'sensitivity' => 'pii',
+            'consent_basis' => 'consent',
+        ));
+
+        $metadata = $memory->records[0]['metadata'];
+
+        $this->assertSame(array('https://example.test/brief', 'doc-42'), $metadata['subject_refs']);
+        $this->assertSame(array(array('sha256' => 'abc', 'mime' => 'application/pdf')), $metadata['attachments']);
+        $this->assertSame('2026-11-25T10:00:00Z', $metadata['recorded_at']);
+        $this->assertSame('2026-11-25', $metadata['valid_from']);
+        $this->assertSame('2027-11-25', $metadata['valid_until']);
+        $this->assertSame('pii', $metadata['sensitivity']);
+        $this->assertSame('consent', $metadata['consent_basis']);
+    }
+
+    /**
+     * Both records describe the same capture, so they cite the same sources.
+     */
+    public function test_every_record_shares_the_same_provenance(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array(
+            'agent_id' => 'u1',
+            'content' => 'The original words, at length.',
+            'summary' => 'Short.',
+            'subject_refs' => array('doc-42'),
+        ));
+
+        $this->assertSame(
+            $memory->records[0]['metadata']['subject_refs'],
+            $memory->records[1]['metadata']['subject_refs'],
+        );
+    }
+
+    /**
+     * A record without provenance gets the derived keys only, not a map full of
+     * empty values — so a reader can tell "nothing recorded" from "recorded as
+     * empty".
+     */
+    public function test_unsupplied_provenance_is_absent_rather_than_empty(): void
+    {
+        $memory = $this->memory();
+
+        $this->tool($memory)->execute(array('agent_id' => 'u1', 'content' => 'x'));
+
+        $this->assertSame(
+            array('source' => 'docgen_capture_style_memory', 'verbatim' => true),
+            $memory->records[0]['metadata'],
+        );
+    }
+
+    public function test_a_bad_date_is_refused_before_anything_is_stored(): void
+    {
+        $memory = $this->memory();
+
+        $result = $this->tool($memory)->execute(array(
+            'agent_id' => 'u1',
+            'content' => 'x',
+            'valid_until' => 'next Tuesday',
+        ));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('validation_failed', $result['error']['code']);
+        $this->assertCount(0, $memory->records);
+    }
+
+    public function test_too_many_references_are_refused(): void
+    {
+        $refs = array();
+
+        for ($i = 0; $i <= DocgenCaptureStyleMemoryTool::MAX_REFS; $i++) {
+            $refs[] = 'ref-' . $i;
+        }
+
+        $result = $this->tool()->execute(array(
+            'agent_id' => 'u1',
+            'content' => 'x',
+            'subject_refs' => $refs,
+        ));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('validation_failed', $result['error']['code']);
+    }
+
+    public function test_an_attachment_that_is_not_an_object_is_refused(): void
+    {
+        $result = $this->tool()->execute(array(
+            'agent_id' => 'u1',
+            'content' => 'x',
+            'attachments' => array('just-a-string'),
+        ));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('validation_failed', $result['error']['code']);
+    }
+
+    public function test_an_over_long_label_is_refused(): void
+    {
+        $result = $this->tool()->execute(array(
+            'agent_id' => 'u1',
+            'content' => 'x',
+            'sensitivity' => str_repeat('x', DocgenCaptureStyleMemoryTool::MAX_LABEL + 1),
+        ));
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('validation_failed', $result['error']['code']);
     }
 
     // ─── Refusals ──────────────────────────────────────────────────────────
