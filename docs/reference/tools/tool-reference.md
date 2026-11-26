@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ UPDATED - November 2026 (v1.2.23)
-**Tool Count:** ~360 base tools + ~1,388 Pro tools = ~1,747 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; **zero registrations in v1.2.23** — `includes/class-wp-mcp-ai-tool-registry.php` has no diff. The window adds **62 `lib/core` Tool classes** (59 concrete + 3 abstract) for the image pipeline, video, document and completion-seam families plus assistant portability and discovery: they are served by the package's own registry and are **described, not counted** (dual-layer rule). The media worker's image/document/video **routes** are worker surfaces, not plugin tools, and `publish_to_social` is human-gated).
-**Last Updated:** November 25, 2026 (v1.2.23 — zero plugin-registry registrations in-window; ~360 base + ~1,388 Pro, ~1,747 total unchanged)
+**Status:** ✅ UPDATED - November 2026 (v1.2.24)
+**Tool Count:** ~360 base tools + ~1,388 Pro tools = ~1,747 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; **zero registrations in v1.2.24** — `includes/class-wp-mcp-ai-tool-registry.php` has no diff. The window's tools are all `lib/core` package classes: the document family (`GeneratePdfTool`, `ProPdfDocumentTool`, `ExcelDataExportTool`, `ProWordDocumentTool`), the docs corpus (`DocsHub*Tool` ×5), the controlled-document register (`DocumentLifecycle` + `qms_*`), OKF enrichment/routing, `ExtractAudioTool`, `TranscribeVideoTool`, `GenerateVideoCaptionsTool`, `ExtractVideoFramesTool`, `ResizeImageSmartTool`, and the CRM/ECA/F&B/Cloudways families — served by the package's own registry and **described, not counted** (dual-layer rule). `lib/core/resources/toolkit-parity-decisions.json` is the authority for slugs intentionally not served (**declined** subtracted, **deferred** blocked on a named prerequisite); `bin/toolkit-parity.php` fails only when a served slug disappears.
+**Last Updated:** November 26, 2026 (v1.2.24 — zero plugin-registry registrations in-window; ~360 base + ~1,388 Pro, ~1,747 total unchanged)
 
 ## Data contracts (ID handoffs between tools)
 
