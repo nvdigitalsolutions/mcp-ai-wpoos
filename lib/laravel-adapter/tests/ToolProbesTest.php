@@ -63,6 +63,10 @@ final class ToolProbesTest extends TestCase {
 			array( 'recall_memory', array( 'agent_id' => '7', 'wing' => 'test-wing' ), 'success', array( 'memories', 'count' ) ),
 			array( 'search_attachments', array( 'query' => 'zzz-no-such-attachment' ), 'success', array() ),
 
+			// §164.53 — the refusal path: the test host configures no media worker,
+			// so the tool must name the absence rather than fail mid-render.
+			array( 'capture_webpage_screenshot', array( 'url' => 'https://example.com' ), 'error', array() ),
+
 			// 090-M Phase 2, batch 5 — the pure family.
 			array( 'base64', array( 'text' => 'hello' ), 'success', array( '*' ) ),
 			array( 'color_convert', array( 'color' => '#ff0000', 'to_format' => 'rgb' ), 'success', array( '*' ) ),

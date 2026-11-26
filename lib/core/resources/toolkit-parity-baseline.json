@@ -9,7 +9,9 @@
         "architectural-design": [],
         "automotive": [],
         "calendar-booking": [],
-        "capture": [],
+        "capture": [
+            "capture_webpage_screenshot"
+        ],
         "chat-channels": [],
         "cloudways": [],
         "comic-creation": [],

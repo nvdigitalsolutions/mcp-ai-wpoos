@@ -9,10 +9,6 @@
             "decision": "declined",
             "reason": "It would be a chain of convert, resize and compress, and ImageProcessingInterface::resize/crop/rotate/convert each take a source path and return a persisted path, so a chain is one worker round trip and one intermediate file per step. A real batch needs a multi-operation `/transform` call, which is a worker contract change rather than a tool. The three served tools (optimise_images_batch, generate_responsive_images, compress_image) already cover the jobs this slug names, so there is nothing left to build behind the name."
         },
-        "capture_webpage_screenshot": {
-            "decision": "deferred",
-            "reason": "The media worker already renders pages: `/api/browser/screenshot` is a hardened Puppeteer call behind an SSRF guard that accepts a URL, a viewport, `fullPage` and a format. The blocker is delivery, not capture — the route writes the image on the worker's own volume and answers `{output_path, size, format}`, while every other binary route (`/api/image/*`, `/api/pdf/*`) returns `b64` and the worker exposes no download route for `/browser`. A host therefore cannot retrieve the bytes, and a tool that returned a path it cannot open would be a lie. Prerequisite: `b64` on the screenshot response (or a `/api/browser/download/:name` route) plus a `BrowserCaptureInterface` over it."
-        },
         "create_remotion_video": {
             "decision": "deferred",
             "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
