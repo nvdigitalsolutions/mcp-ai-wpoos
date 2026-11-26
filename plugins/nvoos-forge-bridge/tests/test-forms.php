@@ -414,7 +414,13 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 	 * payload never creates it, so the bridge rebuilds it.
 	 */
 	public function test_bracket_fields_rebuild_the_native_form_fields_map(): void {
-		$mapped = \NvoosForgeBridge\Rest\Forms::bracket_fields(
+		// The helper is internal to the JFB dispatch; reflect rather than widen
+		// the shipped API for a unit test.
+		$method = new \ReflectionMethod( \NvoosForgeBridge\Rest\Forms::class, 'bracket_fields' );
+		$method->setAccessible( true );
+
+		$mapped = $method->invoke(
+			null,
 			array(
 				'form_fields[name]'    => 'Jane',
 				'form_fields[message]' => 'Hello',
@@ -423,7 +429,7 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( array( 'name' => 'Jane', 'message' => 'Hello' ), $mapped );
-		$this->assertSame( array(), \NvoosForgeBridge\Rest\Forms::bracket_fields( array( 'plain' => 'x' ) ) );
+		$this->assertSame( array(), $method->invoke( null, array( 'plain' => 'x' ) ) );
 	}
 
 	/**
