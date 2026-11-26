@@ -31,6 +31,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
+import { renderDoctor } from './doctor.ts';
+
 /** Supported deploy targets. */
 export type DeployMode = 'github-pages' | 'cloudflare-pages' | 'velocity';
 
@@ -717,6 +719,9 @@ export async function emitDeployConfig( dir: string, config: DeployConfig ): Pro
 		{ path: join( workflows, 'rebuild.yml' ), content: rebuildWorkflow( config ) },
 		{ path: join( scripts, 'verify-dispatch.mjs' ), content: verifyScript() },
 		{ path: join( scripts, 'verify-deployed.mjs' ), content: verifyLiveBuildScript() },
+		// The four-layer sign-in diagnostic — run it ON the server, where the
+		// egress lives (2026-11-26).
+		{ path: join( scripts, 'doctor.mjs' ), content: renderDoctor() },
 	];
 	if ( config.mirrorRepo && config.siteBranch ) {
 		files.push( { path: join( scripts, 'mirror-push.mjs' ), content: mirrorPushScript( config.runtime ) } );
