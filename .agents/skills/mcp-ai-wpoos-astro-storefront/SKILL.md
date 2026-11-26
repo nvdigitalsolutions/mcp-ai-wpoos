@@ -409,6 +409,21 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   then `node scripts/sync-manage-assets.mjs` here (or `npm run build:manage`).
   Both committed bundles must move together — `build/standalone/*` and
   `public/manage-assets/*` — or the two-bundle drift gate fails.
+- **A toolkit nav entry needs `Customer.features`, not just a `NAV` entry
+  (2026-11-26).** The bundle decides which toolkit sections to render from the
+  admin config's `features` list, which `manage-config.ts` forwards from the
+  contract's `Customer.features` (defaulting to `[]`). Drop the field and the
+  bundle still renders perfectly while the nav (ECA's **Activities**, the first
+  run) is simply absent — no error, no 404, just a missing tab. `features` has
+  to survive `GET /api/auth/me` → `manage-config.ts` → the config island.
+- **A forged managed site (Proposal 165) is a second host for `/manage`.** It
+  serves the surface from its own front controller with no CMS cookie in reach:
+  the Application Password rides a sealed AES-256-GCM `nvoos_forge_cred` cookie
+  and the session is
+  `HMAC(secret, 'manage.v1.' + <exp>.<uid>.<base64url(name)>)`.
+  `manage-runtime.ts` signs and `forge-gate/runtime.mjs` verifies locally, so
+  changing the recipe in one silently logs every manager out. Read Proposal
+  165's runbook before touching either.
 - **A per-row action that mints a link must open the tab synchronously.**
   `window.open()` after an `await` is treated as a popup and blocked; open
   `about:blank` first, then `location.replace(url)` once the request resolves
