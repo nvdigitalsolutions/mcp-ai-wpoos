@@ -145,6 +145,42 @@ export function parsePageList( value ) {
 }
 
 /**
+ * The image type a render request asks for.
+ *
+ * PNG is the default because it is what the path-returning route has always
+ * written, and a caller that says nothing must keep getting that. JPEG is
+ * offered for inline rendering, where the bytes travel inside a JSON body and a
+ * lossless page can triple the response for no gain the model can see.
+ *
+ * @param {unknown} value Requested format, e.g. "jpeg" or "png".
+ * @return {string} A MIME type.
+ */
+export function renderMime( value ) {
+	const requested = String( value ?? '' )
+		.trim()
+		.toLowerCase();
+
+	return 'jpeg' === requested || 'jpg' === requested ? 'image/jpeg' : 'image/png';
+}
+
+/**
+ * JPEG quality, clamped to the range the encoder accepts.
+ *
+ * @param {unknown} value    Requested quality, 1..100.
+ * @param {number}  fallback Used when nothing usable was asked for.
+ * @return {number}
+ */
+export function clampJpegQuality( value, fallback = 80 ) {
+	const parsed = Number( value );
+
+	if ( ! Number.isFinite( parsed ) || parsed <= 0 ) {
+		return fallback;
+	}
+
+	return Math.min( 100, Math.max( 1, Math.round( parsed ) ) );
+}
+
+/**
  * Rough rendered width of a string in Helvetica, in points.
  *
  * Helvetica averages a little under half an em per glyph. This is an estimate

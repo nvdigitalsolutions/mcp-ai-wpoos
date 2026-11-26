@@ -56,6 +56,19 @@ final class VisionRequest
     }
 
     /**
+     * Wrap already-encoded bytes as the same data URI.
+     *
+     * `PdfPageRendererInterface` carries base64 at its edge because the images
+     * cross a JSON boundary there. Decoding to bytes only to encode them again
+     * would copy tens of megabytes per page for no change in the result, so the
+     * renderer's representation is wrapped rather than round-tripped.
+     */
+    public static function dataUriFromBase64(string $base64, string $mimeType): string
+    {
+        return 'data:' . $mimeType . ';base64,' . $base64;
+    }
+
+    /**
      * Decode a caller-supplied data URI.
      *
      * A bare base64 blob is refused rather than assumed to be JPEG: the media

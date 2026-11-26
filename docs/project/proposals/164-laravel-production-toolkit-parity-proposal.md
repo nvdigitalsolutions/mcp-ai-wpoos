@@ -3707,3 +3707,171 @@ One recorded follow-up, and no unported tool in this cluster:
 | item | what it needs |
 |---|---|
 | vision OCR | a `PdfPageRendererInterface` plus a worker render route returning bytes, then a per-page vision loop |
+
+## 164.44 Vision OCR — pages the host can actually read
+
+**On the numbering:** §164.43 (agent-memory provenance, #8278) is the sibling
+immediately before this slice, and this section sits after it. The follow-up that
+§164.42 and §164.43 each recorded at their end — "a `PdfPageRendererInterface`
+and a worker render route returning bytes, then a per-page vision loop" — is
+what this section closes. Those sections are left as merged rather than edited.
+
+### The dead end this closes
+
+`POST /api/pdf/render` has rasterised pages for a while. It wrote the PNGs to
+*the worker's* filesystem and answered with their **paths**. A host cannot read
+those paths, so the only possible consumer was something running on the worker
+itself — that is, nothing. This is why `pro_document_ocr` refused `openai`,
+`gemini`, `anthropic` and `ollama` **by name** in §164.40: not because the
+providers were absent, but because there were no bytes to show them.
+
+The refusal was honest. Honouring the names needed a renderer, not a rename.
+
+### The worker answers with the images
+
+`inline` makes the route answer
+`{pages: [{page, mime_type, image, bytes}], count, total_pages, truncated,
+mime_type}` with base64 page images.
+
+| decision | value | why |
+|---|---|---|
+| inline ceiling | 24 MB | base64 inflates by 4/3 and the body is held in memory on both sides; past this the honest answer is "ask for less", not a 500 |
+| over the ceiling | **413** `payload_too_large`, prose in `error` | a request the caller can fix — fewer pages, lower dpi, `jpeg` — so it is a refusal, not a server fault |
+| `dpi` | viewport scaled by `dpi / 72` | the route's old `scale` was a bare multiplier; dpi is the unit an operator reasons in |
+| `format` / `quality` | `png` default; `jpeg` with quality 1–100 | the escape hatch when a page will not fit |
+| pages named, all invalid | **400** | silence would render the whole document instead — the worst kind of helpful |
+| `maxPages` | applied for inline *always* | the caller asked for images, so the budget is part of the request, not an optimisation |
+
+**A separate capability key, not a version check.** The route predates the
+`inline` argument, so a worker can honestly report `pdf_rendering: true` and
+still answer with paths this host cannot read — a 200 that looks like success.
+`pdf_render_inline` is a second key in the worker's matrix, and
+`MediaWorkerCapabilityProbe` reads it, so version skew becomes a named refusal
+before a request is spent. Same reasoning as `MediaWorkerPdfOcr` in §164.40.
+
+### `PdfPageRendererInterface` — bytes at the edge, base64 on the wire
+
+The contract's `render()` returns
+`{pages: [{page, mime_type, data, bytes}], total_pages, truncated}` where `data`
+is **base64**. Bytes would be more natural in PHP, but the images cross a JSON
+boundary in the adapter and every vision provider takes a base64 data URI, so
+one representation at the edge removes a second encoding rule from each caller.
+`VisionRequest::dataUriFromBase64()` wraps the renderer's string rather than
+decoding and re-encoding it — a 20-page document is tens of megabytes, and the
+round trip changes nothing.
+
+The default is **150 DPI**, deliberately lower than `PdfOcrInterface`'s 300.
+Vision models downsample to their own patch grid long before 300 DPI pays for
+itself, so the accuracy ceiling here is the model's, not the scanner's, and the
+cost is bytes per page.
+
+`isAvailable()` asks the worker for the narrower capability key rather than
+`pdf_rendering`, for the reason above.
+
+### `VisionPdfOcr` — render, ask, assemble
+
+The engine lives in `Application/Media` beside `ImageInput` and `VisionRequest`,
+because it is the same kind of thing: a collaborator that owns one awkward
+question for every tool that needs it.
+
+**Per page, then concatenate.** Asking about the whole document at once is not
+an option: 20 pages at 150 DPI is tens of megabytes, past every provider's
+single-request image budget, and models degrade on multi-page input long before
+that. Published OCR practice is recognise-per-page then assemble — which is also
+the only shape that lets one bad page be reported instead of failing the
+document.
+
+**No synthesis pass.** A model asked to "combine these transcriptions" invents
+connective prose. OCR means the words as they were printed, so pages are joined
+with a blank line and the per-page text stays in the result.
+
+**Empty is a finding.** A drawing, a cover, a signature page: `''` records it.
+Only a provider *error* is an error. A document where **every** page errored
+throws; a partial read returns the pages that worked plus `failed_pages`, and
+`truncated` is true. Silence about a gap would be the accepted-then-ignored
+defect in its most expensive form.
+
+**Not a `PdfOcrInterface` implementation,** though it would fit. The tool needs
+*both* engines and two parameters of one interface type resolve to the same
+binding. It is a `final` concrete class instead — and the tool builds it from
+two interfaces (`PdfPageRendererInterface`, `ProviderRouter`) rather than taking
+it as a parameter, which is the `ImageInput` seam and also the only shape the
+readiness harness can construct, since it can double an interface but not a
+`final` class.
+
+### The ladder, and the one place this deliberately differs from WordPress
+
+| `provider` | order |
+|---|---|
+| `auto` | text layer → tesseract → vision → `no_ocr_engine` |
+| `tesseract` | text layer → tesseract → `no_ocr_engine` (never widens) |
+| `openai`/`gemini`/`anthropic`/`ollama` | text layer → vision with that provider |
+| `unlimited_ocr`/`deepseek_ocr` | `ocr_provider_unavailable` |
+
+The text layer still wins for every provider: reading an exact layer is free and
+correct, and §164.40's whole point was that a born-digital page is never
+rendered.
+
+**`auto` is "the cheapest engine that works", which is not what WordPress does.**
+The WordPress tool tries vision models first and recommends them for accuracy.
+This host orders tesseract first, then vision. The reason is that `auto` is what
+a caller who named no engine gets, and vision is billed per page while tesseract
+is free and local — so the default must not spend money on the caller's behalf.
+The caller who wants the better model names it, one argument away. That is
+strictly more capable than refusing the names (before this slice), and it is not
+a silent cost regression.
+
+**Two refusals, not one.** `no_page_renderer` sends an operator to the media
+worker; `no_vision_model` sends them to provider configuration. One message
+covering both would send half of them to the wrong panel.
+
+`source` stays `'ocr'` for both engines — it answers "exact read or recognised
+read", which is what it was documented to answer — and `ocr.engine` now says
+`tesseract` or `vision`, with provider, model, aggregated `usage` and
+`failed_pages` on the vision path.
+
+### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 2,840 / 18,793 | **2,848 / 18,806** |
+| adapter PHPUnit | 444 / 2,131 | **444 / 2,131** |
+| worker (`pdf-style` + `routes/pdf`) | — | **21 / 21** |
+| `PdfPageRendererAdapterTest` | — | **10 / 10** |
+| tool readiness audit | 314/314, servable 295 | **314/314, servable 295** |
+| toolkit parity | 93 of 854 | **93 of 854** (no row moved) |
+
+The before column is post-§164.43, because that section merged while this one was
+in review; the earlier figures were measured against §164.42's tree and replaced
+rather than kept, since a base that no longer exists is not a comparison.
+
+Ten tests were added to `lib/core` (the vision path) and two removed: the
+blanket "hosted and vLLM providers are refused" case became "vLLM providers are
+refused", with the hosted names now covered by the paths above.
+
+### Validation, honestly
+
+- The **adapter suite ran in the `oos-laravel-app` container** from a scratch
+  package tree (runtime skill §19), not on this Windows host: the CLI has no
+  `fileinfo`/`gd`/`zip`, and the committed adapter lock resolves to Laravel 13 /
+  Symfony 8, which requires PHP ≥ 8.4. `composer update` inside the container
+  resolves against its PHP 8.3. A host-side `composer update
+  --ignore-platform-reqs` installed a Symfony that does not parse on 8.3 — the
+  container is the only working runner here.
+- From the app skeleton, **only the new test class** was run. The full suite
+  times out in this environment (>40 min, twice, once with nothing else running,
+  against a normal ~2 min); that gap is reported rather than papered over.
+- `ProjectManagementToolParityTest` reports `Empty data set provided by data
+  provider` on any filtered run unless both `NVOOS_PM_*` fixtures are passed —
+  known-benign, and it fires at collection time even when `--filter` excludes
+  the class.
+- The container serving the dev stack is bound to a **different worktree**
+  (§6 of the runtime skill), so the app-skeleton run mounted this tree at
+  `/workspace/oos` and bound the one new test file over `/app/tests/Feature/`.
+  Nothing in another agent's tree was written.
+
+### What is left
+
+Nothing in this cluster. `document-generation` is **37 of 38**; the remaining
+tool is `get_uninvoiced_orders`, which is blocked on order data rather than on
+code.

@@ -226,6 +226,12 @@ app.get( '/api/health/full', async (_req, res) => {
 				pdf_extraction: true,
 				pdf_generation: true,
 				pdf_rendering: true,
+				// `inline` on `/api/pdf/render` returns the page images as base64
+				// rather than paths on this server's filesystem, which a calling host
+				// cannot read. A separate key, not a version check: an older worker
+				// has the route but not the argument, and must be distinguishable
+				// before a caller spends a request finding out.
+				pdf_render_inline: true,
 				// Page-by-page OCR (pdfjs + tesseract) and styleable watermarks.
 				// Separate keys, not a version check: a runtime talking to an older
 				// worker must be able to tell that the route or the arguments are

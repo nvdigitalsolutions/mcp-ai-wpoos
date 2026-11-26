@@ -16,7 +16,9 @@ import {
 	clampDpi,
 	clampOpacity,
 	clampPageBudget,
+	clampJpegQuality,
 	parsePageList,
+	renderMime,
 	estimateTextWidth,
 	watermarkPlacement,
 } from './pdf-style.js';
@@ -82,6 +84,24 @@ test( 'an absent page list means every page, not page zero', () => {
 	assert.deepEqual( parsePageList( null ), [] );
 	assert.deepEqual( parsePageList( '' ), [] );
 	assert.deepEqual( parsePageList( '   ' ), [] );
+} );
+
+test( 'render format defaults to png and understands jpeg', () => {
+	assert.equal( renderMime( undefined ), 'image/png' );
+	assert.equal( renderMime( '' ), 'image/png' );
+	assert.equal( renderMime( 'PNG' ), 'image/png' );
+	assert.equal( renderMime( 'jpeg' ), 'image/jpeg' );
+	assert.equal( renderMime( ' JPG ' ), 'image/jpeg' );
+	assert.equal( renderMime( 'webp' ), 'image/png', 'an unknown format falls back rather than failing' );
+} );
+
+test( 'jpeg quality defaults to 80 and clamps to 1..100', () => {
+	assert.equal( clampJpegQuality( undefined ), 80 );
+	assert.equal( clampJpegQuality( 0 ), 80 );
+	assert.equal( clampJpegQuality( 55 ), 55 );
+	assert.equal( clampJpegQuality( 250 ), 100 );
+	assert.equal( clampJpegQuality( -5 ), 80, 'a negative is treated as absent' );
+	assert.equal( clampJpegQuality( 62.6 ), 63, 'rounded' );
 } );
 
 test( 'the diagonal mark reproduces the original hard-coded coordinates', () => {

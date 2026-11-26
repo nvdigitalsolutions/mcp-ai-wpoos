@@ -24,13 +24,24 @@
  * `source` in the response says which rung answered, so a caller can tell an
  * exact read from a recognised one.
  *
- * ## The hosted providers are named, not collapsed
+ * ## Both engines live behind one ladder
  *
- * `openai`, `gemini`, `anthropic`, `ollama`, `unlimited_ocr` and `deepseek_ocr`
- * are refused by name with a reason. Silently treating them as tesseract would
- * return plausible text from the wrong engine, and vision-model OCR of a PDF
- * needs a page renderer this runtime does not expose — which is a future slice,
- * not a rename.
+ * `openai`, `gemini`, `anthropic` and `ollama` are vision providers: the page is
+ * rendered to an image and transcribed by the model, through `VisionPdfOcr`.
+ * `tesseract` is the worker's OCR route. A named engine is honoured; if that
+ * engine cannot run, the refusal says *which* thing is missing
+ * (`no_page_renderer`, `no_vision_model`) rather than collapsing to a shrug.
+ *
+ * `auto` means "the cheapest engine that works": the text layer first, then
+ * tesseract, then a vision model. That order is deliberate and differs from the
+ * WordPress tool, which tries vision models first. Vision is billed per page and
+ * tesseract is free and local, so a caller who did not name an engine should not
+ * be spending money for it — the named providers exist for the caller who wants
+ * the better model, and they are one argument away.
+ *
+ * `unlimited_ocr` and `deepseek_ocr` remain refused by name. They are
+ * self-hosted vLLM instances this runtime has no address for; routing them to a
+ * hosted provider would answer under a name that did not answer.
  *
  * ## OCR unavailability is only an error when OCR is needed
  *
@@ -49,9 +60,12 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
+use Nvoos\Core\Application\Media\VisionPdfOcr;
+use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\PdfOcrInterface;
+use Nvoos\Core\Domain\Contract\PdfPageRendererInterface;
 use Nvoos\Core\Domain\Contract\PdfTextExtractorInterface;
 use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 
@@ -84,15 +98,23 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
     public const MIN_TEXT_LAYER_CHARS_PER_PAGE = 32;
 
     /**
-     * Providers the WordPress tool offers that this host does not run.
+     * Provider names that mean "transcribe the page with this model".
      *
      * @var list<string>
      */
-    private const UNAVAILABLE_PROVIDERS = array(
+    private const VISION_PROVIDERS = array(
         'openai',
         'gemini',
         'anthropic',
         'ollama',
+    );
+
+    /**
+     * Engines this host has no address for.
+     *
+     * @var list<string>
+     */
+    private const SELF_HOSTED_PROVIDERS = array(
         'unlimited_ocr',
         'deepseek_ocr',
     );
@@ -102,8 +124,23 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
         private readonly PdfOcrInterface $ocr,
         private readonly PdfTextExtractorInterface $layers,
         private readonly ?FileStoreInterface $files = null,
+        private readonly ?PdfPageRendererInterface $renderer = null,
+        private readonly ?ProviderRouter $providers = null,
     ) {
         parent::__construct($e);
+    }
+
+    /**
+     * The vision engine, assembled here rather than injected.
+     *
+     * `VisionPdfOcr` is final and has dependencies of its own, so the tool takes
+     * the two interfaces and builds it — the same seam `AnalyzeImageVisionTool`
+     * uses for `ImageInput`. It also keeps this tool's constructor readable to
+     * the test harness, which can double an interface but not a final class.
+     */
+    private function vision(): VisionPdfOcr
+    {
+        return new VisionPdfOcr($this->errors, $this->renderer, $this->providers);
     }
 
     public function getSlug(): string
@@ -118,7 +155,7 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
 
     public function getDescription(): string
     {
-        return 'Read a stored PDF\'s text, using its text layer when it has one and falling back to OCR when it does not. "source" says which answered, so an exact read is distinguishable from a recognised one. Tesseract is the only engine on this host: the hosted vision providers and the self-hosted Unlimited-OCR and DeepSeek-OCR models are refused by name.';
+        return 'Read a stored PDF\'s text, using its text layer when it has one and falling back to OCR when it does not. "source" says which answered, so an exact read is distinguishable from a recognised one. Engines: "auto" (text layer, then tesseract, then a vision model), "tesseract" on the media worker, or a vision provider (openai, gemini, anthropic, ollama) that transcribes each rendered page. The self-hosted Unlimited-OCR and DeepSeek-OCR models are refused by name.';
     }
 
     public function getParametersSchema(): array
@@ -133,7 +170,7 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
                 ),
                 'provider' => array(
                     'type' => 'string',
-                    'description' => 'OCR engine. "auto" and "tesseract" are the same on this host, which runs tesseract only; the other names are accepted so a migrating caller gets a reason rather than a schema error, and are refused.',
+                    'description' => '"auto" reads the text layer, then falls back to tesseract, then to a vision provider. Name an engine to force it: "tesseract" runs on the media worker; "openai", "gemini", "anthropic" and "ollama" render each page and transcribe it with that provider, which is billed per page. "unlimited_ocr" and "deepseek_ocr" are refused because this host has no address for them.',
                     'enum' => array(
                         'auto',
                         'tesseract',
@@ -146,6 +183,11 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
                     ),
                     'default' => 'auto',
                 ),
+                'model' => array(
+                    'type' => 'string',
+                    'description' => 'Model id for a vision provider. Defaults to the provider\'s default.',
+                    'maxLength' => 120,
+                ),
                 'prefer_text_layer' => array(
                     'type' => 'boolean',
                     'description' => 'Read the text layer when it has content, instead of OCRing a born-digital page. Default true; set false to force OCR.',
@@ -153,10 +195,9 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
                 ),
                 'dpi' => array(
                     'type' => 'integer',
-                    'description' => 'Rasterisation resolution when OCR runs. Default ' . self::DEFAULT_DPI . '.',
+                    'description' => 'Rasterisation resolution. Tesseract defaults to ' . self::DEFAULT_DPI . '; a vision provider defaults to ' . PdfPageRendererInterface::DEFAULT_DPI . ' because models downsample well below 300 DPI and every extra pixel is billed. Omit to take the engine default.',
                     'minimum' => 150,
                     'maximum' => 600,
-                    'default' => self::DEFAULT_DPI,
                 ),
                 'max_pages' => array(
                     'type' => 'integer',
@@ -204,11 +245,11 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
 
         $provider = strtolower($this->stringParam($arguments, 'provider', 'auto'));
 
-        if (in_array($provider, self::UNAVAILABLE_PROVIDERS, true)) {
+        if (in_array($provider, self::SELF_HOSTED_PROVIDERS, true)) {
             return $this->errors->create(
                 'ocr_provider_unavailable',
                 sprintf(
-                    'The "%s" provider is not available on this host; it runs tesseract only. Vision-model OCR needs a PDF page renderer this runtime does not expose, and the self-hosted vLLM models are absent. Ask for "tesseract" or "auto".',
+                    'The "%s" provider is not available on this host: it needs a self-hosted vLLM instance this runtime has no address for. Ask for "tesseract", "auto", or a vision provider (openai, gemini, anthropic, ollama).',
                     $provider,
                 ),
                 array('provider' => $provider),
@@ -253,13 +294,38 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
             }
         }
 
-        if (!$this->ocr->isAvailable()) {
-            return $this->errors->create(
-                'no_ocr_engine',
-                'The PDF text layer did not contain enough text to return, and OCR is not available on this host. The media worker must be configured and advertise the pdf_ocr capability.',
-            );
+        if (in_array($provider, self::VISION_PROVIDERS, true)) {
+            return $this->recogniseWithVision($path, $fileId, $provider, $maxPages, $arguments);
         }
 
+        if ($this->ocr->isAvailable()) {
+            return $this->recogniseWithTesseract($path, $fileId, $maxPages, $arguments);
+        }
+
+        // `auto` widens one rung when tesseract is absent: a host with a page
+        // renderer and a provider can still read the scan. A caller who named
+        // `tesseract` does not, because naming an engine is asking for that
+        // engine and the refusal below says so.
+        if (
+'auto' === $provider
+            && null === $this->vision()->unavailableReason($provider)
+        ) {
+            return $this->recogniseWithVision($path, $fileId, $provider, $maxPages, $arguments);
+        }
+
+        return $this->errors->create(
+            'no_ocr_engine',
+            'The PDF text layer did not contain enough text to return, and no OCR engine is available on this host. Tesseract needs the media worker to advertise the pdf_ocr capability; a vision provider needs a usable PDF page renderer (pdf_render_inline) and a registered provider.',
+        );
+    }
+
+    /**
+     * Recognise the pages on the worker.
+     *
+     * @param array<string, mixed> $arguments
+     */
+    private function recogniseWithTesseract(string $path, int $fileId, int $maxPages, array $arguments): mixed
+    {
         try {
             $result = $this->ocr->recognize(
                 $path,
@@ -286,8 +352,93 @@ class ProDocumentOcrTool extends AbstractTool implements ToolCapabilityFlagsInte
                 'total_pages' => (int) ($result['total_pages'] ?? 0),
                 'truncated' => (bool) ($result['truncated'] ?? false),
                 'ocr' => array(
+                    'engine' => 'tesseract',
                     'dpi' => (int) ($result['dpi'] ?? self::DEFAULT_DPI),
                     'language' => (string) ($result['language'] ?? 'eng'),
+                ),
+            ),
+        );
+    }
+
+    /**
+     * Recognise the pages with a vision model.
+     *
+     * The two refusals are separate on purpose. A caller reading
+     * `no_page_renderer` has a media worker to fix; a caller reading
+     * `no_vision_model` has a provider to configure. One message covering both
+     * would send half the callers to the wrong panel.
+     *
+     * @param array<string, mixed> $arguments
+     */
+    private function recogniseWithVision(
+        string $path,
+        int $fileId,
+        string $provider,
+        int $maxPages,
+        array $arguments,
+    ): mixed {
+        $vision = $this->vision();
+        $reason = $vision->unavailableReason($provider);
+
+        if (VisionPdfOcr::NO_PAGE_RENDERER === $reason) {
+            return $this->errors->create(
+                $reason,
+                'Vision-model OCR needs page images, and this host has no usable PDF page renderer. The media worker must be configured and advertise the pdf_render_inline capability.',
+            );
+        }
+
+        if (null !== $reason) {
+            $named = 'auto' === $provider ? '' : $provider;
+
+            return $this->errors->create(
+                $reason,
+                '' === $named
+                    ? 'No vision provider is configured on this host, so the scan cannot be recognised.'
+                    : sprintf('No vision provider answers to "%s" on this host.', $named),
+                '' === $named ? array() : array('provider' => $named),
+            );
+        }
+
+        $options = array(
+            'provider' => 'auto' === $provider ? '' : $provider,
+            'max_pages' => $maxPages,
+        );
+
+        // Only forward what the caller named, so the renderer's own defaults
+        // stand rather than being overwritten by the schema's convenience values.
+        if (array_key_exists('model', $arguments)) {
+            $options['model'] = mb_substr($this->stringParam($arguments, 'model'), 0, 120);
+        }
+
+        if (array_key_exists('dpi', $arguments)) {
+            $options['dpi'] = $this->intParam($arguments, 'dpi', PdfPageRendererInterface::DEFAULT_DPI);
+        }
+
+        try {
+            $result = $vision->recognize($path, $options);
+        } catch (\Throwable $e) {
+            return $this->errors->create('pdf_ocr_failed', $e->getMessage());
+        }
+
+        $text = (string) ($result['text'] ?? '');
+
+        return $this->success(
+            sprintf('Recognised %d page(s) of the PDF with %s.', (int) ($result['count'] ?? 0), (string) ($result['provider'] ?? '')),
+            array(
+                'file_id' => $fileId,
+                'source' => 'ocr',
+                'text' => $text,
+                'characters' => strlen($text),
+                'pages_read' => (int) ($result['count'] ?? 0),
+                'total_pages' => (int) ($result['total_pages'] ?? 0),
+                'truncated' => (bool) ($result['truncated'] ?? false),
+                'ocr' => array(
+                    'engine' => 'vision',
+                    'dpi' => (int) ($result['dpi'] ?? PdfPageRendererInterface::DEFAULT_DPI),
+                    'provider' => (string) ($result['provider'] ?? ''),
+                    'model' => (string) ($result['model'] ?? ''),
+                    'usage' => (array) ($result['usage'] ?? array()),
+                    'failed_pages' => (array) ($result['failed_pages'] ?? array()),
                 ),
             ),
         );

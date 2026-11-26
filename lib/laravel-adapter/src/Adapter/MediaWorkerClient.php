@@ -562,12 +562,13 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
 
             $message = 'Media worker error: '.$reason;
 
-            // 400 and 422 mean the worker is refusing the *request* — an option
-            // it does not take, inputs it cannot use. The message and the base
-            // class stay exactly as they have always been, so no existing caller
-            // or test changes; the narrower class only lets a caller that can
-            // tell the difference report a bad request as a bad request.
-            if (in_array($response->status(), array(400, 422), true)) {
+            // 400, 413 and 422 mean the worker is refusing the *request* — an
+            // option it does not take, inputs it cannot use, a payload that will
+            // not fit. The message and the base class stay exactly as they have
+            // always been, so no existing caller or test changes; the narrower
+            // class only lets a caller that can tell the difference report a bad
+            // request as a bad request.
+            if (in_array($response->status(), array(400, 413, 422), true)) {
                 throw new MediaWorkerRefusedException($message);
             }
 

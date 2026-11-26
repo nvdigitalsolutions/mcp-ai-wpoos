@@ -23,11 +23,20 @@ import path from 'path';
 import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
 import { siteDirFor, siteUploadDir, pathGuard } from '../utils/site-paths.js';
-import { clampDpi, clampOpacity, clampPageBudget, parsePageList, watermarkPlacement } from '../utils/pdf-style.js';
+import { clampDpi, clampJpegQuality, clampOpacity, clampPageBudget, parsePageList, renderMime, watermarkPlacement } from '../utils/pdf-style.js';
 
 export const pdfRouter = Router();
 
 const upload = multer( { storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } } );
+
+/**
+ * Byte ceiling for an inline render.
+ *
+ * Inline rendering carries the page images inside the JSON response, so the
+ * whole set has to fit in one body. 24 MB of PNG is roughly forty pages at 150
+ * DPI; past that a caller should ask for fewer pages, a lower dpi, or jpeg.
+ */
+const INLINE_MAX_BYTES = 24 * 1024 * 1024;
 
 // ── Helpers ─────────────────────────────────────────────────
 function tempFile( req, ext ) {
@@ -100,7 +109,16 @@ pdfRouter.post( '/render', upload.single( 'file' ), async ( req, res ) => {
 			return res.status( 404 ).json( { success: false, error: `File not found: ${ source }` } );
 		}
 
-		const { pages, scale, outputDir } = req.body || {};
+		const body = req.body || {};
+		const { pages, scale, outputDir } = body;
+
+		// Multipart text fields arrive as strings, and `'0'` is truthy, so the
+		// accepted spellings are listed rather than coerced.
+		const wantsInline = [ '1', 'true', 'yes', 'on' ].includes(
+			String( body.inline ?? '' )
+				.trim()
+				.toLowerCase(),
+		);
 
 		const pdfjsModule = await import( 'pdfjs-dist/legacy/build/pdf.mjs' );
 		// The legacy build exposes named exports; some versions also ship a
@@ -133,14 +151,85 @@ pdfRouter.post( '/render', upload.single( 'file' ), async ( req, res ) => {
 		const data = new Uint8Array( fs.readFileSync( source ) );
 		const doc = await pdfjsLib.getDocument( { data } ).promise;
 
+		const asked = parsePageList( pages );
+
+		// A caller that named pages and had all of them rejected asked for
+		// something the document does not have; falling back to every page would
+		// answer a different question.
+		if ( undefined !== pages && '' !== String( pages ) && 0 === asked.length ) {
+			return res.status( 400 ).json( { success: false, error: 'No valid page numbers were requested.' } );
+		}
+
+		const renderScale = undefined !== body.dpi ? clampDpi( body.dpi ) / 72 : ( scale || 2.0 );
+		const mime = renderMime( body.format );
+		const quality = clampJpegQuality( body.quality );
+
+		const allPages = Array.from( { length: doc.numPages }, ( _, i ) => i + 1 );
+		const requestedPages = asked.filter( ( n ) => n <= doc.numPages );
+		const base = requestedPages.length ? requestedPages : allPages;
+
+		// The budget applies when the caller asked for one, and always for inline
+		// rendering: a response body has to be bounded.
+		const selected =
+			wantsInline || undefined !== body.maxPages
+				? base.slice( 0, clampPageBudget( body.maxPages ) )
+				: base;
+
+		if ( wantsInline ) {
+			const inlinePages = [];
+			let totalBytes = 0;
+
+			for ( const pageNum of selected ) {
+				const page = await doc.getPage( pageNum );
+				const viewport = page.getViewport( { scale: renderScale } );
+
+				const canvas = canvasModule.createCanvas( viewport.width, viewport.height );
+				const ctx = canvas.getContext( '2d' );
+
+				await page.render( { canvasContext: ctx, viewport } ).promise;
+
+				const buffer =
+					'image/jpeg' === mime
+						? canvas.toBuffer( 'image/jpeg', { quality } )
+						: canvas.toBuffer( 'image/png' );
+
+				totalBytes += buffer.length;
+
+				// A named refusal rather than a half-answer: a caller that asked for
+				// forty pages at 300 DPI is told the window is too big, not handed
+				// twelve pages with no explanation.
+				if ( totalBytes > INLINE_MAX_BYTES ) {
+					return res.status( 413 ).json( {
+						success: false,
+						code: 'payload_too_large',
+						error: `Inline rendering passed ${ INLINE_MAX_BYTES } bytes at page ${ pageNum }; ask for fewer pages, a lower dpi, or format "jpeg".`,
+					} );
+				}
+
+				inlinePages.push( {
+					page: pageNum,
+					mime_type: mime,
+					image: buffer.toString( 'base64' ),
+					bytes: buffer.length,
+				} );
+			}
+
+			return res.json( {
+				success: true,
+				pages: inlinePages,
+				count: inlinePages.length,
+				total_pages: doc.numPages,
+				truncated: selected.length < doc.numPages,
+				mime_type: mime,
+			} );
+		}
+
 		const outDir = pathGuard( req.site, outputDir ) || tempFile( req, '' ).replace( /\.[^.]+$/, '' );
 		ensureDir( outDir );
 
-		const renderScale = scale || 2.0;
 		const results = [];
-		const pageList = pages || Array.from( { length: doc.numPages }, ( _, i ) => i + 1 );
 
-		for ( const pageNum of pageList ) {
+		for ( const pageNum of selected ) {
 			const page = await doc.getPage( pageNum );
 			const viewport = page.getViewport( { scale: renderScale } );
 
