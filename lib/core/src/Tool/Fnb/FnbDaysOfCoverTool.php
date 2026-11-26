@@ -150,14 +150,4 @@ class FnbDaysOfCoverTool extends FnbTool
 
         return 0.0;
     }
-
-    /**
-     * @param array<string, mixed> $arguments
-     */
-    private function scalar(array $arguments, string $key): string
-    {
-        $value = $arguments[ $key ] ?? null;
-
-        return is_scalar($value) ? (string) $value : '';
-    }
 }

@@ -6284,3 +6284,108 @@ Next is slice 4: the ten metric wrappers — `fnb_dish_margin`,
 `fnb_expected_use`, `fnb_waste_analysis`, `fnb_budget_variance`,
 `fnb_variance_split`, `fnb_labour_analysis`, `fnb_utilities_per_cover` — which
 are now argument handling over an engine that already answers their metrics.
+
+## 164.74 The ten metric wrappers, and a helper that had five copies
+
+Slice 4 is argument handling over an engine that already answers the metric.
+Ten tools, and only three of them own anything beyond a refusal and an echo:
+`fnb_dish_margin` switches shape, `fnb_budget_variance` sorts, and
+`fnb_variance_split` compares lines.
+
+### What the probe run changed
+
+The first draft read the metric's keys explicitly —
+`'source' => $result['source']` — because that is the shape the successful
+tests had pinned. On an unmapped corpus the metric's error shape has no
+`source`, so three tools died with `Undefined array key "source"` (PHPUnit
+promotes the notice to an exception) before returning anything.
+
+WordPress does not read the keys. Every one of the ten originals ends in
+`array_merge( array( 'success' => true, …echoed args… ), $result )`. The port
+now merges too. That is both faithful and notice-free, and it preserves whatever
+the metric chose to return — including its own `error` key when a table cannot
+be read.
+
+The consequence is worth stating plainly, because it is the opposite of what
+the slice expected: **none of the ten propagates the unmapped table as a tool
+error.** Each metric answers a zeroed or empty shape carrying its own `error`,
+and the wrapper merges it. All ten adapter probes are therefore **successes**,
+which matches the precedent set by `fnb_days_of_cover`, `fnb_weekend_demand`
+and `fnb_compare_periods` in slice 3. A metric error is data here, not a tool
+failure — the same conclusion `fnb_budget_variance`'s dead `is_wp_error()` check
+reaches of its own accord.
+
+### The wrappers that own a shape
+
+- **`fnb_dish_margin`** has two shapes. With `item_id`, it is M-21 merged under
+  the id; `recipe_cost_source` says whether the menu, the recipes or the
+  supplier prices answered. Without it, the full Kasavana–Smith matrix, which
+  needs a month because popularity is a share of that month's units — the one
+  refusal in the family. An item without a month is allowed and reports
+  `popularity_share: 0.0` rather than guessing a period.
+- **`fnb_budget_variance`** sorts the rows itself, largest variance first with
+  an unrecorded actual last (`PHP_FLOAT_MIN` as the key). It overwrites
+  `source` with the tool name, and it pins the WordPress dead check: an
+  unreadable budget sheet is an **empty success**. The metric returns an array
+  with an `error` key, `is_wp_error()` is false, and the empty `rows` list is
+  the answer.
+- **`fnb_variance_split`** lists only this month's lines. A line new this month
+  is compared against zero, so its whole change lands in the per-cover effect;
+  `total_change` is the difference of the two months' operating totals. Covers
+  are rounded for display only.
+- **`fnb_waste_analysis`** adds a month-on-month change in **waste value**, not
+  in the percentage. `change_pct` is `null` when the previous month logged no
+  waste — dividing by a zero baseline would invent a number — and
+  `month_on_month` is `null` when `prev_month` is not supplied.
+- **`fnb_labour_analysis`** returns `justified` as a **sentence**, because
+  WordPress surfaces it as text. A previous month with covers but no payroll row
+  is a real comparison (overtime grew 15 hours against 10 covers) and answers
+  "exceeds"; a zero-cover previous month also answers "exceeds" rather than
+  dividing by zero. `m10_labour_pct` is a ratio despite its name — payroll ÷
+  revenue at four decimals — and is pinned as-is.
+- **`fnb_utilities_per_cover`** reports raw meters, the costed lines the
+  assumptions table prices (tariff × meter plus fixed charge) and per-cover use
+  against M-02 covers. `assumptions_source` is the literal string
+  `'Assumptions table'`, not a resolved path, so a shape-compatible consumer
+  sees the same value.
+- **`fnb_stock_used`** merges M-15, so a hit carries `opening`, `bought`,
+  `closing` and `period`, and a miss carries only the value. Present-but-
+  malformed dates pass through, as in WordPress: the engine compares strings and
+  an unparseable date matches nothing.
+- **`fnb_stock_variance`** merges M-17. `from` also selects the month whose
+  expected use is subtracted, so a variance without it has no expected-use term
+  rather than a guessed one.
+- **`fnb_expected_use`** and **`fnb_price_change_impact`** are the pure cases:
+  both arguments are required and everything else is the metric's.
+
+### A helper that had five copies
+
+The new `FnbTool::scalar()` is protected, and five tools from slices 1–3 had
+their own `private function scalar()` with the same body. PHP does not allow a
+subclass to narrow visibility, so the runtime died on
+`Access level to …::scalar() must be protected` — not at lint time, and not in
+the earlier slices' tests, because those tools were only loaded when a test
+touched them. The five copies are gone; the base helper is the one
+implementation. This is the kind of collision that only shows up when the whole
+family is loaded at once, which is exactly what the adapter suite does.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,348 / 20,652** (21 tests added) |
+| adapter `ToolProbesTest` | **154 / 1,104**, 1 skipped, 0 failures — ten successes, as recorded above |
+| tool readiness audit | **375 / 375**, servable **356** (+10), no violations |
+| toolkit parity | **154 of 854**; `food-beverage` **17 ported**, 0 declined, 0 deferred, **6 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+Two hand-derived fixture figures were checked before trusting them:
+`fnb_variance_split.total_change` is 4,050 because September's operating total is
+4,030 and August's is −20 (no payroll, no ledger, but the electricity fixed
+charge still applies), and the labour comparison's 15-hour overtime change
+against 10 covers matches the fixture's stated intent. Both agreed with the
+engine; neither needed a source edit.
+
+Next is slice 5: the report path — `fnb_generate_report`, `fnb_export_report`,
+`fnb_save_draft`, `fnb_list_drafts` — which brings `Report_Builder`,
+`Report_Exporter` and `Draft_Writer` across.
