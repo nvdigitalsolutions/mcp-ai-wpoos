@@ -159,6 +159,11 @@ Probe Club,club
 			array( 'cloudways_restart_service', array( 'server_id' => 1, 'service' => 'nginx' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'cloudways_get_operation_status', array( 'operation_id' => 'flex-1' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'cloudways_update_server_label', array( 'server_id' => 1, 'label' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.63 — the CRM company pair. The suite refreshes its database per
+			// test, so the create leaves nothing behind.
+			array( 'create_company', array( 'company_name' => 'Probe Ltd', 'industry' => 'Testing' ), 'success', array( 'company_id', 'company_name' ), array( 'user_id' => 1 ) ),
+			array( 'get_companies', array( 'industry' => 'Testing' ), 'success', array( 'companies', 'total_companies' ), array( 'user_id' => 1 ) ),
 		);
 	}
 

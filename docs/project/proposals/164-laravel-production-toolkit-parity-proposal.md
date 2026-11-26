@@ -5274,3 +5274,99 @@ toolkits that still have work. Three of the fourteen are already at zero.
   tools over three transactional APIs (Brevo, Mailjet, Mailgun), each an HTTP
   client plus a key. It is a natural pair of slices after the CRM survey if an
   early merge is wanted while CRM's engine is still being mapped.
+
+
+## 164.63 `crm`, measured — and the company pair
+
+`crm` is item 3 of the owner's order (§164.62) and the first of the fourteen
+with real work: 13 declared slugs. This section measures the toolkit before it
+is ported, the way §164.54 measured ECA, and lands the simplest pair.
+
+### What the storage actually is
+
+Every entity is a custom post type, so the family maps to
+`ContentStoreInterface` the way the classroom family does:
+
+| entity | type |
+|---|---|
+| company | `mcp_ai_company` |
+| lead | `mcp_ai_lead` |
+| deal | `mcp_ai_deal` |
+| customer | `mcp_ai_customer` |
+| activity | `mcp_ai_crm_activity` |
+| contact (toolkit CPT) | `mcp_crm_contacts` |
+
+Two things that are not obvious from the folder:
+
+- **There are two contact stores.** `mcp_crm_contacts` is the toolkit CPT and
+  `mcp_ai_lead` is the older lead CPT, and `manage_crm_contact` dispatches to
+  whichever the id belongs to (its `get_storage_type` branch calls
+  `*_contact` methods for one and `*_item` for the other). The port has to keep
+  both type strings reachable, or a migrated contact becomes invisible.
+- **The signals table is not on any tool's path.** The toolkit ships a
+  `$wpdb` table for signals, but no declared tool reads it; the only `$wpdb` use
+  in the thirteen is `esc_like` inside one email search. An earlier draft of
+  this section claimed three tools read the table; that was wrong and is
+  corrected here.
+
+The helpers that *do* sit on tool paths are logic, not storage:
+`CRM_Engine` (lead scoring and stage history, two tools), `CRM_Relevance`
+(two), and `CRM_Gmail` (one).
+
+### The thirteen, by slice
+
+| slice | slugs | notes |
+|---|---|---|
+| 1 — companies | `create_company`, `get_companies` | **landed in this section** |
+| 2 — interactions | `get_contact_interactions`, `get_crm_handover` | activity and deal meta, read-only |
+| 3 — contacts | `manage_crm_contact`, `scan_duplicate_contacts` | dual-store dispatch, dedupe scan |
+| 4 — hygiene | `archive_stale_contacts`, `recalculate_engagement_scores` | lead/customer/activity writes; scoring formula comes from the engine |
+| 5 — email search | `crm_email_search_leads`, `…_accounting`, `…_correspondence` | reads `mcp_crm_contacts` plus the relevance helper |
+| 6 — capture and research | `crm_capture_interaction`, `research_company` | engine write path; research service seam |
+
+Slices 2–6 are provisional until each one is read in full. Slice 1 was read
+line by line and is below.
+
+### Slice 1: the company pair
+
+`create_company` and `get_companies`, over `mcp_ai_company` and the
+`_company_*` meta family, unchanged from WordPress — a WordPress export is
+readable here and vice versa, which is what the duplicate scan and handover
+tools will depend on.
+
+Decisions:
+
+- **`edit_url` is present and null.** WordPress returns an admin link; this
+  runtime has no post edit screen. The key is kept so a shape-compatible
+  consumer does not have to tell "absent because this runtime" from "absent
+  because the tool changed".
+- **`revenue` is stored as a number.** WordPress sanitises it as text, so a
+  synced row holds `"250000"`. The port writes a float and the reader accepts
+  either, because an amount compared numerically should not be a string whose
+  ordering depends on its digit count.
+- **`target_status` gets no invented default.** The schema declares `prospect`,
+  but the WordPress handler only stores the field when the caller supplied it;
+  the port does the same, and `get_companies` reports the absence as an empty
+  string.
+- **`tags` stays one string**, as WordPress stores it.
+- **The filter semantics are frozen**: industry, city, state and country are
+  substring matches; size and target status are exact; all ANDed; alphabetical;
+  20 per page by default and 100 at most; `total_companies` is the whole
+  matching set and `filters_applied` echoes the filters.
+- **Capabilities follow WordPress per tool**, not the family default: create is
+  `edit_posts`, the listing is `read`.
+
+One test fixture along the way asserted that "Financial Services" contains
+"Finance". It does not — they diverge at the eighth character — and the failure
+was in the test, not the filter. The assertion now uses a substring that is
+actually one.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,111 / 19,868** (10 tests added) |
+| adapter PHPUnit | **96 / 936** on the two affected files, OK (2 probes added; the create probe writes and reads back through the adapter) |
+| tool readiness audit | **347 / 347**, servable **328** (+2), no violations |
+| toolkit parity | **126 of 854**; `crm` **2 ported**, 0 declined, 0 deferred, **11 remaining** |
+| phpcs | clean, no fixes needed |
