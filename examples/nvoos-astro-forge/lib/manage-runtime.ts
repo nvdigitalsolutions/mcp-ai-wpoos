@@ -387,10 +387,15 @@ function remember(key: string): void {
 }
 
 function sameOrigin(request: Request): boolean {
-	const origin = request.headers.get('origin');
-	if (!origin) {
-		const site = request.headers.get('sec-fetch-site');
-		return !site || site === 'same-origin' || site === 'none';
+	const origin = request.headers.get( 'origin' );
+	// A form submission from a same-origin page arrives with 'Origin: null' —
+	// Chrome serialises it that way for navigations, unlike fetch, which always
+	// sends the real origin. Treat null as "no origin header" and let
+	// sec-fetch-site decide; a cross-site attacker sending null reports
+	// cross-site (2026-11-26).
+	if ( ! origin || origin === 'null' ) {
+		const site = request.headers.get( 'sec-fetch-site' );
+		return ! site || site === 'same-origin' || site === 'none';
 	}
 	let host = '';
 	try {

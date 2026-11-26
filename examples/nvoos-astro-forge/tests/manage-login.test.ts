@@ -98,16 +98,24 @@ function stubWp( options: { password: boolean; mayEdit: boolean } ) {
 async function post(
 	login: { POST( c: Record< string, unknown > ): Promise< Response > },
 	body: string,
-	origin?: string
+	origin?: string,
+	secFetchSite?: string
 ) {
 	const form = new URLSearchParams( body );
 	const cookies: Array< { name: string; value: string } > = [];
+	const headers: Record< string, string > = {
+		'content-type': 'application/x-www-form-urlencoded',
+	};
+	if ( origin ) {
+		headers.origin = origin;
+	}
+	if ( secFetchSite ) {
+		headers[ 'sec-fetch-site' ] = secFetchSite;
+	}
 	const response = await login.POST( {
 		request: new Request( 'https://eca.directory/api/manage/login', {
 			method: 'POST',
-			headers: origin
-				? { 'content-type': 'application/x-www-form-urlencoded', origin }
-				: { 'content-type': 'application/x-www-form-urlencoded' },
+			headers,
 			body: form.toString(),
 		} ),
 		cookies: {
@@ -148,6 +156,21 @@ describe( 'manage sign-in — the WordPress password path', () => {
 
 		const foreign = await post( login, 'username=editor&password=wrong', 'https://evil.example' );
 		expect( foreign.response.headers.get( 'location' ) ?? '' ).toContain( 'error=origin' );
+	} );
+
+	it( 'accepts a same-origin form submission that serialises Origin as null', async () => {
+		// Chrome sends 'Origin: null' for a same-origin FORM POST (fetch sends the
+		// real origin), so sign-in failed for every browser submitting the form
+		// while an API probe from the same page passed.
+		stubWp( { password: false, mayEdit: true } );
+		const { login } = await loadLogin();
+
+		const formPost = await post( login, 'username=editor&password=wrong', 'null', 'same-origin' );
+		expect( formPost.response.headers.get( 'location' ) ?? '' ).toContain( 'error=credentials' );
+
+		// A null origin that reports cross-site is still refused.
+		const crossSite = await post( login, 'username=editor&password=wrong', 'null', 'cross-site' );
+		expect( crossSite.response.headers.get( 'location' ) ?? '' ).toContain( 'error=origin' );
 	} );
 
 	it( 'refuses a wrong password with error=credentials', async () => {
