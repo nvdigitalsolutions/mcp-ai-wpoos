@@ -287,6 +287,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CacheQueueAndBatchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'block_time_slot' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\BlockTimeSlotTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the blocked-range writer (Proposal 164 section 164.83) as an mcp_blocked_time record carrying the same _start_time/_end_time pair appointments use, so one overlap test serves both readers. Corrections: the span is validated as a real calendar range with the end after the start and stored in UTC, where WordPress checked only that two strings were non-empty and then stored whatever it was given, so a reversed or unparseable range became a block that never matched a slot. A block is an availability signal only: check_availability and get_available_slots consult it, while create_appointment does not refuse a write on it, which is how WordPress divided the two as well. _blocked_by records the caller.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarAvailabilityToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'capture_webpage_screenshot' => array(
 			'class' => 'Nvoos\Core\Tool\CaptureWebpageScreenshotTool',
 			'readiness' => 'ready',
@@ -295,6 +304,15 @@ return array(
 			'reason' => 'MediaWorkerBrowserCapture implements BrowserCaptureInterface over the media worker `POST /api/browser/screenshot` (Proposal 164 section 164.53), which answers the rendered bytes inline because a worker-local path is not readable by this host. Needs `oos.media_worker.url` at runtime and refuses with `no_browser_engine` otherwise. The tool always stores the result through the file registry, and refuses width/height outside `viewport: custom` and quality on PNG rather than accepting and ignoring them. No mshots fallback: a different service returns a different picture.',
 			'evidence' => 'lib/core/tests/Unit/Tool/CaptureWebpageScreenshotToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
+		'check_availability' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\CheckAvailabilityTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the pre-write availability probe (Proposal 164 section 164.83): three independently switchable checks — overlapping appointments, business hours and blocked ranges — reported as available, reasons and a per_system map carrying the conflict ids. Corrections: business hours were a weekday test only, so a 22:00 booking on an enabled Monday passed; the whole span must now sit inside the open-close window. The conflict query is the half-open start < new_end AND end > new_start, which also catches an appointment contained in the window. Times are read as UTC and validated, where WordPress accepted any strtotime expression. per_system keeps a single nvoos entry so clients that read the map still find it, and the declared edit_posts capability is now enforced.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarAvailabilityToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'check_capability' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CheckCapabilityTool',
@@ -1839,6 +1857,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CalendarAppointmentToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_available_slots' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\GetAvailableSlotsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the slot grid for one date (Proposal 164 section 164.83) from the weekday business-hours rule, advancing by slot_duration + buffer_time and dropping any slot that overlaps a booked appointment or a blocked range. Corrections: blocked ranges and buffer_time were both ignored before, although the tool guidance promised the first and the rules stored the second; the weekday is now read as UTC, where gmdate on a strtotime date shifted the day west of Greenwich; and duration_minutes is clamped to 15-480 minutes, where absint allowed a zero-length or unbounded slot. An empty result carries day_of_week and the effective business_hours rule, so a disabled day, a missing rule and a fully booked day are distinguishable. Past slots are listed, because backfilling is allowed: available means not taken, not future.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarAvailabilityToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_batch_status' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetBatchStatusTool',
 			'readiness' => 'ready',
@@ -3202,6 +3229,15 @@ return array(
 			'reason' => 'Prompt-builder stand-in: returns a prompt and performs no work. The WordPress tool with this slug is canonical.',
 			'replaced_by' => 'seo_meta_optimizer',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
+		),
+		'set_availability_rules' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\SetAvailabilityRulesTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the weekday rule writer (Proposal 164 section 164.83) onto SettingsStoreInterface under business_hours, keeping the WordPress enabled/start_time/end_time/slot_duration/buffer_time shape so a stored value round-trips. One call writes one weekday and leaves the other six alone; the day is replaced rather than merged, so omitted fields take the documented defaults exactly as WordPress wrote them. Corrections: clock times are validated as HH:MM, where WordPress stored any string and 9am became a rule no reader could parse; a closing time at or before the opening time is refused rather than stored as a day with no bookable slots; and the weekday is validated against the seven slugs. The settings write is wrapped, so a storage failure reports availability_write_failed instead of a fatal.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarAvailabilityToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'set_cache' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SetCacheTool',
