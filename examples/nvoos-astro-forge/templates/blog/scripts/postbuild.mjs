@@ -269,7 +269,12 @@ function applyPublicationGate() {
 	const docRoot = existsSync(resolve(distDir, 'client', 'index.html')) ? resolve(distDir, 'client') : distDir;
 	const page = mode === 'coming_soon' ? 'coming-soon' : 'maintenance';
 	const pageFile = resolve(docRoot, page, 'index.html');
-	const replace = gate.policy !== 'keep' || mode === 'coming_soon';
+	// A server build has a front controller that answers the gate dynamically —
+	// and serves the real document to a signed-in manager. Replacing the files
+	// there would leave the manager staring at the holding page (2026-11-26: an
+	// ECA managed deploy did exactly that). Replacement is the STATIC fallback.
+	const serverBuild = existsSync( resolve( distDir, 'server', 'entry.mjs' ) );
+	const replace = ! serverBuild && ( gate.policy !== 'keep' || mode === 'coming_soon' );
 
 	if (!existsSync(pageFile)) {
 		if (replace) {
