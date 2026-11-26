@@ -2625,6 +2625,22 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					? untrailingslashit( esc_url_raw( $settings['deepseek_base_url'] ) )
 					: 'https://api.deepseek.com';
 
+				// V4.1 Flash rejects `max_tokens`; probe with the key the
+				// configured model accepts so a healthy key never looks broken.
+				$token_param = $client->requires_max_completion_tokens( $model ) ? 'max_completion_tokens' : 'max_tokens';
+
+				$probe_body = array(
+					'model'    => $model,
+					'messages' => array(
+						array(
+							'role'    => 'user',
+							'content' => 'Hi',
+						),
+					),
+				);
+
+				$probe_body[ $token_param ] = 5;
+
 				$response = wp_remote_post(
 					$base_url . '/chat/completions',
 					array(
@@ -2633,18 +2649,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							'Authorization' => 'Bearer ' . $settings['deepseek_api_key'],
 							'User-Agent'    => 'WP-MCP-AI-DeepSeek-Client/1.0',
 						),
-						'body'    => wp_json_encode(
-							array(
-								'model'      => $model,
-								'max_tokens' => 5,
-								'messages'   => array(
-									array(
-										'role'    => 'user',
-										'content' => 'Hi',
-									),
-								),
-							)
-						),
+						'body'    => wp_json_encode( $probe_body ),
 						'timeout' => 30,
 					)
 				);

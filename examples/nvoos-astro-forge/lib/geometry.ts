@@ -150,7 +150,7 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						marginBottom: number;
 						columns?: number[];
 						columnWidths?: number[];
-						content?: { width: number; x: number };
+						content?: { width: number; x: number; padTop?: number; padBottom?: number };
 						kind?: string;
 						/** The build declares it renders this band shorter (see `BandGeometry.collapsed`). */
 						collapsed?: boolean;
@@ -321,11 +321,21 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					 * a #dd3333 right half, 720 of 1440) — and a slab that regressed to
 					 * full-bleed reports the container and fails.
 					 */
-					const contentOf = ( band: Element ): { width: number; x: number } | undefined => {
+					const contentOf = ( band: Element ): { width: number; x: number; padTop?: number; padBottom?: number } | undefined => {
 						const bandRect = band.getBoundingClientRect();
 						if ( bandRect.width <= 0 ) {
 							return undefined;
 						}
+						// The CONTENT STAGE's own block padding travels with the box: builders
+						// inset the copy with `e-con-inner { padding: 60px 0 80px }` rather than
+						// the band, so a rebuild that reads only the band's padding starts the
+						// copy 60–80px high (eca.directory's benefits band, 2026-11-25).
+						const stagePadding = ( node: Element ): { padTop?: number; padBottom?: number } => {
+							const style = getComputedStyle( node );
+							const padTop = Math.round( parseFloat( style.paddingTop ) || 0 );
+							const padBottom = Math.round( parseFloat( style.paddingBottom ) || 0 );
+							return padTop > 0 || padBottom > 0 ? { padTop, padBottom } : {};
+						};
 						const slab = slabOf( band, bandRect );
 						if ( slab ) {
 							return { width: Math.round( slab.width ), x: Math.round( slab.x - bandRect.x ) };
@@ -349,7 +359,7 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 								);
 								const box = widest.getBoundingClientRect();
 								if ( box.width > 0 && box.width < bandRect.width - 2 ) {
-									return { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ) };
+									return { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ), ...stagePadding( widest ) };
 								}
 								// A FULL-BLEED stage is a WRAPPER, not the content box: Elementor's
 								// `e-con-boxed` spans the band and insets with padding, and its single
@@ -376,7 +386,7 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 							// The first narrowing IS the container. Anything deeper is the band's own
 							// padding, which the two sides express differently.
 							if ( box.width < bandRect.width - 2 ) {
-								return { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ) };
+								return { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ), ...stagePadding( next[ 0 ] ) };
 							}
 							node = next[ 0 ];
 						}
@@ -469,6 +479,8 @@ function collectBandTypeFacts( input: {
 		{
 				containerWidth: number;
 				containerPadX: number;
+				containerPadTop: number;
+				containerPadBottom: number;
 				containerInner: boolean;
 				containerFlush: boolean;
 				headings: Record< string, BandTypeProperties >;
@@ -519,6 +531,8 @@ const pick = ( selector: string ): Element | null => {
 		{
 			containerWidth: number;
 			containerPadX: number;
+			containerPadTop: number;
+			containerPadBottom: number;
 			containerInner: boolean;
 			containerFlush: boolean;
 			headings: Record< string, BandTypeProperties >;
@@ -592,6 +606,12 @@ const pick = ( selector: string ): Element | null => {
 			container.getBoundingClientRect().width - padLeft - padRight
 		);
 		const containerPadX = Math.round( Math.max( padLeft, padRight ) * 100 ) / 100;
+		// The container's BLOCK padding. A builder insets the copy with
+		// `e-con-inner { padding: 60px 0 80px }` rather than the band, so a rebuild
+		// that reads only the band's own padding starts the copy 60–80px high
+		// (eca.directory's benefits band, 2026-11-25).
+		const containerPadTop = Math.round( ( parseFloat( containerStyle.paddingTop ) || 0 ) * 100 ) / 100;
+		const containerPadBottom = Math.round( ( parseFloat( containerStyle.paddingBottom ) || 0 ) * 100 ) / 100;
 		// Does the band's own grid cancel that gutter? A Bootstrap-family `.row`
 		// carries a NEGATIVE horizontal margin that pulls its columns back out over
 		// the container's padding. The rebuild's stylesheet never defines `.row`, so
@@ -699,6 +719,8 @@ const pick = ( selector: string ): Element | null => {
 		facts[ id ] = {
 			containerWidth,
 			containerPadX,
+			containerPadTop,
+			containerPadBottom,
 			containerInner,
 			containerFlush,
 			headings,
@@ -2596,6 +2618,8 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			{
 				containerWidth: number;
 				containerPadX: number;
+				containerPadTop: number;
+				containerPadBottom: number;
 				containerInner: boolean;
 				containerFlush: boolean;
 				headings: Record< string, BandTypeProperties >;
@@ -2746,13 +2770,21 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				| {
 						containerWidth: number;
 						containerPadX: number;
+						containerPadTop: number;
+						containerPadBottom: number;
 						containerInner: boolean;
 						containerFlush: boolean;
 				  }
 				| undefined
 		): ForgeBandContainer | undefined =>
 			entry && entry.containerInner && entry.containerWidth > 0
-				? { content: entry.containerWidth, padX: entry.containerPadX, flush: entry.containerFlush }
+				? {
+						content: entry.containerWidth,
+						padX: entry.containerPadX,
+						padTop: entry.containerPadTop,
+						padBottom: entry.containerPadBottom,
+						flush: entry.containerFlush,
+				  }
 				: undefined;
 		for ( const [ id, desktopFacts ] of Object.entries( base ) ) {
 			const band: ForgeBandFacts = {

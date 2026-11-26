@@ -831,6 +831,43 @@ is standalone, never embedded inline in wp-admin).
    Dry-run mergeability without touching the worktree:
    `git merge-tree --write-tree HEAD origin/<base>` (exit 0 = clean).
 
+### React 19 + `@ai-sdk/react` — error #185 while streaming (PR #8272)
+
+`useChat` (the 1.x line) keeps its state in **four** SWR caches — `messages`,
+`streamData`, `status`, `error`. With no throttle every streamed delta mutates
+all of them, and React 19 counts a cache notification that lands during an
+in-progress render as a *nested update*. Past 50 it throws
+**#185 "Maximum update depth exceeded"**, once per token. The stack is
+unmistakable:
+
+```
+sse-adapter → processDataStream → onTextPart / onReasoningPart
+  → onUpdate → mutateByKey → SWR cache setter → subscribeCache
+    → forceStoreRerender → getRootForUpdatedFiber → Error #185
+```
+
+The turn still completes and the transcript still saves — so it is easy to
+dismiss as noise. It isn't: it is one uncaught rejection per delta plus real
+jank. Two fixes, both needed:
+
+1. **`experimental_throttle: 60`** on `useChat` — the AI SDK's documented remedy
+   for this exact error; coalesces updates to ~16/s. (Named `throttle` in AI SDK
+   5+; `experimental_throttle` in the 1.x line. Confirm the option exists in the
+   installed version before relying on it.)
+2. **Memoise the message row.** `useChat` replaces *only* the trailing message
+   object, so `React.memo( MessageView, areEqual )` keyed on message identity
+   bails out for every settled message. Without it each token re-renders — and
+   re-parses the Markdown of — the whole transcript, which is quadratic in
+   conversation length.
+
+Comparator caveats, both learned the hard way:
+
+- The agent panel rebuilds `delegations` (derived from *all* messages) and
+  `jobs` (job-bus state) on every delta. Compare those by **size**, not
+  identity, or the memo never bails for any message.
+- Check every callback prop is `useCallback`-stable. One inline arrow
+  (`stateFor`, `onRegenerate`, …) defeats the entire boundary.
+
 ## @xyflow/react v12 (upgraded from reactflow 11)
 
 - **No default export** — `import { ReactFlow, ... } from '@xyflow/react'`.

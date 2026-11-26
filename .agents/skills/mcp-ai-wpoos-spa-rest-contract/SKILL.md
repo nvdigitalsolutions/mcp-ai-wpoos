@@ -606,3 +606,19 @@ The last two asymmetries between the runtimes are gone; the contract is now **co
   empty-state, verify the server data actually resolves — the reseed now
   relinks members automatically
   (`WP_MCP_AI_Team_Repository::relink_members_after_profession_replace()`).
+- **A tiny envelope field can be the dominant cost of a polled endpoint.**
+  `storage_bytes` on the transcripts helper is a `SUM(LENGTH(...))` over a
+  `LONGTEXT` column — 659 rows / 184 MB, `PRIMARY` only, and it **cannot be
+  indexed away** (no index makes `LENGTH()` cheap). Warm it read ~25 ms; cold
+  after a MySQL restart it was ~8 s — precisely when the console's status-bar
+  poll fires, so it presents as "the console is frozen / the connection is
+  broken". Don't reach for an index on an aggregate like this. The shipped fix
+  in `class-wp-mcp-ai-transcript-repository.php` is cache-first:
+  `get_storage_bytes()` wraps the (now `protected`) aggregate with a 5-minute
+  TTL, a per-user version meta busted on `delete_transcript()`, a 7-day
+  **last-known-good backstop** for recompute failures, and a 2 s statement
+  budget (`max_statement_time` on MariaDB / `max_execution_time` on MySQL).
+  Expose a TTL filter (`wp_mcp_ai_transcript_storage_bytes_ttl`, `0` disables
+  caching) so tests aren't forced to expire transients. Measure the field by
+  timing the repo method directly (`wp eval-file`), not the request — a slow
+  app's multi-second request floor (3.1 s on Victory) hides the delta.

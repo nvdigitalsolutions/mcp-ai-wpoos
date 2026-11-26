@@ -18,9 +18,10 @@
 4. [Pricing & Off-Peak Window](#pricing--off-peak-window)
 5. [Custom Base URL (Proxies & Regional Endpoints)](#custom-base-url)
 6. [Tool Calling & Function Calling](#tool-calling--function-calling)
-7. [Known Limitations](#known-limitations)
-8. [Diagnostics & Testing](#diagnostics--testing)
-9. [Troubleshooting](#troubleshooting)
+7. [Token Limit Parameter](#token-limit-parameter)
+8. [Known Limitations](#known-limitations)
+9. [Diagnostics & Testing](#diagnostics--testing)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -115,6 +116,43 @@ Requirements for a compatible custom endpoint:
 `deepseek-reasoner` and `deepseek-coder` do **not** support tool calling. NV oOS
 automatically strips the `tools` parameter for these models and logs a warning
 — no manual configuration is needed.
+
+---
+
+## Token Limit Parameter
+
+DeepSeek's models do not all accept the same output-token key:
+
+| Model | Parameter sent |
+|-------|----------------|
+| `deepseek-flash` (V4.1 Flash), retired `deepseek-v4-flash*` ids | `max_completion_tokens` |
+| `deepseek-v4-pro` and legacy ids | `max_tokens` |
+
+Sending the wrong key is rejected with:
+
+```
+Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.
+```
+
+`WP_MCP_AI_DeepSeek_Client` chooses the key per resolved model, accepts either
+spelling from callers (`max_tokens` or `max_completion_tokens`), and retries a
+rejected request once with the corrected payload. To declare the rule for a
+model behind a [custom base URL](#custom-base-url), extend the decision:
+
+```php
+add_filter(
+	'wp_mcp_ai_deepseek_requires_max_completion_tokens',
+	function ( $requires, $model ) {
+		return $requires || 'my-proxy-model' === $model;
+	},
+	10,
+	2
+);
+```
+
+Research tools (`research_product`, `research_post`, and the rest of the Pro
+research family) apply the same rule before calling the provider, so their
+larger-budget retries scale whichever key is on the wire.
 
 ---
 

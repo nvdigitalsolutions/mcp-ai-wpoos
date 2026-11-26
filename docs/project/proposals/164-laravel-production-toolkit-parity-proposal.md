@@ -3371,10 +3371,157 @@ Four, and one recorded follow-up:
 | `get_uninvoiced_orders` | order data — genuinely blocked, recorded and unported |
 | *follow-up* | vision-model document OCR: a `PdfPageRendererInterface` plus a worker render route that returns bytes, then a per-page vision loop |
 
+## 164.41 — The last three that could be built (2026-11-25)
+
+§164.40 left four. Reading them again corrected one, and the memory tool needed
+less than expected.
+
+### `generate_invoice_pdf` was never blocked
+
+§164.40 recorded "the two invoice tools need a re-scope to accept invoice data —
+a product decision". That was wrong for one of them. `generate_invoice_pdf`
+already takes `invoice_number`, dates, `bill_to`, `items`, `tax_rate`, `currency`
+as arguments and queries nothing at all. It needed no decision — only reading.
+
+Its `requires-model` and `consumes-tokens` flags are also false: the file builds
+HTML and hands it to dompdf or the pro PDF service, and never calls a model. They
+are not declared here.
+
+Only `generate_invoice_batch` genuinely needed a decision, and the answer was
+option (b): the invoices are given, not looked up.
+
+### The arithmetic, corrected
+
+An invoice is a financial document, so the arithmetic is the part that matters.
+Four things in the WordPress tool are wrong in ways a customer notices:
+
+| WordPress | here |
+|---|---|
+| sums `items[].amount` and ignores `quantity`/`rate` — while printing them, so "3 × 20.00" without an `amount` prints 0.00 and adds nothing | a line is `amount` when given, otherwise `quantity × rate`, and the printed number is the summed number |
+| accepts `subtotal` and `total`, then silently recomputes both | a supplied figure is a **cross-check**: a disagreement is refused with both numbers named |
+| float arithmetic throughout | integer minor units; rounding happens once per line and once for tax, nowhere else |
+| accepts `bill_to` and prints nothing | the recipient is printed, as a string or a map |
+
+The cross-check is the opinionated part. Silently correcting a caller's total
+means the caller never learns their arithmetic disagreed with ours — and on a
+financial document, either answer being wrong is worth stopping on.
+
+### One new entry point on the composer
+
+`PdfDocumentComposer::compose()` builds a body from prose and cannot express a
+table. The alternative to extending it was for the invoice tools to reimplement
+page-size resolution, filename stemming, visibility and the registry row —
+exactly the drift the class says it exists to prevent.
+
+So `compose()` and `document()` were each split at their waist into `wrap()` and
+`render()`, and `documentFromHtml()` exposes the same pipeline for a body the
+caller composed itself. `compose()` and `document()` keep their signatures and
+their output; the 84 existing PDF tests pass unchanged, which is what makes the
+refactor safe to trust.
+
+### The batch, re-scoped
+
+`generate_invoice_batch` requires `order_ids`, plus a `template_id` (a document
+template CPT) and `send_email`. None of the three has a counterpart here. Shipping
+the schema anyway would produce a tool whose only possible answer is "no such
+order".
+
+Option (b) is what shipped: **give the invoices, get the PDFs.** Up to 25 per
+call, each built by the same `InvoiceDocument` the single tool uses, each with
+its own `ok`/`error`, and `continue_on_error` true by default for the same reason
+as `pro_batch_ocr` — a batch that aborts on invoice three has rendered two
+documents and returned nothing.
+
+### The memory tool needed no store
+
+§164.40 guessed "corpus frontmatter is the likely home". It is not: the runtime
+already binds `MemoryStoreInterface`, and `store_agent_context` has used it since
+2.0.
+
+The verbatim discipline ports as two records — the exact text at `tier=archival`,
+an optional `summary` as the `tier=recall` representative. The archival write
+goes **first**, because a summary without its original defeats the thing the tool
+exists for; a failed archival write therefore stores nothing.
+
+When no summary is supplied, **one** record is written holding the verbatim text.
+The WordPress service summarises on its own, and this tool holds no model, so a
+second archival copy of identical bytes would double the storage to reproduce a
+distinction that does not exist in that case.
+
+Six WordPress fields are absent from the schema — `verbatim`,
+`allow_summarisation`, `sensitivity`, `consent_basis`, `subject_refs`,
+`attachments`, and the bi-temporal `recorded_at`/`valid_from`/`valid_until`.
+`MemoryStore::store()` writes fixed columns and drops unknown keys, so offering
+them would let a caller believe provenance and validity were recorded when
+nothing was. `tier` is absent too, deliberately: the verbatim record is archival
+and the representative is recall by construction, and a knob that let the
+original move out of archival would defeat the discipline.
+
+Carrying provenance and validity honestly needs a metadata column on the store.
+That is the recorded follow-up below, not something to fake here.
+
+### Research grounding
+
+| finding | source | where it landed |
+|---|---|---|
+| money should be summed in integer minor units, not floats | the standard accounting-software practice behind every ledger schema | `InvoiceDocument` converts on the way in and renders once at the end |
+| agent memory separates a searchable representative from the verbatim record | the mem0 / MemPalace tier model already recorded in §164.40's research | archival + recall records with the original first |
+
+### Where the work lives
+
+| file | change |
+|---|---|
+| `lib/core/src/Application/Document/InvoiceDocument.php` | new; arithmetic, escaping and body HTML |
+| `lib/core/src/Application/Document/PdfDocumentComposer.php` | split into `wrap()`/`render()`; added `documentFromHtml()` |
+| `lib/core/src/Tool/GenerateInvoicePdfTool.php` | new |
+| `lib/core/src/Tool/GenerateInvoiceBatchTool.php` | new; the re-scoped premise |
+| `lib/core/src/Tool/DocgenCaptureStyleMemoryTool.php` | new; two-record discipline |
+| `lib/core/resources/tool-readiness.php` | three rows |
+| `lib/core/tests/Unit/Application/Document/InvoiceDocumentTest.php` | twenty-six arithmetic and printing tests |
+| `lib/core/tests/Unit/Tool/GenerateInvoicePdfToolTest.php` | eleven |
+| `lib/core/tests/Unit/Tool/GenerateInvoiceBatchToolTest.php` | ten |
+| `lib/core/tests/Unit/Tool/DocgenCaptureStyleMemoryToolTest.php` | sixteen |
+| `lib/core/resources/toolkit-parity-baseline.json` | regenerated (`--write`) |
+
+### Measurement
+
+`lib/core` **2,826 / 18,756** (was 2,757 / 18,543; +63 from the four files above,
++6 from catalogue-driven provider cases); adapter **444 / 2,131** (was 444 /
+2,128); audit **314 / 314, servable 295**; toolkit parity **93 of 854**;
+`document-generation` **37 of 38**.
+
+Parity moves by four for three tools: `generate_invoice_pdf` belongs to both
+`document-generation` and `ecommerce`, and `ecommerce` had no ported tool before,
+so the baseline now records `1` there.
+
+The tests cover: a line computed from quantity × rate; a supplied amount winning;
+cents summing without drift; tax rounded once; a matching supplied total accepted
+and a disagreeing one refused; every builder refusal; the recipient printed; a
+description escaped; the currency rendered with each total; the tool refusing by
+name with no engine; `save_to_media` writing through the store and `false`
+skipping it; a batch continuing past a bad invoice and stopping on request; the
+memory tool writing archival before recall, writing nothing when the archival
+write fails, and storing content containing markup unchanged.
+
+### What is left
+
+One tool:
+
+| item | what it needs |
+|---|---|
+| `get_uninvoiced_orders` | order data — genuinely blocked, recorded and unported |
+
+And two recorded follow-ups, both of which are their own slice:
+
+| follow-up | what it needs |
+|---|---|
+| memory metadata | a metadata column on the memory store, so provenance (`subject_refs`, `attachments`) and bi-temporal validity can be carried rather than dropped |
+| vision OCR | a `PdfPageRendererInterface` and a worker render route returning bytes, then a per-page vision loop |
+
 ## 164.42 — Memory provenance had nowhere to live (2026-11-25)
 
-This section continues §164.41, which lands separately (#8270) and touches
-nothing here: that one adds tools, this one changes the store underneath them.
+The previous section added those tools; this one changes the store they
+write to. The two touch disjoint code.
 
 ### What was being dropped in silence
 

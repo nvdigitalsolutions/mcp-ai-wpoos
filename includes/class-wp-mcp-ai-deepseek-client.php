@@ -100,6 +100,25 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			'deepseek-v3'    => 131072,
 		);
 
+		/**
+		 * Model families that reject `max_tokens` in favour of
+		 * `max_completion_tokens`.
+		 *
+		 * DeepSeek-V4.1-Flash (deepseek-flash) answers a request carrying
+		 * `max_tokens` with: "Unsupported parameter: 'max_tokens' is not
+		 * supported with this model. Use 'max_completion_tokens' instead."
+		 * The retired deepseek-v4-flash ids route to it, so the whole family
+		 * uses the OpenAI-style key. deepseek-v4-pro keeps `max_tokens`.
+		 *
+		 * @since 1.2.24
+		 * @var array
+		 */
+		const MODELS_REQUIRING_MAX_COMPLETION_TOKENS = array(
+			'deepseek-flash',
+			'deepseek-v4-flash',
+			'deepseek-v4.1',
+		);
+
 		// -------------------------------------------------------------------------
 		// Accessors.
 		// -------------------------------------------------------------------------
@@ -247,6 +266,43 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			 * @param string $model           Model identifier.
 			 */
 			return (bool) apply_filters( 'wp_mcp_ai_deepseek_supports_vision', $is_vision_model, $model );
+		}
+
+		/**
+		 * Whether the model expects `max_completion_tokens` on the wire.
+		 *
+		 * The API rejects the legacy `max_tokens` key on V4.1 Flash with an
+		 * "Unsupported parameter" 400, so the budget is written under the key
+		 * the resolved model accepts. Sites fronting a proxy whose models keep
+		 * the legacy key can extend or override the decision through the
+		 * `wp_mcp_ai_deepseek_requires_max_completion_tokens` filter.
+		 *
+		 * @since 1.2.24
+		 *
+		 * @param string $model Model identifier.
+		 * @return bool True when the request must send `max_completion_tokens`.
+		 */
+		public function requires_max_completion_tokens( $model ) {
+			$model    = sanitize_text_field( (string) $model );
+			$requires = false;
+
+			foreach ( self::MODELS_REQUIRING_MAX_COMPLETION_TOKENS as $prefix ) {
+				if ( $model === $prefix || 0 === strpos( $model, $prefix ) ) {
+					$requires = true;
+					break;
+				}
+			}
+
+			/**
+			 * Filters whether a DeepSeek model requires `max_completion_tokens`
+			 * instead of the legacy `max_tokens` parameter.
+			 *
+			 * @since 1.2.24
+			 *
+			 * @param bool   $requires Default capability for the model.
+			 * @param string $model    Model identifier.
+			 */
+			return (bool) apply_filters( 'wp_mcp_ai_deepseek_requires_max_completion_tokens', $requires, $model );
 		}
 
 		// -------------------------------------------------------------------------
@@ -429,7 +485,26 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 							)
 						);
 					}
-					return $this->do_realtime_curl_stream( $url, $payload, $model, $this->resolve_timeout( $options ), $realtime_cb );
+
+					$stream_timeout = $this->resolve_timeout( $options );
+					$stream_result  = $this->do_realtime_curl_stream( $url, $payload, $model, $stream_timeout, $realtime_cb );
+
+					// A streaming 400 can still be a model-parameter rejection:
+					// error bodies are plain JSON (not SSE) and no chunk has been
+					// forwarded before the failure, so the corrected payload is
+					// retried once without duplicating output.
+					if ( is_wp_error( $stream_result ) ) {
+						$error_data = $stream_result->get_error_data();
+						$error_code = isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
+						$error_body = isset( $error_data['body'] ) && is_array( $error_data['body'] ) ? $error_data['body'] : array();
+						$corrected  = $this->correct_unsupported_parameter( $error_code, $error_body, $payload );
+
+						if ( null !== $corrected ) {
+							$stream_result = $this->do_realtime_curl_stream( $url, $corrected, $model, $stream_timeout, $realtime_cb );
+						}
+					}
+
+					return $stream_result;
 				}
 			}
 
@@ -451,6 +526,75 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 				);
 			}
 
+			$sent = $this->send_chat_request( $url, $request_args );
+
+			// Model-parameter self-correction (once). DeepSeek's OpenAI-compatible
+			// API flips the token-limit key between models (V4.1 Flash wants
+			// `max_completion_tokens`), and a proxy in front of `deepseek_base_url`
+			// may expect either key. The API names the offending parameter in its
+			// 400 body, so retry the corrected payload instead of failing the
+			// caller's tool with an otherwise actionable error.
+			if ( ! is_wp_error( $sent ) && ( $sent['code'] < 200 || $sent['code'] >= 300 ) ) {
+				$corrected = $this->correct_unsupported_parameter( $sent['code'], $sent['decoded'], $payload );
+
+				if ( null !== $corrected ) {
+					$payload              = $corrected;
+					$request_args['body'] = wp_json_encode( $payload );
+
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'deepseek_parameter_correction',
+							'Retrying the DeepSeek request with a corrected model parameter.',
+							array(
+								'model'  => $model,
+								'status' => $sent['code'],
+							)
+						);
+					}
+
+					$sent = $this->send_chat_request( $url, $request_args );
+				}
+			}
+
+			if ( is_wp_error( $sent ) ) {
+				return $sent;
+			}
+
+			if ( $sent['code'] < 200 || $sent['code'] >= 300 ) {
+				return $this->handle_api_error( $sent['code'], $sent['decoded'], $sent['response'] );
+			}
+
+			$normalized = $this->normalize_response( $sent['decoded'] );
+
+			if ( ! isset( $normalized['model'] ) && ! empty( $model ) ) {
+				$normalized['model'] = $model;
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'deepseek_response', 'DeepSeek request completed.', array( 'model' => $model ) );
+			}
+
+			return $normalized;
+		}
+
+		/**
+		 * Send the prepared payload and decode the response body.
+		 *
+		 * Wraps the transport, the provider circuit breaker, and JSON decoding
+		 * so the caller can retry a corrected payload without duplicating the
+		 * failure handling.
+		 *
+		 * @since 1.2.24
+		 *
+		 * @param string $url          Endpoint URL.
+		 * @param array  $request_args wp_remote_post() arguments.
+		 * @return array|WP_Error {
+		 *     @type int   $code     HTTP status code.
+		 *     @type array $decoded  Decoded response body.
+		 *     @type array $response Raw WP HTTP response.
+		 * } or WP_Error on transport/decode failure.
+		 */
+		protected function send_chat_request( $url, array $request_args ) {
 			// Provider circuit breaker (1.2.0): skip HTTP when circuit is open.
 			if ( class_exists( 'WP_MCP_AI_Provider_Circuit_Breaker' ) && ! WP_MCP_AI_Provider_Circuit_Breaker::is_allowed( 'deepseek' ) ) {
 				return new WP_Error(
@@ -496,12 +640,11 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 				return $response;
 			}
 
-			$code     = wp_remote_retrieve_response_code( $response );
-			$body     = wp_remote_retrieve_body( $response );
-			$decoded  = json_decode( $body, true );
-			$json_err = json_last_error();
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
 
-			if ( JSON_ERROR_NONE !== $json_err ) {
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_error( 'Failed to decode DeepSeek response.', array( 'body' => $body ) );
 				}
@@ -509,23 +652,83 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_deepseek_invalid_response', __( 'The DeepSeek API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
-			if ( $code < 200 || $code >= 300 ) {
-				return $this->handle_api_error( $code, $decoded, $response );
-			}
-
-			$normalized = $this->normalize_response( $decoded );
-
-			if ( ! isset( $normalized['model'] ) && ! empty( $model ) ) {
-				$normalized['model'] = $model;
-			}
-
-			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_event( 'deepseek_response', 'DeepSeek request completed.', array( 'model' => $model ) );
-			}
-
-			return $normalized;
+			return array(
+				'code'     => (int) $code,
+				'decoded'  => is_array( $decoded ) ? $decoded : array(),
+				'response' => $response,
+			);
 		}
 
+		/**
+		 * Parse an "Unsupported parameter" 400 into a corrected payload.
+		 *
+		 * DeepSeek answers a model-incompatible key with an OpenAI-shaped 400:
+		 * "Unsupported parameter: 'max_tokens' is not supported with this model.
+		 * Use 'max_completion_tokens' instead." The offending key is named in
+		 * the message, so one correction attempt is enough: flip the token-limit
+		 * key, or drop any other parameter the model does not implement.
+		 *
+		 * @since 1.2.24
+		 *
+		 * @param int   $code    HTTP status code.
+		 * @param array $decoded Decoded error body.
+		 * @param array $payload Rejected payload.
+		 * @return array|null Corrected payload, or null when no correction applies.
+		 */
+		protected function correct_unsupported_parameter( $code, array $decoded, array $payload ) {
+			if ( 400 !== (int) $code ) {
+				return null;
+			}
+
+			$message = isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] )
+				? $decoded['error']['message']
+				: '';
+
+			if ( '' === $message || false === strpos( $message, 'Unsupported parameter' ) ) {
+				return null;
+			}
+
+			if ( ! preg_match( "/Unsupported parameter: '([^']+)'/", $message, $matches ) ) {
+				return null;
+			}
+
+			$bad = $matches[1];
+
+			switch ( $bad ) {
+				case 'max_tokens':
+					if ( ! isset( $payload['max_tokens'] ) ) {
+						return null;
+					}
+					$payload['max_completion_tokens'] = $payload['max_tokens'];
+					unset( $payload['max_tokens'] );
+					return $payload;
+
+				case 'max_completion_tokens':
+					if ( ! isset( $payload['max_completion_tokens'] ) ) {
+						return null;
+					}
+					$payload['max_tokens'] = $payload['max_completion_tokens'];
+					unset( $payload['max_completion_tokens'] );
+					return $payload;
+
+				case 'max_output_tokens':
+					if ( ! isset( $payload['max_output_tokens'] ) ) {
+						return null;
+					}
+					$payload['max_completion_tokens'] = $payload['max_output_tokens'];
+					unset( $payload['max_output_tokens'] );
+					return $payload;
+			}
+
+			// Any other unsupported parameter (for example temperature on a
+			// reasoning-only model) is dropped for the single retry.
+			if ( isset( $payload[ $bad ] ) ) {
+				unset( $payload[ $bad ] );
+				return $payload;
+			}
+
+			return null;
+		}
 
 		/**
 		 * Perform a real-time SSE stream request to DeepSeek using direct cURL.
@@ -773,7 +976,10 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 					$error_message .= ' ' . $api_message;
 				}
 
-				$error_data = array( 'status' => $http_status );
+				$error_data = array(
+					'status' => $http_status,
+					'body'   => is_array( $error_body ) ? $error_body : array(),
+				);
 				$error_code = 'wp_mcp_ai_deepseek_api_error';
 
 				if ( 401 === $http_status ) {
@@ -1079,11 +1285,28 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 				$payload['top_p'] = max( 0.0, min( 1.0, (float) $options['top_p'] ) );
 			}
 
-			// Max tokens — support both naming conventions.
-			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
-				$payload['max_tokens'] = absint( $options['max_completion_tokens'] );
+			// Max tokens — accept both caller conventions, then emit the key
+			// the resolved model accepts. V4.1 Flash rejects `max_tokens`
+			// ("Unsupported parameter: 'max_tokens' … Use
+			// 'max_completion_tokens' instead"), while other DeepSeek models
+			// keep the legacy key. An explicit max_completion_tokens is always
+			// honoured as such, since the caller already knows the model.
+			$has_completion_budget = isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] );
+
+			if ( $has_completion_budget ) {
+				$max_tokens = absint( $options['max_completion_tokens'] );
 			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
-				$payload['max_tokens'] = absint( $options['max_tokens'] );
+				$max_tokens = absint( $options['max_tokens'] );
+			} else {
+				$max_tokens = 0;
+			}
+
+			if ( $max_tokens > 0 ) {
+				if ( $has_completion_budget || $this->requires_max_completion_tokens( $model ) ) {
+					$payload['max_completion_tokens'] = $max_tokens;
+				} else {
+					$payload['max_tokens'] = $max_tokens;
+				}
 			}
 
 			// Stop sequences.

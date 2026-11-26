@@ -115,6 +115,17 @@ trait WP_MCP_AI_Tool_Research_Completion {
 			}
 		}
 
+		// Resolve the token-budget key once. Some current models reject
+		// `max_tokens` in favour of `max_completion_tokens` (DeepSeek V4.1
+		// Flash; OpenAI o-series and gpt-5). Clients accept either spelling,
+		// but sending the one the model expects avoids a rejected first
+		// request, and the larger-budget retry below must scale the key that
+		// is actually on the wire.
+		$options    = $this->normalize_research_token_budget( $options, $provider, $model );
+		$budget_key = isset( $options['max_completion_tokens'] )
+			? 'max_completion_tokens'
+			: ( isset( $options['max_tokens'] ) ? 'max_tokens' : '' );
+
 		/**
 		 * Filter the maximum completion attempts for research tools.
 		 *
@@ -150,8 +161,8 @@ trait WP_MCP_AI_Tool_Research_Completion {
 		$continue_reasoning = false;
 
 		for ( $attempt = 0; $attempt < $max_attempts; $attempt++ ) {
-			if ( $retry_larger && isset( $options['max_tokens'] ) ) {
-				$options['max_tokens'] = min( (int) $options['max_tokens'] * $multiplier, $ceiling );
+			if ( $retry_larger && '' !== $budget_key ) {
+				$options[ $budget_key ] = min( (int) $options[ $budget_key ] * $multiplier, $ceiling );
 			}
 			$retry_larger = false;
 
@@ -273,5 +284,59 @@ trait WP_MCP_AI_Tool_Research_Completion {
 			'wp_mcp_ai_invalid_response',
 			__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
 		);
+	}
+
+	/**
+	 * Select the token-budget key the provider/model expects.
+	 *
+	 * DeepSeek-V4.1-Flash rejects `max_tokens` with
+	 * "Unsupported parameter: 'max_tokens' … Use 'max_completion_tokens'
+	 * instead", and the OpenAI o-series / gpt-5 family follow the same rule.
+	 * Tools in this family pass `max_tokens`; this helper renames the key for
+	 * the models that require it so the first request is accepted and the
+	 * budget-retry ladder scales the value that is actually sent.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param array  $options  Completion options.
+	 * @param string $provider Provider id.
+	 * @param string $model    Model identifier.
+	 * @return array Options with a single canonical budget key.
+	 */
+	protected function normalize_research_token_budget( array $options, $provider, $model ) {
+		if ( ! isset( $options['max_tokens'] ) || ! is_numeric( $options['max_tokens'] ) || isset( $options['max_completion_tokens'] ) ) {
+			return $options;
+		}
+
+		$model_id = strtolower( sanitize_text_field( (string) $model ) );
+		$requires = false;
+
+		if ( 'deepseek' === $provider ) {
+			$requires = 0 === strpos( $model_id, 'deepseek-flash' )
+				|| 0 === strpos( $model_id, 'deepseek-v4-flash' )
+				|| 0 === strpos( $model_id, 'deepseek-v4.1' );
+		} elseif ( 'openai' === $provider ) {
+			$requires = 0 === strpos( $model_id, 'gpt-5' )
+				|| ( class_exists( 'WP_MCP_AI_OpenAI_Client' ) && WP_MCP_AI_OpenAI_Client::is_reasoning_model( $model_id ) );
+		}
+
+		/**
+		 * Filters whether a research completion must send
+		 * `max_completion_tokens` instead of `max_tokens`.
+		 *
+		 * @since 1.2.24
+		 *
+		 * @param bool   $requires Default capability for the provider/model.
+		 * @param string $provider Provider id.
+		 * @param string $model    Model identifier.
+		 */
+		$requires = (bool) apply_filters( 'wp_mcp_ai_research_completion_requires_max_completion_tokens', $requires, $provider, $model );
+
+		if ( $requires ) {
+			$options['max_completion_tokens'] = absint( $options['max_tokens'] );
+			unset( $options['max_tokens'] );
+		}
+
+		return $options;
 	}
 }

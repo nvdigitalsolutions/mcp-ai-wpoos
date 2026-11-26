@@ -76,6 +76,7 @@ import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { parseStructureCache, runStructurePass, serializeStructureCache, STRUCTURE_DEVICES } from '../lib/structure-pass.ts';
 import { analyzePageDesigns } from '../lib/page-design.ts';
 import { auditSurfaces, describeSurfaceCoverage } from '../lib/surface-coverage.ts';
+import { boxGateFailures, runBoxGate } from '../lib/box-parity.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
@@ -4951,6 +4952,54 @@ program
 		await runPageDesign( profileRef, options );
 	} );
 
+async function runBoxes( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const target = resolve( options.target );
+	const tolerance = Number.parseFloat( options.tolerance ?? '2' );
+	const slugs = options.pages ? String( options.pages ).split( ',' ).map( ( slug ) => slug.trim() ).filter( Boolean ) : undefined;
+	console.log( `\u2713 Box parity \u2014 ${ profile.url } (tolerance ${ tolerance }px)` );
+	const reports = await runBoxGate( profile, {
+		target,
+		slugs,
+		tolerance,
+		onPage: ( report ) => {
+			if ( report.error ) {
+				console.log( `  \u26a0 ${ report.slug }: ${ report.error }` );
+				return;
+			}
+			const label = report.slug === 'home' ? '/' : `/${ report.slug }/`;
+			const flag = report.deviations.length === 0 ? '\u2713' : '\u2717';
+			console.log(
+				`  ${ flag } ${ label } \u2014 ${ report.compared }/${ report.bands } band(s) compared` +
+					( report.missing.length > 0 ? `, ${ report.missing.length } missing` : '' ) +
+					( report.textless.length > 0 ? `, ${ report.textless.length } textless` : '' )
+			);
+			for ( const deviation of report.deviations ) {
+				console.log(
+					`      ${ deviation.id } ${ deviation.edge.padEnd( 6 ) } ${ String( deviation.source ).padStart( 5 ) } \u2192 ${ String( deviation.built ).padStart( 5 ) }  (${ deviation.delta >= 0 ? '+' : '' }${ deviation.delta })`
+				);
+			}
+			for ( const id of report.missing ) {
+				console.log( `      ${ id } MISSING in the build` );
+			}
+		},
+	} );
+	if ( options.json ) {
+		await writeFile( resolve( options.json ), `${ JSON.stringify( reports, null, 2 ) }\n` );
+		console.log( `\n  report written to ${ options.json }` );
+	}
+	const failures = boxGateFailures( reports );
+	const compared = reports.reduce( ( total, report ) => total + report.compared, 0 );
+	console.log(
+		failures === 0
+			? `\n\u2713 ${ compared } band(s) within ${ tolerance }px on every edge`
+			: `\n\u2717 ${ failures } box deviation(s) over ${ tolerance }px across ${ reports.length } page(s)`
+	);
+	if ( failures > 0 && ! options.warn ) {
+		process.exitCode = 1;
+	}
+}
+
 program
 	.command( 'surfaces' )
 	.description( 'check that every band image / panel the profile declares is actually PAINTED in the build' )
@@ -4958,6 +5007,22 @@ program
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
 	.action( async ( profileRef, options ) => {
 		await runSurfaces( profileRef, options );
+	} );
+
+program
+	.command( 'boxes' )
+	.description(
+		'diff each band\u2019s measured BOX (ink inset + height) between the source and the build'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.option( '--pages <list>', 'page slugs to compare, comma-separated (default: every measured page + home)' )
+	.option( '--tolerance <px>', 'allowed per-edge difference in px', '2' )
+	.option( '--warning', 'report deviations without failing the command' )
+	.option( '--warn', 'alias for --warning' )
+	.option( '--json <path>', 'write the per-page report as JSON' )
+	.action( async ( profileRef, options ) => {
+		await runBoxes( profileRef, { ...options, warn: options.warn || options.warning } );
 	} );
 
 program
