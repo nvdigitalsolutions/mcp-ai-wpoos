@@ -165,7 +165,10 @@ export function createGate(options = {}) {
 
 	function allowed(pathname) {
 		for (const entry of allow) {
-			if (entry.endsWith('/') ? pathname.startsWith(entry) : pathname === entry) {
+			// A no-slash entry also covers its directory form: Astro serves both
+			// /manage and /manage/, and gating the slashed one locks the manager out
+			// of the only sign-in surface (2026-11-26, ECA).
+			if (entry.endsWith('/') ? pathname.startsWith(entry) : pathname === entry || pathname === entry + '/') {
 				return true;
 			}
 		}

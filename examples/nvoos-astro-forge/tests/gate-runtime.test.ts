@@ -222,6 +222,13 @@ describe( 'the emitted front controller', () => {
 		expect( api.status ).toBe( 200 );
 		expect( await api.text() ).toContain( 'APP HANDLER' );
 
+		// `/manage` is allowlisted exactly; its slashed form must resolve to the
+		// same sign-in surface instead of the holding page, or a gated site is
+		// unenterable.
+		const manage = await fetch( `${ base }/manage/` );
+		expect( manage.status ).toBe( 200 );
+		expect( await manage.text() ).toContain( 'APP HANDLER' );
+
 		const asset = await fetch( `${ base }/_astro/app.js` );
 		expect( asset.status ).toBe( 200 );
 		expect( asset.headers.get( 'cache-control' ) ).toContain( 'immutable' );
