@@ -167,6 +167,20 @@ export function repairMediaUrl( url: string | undefined, env?: MediaEnv ): strin
 }
 
 /**
+ * A per-scaffold cache token for the proxied media path.
+ *
+ * The scaffold rewrites `nvoos.json` on every CI run, so `generatedAt` is a new
+ * value per deploy and needs no env plumbing — this module is also imported by
+ * client scripts, where `process.env` does not exist.
+ *
+ * @returns Digits only, or `''` when the manifest carries no stamp.
+ */
+function cacheBustToken(): string {
+	const stamp = ( manifest as unknown as { generatedAt?: string } ).generatedAt ?? '';
+	return stamp.replace( /\D/g, '' ).slice( 0, 14 );
+}
+
+/**
  * The same-origin URL a visitor should load for a CMS asset (Proposal 139).
  *
  * A managed build serves `/media/<uploads path>` from the CMS server-to-server,
@@ -189,10 +203,17 @@ export function repairMediaUrl( url: string | undefined, env?: MediaEnv ): strin
  * documents shipped a `/wp-content/` logo in JSON-LD beside a 503'ing
  * `/media/2018/11/...` `<img>`).
  *
+ * The proxy form carries a per-build `?v=` stamp. That path is the CMS's own,
+ * not content-hashed, and a CDN keeps it for as long as the CMS says — often a
+ * year — so a proxy fix could never reach a visitor that cached the broken
+ * answer (eca, 2026-11-26: the corrected logo stayed a 0-byte edge HIT with a
+ * year left to run, on a shared zone that is not ours to purge). A new stamp
+ * per build makes every deploy a fresh cache key.
+ *
  * @param url Candidate asset URL.
  * @param env Environment record (defaults to `import.meta.env`).
- * @returns The `/media/<path>` form for an upload on a managed CMS-backed build,
- *          else the repaired URL.
+ * @returns The `/media/<path>?v=<build>` form for an upload on a managed
+ *          CMS-backed build, else the repaired URL.
  */
 export function mediaUrl( url: string | undefined, env?: MediaEnv ): string | undefined {
 	const repaired = repairMediaUrl( url, env );
@@ -214,7 +235,16 @@ export function mediaUrl( url: string | undefined, env?: MediaEnv ): string | un
 		return repaired;
 	}
 	const rest = path.slice( WP_UPLOADS_PREFIX.length );
-	return rest ? `/media/${ rest }${ parsed.search }` : repaired;
+	if ( ! rest ) {
+		return repaired;
+	}
+	const token = cacheBustToken();
+	if ( ! token ) {
+		return `/media/${ rest }${ parsed.search }`;
+	}
+	const params = new URLSearchParams( parsed.search );
+	params.set( 'v', token );
+	return `/media/${ rest }?${ params.toString() }`;
 }
 
 /**

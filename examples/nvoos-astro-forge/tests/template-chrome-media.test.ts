@@ -42,4 +42,14 @@ describe( 'template — chrome media', () => {
 		// is the only source structured data is repaired from.
 		expect( media ).toContain( 'if ( ! repaired || materializedContent() || ! managedRuntime() )' );
 	} );
+
+	it( 'stamps the proxied media path so a deploy reaches cached clients', async () => {
+		const media = await readFile( path.join( TEMPLATE, 'src/lib/media.ts' ), 'utf8' );
+		// The proxied path is the CMS's own, not content-hashed, so a CDN keeps a
+		// broken answer for as long as the CMS says. A per-build stamp is what lets
+		// a fix reach a client without a purge (the shared Cloudways zone is not
+		// ours to purge).
+		expect( media ).toContain( 'cacheBustToken' );
+		expect( media ).toContain( "params.set( 'v', token )" );
+	} );
 } );
