@@ -136,6 +136,15 @@ final class ToolProbesTest extends TestCase {
 			array( 'generate_eca_participation_report', array( 'scope' => 'school' ), 'success', array( 'columns', 'rows' ), array( 'user_id' => 1 ) ),
 			array( 'export_eca_data', array( 'export_type' => 'ecas' ), 'success', array( 'rows', 'file' ), array( 'user_id' => 1 ) ),
 			array( 'get_student_participation_summary', array( 'student_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.59 — the five ECA writers: four refusals and one empty list.
+			array( 'set_eca_schedule', array( 'eca_id' => 999999, 'sessions' => array( array( 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00' ) ) ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'manage_eca_term', array( 'action' => 'list' ), 'success', array( 'action', 'total', 'terms' ), array( 'user_id' => 1 ) ),
+			array( 'import_ecas_csv', array( 'csv_content' => "name,type
+Probe Club,club
+", 'dry_run' => true ), 'success', array( 'total_rows', 'created_count', 'dry_run' ), array( 'user_id' => 1 ) ),
+			array( 'send_eca_notification', array( 'eca_id' => 999999, 'notification_type' => 'reminder', 'recipients' => 'all_enrolled' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_eca_parent_report', array( 'student_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
