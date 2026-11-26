@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Pins how a profile's gatePublish block reaches scaffold output.
+ *
+ * Fixtures are temp scaffolds asserting gate.generated.json and the env template.
+ */
 // ---------------------------------------------------------------------------
 // gate-scaffold.test.ts — the front-controller wiring (Proposal 165 P2).
 //

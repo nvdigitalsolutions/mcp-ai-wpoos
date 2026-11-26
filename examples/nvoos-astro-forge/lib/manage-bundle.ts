@@ -1,4 +1,11 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Locates and fingerprints the Astro CMS bundle /manage injects.
+ *
+ * Invariant: the emitted page carries an SRI token for the exact bytes the
+ * scaffold saw, so a stale copy fails loudly instead of running mismatched.
+ * Never vendors the bundle into templates/blog/, which mirrors publicly.
+ */
 // ---------------------------------------------------------------------------
 // manage-bundle.ts — the Astro CMS bundle the `/manage` page injects
 // (Proposal 165 §7b).

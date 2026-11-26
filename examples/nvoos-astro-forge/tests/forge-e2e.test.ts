@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forge-e2e.test.ts — the exit gate (096 §4): fixture WP → scaffold → build.
 //

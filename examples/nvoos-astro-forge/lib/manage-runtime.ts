@@ -1,4 +1,11 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Emits /manage and signs the host-only session the gate trusts.
+ *
+ * Invariant: the Application Password never leaves the server — it rides a
+ * sealed AES-256-GCM cookie — and the session HMAC recipe matches
+ * gate-runtime.ts exactly. Never requires the CMS to be reachable to serve.
+ */
 // ---------------------------------------------------------------------------
 // manage-runtime.ts — the `/manage` surface and the session the gate trusts
 // (Proposal 165 §7; the standalone path while the commerce bridge is absent).

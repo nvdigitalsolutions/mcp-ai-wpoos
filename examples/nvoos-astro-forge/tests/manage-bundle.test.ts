@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Pins bundle discovery, fingerprinting and the emitted SRI token.
+ *
+ * Fixtures are synthetic bundle files; the real bridge build is not required.
+ */
 // ---------------------------------------------------------------------------
 // manage-bundle.test.ts — the §7b editor: the vendored Astro CMS bundle, the
 // sealed credential the BFF holds, and the scaffold wiring.

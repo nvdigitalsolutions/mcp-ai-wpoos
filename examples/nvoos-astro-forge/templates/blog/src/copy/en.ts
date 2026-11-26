@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // en.ts — the reference copy table (Proposal 104 §4.5, ScrewFast pattern).
 // Every UI string the template renders belongs here: nav labels, footer

@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Pins the build-time publication verdict and its manifest shape.
+ *
+ * Fixtures are synthetic bridge payloads and profiles; no network is used.
+ */
 // ---------------------------------------------------------------------------
 // gate-publish.test.ts — the BUILT site's publication verdict (Proposal 165).
 //

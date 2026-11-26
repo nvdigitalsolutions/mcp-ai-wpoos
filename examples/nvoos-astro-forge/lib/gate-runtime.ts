@@ -1,4 +1,11 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Emits the managed tier's front controller and gate modules.
+ *
+ * Invariant: the gate runs before the static handler and never blocks a visitor
+ * on a CMS round trip; the poll happens off the request path. Never renders the
+ * holding page's copy — that ships as a prerendered document.
+ */
 // ---------------------------------------------------------------------------
 // gate-runtime.ts — the MANAGED tier's publication gate (Proposal 165 P2/P3).
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // deploy-config.test.ts — Phase 3.3: emitted deploy/rebuild workflows +
 // the fail-closed dispatch verifier, executed for real in a subprocess.

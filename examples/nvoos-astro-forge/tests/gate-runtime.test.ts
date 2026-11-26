@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Pins the emitted front controller by booting it on a real socket.
+ *
+ * Fixtures are temp projects and signed cookies; no live CMS is required.
+ */
 // ---------------------------------------------------------------------------
 // gate-runtime.test.ts — the emitted front controller, served for real.
 //

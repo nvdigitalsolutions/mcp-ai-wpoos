@@ -1,4 +1,11 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Decides what a BUILT forged site publishes while the CMS is gated.
+ *
+ * Invariant: a bridge failure or an unreadable verdict publishes the real site,
+ * never a gate nobody asked for. Never opens a manager session — publication
+ * state is a public fact, so this module needs no credentials.
+ */
 // ---------------------------------------------------------------------------
 // gate-publish.ts — the BUILT site's publication state (Proposal 165).
 //

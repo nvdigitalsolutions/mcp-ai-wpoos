@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+/**
+ * @fileoverview Pins the /manage routes, the sealed credential and the session HMAC.
+ *
+ * Fixtures are temp projects and stub upstreams; no WordPress site is contacted.
+ */
 // ---------------------------------------------------------------------------
 // manage-runtime.test.ts — the /manage surface and the session the gate trusts
 // (Proposal 165 §7, standalone path).
