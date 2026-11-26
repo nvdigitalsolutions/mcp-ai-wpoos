@@ -4784,3 +4784,80 @@ rather than the declared `edit_posts` on its schema — a delete keeps the stric
 | tool readiness audit | **325 / 325**, servable **306** (+2), no violations |
 | toolkit parity | **104 of 854**; 8 declined, 35 deferred, **707 remaining**; `eca-management` **15 ported**, 1 declined, 20 deferred, **12 remaining** |
 | licence boundary / phpcs | intact / clean (6 files) |
+
+## 164.57 The three reads, and a roster key that was not the live one
+
+**On the numbering:** §164.56 merged ahead of this one. This is step 1 of the order
+§164.54 named.
+
+### A defect in the slice that had just merged
+
+`delete_eca` read the roster from `_eca_enrollments`. **Nothing in this family writes
+that key.** `enroll_student_eca` writes `_eca_student_enrollments` on the activity and
+`_student_eca_enrollments` on the student, and `EcaRow::breakdown()` documents the trap
+in as many words and prefers the live key. On real data the confirmation still fired,
+because it also reads `_eca_current_enrollment` — but the cascade found nobody: the
+activity was removed and every student still pointed at it. That is precisely the
+half-state the student-first ordering was built to prevent.
+
+The unit test passed because its fixture wrote the key the tool read. A fixture that
+agrees with the reader cannot find a reader that disagrees with the writer.
+
+The fix reads through `EcaRow::enrollments()` with the legacy key as a fallback, clears
+both names on cancel, and rewrites the fixture to the live key. Reverting the fix now
+fails two tests — the confirmed delete and a new legacy-key case — so the fixture can
+no longer pass a broken reader.
+
+### The three reads
+
+| tool | reads | adds |
+|---|---|---|
+| `get_eca_timetable` | day, times, venue, teachers, roster | four views, grouping and sorting, overlap detection |
+| `get_eca_attendance_report` | `_eca_attendance_log` | totals, a rate, per-student rates, Chart.js series, per-session breakdown |
+| `get_student_participation_summary` | `_student_eca_enrollments` + each log | per-activity attendance, overall rate, engagement score |
+
+`AttendanceLog` is the one shared piece: date-keyed normalisation, attendee extraction
+and the rate formula. Three copies of `(present + late) / total` is three chances to
+drift the day one tool learns a new status.
+
+### Interpretations worth naming
+
+- **`week_of` labels, it does not filter.** The schedule is weekly and recurring; there
+  is no dated occurrence to filter by. It is validated as a date and echoed, and the
+  description says it is a label rather than implying a filter that does nothing.
+- **Overlap is minute arithmetic.** `strtotime('15:30')` resolves against *today*, so
+  the same timetable would compare differently tomorrow. Times are parsed to minutes
+  since midnight instead.
+- **Two different questions, both answered.** `overall_attendance_rate` is records-based;
+  `engagement_score` is the mean of the per-activity rates, which weights a one-session
+  club like a thirty-session one. WordPress asks both and they are not interchangeable,
+  so the payload keeps them apart.
+- **`skipped`.** An enrolment naming a deleted activity, or one outside the term filter,
+  is counted, so a total of three against a map of five is explained rather than odd.
+- **Filters are applied in PHP over one page of 200 activities.** A meta query cannot
+  express `LIKE` over a serialised list; `truncated` marks the ceiling.
+
+### A claim corrected before it shipped
+
+An early draft of `AttendanceLog` and of the participation summary asserted that
+WordPress divides attendee counts by session counts — a rate that could exceed 100%.
+Re-reading both handlers, `present` and `sessions_recorded` are each counted **per
+student**, so the formula is right and the divergence was mine. Both docblocks were
+corrected before the slice shipped: the shared helper exists to keep one formula, not to
+repair a bug that is not there. It is recorded because a wrong claim in a docblock
+outlives the branch that made it.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,028 / 19,538** (15 tests added) |
+| adapter PHPUnit | **456 / 2,198** (3 probes added), OK |
+| tool readiness audit | **328 / 328**, servable **309** (+3), no violations |
+| toolkit parity | **107 of 854**; `eca-management` **18 ported**, 1 declined, 20 deferred, **9 remaining** |
+| licence boundary / phpcs | intact / clean (8 files) |
+
+One tooling note for whoever writes the next slice: this terminal halves backslashes in
+heredoc content, so a `	rim(` arrived as a tab followed by `rim(`. The suite caught it
+as an undefined function; every new file was then scanned for stray control bytes and
+the damaged call repaired.

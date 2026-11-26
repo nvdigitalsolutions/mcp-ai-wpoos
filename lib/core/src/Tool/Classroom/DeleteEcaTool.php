@@ -131,7 +131,16 @@ class DeleteEcaTool extends AbstractTool
             return $this->errors->notFound('There is no ECA with id ' . $eca_id . '.');
         }
 
-        $roster  = Enrollments::map($eca->meta['_eca_enrollments'] ?? array());
+        // `_eca_student_enrollments` is the key this family writes;
+        // `_eca_enrollments` is the older name, read as a fallback for rows
+        // written by an importer or a hand-written mirror. EcaRow::breakdown()
+        // documents the same preference.
+        $roster = EcaRow::enrollments($eca);
+
+        if (array() === $roster) {
+            $roster = Enrollments::map($eca->meta['_eca_enrollments'] ?? array());
+        }
+
         $current = (int) ($eca->meta['_eca_current_enrollment'] ?? 0);
 
         // The roster is the authority when it exists; the counter is only a
@@ -202,11 +211,14 @@ class DeleteEcaTool extends AbstractTool
                     new UpdateContentCommand(
                         userId: $user_id,
                         meta: array(
-                            '_eca_status'             => 'cancelled',
-                            '_eca_cancelled_at'       => \gmdate('Y-m-d H:i:s'),
-                            '_eca_cancelled_by'       => $user_id,
-                            '_eca_enrollments'        => array(),
-                            '_eca_current_enrollment' => 0,
+                            '_eca_status'              => 'cancelled',
+                            '_eca_cancelled_at'        => \gmdate('Y-m-d H:i:s'),
+                            '_eca_cancelled_by'        => $user_id,
+                            // Both roster names are cleared: the live one this
+                            // family writes and the legacy one a mirror may hold.
+                            '_eca_student_enrollments' => array(),
+                            '_eca_enrollments'         => array(),
+                            '_eca_current_enrollment'  => 0,
                         ),
                     )
                 );
