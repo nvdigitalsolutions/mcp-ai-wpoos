@@ -16,8 +16,16 @@
  */
 class Test_Harness_Search_Engine extends WP_UnitTestCase {
 
+	/**
+	 * Assistant post ID.
+	 *
+	 * @var int
+	 */
 	private $assistant_id;
 
+	/**
+	 * Create the assistant fixture.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->assistant_id = $this->factory->post->create(
@@ -33,11 +41,17 @@ class Test_Harness_Search_Engine extends WP_UnitTestCase {
 		WP_MCP_AI_Harness_Profile::save( $this->assistant_id, $seed );
 	}
 
+	/**
+	 * Delete the fixture.
+	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
 
+	/**
+	 * A valid candidate profile is accepted.
+	 */
 	public function test_validate_candidate_accepts_valid_profile() {
 		$profile                   = WP_MCP_AI_Harness_Profile::defaults();
 		$profile['enabled']        = true;
@@ -49,6 +63,9 @@ class Test_Harness_Search_Engine extends WP_UnitTestCase {
 		$this->assertSame( 10, $result['retrieval']['k'] );
 	}
 
+	/**
+	 * A disabled candidate is rejected.
+	 */
 	public function test_validate_candidate_rejects_disabled() {
 		$profile = WP_MCP_AI_Harness_Profile::defaults();
 		// enabled is false by default.
@@ -57,11 +74,17 @@ class Test_Harness_Search_Engine extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 	}
 
+	/**
+	 * An empty candidate is rejected.
+	 */
 	public function test_validate_candidate_rejects_empty() {
 		$result = WP_MCP_AI_Harness_Search_Engine::validate_candidate( array() );
 		$this->assertWPError( $result );
 	}
 
+	/**
+	 * The Pareto frontier is computed.
+	 */
 	public function test_compute_pareto_frontier_returns_frontier() {
 		$population = array(
 			'hash_a' => array(
@@ -112,6 +135,9 @@ class Test_Harness_Search_Engine extends WP_UnitTestCase {
 		$this->assertNotContains( 'hash_c', $hashes );
 	}
 
+	/**
+	 * Unevaluated profiles are ignored by the frontier.
+	 */
 	public function test_compute_pareto_frontier_ignores_unevaluated() {
 		$population = array(
 			'hash_a' => array(
@@ -139,11 +165,17 @@ class Test_Harness_Search_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'hash_a', $frontier[0]['hash'] );
 	}
 
+	/**
+	 * An empty population yields an empty frontier.
+	 */
 	public function test_compute_pareto_frontier_empty_population() {
 		$frontier = WP_MCP_AI_Harness_Search_Engine::compute_pareto_frontier( array() );
 		$this->assertEmpty( $frontier );
 	}
 
+	/**
+	 * Population reads return the persisted data.
+	 */
 	public function test_get_population_returns_persisted_data() {
 		$seed            = WP_MCP_AI_Harness_Profile::defaults();
 		$seed['enabled'] = true;
@@ -153,11 +185,17 @@ class Test_Harness_Search_Engine extends WP_UnitTestCase {
 		$this->assertIsArray( $population );
 	}
 
+	/**
+	 * Search status is null when no search has run.
+	 */
 	public function test_get_search_status_returns_null_without_search() {
 		$status = WP_MCP_AI_Harness_Search_Engine::get_search_status( $this->assistant_id );
 		$this->assertNull( $status );
 	}
 
+	/**
+	 * Cancelling a search is idempotent.
+	 */
 	public function test_cancel_search_is_idempotent() {
 		$result = WP_MCP_AI_Harness_Search_Engine::cancel_search( $this->assistant_id );
 		$this->assertTrue( $result );
@@ -167,6 +205,9 @@ class Test_Harness_Search_Engine extends WP_UnitTestCase {
 		$this->assertTrue( $result2 );
 	}
 
+	/**
+	 * Profile diffs return the differences.
+	 */
 	public function test_diff_profiles_returns_differences() {
 		$profile_a                   = WP_MCP_AI_Harness_Profile::defaults();
 		$profile_a['enabled']        = true;

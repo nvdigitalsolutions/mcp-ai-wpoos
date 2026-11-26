@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Error boundary — catches React render errors and displays a fallback UI.
  */

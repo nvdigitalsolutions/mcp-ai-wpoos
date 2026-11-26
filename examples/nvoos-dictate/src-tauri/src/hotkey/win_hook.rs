@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Windows `WH_KEYBOARD_LL` low-level keyboard hook.
 //!
 //! Runs on a dedicated OS thread with a message loop. This is the pattern
@@ -194,29 +195,52 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
 /// True when the PTT key is the only non-modifier key held. Reading the
 /// 256-byte key-state table is cheap and safe inside the hook callback.
 fn ptt_pressed_alone(ptt: u16) -> bool {
+    // Tests must not depend on what the developer happens to be holding: the
+    // synthetic `KBDLLHOOKSTRUCT` says nothing about the live key table, so a
+    // stray key (note left-Alt is deliberately NOT an allowed modifier) would
+    // make this return false and fail the swallow contract. See
+    // `TEST_KEY_STATE` in the test module.
+    #[cfg(test)]
+    if let Ok(guard) = TEST_KEY_STATE.try_lock() {
+        if let Some(state) = *guard {
+            return alone_from_state(&state, ptt);
+        }
+    }
     unsafe {
         let mut keys = [0u8; 256];
         if GetKeyboardState(&mut keys).is_err() {
             // Cannot inspect the state table: stay permissive.
             return true;
         }
-        for (vk, &state) in keys.iter().enumerate() {
-            let down = state & 0x80 != 0;
-            if !down || vk as u16 == ptt {
-                continue;
-            }
-            let key = vk as u16;
-            if key != VK_LSHIFT.0
-                && key != VK_RSHIFT.0
-                && key != VK_LCONTROL.0
-                && key != VK_RCONTROL.0
-            {
-                return false;
-            }
-        }
-        true
+        alone_from_state(&keys, ptt)
     }
 }
+
+/// Pure decision: is `ptt` the only non-modifier key down in `keys`?
+///
+/// Shift and Ctrl are tolerated because they never form a window-manager
+/// shortcut on their own; **Alt is not** — Alt+F4 / Alt+Tab / AltGr must keep
+/// working while the app watches the PTT key.
+fn alone_from_state(keys: &[u8; 256], ptt: u16) -> bool {
+    for (vk, &state) in keys.iter().enumerate() {
+        let down = state & 0x80 != 0;
+        if !down || vk as u16 == ptt {
+            continue;
+        }
+        let key = vk as u16;
+        if key != VK_LSHIFT.0 && key != VK_RSHIFT.0 && key != VK_LCONTROL.0 && key != VK_RCONTROL.0
+        {
+            return false;
+        }
+    }
+    true
+}
+
+/// Test-only override of the live key table (`None` = use the real
+/// `GetKeyboardState`). Guarded by the module's `TEST_LOCK`, so `try_lock`
+/// never contends inside the callback.
+#[cfg(test)]
+pub(crate) static TEST_KEY_STATE: Mutex<Option<[u8; 256]>> = Mutex::new(None);
 
 fn send(event: HotkeyEvent) {
     // try_lock: the hook callback must never block (the sender slot is only
@@ -394,11 +418,48 @@ fn _post_quit(thread_id: u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use windows::Win32::UI::Input::KeyboardAndMouse::VK_LMENU;
     use windows::Win32::UI::WindowsAndMessaging::{WM_KEYDOWN, WM_KEYUP};
 
     /// The hook state lives in process-global statics; serialize the tests
     /// so parallel runners cannot clobber each other's EVENT_TX/PTT state.
     static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    /// Pin the live key table for the duration of a test. Without this,
+    /// `ptt_pressed_alone` reads the *real* OS keyboard state and a stray
+    /// held key (any non-modifier, including left-Alt) makes `hook_proc` pass
+    /// the event through — the assertion then fails and poisons `TEST_LOCK`,
+    /// which took out the other two tests with it.
+    struct KeyStateGuard;
+
+    impl KeyStateGuard {
+        fn all_up() -> Self {
+            Self::with([0u8; 256])
+        }
+
+        fn with(state: [u8; 256]) -> Self {
+            Self::set(state);
+            Self
+        }
+
+        /// Change the pinned key table while a guard is alive.
+        fn set(state: [u8; 256]) {
+            *TEST_KEY_STATE.lock().unwrap_or_else(|e| e.into_inner()) = Some(state);
+        }
+    }
+
+    /// A key-state table with exactly `vk` down (the 0x80 bit is "is down").
+    fn key_down(vk: u16) -> [u8; 256] {
+        let mut keys = [0u8; 256];
+        keys[vk as usize] = 0x80;
+        keys
+    }
+
+    impl Drop for KeyStateGuard {
+        fn drop(&mut self) {
+            *TEST_KEY_STATE.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        }
+    }
 
     fn send_ptt(message: WPARAM, kb: &KBDLLHOOKSTRUCT) -> LRESULT {
         unsafe { hook_proc(0, message, LPARAM(kb as *const _ as isize)) }
@@ -410,7 +471,8 @@ mod tests {
     /// down is what wedges the system keyboard state (stuck Alt).
     #[test]
     fn armed_press_swallows_down_and_up_symmetrically() {
-        let _guard = TEST_LOCK.lock().unwrap();
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _keys = KeyStateGuard::all_up();
         let (tx, rx) = std::sync::mpsc::channel();
         EVENT_TX.get_or_init(|| Mutex::new(None));
         *EVENT_TX.get().unwrap().lock().unwrap() = Some(tx);
@@ -461,14 +523,11 @@ mod tests {
     }
 
     /// A PTT key pressed as part of a combo (AltGr input) must pass through
-    /// untouched: no events, no swallow. `ptt_pressed_alone` reads the real
-    /// 256-byte key-state table, so simulate the combo by flipping the queue
-    /// state of another key through `keybd_event`-free means is not possible
-    /// here — instead assert the guard itself stays permissive when the key
-    /// state can't be inspected.
+    /// untouched: no events, no swallow.
     #[test]
     fn non_ptt_keys_pass_through() {
-        let _guard = TEST_LOCK.lock().unwrap();
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _keys = KeyStateGuard::all_up();
         let (tx, rx) = std::sync::mpsc::channel();
         EVENT_TX.get_or_init(|| Mutex::new(None));
         *EVENT_TX.get().unwrap().lock().unwrap() = Some(tx);
@@ -491,7 +550,54 @@ mod tests {
         assert_eq!(up.0, 0, "unpaired key-up must pass through");
         assert!(rx.recv_timeout(Duration::from_millis(100)).is_err());
 
+        // The Alt+F4 / Alt+Tab rule: right-Alt is the PTT key, so a *left*-Alt
+        // held alongside it means a window-manager combo is in progress. The
+        // press must pass through and must not arm. (This is the case the old
+        // test could not express, because it read the real key table.)
+        KeyStateGuard::set(key_down(VK_LMENU.0));
+        PTT_DOWN.store(false, Ordering::SeqCst);
+        SWALLOWED_DOWN.store(false, Ordering::SeqCst);
+        let combo = send_ptt(WPARAM(WM_KEYDOWN as usize), &kb_ptt);
+        assert_eq!(
+            combo.0, 0,
+            "a PTT press inside an Alt combo must pass through"
+        );
+        assert!(
+            !PTT_DOWN.load(Ordering::SeqCst),
+            "the combo must not arm PTT"
+        );
+        assert!(rx.recv_timeout(Duration::from_millis(100)).is_err());
+
         *EVENT_TX.get().unwrap().lock().unwrap() = None;
+    }
+
+    /// The modifier-tolerance contract behind `ptt_pressed_alone`, tested
+    /// directly so it no longer depends on the machine's real key table.
+    #[test]
+    fn alone_from_state_tolerates_only_shift_and_ctrl() {
+        let ptt = VK_RMENU.0;
+        assert!(alone_from_state(&[0u8; 256], ptt), "nothing else down");
+        assert!(
+            alone_from_state(&key_down(VK_LSHIFT.0), ptt),
+            "shift is tolerated"
+        );
+        assert!(
+            alone_from_state(&key_down(VK_LCONTROL.0), ptt),
+            "ctrl is tolerated"
+        );
+        assert!(
+            !alone_from_state(&key_down('A' as u16), ptt),
+            "a plain key is a combo, not a push-to-talk press"
+        );
+        assert!(
+            !alone_from_state(&key_down(VK_LMENU.0), ptt),
+            "left-Alt must keep Alt+F4/Alt+Tab working"
+        );
+        // The PTT key itself being down is not "another key".
+        assert!(
+            alone_from_state(&key_down(ptt), ptt),
+            "the PTT key is excluded from the check"
+        );
     }
 
     /// Teardown must never leave a swallowed key-down pending: the exit path
@@ -499,7 +605,7 @@ mod tests {
     /// is balanced there is nothing to inject.
     #[test]
     fn teardown_release_accounting() {
-        let _guard = TEST_LOCK.lock().unwrap();
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         PTT_VK.store(VK_RMENU.0, Ordering::Relaxed);
 
         // Swallowed down with no release yet: the teardown release must

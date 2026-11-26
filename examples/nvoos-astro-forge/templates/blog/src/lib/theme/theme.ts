@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Theme runtime — Proposal 104 §3.1, forge port (§4.2). Single source of
 // truth for the client theme + contrast axes. No Astro imports — this is

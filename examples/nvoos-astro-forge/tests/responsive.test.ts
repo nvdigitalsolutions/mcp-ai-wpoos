@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // responsive.test.ts — Proposal 115 §4: breakpoint extraction (css-tree),
 // the 4 → 2 → 1 collapse rule, and explicit Elementor column classes.

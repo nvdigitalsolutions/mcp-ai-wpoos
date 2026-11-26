@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scaffold.ts — materializes the Astro project from a site profile.
 //
@@ -19,24 +20,38 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './geometry.ts';
-import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
+import { renderElementCss } from './element-css.ts';
+import { isMaterializedContent, withMaterializedDefaults } from './content-source.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts, columnInnerFacts } from './geometry.ts';
+import { animationRebuildCss, countAnimations, planAnimationRebuild, type ParallaxCarrier } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit, readableInk } from './contrast.ts';
-import { contrast, designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
+import { contrast, DEFAULT_FONT_STACK, designToTokens, inkForSurface, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
-import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
-import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor } from './tracking.ts';
-import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import { ECA_CONFIG_PATH, ecaCollection, ecaScaffoldWarnings, renderEcaGenerated } from './eca-scaffold.ts';
+import { ecaDataPages, ecaRouteFiles } from './eca-ui.ts';
+import { renderApiProxyTs, renderFormsProxyTs, renderHealthTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
+import { MANAGE_BOOT_FILE, renderManageCredentialTs, renderManageGeneratedTs, renderManageLoginTs, renderManageLogoutTs, renderManageMeTs, renderManagePageTs, renderManageSessionTs, renderManageBootJs } from './manage-runtime.ts';
+import { resolveManageBundle, type ManageBundle } from './manage-bundle.ts';
+import { renderFrontController, renderGateRuntime, renderGateStatic } from './gate-runtime.ts';
+import { offPublication, resolveGateConfig, writeGateManifest } from './gate-publish.ts';
+import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor, isCookielessVendor } from './tracking.ts';
+import type { BandBoxFacts, BandGeometry, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ForgeSectionColumn, GatePublication, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 /** Files vendored into every generated project under `src/forge/`. */
 export const FORGE_LIB_FILES = [
+	// `types.ts` imports `ForgeEca` from here (the profile's `eca` block), so the
+	// module must exist in EVERY project even when the profile is not an ECA site
+	// — otherwise `astro check` fails ts(2307) in every generated site. The file
+	// is self-contained with no runtime imports, so vendoring it costs 40 KB of
+	// unused TypeScript in a blog rebuild and nothing at runtime.
+	'eca.ts',
 	'types.ts',
 	// `types.ts` imports `ForgeVerify` from here, so the module must exist in the
 	// customer repo even though only the CLI reads the policy at runtime —
@@ -49,6 +64,12 @@ export const FORGE_LIB_FILES = [
 	// The form payload contract (parse + message + idempotency digest) both
 	// delivery modes share — `forms.fallback` needs both at once.
 	'forms.ts',
+	// The measured HOVER deltas mapped onto the rebuilt components — the renderer
+	// reads it, so it ships with every project.
+	'hover-vars.ts',
+	// A footer LINE split at the anchors it carries (`chrome.footerLinks`) — the
+	// renderer rebuilds the credit anchor from it.
+	'footer-line.ts',
 	// Proposal 114: the semantic classifier + the shared contrast math the
 	// generated project's build-time audit endpoint consumes.
 	'semantic.ts',
@@ -180,6 +201,12 @@ creates this directory; its contents are yours.
 export interface ScaffoldOptions {
 	/** Operator-configured site profile (allowlisted URL). */
 	profile: SiteProfile;
+	/**
+	 * The publication verdict (Proposal 165). Absent = off (the real site).
+	 * The CLI resolves it from the bridge before scaffolding; tests pass it
+	 * explicitly, so the scaffold itself never makes a network call.
+	 */
+	gate?: GatePublication;
 	/** Where the Astro project is written. */
 	targetDir: string;
 	/**
@@ -196,6 +223,12 @@ export interface ScaffoldOptions {
 	mediaDir?: string;
 	/** Built-in template name ('blog') or a path to a template directory. */
 	template?: string;
+	/**
+	 * Additive variant applied AFTER the template copy (see TEMPLATE_VARIANTS).
+	 * A variant never replaces the template — it overlays only the files it
+	 * needs, so a base-template fix reaches every variant for free.
+	 */
+	variant?: TemplateVariant;
 	/** Fail instead of clobbering an existing target. */
 	overwrite?: boolean;
 	/**
@@ -271,12 +304,20 @@ export interface ForgeManifest {
 	/** The source's own head description (131 §2.5) — the front page's
 	 * description fallback when the page carries no SEO description. */
 	seoDescription?: string;
+	/** The site-level social image (absolute URL, mirrored at build time). */
+	seoImage?: string;
 	/** Applied design-token overrides (098 output, tokens_apply). */
 	tokens?: Record<string, string>;
 	/** The design rebuild block (114 §3.3) — provenance for verify + audit. */
 	design?: ForgeDesign;
 	/** Contrast gate mode: 'warn' (default) or 'strict' (fail the build). */
 	designAudit?: 'warn' | 'strict';
+	/**
+	 * Route-conflict policy (2026-11-22) — `strictRoutes: true` makes the
+	 * generated `astro.config.mjs` set `prerenderConflictBehavior: "error"`.
+	 * Absent = Astro's `warn` default (the first path wins).
+	 */
+	build?: { strictRoutes?: boolean };
 	/** The form bridge block (114 §3.9) — endpoint/searchForms consumed by
 	 * the Form design component (env vars override at deploy time). */
 	forms?: { endpoint?: string; origin?: string; searchForms?: string[] };
@@ -291,6 +332,13 @@ export interface ForgeManifest {
 	 * chrome on these (search/feed links, sitemap pointer, og:image).
 	 */
 	surfaces?: { search: boolean; feed: boolean; sitemap: boolean; ogImages: boolean };
+	/**
+	 * Where the content came from (2026-11-15). `materialized` means the CMS is
+	 * GONE: the scaffolded loader reads the committed snapshot and never touches
+	 * the network, so the generated project is self-describing about it.
+	 * Always emitted so the key is inferable from the JSON.
+	 */
+	contentSource?: 'wordpress' | 'materialized' | 'none';
 	/** The contact band (issue #7549) — copy the front page renders at `#contact`. */
 	contact?: ForgeContact;
 	/** Rendering model (104 Q4) — informational; the project files embody it. */
@@ -302,10 +350,28 @@ export interface ForgeManifest {
 	 */
 	runtime?: 'static' | 'managed';
 	/**
+	 * The staff surface (Proposal 165 §7) — emitted when `deploy.manage` is on.
+	 * `sessionCookie` is the host-only cookie name the gate verifies; it is not
+	 * a secret, so the manifest stays safe in a public repo. `bundle` appears
+	 * only when the Astro CMS bundle was vendored (§7b); its `integrity` is the
+	 * SRI token the page enforces, so a stale copy fails loudly instead of
+	 * running mismatched code.
+	 */
+	admin?: {
+		enabled: boolean;
+		sessionCookie?: string;
+		bundle?: { src: string; css: string; integrity: string; cssIntegrity: string };
+	};
+	/**
 	 * Tracking provenance (Proposal 130) — vendor names and the consent mode
 	 * only. No ids, no tokens: the manifest must stay safe in a public repo.
 	 */
-	tracking?: { enabled: boolean; vendors: string[]; consentMode: string; hasVerification: boolean };
+	tracking?: { enabled: boolean; vendors: string[]; consentMode: string; hasVerification: boolean; consentExempt: string[] };
+	/**
+	 * Operator-declared redirects (cutover leftovers). Public paths only, so the
+	 * manifest stays safe in a public repo.
+	 */
+	redirects?: ForgeRedirect[];
 	generatedAt: string;
 	collections: Array<{
 		slug: string;
@@ -349,6 +415,58 @@ export async function resolveTemplateDir(template?: string): Promise<string> {
 		throw new Error(`Template directory not found: ${explicit}`);
 	}
 	return explicit;
+}
+
+/**
+ * The additive template variants this forge ships.
+ *
+ * A variant is NOT a template: `templates/blog` stays the single source of
+ * truth and a variant overlays only the files it needs, so a base-template fix
+ * reaches every variant for free. `templates/variants/<id>/variant.json` is the
+ * machine-readable manifest — the same agent-readable discipline as presets.json.
+ */
+export const TEMPLATE_VARIANTS = ['product-3d', 'video-hero'] as const;
+export type TemplateVariant = (typeof TEMPLATE_VARIANTS)[number];
+
+/** True when `value` names a shipped variant. */
+export function isTemplateVariant(value: unknown): value is TemplateVariant {
+	return typeof value === 'string' && (TEMPLATE_VARIANTS as readonly string[]).includes(value);
+}
+
+/** Every file under a directory, as `/`-joined relative paths. */
+async function relativeFiles(root: string, prefix = ''): Promise<string[]> {
+	const files: string[] = [];
+	for (const entry of await readdir(root, { withFileTypes: true })) {
+		const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+		if (entry.isDirectory()) {
+			files.push(...(await relativeFiles(path.join(root, entry.name), rel)));
+		} else {
+			files.push(rel);
+		}
+	}
+	return files.sort();
+}
+
+/**
+ * Overlay a variant on a freshly scaffolded project.
+ *
+ * `fs.cp` merges directories, so this never deletes a template file — it only
+ * adds (or deliberately replaces) the ones the variant owns. Returns the
+ * relative paths it wrote, for the manifest and the CLI log line.
+ */
+export async function applyTemplateVariant(
+	targetDir: string,
+	variant: TemplateVariant
+): Promise<string[]> {
+	const source = path.join(FORGE_ROOT, 'templates', 'variants', variant);
+	try {
+		await readFile(path.join(source, 'variant.json'));
+	} catch {
+		throw new Error(`Template variant "${variant}" not found under ${source}`);
+	}
+	const files = await relativeFiles(source);
+	await cp(source, targetDir, { recursive: true });
+	return files;
 }
 
 /** Serialize one collection as a TS object literal for content.config.ts. */
@@ -396,7 +514,7 @@ function tsLength( value: ResponsiveLength ): string {
  */
 function tsTypeFact( fact: BandTypeFact ): string {
 	const properties = ( value: Record< string, unknown >, dropDefaults: boolean ): string[] =>
-		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color', 'maxWidth', 'marginTop', 'marginBottom' ] as const )
+		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'family', 'color', 'maxWidth', 'marginTop', 'marginBottom' ] as const )
 			.filter( ( key ) => {
 				const entry = value[ key ];
 				if ( typeof entry !== 'string' || entry.length === 0 ) {
@@ -463,19 +581,50 @@ function tsBandType( type: { headings?: Record< string, BandTypeFact >; body?: B
  * tile band). Falling back to the band/theme ink keeps the copy readable; the
  * colour gate then reports the drift, which is the honest trade.
  */
+/**
+ * The colour a band's copy actually sits on.
+ *
+ * A flat band fill wins; otherwise the tail of its gradient (the part under the
+ * copy); otherwise the page background. Shared by the type facts and the
+ * eyebrow so both decide readability against the same surface.
+ */
+export function bandSurface( section: ForgeSection, profile: SiteProfile ): string {
+	const flat = section.bgColor && section.bgColor !== 'transparent' ? section.bgColor : undefined;
+	return flat ?? gradientTail( section.bgGradient ) ?? profile.pageBackground ?? '#ffffff';
+}
+
+/**
+ * Below this contrast the measured ink is not "low contrast", it is INVISIBLE —
+ * and therefore the wrong ink for this surface.
+ *
+ * The two cases are different and used to be conflated at 4.5:1:
+ *
+ *   - a band whose copy sits on a CARD the rebuild does not render records the
+ *     CARD's ink, so black-on-black or white-on-white comes through (ratio ≈ 1);
+ *     that colour must go, and the band/theme ink takes over.
+ *   - a source that simply paints its body copy a light grey (`#747474` on
+ *     `#f7fafc` is 4.24:1 — below AA, perfectly readable) is a DESIGN choice.
+ *     Dropping it repainted eca.directory's grey copy near-black and the colour
+ *     gate reported 29.5 ΔE of drift on five bands (2026-11-24).
+ *
+ * So the guard now only rescues the invisible case. A source that fails AA still
+ * fails it in the rebuild — which is parity — and `contrastAudit` reports it as
+ * a finding rather than the scaffold silently redesigning the band.
+ */
+const INVISIBLE_INK_RATIO = 2.5;
+
 export function readableBandType< T extends { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } >(
 	type: T,
 	section: ForgeSection,
 	profile: SiteProfile
 ): T {
-	const flat = section.bgColor && section.bgColor !== 'transparent' ? section.bgColor : undefined;
-	const surface = flat ?? gradientTail( section.bgGradient ) ?? profile.pageBackground ?? '#ffffff';
+	const surface = bandSurface( section, profile );
 	const readable = ( fact: BandTypeFact | undefined ): BandTypeFact | undefined => {
 		if ( ! fact?.color ) {
 			return fact;
 		}
 		const ratio = contrast( fact.color, surface );
-		if ( ratio === undefined || ratio >= 4.5 ) {
+		if ( ratio === undefined || ratio >= INVISIBLE_INK_RATIO ) {
 			return fact;
 		}
 		const next = { ...fact };
@@ -499,6 +648,73 @@ export function readableBandType< T extends { headings?: Record< string, BandTyp
 		return type;
 	}
 	return { ...type, ...( type.headings ? { headings } : {} ), ...( body ? { body } : {} ) };
+}
+
+/**
+ * The ink a CARD's body copy inherits inside this band.
+ *
+ * `.ds-section .ds-card p { color: var(--forge-muted) }` exists because a
+ * band-level ink harvested from a DARK PANEL repainted a white card
+ * (virtuallysrilanka). But the blanket rule also breaks parity wherever the
+ * card sits on the surface its ink was measured against: eca.directory's cards
+ * are the page's own surface and the source paints their copy `#747474`, while
+ * the `muted` token is Elementor's `#69727d` — ΔE00 6.4 on two bands, both
+ * reported by the colour gate (2026-11-24).
+ *
+ * The test is a SURFACE test, not a contrast test: the measured ink is reused
+ * for the band's cards only when the band and the card paint the same surface
+ * (contrast < 1.15 — `#ffffff` against the template's `#f5f5f4` is 1.08). An
+ * ink measured over a dark panel therefore never reaches a white card, and no
+ * threshold has to judge what "readable" means twice.
+ *
+ * @return The card copy ink, or `undefined` when the template's `muted` token
+ *         is the honest answer.
+ */
+export function cardInkFor(
+	section: ForgeSection,
+	type: { body?: BandTypeFact },
+	profile: SiteProfile
+): string | undefined {
+	const ink = type.body?.color;
+	if ( ! ink ) {
+		return undefined;
+	}
+	const cardSurface = mergeTokens( profile.design, profile.tokens, profile.colors )[ 'surface-alt' ] ?? '#ffffff';
+	const delta = contrast( bandSurface( section, profile ), cardSurface );
+	return delta !== undefined && delta < 1.15 ? ink : undefined;
+}
+
+/**
+ * Overlay an operator `section.type` pin on the MEASURED band type.
+ *
+ * A pin is an explicit correction, so it must not be re-judged by
+ * `readableBandType`: that fallback compares the measured ink against the
+ * SECTION's flat surface, which is the wrong surface when the copy sits on a
+ * nested one the rebuild DOES ship. virtuallyjamaica's `1ff4891` cards sit on a
+ * red `#dd3333` column (kept inline by the sanitizer): the source's white copy
+ * was measured correctly, then dropped against the `#ededed` band, so the cards
+ * rendered grey-on-red. The pin restores the measured ink; `verify --colors` is
+ * the gate that reports it if the pin is wrong.
+ *
+ * Fields merge per heading level and per property, so a colour-only pin keeps
+ * the measured sizes (a pin used to REPLACE the whole fact block).
+ */
+export function mergeBandType(
+	measured: { headings?: Record< string, BandTypeFact >; body?: BandTypeFact },
+	pinned: { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } | undefined
+): { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } {
+	if ( ! pinned ) {
+		return measured;
+	}
+	const headings: Record< string, BandTypeFact > = { ...( measured.headings ?? {} ) };
+	for ( const [ tag, fact ] of Object.entries( pinned.headings ?? {} ) ) {
+		headings[ tag ] = { ...( headings[ tag ] ?? {} ), ...fact };
+	}
+	const body = pinned.body ? { ...( measured.body ?? {} ), ...pinned.body } : measured.body;
+	return {
+		...( Object.keys( headings ).length > 0 ? { headings } : {} ),
+		...( body ? { body } : {} ),
+	};
 }
 
 /** The end colour of a CSS gradient — the surface a painted card ends on. */
@@ -550,9 +766,23 @@ async function writeGeneratedManifest( targetDir: string ): Promise<void> {
 		'src/lib/animations.generated.ts',
 		'src/lib/vocabulary.generated.ts',
 		'src/lib/tracking.generated.ts',
+		// Present only on an ECA profile — the loop tolerates a missing file.
+		'src/lib/eca.generated.ts',
+		// Present only when deploy.manage is on — the loop tolerates a missing file.
+		'src/lib/manage-session.ts',
+		// Present only when deploy.manageBundle is on (§7b).
+		'src/lib/manage-credential.ts',
+		// The bundle's SRI/sha provenance. The 900 KB binaries are NOT hashed here:
+		// reading them as text is lossy, and the SRI token in this file already pins
+		// their bytes.
+		'src/lib/manage.generated.ts',
+		// The external /manage boot (no inline script on the page).
+		MANAGE_BOOT_FILE,
 		'src/lib/managed.generated.ts',
 		'public/tokens.dtcg.json',
 		'public/_headers',
+		// Proposal 165 — the publication verdict (generated, never hand-edited).
+		'gate.generated.json',
 	];
 	const files: Record<string, string> = {};
 	for ( const file of generatedFiles ) {
@@ -578,6 +808,12 @@ function collectionLiteral(collection: WpCollection, indent = '\t'): string {
 		`${indent}perPage: ${collection.perPage ?? 100},`,
 		`${indent}maxPages: ${collection.maxPages ?? 50},`,
 	];
+	// Extra REST keys the collection needs verbatim (Proposal 163). Emitted
+	// explicitly: a passthrough field that never reaches the generated config is
+	// a silently missing dataset, not a build error.
+	if (collection.passthrough && collection.passthrough.length > 0) {
+		lines.push(`${indent}passthrough: [${collection.passthrough.map((field) => tsString(field)).join(', ')}],`);
+	}
 	if (collection.exclude && collection.exclude.length > 0) {
 		lines.push(`${indent}exclude: [${collection.exclude.map((s) => tsString(s)).join(', ')}],`);
 	}
@@ -615,7 +851,48 @@ export interface HybridLocalSource {
 }
 
 /** Generate the content.config.ts body between the FORGE markers. */
+/**
+ * The contact band the front page renders at `#contact` (issue #7549).
+ *
+ * An ECA profile already names its people once, in `eca.contacts`, and `/help/`
+ * renders them from there. Copying the same four people into a second list
+ * would drift the moment someone changes an email, so the band is DERIVED.
+ * An explicit `profile.contact` always wins (a site may want different people
+ * on the home band than on the help page), and a profile with neither gets no
+ * contact block — never an empty one.
+ */
+export function resolveContactBlock( profile: SiteProfile ): ForgeContact | undefined {
+	if ( profile.contact ) {
+		return profile.contact;
+	}
+	const contacts = profile.eca?.contacts ?? [];
+	if ( contacts.length === 0 ) {
+		return undefined;
+	}
+	// A person without an email is still worth naming, but NOT as a dead mailto:
+	// the component only links the ones that can be written to.
+	const people = contacts.map( ( contact ) => ( {
+		label: contact.label,
+		...( contact.role ? { role: contact.role } : {} ),
+		...( contact.email ? { email: contact.email } : {} ),
+	} ) );
+	const primary = people.find( ( person ) => person.email );
+	return {
+		heading: 'Questions?',
+		// The enquiry band this replaces is a form; a form that cannot post is a
+		// dead end, so say what works instead of shipping the shell of one.
+		blurb: 'Send the ECA team an email and we will get back to you.',
+		...( primary?.email ? { email: primary.email } : {} ),
+		people,
+		links: [ { label: 'Booking steps and answers', href: '/help/' } ],
+	};
+}
+
 export function renderContentConfig(profile: SiteProfile): string {
+	// Pages the ECA preset owns as DATA VIEWS (a day timetable, the full list).
+	// They get their own static route, so the generic `[slug]` page must not also
+	// claim the URL — one canonical route per page is a hard gate.
+	const ecaDataSlugs = ecaDataPages( profile ).map( ( page ) => page.slug );
 	const block: string[] = [];
 	block.push(`// FORGE:site — generated by nvoos-astro-forge; edits are overwritten on re-scaffold.`);
 	block.push(
@@ -635,20 +912,53 @@ export function renderContentConfig(profile: SiteProfile): string {
 	block.push(`const site: SiteProfile = { url: siteUrl, name: siteName, collections: [] };`);
 	block.push('');
 	for (const collection of profile.collections) {
-		block.push(`const ${collection.slug}Collection: WpCollection = ${collectionLiteral(collection)};`);
+		const effective =
+			collection.slug === 'pages' && ecaDataSlugs.length > 0
+				? { ...collection, exclude: [ ...( collection.exclude ?? [] ), ...ecaDataSlugs ] }
+				: collection;
+		block.push(`const ${collection.slug}Collection: WpCollection = ${collectionLiteral(effective)};`);
 	}
 	block.push('');
 	block.push(`export const collections = {`);
+	// A materialized profile (the CMS is gone) reads ONLY the snapshot: every
+	// collection gets its `src/content/<slug>/` glob, and `localOnly` keeps the
+	// loader off the network entirely. `posts`/`pages` keep their canonical
+	// globs; any extra collection (a CPT, a storefront catalogue) resolves the
+	// same way, so `forge materialize` output works for it too.
+	const materialized = isMaterializedContent(profile);
+	// A profile-declared cap is only honoured when it is a real positive integer:
+	// a typo must not become `|| 0` (falsy → default, silently) or a negative
+	// number handed to AbortSignal.timeout (which throws).
+	const declaredTimeout = Number(profile.fetch?.timeoutMs);
+	const timeoutFallback =
+		Number.isFinite(declaredTimeout) && declaredTimeout > 0
+			? Math.min(Math.floor(declaredTimeout), 600_000)
+			: null;
+	const timeoutExpr = timeoutFallback
+		? `Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || ${timeoutFallback}`
+		: 'Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined';
 	for (const collection of profile.collections) {
 		const authVar = collection.authMode === 'wc-consumer' ? 'wcAuth' : 'applicationAuth';
 		// Hybrid local (106 P2): posts/pages merge the local MDX glob under the
 		// WP loader — WP wins on collision, local fills the gaps.
-		const localSource = LOCAL_CONTENT_SOURCES[collection.slug];
+		const localSource = materialized
+			? LOCAL_CONTENT_SOURCES[collection.slug] ?? {
+					pattern: '**/*.mdx',
+					base: `./src/content/${collection.slug}`,
+			  }
+			: LOCAL_CONTENT_SOURCES[collection.slug];
 		const localOption = localSource
 			? `, local: { pattern: ${tsString(localSource.pattern)}, base: ${tsString(localSource.base)} }`
 			: '';
+		const localOnlyOption = materialized ? ', localOnly: true' : '';
+		// A big Elementor page tree is megabytes of markup in ONE REST page; a
+		// cheap host can take 30s+ to serialise it. The transport cap is
+		// therefore a build knob (`WP_FETCH_TIMEOUT_MS`), not a hard 15s — and
+		// the profile's own `fetch.timeoutMs` is baked in as the FALLBACK, so a
+		// host that knows nothing about the source still gets a cap that fits it
+		// (eca.directory needs >26s; the fleet runner aborted at 15s).
 		block.push(
-			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}, userAgent: import.meta.env.WP_USER_AGENT }) }),`
+			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}${localOnlyOption}, userAgent: import.meta.env.WP_USER_AGENT, timeoutMs: ${timeoutExpr} }) }),`
 		);
 	}
 	block.push(`};`);
@@ -726,6 +1036,11 @@ const DEFAULT_TOKENS: Record<string, string> = {
 	'radius-lg': '12px',
 	font: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
 	'font-display': "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+	// The nav/menu face. Degrades to the body face so a two-family source
+	// renders exactly as before.
+	'font-ui': 'var(--forge-font)',
+	// The class-driven accent face; degrades to the display role.
+	'font-accent': 'var(--forge-font-display)',
 	space: '1rem',
 	'space-sm': '0.5rem',
 	'space-lg': '2rem',
@@ -784,12 +1099,66 @@ function measuredBodyInk( colors?: ForgeColorModes | Record< string, { text?: st
  * derivation (tokens_apply v2) ← rendered body ink (when measured) ← explicit
  * profile.tokens overrides. Explicit operator overrides always win.
  */
+/**
+ * The ACCENT family a profile ALREADY measured, no re-analysis needed.
+ *
+ * `design.typography.accent` postdates most committed profiles, so derive it
+ * from the measured heading facts instead: the one family that is neither the
+ * body, the display role nor the menu. monicarajiv records Dancing Script on
+ * its `h3.alt-font` facts, and the builder’s own `alt-font` utility points
+ * at the resulting token.
+ */
+export function accentFamilyOf( profile: SiteProfile ): string | undefined {
+	const design = profile.design;
+	if ( design?.typography.accent ) {
+		return design.typography.accent;
+	}
+	const known = new Set(
+		[ design?.typography.body, design?.typography.display, design?.typography.ui ]
+			.map( ( name ) => ( name ?? '' ).trim().toLowerCase() )
+			.filter( Boolean )
+	);
+	const families: string[] = [];
+	const add = ( name?: string ): void => {
+		const clean = ( name ?? '' ).trim().replace( /["']/g, '' );
+		if ( clean && ! known.has( clean.toLowerCase() ) && ! families.some( ( family ) => family.toLowerCase() === clean.toLowerCase() ) ) {
+			families.push( clean );
+		}
+	};
+	const addFacts = ( facts?: { headings?: Record< string, { family?: string } >; body?: { family?: string } } ): void => {
+		for ( const fact of Object.values( facts?.headings ?? {} ) ) {
+			add( fact?.family );
+		}
+		add( facts?.body?.family );
+	};
+	for ( const section of design?.sections ?? [] ) {
+		addFacts( section.type );
+	}
+	for ( const facts of Object.values( profile.bandFacts ?? {} ) ) {
+		addFacts( facts );
+	}
+	for ( const page of Object.values( profile.pageBands ?? {} ) ) {
+		for ( const facts of Object.values( page.bandFacts ?? {} ) ) {
+			addFacts( facts );
+		}
+	}
+	return families[ 0 ];
+}
+
 export function mergeTokens(
 	design?: ForgeDesign,
 	tokens?: Record< string, string >,
-	colors?: ForgeColorModes | Record< string, { text?: string } >
+	colors?: ForgeColorModes | Record< string, { text?: string } >,
+	/** The ACCENT family a profile already measured (see `accentFamilyOf`).
+	 * It has to arrive here rather than in `scaffoldProject`, because the
+	 * token-block AUDIT compares the on-disk span against this function — two
+	 * derivations drift apart (the audit failed on its first outing). */
+	accent?: string
 ): Record< string, string > {
 	const merged = { ...DEFAULT_TOKENS, ...( design ? designToTokens( design ) : {} ), ...( tokens ?? {} ) };
+	if ( accent && ! ( tokens && tokens[ 'font-accent' ] ) ) {
+		merged[ 'font-accent' ] = `'${ accent }', ${ DEFAULT_FONT_STACK }`;
+	}
 	const ink = measuredBodyInk( colors );
 	if ( ink && ! ( tokens && typeof tokens.ink === 'string' && tokens.ink.trim() ) ) {
 		merged.ink = ink;
@@ -956,21 +1325,60 @@ export function renderDesignGenerated( profile: SiteProfile, tokens: Record<stri
 	body.push( '// when the harvested family is not a system stack (jayainc: Rubik).' );
 	body.push( 'export const webFonts: Array<{ family: string; weights: number[] }> = [' );
 	const systemFontRe = /^(system-ui|ui-sans-serif|ui-serif|ui-monospace|sans-serif|serif|monospace|cursive|fantasy|arial|helvetica|georgia|times|garamond|courier|verdana|tahoma|trebuchet|segoe|menlo|consolas|impact)$/i;
-	const families: string[] = [];
-	for ( const name of [ design?.typography.display, design?.typography.body ] ) {
+	// EVERY family the rebuild RENDERS, not just the two roles. A source can wear
+	// a third face on its headings (monicarajiv: a Dancing Script `alt-font` h3
+	// beside a Karma h1) and a fourth on its menu. Loading only display+body left
+	// those rules pointing at a family with no @font-face — the browser fell back
+	// and the per-level rule silently did nothing.
+	const familyWeights = new Map< string, { family: string; weights: Set< number >; ladder: boolean } >();
+	const addFamily = ( name: string | undefined, weight?: string, ladder = false ): void => {
 		const clean = ( name ?? '' ).trim().replace( /["']/g, '' );
-		if ( clean && ! systemFontRe.test( clean ) && ! families.includes( clean.toLowerCase() ) ) {
-			families.push( clean );
+		// An icon font is never requested from Google Fonts (it is not there).
+		if ( ! clean || systemFontRe.test( clean ) || /icon|awesome|dashicons|glyph|symbol/i.test( clean ) ) {
+			return;
+		}
+		const key = clean.toLowerCase();
+		const entry = familyWeights.get( key ) ?? { family: clean, weights: new Set< number >(), ladder: false };
+		if ( ladder ) {
+			// The two ROLE families keep the full ladder: body/display also render
+			// prose and UI the measurements never sample (bold, small print).
+			entry.ladder = true;
+		}
+		// A measured weight is kept for EVERY family: a role can sit outside the
+		// 300-700 ladder (jayainc's body is 300), and an accent only needs the
+		// weight it actually wears.
+		const parsed = parseInt( weight ?? '', 10 );
+		entry.weights.add( parsed >= 100 && parsed <= 900 ? parsed : 400 );
+		familyWeights.set( key, entry );
+	};
+	addFamily( design?.typography.display, undefined, true );
+	addFamily( design?.typography.body, design?.typography.bodyWeight, true );
+	addFamily( design?.typography.ui );
+	addFamily( design?.typography.accent );
+	const addTypeFacts = ( facts?: { headings?: Record< string, { family?: string; weight?: string } >; body?: { family?: string; weight?: string } } ): void => {
+		for ( const fact of Object.values( facts?.headings ?? {} ) ) {
+			addFamily( fact?.family, fact?.weight );
+		}
+		addFamily( facts?.body?.family, facts?.body?.weight );
+	};
+	for ( const section of design?.sections ?? [] ) {
+		addTypeFacts( section.type );
+	}
+	// The site-level measurement (the front page) + every sub-page: each carries
+	// its own measured headings, and a band can wear a family the roles never see.
+	for ( const facts of Object.values( profile.bandFacts ?? {} ) ) {
+		addTypeFacts( facts );
+	}
+	for ( const page of Object.values( profile.pageBands ?? {} ) ) {
+		for ( const facts of Object.values( page.bandFacts ?? {} ) ) {
+			addTypeFacts( facts );
 		}
 	}
-	const weights = [ 300, 400, 500, 600, 700 ];
 	const bodyWeight = parseInt( design?.typography.bodyWeight ?? '', 10 );
-	if ( bodyWeight && ! weights.includes( bodyWeight ) ) {
-		weights.push( bodyWeight );
-	}
-	weights.sort( ( a, b ) => a - b );
-	for ( const family of families ) {
-		body.push( `\t{ family: ${ tsString( family ) }, weights: [ ${ weights.join( ', ' ) } ] },` );
+	for ( const entry of familyWeights.values() ) {
+		const weights = entry.ladder ? new Set< number >( [ 300, 400, 500, 600, 700, ...entry.weights ] ) : new Set< number >( entry.weights );
+		const sorted = [ ...weights ].sort( ( a, b ) => a - b );
+		body.push( `\t{ family: ${ tsString( entry.family ) }, weights: [ ${ sorted.join( ', ' ) } ] },` );
 	}
 	body.push( '];' );
 	body.push( '' );
@@ -1121,6 +1529,189 @@ function contentlessBand( facts: ForgeBandFacts | undefined ): boolean {
  * (a fact — it overrides the template rhythm); only a band with no measurement
  * at all returns `undefined`.
  */
+/**
+ * The band's lanes as the BROWSER measured them, merged with the declared
+ * column facts.
+ *
+ * `design.sections[].columns` states the builder's INTENT — `col-33` on every
+ * lane, plus whatever surfaces a static parse could attribute. The geometry pass
+ * renders the band and records the real width and the PAINTED layer, so it wins
+ * where the two disagree. The declared `bgImage` URL is kept, because the
+ * measured fact records only that an image is painted, not which.
+ *
+ * Returns undefined unless at least two lanes were measured, so a band with no
+ * column grid keeps the declared path.
+ */
+function measuredLaneColumns(
+	bandFacts: ForgeBandFacts | undefined,
+	declared: ForgeSectionColumn[] | undefined,
+	contentWidth?: number
+): ForgeSectionColumn[] | undefined {
+	const lanes = bandFacts?.columns?.desktop;
+	if ( ! lanes || lanes.length < 2 ) {
+		return undefined;
+	}
+	// Only override the declared columns when the measurement carries something
+	// the declaration cannot: a rendered width or a painted surface. Otherwise a
+	// grid measured for its heights alone would replace a good declaration with
+	// empty objects.
+	if ( ! lanes.some( ( lane ) => lane.width || lane.bg || lane.image ) ) {
+		return undefined;
+	}
+	const total = lanes.reduce( ( sum, lane ) => sum + ( lane.width ?? 0 ), 0 );
+	// A lane set where EVERY lane fills the content column is a STACK, not a row:
+	// eca.directory's about-us CTA measures two 1280px lanes inside a 1280px
+	// content column. Normalising those to 50/50 laid them side by side; recording
+	// each as 100% lets the renderer derive ONE track (see lib/lane-tracks.ts).
+	const stacked =
+		contentWidth !== undefined &&
+		contentWidth > 0 &&
+		lanes.every( ( lane ) => ( lane.width ?? 0 ) >= contentWidth * 0.95 );
+	const declaredImages = ( declared ?? [] )
+		.map( ( column ) => column.bgImage )
+		.filter( ( url ): url is string => Boolean( url ) );
+	const used = new Set< string >();
+	return lanes.map( ( lane, index ) => {
+		const column: ForgeSectionColumn = {};
+		if ( stacked ) {
+			column.width = 100;
+		} else if ( lane.width && total > 0 ) {
+			// A one-decimal share keeps the lanes summing to 100.
+			column.width = Math.round( ( lane.width / total ) * 1000 ) / 10;
+		}
+		if ( lane.bg ) {
+			column.bgColor = lane.bg;
+			// A painted lane's copy needs the ink that slab requires — the card's
+			// default (`--forge-muted`) is unreadable on a black or red panel.
+			column.ink = inkForSurface( lane.bg );
+		}
+		if ( lane.image ) {
+			const atIndex = declared?.[ index ]?.bgImage;
+			const url =
+				atIndex && ! used.has( atIndex )
+					? atIndex
+					: declaredImages.find( ( candidate ) => ! used.has( candidate ) );
+			if ( url ) {
+				used.add( url );
+				column.bgImage = url;
+			}
+		}
+		// The measurement knows GEOMETRY, the declaration knows per-device INTENT.
+		// A responsive visibility class (`elementor-hidden-mobile`) is still in the
+		// desktop DOM and a width override lives in a media block, so neither is
+		// measurable from the desktop render — and dropping them here silently
+		// un-hid a lane the source hides. Carry them across positionally.
+		const declaredAt = declared?.[ index ];
+		if ( declaredAt ) {
+			if ( declaredAt.widthTablet !== undefined ) {
+				column.widthTablet = declaredAt.widthTablet;
+			}
+			if ( declaredAt.widthMobile !== undefined ) {
+				column.widthMobile = declaredAt.widthMobile;
+			}
+			if ( declaredAt.reverseMobile ) {
+				column.reverseMobile = true;
+			}
+			if ( declaredAt.reverseTablet ) {
+				column.reverseTablet = true;
+			}
+			if ( declaredAt.hiddenMobile ) {
+				column.hiddenMobile = true;
+			}
+			if ( declaredAt.hiddenTablet ) {
+				column.hiddenTablet = true;
+			}
+			if ( declaredAt.hiddenDesktop ) {
+				column.hiddenDesktop = true;
+			}
+		}
+		return column;
+	} );
+}
+
+/**
+ * Reconcile an EXPLICIT `section.padding` fact with the per-viewport
+ * measurement.
+ *
+ * The explicit fact wins by policy, but it is a single DESKTOP shorthand: a
+ * string is emitted inline (see `wrapStyle`), and an inline `padding` outranks
+ * the media queries that would narrow it. virtuallysrilanka's hardware band
+ * measures `100px 0 0 0` at desktop and flush (`0`) at both narrow viewports,
+ * but the profile pins the desktop shorthand — so the rebuild carried the 100px
+ * down to tablet and mobile and ran 161px / 233px taller than its source.
+ *
+ * Keep the explicit value for the viewport it describes and take the narrower
+ * overrides from the measurement, only where they actually differ. An explicit
+ * per-device map is already responsive and is returned untouched.
+ */
+export function resolveBandPadding(
+	explicit: ResponsiveLength | undefined,
+	measured: ResponsiveLength | undefined
+): ResponsiveLength | undefined {
+	if ( ! explicit ) {
+		return measured;
+	}
+	if ( typeof explicit !== 'string' || ! measured || typeof measured === 'string' ) {
+		return explicit;
+	}
+	const resolved: { desktop: string; tablet?: string; mobile?: string } = { desktop: explicit };
+	if ( measured.tablet && measured.tablet !== explicit ) {
+		resolved.tablet = measured.tablet;
+	}
+	if ( measured.mobile && measured.mobile !== explicit ) {
+		resolved.mobile = measured.mobile;
+	}
+	return resolved.tablet || resolved.mobile ? resolved : explicit;
+}
+
+/**
+ * Add a container's BLOCK padding onto a band's own padding fact.
+ *
+ * The builder often puts the copy's top/bottom inset on the inner container
+ * (`e-con-inner { padding: 60px 0 80px }`) and leaves the band's own padding at
+ * zero, so a rebuild that reads only the band's padding starts the copy 60–80px
+ * high and every band below it shifts up (eca.directory's about-us benefits band
+ * measured an ink top of 88px against the rebuild's 5, 2026-11-25). The shorthand
+ * is normalised to four sides, the two block values are summed and re-emitted.
+ */
+export function addBlockPadding(
+	padding: ResponsiveLength | undefined,
+	block: { top?: number; bottom?: number } | undefined
+): ResponsiveLength | undefined {
+	const top = Math.round( block?.top ?? 0 );
+	const bottom = Math.round( block?.bottom ?? 0 );
+	if ( top <= 0 && bottom <= 0 ) {
+		return padding;
+	}
+	const bump = ( value: string | undefined ): string => {
+		if ( typeof value !== 'string' || value.trim() === '' ) {
+			return `${ top }px 0px ${ bottom }px 0px`;
+		}
+		const parts = value.trim().split( /\s+/ );
+		const four =
+			parts.length === 1
+				? [ parts[ 0 ], parts[ 0 ], parts[ 0 ], parts[ 0 ] ]
+				: parts.length === 2
+					? [ parts[ 0 ], parts[ 1 ], parts[ 0 ], parts[ 1 ] ]
+					: parts.length === 3
+						? [ parts[ 0 ], parts[ 1 ], parts[ 2 ], parts[ 1 ] ]
+						: parts.slice( 0, 4 );
+		const add = ( token: string, extra: number ): string => {
+			const match = /^(\d+(?:\.\d+)?)px$/.exec( token );
+			return match ? `${ Math.round( Number( match[ 1 ] ) + extra ) }px` : token;
+		};
+		return [ add( four[ 0 ], top ), four[ 1 ], add( four[ 2 ], bottom ), four[ 3 ] ].join( ' ' );
+	};
+	if ( typeof padding === 'string' || padding === undefined ) {
+		return bump( padding );
+	}
+	return {
+		desktop: bump( padding.desktop ),
+		...( padding.tablet ? { tablet: bump( padding.tablet ) } : {} ),
+		...( padding.mobile ? { mobile: bump( padding.mobile ) } : {} ),
+	};
+}
+
 function measuredBandPadding(
 	section: ForgeSection,
 	geometry?: ForgeGeometry
@@ -1209,33 +1800,73 @@ function collapseDevice( desktop?: string, tablet?: string, mobile?: string ): R
  */
 function measuredContainer(
 	bandFacts: ForgeBandFacts | undefined,
-	fallbackPadX?: ResponsiveLength
-): { measure?: ResponsiveLength; paddingX?: ResponsiveLength } {
-	const at = ( device: 'desktop' | 'tablet' | 'mobile' ): { measure: string; padX: string } | undefined => {
+	fallbackPadX?: ResponsiveLength,
+	measured?: Record< string, BandGeometry >
+): { measure?: ResponsiveLength; paddingX?: ResponsiveLength; blockPad?: { top: number; bottom: number } } {
+	const at = ( device: 'desktop' | 'tablet' | 'mobile' ): { measure: string; padX: string; padTop?: number; padBottom?: number } | undefined => {
 		const entry = bandFacts?.container?.[ device ];
-		if ( ! entry || ! ( entry.content > 0 ) ) {
-			return undefined;
+		if ( entry && entry.content > 0 ) {
+			// 0 is a fact (a genuinely flush container), not an absence — it must
+			// override the template's clamp, exactly as the band padding does.
+			const padX = Number.isFinite( entry.padX ) && entry.padX > 0 ? entry.padX : 0;
+			// A band whose grid cancels the gutter renders FLUSH so its columns span the
+			// container's border-box; the per-column padding is already in the `box`
+			// facts. Applying `padX` there would re-inset a band the source lets bleed
+			// (virtuallyjamaica's #wifi grew 29px taller when it was narrowed by 30px).
+			const sectionPadX = entry.flush ? 0 : padX;
+			return {
+				measure: `${ Math.round( entry.content + padX * 2 ) }px`,
+				padX: `${ Math.round( sectionPadX * 100 ) / 100 }px`,
+				...( entry.padTop ? { padTop: entry.padTop } : {} ),
+				...( entry.padBottom ? { padBottom: entry.padBottom } : {} ),
+			};
 		}
-		// 0 is a fact (a genuinely flush container), not an absence — it must
-		// override the template's clamp, exactly as the band padding does.
-		const padX = Number.isFinite( entry.padX ) && entry.padX > 0 ? entry.padX : 0;
-		// A band whose grid cancels the gutter renders FLUSH so its columns span the
-		// container's border-box; the per-column padding is already in the `box`
-		// facts. Applying `padX` there would re-inset a band the source lets bleed
-		// (virtuallyjamaica's #wifi grew 29px taller when it was narrowed by 30px).
-		const sectionPadX = entry.flush ? 0 : padX;
-		return {
-			measure: `${ Math.round( entry.content + padX * 2 ) }px`,
-			padX: `${ Math.round( sectionPadX * 100 ) / 100 }px`,
-		};
+		// The BAND's own measured content column.
+		//
+		// Builder 4.x containers (`e-con` / `e-con-inner`) are not `.container`
+		// or `.row`, so `bandFacts.container` is absent and `containerWidth`
+		// below reports the band's PADDING box instead — eca.directory's hero
+		// rebuilt 1380px wide against a 1280px source container, and every day
+		// page 1380 against 1328 (2026-11-24). The measured content box is the
+		// column the copy actually occupies, which is exactly what
+		// `--ds-measure` means, so it replaces the gutter guess.
+		const box = measured?.[ device ];
+		const contentWidth = box?.content?.width;
+		if ( typeof contentWidth === 'number' && contentWidth > 0 && typeof box?.width === 'number' ) {
+			const available = box.width - ( box.paddingLeft ?? 0 ) - ( box.paddingRight ?? 0 );
+			// A partial slab reports the SLAB, and constraining a band to it would
+			// re-centre a surface the source paints flush; `theme.panel` already
+			// carries that case. Below 60% of the row it is a slab, not a container.
+			//
+			// POSITION is the other half of the test: a container is CENTRED in its
+			// band, a slab is not. eca.directory's contact form is a 924px white slab
+			// starting at x=516 (not the 258 a centred 924 box would start at), and
+			// constraining the band to it squeezed the photo lane away (2026-11-25).
+			const offset = typeof box.content?.x === 'number' ? box.content.x : 0;
+			const centred = Math.abs( offset - ( box.width - contentWidth ) / 2 ) <= 8;
+			if ( available > 0 && centred && contentWidth >= available * 0.6 && contentWidth <= available + 1 ) {
+				return {
+					measure: `${ Math.round( contentWidth ) }px`,
+					padX: '0px',
+					...( box.content?.padTop ? { padTop: box.content.padTop } : {} ),
+					...( box.content?.padBottom ? { padBottom: box.content.padBottom } : {} ),
+				};
+			}
+		}
+		return undefined;
 	};
 	const desktop = at( 'desktop' );
 	if ( desktop ) {
 		const tablet = at( 'tablet' );
 		const mobile = at( 'mobile' );
+		const blockPad =
+			desktop.padTop || desktop.padBottom
+				? { top: desktop.padTop ?? 0, bottom: desktop.padBottom ?? 0 }
+				: undefined;
 		return {
 			measure: collapseDevice( desktop.measure, tablet?.measure, mobile?.measure ),
 			paddingX: collapseDevice( desktop.padX, tablet?.padX, mobile?.padX ),
+			...( blockPad ? { blockPad } : {} ),
 		};
 	}
 	const width = bandFacts?.containerWidth;
@@ -1251,9 +1882,15 @@ function measuredContainer(
 		const pad = Number.parseFloat( fallbackPadX );
 		return { measure: `${ Math.round( width + pad * 2 ) }px`, paddingX: fallbackPadX };
 	}
+	if ( width >= FLUID_CONTAINER_MIN ) {
+		// A FLUID band has no separate container: `containerWidth` IS the band’s own
+		// inner width, so the +64 gutter compensation would push the measure past
+		// the viewport and leave the copy flush to the edge (eca.directory’s
+		// /about-us/ title band measured 1504px in a 1440px viewport, 2026-11-24).
+		return { measure: `${ Math.round( width ) }px`, paddingX: '0px' };
+	}
 	return {
 		measure: `${ Math.round( width ) + BAND_GUTTER_PX }px`,
-		paddingX: width >= FLUID_CONTAINER_MIN ? '0px' : undefined,
 	};
 }
 
@@ -1279,11 +1916,41 @@ function elementInk( bg: string | undefined ): string | undefined {
 	return readableInk( bg.slice( prefix.length ) );
 }
 
+/**
+ * A canonical `r,g,b` key for a CSS colour (hex or an opaque `rgb()`), so a
+ * MEASURED element fill can be compared with the band's own surface. `undefined`
+ * for anything else (a translucent fill, a gradient, a keyword) — those never
+ * compare equal, which is the safe direction.
+ */
+function colourKey( value: string | undefined ): string | undefined {
+	if ( ! value ) {
+		return undefined;
+	}
+	const hex = value.trim().match( /^#([0-9a-f]{3}|[0-9a-f]{6})$/i );
+	if ( hex ) {
+		const digits = hex[ 1 ].length === 3 ? hex[ 1 ].split( '' ).map( ( c ) => c + c ).join( '' ) : hex[ 1 ];
+		const n = Number.parseInt( digits, 16 );
+		return `${ ( n >> 16 ) & 255 },${ ( n >> 8 ) & 255 },${ n & 255 }`;
+	}
+	const rgb = value.trim().match( /^rgba?\(\s*([0-9.]+)[\s,]+([0-9.]+)[\s,]+([0-9.]+)\s*(?:[,/]\s*([0-9.]+)\s*)?\)$/i );
+	if ( ! rgb ) {
+		return undefined;
+	}
+	const alpha = rgb[ 4 ] === undefined ? 1 : Number( rgb[ 4 ] );
+	if ( ! ( alpha >= 0.95 ) ) {
+		return undefined;
+	}
+	return `${ Math.round( Number( rgb[ 1 ] ) ) },${ Math.round( Number( rgb[ 2 ] ) ) },${ Math.round( Number( rgb[ 3 ] ) ) }`;
+}
+
 function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ): string {
 	const theme = resolveSectionTheme( section );
 	const entry: string[] = [];
 	if ( section.id ) {
 		entry.push( `id: ${ tsString( section.id ) }` );
+	}
+	if ( section.kind ) {
+		entry.push( `kind: ${ tsString( section.kind ) }` );
 	}
 	entry.push( `theme: ${ tsString( theme ) }` );
 	if ( section.anchor ) {
@@ -1305,23 +1972,121 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		if ( bg && bg !== 'transparent' ) {
 			entry.push( `bg: ${ tsString( bg ) }` );
 		}
+		// A LAYER image rides a non-hero band too (`bandLayerCss` renders it on a
+		// faded `::before`, and `wrapStyle` leaves it off the wrap). A full-strength
+		// band photo stays hero-only, as before.
+		if ( section.bgImage && section.bgLayerOpacity !== undefined ) {
+			entry.push( `bgImage: ${ tsString( section.bgImage ) }` );
+		}
 	}
-	// The band's padding: an explicit profile fact wins; otherwise the MEASURED
-	// source padding (114 §3.6) — see `measuredBandPadding`.
-	const padding = section.padding ?? measuredBandPadding( section, profile.geometry );
+	// The image's BOX (`ForgeSection.bgSize`). Emitted for every theme, hero or
+	// not: an image without it paints at native scale.
+	for ( const key of [ 'bgSize', 'bgRepeat', 'bgPosition' ] as const ) {
+		const value = section[ key ];
+		if ( value ) {
+			entry.push( `${ key }: ${ tsString( value ) }` );
+		}
+	}
+	if ( section.bgLayerOpacity !== undefined ) {
+		entry.push( `bgLayerOpacity: ${ section.bgLayerOpacity }` );
+	}
+	if ( section.bgBlendMode ) {
+		entry.push( `bgBlendMode: ${ tsString( section.bgBlendMode ) }` );
+	}
+	// The band's MARK STRIP (analyzer-measured logo wall — see
+	// `ForgeSection.logos`). Emitted for every theme: a logo wall is as often a
+	// transparent band as a light one.
+	if ( section.logos && section.logos.length > 0 ) {
+		entry.push( `logos: ${ JSON.stringify( section.logos ) }` );
+	}
+	// The band's COMPARISON MATRIX (analyzer-measured from the RAW html — see
+	// `ForgeSection.comparison`). The build-time classifier cannot see it because
+	// sanitisation strips the check/cross `<svg>`, so the renderer appends it from
+	// this fact instead of trying to detect it.
+	if ( section.comparison && section.comparison.rows.length > 0 ) {
+		entry.push( `comparison: ${ JSON.stringify( section.comparison ) }` );
+	}
+	// MEASURED STRUCTURE — the generic channel (see `ForgeSection.structure`).
+	// A profile recorded before the channel existed carries only `comparison`, so
+	// synthesise the entry rather than emitting two shapes the renderer must know.
+	const structure =
+		section.structure && section.structure.length > 0
+			? section.structure
+			: section.comparison && section.comparison.rows.length > 0
+				? [ { type: 'comparison' as const, data: section.comparison } ]
+				: [];
+	if ( structure.length > 0 ) {
+		entry.push( `structure: ${ JSON.stringify( structure ) }` );
+	}
+	// The band's PANEL surface (`ForgeSection.panel`) — a literal colour + its
+	// legible ink, so the item group renders on the source's slab.
+	const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
+	// The band's SLAB. `design.ts` records it on the SECTION for the homepage;
+	// the geometry pass records it as a BAND fact, which is the only path a
+	// sub-page takes. ONE emission: this block used to be three, and a band that
+	// carried both shapes emitted `panel:` twice in the same object literal.
+	const panel =
+		bandFacts?.panel && ( bandFacts.panel.width || bandFacts.panel.align )
+			? bandFacts.panel
+			: section.panel ?? bandFacts?.panel;
+	if ( panel ) {
+		// A slab that fills only PART of the band carries its own box: the source
+		// halves the band and centres the heading on that half, so the rebuild has
+		// to constrain the section — a full-bleed slab centred the eyebrow on the
+		// viewport instead (virtuallysrilanka's "How it Works").
+		const box = [
+			panel.width && `width: ${ tsString( panel.width ) }`,
+			panel.align && `align: ${ tsString( panel.align ) }`,
+		]
+			.filter( Boolean )
+			.join( ', ' );
+		entry.push(
+			`panel: { bg: ${ tsString( panel.bg ) }, ink: ${ tsString( panel.ink ) }${ box ? `, ${ box }` : '' } }`
+		);
+	}
+	// The band's measured CAROUSEL geometry — the slider's own slides-per-view and
+	// gutter. Without it a logo wall that the source ROTATES renders as a static
+	// row (virtuallysrilanka's hardware band is a 7-slide Swiper, and the rebuild
+	// drew all seven in one row). `bandFacts` is declared above this point.
+	const carouselFact = bandFacts?.carousel?.desktop?.[ 0 ];
+	if ( carouselFact && ( carouselFact.perView ?? 0 ) > 1 ) {
+		entry.push( `carousel: ${ JSON.stringify( carouselFact ) }` );
+	}
+	// The measured EYEBROW and TITLE text. The classifier reads tag level alone,
+	// so a kicker longer than its six-word heuristic is promoted to title and the
+	// real title demoted to body copy (virtuallysrilanka's hardware band). The
+	// browser measurement is the only pass that can see the sizes.
+	if ( bandFacts?.eyebrow ) {
+		// The EYEBROW's ink gets the same readability guard as the band type.
+		//
+		// A builder paints its kicker as white type on a coloured pill, and the
+		// rebuild has no pill — the vendor rule that filled it never ships — so
+		// the measured white landed on a light band and the eyebrow vanished
+		// (eca.directory's /about-us/: "Our Benefits" was invisible, 2026-11-24).
+		const eyebrow = { ...bandFacts.eyebrow };
+		if ( eyebrow.color ) {
+			const ratio = contrast( eyebrow.color, bandSurface( section, profile ) );
+			if ( ratio !== undefined && ratio < INVISIBLE_INK_RATIO ) {
+				delete eyebrow.color;
+			}
+		}
+		entry.push( `eyebrow: ${ JSON.stringify( eyebrow ) }` );
+	}
+	if ( bandFacts?.titleText ) {
+		entry.push( `titleText: ${ tsString( bandFacts.titleText ) }` );
+	}
+	// The container measure + side gutter, MEASURED per device (114 §3.6). An
+	// explicit profile fact wins; otherwise the source's own container decides.
+	const container = measuredContainer( bandFacts, section.paddingX, section.id ? profile.geometry?.[ section.id ] : undefined );
+	// The band's PADDING: its own fact plus the container's block padding (see
+	// `addBlockPadding`). Emitted here because the container fact is read above.
+	const padding = addBlockPadding(
+		resolveBandPadding( section.padding, measuredBandPadding( section, profile.geometry ) ),
+		container.blockPad
+	);
 	if ( padding ) {
 		entry.push( `padding: ${ tsLength( padding ) }` );
 	}
-	// The boxed container measure + column gap (124 §3) — the inner
-	// column re-measures to the source's container width. An explicit profile
-	// fact wins; otherwise the MEASURED container (`.container` = 1140px,
-	// `.container-fluid` = the viewport) sets it. Without it every band rendered
-	// at the site measure: virtuallyjamaica's services band is fluid (1440px)
-	// and came out at 1136px.
-	const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
-	// The container measure + side gutter, MEASURED per device (114 §3.6). An
-	// explicit profile fact wins; otherwise the source's own container decides.
-	const container = measuredContainer( bandFacts, section.paddingX );
 	// An analyzed `section.measure` can be the THEME's container width applied to
 	// a FULL-WIDTH band (jayainc's services band: the CSS says 1140, the live
 	// `.elementor-container` is 1440, so its columns rendered 524 instead of the
@@ -1423,12 +2188,22 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 					};
 		entry.push( `minHeight: ${ tsLength( value ) }` );
 	}
-	// The band's measured typography (see `tsBandType`). A profile pin on
-	// `design.sections[].type` wins over the measurement — but never at the cost
-	// of readable copy (see `readableBandType`).
-	const typeLiteral = tsBandType( readableBandType( section.type ?? bandFacts ?? {}, section, profile ) );
+	// The band's measured typography (see `tsBandType`). The readability
+	// fallback applies to the MEASURED facts only; an operator pin on
+	// `design.sections[].type` then overlays them field by field (see
+	// `mergeBandType`) — an explicit ink choice is never silently dropped.
+	const measuredType = readableBandType( bandFacts ?? {}, section, profile );
+	const bandType = mergeBandType( measuredType, section.type );
+	const typeLiteral = tsBandType( bandType );
 	if ( typeLiteral ) {
 		entry.push( `type: ${ typeLiteral }` );
+	}
+	// The ink the band's CARDS paint their copy in (see `cardInkFor`). Emitted
+	// only when the band and the card share a surface, so the template's blanket
+	// `.ds-card p` rule is corrected exactly where it is wrong and nowhere else.
+	const cardInk = cardInkFor( section, bandType, profile );
+	if ( cardInk ) {
+		entry.push( `cardInk: ${ tsString( cardInk ) }` );
 	}
 	// The subtrees the source hides at rest (see `signaturesHiddenAtBoth`).
 	const hidden = section.hidden ?? bandFacts?.hidden ?? [];
@@ -1508,10 +2283,28 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 					const parts = [ `path: ${ tsString( element.path ) }` ];
 					if ( element.bg ) {
 						parts.push( `bg: ${ tsString( element.bg ) }` );
-						const ink = elementInk( element.bg );
+						// A stage that IS the band's own surface must not re-derive its ink.
+						// The derived black/white is a FALLBACK for a card whose own fill the
+						// band ink was never measured against — but the rule it emits
+						// (`… :is(h1…h6,p,li,span)`, 0,3,3) outranks the band's MEASURED type
+						// facts (`[data-section-id] h3`, 0,1,1). On krishandramikasavethe.world
+						// the hero's own `#f0f0f0` banner derived black and repainted a
+						// `#578050` heading and `#4a4a4a` body (2 colour-gate failures,
+						// 2026-11-19). Equal fill → the measured ink is the faithful copy.
+						const fill = colourKey( element.bg.slice( 'background-color:'.length ) );
+						const bandFill = colourKey( section.bgColor );
+						const ink =
+							fill !== undefined && bandFill !== undefined && fill === bandFill
+								? undefined
+								: elementInk( element.bg );
 						if ( ink ) {
 							parts.push( `fg: ${ tsString( ink ) }` );
 						}
+					}
+					// A translucent VEIL (Flatsome's `.overlay`) stacks over the surface
+					// instead of replacing it, so it is emitted as its own declaration.
+					if ( element.veil ) {
+						parts.push( `veil: ${ tsString( element.veil ) }` );
 					}
 					if ( typeof element.height === 'number' ) {
 						parts.push( `height: ${ element.height }` );
@@ -1521,6 +2314,18 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 							.map( ( [ device, value ] ) => `${ device }: ${ value }` );
 						if ( map.length > 0 ) {
 							parts.push( `height: { ${ map.join( ', ' ) } }` );
+						}
+					}
+					// The measured WIDTH (a builder sizes images on the wrapper, not on
+					// the `width="1"` attribute the markup carries).
+					if ( typeof element.width === 'number' ) {
+						parts.push( `width: ${ element.width }` );
+					} else if ( element.width ) {
+						const widthMap = Object.entries( element.width )
+							.filter( ( [ , value ] ) => typeof value === 'number' )
+							.map( ( [ device, value ] ) => `${ device }: ${ value }` );
+						if ( widthMap.length > 0 ) {
+							parts.push( `width: { ${ widthMap.join( ', ' ) } }` );
 						}
 					}
 					return `{ ${ parts.join( ', ' ) } }`;
@@ -1533,6 +2338,14 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// column's own class. The sanitizer keeps the class but drops the inline
 	// min-height, and the vendor sheet never ships — without this the image
 	// column collapses to its content and its "fixed" photo scrolls.
+	const innerEntries = Object.entries( columnInnerFacts( bandFacts?.columns ?? {} ) );
+	if ( innerEntries.length > 0 ) {
+		entry.push(
+			`columnInner: { ${ innerEntries
+				.map( ( [ name, box ] ) => `${ tsKey( name ) }: ${ tsUtility( box ) }` )
+				.join( ', ' ) } }`
+		);
+	}
 	const columnEntries = Object.entries( columnBoxFacts( bandFacts?.columns ?? {} ) );
 	if ( columnEntries.length > 0 ) {
 		entry.push(
@@ -1594,7 +2407,53 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 				.join( ', ' ) }]`
 		);
 	}
-	if ( section.columns && section.columns.length > 0 ) {
+	// The MEASURED lanes win over the profile's declared columns. The declaration
+	// states the builder's INTENT (`col-33` on all three), while the measurement
+	// holds what the browser actually renders: the real widths (virtuallysrilanka's
+	// services row is 432 / 432 / 571, not equal thirds) and the surfaces only a
+	// browser can see — a builder scopes the slab to a nested wrapper, which is
+	// how the black third column and its photo column went unrecorded.
+	const measuredColumns = measuredLaneColumns( bandFacts, section.columns, box?.desktop?.content?.width );
+	if ( measuredColumns ) {
+		const lanes = measuredColumns.map( ( column ) => {
+			const parts: string[] = [];
+			if ( column.width !== undefined ) {
+				parts.push( `width: ${ column.width }` );
+			}
+			if ( column.bgColor ) {
+				parts.push( `bgColor: ${ tsString( column.bgColor ) }` );
+			}
+			if ( column.bgImage ) {
+				parts.push( `bgImage: ${ tsString( column.bgImage ) }` );
+			}
+			if ( column.ink ) {
+				parts.push( `ink: ${ tsString( column.ink ) }` );
+			}
+			if ( column.widthTablet !== undefined ) {
+				parts.push( `widthTablet: ${ column.widthTablet }` );
+			}
+			if ( column.widthMobile !== undefined ) {
+				parts.push( `widthMobile: ${ column.widthMobile }` );
+			}
+			if ( column.reverseMobile ) {
+				parts.push( 'reverseMobile: true' );
+			}
+			if ( column.reverseTablet ) {
+				parts.push( 'reverseTablet: true' );
+			}
+			if ( column.hiddenMobile ) {
+				parts.push( 'hiddenMobile: true' );
+			}
+			if ( column.hiddenTablet ) {
+				parts.push( 'hiddenTablet: true' );
+			}
+			if ( column.hiddenDesktop ) {
+				parts.push( 'hiddenDesktop: true' );
+			}
+			return `{ ${ parts.join( ', ' ) } }`;
+		} );
+		entry.push( `columns: [${ lanes.join( ', ' ) }]` );
+	} else if ( section.columns && section.columns.length > 0 ) {
 		const columns = section.columns.map( ( column ) => {
 			const parts: string[] = [];
 			if ( column.width !== undefined ) {
@@ -1621,14 +2480,201 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			if ( column.hiddenDesktop ) {
 				parts.push( 'hiddenDesktop: true' );
 			}
+			if ( column.bgColor ) {
+				parts.push( `bgColor: ${ tsString( column.bgColor ) }` );
+			}
+			if ( column.bgImage ) {
+				parts.push( `bgImage: ${ tsString( column.bgImage ) }` );
+			}
 			return `{ ${ parts.join( ', ' ) } }`;
 		} );
 		entry.push( `columns: [${ columns.join( ', ' ) }]` );
+	}
+	// The rows NESTED inside the band (see `ForgeBandRowFact`). A raw band loses
+	// the builder's flex layout, so a 3-card team row stacked three full-width
+	// cards down the page; these widths give each row its tracks back.
+	const nestedRows = bandFacts?.rows;
+	if ( nestedRows && nestedRows.length > 0 ) {
+		entry.push(
+			`rows: [${ nestedRows
+				.map( ( row ) => `{ id: ${ tsString( row.id ) }, widths: [${ row.widths.join( ', ' ) }] }` )
+				.join( ', ' ) }]`
+		);
+	}
+	// Whether the band's OWN row is a ROW or a STACK, and the gap between its
+	// lanes (`ForgeBandRowLayout`). The lane widths alone cannot say: two
+	// full-width lanes are a column, and normalising them into a two-track grid
+	// laid eca.directory's about-us CTA beside itself (2026-11-25).
+	const measuredRowLayout = bandFacts?.rowLayout;
+	if ( measuredRowLayout?.desktop ) {
+		const base = measuredRowLayout.desktop;
+		const parts = [ `direction: ${ tsString( base.direction ) }` ];
+		if ( base.gap ) {
+			parts.push( `gap: ${ base.gap }` );
+		}
+		if ( base.justify ) {
+			parts.push( `justify: ${ tsString( base.justify ) }` );
+		}
+		if ( base.align ) {
+			parts.push( `align: ${ tsString( base.align ) }` );
+		}
+		if ( base.labelInk ) {
+			parts.push( `labelInk: ${ tsString( base.labelInk ) }` );
+		}
+		// A device override only when the SOURCE changes direction there — an
+		// unchanged value would double the stylesheet for nothing.
+		for ( const device of [ 'tablet', 'mobile' ] as const ) {
+			const override = measuredRowLayout[ device ];
+			if ( ! override || override.direction === base.direction ) {
+				continue;
+			}
+			const overrideParts = [ `direction: ${ tsString( override.direction ) }` ];
+			if ( override.gap ) {
+				overrideParts.push( `gap: ${ override.gap }` );
+			}
+			parts.push( `${ device }: { ${ overrideParts.join( ', ' ) } }` );
+		}
+		entry.push( `rowLayout: { ${ parts.join( ', ' ) } }` );
+	}
+	// The NARROW, centred containers nested in the band (`ForgeBandNarrowBox`).
+	// The wrapper has no id, so the fact names its parent and the measured width.
+	if ( bandFacts?.narrowBoxes && bandFacts.narrowBoxes.length > 0 ) {
+		entry.push(
+			`narrowBoxes: [${ bandFacts.narrowBoxes
+				.map(
+					( box ) =>
+						`{ parentId: ${ tsString( box.parentId ) }, width: ${ box.width }, align: ${ tsString(
+							box.align
+						) }${ box.alignItems ? `, alignItems: ${ tsString( box.alignItems ) }` : '' } }`
+				)
+				.join( ', ' ) }]`
+		);
+	}
+	// WHERE the source stops splitting its own row.
+	//
+	// The measured lanes say it directly: at the device where their widths sum
+	// to more than the band's content column, they cannot be side by side, so
+	// the builder stacked them. eca.directory's team band is 286 / 954 on a
+	// desktop and 774 / 774 at 834px — two full-width lanes — while the rebuild
+	// kept a 179px copy column beside 595px of cards (2026-11-24).
+	const laneStacksAt = ( device: 'tablet' | 'mobile' ): boolean => {
+		const lanes = bandFacts?.columns?.[ device ] ?? [];
+		if ( lanes.length < 2 ) {
+			return false;
+		}
+		const total = lanes.reduce( ( sum, lane ) => sum + ( lane.width ?? 0 ), 0 );
+		const availableText =
+			typeof container.measure === 'string' ? container.measure : container.measure?.[ device ];
+		const available = availableText ? Number.parseFloat( availableText ) : NaN;
+		return Number.isFinite( available ) && available > 0 && total > available * 1.05;
+	};
+	if ( laneStacksAt( 'tablet' ) ) {
+		entry.push( `stackAt: 'tablet'` );
+	} else if ( laneStacksAt( 'mobile' ) ) {
+		entry.push( `stackAt: 'mobile'` );
 	}
 	// The split-hero + collage facts (125 §1) — layout, divider, heading
 	// type, backdrop shape, per-photo offsets, body columns.
 	if ( section.layout ) {
 		entry.push( `layout: ${ tsString( section.layout ) }` );
+	}
+	if ( section.mediaSide ) {
+		entry.push( `mediaSide: ${ tsString( section.mediaSide ) }` );
+	}
+	// The split's COPY MEASURE (`ForgeBandFacts.copyWidth`) — the builder's own
+	// cap on the lede's line length. Emitted for the band list, not only heroes:
+	// any two-lane band whose copy is pinned narrower than its lane needs it.
+	if ( bandFacts?.copyWidth ) {
+		entry.push( `copyWidth: ${ bandFacts.copyWidth }` );
+	}
+	// A SPACED row's per-item widths (absolute px), for the component that rebuilds
+	// it. The source spreads four counters across 1100px with `space-between`, and
+	// each states its own width (151 / 253 / 197 / 163); an equal-cell grid renders
+	// four 275px cells and wraps every label differently (eca.directory's stats
+	// band, 2026-11-25). A lane that fills the row is a heading the component
+	// renders itself, so it is left out.
+	if ( bandFacts?.rowLayout?.desktop?.justify === 'space-between' ) {
+		const lanes = ( bandFacts.columns?.desktop ?? [] )
+			.map( ( lane ) => Math.round( lane.width ?? 0 ) )
+			.filter( ( width ) => width > 0 );
+		const widest = lanes.length > 0 ? Math.max( ...lanes ) : 0;
+		const items = lanes.filter( ( width ) => width < widest * 0.9 );
+		if ( items.length >= 2 && widest > 0 ) {
+			entry.push( `statsWidths: [${ items.join( ', ' ) }]` );
+		}
+	}
+	// The page HERO, derived from MEASURED facts rather than markup: the band
+	// that owns the h1 and splits into a copy column beside a media column.
+	//
+	// A builder paints the hero's photo as a `background-image` on a spacer
+	// div, so the semantic pass (which reads `<img src>`) sees an empty media
+	// slot and the band falls back to its kind's own component — eca.directory's
+	// hero rebuilt as an icon-list with no picture at all (2026-11-24). The
+	// measured columns carry the truth: which side is the media, and how wide
+	// each side is. The h1 gate is what keeps a two-column TEAM band (h2, three
+	// avatars in its wide lane) from becoming a hero collage.
+	if ( ! section.layout && ! section.bgImage && bandFacts?.headings?.h1 ) {
+		const lanes = bandFacts?.columns?.desktop ?? [];
+		if ( lanes.length === 2 && lanes.some( ( lane ) => lane.image ) ) {
+			entry.push( `layout: 'split'` );
+		}
+	}
+	// The hero's COLLAGE, layer by layer.
+	//
+	// eca.directory's hero media column is five spacer divs, each painted with a
+	// background image (a green blob, two shapes and the student photo) that the
+	// vendor sheet overlaps with transforms. One image lost the composition — the
+	// blob and the shapes ARE the design — so every painted element of the media
+	// lane is emitted in DOM order with its measured height, and the renderer
+	// stacks them as layers.
+	if ( entry.some( ( line ) => line.startsWith( 'layout: ' ) ) ) {
+		const lanes = bandFacts?.columns?.desktop ?? [];
+		const mediaIndex = lanes.findIndex( ( lane ) => lane.image );
+		const lane = lanes[ mediaIndex ];
+		// A lane's element path carries its position as the 2nd segment when the
+		// band wraps its lanes in a container row (`e-con-inner`), and as the 1st
+		// when the lanes ARE the band's children. Both shapes occur.
+		const laneOf = ( path: string ): number | undefined => {
+			const segments = path.split( ' > ' );
+			const index = ( segment: string | undefined ): number | undefined => {
+				const match = segment ? /^div:nth-child\((\d+)\)$/.exec( segment ) : null;
+				return match ? Number( match[ 1 ] ) : undefined;
+			};
+			return index( segments[ 1 ] ) ?? index( segments[ 0 ] );
+		};
+		type Layer = { src: string; height?: number };
+		const layers = mediaIndex < 0
+			? []
+			: ( bandFacts?.elements ?? [] )
+					.filter( ( element ) => laneOf( element.path ) === mediaIndex + 1 )
+					.map( ( element ): Layer | undefined => {
+						const src = /background-image:\s*url\(\s*["']?([^"')]+)["']?\s*\)/i.exec( element.bg ?? '' )?.[ 1 ];
+						if ( ! src || ! /\.(?:png|jpe?g|webp|svg|gif|avif)(?:\?|$)/i.test( src ) ) {
+							return undefined;
+						}
+						const height =
+							typeof element.height === 'number' ? element.height : element.height?.desktop;
+						return { src, height };
+					} )
+					.flatMap( ( layer ): Layer[] => ( layer ? [ layer ] : [] ) )
+					// The BOTTOM layer (a blob) is painted first in DOM order and the photo
+					// last; keep that order, the renderer stacks from it.
+					.slice( 0, 6 );
+		if ( layers.length > 0 ) {
+			entry.push(
+				`mediaLayers: [${ layers
+					.map( ( layer ) => `{ src: ${ tsString( layer.src ) }${ layer.height ? `, height: ${ Math.round( layer.height ) }` : '' } }` )
+					.join( ', ' ) }]`
+			);
+		}
+		// The media LANE's measured height, always — not only for a layered
+		// collage. A single photo rendered at its intrinsic aspect made the whole
+		// band taller than the source (eca.directory's about-us hero: 544px built
+		// against 420px, so its copy sat 59px low, 2026-11-25). The source crops the
+		// picture to this box with `cover`; the rebuild must too.
+		if ( lane?.height ) {
+			entry.push( `mediaHeight: ${ Math.round( lane.height ) }` );
+		}
 	}
 	if ( section.titleDivider ) {
 		const divider = section.titleDivider;
@@ -1786,11 +2832,21 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tletterSpacing?: string;',
 		'\ttransform?: string;',
 		'\talign?: string;',
+		'\t/** The first family of the computed `font-family` \u2014 the source\u2019s',
+		'\t * own face for this LEVEL. A band can wear several: monicarajiv\u2019s h1 is',
+		'\t * Karma while the `alt-font` h3 beside it is Dancing Script, so the family',
+		'\t * belongs to the heading level, not to the band. */',
+		'\tfamily?: string;',
 		'\t/** Computed `color` \u2014 the source\u2019s own ink. A builder writes it as an',
 		'\t * inline `style` the sanitizer drops, so this is the only surviving copy. */',
 		'\tcolor?: string;',
 		'\t/** Computed `max-width` \u2014 a heading the source deliberately narrows. */',
 		'\tmaxWidth?: string;',
+		'\t/** Computed `margin-top` / `margin-bottom` — the builder\u2019s heading rhythm.',
+		'\t * An UNCLASSED heading has no class for a box fact to hang on, so without',
+		'\t * this the rebuilt heading falls back to the template\u2019s prose margins. */',
+		'\tmarginTop?: string;',
+		'\tmarginBottom?: string;',
 		'\t/** What the source CHANGES below the desktop breakpoint (and only that). */',
 		'\ttablet?: BandTypeProperties;',
 		'\tmobile?: BandTypeProperties;',
@@ -1802,6 +2858,9 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'',
 		'export interface SectionTheme {',
 		'\tid?: string;',
+		'\t/** The band\'s classified kind (Proposal 136 §4.2). Advisory: emitted as',
+		'\t * `data-section`, which is what the per-band fact gate compares. */',
+		'\tkind?: string;',
 		'\ttheme: SectionThemeName;',
 		'\t/** The source section anchor (the chrome nav links to it). */',
 		'\tanchor?: string;',
@@ -1809,8 +2868,41 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbg?: string;',
 		'\t/** The hero photo (hero sections only). */',
 		'\tbgImage?: string;',
+		'\tbgSize?: string;',
+		'\tbgRepeat?: string;',
+		'\tbgPosition?: string;',
+		'\tbgLayerOpacity?: number;',
+		'\tbgBlendMode?: string;',
 		'\t/** The overlay tint over the hero photo. */',
 		'\toverlay?: string;',
+		'\t/** The band\u2019s MARK STRIP \u2014 logos the source publishes as carousel',
+		'\t * `background-image` slides, which the classifier (reading `<img>` only)',
+		'\t * cannot see. Rendered as a `.ds-logos` row inside the band. */',
+		'\tlogos?: Array<{ src: string; alt?: string }>;',
+		'/\*\* The band\u2019s COMPARISON MATRIX \u2014 role columns against feature rows,\n			 * recorded at analyze time from the raw HTML because sanitisation strips\n			 * the check/cross `<svg>` the build-time classifier would need. Rendered\n			 * as a real table AFTER the band\u2019s own component (the band usually holds\n			 * cards too). */',
+		'\tcomparison?: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string; hiddenAt?: Array<"tablet" | "mobile"> };',
+		'/\*\* MEASURED STRUCTURE (see `ForgeSection.structure`). One entry per\n			 * measured structure; rendered IN ADDITION to the band\u2019s classified kind,\n			 * never instead of it. `comparison` above is the typed fast path. */',
+		'\tstructure?: Array<{ type: string; data?: { columns: string[]; rows: Array<{ label: string; values: string[] }>; caption?: string; hiddenAt?: Array<"tablet" | "mobile"> }; source?: "vision"; model?: string; confidence?: number; note?: string }>;',
+		'\t/** The band\u2019s measured PAGED carousel (`bandFacts[].carousel`) \u2014',
+		'\t * slides-per-view and the gutter the source renders. A logo wall is as',
+		'\t * often a slider as a static row, and the difference is only measurable',
+		'\t * in the browser: the markup names the vendor, not the geometry. */',
+		'\tcarousel?: { selector?: string; count?: number; perView?: number; gap?: number; dots?: number };',
+		'\t/** The band\u2019s PANEL surface \u2014 the source sets its content on ONE',
+		'\t * coloured slab (see `ForgeSection.panel`). `ink` is the legible foreground',
+		'\t * on that slab; `width`/`align` place a slab that fills only PART of the',
+		'\t * band (the heading sits on it too). */',
+		"\tpanel?: { bg: string; ink: string; width?: string; align?: 'start' | 'center' | 'end' };",
+		'\t/** The ink a CARD\u2019s body copy inherits inside this band. Emitted only',
+		' * when the band paints the same surface the card does, i.e. when the',
+		' * measured body ink was measured ON the card: the template\u2019s blanket',
+		' * `.ds-section .ds-card p` rule would otherwise paint the band\u2019s cards',
+		' * with the `muted` token instead of the source\u2019s own ink. */',
+		'\tcardInk?: string;',
+		'\t/** The measured EYEBROW — the small label the source stacks above the\n\t * title. Rendered above the heading at its own measured size: a builder\n\t * publishes the kicker as a real heading (often the SAME tag at a fraction\n\t * of the size), which no tag-level heuristic can separate from the title. */',
+		'\teyebrow?: { text: string; level?: number; size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; maxWidth?: string; marginTop?: string; marginBottom?: string };',
+		'\t/** The measured TITLE text — the LARGEST heading the band renders. */',
+		'\ttitleText?: string;',
 		'\t/** The source band padding (the declared padding fact). */',
 		'\tpadding?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\t/** The boxed container width (the source constrains its content —',
@@ -1849,7 +2941,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * otherwise renders at the browser default heading scale (a 40px source',
 		'\t * `<h3>` came out at 15.21px = 1.17em of the 13px body). `title` is the',
 		'\t * band\u2019s LARGEST heading \u2014 the visual title the components size from. */',
-		'\ttype?: { headings?: Record<string, BandTypeFact>; body?: BandTypeFact; title?: BandTypeFact; titleLevel?: string };',
+		'\ttype?: { headings?: Record<string, BandTypeFact>; body?: BandTypeFact; title?: BandTypeFact; titleLevel?: string; /** The page owns this band’s h1 (front page) — see title-tag.ts. */ allowH1?: boolean };',
 		'\t/** Selectors for subtrees the SOURCE renders hidden at rest (accordion',
 		'\t * panels, tab panes) — emitted as scoped `display:none` rules. */',
 		'\thidden?: string[];',
@@ -1874,13 +2966,15 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * keyed by a STRUCTURAL path relative to the band (a class name repeats',
 		'\t * across bands and elements). Raw bands keep the source markup, so the',
 		'\t * path resolves to the same node in the rebuild. */',
-		'\telements?: Array<{ path: string; bg?: string; fg?: string; height?: number | { desktop?: number; tablet?: number; mobile?: number } }>;',
+		'\telements?: Array<{ path: string; bg?: string; veil?: string; fg?: string; height?: number | { desktop?: number; tablet?: number; mobile?: number }; width?: number | { desktop?: number; tablet?: number; mobile?: number } }>;',
 		'\t/** The band\u2019s measured COLUMN geometry, keyed by the column\u2019s',
 		'\t * unique class: a rendered `min-height` floor plus a fixed background',
 		'\t * photo\u2019s attachment/size. Emitted as band-scoped `.class` rules \u2014 the',
 		'\t * sanitizer keeps the class but drops the inline layout, and the vendor',
 		'	 * sheet never ships. */',
 		'	columnBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'	/** The per-column INNER padding (targets `.<class> > .col-inner`). */',
+		'	columnInner?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'	/** The band\u2019s measured CAROUSEL geometry, keyed by the carousel\u2019s',
 		'	 * unique class: slides-per-view, gutter and the track\u2019s scroll',
 		'	 * behaviour. A vendor slider keeps `items` in its JS options, so the',
@@ -1905,10 +2999,63 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t\thiddenMobile?: boolean;',
 		'\t\thiddenTablet?: boolean;',
 		'\t\thiddenDesktop?: boolean;',
+		'\t\t/** The column\u2019s own painted SURFACE (see ForgeSectionColumn) \u2014 a',
+		'\t\t * builder panel. Measured, never guessed: the vendor stylesheet never',
+		'\t\t * ships and the sanitiser drops the inline style. */',
+		'\t\tbgColor?: string;',
+		'\t\tbgImage?: string;',
+		'\t\t/** The ink that lane\u2019s own surface needs (`inkForSurface`). */',
+		'\t\tink?: string;',
 		'\t}>;',
+		'\t/** The rows NESTED inside the band (`ForgeBandRowFact`): a container',
+		'\t * that lays two or more lanes out side by side, with the lane widths the',
+		'\t * source rendered. A raw band keeps the markup but never the vendor\u2019s',
+		'\t * flex CSS, so without these every nested row stacked. */',
+		'\trows?: Array<{ id: string; widths: number[] }>;',
+		'\t/** How the band\u2019s OWN row lays its lanes out (`ForgeBandRowLayout`):',
+		'\t * `row` lays them side by side, `column` stacks them, and `gap` is the',
+		'\t * space between the stacked lanes. The lane widths alone cannot say',
+		'\t * which — two full-width lanes are a stack. */',
+		'\trowLayout?: {',
+		"\t\tdirection: 'row' | 'column';",
+		'\t\tgap?: number;',
+		'\t\tjustify?: string;',
+		'\t\talign?: string;',
+		'\t\t/** The band\u2019s LABEL ink (a counter title / dd), when one is present:',
+		'\t\t * the muted default is unreadable on a dark panel. */',
+		'\t\tlabelInk?: string;',
+		"\t\ttablet?: { direction: 'row' | 'column'; gap?: number };",
+		"\t\tmobile?: { direction: 'row' | 'column'; gap?: number };",
+		'\t};',
+		'\t/** The NARROW containers nested in the band, measured: a builder insets',
+		'\t * copy by wrapping it in a smaller centred container (500px inside 1280).',
+		'\t * The wrapper has no builder id, so the fact names its PARENT. */',
+		"\tnarrowBoxes?: Array<{ parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string }>;",
+		'\t/** The breakpoint at which the SOURCE stops laying its own lanes side',
+		'\t * by side (`analyze --geometry`, measured): the rebuild stacks there',
+		'\t * instead of squeezing a copy column. Absent → the template\u2019s mobile',
+		'\t * breakpoint, which is where almost every builder stacks. */',
+		'\tstackAt?: \'tablet\' | \'mobile\';',
+		'\t/** The hero collage, layer by layer (`analyze --geometry` element facts):',
+		'\t * a builder stacks the blob, the shapes and the photo as separate painted',
+		'\t * spacers, so one image loses the composition. In DOM order, bottom first. */',
+		'\tmediaLayers?: Array<{ src: string; height?: number }>;',
+		'\t/** The media lane\u2019s measured height, so the layers have a box to sit in. */',
+		'\tmediaHeight?: number;',
 		'\t/** The content rhythm (125 §1) — \'split\' = a copy column beside a',
 		'\t * media collage column (the source\'s two-column hero bands). */',
 		"\tlayout?: 'split';",
+		'\t/** Which side of the split holds the media (`left` | `right`) — measured',
+		'\t * from the lane order, so a mirror-image design is not rebuilt flipped. */',
+		'\tmediaSide?: \'left\' | \'right\';',
+		'\t/** The split\u2019s COPY lane measure in px (`ForgeBandFacts.copyWidth`):',
+		'\t * the builder pinned the lede narrower than its lane, and the rule',
+		'\t * that did it never ships. Applied as a max-width on the copy body. */',
+		'\tcopyWidth?: number;',
+		'\t/** A spaced row\u2019s per-item widths in px (`statsWidths`): the source',
+		'\t * states each counter\u2019s own width, so an equal-cell grid wraps the',
+		'\t * labels differently. Applied to the stats list in DOM order. */',
+		'\tstatsWidths?: number[];',
 		'\t/** The heading\'s underline divider facts (width/height/background/shadow). */',
 		'\ttitleDivider?: { width: string; height: string; background: string; shadow?: string };',
 		'\t/** The heading typography (size/weight/line-height/letter-spacing). */',
@@ -1992,6 +3139,31 @@ export function renderPagesGenerated( profile: SiteProfile ): string {
 }
 
 /**
+ * A chrome href, made LOCAL.
+ *
+ * The nav is MEASURED from the live site, so every menu item carries the CMS's
+ * absolute URL — and clicking it left the rebuilt front end for the WordPress
+ * install it is meant to replace (eca.directory: Home / About Us / Contact Us,
+ * 2026-11-24). A same-origin URL becomes its path plus hash; an off-site URL is
+ * a genuine outbound link and is left exactly as it is.
+ */
+function localHref( href: string | undefined, origin: string | undefined ): string | undefined {
+	if ( ! href || ! origin ) {
+		return href;
+	}
+	try {
+		const base = new URL( origin );
+		const target = new URL( href, base );
+		if ( target.origin !== base.origin ) {
+			return href;
+		}
+		return `${ target.pathname }${ target.search }${ target.hash }`;
+	} catch {
+		return href;
+	}
+}
+
+/**
  * Render the generated site-chrome module (120 §2) —
  * src/lib/chrome.generated.ts. The source header/footer facts (profile
  * design.chrome) bake into a deterministic module the layout reads; absent
@@ -2051,11 +3223,16 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t * hero); `headerBg` is then absent on purpose. */',
 		'\theaderTransparent?: boolean;',
 		'	call?: { label: string; href: string; bg?: string; ink?: string; style?: ForgeChromeStyle };',
-		'	footerBlocks?: Array<{ title?: string; items: string[] }>;',
-		'	footerHeadingStyle?: ForgeChromeStyle;',
-		'	copyright?: string;',
-		'	/** The footer social links (label/href plus the source icon class). */',
-		'	social?: Array<{ label?: string; href: string; icon?: string }>;',
+		'\tfooterBlocks?: Array<{ title?: string; items: string[] }>;',
+		'\t/** The links a footer LINE carries, as `{ text, href }`. A builder',
+		'\t * publishes the \u00a9 statement as one line with only the credit linked, so',
+		'\t * the anchor is a SUFFIX inside a line, not a line of its own. */',
+		'\tfooterLinks?: Array<{ text: string; href: string }>;',
+		'\tfooterHeadingStyle?: ForgeChromeStyle;',
+		'\tcopyright?: string;',
+		'\t/** The footer social links (label/href plus the source icon class).',
+		'\t * `href` is absent for a badge the source drives from JS. */',
+		'\tsocial?: Array<{ label?: string; href?: string; icon?: string }>;',
 		'	/** The site favicon (the first <link rel="icon"> href, absolute). */',
 		'	favicon?: string;',
 		'\t/** The source icon-font stylesheet (the icons CSS link, e.g. the theme\'s',
@@ -2090,13 +3267,16 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t\toverlay?: boolean;',
 		'\t\tfullWidth?: boolean;',
 		'\t};',
-		'\t/** The header\u2019s BOX per viewport (measured): the container\u2019s cap and',
-		'\t * gutter. `measure` is present only where the cap is binding. */',
+		'\t/** The header\u2019s BOX per viewport (measured): the container\u2019s cap,',
+		'\t * gutter and the brand mark\u2019s rendered height. `measure` is present only',
+		'\t * where the cap is binding. */',
+		'\t/** The header trailing controls: icon links and labelled CTA pills. */',
+		'\theaderActions?: Array<{ icon?: string; label?: string; href?: string; text?: string; fill?: string; ink?: string; hideMobile?: boolean; style?: { padding?: string; radius?: string; size?: string; weight?: string; transform?: string; letterSpacing?: string } }>;',
 		'\tgeometry?: {',
-		'\t\twide?: { measure?: number; padX?: number };',
-		'\t\tdesktop?: { measure?: number; padX?: number };',
-		'\t\ttablet?: { measure?: number; padX?: number };',
-		'\t\tmobile?: { measure?: number; padX?: number };',
+		"\t\twide?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
+		"\t\tdesktop?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
+		"\t\ttablet?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
+		"\t\tmobile?: { measure?: number; padX?: number; logoHeight?: string; logoAlign?: 'start' | 'center' | 'end' };",
 		'\t};',
 		'\t/** The footer brand ROW: where the brand mark and the social icons sit',
 		'\t * inside it, per viewport (measured at 1920/1440/834/390). */',
@@ -2107,6 +3287,12 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		"\t\tmobile?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end'; logoHeight?: string };",
 		'\t\t/** The sub-footer row paints a hairline above the copyright bar. */',
 		'\t\tdivider?: boolean;',
+		'\t\t/** The social BADGE box (a builder\u2019s filled style is a rounded',
+		'\t\t * SQUARE, not the template\u2019s 2.25rem circle). */',
+		'\t\tsocial?: { size?: string; radius?: string; bg?: string; ink?: string };',
+		'\t\t/** The footer\u2019s © row type + alignment (the template renders footer',
+		'\t\t * blocks as left-aligned body copy). */',
+		'\t\ttext?: { size?: string; weight?: string; ink?: string; linkInk?: string; align?: \'start\' | \'center\' | \'end\' };',
 		'\t};',
 		'\t/** True when the SOURCE exposes a theme / colour-mode control; absent',
 		'\t * means the site has none, so the toggle is not rendered. */',
@@ -2180,7 +3366,11 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		entry.push( `tagline: ${ tsString( chrome.tagline ) }` );
 	}
 	if ( chrome.nav && chrome.nav.length > 0 ) {
-		entry.push( `nav: [${ chrome.nav.map( ( item ) => `{ label: ${ tsString( item.label ) }, href: ${ tsString( item.href ) } }` ).join( ', ' ) }]` );
+		entry.push(
+			`nav: [${ chrome.nav
+				.map( ( item ) => `{ label: ${ tsString( item.label ) }, href: ${ tsString( localHref( item.href, profile.url ) ?? item.href ?? '/' ) } }` )
+				.join( ', ' ) }]`
+		);
 	}
 	if ( chrome.navStyle ) {
 		entry.push( `navStyle: ${ renderChromeStyle( chrome.navStyle ) }` );
@@ -2226,6 +3416,12 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 			if ( typeof box.padX === 'number' ) {
 				fields.push( `padX: ${ box.padX }` );
 			}
+			if ( box.logoHeight ) {
+				fields.push( `logoHeight: ${ tsString( box.logoHeight ) }` );
+			}
+			if ( box.logoAlign ) {
+				fields.push( `logoAlign: ${ tsString( box.logoAlign ) }` );
+			}
 			if ( fields.length > 0 ) {
 				devices.push( `${ device }: { ${ fields.join( ', ' ) } }` );
 			}
@@ -2233,6 +3429,48 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		if ( devices.length > 0 ) {
 			entry.push( `geometry: { ${ devices.join( ', ' ) } }` );
 		}
+	}
+	// The trailing ICON links and the labelled CTA PILLS, beside the per-viewport
+	// boxes. A glyph comes from the vendor font (which never ships) so the
+	// rebuild re-draws it; a pill carries its own measured fill/ink/box. Both are
+	// `headerActions` to the template — it renders a pill when `text` is present.
+	const actionFacts = [ ...( chrome.geometry?.actions ?? [] ), ...( chrome.headerActions ?? [] ) ].filter(
+		( action, index, list ) =>
+			list.findIndex( ( other ) => ( other.text ?? other.icon ?? other.label ) === ( action.text ?? action.icon ?? action.label ) ) === index
+	);
+	if ( actionFacts.length > 0 ) {
+		const actions = actionFacts.map( ( action ) => {
+			const parts: string[] = [];
+			if ( action.icon ) {
+				parts.push( `icon: ${ tsString( action.icon ) }` );
+			}
+			if ( action.label ) {
+				parts.push( `label: ${ tsString( action.label ) }` );
+			}
+			if ( action.href ) {
+				parts.push( `href: ${ tsString( action.href ) }` );
+			}
+			// A labelled pill (the source's own header CTA) plus its measured
+			// fill/ink/box — the template renders it as a button, not a glyph.
+			if ( action.text ) {
+				parts.push( `text: ${ tsString( action.text ) }` );
+			}
+			if ( action.fill ) {
+				parts.push( `fill: ${ tsString( action.fill ) }` );
+			}
+			if ( action.ink ) {
+				parts.push( `ink: ${ tsString( action.ink ) }` );
+			}
+			if ( action.style ) {
+				parts.push( `style: ${ JSON.stringify( action.style ) }` );
+			}
+			// The source hides its conversion pills on phones.
+			if ( ( action as { hideMobile?: boolean } ).hideMobile ) {
+				parts.push( 'hideMobile: true' );
+			}
+			return `{ ${ parts.join( ', ' ) } }`;
+		} );
+		entry.push( `headerActions: [ ${ actions.join( ', ' ) } ]` );
 	}
 	if ( chrome.footerBrand ) {
 		const parts: string[] = [];
@@ -2257,6 +3495,24 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		}
 		if ( typeof chrome.footerBrand.divider === 'boolean' ) {
 			parts.push( `divider: ${ chrome.footerBrand.divider }` );
+		}
+		if ( chrome.footerBrand.social ) {
+			const social = chrome.footerBrand.social;
+			const fields = ( [ 'size', 'radius', 'bg', 'ink' ] as const )
+				.filter( ( key ) => social[ key ] )
+				.map( ( key ) => `${ key }: ${ tsString( social[ key ] as string ) }` );
+			if ( fields.length > 0 ) {
+				parts.push( `social: { ${ fields.join( ', ' ) } }` );
+			}
+		}
+		if ( chrome.footerBrand.text ) {
+			const text = chrome.footerBrand.text;
+			const fields = ( [ 'size', 'weight', 'ink', 'linkInk', 'align' ] as const )
+				.filter( ( key ) => text[ key ] )
+				.map( ( key ) => `${ key }: ${ tsString( text[ key ] as string ) }` );
+			if ( fields.length > 0 ) {
+				parts.push( `text: { ${ fields.join( ', ' ) } }` );
+			}
 		}
 		if ( parts.length > 0 ) {
 			entry.push( `footerBrand: { ${ parts.join( ', ' ) } }` );
@@ -2319,12 +3575,22 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 				.join( ', ' ) }]`
 		);
 	}
+	if ( chrome.footerLinks && chrome.footerLinks.length > 0 ) {
+		entry.push(
+			`footerLinks: [ ${ chrome.footerLinks
+				.map( ( link ) => `{ text: ${ tsString( link.text ) }, href: ${ tsString( link.href ) } }` )
+				.join( ', ' ) } ]`
+		);
+	}
 	if ( chrome.copyright ) {
 		entry.push( `copyright: ${ tsString( chrome.copyright ) }` );
 	}
 	if ( chrome.social && chrome.social.length > 0 ) {
 		const links = chrome.social.map( ( link ) => {
-			const parts = [ `href: ${ tsString( link.href ) }` ];
+			const parts: string[] = [];
+			if ( link.href ) {
+				parts.push( `href: ${ tsString( link.href ) }` );
+			}
 			if ( link.label ) {
 				parts.push( `label: ${ tsString( link.label ) }` );
 			}
@@ -2418,8 +3684,9 @@ export function renderTrackingGenerated( profile: SiteProfile ): string {
 		'// edits are overwritten on re-scaffold. The measured tracking surface: the',
 		'// enabled vendors with their PUBLIC ids, the consent configuration, the',
 		'// verification tokens and the delivery/ecommerce rules. The template',
-		'// rebuilds every vendor with first-party, consent-gated delivery — never',
-		'// the source\'s snippets.',
+		'// rebuilds every vendor with first-party delivery — consent-gated for a',
+		'// cookie-setting tag, static for an operator-exempt cookieless beacon — and',
+		'// never re-uses the source\'s snippets.',
 		'// ---------------------------------------------------------------------------',
 		'',
 		'export type TrackingConsentCategory = \'analytics\' | \'advertising\' | \'functional\' | \'personalization\';',
@@ -2428,6 +3695,10 @@ export function renderTrackingGenerated( profile: SiteProfile ): string {
 		'\tvendor: string;',
 		'\tcategory: string;',
 		'\tconsentCategory: TrackingConsentCategory;',
+		'\t/** Cookieless audience measurement — stores nothing on the device. */',
+		'\tcookieless?: boolean;',
+		'\t/** Operator-declared basis to load without a consent decision. */',
+		'\tconsentExempt?: boolean;',
 		'\tids: Record<string, string>;',
 		'}',
 		'',
@@ -2446,12 +3717,15 @@ export function renderTrackingGenerated( profile: SiteProfile ): string {
 		'\t\tenforceCsp?: boolean;',
 		'\t};',
 		'\tverification?: Record<string, string>;',
+		'\t/** SPA route measurement for the beacon; false for a static MPA build. */',
+		'\tspa: boolean;',
 		'\tdelivery: { mode: \'deferred\' | \'inline\' | \'partytown\' };',
 		'\tecommerce?: { events?: \'ga4\' | \'none\'; purchaseSource?: \'wordpress\' | \'forge\' };',
 		'}',
 		'',
 		'export const tracking: TrackingConfig = {',
 		`\tenabled: ${ vendors.length > 0 },`,
+		`\tspa: ${ tracking?.spa === true },`,
 	];
 	if ( vendors.length === 0 ) {
 		lines.push( '\tvendors: [],' );
@@ -2461,11 +3735,20 @@ export function renderTrackingGenerated( profile: SiteProfile ): string {
 			const ids = Object.entries( vendor.ids )
 				.map( ( [ key, value ] ) => `${ tsKey( key ) }: ${ tsString( value ) }` )
 				.join( ', ' );
-			lines.push(
-				`\t\t{ vendor: ${ tsString( vendor.vendor ) }, category: ${ tsString( vendor.category ) }, consentCategory: ${ tsString(
-					consentCategoryFor( vendor.category )
-				) }, ids: { ${ ids } } },`
-			);
+			// The consent exemption is reachable ONLY for a cookieless vendor. A
+			// cookie-setting tag marked exempt is a compliance bug, so the flag is
+			// dropped here rather than trusted — nothing downstream can re-enable it.
+			const cookieless = isCookielessVendor( vendor.vendor );
+			const exempt = cookieless && vendor.consentExempt === true;
+			const fields = [
+				`vendor: ${ tsString( vendor.vendor ) }`,
+				`category: ${ tsString( vendor.category ) }`,
+				`consentCategory: ${ tsString( consentCategoryFor( vendor.category ) ) }`,
+				...( cookieless ? [ 'cookieless: true' ] : [] ),
+				...( exempt ? [ 'consentExempt: true' ] : [] ),
+				`ids: { ${ ids } }`,
+			].join( ', ' );
+			lines.push( `\t\t{ ${ fields } },` );
 		}
 		lines.push( '\t],' );
 	}
@@ -2661,7 +3944,7 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 		kind: string;
 		effect?: string;
 		speed?: number;
-		pieces?: Array<{ depth?: number; origin?: string; off?: number; direction?: string; speed?: number }>;
+		pieces?: Array<{ depth?: number; origin?: string; off?: number; direction?: string; speed?: number; axis?: string }>;
 	}>;
 	const header = [
 		'# Motion contract',
@@ -2704,7 +3987,11 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 	}
 	const rows = entries.map( ( entry ) => {
 		const behaviour = entry.effect && entry.kind !== 'sticky' ? `${ entry.kind } (${ entry.effect })` : entry.kind;
-		const baseRange = entry.kind === 'parallax' && entry.speed ? `±${ Math.min( entry.speed, 4 ) * 24 }px` : '—';
+		const horizontal = entry.kind === 'parallax' && ( entry.pieces ?? [] ).some( ( piece ) => piece.axis === 'x' );
+		const baseRange =
+			entry.kind === 'parallax' && entry.speed
+				? `±${ Math.min( entry.speed, 4 ) * 24 }px${ horizontal ? ' (horizontal)' : '' }`
+				: '—';
 		// A piece-level parallax band names its sources: depth/origin/off decide
 		// direction and the mobile gate, so a reviewer can check the source facts.
 		const range =
@@ -2815,7 +4102,9 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 		'\tid?: string;',
 		'\tsrc?: string;',
 		'\tindex?: number;',
-		'\ttype?: \'position\' | \'background\';',
+		'	type?: \'position\' | \'background\';',
+		'	/** The axis the piece travels on; absent = vertical. */',
+		'	axis?: \'x\' | \'y\';',
 		'\tdepth?: number;',
 		'\torigin?: \'top\' | \'bottom\' | \'middle\';',
 		'\toff?: number;',
@@ -2881,6 +4170,9 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 				if ( piece.type ) {
 					fields.push( `type: ${ tsString( piece.type ) }` );
 				}
+				if ( piece.axis ) {
+					fields.push( `axis: ${ tsString( piece.axis ) }` );
+				}
 				if ( piece.depth !== undefined ) {
 					fields.push( `depth: ${ piece.depth }` );
 				}
@@ -2945,6 +4237,39 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 }
 
 /**
+ * The media carriers a parallax band also animates, keyed by band + ordinal.
+ *
+ * A HERO band is excluded: global.css deliberately keeps `.ds-section-wrap--hero`
+ * static (125 §5 — a band translate overlapped the flush band below it), so
+ * composing the parallax animation into a hero carrier would silently undo that
+ * decision. `piece.type === 'background'` is excluded too — the renderer skips
+ * it rather than faking `background-position` with a transform.
+ */
+function parallaxCarriersOf( profile: SiteProfile ): ParallaxCarrier[] {
+	const entries = profile.design?.behavior?.entries ?? [];
+	const heroIds = new Set(
+		( profile.design?.sections ?? [] )
+			.filter( ( section ) => section.kind === 'hero' && section.id )
+			.map( ( section ) => section.id as string )
+	);
+
+	const carriers: ParallaxCarrier[] = [];
+	for ( const entry of entries ) {
+		if ( entry.kind !== 'parallax' || ! entry.id || heroIds.has( entry.id ) ) {
+			continue;
+		}
+		// `parallaxPieceCss` falls back to the piece's ARRAY POSITION, so mirror it.
+		entry.pieces?.forEach( ( piece, position ) => {
+			if ( piece.type === 'background' ) {
+				return;
+			}
+			carriers.push( { bandId: entry.id as string, mediaIndex: piece.index ?? position } );
+		} );
+	}
+	return carriers;
+}
+
+/**
  * Render `src/lib/animations.generated.ts` — the finite, layout-safe CSS
  * keyframe rebuild (2026-11-12). JS runtimes and infinite motion never reach
  * this file; they live in MOTION.md as deferred facts.
@@ -2953,7 +4278,7 @@ export function renderAnimationsGenerated( profile: SiteProfile ): string {
 	const facts = planAnimationRebuild( profile.animations?.facts ?? [], profile.design?.behavior, {
 		allowInfinite: true,
 	} );
-	const css = animationRebuildCss( facts );
+	const css = animationRebuildCss( facts, parallaxCarriersOf( profile ) );
 	const hasInfiniteMotion = facts.some( ( fact ) => fact.rebuild === 'css' && fact.infinite === true );
 	return [
 		'// ---------------------------------------------------------------------------',
@@ -3045,7 +4370,7 @@ export const OG_DEV_DEPENDENCIES: Record<string, string> = {
  * exist only in 'ssr' mode; 'static' removes both lines. The template
  * carries the markers — matching is line-anchored like the FORGE:site span.
  */
-export function renderAstroConfig(source: string, render: RenderMode, managed = false): string {
+export function renderAstroConfig(source: string, render: RenderMode, managed = false, frontController = false): string {
 	const lines = source.split(/\r?\n/);
 	const importLine = lines.findIndex((line) => line.trim() === '// FORGE:adapter-import');
 	const configLine = lines.findIndex((line) => line.trim() === '// FORGE:render-config');
@@ -3067,7 +4392,11 @@ export function renderAstroConfig(source: string, render: RenderMode, managed = 
 		if (i === configLine) {
 			if (render === 'ssr') {
 				out.push("\toutput: 'server',");
-				out.push("\tadapter: node({ mode: 'standalone' }),");
+				out.push(
+					frontController
+						? "\tadapter: node({ mode: 'middleware' }),"
+						: "\tadapter: node({ mode: 'standalone' }),"
+				);
 			}
 			if (managed) {
 				// Proposal 135: tag-based route caching backs the revalidate route.
@@ -3369,6 +4698,32 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
  * the new one is committed. A locked target (a dev server, watcher or editor
  * holding it) fails the rename BEFORE anything is destroyed, with an
  * actionable message rather than a half-written project. */
+/**
+ * Rename with a bounded retry for the Windows lock window.
+ *
+ * A just-written 900 KB bundle (the §7b vendor step) can still be held by
+ * Defender or the search indexer for a moment, and the rename of the staging
+ * directory then answers EPERM/EBUSY. Retrying is the documented remedy; the
+ * LAST error still surfaces, so a real lock is never masked.
+ */
+async function renameWithRetry( from: string, to: string, attempts = 5 ): Promise< void > {
+	let last: unknown;
+	for ( let attempt = 0; attempt < attempts; attempt += 1 ) {
+		try {
+			await rename( from, to );
+			return;
+		} catch ( error ) {
+			last = error;
+			const code = ( error as NodeJS.ErrnoException ).code ?? '';
+			if ( code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES' ) {
+				throw error;
+			}
+			await new Promise( ( resolve ) => setTimeout( resolve, 50 * ( attempt + 1 ) ) );
+		}
+	}
+	throw last;
+}
+
 async function swapStagedProject(stagingDir: string, finalDir: string): Promise<void> {
 	const backupDir = `${finalDir}.forge-old-${process.pid}-${Date.now()}`;
 	let hadTarget = false;
@@ -3391,7 +4746,7 @@ async function swapStagedProject(stagingDir: string, finalDir: string): Promise<
 	}
 
 	try {
-		await rename(stagingDir, finalDir);
+		await renameWithRetry(stagingDir, finalDir);
 	} catch (error) {
 		if (hadTarget) {
 			await rename(backupDir, finalDir).catch(() => undefined);
@@ -3413,19 +4768,44 @@ async function scaffoldProject(
 	targetDir: string
 ): Promise<ScaffoldResult> {
 	const preset = PRESETS[options.preset ?? 'blog'];
+	// A variant must be compatible with the PRESET — `product-3d` is a commerce
+	// surface, and dropping a viewer (plus a vendored runtime) into a site with
+	// no products is a silent misconfiguration. Fail before any write.
+	if (options.variant && !preset.variants.includes(options.variant)) {
+		const allowed = preset.variants.length > 0 ? preset.variants.join(', ') : 'none';
+		throw new Error(
+			`Template variant "${options.variant}" is not compatible with the "${preset.name}" preset (allowed: ${allowed}).`
+		);
+	}
 	// The preset's collection-profile half applies here so a preset scaffold
 	// is self-contained (idempotent when the caller already applied it —
 	// applyPresetToProfile re-filters to the same result).
-	const profile = applyPresetToProfile(options.profile, options.preset ?? 'blog');
+	// A materialized profile (the CMS is gone) then makes every collection
+	// absent-tolerant: the snapshot defines what exists, and a collection it
+	// does not carry is EMPTY, not a failed build.
+	const profile = withMaterializedDefaults(applyPresetToProfile(options.profile, options.preset ?? 'blog'));
 	// Proposal 135: the managed tier needs a Node process (the BFF + the
 	// revalidate endpoint), so it requires server output. Infer it from the
 	// runtime tier; an explicit conflicting --render still fails closed BEFORE
 	// any writes — a half-scaffolded managed project is worse than an error.
-	const managed = profile.deploy?.runtime === 'managed';
+	// `deploy.manage` is itself a managed-only surface (Proposal 165 §7), so it
+	// implies the same tier even when `runtime` is omitted.
+	const managed = profile.deploy?.runtime === 'managed' || profile.deploy?.manage === true;
 	const render: RenderMode = options.render ?? (managed ? 'ssr' : preset.render);
 	if (managed && render !== 'ssr') {
 		throw new Error('A managed site uses server output — scaffold it with --render ssr (Proposal 135).');
 	}
+	// Proposal 165 §7b — the vendored bundle only makes sense inside the manage
+	// page, and the manage page only exists on the managed tier. Refuse rather
+	// than emit a project that half-has an editor.
+	if ( profile.deploy?.manageBundle === true && ! ( managed && profile.deploy?.manage === true ) ) {
+		throw new Error(
+			'deploy.manageBundle requires BOTH deploy.runtime: "managed" and deploy.manage: true — the bundle is served by the /manage page (Proposal 165 §7b).'
+		);
+	}
+	// Resolved inside the managed block below; hoisted because the manifest (§4)
+	// records its fingerprints after every generated write has landed.
+	let manageBundle: ManageBundle | undefined;
 	const templateDir = await resolveTemplateDir(options.template);
 
 	// 1. Copy the template (never copy its build artifacts or lockfile state).
@@ -3439,12 +4819,27 @@ async function scaffoldProject(
 		},
 	});
 
+	// 1b. Optional template variant — an ADDITIVE overlay on the copy above, so
+	//     the base template stays the single source of truth. Placement matters:
+	//     it lands BEFORE the FORGE-marker rewrites, which must still win over
+	//     any file a variant ships.
+	if (options.variant) {
+		if (!isTemplateVariant(options.variant)) {
+			throw new Error(
+				`Unknown template variant "${options.variant}" — expected one of: ${TEMPLATE_VARIANTS.join(', ')}`
+			);
+		}
+		await applyTemplateVariant(targetDir, options.variant);
+	}
+
 	// 2. Vendor the forge libs so the customer repo builds standalone.
 	const forgeDir = path.join(targetDir, 'src', 'forge');
 	await mkdir(forgeDir, { recursive: true });
 	for (const file of FORGE_LIB_FILES) {
 		await copyFile(path.join(FORGE_ROOT, 'lib', file), path.join(forgeDir, file));
 	}
+	// The ECA normaliser is already vendored above (FORGE_LIB_FILES) because
+	// `types.ts` imports its config type in every project.
 
 	// 2b. Ship the NOTICE — MIT attribution for the vendored libs plus the
 	//     generated-output rule (the customer owns the site).
@@ -3454,6 +4849,13 @@ async function scaffoldProject(
 	const configPath = path.join(targetDir, 'src', 'content.config.ts');
 	const source = await readFile(configPath, 'utf8');
 	await writeFile(configPath, rewriteContentConfig(source, profile), 'utf8');
+
+	// 3a. ECA catalogue (Proposal 163 §P1) — the site config module. Grounded on
+	//     `profile.eca` so a non-ECA rebuild is byte-identical to today's output.
+	//     The routes that consume it land in §P2.
+	if (profile.eca) {
+		await writeFile(path.join(targetDir, ECA_CONFIG_PATH), renderEcaGenerated(profile), 'utf8');
+	}
 
 	// 3a0. Tracker & measurement capture (Proposal 130) — bake the measured
 	//      tracking surface into src/lib/tracking.generated.ts and drop the
@@ -3492,10 +4894,19 @@ async function scaffoldProject(
 	// 3a. Apply the design language (tokens_apply v2 — Proposal 114 §3.3) over
 	//     the --forge-* defaults, gate the rendered pairs against WCAG, and
 	//     write the resolved design module the audit endpoint reads.
-	const mergedTokens = mergeTokens( profile.design, profile.tokens, profile.colors );
+	const mergedTokens = mergeTokens( profile.design, profile.tokens, profile.colors, accentFamilyOf( profile ) );
 	const cssPath = path.join( targetDir, 'src', 'styles', 'global.css' );
 	const css = await readFile( cssPath, 'utf8' );
 	await writeFile( cssPath, rewriteGlobalCss( css, mergedTokens ), 'utf8' );
+	// The source builder's PER-ELEMENT rules (`lib/element-css.ts`), already
+	// gated + scoped to a band. The layout imports this after global.css, so a
+	// recovered `#text-box-x{width:20%}` out-ranks the class-convention shim the
+	// same way the vendor stylesheet did on the source.
+	await writeFile(
+		path.join( targetDir, 'src', 'styles', 'elements.generated.css' ),
+		renderElementCss( profile.design?.elementCss ),
+		'utf8'
+	);
 	// The resolved design module — templates without it (the builtin test
 	// fixture) skip the write; the real template always ships it.
 	try {
@@ -3573,6 +4984,12 @@ async function scaffoldProject(
 		// No design module in the template — nothing to write.
 	}
 	const warnings = tokenWarnings( mergedTokens, profile.design, profile.colors );
+	// ECA scaffold advisories (Proposal 163 §P1) — a missing term list withholds
+	// every .ics feed and a missing hand-off renders the register CTA as copy.
+	// Both behaviours are correct but surprising, so the operator is told now.
+	if (profile.eca) {
+		warnings.push(...ecaScaffoldWarnings(profile));
+	}
 
 	// 3a2. Wireframe pages (Proposal 115 §3) — every page the profile's
 	//      wireframe block captures becomes a static route, so the rebuild
@@ -3641,6 +5058,12 @@ async function scaffoldProject(
 		if (CORE_COLLECTIONS.has(collection.slug)) {
 			continue;
 		}
+		// The `eca` preset ships its own catalogue, landings and detail page
+		// (Proposal 163 §P2) — the generic pair would emit conflicting dynamic
+		// routes for the same passthrough.
+		if (profile.eca && collection.slug === ecaCollection(profile).slug) {
+			continue;
+		}
 		// `basePath` lets an extra collection keep the source's URLs
 		// (/blog/portfolio/…); the route directory follows it, so the
 		// component imports need the matching depth.
@@ -3651,6 +5074,17 @@ async function scaffoldProject(
 		await mkdir(dir, { recursive: true });
 		await writeFile(path.join(dir, 'index.astro'), renderCollectionIndexRoute(collection.slug, base, up), 'utf8');
 		await writeFile(path.join(dir, '[...parts].astro'), renderCollectionEntryRoute(collection.slug, base, up), 'utf8');
+	}
+
+	// 3c-3. The ECA front-end (Proposal 163 §P2) — catalogue, facet rail, detail
+	//       page, four landing families and the .ics endpoint. Written as whole
+	//       files because none of them is a variation on a core template route.
+	if (profile.eca) {
+		for (const file of ecaRouteFiles(profile)) {
+			const destination = path.join(targetDir, file.path);
+			await mkdir(path.dirname(destination), { recursive: true });
+			await writeFile(destination, file.content, 'utf8');
+		}
 	}
 
 	// 3d. Preset surface toggles + render mode (104 §4.3 / Q4) — the minimal
@@ -3729,9 +5163,13 @@ async function scaffoldProject(
 	// 3e. Render-mode config rewrite (104 Q4) — server output + the node
 	//     adapter only in ssr mode; the static config is untouched. Skipped
 	//     when the template carries no config (the builtin test fixture).
+	//     A profile with `gatePublish` gets the FRONT CONTROLLER (Proposal 165):
+	//     middleware mode leaves no listener of its own, so `server.js` can gate
+	//     before the router and still serve dist/client.
+	const frontController = managed && Boolean( profile.gatePublish );
 	const astroConfigPath = path.join(targetDir, 'astro.config.mjs');
 	try {
-		await writeFile(astroConfigPath, renderAstroConfig(await readFile(astroConfigPath, 'utf8'), render, managed), 'utf8');
+		await writeFile(astroConfigPath, renderAstroConfig(await readFile(astroConfigPath, 'utf8'), render, managed, frontController), 'utf8');
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
 			throw error;
@@ -3752,9 +5190,23 @@ async function scaffoldProject(
 			'forms.delivery: "direct" requires deploy.runtime: "managed" — a static site has nowhere to keep the provider key. Use delivery: "bridge" (WordPress owns the mailer) or set the managed runtime.'
 		);
 	}
-	if (directDelivery && !profile.forms?.mail) {
+	if ( directDelivery && !profile.forms?.mail ) {
 		throw new Error(
 			'forms.delivery: "direct" requires forms.mail { provider, from, to } so the endpoint knows who sends and who receives.'
+		);
+	}
+	// The Turnstile site key is PUBLIC (it is rendered into the page), so it
+	// belongs in the profile — but a placeholder or a half-pasted key must not
+	// reach a build. A wrong key is not a build failure: it is a form whose
+	// widget never renders and whose submits all answer 400, discovered by the
+	// first visitor (2026-11-20: a Sri Lanka profile was about to reuse the
+	// Jamaica key, and Cloudflare scopes a widget to its hostnames). Refuse it
+	// here, where the message can say which key and why.
+	const turnstileKey = ( profile.forms?.turnstile?.siteKey ?? '' ).trim();
+	if ( turnstileKey !== '' && ! /^(?:0x|1x)[A-Za-z0-9_-]{20,}$/.test( turnstileKey ) ) {
+		const shown = turnstileKey.length > 24 ? `${ turnstileKey.slice( 0, 21 ) }…` : turnstileKey;
+		throw new Error(
+			`forms.turnstile.siteKey "${ shown }" is not a Turnstile site key — Cloudflare keys start "0x" (test keys "1x") and are 24 characters. Copy it from Cloudflare → Turnstile → the widget whose hostnames include this site.`
 		);
 	}
 	// `forms.fallback` is the bridge-mode companion: the provider key still has
@@ -3772,12 +5224,21 @@ async function scaffoldProject(
 	}
 
 	if (managed) {
+		// §7b — resolve the bundle ONCE, before any of its consumers are written.
+		// `resolveManageBundle` throws a named error when the bridge checkout is
+		// absent, so a profile that opted in can never emit a /manage page whose
+		// bundle 404s (runbook §4, rule 1).
+		manageBundle = profile.deploy?.manageBundle === true ? await resolveManageBundle() : undefined;
 		await mkdir(path.join(targetDir, 'src', 'lib'), { recursive: true });
 		await writeFile(path.join(targetDir, 'src', 'lib', 'managed.generated.ts'), renderManagedGenerated(true), 'utf8');
 		await writeFile(path.join(targetDir, 'src', 'lib', 'managed-proxy.ts'), renderProxyHelperTs(), 'utf8');
 
 		await mkdir(path.join(targetDir, 'src', 'pages', 'api', 'forms'), { recursive: true });
-		await writeFile(path.join(targetDir, 'src', 'pages', 'api', '[...path].ts'), renderApiProxyTs(), 'utf8');
+		await writeFile(
+			path.join(targetDir, 'src', 'pages', 'api', '[...path].ts'),
+			renderApiProxyTs({ manageCredentials: Boolean(manageBundle) }),
+			'utf8'
+		);
 		// `direct` sends through the provider API instead of the WordPress
 		// bridge; the validation above guarantees this is the managed tier.
 		await writeFile(
@@ -3793,6 +5254,10 @@ async function scaffoldProject(
 			'utf8'
 		);
 		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'revalidate.ts'), renderRevalidateTs(), 'utf8');
+		// The diagnostic surface: one request answers "is the BFF wired, and what
+		// does the CMS say?" without shell access to the running app
+		// (2026-11-26 — the only copy of the real upstream error was in PM2 stdout).
+		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'health.ts'), renderHealthTs(), 'utf8');
 		// Proposal 135 Phase 5 — the preview exchange + the draft-aware page.
 		// `/manage` mints the token on the CMS; this route only transports it
 		// into a host-only cookie and redirects to /preview/<slug>/.
@@ -3800,10 +5265,67 @@ async function scaffoldProject(
 		await mkdir(path.join(targetDir, 'src', 'pages', 'preview'), { recursive: true });
 		await writeFile(path.join(targetDir, 'src', 'pages', 'preview', '[...slug].astro'), renderPreviewPageTs(), 'utf8');
 
+		// Proposal 165 §7 — the staff surface. `deploy.manage: true` emits a
+		// self-contained sign-in (WordPress Application Password, verified
+		// server-to-server) that mints the host-only session the gate trusts.
+		// It works without the commerce bridge; when the bridge is installed the
+		// same page keeps working and the bundle can be layered on top.
+		if ( profile.deploy?.manage === true ) {
+			const gate = resolveGateConfig( profile );
+			const manage = {
+				cookieName: gate.session.cookieName,
+				ttlSeconds: gate.bypass.ttlSeconds,
+				targetSite: ( profile.url ?? '' ).replace( /\/+$/, '' ),
+				...( manageBundle
+					? { bundle: { integrity: manageBundle.integrity, cssIntegrity: manageBundle.cssIntegrity } }
+					: {} ),
+			};
+			const withBundle = Boolean( manageBundle );
+			await mkdir(path.join(targetDir, 'src', 'pages', 'manage'), { recursive: true });
+			await mkdir(path.join(targetDir, 'src', 'pages', 'api', 'manage'), { recursive: true });
+			await writeFile(path.join(targetDir, 'src', 'lib', 'manage-session.ts'), renderManageSessionTs( manage ), 'utf8');
+			await writeFile(path.join(targetDir, 'src', 'pages', 'manage', 'index.astro'), renderManagePageTs( manage ), 'utf8');
+			await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'manage', 'login.ts'), renderManageLoginTs({ bundle: withBundle }), 'utf8');
+			await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'manage', 'logout.ts'), renderManageLogoutTs({ bundle: withBundle }), 'utf8');
+			await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'manage', 'me.ts'), renderManageMeTs(), 'utf8');
+
+			if ( manageBundle ) {
+				// The credential the BFF holds, the provenance module, and the two
+				// vendored files. Copied into the CUSTOMER project only — never into
+				// templates/blog/, which the public forge repo mirrors.
+				await writeFile(path.join(targetDir, 'src', 'lib', 'manage-credential.ts'), renderManageCredentialTs(), 'utf8');
+				await writeFile(
+					path.join(targetDir, 'src', 'lib', 'manage.generated.ts'),
+					renderManageGeneratedTs({
+						integrity: manageBundle.integrity,
+						cssIntegrity: manageBundle.cssIntegrity,
+						jsSha256: manageBundle.jsSha256,
+						cssSha256: manageBundle.cssSha256,
+						jsBytes: manageBundle.js.length,
+						cssBytes: manageBundle.css.length,
+					}),
+					'utf8'
+				);
+				await mkdir(path.join(targetDir, 'public', 'manage-assets'), { recursive: true });
+				await writeFile(path.join(targetDir, 'public', 'manage-assets', 'astro-admin.js'), manageBundle.js);
+				await writeFile(path.join(targetDir, 'public', 'manage-assets', 'astro-admin.css'), manageBundle.css);
+				await writeFile(
+					path.join(targetDir, MANAGE_BOOT_FILE),
+					renderManageBootJs({ integrity: manageBundle.integrity, cssIntegrity: manageBundle.cssIntegrity }),
+					'utf8'
+				);
+			}
+		}
+
 		await mkdir(path.join(targetDir, 'src', 'pages', 'media'), { recursive: true });
 		await writeFile(path.join(targetDir, 'src', 'pages', 'media', '[...path].ts'), renderMediaProxyTs(), 'utf8');
 
-		await writeFile(path.join(targetDir, 'server.js'), renderServerShim(), 'utf8');
+		await writeFile(path.join(targetDir, 'server.js'), frontController ? renderFrontController() : renderServerShim(), 'utf8');
+		if ( frontController ) {
+			await mkdir(path.join(targetDir, 'forge-gate'), { recursive: true });
+			await writeFile(path.join(targetDir, 'forge-gate', 'runtime.mjs'), renderGateRuntime(), 'utf8');
+			await writeFile(path.join(targetDir, 'forge-gate', 'static.mjs'), renderGateStatic(), 'utf8');
+		}
 		await writeFile(path.join(targetDir, 'scripts', 'sync-deploy-tree.mjs'), renderSyncDeployTree(), 'utf8');
 		await writeFile(path.join(targetDir, 'scripts', 'verify-deploy-tree.mjs'), renderVerifyDeployTree(), 'utf8');
 		await mutatePackageJson(targetDir, (pkg) => {
@@ -3813,6 +5335,13 @@ async function scaffoldProject(
 			pkg.scripts = scripts;
 		});
 	}
+
+	// Proposal 165 — the publication verdict every tier reads (the static
+	// postbuild, the managed front controller). Written BEFORE the drift
+	// manifest so it is hashed with the other generated files, and even when the
+	// gate is off: it is the runtime's boot state, so a cold start during a gate
+	// still knows to gate before its first poll.
+	await writeGateManifest( targetDir, options.gate ?? offPublication(), profile );
 
 	// 3g. Generated-artifact drift manifest (Proposal 126 §drift) — sha256 of
 	//     every generated/rewritten file. Written LAST, after every other
@@ -3837,6 +5366,7 @@ async function scaffoldProject(
 				turnstile: profile.forms.turnstile,
 		  }
 		: undefined;
+	const contactBlock = resolveContactBlock( profile );
 	const manifest: ForgeManifest = {
 		version: 1,
 		generator: 'nvoos-astro-forge',
@@ -3849,10 +5379,38 @@ async function scaffoldProject(
 		// Always emitted (never omitted): the template reads it directly and a
 		// missing key makes `astro check` fail on the inferred JSON type.
 		seoDescription: profile.seo?.description ?? '',
+		// The site-level social image (`seo.ogImage`). Emitted as an ABSOLUTE
+		// source URL: the post-build localizer mirrors it and rewrites the meta
+		// tag to the public origin (a root-relative og:image is invalid).
+		seoImage: profile.seo?.ogImage ?? '',
+		contentSource: profile.content?.source ?? 'wordpress',
+		// Route-conflict policy (2026-11-22): opt-in strictness for the
+		// generated astro.config.mjs. Absent = Astro's `warn` default.
+		...( profile.build?.strictRoutes ? { build: { strictRoutes: true } } : {} ),
 		tokens: profile.tokens,
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',
 		forms,
+		// Proposal 165 §7 — the staff surface. `bundle` appears only when the
+		// bundle was vendored, and it is the provenance the drift/audit path reads.
+		...( profile.deploy?.manage === true
+			? {
+					admin: {
+						enabled: true,
+						sessionCookie: resolveGateConfig( profile ).session.cookieName,
+						...( manageBundle
+							? {
+									bundle: {
+										src: '/manage-assets/astro-admin.js',
+										css: '/manage-assets/astro-admin.css',
+										integrity: manageBundle.integrity,
+										cssIntegrity: manageBundle.cssIntegrity,
+									},
+							  }
+							: {} ),
+					},
+			  }
+			: {} ),
 		// Proposal 139 — the media policy, emitted only when the profile sets
 		// one: an absent block IS the default (CMS host, localization on).
 		...( profile.media
@@ -3870,13 +5428,18 @@ async function scaffoldProject(
 			: {} ),
 		// Issue #7549 — a theme-injected contact band cannot come from content;
 		// the profile declares its copy so the front page can render `#contact`.
-		...( profile.contact ? { contact: profile.contact } : {} ),
+		// An ECA profile keeps its people in ONE place (`eca.contacts`, shared with
+		// `/help/`), so the contact band is derived from them rather than copied
+		// into a second list that drifts. An explicit `contact` block still wins.
+		...( contactBlock ? { contact: contactBlock } : {} ),
 		surfaces,
 		render,
 		// Always emitted (139): the media pass reads it to choose between
 		// mirroring the library (static) and rewriting uploads to the
 		// same-origin `/media/*` proxy (managed).
-		runtime: profile.deploy?.runtime === 'managed' ? 'managed' : 'static',
+		runtime: managed ? 'managed' : 'static',
+		// (The staff surface block is emitted ABOVE — a second `admin` key here
+		// would silently win and drop the bundle provenance.)
 		...( hasTrackingModule && profile.tracking
 			? {
 					tracking: {
@@ -3884,7 +5447,13 @@ async function scaffoldProject(
 						vendors: profile.tracking.trackers.filter( ( tracker ) => tracker.enabled ).map( ( tracker ) => tracker.vendor ),
 						consentMode: profile.tracking.consent.mode,
 						hasVerification: Boolean( profile.tracking.verification ),
+						// Cookieless vendors the operator exempted from the decision. Mirrors
+						// the generator's guard: the flag is inert for a cookie-setting tag.
+						consentExempt: profile.tracking.trackers
+							.filter( ( tracker ) => tracker.enabled && tracker.consentExempt === true && isCookielessVendor( tracker.vendor ) )
+							.map( ( tracker ) => tracker.vendor ),
 					},
+					redirects: profile.redirects ?? [],
 			  }
 			: {} ),
 		generatedAt: new Date().toISOString(),
@@ -3999,6 +5568,18 @@ async function scaffoldProject(
 					'',
 				  ]
 				: [] ),
+		// Turnstile — the widget is chrome, `siteverify` is the boundary, and a
+		// MISSING secret makes the endpoint accept every submission UNVERIFIED
+		// (it warns once and continues). An operator who never sees the name
+		// cannot set it, so the secret is emitted beside the key that needs it.
+		...( profile.forms?.turnstile?.siteKey
+			? [
+				'# Cloudflare Turnstile — the SECRET paired with forms.turnstile.siteKey.',
+				'# Unset accepts every form submission unverified (the endpoint warns once).',
+				'TURNSTILE_SECRET=',
+				'',
+			  ]
+			: [] ),
 			'# Stored redirects (Proposal 132) — the build reads the redirect rules',
 			'# your WordPress redirect plugin already stores (Redirection / Rank Math)',
 			'# from the Forge Bridge, so legacy URLs keep resolving after cutover.',
@@ -4013,17 +5594,57 @@ async function scaffoldProject(
 			'# fetches through an allowlisted proxy (http://user:pass@host:port).',
 			'# Unset = direct fetches.',
 			'WP_FETCH_PROXY=',
-			...(profile.deploy?.runtime === 'managed'
+			'',
+			'# Page gate (Proposal 152) — consumed by `forge analyze` / `forge gate`',
+			'# runs (export them in the shell), NOT by the generated build. A',
+			'# pre-launch site answers 503 or a coming-soon page on HTML while',
+			'# /wp-json/ stays open. Fill ONE of:',
+			'#   WP_GATE_USERNAME + WP_GATE_PASSWORD  (a user the gate\'s allowlist accepts)',
+			'#   WP_GATE_COOKIE                       (a captured session; 2FA sites)',
+			'#   WP_GATE_STORAGE_STATE                (a Playwright storageState file)',
+			'# Leave blank on a public site: the forge then never sends credentials.',
+			'WP_GATE_USERNAME=',
+			'WP_GATE_PASSWORD=',
+			'WP_GATE_COOKIE=',
+			'WP_GATE_STORAGE_STATE=',
+			'',
+			'# Edge gate (optional): Cloudflare Access service token, or staging',
+			'# HTTP Basic auth (WP_GATE_HTTP_AUTH="user:pass").',
+			'CF_ACCESS_CLIENT_ID=',
+			'CF_ACCESS_CLIENT_SECRET=',
+			'WP_GATE_HTTP_AUTH=',
+			...(managed
 				? [
 						'',
-						'# Managed runtime (Proposal 135) — the WordPress origin the BFF proxies',
-						'# /api, /media and /api/forms/submit to (server-to-server; the CMS host',
-						'# is never called by a browser).',
-						`NVOOS_TARGET_SITE=${ cmsOrigin }`,
+						...(isMaterializedContent(profile)
+							? [
+									'# Managed runtime (Proposal 135) — this site has NO CMS (its content is',
+									'# materialized), so the BFF has no upstream to proxy. Leave this blank:',
+									'# pointing it at the public origin would make /api proxy to itself.',
+									'NVOOS_TARGET_SITE=',
+							  ]
+							: [
+									'# Managed runtime (Proposal 135) — the WordPress origin the BFF proxies',
+									'# /api, /media and /api/forms/submit to (server-to-server; the CMS host',
+									'# is never called by a browser).',
+									`NVOOS_TARGET_SITE=${ cmsOrigin }`,
+							  ]),
 						'',
 						'# Shared secret for POST /api/revalidate (tag-based cache invalidation).',
 						'# Unset disables the route (503).',
 						'NVOOS_REVALIDATE_TOKEN=',
+						...( profile.deploy?.manage === true
+							? [
+									'',
+									'# Manage sign-in (Proposal 165) — signs the host-only session the gate',
+									'# trusts. Unset falls back to NVOOS_FORGE_GATE_SECRET; both unset disables',
+									'# sign-in (the site stays gated and /manage says so).',
+									'NVOOS_MANAGE_SECRET=',
+									'',
+									'# Operator bypass links for an active gate (?nvoos-gate=...).',
+									'NVOOS_FORGE_GATE_SECRET=',
+							  ]
+							: [] ),
 				  ]
 				: []),
 			...renderTrackingEnvLines( profile ),
@@ -4074,9 +5695,20 @@ async function scaffoldProject(
 		const source = path.resolve(options.contentDir);
 		if (existsSync(source)) {
 			await cp(source, path.join(targetDir, 'src', 'content'), { recursive: true });
+		} else if (isMaterializedContent(profile)) {
+			// The profile says the CMS is gone. Without the snapshot there is
+			// nothing at all behind the site, so say exactly what is missing and
+			// how to get it — an empty build is otherwise baffling.
+			warnings.push(
+				`content.source is "materialized" but no content snapshot was found at ${source} — the site will build EMPTY. Run "forge materialize <profile> --from <built project>" (or commit the snapshot) first.`
+			);
 		} else {
 			warnings.push(`contentDir not found: ${source}`);
 		}
+	} else if (isMaterializedContent(profile)) {
+		warnings.push(
+			'content.source is "materialized" but no content directory was supplied — the site will build EMPTY. Scaffold through the CLI (it derives sites/<name>.content/ from the profile path) or pass --content <dir>.'
+		);
 	}
 
 	// 4e. Media snapshot (2026-11-15): the CMS-less counterpart to the content
@@ -4108,4 +5740,101 @@ async function scaffoldProject(
 		warnings,
 		...( wireframePages.length > 0 ? { wireframePages } : {} ),
 	};
+}
+
+/**
+ * The generated modules a RE-FORGE can rewrite in place.
+ *
+ * A profile fact often changes without the template changing at all: a
+ * re-analyze adds a measured fact, an operator pins a colour, the day-range
+ * parser learns a new shape. Re-scaffolding for that is a wrecking ball — it
+ * swaps the whole target (and on Windows it fails with EPERM whenever an editor
+ * or watcher holds the directory), so the operator either hand-copies files or
+ * leaves the site stale. `forge regen` rewrites exactly the derived modules and
+ * touches nothing else.
+ */
+export const REGEN_MODULES = [
+	'design',
+	'sections',
+	'pages',
+	'chrome',
+	'behaviors',
+	'animations',
+	'tracking',
+	'vocabulary',
+	'eca',
+] as const;
+
+export type RegenModule = ( typeof REGEN_MODULES )[ number ];
+
+export interface RegenResult {
+	written: string[];
+	/** Modules whose target file does not exist in this project. */
+	skipped: string[];
+}
+
+/** Rewrite the generated modules from `profile` without re-scaffolding. */
+export async function regenGenerated(
+	profile: SiteProfile,
+	targetDir: string,
+	only?: readonly string[]
+): Promise< RegenResult > {
+	const requested = ( only && only.length > 0 ? only : REGEN_MODULES ) as readonly string[];
+	const unknown = requested.filter( ( name ) => ! ( REGEN_MODULES as readonly string[] ).includes( name ) );
+	if ( unknown.length > 0 ) {
+		throw new Error( `unknown regen module(s): ${ unknown.join( ', ' ) } — expected ${ REGEN_MODULES.join( '|' ) }` );
+	}
+	const lib = ( file: string ): string => path.join( targetDir, 'src', 'lib', file );
+	const tokens = mergeTokens( profile.design, profile.tokens, profile.colors, accentFamilyOf( profile ) );
+	const renderers: Record< RegenModule, () => { file: string; contents: string } > = {
+		design: () => ( { file: lib( 'design.generated.ts' ), contents: renderDesignGenerated( profile, tokens ) } ),
+		sections: () => ( { file: lib( 'sections.generated.ts' ), contents: renderSectionsGenerated( profile ) } ),
+		pages: () => ( { file: lib( 'pages.generated.ts' ), contents: renderPagesGenerated( profile ) } ),
+		chrome: () => ( { file: lib( 'chrome.generated.ts' ), contents: renderChromeGenerated( profile ) } ),
+		behaviors: () => ( { file: lib( 'behaviors.generated.ts' ), contents: renderBehaviorsGenerated( profile ) } ),
+		animations: () => ( { file: lib( 'animations.generated.ts' ), contents: renderAnimationsGenerated( profile ) } ),
+		tracking: () => ( { file: lib( 'tracking.generated.ts' ), contents: renderTrackingGenerated( profile ) } ),
+		vocabulary: () => ( { file: lib( 'vocabulary.generated.ts' ), contents: renderVocabularyGenerated( profile ) } ),
+		eca: () => ( { file: path.join( targetDir, ECA_CONFIG_PATH ), contents: renderEcaGenerated( profile ) } ),
+	};
+	const result: RegenResult = { written: [], skipped: [] };
+	const writtenFiles: string[] = [];
+	for ( const name of requested as RegenModule[] ) {
+		const { file, contents } = renderers[ name ]();
+		// Only rewrite a module this project actually ships: the minimal preset has
+		// no `animations.generated.ts`, and writing one would add a file the
+		// template never imports (and `check-generated.mjs` would then flag it).
+		try {
+			await stat( file );
+		} catch {
+			result.skipped.push( name );
+			continue;
+		}
+		await writeFile( file, contents, 'utf8' );
+		result.written.push( name );
+		writtenFiles.push( file );
+	}
+	// Keep the DRIFT GATE honest: a regenerated module is not a hand edit, and
+	// `check-generated.mjs` would fail the next build on the stale hash. The
+	// manifest is the scaffold's, so only its entries are touched.
+	if ( writtenFiles.length > 0 ) {
+		const manifestPath = path.join( targetDir, 'nvoos.generated.json' );
+		try {
+			const manifest = JSON.parse( await readFile( manifestPath, 'utf8' ) ) as {
+				regeneratedAt?: string;
+				files?: Record< string, string >;
+			};
+			manifest.files ??= {};
+			for ( const file of writtenFiles ) {
+				const relative = path.relative( targetDir, file ).split( path.sep ).join( '/' );
+				const contents = await readFile( file, 'utf8' );
+				manifest.files[ relative ] = createHash( 'sha256' ).update( contents ).digest( 'hex' );
+			}
+			manifest.regeneratedAt = new Date().toISOString();
+			await writeFile( manifestPath, JSON.stringify( manifest, null, 2 ) + '\n', 'utf8' );
+		} catch {
+			// No manifest (a LOCKED or minimal project) — nothing to keep honest.
+		}
+	}
+	return result;
 }

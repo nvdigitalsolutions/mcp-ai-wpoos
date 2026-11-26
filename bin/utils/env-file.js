@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Shared dotenv-style env-file support for the bin/ MCP tooling.
  *

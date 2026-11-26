@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * ConfirmDialog — composable, accessible delete/confirm dialog.
  *

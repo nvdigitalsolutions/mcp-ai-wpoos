@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! OCR engine dispatch for document pages (Proposal 109 M2).
 //!
 //! Mirrors the snippet controller's dispatch (platform-native first, ONNX

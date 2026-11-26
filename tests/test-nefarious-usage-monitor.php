@@ -89,7 +89,7 @@ class WP_MCP_AI_Nefarious_Usage_Monitor_Test extends WP_UnitTestCase {
 	 */
 	public function test_detects_script_injection() {
 		// Payload split across concatenations so on-disk bytes do not match common AV signatures; runtime value is identical.
-		$suspicious_content = '<scr' . 'ipt>al' . 'ert("X' . 'SS")</scr' . 'ipt>';
+		$suspicious_content = '<scr' . 'ipt>al' . 'ert("X' . 'SS")</scr' . 'ipt>'; // phpcs:ignore Generic.Strings.UnnecessaryStringConcat -- Payload split so on-disk bytes do not match AV or WAF signatures.
 
 		$reflection = new ReflectionClass( $this->monitor );
 		$method     = $reflection->getMethod( 'scan_for_suspicious_content' );
@@ -251,7 +251,7 @@ class WP_MCP_AI_Nefarious_Usage_Monitor_Test extends WP_UnitTestCase {
 	 */
 	public function test_detects_sql_injection() {
 		// Payload split across concatenations so on-disk bytes do not match common AV signatures; runtime value is identical.
-		$suspicious_content = "1' UNI" . 'ON SEL' . 'ECT * FROM wp_users--';
+		$suspicious_content = "1' UNI" . 'ON SEL' . 'ECT * FROM wp_users--'; // phpcs:ignore Generic.Strings.UnnecessaryStringConcat -- Payload split so on-disk bytes do not match AV or WAF signatures.
 
 		$reflection = new ReflectionClass( $this->monitor );
 		$method     = $reflection->getMethod( 'scan_for_suspicious_content' );
@@ -269,7 +269,7 @@ class WP_MCP_AI_Nefarious_Usage_Monitor_Test extends WP_UnitTestCase {
 		$suspicious_array = array(
 			'email' => 'user@example.com',
 			// Payload split across concatenations so on-disk bytes do not match common AV signatures; runtime value is identical.
-			'body'  => '<scr' . 'ipt>al' . 'ert("X' . 'SS")</scr' . 'ipt>',
+			'body'  => '<scr' . 'ipt>al' . 'ert("X' . 'SS")</scr' . 'ipt>', // phpcs:ignore Generic.Strings.UnnecessaryStringConcat -- Payload split so on-disk bytes do not match AV or WAF signatures.
 		);
 
 		$reflection = new ReflectionClass( $this->monitor );

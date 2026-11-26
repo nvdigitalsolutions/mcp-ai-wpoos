@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Pro;
 
+use App\Support\Media\MediaLibrary;
 use App\Support\Media\MediaSweeper;
-use App\Support\Media\MediaWorkerClient;
+use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
+use Nvoos\Laravel\Adapter\MediaWorkerClient;
+use App\Support\TenantContext;
 use Cron\CronExpression;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +21,9 @@ use Illuminate\Support\Facades\Schema;
  *    coverage come from `nvoos_files`. The image list and the filename
  *    heuristic mirror WordPress's own gatherers, so the same library reports
  *    the same percentages on either runtime.
- *  - **The worker** — version and uptime from `GET /api/health`, plus the
- *    queue counts for `media.*` handlers in `nvoos_jobs`.
+ *  - **The worker** — version and uptime from `GET /api/health`, the domain
+ *    tiers from `GET /api/health/full` (via {@see MediaWorkerCapabilityProbe}),
+ *    plus the queue counts for `media.*` handlers in `nvoos_jobs`.
  *
  * `compression` is the sum of recorded derivative savings, so a saving is only
  * ever reported once the optimised bytes exist. `schedule` is the one section
@@ -32,30 +36,20 @@ use Illuminate\Support\Facades\Schema;
  */
 class MediaCcController
 {
-    /** Filename prefixes WordPress treats as generic (`IMG_1234`, `screenshot-…`). */
-    private const GENERIC_PREFIXES = [
-        'img_',
-        'IMG_',
-        'screenshot-',
-        'Screenshot_',
-        'image-',
-        'Image_',
-        'photo-',
-        'Photo_',
-        'dsc_',
-        'DSC_',
-    ];
-
     /**
      * GET /media-cc/health — the snapshot, in the shape `api/media-ops.ts` parses.
+     *
+     * The library numbers come from {@see MediaLibrary} rather than a private
+     * copy, because `/admin/{estate}/media` reads the same projection (§109).
      */
-    public function health(MediaWorkerClient $worker): JsonResponse
+    public function health(MediaWorkerClient $worker, MediaWorkerCapabilityProbe $probe): JsonResponse
     {
         if (! $worker->configured()) {
             return $this->notConfigured();
         }
 
-        $library = $this->library();
+        $library = app(MediaLibrary::class)->summary(TenantContext::current());
+        $report = $probe->report();
 
         return response()->json([
             'attachments' => [
@@ -65,16 +59,19 @@ class MediaCcController
                 'descriptive_filename_count' => $library['descriptive'],
             ],
             'storage' => $library['storage'],
-            // WordPress reports 100 when there is nothing to measure; mirror it.
-            'alt_pct' => $library['image_count'] < 1
-                ? 100
-                : (int) round($library['with_alt'] / $library['image_count'] * 100),
+            'alt_pct' => $library['alt_pct'],
             'nextgen_pct' => $library['nextgen_pct'],
             'compression' => $this->compression(),
             'queue' => $this->queue(),
             'schedule' => $this->schedule(),
             'capabilities' => ['sweep' => true],
-            'worker' => ['configured' => true] + $worker->health(),
+            // `domains` and `missing` are the new keys; `configured`,
+            // `available`, `version` and `uptime` keep the shape
+            // `api/media-ops.ts` already parses.
+            'worker' => ['configured' => true] + $worker->health() + [
+                'domains' => $report->domains(),
+                'missing' => $report->toArray()['missing'],
+            ],
         ]);
     }
 
@@ -99,68 +96,12 @@ class MediaCcController
     }
 
     /**
-     * Library totals from `nvoos_files`.
-     *
-     * @return array{total: int, image_count: int, with_alt: int, descriptive: int, storage: int, nextgen_pct: int}
-     */
-    private function library(): array
-    {
-        if (! Schema::hasTable('nvoos_files')) {
-            return [
-                'total' => 0,
-                'image_count' => 0,
-                'with_alt' => 0,
-                'descriptive' => 0,
-                'storage' => 0,
-                'nextgen_pct' => 0,
-            ];
-        }
-
-        $images = static fn () => DB::table('nvoos_files')->whereIn('mime_type', MediaSweeper::IMAGE_MIMES);
-
-        $imageCount = (int) $images()->count();
-        $withAlt = (int) $images()
-            ->whereNotNull('alt_text')
-            ->where('alt_text', '!=', '')
-            ->count();
-
-        $descriptive = (int) $images()
-            ->where(static function ($query): void {
-                foreach (self::GENERIC_PREFIXES as $prefix) {
-                    $query->where('filename', 'not like', $prefix.'%');
-                }
-            })
-            ->count();
-
-        $nextgen = (int) $images()
-            ->whereIn('mime_type', ['image/webp', 'image/avif'])
-            ->count();
-
-        return [
-            'total' => (int) DB::table('nvoos_files')->count(),
-            'image_count' => $imageCount,
-            'with_alt' => $withAlt,
-            'descriptive' => $descriptive,
-            'storage' => (int) DB::table('nvoos_files')->sum('size_bytes'),
-            'nextgen_pct' => $imageCount > 0 ? (int) round($nextgen / $imageCount * 100) : 0,
-        ];
-    }
-
-    /**
-     * Recorded savings across every derivative.
-     *
-     * Only positive savings count: an "optimised" file that came out larger is
-     * a miss, not a negative saving that offsets the wins.
+     * Recorded savings for this estate. Delegated to {@see MediaLibrary} so the
+     * panel and the API report the same number.
      */
     private function compression(): int
     {
-        if (! Schema::hasTable('nvoos_media_derivatives')) {
-            return 0;
-        }
-
-        return (int) DB::table('nvoos_media_derivatives')
-            ->where('savings_bytes', '>', 0)
-            ->sum('savings_bytes');
+        return app(MediaLibrary::class)->derivativeBytes(TenantContext::current());
     }
 
     /**

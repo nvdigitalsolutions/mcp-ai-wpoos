@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // copy/index.ts — the typed copy-table registry (Proposal 104 §4.5).
 // `Copy` derives from the reference table, so a second locale is added as

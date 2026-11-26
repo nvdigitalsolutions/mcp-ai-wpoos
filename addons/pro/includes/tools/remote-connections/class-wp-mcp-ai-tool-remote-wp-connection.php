@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access and manage remote WordPress, WooCommerce, JetEngine Custom Content Type (CCT), and Paper Store sites. Supports reading posts, pages, media, products, orders, JetEngine CCT records, Paper Store collections and records, and other data, plus creating, updating, and deleting content when the connection allows it. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections. NOTE: Write operations (create/update/delete) require the connection to have those operations explicitly enabled by the site administrator. NOTE: Paper Store operations (list_paper_store_collections, search_paper_store) allow you to browse and search the remote site\'s Paper Store knowledge base through the same WordPress connections.', 'mcp-ai-wpoos-pro' );
+		return __( 'Access and manage remote WordPress, WooCommerce, JetEngine Custom Content Type (CCT), and Paper Store sites. Supports reading posts, pages, media, products, orders, JetEngine CCT records, Paper Store collections and records, and other data, plus creating, updating, and deleting content when the connection allows it. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only (it accepts post_id, product_id, or sku and resolves the parent product). WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections. NOTE: Write operations (create/update/delete) require the connection to have those operations explicitly enabled by the site administrator. NOTE: Paper Store operations (list_paper_store_collections, search_paper_store) allow you to browse and search the remote site\'s Paper Store knowledge base through the same WordPress connections.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -189,7 +189,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'post_id'            => array(
 					'type'        => 'integer',
 					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
-					'description' => __( 'Post or product ID for single item queries.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Post, product, or parent product ID for single item queries. Optional for get_wc_product and get_wc_product_variations when a sku is supplied instead.', 'mcp-ai-wpoos-pro' ),
+				),
+				'product_id'         => array(
+					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+					'description' => __( 'Alias of post_id for WooCommerce product actions (get_wc_product, get_wc_product_variations). Supply either identifier, not both.', 'mcp-ai-wpoos-pro' ),
 				),
 				'order_id'           => array(
 					'type'        => 'integer',
@@ -219,7 +224,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'sku'                => array(
 					'type'        => 'string',
-					'description' => __( 'Product SKU for WooCommerce product queries.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Product SKU for WooCommerce product queries. Accepted by get_wc_products (filter), get_wc_product and get_wc_product_variations (exact SKU lookup, so no product ID is needed). A variation SKU needs the parent product ID: pass the variation\'s parent_id as post_id.', 'mcp-ai-wpoos-pro' ),
 				),
 				'stock_status'       => array(
 					'type'        => 'string',
@@ -905,6 +910,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return $products;
 		}
 
+		// The manager decodes JSON to associative arrays; product logic below
+		// (type detection, parent_id stamping) addresses object properties.
+		$products = $this->normalize_remote_items( $products );
+
 		// Optimize images to save tokens (limit to 3 images, keep only src and alt).
 		$products = $this->optimize_product_images( $products );
 
@@ -1060,14 +1069,13 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		if ( empty( $arguments['post_id'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_missing_product_id',
-				__( 'Product ID is required.', 'mcp-ai-wpoos-pro' )
-			);
+		$reference = $this->resolve_product_reference( $connection, $arguments );
+
+		if ( is_wp_error( $reference ) ) {
+			return $reference;
 		}
 
-		$product_id = absint( $arguments['post_id'] );
+		$product_id = $reference['product_id'];
 		$endpoint   = 'wc/v3/products/' . $product_id;
 
 		$product = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
@@ -1075,6 +1083,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( is_wp_error( $product ) ) {
 			return $product;
 		}
+
+		$normalized = $this->normalize_remote_items( array( $product ) );
+		$product    = $normalized[0];
 
 		// Optimize the single product to reduce token usage.
 		if ( is_object( $product ) ) {
@@ -1122,31 +1133,57 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		if ( empty( $arguments['post_id'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_missing_product_id',
-				__( 'Product ID is required for fetching variations.', 'mcp-ai-wpoos-pro' )
-			);
+		$reference = $this->resolve_product_reference( $connection, $arguments );
+
+		if ( is_wp_error( $reference ) ) {
+			return $reference;
 		}
 
-		$product_id = absint( $arguments['post_id'] );
+		$product_id = $reference['product_id'];
 		$variations = $this->fetch_product_variations( $connection, $product_id );
 
 		if ( is_wp_error( $variations ) ) {
 			return $variations;
 		}
 
-		return array(
-			'summary'    => sprintf(
-				/* translators: 1: number of variations, 2: product ID */
-				__( 'Retrieved %1$d variation(s) for product ID %2$d', 'mcp-ai-wpoos-pro' ),
-				count( $variations ),
-				$product_id
-			),
+		$resolved_product = is_object( $reference['product'] ) ? $reference['product'] : null;
+		$product_name     = null !== $resolved_product && isset( $resolved_product->name )
+			? sanitize_text_field( (string) $resolved_product->name )
+			: '';
+
+		$summary = sprintf(
+			/* translators: 1: number of variations, 2: product ID */
+			__( 'Retrieved %1$d variation(s) for product ID %2$d', 'mcp-ai-wpoos-pro' ),
+			count( $variations ),
+			$product_id
+		);
+
+		if ( '' !== $product_name ) {
+			$summary .= ' ' . sprintf(
+				/* translators: %s: product name */
+				__( '(Product: %s)', 'mcp-ai-wpoos-pro' ),
+				$product_name
+			);
+		}
+
+		$response = array(
+			'summary'    => $summary,
 			'variations' => $variations,
 			'count'      => count( $variations ),
 			'product_id' => $product_id,
 		);
+
+		if ( 'sku' === $reference['resolved_by'] && null !== $resolved_product ) {
+			$response['resolved_by'] = 'sku';
+			$response['product']     = array(
+				'id'   => $product_id,
+				'name' => $product_name,
+				'sku'  => isset( $resolved_product->sku ) ? sanitize_text_field( (string) $resolved_product->sku ) : '',
+				'type' => isset( $resolved_product->type ) ? sanitize_key( (string) $resolved_product->type ) : '',
+			);
+		}
+
+		return $response;
 	}
 
 	/**
@@ -1191,10 +1228,198 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return array();
 		}
 
+		$variations = $this->normalize_remote_items( $variations );
+
 		// Optimize variation images to save tokens.
 		$variations = $this->optimize_product_images( $variations );
 
 		return $variations;
+	}
+
+	/**
+	 * Resolve a product reference from the request arguments.
+	 *
+	 * Accepts a numeric post_id (or the product_id alias), or a SKU. Callers
+	 * often hold a SKU from a catalog/research record rather than a
+	 * WooCommerce ID, so a SKU is resolved before failing.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Tool arguments.
+	 * @return array|WP_Error {
+	 *     @type int         $product_id  Resolved product ID.
+	 *     @type string      $resolved_by 'id' or 'sku'.
+	 *     @type object|null $product     Matching product summary when resolved by SKU.
+	 * } or WP_Error when no identifier is supplied or the SKU is unknown.
+	 */
+	protected function resolve_product_reference( $connection, $arguments ) {
+		foreach ( array( 'post_id', 'product_id' ) as $key ) {
+			if ( ! empty( $arguments[ $key ] ) ) {
+				$product_id = absint( $arguments[ $key ] );
+
+				if ( $product_id ) {
+					return array(
+						'product_id'  => $product_id,
+						'resolved_by' => 'id',
+						'product'     => null,
+					);
+				}
+			}
+		}
+
+		$sku = isset( $arguments['sku'] ) && is_scalar( $arguments['sku'] )
+			? sanitize_text_field( (string) $arguments['sku'] )
+			: '';
+
+		if ( '' !== $sku ) {
+			$product = $this->resolve_product_by_sku( $connection, $sku );
+
+			if ( is_wp_error( $product ) ) {
+				return $product;
+			}
+
+			return array(
+				'product_id'  => absint( $product->id ),
+				'resolved_by' => 'sku',
+				'product'     => $product,
+			);
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_pro_missing_product_id',
+			__( 'A product ID is required: pass post_id (or product_id), or sku so the product can be looked up by SKU.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	/**
+	 * Look up a parent product by SKU.
+	 *
+	 * Runs the exact WooCommerce `sku` filter first, then a search pass that
+	 * still requires an exact SKU match (some hosts ignore the filter or
+	 * return fuzzy results). Only parent products resolve: the products
+	 * endpoint never returns variations, so a variation SKU needs the parent
+	 * product ID.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param array  $connection Connection data.
+	 * @param string $sku        Product SKU.
+	 * @return object|WP_Error Product summary (id, name, sku, type) or WP_Error.
+	 */
+	protected function resolve_product_by_sku( $connection, $sku ) {
+		$fields = 'id,name,sku,type';
+
+		$endpoint = add_query_arg(
+			array(
+				'sku'      => $sku,
+				'per_page' => 1,
+				'_fields'  => $fields,
+			),
+			'wc/v3/products'
+		);
+
+		$results = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
+
+		if ( is_wp_error( $results ) ) {
+			return $results;
+		}
+
+		$match = $this->find_sku_match( $results, $sku );
+
+		if ( null !== $match ) {
+			return $match;
+		}
+
+		// Fallback: search results still have to carry the exact SKU.
+		$endpoint = add_query_arg(
+			array(
+				'search'   => $sku,
+				'per_page' => 20,
+				'_fields'  => $fields,
+			),
+			'wc/v3/products'
+		);
+
+		$results = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
+
+		if ( is_wp_error( $results ) ) {
+			return $results;
+		}
+
+		$match = $this->find_sku_match( $results, $sku );
+
+		if ( null !== $match ) {
+			return $match;
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_pro_product_not_found',
+			sprintf(
+				/* translators: %s: product SKU */
+				__( 'No parent product found with SKU "%s". If this is a variation SKU, pass the parent product ID as post_id (the variation\'s parent_id).', 'mcp-ai-wpoos-pro' ),
+				$sku
+			)
+		);
+	}
+
+	/**
+	 * Find an exact, case-insensitive SKU match in a product result set.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param mixed  $products Product list from the remote site.
+	 * @param string $sku      SKU to match.
+	 * @return object|null Matching product, or null when none matches exactly.
+	 */
+	protected function find_sku_match( $products, $sku ) {
+		if ( ! is_array( $products ) ) {
+			return null;
+		}
+
+		$products = $this->normalize_remote_items( $products );
+		$needle   = strtolower( $sku );
+
+		foreach ( $products as $product ) {
+			if ( ! is_object( $product ) || ! isset( $product->id ) ) {
+				continue;
+			}
+
+			if ( isset( $product->sku ) && is_scalar( $product->sku ) && strtolower( (string) $product->sku ) === $needle ) {
+				return $product;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Normalize remote payload items to objects.
+	 *
+	 * The remote site manager decodes JSON responses with associative arrays,
+	 * while the product and variation logic in this tool addresses fields as
+	 * object properties. Without this pass a variable product is never
+	 * recognised as `type => variable`, so `include_variations` silently
+	 * returns parents only. Nested lists (images, attributes, categories) are
+	 * left as arrays — the helpers accept either shape.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param mixed $items A single item or a list of items from the remote site.
+	 * @return mixed Items with top-level entries cast to objects.
+	 */
+	protected function normalize_remote_items( $items ) {
+		if ( is_object( $items ) || ! is_array( $items ) ) {
+			return $items;
+		}
+
+		$normalized = array();
+
+		foreach ( $items as $item ) {
+			$normalized[] = is_array( $item ) ? (object) $item : $item;
+		}
+
+		return $normalized;
 	}
 
 	/**
@@ -1242,6 +1467,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				$results[ $product_id ] = array();
 				continue;
 			}
+
+			// The manager decodes JSON to associative arrays; the caller stamps
+			// parent context as object properties.
+			$variations = $this->normalize_remote_items( $variations );
 
 			// Optimize variation images to save tokens.
 			$variations = $this->optimize_product_images( $variations );

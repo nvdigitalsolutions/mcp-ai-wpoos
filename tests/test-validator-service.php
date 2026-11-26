@@ -49,6 +49,11 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	public function test_not_blank_validation() {
 		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\NotBlank]
+			/**
+			 * Fixture name.
+			 *
+			 * @var string
+			 */
 			public $name = '';
 		};
 
@@ -64,6 +69,11 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\NotBlank]
 			#[\Symfony\Component\Validator\Constraints\Length( min: 3 )]
+			/**
+			 * Fixture name.
+			 *
+			 * @var string
+			 */
 			public $name = 'John Doe';
 		};
 
@@ -78,6 +88,11 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	public function test_email_validation() {
 		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\Email]
+			/**
+			 * Fixture email.
+			 *
+			 * @var string
+			 */
 			public $email = 'invalid-email';
 		};
 
@@ -95,6 +110,11 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	public function test_format_errors_returns_wp_error() {
 		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\NotBlank( message: 'Name is required' )]
+			/**
+			 * Fixture name.
+			 *
+			 * @var string
+			 */
 			public $name = '';
 		};
 
@@ -118,6 +138,11 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\NotBlank]
 			#[\Symfony\Component\Validator\Constraints\Length( min: 5, max: 10 )]
+			/**
+			 * Fixture username.
+			 *
+			 * @var string
+			 */
 			public $username = 'ab';
 		};
 
@@ -136,6 +161,11 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	public function test_choice_constraint() {
 		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\Choice( choices: array( 'draft', 'publish', 'pending' ) )]
+			/**
+			 * Fixture status.
+			 *
+			 * @var string
+			 */
 			public $status = 'invalid';
 		};
 
@@ -153,6 +183,11 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	public function test_type_constraint() {
 		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\Type( type: 'integer' )]
+			/**
+			 * Fixture count.
+			 *
+			 * @var string
+			 */
 			public $count = 'not-an-integer';
 		};
 

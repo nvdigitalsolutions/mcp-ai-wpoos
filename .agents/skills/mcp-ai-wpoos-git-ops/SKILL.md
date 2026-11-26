@@ -15,10 +15,52 @@ description: "Git/GitHub workflow discipline for the mcp-ai-wpoos repo: PRs agai
   branch** (so the diff is only the delta), and name the parent PR number in
   the body. If the parent merges and its branch is deleted, retarget the child
   to `alpha-working` and rebase the delta.
+- **Prove the base is alive BEFORE merging a stacked child.** Read the child's
+  base, then the parent PR's state:
+
+  ```sh
+  gh pr view <child> --json baseRefName      # base = fix/<parent>
+  gh pr view <parent> --json state,mergedAt  # MERGED already? stop
+  ```
+
+  A base whose parent PR is already `MERGED` is a dead branch: retarget the
+  child to `alpha-working` and rebase the delta instead of merging. A squash
+  merge into a dead base looks green, reports `MERGED`, and the commit is gone
+  (2026-11-12 #7604; recurred 2026-11-16 #7848 — recovered by replaying its
+  commit in #7851, because production ran the code while `alpha-working` did
+  not, so the next scaffold would have regressed it). `delete_branch_on_merge`
+  is ON repo-side since 2026-11-16, so GitHub now retargets a child
+  automatically when the parent's branch is deleted — a base branch that still
+  exists after its parent merged is the warning sign.
 - **Stage explicitly.** Never `git add -A` — the worktree often holds build
   artifacts and local state (e.g. `.lighthouseci/`, `test-results/`). Use
   explicit paths, or pathspec exclusions:
   `git add examples/nvoos-astro-velocity ":(exclude)…/test-results"`.
+- **A red check may be inherited, not yours.** Before debugging a failing job
+  on your PR, check whether the base branch fails it on its own head:
+
+  ```sh
+  gh run list --branch alpha-working --workflow "<workflow name>" \
+    --limit 3 --json databaseId,conclusion,headSha
+  gh run view <id> --log-failed | grep -E "✘|Failed asserting"
+  ```
+
+  A job that fails identically on `alpha-working` is pre-existing: say so and
+  leave it to its own PR rather than widening an unrelated change (2026-11-22:
+  an unported CG dj-management envelope drifted `PHPUnit Pro Addon / test
+  (monolith)` red on every PR; the fix landed separately as #8112).
+- **Creating a branch from `origin/alpha-working` with a dirty tree.** The edits
+  carry over on `git switch -c <branch> origin/alpha-working` — but only when
+  the touched files are identical on both sides. Prove it first:
+
+  ```sh
+  git diff --stat origin/alpha-working HEAD -- <the dirty files>
+  ```
+
+  Empty output means the switch is safe. Note the new branch tracks
+  `origin/alpha-working`, so push with an explicit refspec:
+  `git push -u origin HEAD:refs/heads/<branch>` — a bare `git push` can never
+  land on the base branch that way.
 - Commits: imperative subject ≤ 50 chars, body only when useful (wrap at 72).
   Run commits with `GIT_EDITOR=true git commit …`; read-only git with
   `--no-pager`; prefer `git --no-optional-locks status`.
@@ -58,6 +100,30 @@ git push --force-with-lease origin <branch>
   `alpha-working` as a fresh PR (recovery: #7606).
 - GitHub Docs reference: "Managing stacked pull requests" /
   "Troubleshooting stacked pull requests" (`gh stack rebase` alternative).
+
+## Sequencing a fix-PR against a sweep-PR (2026-11-23)
+
+When a sweep branch cannot go green on its own — because the failing tests are
+fixed by a *separate* PR — ordering is the whole fix:
+
+- **Merge the fix PR first.** The sweep branch predates it, so its full-suite
+  run keeps reporting the same failures however clean its delta is
+  (#8118 → #8117). Merging the sweep first puts those failures on
+  `alpha-working` until the fix lands.
+- **Sync after, don't fold.** Merging the base into the sweep and re-running CI
+  costs one cycle — the same as folding the green PR into the sweep, which
+  costs one cycle *and* destroys a review unit (the folded PR then has to be
+  closed unmerged).
+- **Verify the merge by content, not by the squash subject.**
+  `git show origin/alpha-working:path | grep -n '<marker>'`, or
+  `git grep -n '<marker>' origin/alpha-working -- path`. Subjects can match
+  while the tree differs.
+- **`gh pr checks` exits 8 when checks are merely pending**, not failed. A
+  job-level `status` can also lag its step list by minutes — confirm with
+  `gh api repos/<org>/<repo>/actions/jobs/<id> -q '.status'`.
+- **`git push -u` can fail writing `.git/config` in a shared worktree**
+  (`Permission denied`) *after* the refs have landed. Check the remote ref; do
+  not treat it as a failed push.
 
 ## The PR was merged WHILE you were pushing (2026-11-09)
 
@@ -103,6 +169,21 @@ everything:
   additions-from-the-tip that the squash lacks was MISSED; recover it
   as a new PR. (The reverse direction shows rebase-at-merge artifacts —
   newer base content your tip predates — those are fine.)
+
+### Auto-merge has no review window (2026-11-26)
+
+Auto-merge fires as soon as GitHub considers the PR mergeable — **before the
+checks finish**. Measured: #8302 merged 29 s after `gh pr create` while
+`Licence Boundary` was still running; that job failed 25 s later, leaving
+`alpha-working` red. The follow-up #8304 merged **26 s** after opening.
+
+- Open the PR only when the branch is final. Run the gates locally first;
+  there is no window to add a fix afterwards.
+- `gh pr reopen` refuses a merged PR (`can't be reopened because it was
+  already merged`). Recovery is a fresh branch off the updated base plus a new
+  PR — never a push to the merged branch.
+- `state: closed` does not distinguish merged from abandoned:
+  `gh api repos/<o>/<r>/pulls/<n> --jq '{state,merged,merged_at}'`.
 
 ## GitHub Actions expressions: `||` is `if:`-only (2026-11-06)
 
@@ -181,6 +262,14 @@ sync.
 Parallel agents share the same checkout and switch branches between tasks.
 Each rule below cost a recovery:
 
+- **Detect a concurrent agent from `git status`, not from assumption
+  (2026-11-23).** Two `git status` runs twenty minutes apart gained `M
+examples/…` and `M .agents/skills/…` paths nobody on the task had touched. That
+  is the signal to stop switching branches and to snapshot any tree a long test
+  run reads from. A blocked `git checkout` (`Please commit your changes or stash
+  them before you switch branches`) is the good outcome — forcing it is how other
+  agents' work is destroyed.
+
 - **Check the branch before committing.** `git branch --show-current` and
   `git log --oneline -1` before `git add`/`commit` — a commit lands on
   whatever branch is checked out, and the worktree may have been switched
@@ -192,7 +281,16 @@ Each rule below cost a recovery:
   just-merged PR, either re-verify the branch first or deliberately
   commit to a `fix/` branch + PR; a direct mainline hotfix (e.g. `cb9158501f`,
   the #7400 fixture-sync crash fix) should still be recorded by a small
-  follow-up PR for the audit trail.
+	  follow-up PR for the audit trail.
+- **Recovering work that landed on a foreign base (2026-11-24).** When your
+  uncommitted work sits on another agent's branch and their commit must not ride
+  along: `switch -c my-branch` (uncommitted changes carry over) → stage your
+  paths and commit → `GIT_EDITOR=true git rebase --onto origin/alpha-working <their-HEAD>`.
+  `--onto` replays only the commits AFTER their HEAD, so their commit is left
+  behind. Verify `git rev-list --count origin/alpha-working..HEAD` == 1 and
+  re-run the gates on the new base — upstream can move under you (18 commits in
+  the 2026-11-24 case, clean rebase, still re-ran 2137 tests). Do it before the
+  first push; afterwards it needs a force-push.
 - **`git checkout -b` inherits whatever branch is checked out — verify BEFORE
   creating, not only before committing (2026-11-11).** A `checkout -b feat/x`
   issued while the worktree sat on another agent's `feat/ezuite-…` produced a
@@ -215,6 +313,19 @@ Each rule below cost a recovery:
   checked out). `rm .git/tmp-index` afterwards. This touches nothing the other
   agent can see and needs no worktree state at all — the recovery of choice
   whenever a checkout is blocked by their dirty files.
+- **That index path is wrong in a linked worktree (2026-11-23).** `.git` is a
+  FILE there, so `GIT_INDEX_FILE=.git/tmp-index` fails with `Not a directory`.
+  Use an absolute path outside the tree, e.g.
+  `GIT_INDEX_FILE=<worktree>/.playwright-mcp/tmp-index` (gitignored), or
+  `"$(git rev-parse --git-dir)/tmp-index"`. Two refinements to the recipe: after
+  `read-tree`, `git add -- <paths>` is legal **when you have just diffed those
+  exact paths against the base branch and confirmed they carry only your hunks**
+  — the only practical way to carry *new* files, where `hash-object` +
+  `--cacheinfo` is fiddly; and prefer `git update-ref <ref> <new> <old>` over
+  `git branch -f`, because it refuses the move if the branch advanced under you.
+  Then verify with `git diff-tree -r --name-status <base> <new-tree>`: anything
+  beyond your own paths means the `read-tree` or the `add` was wrong. The flag is
+  `--no-renames`, not `--no-rename`.
 - **Recovering a stray commit:** cherry-pick it onto your branch, then
   restore the foreign branch with `git reset --mixed <its-old-head>` +
   `git restore --worktree -- <only-the-files-you-touched>`. **Never
@@ -258,6 +369,19 @@ Each rule below cost a recovery:
   and can be killed mid-checkout on this repo — if it times out, `rm -rf` the
   leftover, `git worktree prune`, and check the branch was not already
   registered.
+- **A worktree can hold a STALE copy of a committed file** (2026-11-17). A gate
+  that is red there but green on the branch is usually a file patched on one
+  side only, not a logic bug — compare `git hash-object <file>` with
+  `git rev-parse <branch>:<file>` BEFORE debugging. Seen with
+  `bin/check-astro-app-parity.mjs`: a pre-fix copy produced two plausible but
+  wrong failures while the branch tip was green.
+- **Never `git worktree remove` a tree holding junctions into a real
+  `node_modules`** — a recursive delete follows the junction and can erase the
+  main worktree's deps. Lend deps for a one-off gate run with `cmd //c "mklink
+  /J <wt>/examples/<app>/node_modules <main>/examples/<app>/node_modules"`, then
+  **unlink first** with `cmd //c "rmdir <that path>"` (no `/S` — removes the
+  link only) before removing the worktree, and verify the real
+  `node_modules/<dep>/package.json` still exists afterwards.
 - **Rebasing with foreign unstaged edits present:** plain `git rebase`
   refuses ("You have unstaged changes"); `git rebase --autostash` stashes
   only tracked changes and pops them back. **Safer variant (2026-11-03,
@@ -429,6 +553,114 @@ done
   the editor's built-in security rule ("too harmful"). Run the `rm` and the
   `checkout` as separate calls.
 
+## Isolated worktrees, allowlist staging, reaping (2026-11-16, Wave 0 admin PR)
+
+When another agent's uncommitted edits block an in-place `git checkout -b`,
+build the PR in a throwaway worktree rather than negotiating the shared index:
+
+```sh
+git fetch origin alpha-working --quiet
+git worktree add .wt-<task> --detach origin/alpha-working
+git -C .wt-<task> checkout -b feat/<track>-<descriptor>
+```
+
+Copy only your own paths in, then stage from an **explicit allowlist** — never
+`git status --porcelain`, which cannot tell your files from theirs (it missed a
+foreign *move* once, so the old and the new name both looked unremarkable):
+
+```sh
+while IFS= read -r f; do git -C .wt-x add -- "$f"; done < /tmp/mine.txt
+git -C .wt-x add -- <late additions>
+git -C .wt-x diff --cached --name-only | sort > /tmp/staged.txt
+(cat /tmp/mine.txt; echo <late additions>) | sort > /tmp/expected.txt
+comm -23 /tmp/staged.txt /tmp/expected.txt   # foreign risk — must be empty
+comm -13 /tmp/staged.txt /tmp/expected.txt   # missing      — must be empty
+```
+
+- **Derive the allowlist from the call graph, not the delivery tree
+  (2026-11-17).** A parity PR staged `docker/laravel/app-skeleton/**` because
+  that is where its pages live, and missed `lib/core/**`, where the same feature
+  added a value object and four provider methods. The container suite passed — it
+  runs the dirty worktree — while CI failed eight tests with
+  `Class "Nvoos\Core\Domain\ValueObject\ProviderConnectivity" not found`, the
+  class having never been committed. For a change that spans packages, read
+  `git status` over the whole repo as the *inventory* (staging still goes through
+  the allowlist) and reconcile the two before committing: every path outside the
+  allowlist is either another agent's work or a missed dependency.
+
+- **A file list is not a port — prove it with a tree diff (2026-11-26).** A
+  handoff enumerated "7 patched + 4 string-patched + 11 new" and was wrong
+  twice over: `lib/gate.ts` (+39/−1 — the fields the new module imported) and
+  eight further files (`deploy-config.ts`, `copy/en.ts`, four tests,
+  `scaffold.test.ts`) never crossed. `tsc --noEmit` caught the first at once
+  (`Property 'retryAfter' does not exist on type 'BridgeGateState'`); only a
+  tree diff caught the rest:
+
+  ```sh
+  diff -rq --exclude=node_modules --exclude=dist --exclude=.astro \
+    <source-tree> <worktree>/<same-tree>
+  ```
+
+  Then prove each residual difference is header-only before dismissing it — a
+  repo-wide `+1` SPDX sweep is indistinguishable from a real change in a file
+  list:
+
+  ```sh
+  diff --unified=0 <a> <b> | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
+    | grep -v SPDX-License-Identifier      # empty = header-only
+  ```
+
+  Two traps this exposed. (1) Copying a file from a branch whose **HEAD had
+  stripped** the SPDX line silently re-breaks the docs contract — `ts:examples`
+  allows `missing_spdx` of **0** — so restore the header from the base, never
+  from the source worktree. (2) A multi-file `head`/`diff` loop in this shell
+  **interleaves** its output: two intact `.astro` files read back as one
+  corrupted file. Verify one file at a time with `cat -A` before "fixing" a
+  phantom.
+
+- **`.git` inside a worktree is a FILE, not a directory** (a pointer into
+  `.git/worktrees/<name>`). Writing scratch to `<worktree>/.git/msg.txt` fails
+  with "parent directory doesn't exist" — keep scratch in `/tmp`.
+- **`/tmp` is MSYS-only.** Windows Python cannot read `/tmp/mine.txt`
+  (`FileNotFoundError`); pipe the list on stdin, or read it from the sh side.
+- **Reap only what is provably disposable.** Before
+  `git worktree remove <path>`, require *both*
+  `git -C <path> status --porcelain` empty **and**
+  `git -C <path> rev-list --count '@{u}..HEAD'` = 0. A detached HEAD has no
+  upstream, so it can never pass — report it and leave it. Removing a clean,
+  pushed worktree loses nothing (the branch survives on `origin`); removing a
+  dirty one destroys work that exists nowhere else. Use `--force` only to get
+  past genuinely ignored files such as `.env`, never to override a dirty status
+  — and **not** for `vendor/`, which is tracked here (see the next bullet).
+- **`vendor/` is partly TRACKED here — never prune it, and never `rm -rf` a
+  junction** (2026-11-20). `git ls-files vendor | wc -l` = **810**, so the
+  familiar "`--force` gets past ignored `vendor/`" does not apply: pruning it
+  becomes 810 deletions in `git status`, and committing that removes the vendored
+  tree from every checkout. The trap arrived from the other direction — a fresh
+  worktree could not run PHPUnit because its `vendor/` was an 8-file partial, and
+  pointing it at another checkout looked harmless:
+  `cmd //c "mklink /J vendor F:\GITHUB\<checkout>\vendor"`. Creating the junction
+  is harmless; **undoing it with POSIX `rm` is not** — `rm -rf vendor` follows a
+  Windows junction and empties the *target*, i.e. the other checkout's vendor.
+  Remove the link with `cmd //c "rmdir vendor"` (link only), then
+  `git checkout -- vendor` if the tracked subset shows up as deletions, and
+  confirm the target still has its files. Do not leave the junction behind
+  either: it makes the worktree silently depend on a checkout another agent may
+  move or delete.
+- **Never delete a worktree outside the repo root** (e.g.
+  `F:/GITHUB/worktrees/…`) or one on a branch you did not create — those belong
+  to other agents' sessions. Enumerate with
+  `git worktree list --porcelain` before removing anything, and report what you
+  deliberately left behind.
+- **Editor file tools are rooted at the open project, not at a sibling
+  worktree (2026-11-26).** With the editor open on
+  `stark-linden/mcp-ai-wpoos`, an `edit_file` on `docs/...` silently wrote to
+  that shared tree; `../mcp-ai-wpoos-166/...` is outside the allowed roots and
+  cannot be addressed at all. Write to a second worktree with an absolute
+  filesystem-tool path (`F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/...`), then
+  prove it with `grep -c <marker> <absolute path>`. Recovery for a mis-targeted
+  edit: reverse it in the shared tree, then re-apply at the absolute path.
+
 ## Windows reserved-name artifacts (learned 2026-10-29)
 
 A stray untracked file literally named `nul` (Windows reserved device name)
@@ -481,6 +713,11 @@ can appear in the repo root. Two failure modes follow:
   `node -e "fs.rmSync('nul',{force:true})"`.
 - `findstr /C:"..."` quoting breaks under sh — pipe to node for filtering
   or use the terminal tool's `tail_lines`.
+- **`git show <ref>:<path>` is mangled by MSYS path conversion (2026-11-26).**
+  `git show origin/alpha-working:.github/docs-scopes.json` arrives as
+  `origin\alpha-working;.github\docs-scopes.json` → "ambiguous argument".
+  Keep the ref and the path as separate arguments — `git grep <ref> -- <path>`
+  — or prefix `MSYS_NO_PATHCONV=1`. `git -C <worktree> …` is unaffected.
 - `node --test <directory>` does **not** recurse on this setup (runs one
   file) — pass explicit files or the package's `npm test` script.
 - **Windows-reserved names:** see the `nul`-artifact section above (same
@@ -497,6 +734,37 @@ can appear in the repo root. Two failure modes follow:
   `git commit --amend -F /tmp/msg.txt`), then confirm with
   `git --no-pager log -1 --format=%B` **before** pushing. Amending is safe
   pre-push; a corrupt message that reaches the remote needs a force-push.
+- **Windows junctions are invisible to `os.path.islink()`, and `cmd //c` does not
+  survive this shell (2026-11-16).** Sharing a sibling worktree's `vendor` with
+  `ln -s` can create a **junction** rather than a symlink: native Windows Python
+  reports
+  `os.path.islink()` → `False`, but `os.path.realpath()` resolves to the target,
+  which is the reliable detection. `MSYS_NO_PATHCONV=1 cmd //c rmdir "F:\…"`
+  prints the cmd banner and opens an interactive prompt instead of running.
+  Removal that cannot touch the target:
+  `python -c "import os; os.rmdir(r'F:\…\vendor')"` — `os.rmdir` unlinks a
+  reparse point and refuses a real non-empty directory. Verify the source tree
+  still has its files afterwards. **`ln -s` is not reliable either way:** the
+  same command sometimes produces a junction and sometimes a silent **deep
+  copy** — a 108 MB `node_modules` was duplicated in seconds, and the tells were
+  `os.rmdir()` refusing ("directory is not empty") and `os.path.realpath()`
+  resolving *inside* the worktree instead of at the source. Check realpath after
+  every `ln -s` of a directory: if it stays inside your own tree you got a copy,
+  so `rm -rf` is both safe and necessary — the original was never linked.
+
+- **A multi-line console dump can interleave and read as file corruption
+  (2026-11-21).** Two "corrupted files" in one session were both false alarms.
+  A `sed -n '128,140p;175,190p'` printed its two ranges back-to-back, so the
+  output looked like it jumped mid-table; a large contiguous `sed`/`awk` dump
+  came back with lines interleaved, making a healthy 677 KB proposal look
+  shuffled and truncated. A controlled `python` truncate-write on a copy then
+  produced exactly **one hunk, +1 / -1**, proving the write path was never at
+  fault. Discipline: never diagnose damage from an eyeballed dump — confirm
+  with outputs that cannot interleave: `git hash-object <f>` against
+  `git rev-parse HEAD:<path>` (equal = file matches its blob),
+  `git --no-pager diff --no-index --numstat A B`, `wc -c`, and `grep -c`.
+  `git checkout -- <file>` on a healthy file is harmless, so the recovery
+  habit is fine; the *diagnosis* is what needs the cheap check first.
 
 ## Pathspec commits, shared-index races, workflow YAML (learned 2026-11-02, Cognition rebrand session)
 
@@ -548,6 +816,27 @@ can appear in the repo root. Two failure modes follow:
   Use `--input -` with a JSON body on stdin instead:
   `gh api --method POST "<endpoint>" --input - <<'JSON' … JSON`.
 
+## CI checkout on a ~39 GB repo (2026-11-26)
+
+`git count-objects -vH` reports **38.7 GiB** packed for 2,136 commits, so
+`actions/checkout` with `fetch-depth: 0` cannot finish: the new `Docs Contract`
+job sat in **Checkout repository for 20+ minutes** and had to be cancelled. Use
+depth 1 and fetch the base explicitly:
+
+```yaml
+with:
+  fetch-depth: 1
+# ...
+run: git fetch --no-tags --depth=1 origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+```
+
+A three-dot diff (`base...HEAD`) needs a merge base, which a shallow clone does
+not have, so "new files since base" logic must fall back to a two-dot tree diff:
+`git diff --diff-filter=A --no-renames <base> HEAD`. Detect the clone with
+`git rev-parse --is-shallow-repository`. The gate itself is
+`php bin/check-file-docs.php --strict`; the rules live in
+`docs/developer/file-header-convention.md`.
+
 ## gh CLI gotchas
 
 - **`git archive` strips `package.json` and `bin/` repo-wide** — the root
@@ -564,11 +853,49 @@ can appear in the repo root. Two failure modes follow:
 - `gh pr checks <n>` shows queued runs; the repo-wide **PHP Linting workflow
   takes ~20–30 minutes** — don't retry or "fix" it while it's simply running.
   `Forbidden pattern checks` alone took 27m once, and
-  `PHP Compatibility Check` + `WPCS 3.0` can sit `pending` indefinitely —
-  they still show pending on PRs merged long before (verified 2026-11-08 on
-  an already-merged PR), so they are not a gate. Report `mergeable`
-  (`MERGEABLE`) plus the JS suites (`test`, `test (18.x)`, `test (20.x)`)
-  instead of blocking on those three.
+  `PHP Compatibility Check` + `WPCS 3.0` can sit `pending` indefinitely
+  (verified 2026-11-08 on an already-merged PR).
+- **"They are not a gate" was the wrong conclusion (corrected 2026-11-16).**
+  The `WPCS 3.0` job wedges on `Get changed PHP files`
+  (`tj-actions/changed-files`), so **every later step stays `pending`** —
+  including the PSR-12 gate for `docker/laravel/**`. Six style errors merged
+  into `alpha-working` that way (#7862–#7864), because a `pending` check does
+  not fail a PR. #7865 moves both ruleset checks above the wedging step.
+  A `pending` check is not evidence of a pass: confirm the **steps**, not the
+  label, before calling a PR verified.
+
+  ```sh
+  gh api repos/<org>/<repo>/actions/jobs/<job-id> \
+    --jq '.steps[] | {n:.number, name, status, conclusion}'
+  ```
+
+  Read `.conclusion`, not `.status` — a wedged step and a queued one both say
+  `in_progress`/`pending`. Report `mergeable` (`MERGEABLE`) plus the JS suites
+  (`test`, `test (18.x)`, `test (20.x)`) when the linting workflow is still
+  running, but say that the lint gate has not reported.
+- **The wedge is bounded in `php-compatibility` too (2026-11-21).** #8041 added
+  `timeout-minutes: 5` + `continue-on-error: true` to the compatibility job's
+  `Get changed PHP files` step, matching what `wpcs` already carried. Proven on
+  #8041's own run, where the action wedged again: the step ended at **exactly
+  5m 00s** (`20:06:12Z → 20:11:12Z`), both compat steps reported
+  `completed/skipped`, and the job concluded **success**. On a branch that
+  contains #8041 a wedge costs five minutes and a skip, not six hours of
+  pending — so **do not cancel-and-retry**; the action wedges again.
+  `continue-on-error` rewrites the step's *outcome*, so its `conclusion` reads
+  `success` even when the timeout fired — prove it with the step's
+  `started_at`/`completed_at` delta, not the label.
+  `Forbidden pattern checks` is a different failure: it can stall in
+  `Checkout repository` (15+ min observed 2026-11-21), which no changed-files
+  timeout covers.
+- `gh api` / `gh pr comment` intermittently fail here with
+  `net/http: TLS handshake timeout` (2026-11-16, several in a row). Retry —
+  it is the network, not the token or a missing permission.
+- **`gh run view <id> --json status,conclusion` can return EMPTY while a run
+  is queued** (2026-11-22, forge-bridge #8108: twelve polls printed blank
+  lines). The job-level query stayed reliable and is the one to poll when you
+  only need "did my jobs pass":
+  `gh run view <id> --json jobs --jq '.jobs[] | [.name,.status,(.conclusion//"-")] | @tsv'`.
+  A blank poll is not a failure — do not cancel and retry the workflow.
 - After a forced push, GitHub recomputes conflict status automatically;
   re-check `mergeable` before reporting done.
 
@@ -590,6 +917,23 @@ can appear in the repo root. Two failure modes follow:
   `Licence boundary intact` check fails in ~20 s, so this is the cheapest
   CI failure to prevent — and the easiest to misdiagnose as a code problem
   when the diff is only a docblock.
+- **The docs contract gate is the second-cheapest failure.** `php
+  bin/check-file-docs.php --new-files-only --strict --base=origin/alpha-working`
+  checks every new TS/JS/Astro/Rust file for an SPDX line and a purpose header
+  (`@fileoverview` / `//!`). `--explain=<file>` says which check failed. The
+  budget is `.github/docs-budget.json`; never raise it without
+  `--allow-increase` and a reason. `--folder-docs` checks the Rust non-module
+  READMEs. Proposal 166 /
+  [`docs/developer/file-header-convention.md`](../../../docs/developer/file-header-convention.md).
+  Details that decide whether it passes (2026-11-26): `//!` is **Rust-only** —
+  TS/JS/Astro need the literal `@fileoverview` or `@file` tag, and the repo's
+  older `// ---` blocks do **not** count even though ~750 legacy ones are
+  tolerated by the ratchet; the bar is 2 meaningful lines (**1** for
+  `test`/`config`), each ≥20 chars, and the first must not be just the
+  filename; `--json` returns **scope totals only** (no per-file detail — a
+  dead end), so use `--explain=<file>`. `Documentation contract` and
+  `Licence boundary intact` can go red from one root cause, because the licence
+  workflow re-runs the same contract — read both logs before fixing twice.
 
 ### Format-check drift - verify the toolchain and the commit (2026-11-04)
 
@@ -687,3 +1031,56 @@ case body is **+1 tab**. Authoring a `switch` at 2 tabs means `case` at 2
 tabs, body at 3, nested block at 4. A `switch` nested one level deeper than
 the author expects produces a uniform off-by-one across every line of the
 switch — 87 errors from one mental slip, all fixed by `npx eslint src --fix`.
+
+### `phpcs` on `lib/` — the no-files false green (2026-11-21)
+
+There are **two** PHP style gates with **two different file lists**, and the
+difference is invisible on the command line:
+
+| ruleset | covers | excludes |
+|---|---|---|
+| `phpcs.xml.dist` (WPCS 3.0) | plugin trees (`includes/`, `addons/`, `assets/`) | `*/lib/*`, `*/docker/*` |
+| `phpcs-laravel.xml.dist` (PSR-12) | its whole ruleset file list — **including `lib/core`, `lib/laravel-adapter` and `docker/laravel/app-skeleton`** | — |
+
+So a `lib/core` change is **not** covered by `phpcs.xml.dist` at all, and the
+CI step that catches it is the PSR-12 step, not "WordPress Coding Standards
+(WPCS 3.0)".
+
+**The trap.** Passing an explicit `lib/` path — absolute or relative — matches
+the `*/lib/*` exclude. phpcs then processes **no files**, prints
+`Run "phpcs --help" for usage information` and exits **3**. One session
+reported "phpcs clean" repeatedly on three `lib/core` files carrying 55
+violations between them, because the command was piped to `tail`: the exit
+status came from `tail`, and the tail of a no-files run looks like a clean run.
+
+**Never read phpcs through a pipe without its status.** Capture it as
+`phpcs … ; echo EXIT=$?`, or `${PIPESTATUS[0]}` in bash. Exit 0 means clean;
+exit 3 means *nothing was linted*, which is a failure of the command, not a
+pass.
+
+**Run it the way CI runs it.** The two gates are scoped differently, and that
+is the part to copy exactly:
+
+```bash
+# plugin trees — CI lints ONLY the changed files, passed repo-relative
+git diff --name-only --diff-filter=ACMR origin/alpha-working... -- '*.php' \
+  | xargs -r vendor/bin/phpcs --standard=phpcs.xml.dist
+
+# lib/ + docker/ — this is the step that actually lints lib/core.
+# No path arguments: the ruleset's <file> list decides (1,168 files, ~35s).
+vendor/bin/phpcs --standard=phpcs-laravel.xml.dist --error-severity=1 --warning-severity=8
+```
+
+Do **not** run `phpcs.xml.dist` across the whole tree as a local gate: it is
+7,129 files, it needs `-d memory_limit=512M` to finish, and it reports
+pre-existing findings that CI never sees because it scopes to changed files.
+
+**Prove the file was linted.** Exit 0 *and* the file in scope. For a single
+file the cheapest proof is a deliberate violation: break one line, confirm
+phpcs reports it, revert. `--report=summary` is **not** proof — it prints no
+count line when a run is clean.
+
+**Auto-fix:** `vendor/bin/phpcbf --standard=phpcs-laravel.xml.dist <file>`
+clears the whole class in one pass. When the change is spacing only, say so in
+the PR body — `git diff --ignore-all-space -- <file>` empty is the evidence
+(same rule as §5 above).

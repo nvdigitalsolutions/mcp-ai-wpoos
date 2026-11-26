@@ -113,13 +113,12 @@ class WP_MCP_AI_Ability_Backward_Compat_Test extends WP_UnitTestCase {
 		wp_set_current_user( $admin_id );
 
 		// The tool won't be found in the real registry, so the execute callback
-		// should return a structured error.
+		// should return the canonical WP_Error (the bridge's default channel;
+		// the legacy array envelope is opt-in via a filter).
 		$result = wp_get_ability( 'nvoos/nonexistent-tool' )->execute( array() );
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertSame( 'tool_not_found', $result['code'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'tool_not_found', $result->get_error_code() );
 	}
 
 	/**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Windows system-audio capture via WASAPI loopback (in-process).
 //!
 //! cpal opens a loopback input stream on the default render (output) device,

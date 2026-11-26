@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   api,
   isMac,
   onModelProgress,
   type ConnectionTest,
+  type GestureCatalogue,
+  type GestureModelStatus,
   type LmStudioConnectionTest,
   type ModelSpec,
   type OllamaConnectionTest,
@@ -61,11 +64,25 @@ export default function SettingsView({ onChanged, status }: Props) {
   const [modelDownloading, setModelDownloading] = useState<string | null>(null);
   const [polishTesting, setPolishTesting] = useState(false);
   const [visionPolishModels, setVisionPolishModels] = useState<string[]>([]);
+  const [gestureModels, setGestureModels] = useState<GestureModelStatus[]>([]);
+  const [gestureCatalogue, setGestureCatalogue] = useState<GestureCatalogue | null>(null);
   const [snippetModels, setSnippetModels] = useState<
     { id: string; label: string; size_mb: number; license: string; installed: boolean }[]
   >([]);
   const [snippetDownloading, setSnippetDownloading] = useState<string | null>(null);
   const [ocrLanguages, setOcrLanguages] = useState<string[]>([]);
+
+  // Gesture catalogue + model list (empty without the `gestures` feature).
+  useEffect(() => {
+    api
+      .getGestureCatalogue()
+      .then(setGestureCatalogue)
+      .catch(() => setGestureCatalogue(null));
+    api
+      .getGestureModels()
+      .then(setGestureModels)
+      .catch(() => setGestureModels([]));
+  }, []);
 
   // Latest settings + a debounce timer: typing must not fire an
   // `update_settings` (which swaps the speech engine) on every keystroke.
@@ -171,6 +188,20 @@ export default function SettingsView({ onChanged, status }: Props) {
       await api.downloadVisionModel(model);
       // Refresh the catalogue so the installed flag updates.
       setVisionModels(await api.getVisionModels());
+    } catch (e) {
+      setMessage(`Download failed: ${e}`);
+    } finally {
+      setModelDownloading(null);
+    }
+  };
+
+  const downloadGestureModel = async (model: string) => {
+    setModelDownloading(model);
+    setMessage('');
+    try {
+      await api.downloadGestureModel(model);
+      // Refresh the catalogue so `installed` flips and the button disappears.
+      setGestureModels(await api.getGestureModels());
     } catch (e) {
       setMessage(`Download failed: ${e}`);
     } finally {
@@ -544,6 +575,295 @@ export default function SettingsView({ onChanged, status }: Props) {
               </p>
             </>
           )}
+          <h2>Gestures</h2>
+          <label className="row">
+            <span>Hand gestures from the camera (opt-in)</span>
+            <input
+              type="checkbox"
+              checked={settings.gestures.enabled}
+              onChange={(e) =>
+                patch({ gestures: { ...settings.gestures, enabled: e.target.checked } })
+              }
+            />
+          </label>
+          <p className="muted">
+            {status?.gestures_available
+              ? 'Recognition runs locally. No frames leave the device, there is no facial recognition, and every gesture has a keyboard equivalent below.'
+              : 'This build was compiled without the `gestures` feature.'}
+          </p>
+          {settings.gestures.enabled && (
+            <>
+              <label className="row">
+                <span>Landmark model</span>
+                <select
+                  value={settings.gestures.landmark_model}
+                  onChange={(e) =>
+                    patch({
+                      gestures: { ...settings.gestures, landmark_model: e.target.value },
+                    })
+                  }
+                >
+                  {(gestureModels.length > 0
+                    ? gestureModels
+                    : [
+                        {
+                          id: 'hand-landmark',
+                          description: '',
+                          license: '',
+                          installed: false,
+                          downloadable: false,
+                          expected_path: '',
+                        },
+                      ]
+                  ).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.id}
+                      {m.installed ? '' : ' (file not found)'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="row">
+                <span>Model path (optional, wins over the catalogue)</span>
+                <input
+                  type="text"
+                  value={settings.gestures.model_path}
+                  placeholder="C:\\models\\hand_landmark.onnx"
+                  onChange={(e) =>
+                    patch({ gestures: { ...settings.gestures, model_path: e.target.value } })
+                  }
+                />
+              </label>
+              {gestureModels
+                .filter((m) => !m.installed && m.downloadable)
+                .map((m) => (
+                  <div key={m.id} className="btn-row">
+                    <button
+                      className="btn ghost"
+                      disabled={modelDownloading !== null}
+                      onClick={() => downloadGestureModel(m.id)}
+                    >
+                      {modelDownloading === m.id ? 'Downloading…' : `Download ${m.id}`}
+                    </button>
+                  </div>
+                ))}
+              <p className="muted">
+                Downloads are pinned to an exact revision and verified by SHA-256 (Apache-2.0:
+                OpenCV Zoo's conversion of Google's MediaPipe Hands). You can also supply any
+                MediaPipe-compatible 21-landmark .onnx file — the expected catalogue path is{' '}
+                <code>{gestureModels[0]?.expected_path ?? 'models/hand-landmark.onnx'}</code>.
+              </p>
+              <label className="row">
+                <span>Model input size</span>
+                <input
+                  type="number"
+                  min={96}
+                  max={640}
+                  step={16}
+                  value={settings.gestures.input_size}
+                  onChange={(e) =>
+                    patch({
+                      gestures: {
+                        ...settings.gestures,
+                        input_size: parseInt(e.target.value, 10) || 224,
+                      },
+                    })
+                  }
+                />
+              </label>
+              <label className="row">
+                <span>Mirror the preview</span>
+                <input
+                  type="checkbox"
+                  checked={settings.gestures.mirror_preview}
+                  onChange={(e) =>
+                    patch({
+                      gestures: { ...settings.gestures, mirror_preview: e.target.checked },
+                    })
+                  }
+                />
+              </label>
+              <label className="row">
+                <span>Arm hold (ms)</span>
+                <input
+                  type="number"
+                  min={200}
+                  max={2000}
+                  step={100}
+                  value={settings.gestures.arm_hold_ms}
+                  onChange={(e) =>
+                    patch({
+                      gestures: {
+                        ...settings.gestures,
+                        arm_hold_ms: parseInt(e.target.value, 10) || 600,
+                      },
+                    })
+                  }
+                />
+              </label>
+              <label className="row">
+                <span>Confirmation hold (ms)</span>
+                <input
+                  type="number"
+                  min={500}
+                  max={3000}
+                  step={100}
+                  value={settings.gestures.confirm_hold_ms}
+                  onChange={(e) =>
+                    patch({
+                      gestures: {
+                        ...settings.gestures,
+                        confirm_hold_ms: parseInt(e.target.value, 10) || 1500,
+                      },
+                    })
+                  }
+                />
+              </label>
+              <label className="row">
+                <span>Enter confidence</span>
+                <input
+                  type="number"
+                  min={0.5}
+                  max={0.95}
+                  step={0.05}
+                  value={settings.gestures.min_confidence}
+                  onChange={(e) =>
+                    patch({
+                      gestures: {
+                        ...settings.gestures,
+                        min_confidence: parseFloat(e.target.value) || 0.75,
+                      },
+                    })
+                  }
+                />
+              </label>
+              <label className="row">
+                <span>"Ask your camera" (point + ask)</span>
+                <input
+                  type="checkbox"
+                  checked={settings.gestures.deictic_enabled}
+                  onChange={(e) =>
+                    patch({
+                      gestures: { ...settings.gestures, deictic_enabled: e.target.checked },
+                    })
+                  }
+                />
+              </label>
+              <p className="muted small">
+                Sends a crop of what a hand is pointing at to your <em>local</em> multimodal model
+                and shows the answer. Off by default; the answer is never pasted into another app
+                and no crop is saved.
+              </p>
+              {settings.gestures.deictic_enabled && (
+                <>
+                  <label className="row">
+                    <span>Ask provider</span>
+                    <select
+                      value={settings.gestures.deictic_provider}
+                      onChange={(e) =>
+                        patch({
+                          gestures: { ...settings.gestures, deictic_provider: e.target.value },
+                        })
+                      }
+                    >
+                      <option value="lm_studio">LM Studio</option>
+                      <option value="ollama">Ollama</option>
+                    </select>
+                  </label>
+                  <label className="row">
+                    <span>Ask model (vision-capable)</span>
+                    <input
+                      type="text"
+                      value={settings.gestures.deictic_model}
+                      placeholder="empty = the server's loaded model"
+                      onChange={(e) =>
+                        patch({
+                          gestures: { ...settings.gestures, deictic_model: e.target.value },
+                        })
+                      }
+                    />
+                  </label>
+                </>
+              )}
+              <div className="btn-row">
+                <button
+                  className="btn ghost"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    setMessage('');
+                    try {
+                      await api.startGestures();
+                      setMessage('Gesture loop started');
+                      onChanged();
+                    } catch (e) {
+                      setMessage(String(e));
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Start gestures
+                </button>
+                <button
+                  className="btn ghost"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await api.stopGestures();
+                      setMessage('Gesture loop stopped');
+                      onChanged();
+                    } catch (e) {
+                      setMessage(String(e));
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Stop gestures
+                </button>
+              </div>
+
+              <h3>Allowed actions</h3>
+              <p className="muted">
+                Guarded actions also require holding the pose for the confirmation window.
+              </p>
+              {gestureCatalogue?.actions.map((action) => (
+                <label className="row" key={action.id}>
+                  <span>
+                    {action.label}
+                    {action.safety === 'guarded' ? ' (guarded)' : ''}
+                    <br />
+                    <span className="muted">keyboard: {action.keyboard_equivalent}</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={settings.gestures.allowed_actions.includes(action.id)}
+                    onChange={(e) => {
+                      const next = new Set(settings.gestures.allowed_actions);
+                      if (e.target.checked) {
+                        next.add(action.id);
+                      } else {
+                        next.delete(action.id);
+                      }
+                      patch({
+                        gestures: { ...settings.gestures, allowed_actions: [...next] },
+                      });
+                    }}
+                  />
+                </label>
+              ))}
+
+              <h3>Vocabulary</h3>
+              {gestureCatalogue?.gestures.map((gesture) => (
+                <div key={gesture.id} className="muted">
+                  <strong>{gesture.label}</strong> — {gesture.description}
+                </div>
+              ))}
+            </>
+          )}
+
           <h2>Cleanup</h2>
           <label className="row">
             <span>Stage-2 AI polish</span>

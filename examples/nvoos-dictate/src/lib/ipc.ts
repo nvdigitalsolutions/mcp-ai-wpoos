@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 // Typed IPC surface mirroring src-tauri/src/ipc.rs and the serialized DTOs.
 // The webview is thin: all state lives in Rust; these wrappers only marshal.
 
@@ -81,6 +82,27 @@ export interface Settings {
     polish_min_confidence: number;
     polish_max_per_second: number;
   };
+  gestures: {
+    enabled: boolean;
+    landmark_model: string;
+    model_path: string;
+    input_size: number;
+    mirror_preview: boolean;
+    arm_hold_ms: number;
+    min_confidence: number;
+    exit_confidence: number;
+    debounce_agree: number;
+    debounce_window: number;
+    min_track_frames: number;
+    cooldown_ms: number;
+    armed_timeout_ms: number;
+    confirm_hold_ms: number;
+    allowed_actions: string[];
+    /** "Ask your camera" (deictic grounding, Proposal 153 M5). */
+    deictic_enabled: boolean;
+    deictic_provider: string; // lm_studio | ollama
+    deictic_model: string;
+  };
   agent: {
     enabled: boolean;
     provider: string; // lm_studio | ollama | nvoos
@@ -156,6 +178,10 @@ export interface StatusInfo {
   vision_running: boolean;
   vision_detector: string | null;
   vision_hand_model: string | null;
+  gestures_available: boolean;
+  gestures_running: boolean;
+  gesture_armed: boolean;
+  gesture_last: string | null;
   agent_available: boolean;
   agent_running: boolean;
   version: string;
@@ -333,6 +359,75 @@ export interface VisionModelStatus {
   installed: boolean;
 }
 
+export interface GestureModelStatus {
+  id: string;
+  description: string;
+  license: string;
+  installed: boolean;
+  downloadable: boolean;
+  expected_path: string;
+}
+
+export interface GestureInfo {
+  id: string;
+  label: string;
+  description: string;
+  action: string | null;
+  motion: boolean;
+  default_enabled: boolean;
+}
+
+export interface GestureActionInfo {
+  id: string;
+  label: string;
+  safety: 'safe' | 'guarded';
+  keyboard_equivalent: string;
+  default_enabled: boolean;
+}
+
+export interface GestureCatalogue {
+  gestures: GestureInfo[];
+  actions: GestureActionInfo[];
+  /** Whether "ask your camera" (deictic grounding) is enabled. */
+  deictic_enabled: boolean;
+}
+
+/** Result of pointing at something and asking (Proposal 153 M5). */
+export interface DeicticAnswer {
+  answer: string;
+  gesture: string | null;
+  /** The crop that was sent, in source-frame pixels. */
+  region: { x: number; y: number; w: number; h: number };
+  elapsed_ms: number;
+}
+
+export interface GestureSnapshot {
+  running: boolean;
+  armed: boolean;
+  gesture: string | null;
+  confidence: number;
+  held_ms: number;
+  handedness: 'left' | 'right' | 'unknown';
+  /** 21 normalised landmarks (0..1 of the source frame); empty when no hand. */
+  landmarks: { x: number; y: number; z: number }[];
+  at_ms: number;
+  last_action: string | null;
+}
+
+/** A routed gesture action, emitted on `gesture://action`.
+ *  `requires_confirm && !hold_confirmed` means the pose flashed but the
+ *  deliberate hold never completed, so nothing was executed. */
+export interface GestureIntent {
+  action: string;
+  gesture: string;
+  confidence: number;
+  source: 'geometry' | 'learned' | 'llm';
+  requires_confirm: boolean;
+  hold_confirmed: boolean;
+  held_ms: number;
+  at_ms: number;
+}
+
 export interface AgentSnapshot {
   running: boolean;
   last: {
@@ -430,6 +525,28 @@ export interface DiagnosticsInfo {
     polish_model: string;
     polish_calls: number;
     polish_results: number;
+  };
+  gestures: {
+    available: boolean;
+    enabled: boolean;
+    running: boolean;
+    armed: boolean;
+    landmark_model: string;
+    model_path: string;
+    input_size: number;
+    mirror_preview: boolean;
+    frames: number;
+    detections: number;
+    observations: number;
+    intents: number;
+    last_infer_ms: number;
+    errors: number;
+    last_error: string | null;
+    last_gesture: string | null;
+    last_action: string | null;
+    confidence: number;
+    dictation_phase: string;
+    models: GestureModelStatus[];
   };
   agent: {
     available: boolean;
@@ -595,6 +712,18 @@ export const api = {
     invoke<string>('download_vision_model', { model, force }),
   testVisionPolish: () => invoke<LmStudioConnectionTest>('test_vision_polish'),
 
+  gesturesAvailable: () => invoke<boolean>('gestures_available'),
+  startGestures: () => invoke<void>('start_gestures'),
+  stopGestures: () => invoke<void>('stop_gestures'),
+  getGestureState: () => invoke<GestureSnapshot>('get_gesture_state'),
+  setGestureArming: (armed: boolean) =>
+    invoke<boolean>('set_gesture_arming', { armed }),
+  getGestureCatalogue: () => invoke<GestureCatalogue>('get_gesture_catalogue'),
+  getGestureModels: () => invoke<GestureModelStatus[]>('get_gesture_models'),
+  downloadGestureModel: (model: string) =>
+    invoke<string>('download_gesture_model', { model }),
+  askCamera: (question: string) => invoke<DeicticAnswer>('ask_camera', { question }),
+
   agentAvailable: () => invoke<boolean>('agent_available'),
   agentRun: (instruction: string) => invoke<void>('agent_run', { instruction }),
   agentStatus: () => invoke<AgentSnapshot>('agent_status'),
@@ -694,6 +823,22 @@ export function onModelProgress(
     'model://progress',
     (e) => handler(e.payload),
   );
+}
+
+export function onGestureAction(handler: (intent: GestureIntent) => void): Promise<UnlistenFn> {
+  return listen<GestureIntent>('gesture://action', (e) => handler(e.payload));
+}
+
+/** Fires when a guarded gesture was seen but the confirmation hold has not
+ *  completed yet — announce it, do not treat it as executed. */
+export function onGesturePendingConfirm(
+  handler: (intent: GestureIntent) => void,
+): Promise<UnlistenFn> {
+  return listen<GestureIntent>('gesture://pending-confirm', (e) => handler(e.payload));
+}
+
+export function onGestureError(handler: (message: string) => void): Promise<UnlistenFn> {
+  return listen<string>('gesture://error', (e) => handler(e.payload));
 }
 
 export function onMediaProgress(handler: (progress: MediaProgress) => void): Promise<UnlistenFn> {

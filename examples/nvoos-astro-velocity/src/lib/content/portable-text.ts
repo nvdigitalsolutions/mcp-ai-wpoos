@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Portable Text — the structured block-content layer (Proposal 107,
 // DECISION-2, D1). Open spec (portabletext.org), JSON-native, agent-friendly:
@@ -20,6 +21,8 @@ import { z } from 'zod';
 export const CUSTOM_BLOCK_TYPES = [
 	'hero',
 	'image',
+	// 3D product viewer — poster-first, rendered as a custom element.
+	'model3d',
 	'productGrid',
 	'promotion',
 	'testimonial',
@@ -69,6 +72,30 @@ const imageSchema = z.object({
 	_type: z.literal('image'),
 	src: z.string().min(1),
 	alt: z.string().max(300),
+});
+
+/**
+ * A model URL must be root-relative or https — never protocol-relative (`//`)
+ * and never another scheme. The viewer is a content-authored tag, so the
+ * schema is where the fetch origin is decided (not the sanitizer alone).
+ */
+const SITE_ASSET = /^(?:\/(?!\/)|https:\/\/)/;
+
+/**
+ * Model3D block — a poster-first 3D product viewer.
+ *
+ * `poster` and `alt` are REQUIRED on purpose: the poster IS the no-JS, LCP and
+ * reduced-data experience, so a block without one would ship an empty box to
+ * every crawler and to anyone whose runtime never loads. `ar` is opt-in — a
+ * model that is not AR-ready must not advertise AR to a phone.
+ */
+const model3dSchema = z.object({
+	_type: z.literal('model3d'),
+	src: z.string().min(1).max(500).regex(SITE_ASSET, 'src must be root-relative or https'),
+	poster: z.string().min(1).max(500).regex(SITE_ASSET, 'poster must be root-relative or https'),
+	alt: z.string().min(1).max(300),
+	caption: z.string().max(300).optional(),
+	ar: z.boolean().optional(),
 });
 
 const productGridSchema = z.object({
@@ -173,6 +200,7 @@ export type PortableTextItem =
 	| z.infer<typeof blockSchema>
 	| z.infer<typeof heroSchema>
 	| z.infer<typeof imageSchema>
+	| z.infer<typeof model3dSchema>
 	| z.infer<typeof productGridSchema>
 	| z.infer<typeof promotionSchema>
 	| z.infer<typeof testimonialSchema>
@@ -212,6 +240,7 @@ export const portableTextItemSchema = z.discriminatedUnion('_type', [
 	...[
 		heroSchema,
 		imageSchema,
+		model3dSchema,
 		productGridSchema,
 		promotionSchema,
 		testimonialSchema,

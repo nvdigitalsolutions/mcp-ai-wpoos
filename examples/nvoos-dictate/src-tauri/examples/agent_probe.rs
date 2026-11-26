@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Browser-agent de-risk spike (Phase 0 of `docs/browser-agent-plan.md`).
 //!
 //! The de-risk step, mirroring `vision_probe`: prove that a *local* model can

@@ -1,0 +1,74 @@
+{
+  "slug": "law-firm",
+  "name": "Law Firm",
+  "version": "1.0.0",
+  "description": "Billing and matter defaults for the Law Firm toolkit. The Research Assistant select is omitted because its options come from the assistant store.",
+  "icon": "⚖️",
+  "feature": "law-firm",
+  "screens": ["settings"],
+  "tab_labels": {
+    "defaults": "Matter defaults",
+    "features": "Features",
+    "research": "Research & Add"
+  },
+  "settings": [
+    {
+      "key": "default_jurisdiction",
+      "label": "Default jurisdiction",
+      "type": "select",
+      "tab": "defaults",
+      "default": "federal",
+      "options": ["federal", "state"],
+      "description": "Court jurisdiction used for new matters and filings."
+    },
+    {
+      "key": "default_state",
+      "label": "Default state",
+      "type": "text",
+      "tab": "defaults",
+      "default": "",
+      "description": "Two-letter abbreviation (CA, NY, TX). Values are upper-cased and truncated to two characters."
+    },
+    {
+      "key": "default_billing_rate",
+      "label": "Default billing rate (per hour)",
+      "type": "number",
+      "tab": "defaults",
+      "default": 350,
+      "description": "Applied to time entries and fee calculations without their own rate."
+    },
+    {
+      "key": "billing_increment",
+      "label": "Billing increment",
+      "type": "select",
+      "tab": "defaults",
+      "default": "0.1",
+      "options": ["0.1", "0.25"],
+      "description": "Minimum billed slice: 0.1 is the ABA six-minute standard, 0.25 is fifteen minutes."
+    },
+    {
+      "key": "enable_trust_accounting",
+      "label": "Enable trust accounting",
+      "type": "boolean",
+      "tab": "features",
+      "default": false,
+      "description": "Enables IOLTA trust management, reconciliation and retainer balance monitoring."
+    },
+    {
+      "key": "enable_firm_dashboard",
+      "label": "Enable firm dashboard",
+      "type": "boolean",
+      "tab": "features",
+      "default": true,
+      "description": "Shows utilisation, revenue forecasts and matter analytics."
+    },
+    {
+      "key": "enable_research",
+      "label": "Enable Research & Add",
+      "type": "boolean",
+      "tab": "research",
+      "default": true,
+      "description": "Enables the AI-assisted legal research page."
+    }
+  ]
+}

@@ -69,7 +69,7 @@ class WP_MCP_AI_Bearer_Token_Privilege_Escalation_Test extends WP_UnitTestCase {
 			// The request should be REJECTED because:
 			// 1. The assistant is unpublished
 			// 2. The bearer token is not mapped to any user
-			// 3. Even though an admin is logged in, we should NOT use the admin's privileges
+			// 3. Even though an admin is logged in, we should NOT use the admin's privileges.
 			$this->assertInstanceOf( WP_REST_Response::class, $response );
 			$this->assertSame( 403, $response->get_status(), 'Bearer token without user mapping should not access unpublished assistant even with active admin session' );
 
@@ -151,7 +151,7 @@ class WP_MCP_AI_Bearer_Token_Privilege_Escalation_Test extends WP_UnitTestCase {
 			// The request should be REJECTED because:
 			// 1. The bearer token is mapped to a subscriber
 			// 2. The subscriber does not have permission to read the draft assistant
-			// 3. Even though an admin is logged in, we should use the subscriber's privileges
+			// 3. Even though an admin is logged in, we should use the subscriber's privileges.
 			$this->assertInstanceOf( WP_REST_Response::class, $response );
 			$this->assertSame( 403, $response->get_status(), 'Bearer token mapped to subscriber should not inherit admin session privileges' );
 

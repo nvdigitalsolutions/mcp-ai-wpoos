@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import {
 	buildCollectionQuery,

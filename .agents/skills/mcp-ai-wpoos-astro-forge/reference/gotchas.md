@@ -268,3 +268,100 @@ short digest of the highest-traffic ones stays in `SKILL.md`.
   invented. The named type scale (`title-large`, `title-extra-large-4`, …)
   needs no rows: the measured `type.headings` facts already apply those sizes
   and match the source's computed value.
+- **The suite flakes under full parallelism on a cold tree** — 104 workers × the
+  scaffold-heavy files (`lock`, `scaffold`, `contact-section`) blow vitest's 5 s
+  per-test timeout with 3–4 failures that pass in isolation, and a fresh Windows
+  checkout can also throw `EPERM: operation not permitted, rename
+  …\TEMP\forge-scaffold-*\x.forge-tmp-*` from `swapStagedProject`'s rename-in.
+  Both are environmental. Re-run `npx vitest run --exclude
+  tests/forge-e2e.test.ts --no-file-parallelism` (~90 s) before believing a
+  failure belongs to your diff, and say which run the numbers came from in the
+  PR body.
+
+## Cross-app parity gate: running it from a clean worktree (2026-11-17)
+
+`bin/check-astro-app-parity.mjs` imports the two apps' `.ts` modules directly,
+and the forge's `lib/llms.ts` is the one file with a runtime dependency
+(`htmlparser2`). A bare `git worktree add` checkout has no `node_modules`, and
+because ESM **resolves static imports before any statement in the script runs**,
+the failure was an `ERR_MODULE_NOT_FOUND` stack with exit 1 and NO checks
+printed — indistinguishable from real drift, and it cost a debugging cycle.
+
+- **Exit codes are now `0` parity / `1` drift / `2` cannot verify.** The script
+  preflights the forge's `node_modules/htmlparser2` and loads the app modules
+  with `await import()`, so a deps-less tree prints
+  `run npm ci in examples/nvoos-astro-forge` and exits 2. Exit 2 means the gate
+  did NOT run — never "resolve" it by weakening a check.
+- **Lend deps instead of a full `npm ci`** for a one-off run:
+  `cmd //c "mklink /J <wt>/examples/nvoos-astro-forge/node_modules <main>/examples/nvoos-astro-forge/node_modules"`.
+  Velocity's modules are dependency-free by design (the workflow comments say
+  to keep them so). **Unlink with `cmd //c "rmdir <that path>"` before
+  `git worktree remove`** — `rmdir` without `/S` removes the junction only,
+  while a recursive delete follows it into the real `node_modules`.
+- **A red gate in a worktree is usually a stale file, not drift.** Compare
+  `git hash-object bin/check-astro-app-parity.mjs` against
+  `git rev-parse <branch>:bin/check-astro-app-parity.mjs` BEFORE debugging the
+  logic. On 2026-11-17 a pre-fix copy without `model-3d` in `SHARED` produced
+  exactly two failures (forge 6+12=18 kinds vs 19 actual; velocity 6+5=11 vs 12)
+  while the branch tip was green.
+- **Adding a band kind is a three-file decision in ONE commit**: the app's kind
+  list (`lib/types.ts` `SECTION_KINDS`, and velocity's
+  `src/lib/content/section-kinds.ts`), the block that emits `data-section`, and
+  the gate's `SHARED` / `FORGE_ONLY` / `VELOCITY_ONLY` array. `hero`,
+  `testimonial`, `stats`, `comparison`, `steps`, `team` and `model-3d` are
+  SHARED; `accordion` and `content` are forge-only; `image`, `faq`, `tabs`,
+  `product-grid`, `promotion` are velocity-only.
+
+### 2026-11-21 — the type-model review pass
+
+- **`profile.url` is NOT always the rebuild.** A site can be "detached" from WP
+  (materialized content, frozen media, a separate preview host) while
+  `profile.url` still points at the LIVE WordPress. Check before deciding a
+  re-measure is circular: `curl -s <url> | grep -c wp-content` plus the absence
+  of `<meta name="forge-build">` means that origin is still the SOURCE. On
+  monicarajiv the whole chrome re-measure was safe precisely because
+  `monicarajiv.com` is still Flatsome and only the preview host serves Astro.
+- **Check the element EXISTS in the build before fixing its CSS.** A
+  component-class fix is a silent no-op on a raw-HTML site: monicarajiv's bands
+  are all `.section-title` (Flatsome markup on the raw path), so a considered
+  `--ds-title-size-*` change to the `.ds-title` clamp touched **zero** nodes.
+  `grep -c 'class="ds-title' dist/*.html` is a 30-second check that reorders the
+  whole investigation.
+- **Per-element type is a CLASS BOX FACT, not `design.elementCss`.**
+  `elementCss` is a flat `{selector, declarations}` list of `#id` rules (306 on
+  monicarajiv) and is empty of `.section-title`; the emitted
+  `[data-section-id] .section-title{font-size:…}` rules come from
+  `bandFacts[id].box` → `theme.box` → `emit()` in `bandBoxCss`. Grep the built
+  HTML for the selector, then look in the box facts.
+- **`bandBoxCss` sets a deliberate SPECIFICITY FLOOR** that no reordering can
+  beat: its second selector is `.post-body .section-content .col .x` — five
+  classes. A band type rule (`[data-section-id="X"] h3`, one attribute + one
+  element) loses whatever the source order, and so does emitting it later. Any
+  rule meant to override a class fact has to clear that floor or be applied to
+  the fact itself.
+- **A class fact records only DECLARED type, so a desktop value leaks to
+  mobile.** `ownTypeOf` returns type only when the element's computed values
+  differ from its PARENT's. A `.section-title` h3 is 22.2px against a 17.76px
+  parent on desktop (declared → recorded) but 16px against a 16px parent at
+  390px (inherited → NOT recorded), so `mergeBoxFacts` emits no mobile override
+  and the phone headline renders 22.2px instead of 16px. This is the
+  deliberately-unbuilt descendant-type work: the fix is to record computed type
+  for text-level nodes and let the device diff decide, which grows CSS on every
+  site — measure the fact budget first.
+- **The sampled viewport and the emitted media range must be explicitly
+  related.** `DEFAULT_GEOMETRY_VIEWPORTS` samples 1440/834/390 while the
+  renderer emits `max-width:1024px` and `max-width:767px`. 834 is neither edge
+  of the tablet range, so the frozen value is ~6% off at 1024 (32px → 30.024px)
+  and NOTHING in the existing gates noticed. Sample the range EDGES (or emit a
+  `clamp()`), never one interior point.
+- **Chained directory junctions break Vite.** Pointing a build target's
+  `node_modules` at a path that is ITSELF a junction resolves to the outer real
+  path, so `@astrojs/mdx` is reported missing from a package that is installed.
+  Point the junction at the real directory, or `npm install` in the target.
+- **`sites/` is enumerated as site profiles by the fleet workflow.**
+  `forge-sites.yml` globs `sites/*.json`, so a non-profile artefact parked there
+  (an element spec) is scaffolded as a site, fails `assertProfile` on
+  `{ url, collections }`, and — under `set -e` — kills the run before the sites
+  after it build. Specs live in `compare/<site>.json`. The workflow now skips a
+  file that merely lacks the profile shape (with a warning) but still fails on
+  malformed JSON.

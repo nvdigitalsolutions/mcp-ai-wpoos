@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * LoginScreen UI tests — form submission, uniform error display, the
  * informational notice (session-expired) surface, and the magic-link
@@ -145,6 +146,23 @@ describe('LoginScreen', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(
         'Sign-in is temporarily unavailable.',
       );
+    });
+
+    it('hides the mode when the backend reports it off', () => {
+      render(<LoginScreen onSuccess={() => {}} magicLinkAvailable={false} />);
+
+      // `hidden` keeps it out of the accessibility tree, so a disabled login
+      // method is not advertised (the backend answers 404 for the same reason).
+      expect(screen.queryByRole('tab', { name: 'Magic link' })).toBeNull();
+      expect(screen.getByRole('tab', { name: 'Password' })).toBeVisible();
+    });
+
+    it('keeps the mode when availability is still unknown', () => {
+      // `undefined` means the feature probe has not settled: show it, because a
+      // failed probe must not remove a working login method.
+      render(<LoginScreen onSuccess={() => {}} />);
+
+      expect(screen.getByRole('tab', { name: 'Magic link' })).toBeTruthy();
     });
   });
 });

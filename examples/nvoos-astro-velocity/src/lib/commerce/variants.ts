@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Variant resolution helpers — Proposal 106 §1.1 (variable products).
 //

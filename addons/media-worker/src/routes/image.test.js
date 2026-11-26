@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the Wave 1 image routes (v3.4.0):
  * POST /api/image/enhance and POST /api/image/upscale.
@@ -481,4 +482,83 @@ test( 'edit honors a prompt override on the provider request', async () => {
 	const texts = parts.filter( ( part ) => part.text ).map( ( part ) => part.text ).join( ' ' );
 	assert.match( texts, /Make it sepia toned\./ );
 	assert.ok( parts.some( ( part ) => part.inlineData ), 'the source image travels inline' );
+} );
+
+/**
+ * Build a multipart body carrying several files under the `files[n]` convention.
+ *
+ * @param {Buffer[]} files  File bytes, in order.
+ * @param {Object}   fields Extra form fields.
+ * @return {FormData} Multipart body.
+ */
+function multipartMany( files, fields = {} ) {
+	const form = new FormData();
+	files.forEach( ( bytes, index ) => {
+		form.append( `files[${ index }]`, new Blob( [ bytes ], { type: 'image/png' } ), `fixture-${ index }.png` );
+	} );
+	for ( const [ key, value ] of Object.entries( fields ) ) {
+		form.append( key, String( value ) );
+	}
+	return form;
+}
+
+test( 'batch encodes losslessly only for formats that have a lossless mode', async () => {
+	const { server, url } = await startServer();
+	try {
+		const png = await makePng( 80, 60 );
+
+		const lossless = await fetch( `${ url }/batch`, {
+			method: 'POST',
+			body: multipartMany( [ png ], { format: 'webp', lossless: true } ),
+		} );
+
+		assert.equal( lossless.status, 200 );
+		const body = await lossless.json();
+		assert.equal( body.processed, 1 );
+
+		// Sharp echoes `lossless` on the encoder; the reliable black-box check is
+		// that the payload decodes to the same pixels as the source.
+		const decoded = await sharp( Buffer.from( body.results[ 0 ].b64, 'base64' ) ).raw().toBuffer();
+		const source = await sharp( png ).removeAlpha().raw().toBuffer();
+		assert.deepEqual( decoded, source );
+
+		const jpeg = await fetch( `${ url }/batch`, {
+			method: 'POST',
+			body: multipartMany( [ png ], { format: 'jpeg', lossless: true } ),
+		} );
+
+		assert.equal( jpeg.status, 400 );
+		const refused = await jpeg.json();
+		assert.match( refused.error, /lossless/i );
+		assert.deepEqual( refused.allowed_formats, [ 'png', 'webp', 'avif' ] );
+
+		const original = await fetch( `${ url }/batch`, {
+			method: 'POST',
+			body: multipartMany( [ png ], { format: 'original', lossless: true } ),
+		} );
+
+		assert.equal( original.status, 400, 'an unknown source encoding cannot be vouched for' );
+	} finally {
+		server.close();
+	}
+} );
+
+test( 'batch reports one corrupt file without failing the others', async () => {
+	const { server, url } = await startServer();
+	try {
+		const good = await makePng( 20, 20 );
+
+		const res = await fetch( `${ url }/batch`, {
+			method: 'POST',
+			body: multipartMany( [ good, Buffer.from( 'not an image' ) ], { format: 'webp', quality: 80 } ),
+		} );
+
+		assert.equal( res.status, 200 );
+		const body = await res.json();
+		assert.equal( body.processed, 1 );
+		assert.equal( body.errors.length, 1 );
+		assert.match( body.errors[ 0 ].filename, /fixture-1\.png/ );
+	} finally {
+		server.close();
+	}
 } );

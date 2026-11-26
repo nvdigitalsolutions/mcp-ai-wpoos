@@ -100,6 +100,45 @@ class Test_Remote_Connection_Tool_Variations extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Stub remote HTTP responses by URL fragment.
+	 *
+	 * @param array $routes Map of URL fragment => decoded response body.
+	 * @param array $urls   Captured request URLs (by reference).
+	 * @return callable The registered filter callback.
+	 */
+	protected function stub_remote_responses( array $routes, &$urls ) {
+		$stub = function ( $preempt, $args, $url ) use ( $routes, &$urls ) {
+			$urls[] = $url;
+
+			foreach ( $routes as $fragment => $body ) {
+				if ( false !== strpos( $url, $fragment ) ) {
+					return array(
+						'body'     => wp_json_encode( $body ),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'headers'  => array(),
+					);
+				}
+			}
+
+			return array(
+				'body'     => wp_json_encode( array() ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'headers'  => array(),
+			);
+		};
+
+		add_filter( 'pre_http_request', $stub, 10, 3 );
+
+		return $stub;
+	}
+
+	/**
 	 * Test that get_wc_product_variations action is in the schema.
 	 */
 	public function test_schema_includes_variations_action() {
@@ -293,6 +332,234 @@ class Test_Remote_Connection_Tool_Variations extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( '25', $description );
 		$this->assertStringContainsString( 'in-stock', strtolower( $description ) );
+	}
+
+	/**
+	 * The schema exposes product_id as an alias of post_id.
+	 */
+	public function test_schema_includes_product_id_alias() {
+		$schema = $this->tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'product_id', $schema['properties'] );
+		$this->assertEquals( 'integer', $schema['properties']['product_id']['type'] );
+	}
+
+	/**
+	 * The sku description explains the variation-SKU limitation.
+	 */
+	public function test_sku_parameter_description_covers_variation_parent() {
+		$schema      = $this->tool->get_parameters_schema();
+		$description = strtolower( $schema['properties']['sku']['description'] );
+
+		$this->assertStringContainsString( 'get_wc_product_variations', $description );
+		$this->assertStringContainsString( 'parent', $description );
+	}
+
+	/**
+	 * get_wc_products expands variable products into their variations.
+	 *
+	 * Remote payloads decode to associative arrays; before the shape
+	 * normalisation the tool never detected `type => variable`, so
+	 * include_variations silently returned the parent product only.
+	 */
+	public function test_get_wc_products_includes_variations_for_variable_products() {
+		$urls = array();
+
+		$stub = $this->stub_remote_responses(
+			array(
+				'/products/501/variations' => array(
+					array(
+						'id'           => 9001,
+						'sku'          => 'BLUE-M',
+						'stock_status' => 'instock',
+					),
+				),
+				'/wc/v3/products?'         => array(
+					array(
+						'id'           => 501,
+						'name'         => 'Blue Shirt',
+						'type'         => 'variable',
+						'sku'          => 'BLUE',
+						'stock_status' => 'instock',
+					),
+				),
+			),
+			$urls
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'action'        => 'get_wc_products',
+				'connection_id' => $this->connection_id,
+			),
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		remove_filter( 'pre_http_request', $stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 1, $result['variation_count'] );
+		$this->assertCount( 1, $result['products'] );
+		$this->assertIsObject( $result['products'][0] );
+		$this->assertSame( 9001, $result['products'][0]->id );
+		$this->assertSame( 501, $result['products'][0]->parent_id );
+		$this->assertSame( 'Blue Shirt', $result['products'][0]->parent_name );
+	}
+
+	/**
+	 * A SKU resolves to the parent product before variations are fetched.
+	 */
+	public function test_get_variations_resolves_sku_to_parent_product() {
+		$urls = array();
+
+		$stub = $this->stub_remote_responses(
+			array(
+				'sku=SHIRT-BLUE'           => array(
+					array(
+						'id'   => 501,
+						'name' => 'Blue Shirt',
+						'sku'  => 'SHIRT-BLUE',
+						'type' => 'variable',
+					),
+				),
+				'/products/501/variations' => array(
+					array(
+						'id'           => 9001,
+						'sku'          => 'SHIRT-BLUE-M',
+						'stock_status' => 'instock',
+					),
+				),
+			),
+			$urls
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'action'        => 'get_wc_product_variations',
+				'connection_id' => $this->connection_id,
+				'sku'           => 'SHIRT-BLUE',
+			),
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		remove_filter( 'pre_http_request', $stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 501, $result['product_id'] );
+		$this->assertSame( 'sku', $result['resolved_by'] );
+		$this->assertSame( 'Blue Shirt', $result['product']['name'] );
+		$this->assertSame( 1, $result['count'] );
+		$this->assertSame( 9001, $result['variations'][0]->id );
+	}
+
+	/**
+	 * product_id is accepted as an alias of post_id.
+	 */
+	public function test_get_variations_accepts_product_id_alias() {
+		$urls = array();
+
+		$stub = $this->stub_remote_responses(
+			array(
+				'/products/501/variations' => array(
+					array(
+						'id'  => 9002,
+						'sku' => 'SKU-ALIAS-VAR',
+					),
+				),
+			),
+			$urls
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'action'        => 'get_wc_product_variations',
+				'connection_id' => $this->connection_id,
+				'product_id'    => 501,
+			),
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		remove_filter( 'pre_http_request', $stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 501, $result['product_id'] );
+		$this->assertArrayNotHasKey( 'resolved_by', $result );
+		$this->assertCount( 1, $urls );
+		$this->assertStringContainsString( '/products/501/variations', $urls[0] );
+	}
+
+	/**
+	 * An unknown SKU returns an actionable error naming the variation case.
+	 */
+	public function test_get_variations_rejects_unknown_sku() {
+		$urls = array();
+
+		$stub = $this->stub_remote_responses( array(), $urls );
+
+		$result = $this->tool->execute(
+			array(
+				'action'        => 'get_wc_product_variations',
+				'connection_id' => $this->connection_id,
+				'sku'           => 'DOES-NOT-EXIST',
+			),
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		remove_filter( 'pre_http_request', $stub, 10 );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_pro_product_not_found', $result->get_error_code() );
+		$this->assertStringContainsString( 'variation SKU', $result->get_error_message() );
+		$this->assertStringContainsString( 'post_id', $result->get_error_message() );
+		$this->assertCount( 2, $urls, 'Exact SKU lookup then the search fallback.' );
+	}
+
+	/**
+	 * get_wc_product also accepts a SKU instead of a product ID.
+	 */
+	public function test_get_product_resolves_sku() {
+		$urls = array();
+
+		$stub = $this->stub_remote_responses(
+			array(
+				'sku=HOODIE-RED' => array(
+					array(
+						'id'   => 601,
+						'name' => 'Red Hoodie',
+						'sku'  => 'HOODIE-RED',
+						'type' => 'simple',
+					),
+				),
+				'/products/601'  => array(
+					'id'                => 601,
+					'name'              => 'Red Hoodie',
+					'sku'               => 'HOODIE-RED',
+					'type'              => 'simple',
+					'price'             => '59.00',
+					'stock_status'      => 'instock',
+					'images'            => array(),
+					'categories'        => array(),
+					'description'       => '',
+					'short_description' => '',
+				),
+			),
+			$urls
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'action'        => 'get_wc_product',
+				'connection_id' => $this->connection_id,
+				'sku'           => 'HOODIE-RED',
+			),
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		remove_filter( 'pre_http_request', $stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 601, $result['product']->id );
+		$this->assertSame( 'Red Hoodie', $result['product']->name );
 	}
 
 	/**

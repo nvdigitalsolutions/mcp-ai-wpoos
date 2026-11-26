@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Stamp worker/drift-manifest.json with the build-time fingerprint of
  * worker/dist/index.js.

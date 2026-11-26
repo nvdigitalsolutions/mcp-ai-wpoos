@@ -55,6 +55,9 @@ final class WorkflowRunner
 
         $runId = DB::table('nvoos_workflow_runs')->insertGetId([
             'workflow_id' => $workflow->id,
+            // The estate that ran it, not the estate that owns the workflow:
+            // a run is an event, and the reader scopes by it (149 §18).
+            'tenant_id' => TenantContext::current(),
             'status' => 'running',
             'source' => $source,
             'trigger_id' => $triggerId,

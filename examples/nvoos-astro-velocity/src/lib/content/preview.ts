@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Preview tokens (Proposal 107 §3.2, D3) — the Next.js Draft Mode pattern:
 // a short-lived HMAC token minted per preview, exchanged once at

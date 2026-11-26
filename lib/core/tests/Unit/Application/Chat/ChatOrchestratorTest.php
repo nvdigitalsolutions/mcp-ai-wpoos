@@ -21,6 +21,7 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
@@ -31,7 +32,9 @@ use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestErrorDecision;
+use Nvoos\Core\Domain\Security\ChatProfile;
 use Nvoos\Core\Domain\ValueObject\CancellationToken;
+use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
@@ -251,6 +254,33 @@ final class ChatOrchestratorTest extends TestCase
         }
 
         return array( $orchestrator, $errors, $dispatcher );
+    }
+
+    /**
+     * A resolver bound to one profile, for the hint assertions.
+     */
+    private function chatProfile(ChatProfile $profile): ChatProfileResolverInterface
+    {
+        return new class ($profile) implements ChatProfileResolverInterface {
+            public function __construct(private readonly ChatProfile $profile)
+            {
+            }
+
+            public function resolve(array $context): ChatProfile
+            {
+                return $this->profile;
+            }
+
+            public function defaultProfile(): ChatProfile
+            {
+                return ChatProfile::write();
+            }
+
+            public function isEnabled(): bool
+            {
+                return true;
+            }
+        };
     }
 
     private function toolCallResponse(): array
@@ -1330,6 +1360,165 @@ final class ChatOrchestratorTest extends TestCase
         $this->assertStringStartsWith('[Guardrails — Stay on Target]', $sent[0]['content']);
     }
 
+    // ── Chat-profile hint ───────────────────────────────────────
+
+    /**
+     * The hint tells the model where the boundary is before it hits it.
+     *
+     * Without it the model discovers read-only by having a write refused, and
+     * spends its remaining iterations retrying a call that cannot succeed.
+     */
+    public function test_the_read_only_hint_reaches_the_system_prompt(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setChatProfileResolver($this->chatProfile(ChatProfile::readOnly()));
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+            userId: 7,
+        );
+
+        $system = $dispatcher->router->receivedMessages[0][0];
+
+        $this->assertSame('system', $system['role']);
+        $this->assertStringContainsString('Read-only mode', $system['content']);
+        $this->assertStringContainsString('blocked at the execution layer', $system['content']);
+        $this->assertStringContainsString('A blocked call is final', $system['content']);
+    }
+
+    public function test_the_permissive_profile_contributes_no_hint(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setChatProfileResolver($this->chatProfile(ChatProfile::write()));
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+            userId: 7,
+        );
+
+        $this->assertStringNotContainsString('Read-only mode', $dispatcher->router->receivedMessages[0][0]['content']);
+    }
+
+    /**
+     * A resumed turn may already carry the hint; a second copy would double
+     * its weight in the prompt.
+     */
+    public function test_the_hint_is_not_duplicated_when_the_turn_already_carries_it(): void
+    {
+        $hint = ChatProfile::readOnly()->promptHint();
+
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setChatProfileResolver($this->chatProfile(ChatProfile::readOnly()));
+
+        $orchestrator->handleChat(
+            array(
+                array( 'role' => 'system', 'content' => $hint ),
+                array( 'role' => 'user', 'content' => 'Hi.' ),
+            ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+            userId: 7,
+        );
+
+        $this->assertSame(
+            1,
+            \substr_count($dispatcher->router->receivedMessages[0][0]['content'], 'A blocked call is final')
+        );
+    }
+
+    public function test_the_streaming_path_carries_the_hint_too(): void
+    {
+        $sse = new SseHandler($this->createMock(PlatformFlushInterface::class));
+        $sse->markHeadersSent();
+
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ), null, $sse);
+        $orchestrator->setChatProfileResolver($this->chatProfile(ChatProfile::readOnly()));
+        $dispatcher->router->streamChunks = array();
+
+        \ob_start();
+        $orchestrator->handleChatStreaming(
+            messages: array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            assistantConfig: array( 'provider' => 'openai', 'model' => 'gpt-4o', 'tools' => array() ),
+            userId: 7,
+        );
+        \ob_end_clean();
+
+        $this->assertStringContainsString(
+            'Read-only mode',
+            $dispatcher->router->receivedMessages[0][0]['content']
+        );
+    }
+
+    // ── Turn budget (149 §179) ──────────────────────────────────
+
+    /**
+     * The ceiling has to act **before** the request leaves: a limit applied
+     * afterwards is a report, and the call that overspent is already billed.
+     */
+    public function test_a_call_over_the_per_call_ceiling_never_reaches_the_provider(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setTurnBudget(new TurnBudget(perCallTokens: 10));
+
+        $result = $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => \str_repeat('word ', 200) ) ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o', 'max_tokens' => 100 ),
+        );
+
+        $this->assertIsArray($result['response']);
+        $this->assertSame('turn_budget_exceeded', $result['response']['error']['code']);
+        $this->assertSame('call', $result['response']['error']['data']['dimension']);
+        $this->assertStringContainsString('per-call ceiling', $result['response']['error']['message']);
+        $this->assertSame('budget_limit', $result['cancel_reason']);
+        $this->assertSame(
+            array(),
+            $dispatcher->router->receivedMessages,
+            'A refused call must not reach the provider at all.'
+        );
+    }
+
+    /**
+     * The runaway case: a loop that has spent its allowance must not buy one
+     * more round-trip, however cheap that round-trip looks on its own.
+     */
+    public function test_the_loop_stops_before_a_call_that_would_cross_the_turn_ceiling(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator(
+            $this->echoTool()[0],
+            array( $this->toolCallResponse(), $this->finalResponse() )
+        );
+
+        // The first response reports 110 tokens of usage, so any ceiling at or
+        // below that is already spent when the loop reaches its second call.
+        $orchestrator->setTurnBudget(new TurnBudget(perTurnTokens: 105));
+
+        $result = $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+        );
+
+        $this->assertIsArray($result['response'], 'The loop stops with the first answer rather than an error.');
+        $this->assertSame(
+            1,
+            \count($dispatcher->router->receivedMessages),
+            'The second provider call must not be made.'
+        );
+    }
+
+    public function test_no_ceiling_configured_changes_nothing(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setTurnBudget(new TurnBudget());
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+        );
+
+        $this->assertCount(1, $dispatcher->router->receivedMessages);
+    }
+
     // ── Scored tool routing ───────────────────────────────────────
 
     /**
@@ -1621,11 +1810,22 @@ final class ChatOrchestratorTest extends TestCase
             assistantId: 7,
         );
 
-        $this->assertSame(array( 'start', 'routing', 'iteration', 'iteration', 'end' ), $store->types);
+        // The tool record sits between the two provider calls: one execution
+        // happened, and the trace says which tool, for how long and with what
+        // outcome — the shape per-tool metrics are derived from.
+        $this->assertSame(
+            array( 'start', 'routing', 'iteration', 'tool', 'iteration', 'end' ),
+            $store->types
+        );
         $this->assertSame('tool_calls', $store->records[2]['finish_reason']);
-        $this->assertSame('stop', $store->records[3]['finish_reason']);
-        $this->assertSame(2, $store->records[4]['provider_calls']);
-        $this->assertSame(1, $store->records[4]['iterations'], 'The orchestrator loop counted one continuation.');
+
+        $this->assertSame('echo_tool', $store->records[3]['tool']);
+        $this->assertSame('success', $store->records[3]['outcome']);
+        $this->assertGreaterThanOrEqual(0.0, (float) $store->records[3]['duration_ms']);
+
+        $this->assertSame('stop', $store->records[4]['finish_reason']);
+        $this->assertSame(2, $store->records[5]['provider_calls']);
+        $this->assertSame(1, $store->records[5]['iterations'], 'The orchestrator loop counted one continuation.');
     }
 
     public function test_the_streaming_path_traces_too(): void
@@ -1650,5 +1850,207 @@ final class ChatOrchestratorTest extends TestCase
 
         $this->assertSame(array( 'start', 'routing', 'iteration', 'end' ), $store->types);
         $this->assertSame(1, $store->prunes);
+    }
+
+    /**
+     * A tool whose result carries an encoded payload and no `message` key, so
+     * it takes the sanitize-and-encode branch of the loop.
+     */
+    private function payloadTool(string $slug, mixed $result): ToolInterface
+    {
+        return new class ($slug, $result) implements ToolInterface {
+            public function __construct(private string $slug, private mixed $result)
+            {
+            }
+
+            public function getSlug(): string
+            {
+                return $this->slug;
+            }
+
+            public function getName(): string
+            {
+                return 'Payload Tool';
+            }
+
+            public function getDescription(): string
+            {
+                return 'Returns an encoded payload.';
+            }
+
+            public function getParametersSchema(): array
+            {
+                return array( 'type' => 'object', 'properties' => array() );
+            }
+
+            public function getRequiredCapability(): string
+            {
+                return '';
+            }
+
+            public function execute(array $arguments = array(), array $context = array()): mixed
+            {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * The same result shape, but the tool declares how the model should see it.
+     */
+    private function declaringPayloadTool(string $slug, mixed $result, mixed $copy): ToolInterface
+    {
+        return new class ($slug, $result, $copy) implements ToolInterface, \Nvoos\Core\Domain\Contract\LlmSanitizerInterface {
+            public function __construct(private string $slug, private mixed $result, private mixed $copy)
+            {
+            }
+
+            public function getSlug(): string
+            {
+                return $this->slug;
+            }
+
+            public function getName(): string
+            {
+                return 'Declaring Payload Tool';
+            }
+
+            public function getDescription(): string
+            {
+                return 'Returns a payload with a declared copy.';
+            }
+
+            public function getParametersSchema(): array
+            {
+                return array( 'type' => 'object', 'properties' => array() );
+            }
+
+            public function getRequiredCapability(): string
+            {
+                return '';
+            }
+
+            public function execute(array $arguments = array(), array $context = array()): mixed
+            {
+                return $this->result;
+            }
+
+            public function sanitizeForLlm(mixed $result): mixed
+            {
+                return $this->copy;
+            }
+        };
+    }
+
+    private function toolCallResponseFor(string $name): array
+    {
+        return array(
+            'choices' => array(
+                array(
+                    'message'      => array(
+                        'role'       => 'assistant',
+                        'content'    => null,
+                        'tool_calls' => array(
+                            array(
+                                'id'       => 'call_1',
+                                'function' => array(
+                                    'name'      => $name,
+                                    'arguments' => '{}',
+                                ),
+                            ),
+                        ),
+                    ),
+                    'finish_reason' => 'tool_calls',
+                ),
+            ),
+            'usage'   => array( 'prompt_tokens' => 10, 'completion_tokens' => 5 ),
+        );
+    }
+
+    public function test_a_payload_is_stripped_before_the_model_sees_it(): void
+    {
+        $tool = $this->payloadTool('payload_tool', array(
+            'images' => array(
+                array( 'b64_json' => str_repeat('A', 500), 'url' => 'https://example.test/a.png' ),
+            ),
+        ));
+
+        [ $orchestrator, ] = $this->orchestratorWithTools(
+            array( $tool ),
+            array( $this->toolCallResponseFor('payload_tool'), $this->finalResponse() )
+        );
+
+        $result = $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Make one.' ) ),
+            array( 'tools' => array( 'payload_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+        );
+
+        $content = (string) $result['tool_results'][0]['content'];
+
+        $this->assertStringNotContainsString('b64_json', $content);
+        $this->assertStringContainsString('a.png', $content);
+    }
+
+    public function test_a_declared_copy_is_what_the_model_sees(): void
+    {
+        $tool = $this->declaringPayloadTool(
+            'declared_tool',
+            array( 'images' => array( array( 'b64_json' => str_repeat('A', 500) ) ) ),
+            array( 'note' => 'declared-copy' )
+        );
+
+        [ $orchestrator, ] = $this->orchestratorWithTools(
+            array( $tool ),
+            array( $this->toolCallResponseFor('declared_tool'), $this->finalResponse() )
+        );
+
+        $result = $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Make one.' ) ),
+            array( 'tools' => array( 'declared_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+        );
+
+        $content = (string) $result['tool_results'][0]['content'];
+
+        $this->assertStringContainsString('declared-copy', $content);
+        $this->assertStringNotContainsString('images', $content);
+    }
+
+    public function test_the_streaming_path_sanitizes_the_same_way(): void
+    {
+        $tool = $this->payloadTool('payload_tool', array(
+            'images' => array(
+                array( 'b64_json' => str_repeat('B', 500), 'url' => 'https://example.test/streamed.png' ),
+            ),
+        ));
+
+        [ $orchestrator, $dispatcher ] = $this->orchestratorWithTools(
+            array( $tool ),
+            array( $this->toolCallResponseFor('payload_tool'), $this->finalResponse() )
+        );
+
+        // This path used to encode the raw result, so the payload reached the
+        // model here and not on the non-streaming path. Assert on what was sent
+        // to the provider rather than on stdout: the SSE handler flushes output
+        // buffers, so a captured buffer is not a reliable witness.
+        //
+        // `sendHeaders()` drains every buffer by design, which PHPUnit reports as
+        // "closed output buffers other than its own". Restoring the level keeps
+        // that check honest instead of suppressing it.
+        $level = \ob_get_level();
+
+        $orchestrator->handleChatStreaming(
+            messages: array( array( 'role' => 'user', 'content' => 'Make one.' ) ),
+            assistantConfig: array( 'provider' => 'openai', 'model' => 'gpt-4o', 'tools' => array( 'payload_tool' ) ),
+            assistantId: 7,
+        );
+
+        while (\ob_get_level() < $level) {
+            \ob_start();
+        }
+
+        $sent = (string) \json_encode($dispatcher->router->receivedMessages);
+
+        $this->assertStringNotContainsString('b64_json', $sent);
+        $this->assertStringContainsString('streamed.png', $sent);
     }
 }

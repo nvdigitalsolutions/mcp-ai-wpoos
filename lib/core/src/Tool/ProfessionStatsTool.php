@@ -13,8 +13,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class ProfessionStatsTool extends AbstractTool
+class ProfessionStatsTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $e, private readonly ProfessionRepositoryInterface $p)
     {
@@ -48,5 +50,18 @@ class ProfessionStatsTool extends AbstractTool
             $total += \count($c);
         }
         return $this->success('Profession statistics.', array('total_professions' => $total,'category_count' => \count($cats),'categories' => array_map(fn($c)=>count($c), $cats)));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Reads a local store. Side-effect free, but not cacheable: the store
+     * can change between two identical calls.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_READ;
     }
 }

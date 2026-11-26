@@ -1,0 +1,19 @@
+{
+	"asset": {
+		"version": "2.0",
+		"generator": "nvoos-astro-velocity e2e fixture (structural, no buffers)"
+	},
+	"scene": 0,
+	"scenes": [
+		{
+			"name": "fixture",
+			"nodes": [0]
+		}
+	],
+	"nodes": [
+		{
+			"name": "fixture-root",
+			"translation": [0, 0, 0]
+		}
+	]
+}

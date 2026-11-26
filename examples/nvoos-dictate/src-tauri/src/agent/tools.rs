@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Action vocabulary helpers: the safety buckets (§4/§4a) and the brain prompt.
 //!
 //! Pure, always-compiled, unit-testable. The safety classification mirrors the

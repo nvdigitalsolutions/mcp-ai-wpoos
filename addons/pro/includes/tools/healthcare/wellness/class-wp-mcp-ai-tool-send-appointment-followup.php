@@ -200,9 +200,9 @@ class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interfa
 		);
 
 		if ( empty( $appointment_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No valid appointment IDs provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'No valid appointment IDs provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

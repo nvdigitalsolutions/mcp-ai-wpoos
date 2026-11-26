@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Button — CVA-based button with shadcn-style variants.
  */

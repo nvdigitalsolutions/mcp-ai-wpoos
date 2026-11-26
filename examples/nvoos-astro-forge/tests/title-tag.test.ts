@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // title-tag.test.ts — the heading level a band title renders at.
 //
@@ -22,6 +23,16 @@ describe( 'titleTag', () => {
 
 	it( 'maps a source h1 down to h2 (the article owns the single h1)', () => {
 		expect( titleTag( { titleLevel: 'h1' } ) ).toBe( 'h2' );
+	} );
+
+	it( 'keeps the h1 when the PAGE owns the heading', () => {
+		// The front page's body IS the outline: no article sits above the bands, so
+		// mapping its hero down left eca.directory with no h1 at all (2026-11-24).
+		expect( titleTag( { titleLevel: 'h1', allowH1: true } ) ).toBe( 'h1' );
+		// The flag never promotes anything else.
+		expect( titleTag( { titleLevel: 'h3', allowH1: true } ) ).toBe( 'h3' );
+		// …and it is inert where the article owns the h1.
+		expect( titleTag( { titleLevel: 'h1', allowH1: false } ) ).toBe( 'h2' );
 	} );
 
 	it( 'falls back to h2 without a fact', () => {

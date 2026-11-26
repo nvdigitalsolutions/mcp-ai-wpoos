@@ -37,12 +37,18 @@ class WP_MCP_AI_Request_Context_Tests extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * A non-loopback host is left unchanged.
+	 */
 	public function test_normalise_rest_url_returns_original_for_non_loopback_host() {
 		$url = 'https://example.com/wp-json/wp/v2';
 
 		$this->assertSame( $url, WP_MCP_AI_Request_Context::normalise_rest_url( $url ) );
 	}
 
+	/**
+	 * A missing request host leaves the URL unchanged.
+	 */
 	public function test_normalise_rest_url_without_request_host_returns_original() {
 		$_SERVER = array();
 		$url     = 'https://127.0.0.1/wp-json/wp/v2';
@@ -50,6 +56,9 @@ class WP_MCP_AI_Request_Context_Tests extends WP_UnitTestCase {
 		$this->assertSame( $url, WP_MCP_AI_Request_Context::normalise_rest_url( $url ) );
 	}
 
+	/**
+	 * A loopback host is replaced with the current host.
+	 */
 	public function test_normalise_rest_url_replaces_loopback_host_with_current_host() {
 		$_SERVER['HTTP_HOST']              = 'bots.nvdigital.solutions';
 		$_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
@@ -61,6 +70,9 @@ class WP_MCP_AI_Request_Context_Tests extends WP_UnitTestCase {
 		$this->assertSame( $expected, $normalised );
 	}
 
+	/**
+	 * The forwarded host and port are used.
+	 */
 	public function test_normalise_rest_url_uses_forwarded_host_and_port() {
 		$_SERVER['HTTP_X_FORWARDED_HOST']  = 'chat.example.test:8443';
 		$_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';

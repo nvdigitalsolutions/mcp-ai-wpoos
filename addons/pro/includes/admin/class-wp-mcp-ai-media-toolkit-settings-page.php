@@ -23,6 +23,41 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-node-package-h
 class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
+	 * {@inheritdoc}
+	 *
+	 * The markup was already namespaced; what was missing was this list, so the
+	 * base sanitiser dropped all twenty-two keys and the Media Command Center
+	 * read `sharp_processing_mode`, `sharp_enable_webp`, `ocr_primary_provider`
+	 * and `enable_research` from an option nothing ever wrote.
+	 */
+	protected function setting_schema() {
+		return array(
+			'enable_ai_design'             => 'boolean',
+			'default_template_category'    => 'select',
+			'enable_smart_tagging'         => 'boolean',
+			'enable_remote_sync'           => 'boolean',
+			'max_collection_size'          => 'number',
+			'sharp_processing_mode'        => 'select',
+			'sharp_microservice_url'       => 'url',
+			'sharp_microservice_api_key'   => 'text',
+			'sharp_timeout'                => 'number',
+			'sharp_default_quality'        => 'number',
+			'sharp_enable_webp'            => 'boolean',
+			'sharp_max_concurrent'         => 'number',
+			'enable_ocr'                   => 'boolean',
+			'ocr_primary_provider'         => 'select',
+			'enable_image_preprocess'      => 'boolean',
+			'ocr_max_dimension'            => 'number',
+			'batch_chunk_size'             => 'number',
+			'enable_background_processing' => 'boolean',
+			'batch_timeout'                => 'number',
+			'temp_storage_path'            => 'text',
+			'auto_cleanup_temp'            => 'boolean',
+			'temp_retention_hours'         => 'number',
+		);
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -209,7 +244,7 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 * Render configuration tab
 	 */
 	protected function render_configuration_tab() {
-		$options = get_option( $this->option_name, array() );
+		$options = $this->stored_options();
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'Media Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>

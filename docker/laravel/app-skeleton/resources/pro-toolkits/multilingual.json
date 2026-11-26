@@ -1,0 +1,33 @@
+{
+  "slug": "multilingual",
+  "name": "Multilingual",
+  "version": "1.0.0",
+  "description": "Target language, provider and translation memory defaults for the Multilingual toolkit.",
+  "icon": "🌐",
+  "feature": "multilingual",
+  "screens": ["settings"],
+  "settings": [
+    {
+      "key": "default_target_language",
+      "label": "Default target language",
+      "type": "select",
+      "default": "es",
+      "options": ["es", "fr", "de", "zh"],
+      "description": "Language used when a translation request names none."
+    },
+    {
+      "key": "translation_provider",
+      "label": "Translation provider",
+      "type": "select",
+      "default": "openai",
+      "options": ["openai", "google", "deepl"]
+    },
+    {
+      "key": "enable_translation_memory",
+      "label": "Enable translation memory",
+      "type": "boolean",
+      "default": true,
+      "description": "Store and reuse previous translations."
+    }
+  ]
+}

@@ -10,8 +10,16 @@
 
 class Test_Cloudflare_Tool_Call_Parsing extends WP_UnitTestCase {
 
+	/**
+	 * Cloudflare client under test.
+	 *
+	 * @var object
+	 */
 	private $client;
 
+	/**
+	 * Create the client before each test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 

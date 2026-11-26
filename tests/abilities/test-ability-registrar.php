@@ -243,4 +243,77 @@ class WP_MCP_AI_Ability_Registrar_Test extends WP_UnitTestCase {
 			'delete_post should NOT be registered as an ability (not in selective allowlist).'
 		);
 	}
+
+	/**
+	 * Ensure the tool_abilities filter can disable the whole bridge.
+	 *
+	 * This is the documented kill switch for the change that stops core REST
+	 * requests from enumerating the entire tool registry.
+	 *
+	 * @since 1.2.24
+	 * @return void
+	 */
+	public function test_register_all_respects_kill_switch_filter() {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'wp_register_ability() not available.' );
+		}
+
+		$fired = false;
+		add_action(
+			'wp_mcp_ai_abilities_registered',
+			function () use ( &$fired ) {
+				$fired = true;
+			}
+		);
+		add_filter( 'wp_mcp_ai_register_tool_abilities', '__return_false' );
+
+		$this->fire_registration_actions();
+
+		$this->assertFalse(
+			$fired,
+			'wp_mcp_ai_abilities_registered should not fire when the filter disables registration.'
+		);
+		$this->assertFalse(
+			wp_has_ability( 'nvoos/get-recent-posts' ),
+			'No tool abilities should be registered when the kill switch is active.'
+		);
+
+		remove_filter( 'wp_mcp_ai_register_tool_abilities', '__return_false' );
+	}
+
+	/**
+	 * Ensure the REST route used by the registration gate is normalised.
+	 *
+	 * Core routes (e.g. /wp/v2/users/me) must not match the Abilities or MCP
+	 * namespaces, and both namespaces must match with or without leading and
+	 * trailing slashes in the raw query var.
+	 *
+	 * @since 1.2.24
+	 * @return void
+	 */
+	public function test_current_rest_route_is_normalised() {
+		$method = new ReflectionMethod( 'WP_MCP_AI_Ability_Registrar', 'current_rest_route' );
+		$method->setAccessible( true );
+
+		$had_original = isset( $GLOBALS['wp']->query_vars['rest_route'] );
+		$original     = $had_original ? $GLOBALS['wp']->query_vars['rest_route'] : null;
+
+		$GLOBALS['wp']->query_vars['rest_route'] = '/wp/v2/users/me';
+		$this->assertSame( '/wp/v2/users/me/', $method->invoke( null ) );
+
+		$GLOBALS['wp']->query_vars['rest_route'] = 'mcp-ai/v1/tools';
+		$route                                   = $method->invoke( null );
+		$this->assertSame( '/mcp-ai/v1/tools/', $route );
+		$this->assertSame( 0, strpos( $route, '/mcp-ai/' ), 'MCP namespace must match the gate.' );
+
+		$GLOBALS['wp']->query_vars['rest_route'] = '/wp-abilities/v1/abilities';
+		$route                                   = $method->invoke( null );
+		$this->assertSame( 0, strpos( $route, '/wp-abilities/' ), 'Abilities namespace must match the gate.' );
+
+		if ( $had_original ) {
+			$GLOBALS['wp']->query_vars['rest_route'] = $original;
+		} else {
+			unset( $GLOBALS['wp']->query_vars['rest_route'] );
+		}
+	}
 }

@@ -51,6 +51,8 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 	/**
 	 * Set up before class
+	 *
+	 * @param WP_UnitTest_Factory $factory Factory instance.
 	 */
 	public static function wpSetUpBeforeClass( $factory ) {
 		// Create test user.

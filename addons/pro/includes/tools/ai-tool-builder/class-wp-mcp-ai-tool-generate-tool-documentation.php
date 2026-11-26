@@ -152,9 +152,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['tool_class'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Tool class name is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Tool class name is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -186,10 +186,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 		$tool_data = $this->analyze_tool_for_docs( $tool_class, $tool_file );
 
 		if ( is_wp_error( $tool_data ) ) {
-			return array(
-				'success' => false,
-				'error'   => $tool_data->get_error_message(),
-			);
+			return $tool_data;
 		}
 
 		// Build documentation generation prompt.
@@ -198,23 +195,23 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 		// Get AI service.
 		$ai_service = $this->get_ai_service( $arguments, $context );
 		if ( is_wp_error( $ai_service ) ) {
-			return array(
-				'success' => false,
-				'error'   => $ai_service->get_error_message(),
-			);
+			return $ai_service;
 		}
 
 		// Generate documentation.
 		$ai_response = $ai_service->generate( $prompt );
 
 		if ( is_wp_error( $ai_response ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			// Keep the inner code and data: a caller branches on those, and the
+			// prefix only adds human context.
+			return new WP_Error(
+				$ai_response->get_error_code(),
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Documentation generation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$ai_response->get_error_message()
 				),
+				$ai_response->get_error_data()
 			);
 		}
 

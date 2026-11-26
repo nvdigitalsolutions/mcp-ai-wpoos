@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Workflow graph model + node component tests (Phase 3b W10.2b).
  *

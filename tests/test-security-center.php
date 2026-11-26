@@ -101,6 +101,64 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The grade bands exist twice: the shared scorer's, and the copy inside
+	 * WP_MCP_AI_Security_Posture that the wp.org base build uses when lib/core
+	 * is stripped. Assert the scale they produce, then — when lib/core is
+	 * loaded — that the local copy agrees with PostureScorer::gradeFor() at
+	 * every score, so the copy cannot rot.
+	 */
+	public function test_grade_bands_match_the_shared_scorer() {
+		$posture   = new WP_MCP_AI_Security_Posture();
+		$score_ref = new ReflectionMethod( $posture, 'score_to_grade' );
+		$score_ref->setAccessible( true );
+
+		$boundaries = array(
+			100 => 'A+',
+			90  => 'A',
+			89  => 'A-',
+			85  => 'A-',
+			84  => 'B+',
+			79  => 'B',
+			64  => 'C+',
+			59  => 'C',
+			44  => 'D+',
+			39  => 'D',
+			24  => 'F',
+			0   => 'F',
+		);
+
+		foreach ( $boundaries as $score => $grade ) {
+			$this->assertSame( $grade, $score_ref->invoke( $posture, $score ), "score {$score}" );
+		}
+
+		if ( ! class_exists( '\Nvoos\Core\Application\Security\PostureScorer' ) ) {
+			// Base build: the local table is the only implementation, and the
+			// boundary assertions above are the whole contract.
+			return;
+		}
+
+		$bands_ref = new ReflectionMethod( $posture, 'local_grade_bands' );
+		$bands_ref->setAccessible( true );
+		$bands = $bands_ref->invoke( $posture );
+
+		for ( $score = 0; $score <= 100; $score++ ) {
+			$local = 'F';
+			foreach ( $bands as $band ) {
+				if ( $score >= $band[0] ) {
+					$local = $band[1];
+					break;
+				}
+			}
+
+			$this->assertSame(
+				\Nvoos\Core\Application\Security\PostureScorer::gradeFor( $score ),
+				$local,
+				"Local fallback disagrees with the shared scorer at {$score}"
+			);
+		}
+	}
+
+	/**
 	 * Quick wins contains at most 3 items.
 	 */
 	public function test_quick_wins_max_three() {

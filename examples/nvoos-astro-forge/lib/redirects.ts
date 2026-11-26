@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // redirects.ts — the redirect-map generator (096 §3.3; Proposal 132).
 //
@@ -14,6 +15,7 @@
 // ---------------------------------------------------------------------------
 
 import type { SiteProfile } from './types.ts';
+import { isMaterializedContent } from './content-source.ts';
 import { DEFAULT_USER_AGENT, type WpClient } from './wp-client.ts';
 
 /** HTTP statuses a static host can express in a `_redirects` file. */
@@ -91,11 +93,18 @@ function errorMessage( error: unknown ): string {
  * (`rank_math_redirections`) into `{ source, target, type }`; this function
  * validates and re-types that contract. A 404 means "bridge not installed" and
  * is silent; every other failure is a warning so the build still completes.
+ *
+ * A `materialized` profile is not contacted AT ALL: the flag is a promise that
+ * the CMS is gone, and its URL is then the rebuilt site — the request could
+ * only ever reach the rebuild's own fallback page.
  */
 export async function fetchBridgeRedirects(
 	profile: SiteProfile,
 	options: BridgeRedirectOptions = {}
-): Promise<BridgeRedirectResult> {
+): Promise< BridgeRedirectResult > {
+	if ( isMaterializedContent( profile ) ) {
+		return { redirects: [], truncated: false, warnings: [] };
+	}
 	const base = (
 		options.endpoint ??
 		profile.forms?.endpoint ??
@@ -258,7 +267,17 @@ export async function generateRedirects(
 			} else if ( collection.slug === 'products' ) {
 				push( source, `/products/${ entry.id }/${ entry.slug }/` );
 			} else {
-				push( source, `/posts/${ entry.id }/${ entry.slug }/` );
+				// Every other collection is a CPT, whose ROUTE the scaffold emits
+				// under `basePath` (default `/<slug>`) as `/<base>/<id>/<slug>/`.
+				// Sending its entries to `/posts/…` pointed a 301 at a 404 —
+				// eca.directory's 105 `/eca/<slug>/` URLs all resolved to
+				// `/posts/<id>/<slug>/` while the pages were built at
+				// `/eca/<id>/<slug>/`.
+				const base = ( collection.basePath ?? ( collection.slug === 'posts' ? '/posts' : `/${ collection.slug }` ) ).replace(
+					/\/+$/,
+					''
+				);
+				push( source, collection.canonicalPath === 'slug' ? `${ base }/${ entry.slug }/` : `${ base }/${ entry.id }/${ entry.slug }/` );
 			}
 		}
 	}

@@ -62,6 +62,7 @@ class Test_Forge_Bridge_Rest extends WP_UnitTestCase {
 		$this->assertContains( '/nvoos-forge/v1/health', $paths );
 		$this->assertContains( '/nvoos-forge/v1/preview-tokens', $paths );
 		$this->assertContains( '/nvoos-forge/v1/preview-tokens/verify', $paths );
+		$this->assertContains( '/nvoos-forge/v1/gate', $paths );
 	}
 
 	/**

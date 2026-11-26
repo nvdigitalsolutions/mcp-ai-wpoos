@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * UI kit — component tests for the shadcn-style primitives.
  */

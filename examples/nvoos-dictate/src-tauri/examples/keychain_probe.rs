@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Keychain probe: verify the store the app actually uses (Windows
 //! Credential Manager via `storage::win_cred`, keyring elsewhere) persists
 //! correctly: set → read-back → delete.

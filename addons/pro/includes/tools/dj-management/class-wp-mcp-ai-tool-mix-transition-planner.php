@@ -100,9 +100,9 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['track_a_id'] ) || empty( $arguments['track_b_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Both track IDs are required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Both track IDs are required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -111,16 +111,16 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 
 		// Verify tracks exist.
 		if ( ! get_post( $track_a_id ) || get_post_type( $track_a_id ) !== 'dj_track' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid first track ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Invalid first track ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( ! get_post( $track_b_id ) || get_post_type( $track_b_id ) !== 'dj_track' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid second track ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Invalid second track ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

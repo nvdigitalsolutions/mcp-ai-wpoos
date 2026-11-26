@@ -104,23 +104,46 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertSame( 'categories', $data['dashboards']['eca']['charts'][0]['key'] );
 		$this->assertSame( 'ecas', $data['dashboards']['eca']['lists'][0]['key'] );
 
-		// The member-filtered pair joins with member + date-range filters.
-		$this->assertArrayHasKey( 'health', $data['dashboards'] );
-		$this->assertSame( 'member', $data['dashboards']['health']['filters'][0]['type'] );
-		$this->assertSame( 'history', $data['dashboards']['health']['lists'][0]['key'] );
-		$this->assertArrayHasKey( 'vitals', $data['dashboards'] );
-		$this->assertSame( 'member', $data['dashboards']['vitals']['filters'][0]['type'] );
-		$this->assertSame( 'history', $data['dashboards']['vitals']['lists'][0]['key'] );
+		// 158 D1 — the member-filtered pair is ONE surface now. The filters and
+		// the shape were identical; only the toolkit toggles differed, and those
+		// survive as per-section visibility.
+		$this->assertArrayHasKey( 'members', $data['dashboards'] );
+		$this->assertSame( 'member', $data['dashboards']['members']['filters'][0]['type'] );
+		$this->assertArrayNotHasKey( 'sections', $data['dashboards']['members'], 'Gating internals must not leak into the render contract.' );
 
-		// The commerce trio joins (Proposal 089 Phase 4f) with metric cards
-		// and the warehouse/location lists.
-		$this->assertArrayHasKey( 'ezuite', $data['dashboards'] );
-		$this->assertSame( 'in_stock', $data['dashboards']['ezuite']['metrics'][0]['key'] );
-		$this->assertSame( 'warehouses', $data['dashboards']['ezuite']['lists'][0]['key'] );
-		$this->assertArrayHasKey( 'shopify', $data['dashboards'] );
-		$this->assertSame( 'cost_remaining_pct', $data['dashboards']['shopify']['metrics'][0]['key'] );
-		$this->assertArrayHasKey( 'flowhub', $data['dashboards'] );
-		$this->assertSame( 'locations', $data['dashboards']['flowhub']['lists'][0]['key'] );
+		// Both sections are on (every flag is seeded), so both lists are there,
+		// namespaced by section — two lists called `history` cannot coexist.
+		$this->assertSame(
+			array( 'health_history', 'vitals_history' ),
+			array_column( $data['dashboards']['members']['lists'], 'key' )
+		);
+
+		// The commerce trio is one surface: identical render specs, one data
+		// source each. `ezuite` and `flowhub` both publish `in_stock`, which is
+		// exactly why the keys are namespaced.
+		$this->assertArrayHasKey( 'connectors', $data['dashboards'] );
+
+		$metric_keys = array_column( $data['dashboards']['connectors']['metrics'], 'key' );
+		$this->assertCount( 15, $metric_keys );
+		$this->assertSame( $metric_keys, array_unique( $metric_keys ) );
+		$this->assertContains( 'ezuite_in_stock', $metric_keys );
+		$this->assertContains( 'flowhub_in_stock', $metric_keys );
+		$this->assertContains( 'shopify_cost_remaining_pct', $metric_keys );
+
+		$list_keys = array_column( $data['dashboards']['connectors']['lists'], 'key' );
+		$this->assertSame( array( 'ezuite_warehouses', 'flowhub_locations' ), $list_keys );
+
+		// The retired ids are gone from the catalogue...
+		foreach ( array( 'health', 'vitals', 'ezuite', 'shopify', 'flowhub' ) as $retired ) {
+			$this->assertArrayNotHasKey( $retired, $data['dashboards'], $retired . ' should be retired.' );
+		}
+
+		// ...and published as aliases, so a saved id resolves instead of 404ing.
+		$this->assertSame( 'members', $data['aliases']['health'] );
+		$this->assertSame( 'members', $data['aliases']['vitals'] );
+		$this->assertSame( 'connectors', $data['aliases']['ezuite'] );
+		$this->assertSame( 'connectors', $data['aliases']['shopify'] );
+		$this->assertSame( 'connectors', $data['aliases']['flowhub'] );
 
 		// With every toolkit on, the guidance map is empty.
 		$this->assertArrayHasKey( 'disabled', $data );
@@ -140,35 +163,60 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
 		$data   = $result->get_data();
 
-		foreach ( array( 'cre', 'law', 'registration', 'eca', 'health', 'vitals' ) as $id ) {
+		// 158 D1 retired five ids into two, so six surfaces can be off.
+		foreach ( array( 'cre', 'law', 'registration', 'eca', 'members', 'connectors' ) as $id ) {
 			$this->assertArrayNotHasKey( $id, $data['dashboards'], $id . ' should hide when its toolkit is off.' );
 			$this->assertArrayHasKey( $id, $data['disabled'], $id . ' should be listed in the disabled map.' );
+		}
+
+		// The retired ids are neither served nor offered as guidance — they
+		// are aliases, and offering one would resurrect the surface.
+		foreach ( array( 'health', 'vitals', 'ezuite', 'shopify', 'flowhub' ) as $retired ) {
+			$this->assertArrayNotHasKey( $retired, $data['dashboards'] );
+			$this->assertArrayNotHasKey( $retired, $data['disabled'] );
 		}
 
 		// The disabled entries carry the console-guidance metadata: the
 		// display label/icon and the settings flag that would enable them.
 		$this->assertSame( 'CRE Debt Portfolio', $data['disabled']['cre']['label'] );
 		$this->assertSame( 'enable_cre_debt_toolkit', $data['disabled']['cre']['toolkit_flag'] );
-		// Vitals follows the Health & Wellness toggle when the dedicated
-		// flag was never saved (BC fallback).
-		$this->assertSame( 'enable_health_wellness_management', $data['disabled']['vitals']['toolkit_flag'] );
 
-		// Enabling only Health & Wellness restores health AND vitals (the
-		// medical-vitals BC fallback mirrors includes/tools/healthcare/init.php)
-		// and moves both out of the disabled map.
+		// A merged surface names EVERY flag that would enable it. Naming one
+		// of three is incomplete advice; the single-flag key stays for BC.
+		$this->assertSame( 'enable_ezuite_toolkit', $data['disabled']['connectors']['toolkit_flag'] );
+		$this->assertSame(
+			array( 'enable_ezuite_toolkit', 'enable_shopify_sync_toolkit', 'enable_flowhub_toolkit' ),
+			$data['disabled']['connectors']['toolkit_flags']
+		);
+
+		// Vitals follows the Health & Wellness toggle when the dedicated flag
+		// was never saved (BC fallback), so the candidate list collapses to
+		// the key that actually decides it.
+		$this->assertSame(
+			array( 'enable_health_wellness_management' ),
+			$data['disabled']['members']['toolkit_flags']
+		);
+
+		// Enabling only Health & Wellness restores the whole members surface —
+		// including the vitals section, via the same BC fallback.
 		update_option( 'wp_mcp_ai_settings', array( 'enable_health_wellness_management' => 1 ) );
 		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
 		$data   = $result->get_data();
 
-		$this->assertArrayHasKey( 'health', $data['dashboards'] );
-		$this->assertArrayHasKey( 'vitals', $data['dashboards'] );
-		$this->assertArrayNotHasKey( 'health', $data['disabled'] );
-		$this->assertArrayNotHasKey( 'vitals', $data['disabled'] );
+		$this->assertArrayHasKey( 'members', $data['dashboards'] );
+		$this->assertArrayNotHasKey( 'members', $data['disabled'] );
+		$this->assertSame(
+			array( 'health_history', 'vitals_history' ),
+			array_column( $data['dashboards']['members']['lists'], 'key' )
+		);
 		$this->assertArrayNotHasKey( 'cre', $data['dashboards'] );
 		$this->assertArrayNotHasKey( 'law', $data['dashboards'] );
 		$this->assertArrayNotHasKey( 'eca', $data['dashboards'] );
+		$this->assertArrayNotHasKey( 'connectors', $data['dashboards'], 'One member flag must not enable a connector surface.' );
 
-		// The dedicated vitals toggle, once saved, wins over the BC fallback.
+		// The dedicated vitals toggle, once saved, wins over the BC fallback —
+		// and because the surface itself is still enabled by health, only the
+		// vitals SECTION disappears.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
@@ -179,9 +227,119 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
 		$data   = $result->get_data();
 
-		$this->assertArrayHasKey( 'health', $data['dashboards'] );
-		$this->assertArrayNotHasKey( 'vitals', $data['dashboards'] );
-		$this->assertSame( 'enable_medical_vitals', $data['disabled']['vitals']['toolkit_flag'] );
+		$this->assertArrayHasKey( 'members', $data['dashboards'] );
+		$this->assertSame(
+			array( 'health_history' ),
+			array_column( $data['dashboards']['members']['lists'], 'key' ),
+			'A saved `0` on the dedicated toggle must hide the vitals section.'
+		);
+
+		// And with both member toggles off, the surface leaves the catalogue.
+		update_option( 'wp_mcp_ai_settings', array( 'enable_medical_vitals' => 0 ) );
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
+		$data   = $result->get_data();
+
+		$this->assertArrayNotHasKey( 'members', $data['dashboards'] );
+		$this->assertArrayHasKey( 'members', $data['disabled'] );
+
+		// The merged surface is gated by BOTH member flags (158 D1), so the
+		// single-flag guidance names the first that would enable it
+		// (`effective_flag_key()` is `effective_flag_keys()[0]`) while
+		// `toolkit_flags` carries every candidate — naming one of two would be
+		// incomplete advice for a client that can render a list.
+		$this->assertSame( 'enable_health_wellness_management', $data['disabled']['members']['toolkit_flag'] );
+		$this->assertSame(
+			array( 'enable_health_wellness_management', 'enable_medical_vitals' ),
+			$data['disabled']['members']['toolkit_flags'],
+			'`enable_medical_vitals` is saved as 0 here, so it stays in the candidate list.'
+		);
+	}
+
+	/**
+	 * A single enabled connector reveals its own section and nobody else's.
+	 *
+	 * This is the property that makes the 3 -> 1 merge safe: the old dashboards
+	 * were gated independently, and a merge that gated them together would
+	 * publish one tenant's connector count under another connector's heading.
+	 */
+	public function test_one_connector_flag_reveals_only_its_own_section() {
+		update_option( 'wp_mcp_ai_settings', array( 'enable_flowhub_toolkit' => 1 ) );
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
+		$data   = $result->get_data();
+
+		$this->assertArrayHasKey( 'connectors', $data['dashboards'] );
+
+		$metric_keys = array_column( $data['dashboards']['connectors']['metrics'], 'key' );
+
+		$this->assertCount( 5, $metric_keys, 'Only the enabled connector contributes.' );
+		$this->assertSame( 'flowhub_in_stock', $metric_keys[0] );
+		$this->assertNotContains( 'ezuite_in_stock', $metric_keys );
+		$this->assertNotContains( 'shopify_cost_remaining_pct', $metric_keys );
+
+		$this->assertSame(
+			array( 'flowhub_locations' ),
+			array_column( $data['dashboards']['connectors']['lists'], 'key' )
+		);
+	}
+
+	/**
+	 * A retired id resolves to its replacement and the response says so.
+	 */
+	public function test_a_retired_id_resolves_instead_of_404ing() {
+		$this->seed_toolkit_flags();
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/ezuite/data' );
+		$request->set_param( 'id', 'ezuite' );
+		$request->set_param( 'filters', array() );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
+			$this->markTestSkipped( 'Connector widget unavailable in this bootstrap.' );
+		}
+
+		$this->assertNotWPError( $result );
+
+		// The resolved id is reported, which is the one piece of information a
+		// client needs to migrate its own saved state.
+		$this->assertSame( 'connectors', $result->get_data()['dashboard'] );
+	}
+
+	/**
+	 * Resolving an alias is not a grant: the replacement's own gate still applies.
+	 */
+	public function test_a_retired_id_is_still_refused_when_its_replacement_is_off() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/ezuite/data' );
+		$request->set_param( 'id', 'ezuite' );
+		$request->set_param( 'filters', array() );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'dashboards_unavailable', $result->get_error_code() );
+	}
+
+	/**
+	 * The BC accessors still answer for a retired id.
+	 */
+	public function test_the_flag_map_still_answers_for_a_retired_id() {
+		$this->assertSame( 'members', WP_MCP_AI_Pro_Dashboards_REST_Controller::resolve_alias( 'health' ) );
+		$this->assertSame( 'connectors', WP_MCP_AI_Pro_Dashboards_REST_Controller::resolve_alias( 'flowhub' ) );
+		$this->assertSame( 'cre', WP_MCP_AI_Pro_Dashboards_REST_Controller::resolve_alias( 'cre' ) );
+		$this->assertSame( 'nope', WP_MCP_AI_Pro_Dashboards_REST_Controller::resolve_alias( 'nope' ) );
+
+		// The single-flag accessor answers for a retired id, because the id
+		// itself is still what a stored console state carries.
+		$this->assertSame( 'enable_ezuite_toolkit', WP_MCP_AI_Pro_Dashboards_REST_Controller::effective_flag_key( 'ezuite' ) );
+		$this->assertSame( '', WP_MCP_AI_Pro_Dashboards_REST_Controller::effective_flag_key( 'observability' ) );
 	}
 
 	/**
@@ -192,8 +350,8 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/health/data' );
-		$request->set_param( 'id', 'health' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/members/data' );
+		$request->set_param( 'id', 'members' );
 		$request->set_param( 'filters', array() );
 
 		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
@@ -330,34 +488,35 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The member-filtered dashboards require a member — 400 without one
+	 * The member-metrics surface requires a member — 400 without one
 	 * (deterministic: the provider is never reached).
+	 *
+	 * The 400 is one section's answer to "which member?", so it must survive
+	 * the merge rather than be swallowed as a per-section degradation.
 	 */
 	public function test_member_dashboards_require_a_member() {
 		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		foreach ( array( 'health', 'vitals' ) as $id ) {
-			$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/' . $id . '/data' );
-			$request->set_param( 'id', $id );
-			$request->set_param( 'filters', array() );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/members/data' );
+		$request->set_param( 'id', 'members' );
+		$request->set_param( 'filters', array() );
 
-			$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
 
-			if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
-				$this->markTestSkipped( 'Dashboard page unavailable in this bootstrap.' );
-			}
-
-			$this->assertWPError( $result, $id . ' should refuse a missing member.' );
-			$this->assertSame( 400, $result->get_error_data()['status'] );
+		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
+			$this->markTestSkipped( 'Member dashboard page unavailable in this bootstrap.' );
 		}
+
+		$this->assertWPError( $result, 'members should refuse a missing member.' );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**
-	 * With a real member and no stored metrics, the history provider
-	 * returns the zeroed envelope (zero network — the tool reads the
-	 * member's option, which is absent in the test env).
+	 * With a real member and no stored metrics, both enabled sections return
+	 * their zeroed envelope (zero network — the tools read the member's option,
+	 * which is absent in the test env).
 	 */
 	public function test_health_data_zeroed_envelope() {
 		$this->seed_toolkit_flags();
@@ -381,8 +540,8 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/health/data' );
-		$request->set_param( 'id', 'health' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/members/data' );
+		$request->set_param( 'id', 'members' );
 		$request->set_param(
 			'filters',
 			array(
@@ -394,15 +553,21 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
 
 		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
-			$this->markTestSkipped( 'Health dashboard page unavailable in this bootstrap.' );
+			$this->markTestSkipped( 'Member dashboard page unavailable in this bootstrap.' );
 		}
 
 		$this->assertNotWPError( $result );
 		$data = $result->get_data();
 
-		$this->assertSame( 'health', $data['dashboard'] );
-		$this->assertArrayHasKey( 'history', $data['data'] );
-		$this->assertSame( array(), $data['data']['history'] );
+		$this->assertSame( 'members', $data['dashboard'] );
+
+		// Both sections are on (every flag is seeded), and the payload keys are
+		// the namespaced ones the schema declares — the two must agree, or the
+		// console renders `undefined` for every card.
+		$this->assertArrayHasKey( 'health_history', $data['data'] );
+		$this->assertArrayHasKey( 'vitals_history', $data['data'] );
+		$this->assertSame( array(), $data['data']['health_history'] );
+		$this->assertSame( array(), $data['data']['vitals_history'] );
 	}
 
 	/**
@@ -464,8 +629,8 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/health/data' );
-		$request->set_param( 'id', 'health' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/members/data' );
+		$request->set_param( 'id', 'members' );
 		$request->set_param(
 			'filters',
 			'{"member_id":"' . $member_id . '","days_back":"30"}'
@@ -474,15 +639,15 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
 
 		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
-			$this->markTestSkipped( 'Health dashboard page unavailable in this bootstrap.' );
+			$this->markTestSkipped( 'Member dashboard page unavailable in this bootstrap.' );
 		}
 
 		$this->assertNotWPError( $result );
 		$data = $result->get_data();
 
-		$this->assertSame( 'health', $data['dashboard'] );
-		$this->assertArrayHasKey( 'history', $data['data'] );
-		$this->assertSame( array(), $data['data']['history'] );
+		$this->assertSame( 'members', $data['dashboard'] );
+		$this->assertArrayHasKey( 'health_history', $data['data'] );
+		$this->assertSame( array(), $data['data']['health_history'] );
 	}
 
 	/**

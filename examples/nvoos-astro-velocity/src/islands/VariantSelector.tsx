@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // VariantSelector island — Proposal 106 §1.1. client:load on the PDP.
 //

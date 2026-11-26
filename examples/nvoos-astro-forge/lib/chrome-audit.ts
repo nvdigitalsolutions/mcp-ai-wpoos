@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // chrome-audit.ts — the chrome STATES the colour gate cannot see.
 //

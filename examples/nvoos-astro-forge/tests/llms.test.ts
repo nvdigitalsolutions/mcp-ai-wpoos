@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // llms.test.ts — the deterministic agent surfaces (Proposal 136 §4.4).
 //

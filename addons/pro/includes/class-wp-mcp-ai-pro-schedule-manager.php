@@ -65,9 +65,30 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		const DISPATCH_HOOK = 'wp_mcp_ai_pro_schedule_exec';
 
 		/**
+		 * Action Scheduler group for manually-triggered runs.
+		 *
+		 * @since 1.2.8
+		 */
+		const AS_GROUP = 'wp-mcp-ai-pro-schedules';
+
+		/**
 		 * Maximum history entries stored per schedule.
 		 */
 		const MAX_HISTORY_PER_SCHEDULE = 50;
+
+		/**
+		 * Seconds after which a `pending`/`running` run is considered abandoned.
+		 *
+		 * A run is written to history *before* dispatch so the UI can show live
+		 * progress. If the PHP worker dies mid-run (fatal error, request killed,
+		 * gateway timeout) nothing ever closes the record, so the reaper in
+		 * {@see self::reap_stale_runs()} marks it `timeout` once it is older than
+		 * this window. Mirrors the 15-minute default job-visibility timeout used
+		 * by queue systems such as SQS and Action Scheduler's own claim timeout.
+		 *
+		 * @since 1.2.8
+		 */
+		const RUN_STALE_AFTER = 900;
 
 		/**
 		 * Maximum length of a free-text value retained in a history action log.
@@ -101,7 +122,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 */
 		public static function init() {
 			// Central dispatcher: all managed schedules call this hook with schedule ID as argument.
-			add_action( self::DISPATCH_HOOK, array( __CLASS__, 'dispatch' ), 10, 1 );
+			// A second argument (run ID) is forwarded when supplied, so a queued run can be
+			// correlated with the history record opened when it was enqueued.
+			add_action( self::DISPATCH_HOOK, array( __CLASS__, 'dispatch' ), 10, 2 );
 
 			// Register custom cron intervals used by pro schedules.
 			// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- 5-minute intervals are intentional for real-time scheduling use cases; the plugin also supports Action Scheduler for production deployments.
@@ -825,7 +848,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		}
 
 		/**
-		 * Manually trigger a named schedule (bypasses cron, runs synchronously).
+		 * Manually trigger a named schedule and wait for it to finish.
+		 *
+		 * This is the *synchronous* execution primitive. It is correct for callers
+		 * that own their own time budget (WP-CLI, the MCP tool layer, slash
+		 * commands) but must never be called from a browser request: workflow and
+		 * assistant schedules make provider round trips that routinely outlive the
+		 * ~100 s edge timeout enforced by Cloudflare and similar proxies, which
+		 * surfaces to the user as an HTTP 524 while the PHP worker happily keeps
+		 * running in the background. Browser entry points should call
+		 * {@see self::trigger_now_async()} instead.
 		 *
 		 * @param string $schedule_id Schedule ID to trigger.
 		 * @param int    $user_id     User performing the action.
@@ -854,7 +886,459 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				);
 			}
 
-			return self::dispatch( $schedule_id );
+			$run_id = self::begin_run( $schedule_id, $user_id, 'manual' );
+
+			return self::dispatch( $schedule_id, $run_id );
+		}
+
+		/**
+		 * Enqueue a schedule run and return immediately.
+		 *
+		 * Implements the standard `validate → enqueue → return a handle → poll for
+		 * status` contract for long-running work:
+		 *
+		 * 1. Validate the schedule exists and is enabled.
+		 * 2. Refuse a second concurrent run (idempotency — two clicks must not
+		 *    start two overlapping workflow executions).
+		 * 3. Open a `pending` history record so the UI has something to poll.
+		 * 4. Hand the work to Action Scheduler, falling back to a WP-Cron
+		 *    single event when Action Scheduler is unavailable.
+		 *
+		 * The caller gets the run ID back in milliseconds and follows progress via
+		 * {@see self::get_run()}.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @param string $schedule_id Schedule ID to trigger.
+		 * @param int    $user_id     User performing the action.
+		 * @return array|WP_Error {
+		 *     @type bool   $queued      Always true on success.
+		 *     @type string $run_id      Identifier for the enqueued run.
+		 *     @type string $schedule_id Schedule ID the run belongs to.
+		 *     @type string $backend     `action-scheduler` or `wp-cron`.
+		 *     @type string $message     Human-readable status message.
+		 * }
+		 */
+		public static function trigger_now_async( $schedule_id, $user_id = 0 ) {
+			$schedule_id = (string) $schedule_id;
+			$schedule    = self::get_schedule( $schedule_id );
+
+			if ( ! $schedule ) {
+				return new WP_Error(
+					'not_found',
+					/* translators: %s: schedule ID */
+					sprintf( __( 'Schedule "%s" not found.', 'mcp-ai-wpoos-pro' ), $schedule_id ),
+					array( 'status' => 404 )
+				);
+			}
+
+			if ( empty( $schedule['enabled'] ) ) {
+				return new WP_Error(
+					'schedule_disabled',
+					/* translators: %s: schedule name */
+					sprintf( __( 'Schedule "%s" is disabled. Enable it before running it.', 'mcp-ai-wpoos-pro' ), $schedule['name'] ),
+					array( 'status' => 409 )
+				);
+			}
+
+			$active = self::get_active_run( $schedule_id );
+			if ( $active ) {
+				return new WP_Error(
+					'schedule_already_running',
+					/* translators: 1: schedule name, 2: run ID */
+					sprintf(
+						__( 'Schedule "%1$s" is already running (run %2$s). Wait for it to finish or check its history.', 'mcp-ai-wpoos-pro' ),
+						$schedule['name'],
+						isset( $active['run_id'] ) ? $active['run_id'] : ''
+					),
+					array( 'status' => 409 )
+				);
+			}
+
+			$run_id = self::begin_run( $schedule_id, $user_id, 'manual' );
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'schedule_run',
+					'Pro schedule queued for background run: ' . $schedule['name'],
+					array(
+						'event'       => 'schedule_queued',
+						'schedule_id' => $schedule_id,
+						'run_id'      => $run_id,
+						'user_id'     => $user_id,
+					)
+				);
+			}
+
+			$backend = self::enqueue_run( $schedule_id, $run_id );
+
+			if ( is_wp_error( $backend ) ) {
+				// Nothing will close the record we just opened — do it here so a
+				// failed enqueue does not block the schedule forever.
+				self::record_run( $schedule_id, false, 0, $backend->get_error_message(), array( 'type' => $schedule['schedule_type'] ), $run_id );
+
+				return $backend;
+			}
+
+			return array(
+				'queued'      => true,
+				'run_id'      => $run_id,
+				'schedule_id' => $schedule_id,
+				'backend'     => $backend,
+				'message'     => sprintf(
+					/* translators: %s: schedule name */
+					__( 'Schedule "%s" queued. It is running in the background; the run history updates when it finishes.', 'mcp-ai-wpoos-pro' ),
+					$schedule['name']
+				),
+			);
+		}
+
+		/**
+		 * Hand a run to a background executor.
+		 *
+		 * Prefers Action Scheduler (queue semantics, retries, its own admin UI).
+		 * Falls back to a WP-Cron single event spawned immediately, which is not as
+		 * robust but keeps the feature working on sites that do not load
+		 * WooCommerce / Action Scheduler.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param string $run_id      Run identifier.
+		 * @return string|WP_Error Backend name on success, WP_Error on failure.
+		 */
+		protected static function enqueue_run( $schedule_id, $run_id ) {
+			$args = array( (string) $schedule_id, (string) $run_id );
+
+			/**
+			 * Filter the queue backend used for a background run.
+			 *
+			 * Return `wp-cron` to bypass Action Scheduler on sites where its tables
+			 * are missing or its queue is backed up, or a WP_Error to fail the
+			 * enqueue outright (the caller closes the run record and surfaces the
+			 * error). Return null to auto-select.
+			 *
+			 * @since 1.2.8
+			 *
+			 * @param null|string|WP_Error $backend     Null to auto-select.
+			 * @param string               $schedule_id Schedule ID.
+			 * @param string               $run_id      Run identifier.
+			 */
+			$forced = apply_filters( 'wp_mcp_ai_pro_schedule_run_backend', null, $schedule_id, $run_id );
+
+			if ( is_wp_error( $forced ) ) {
+				return $forced;
+			}
+
+			$allow_action_scheduler = ( 'wp-cron' !== $forced );
+
+			if ( $allow_action_scheduler && function_exists( 'as_enqueue_async_action' ) ) {
+				$as_error = '';
+
+				try {
+					$action_id = as_enqueue_async_action( self::DISPATCH_HOOK, $args, self::AS_GROUP );
+					if ( ! empty( $action_id ) ) {
+						return 'action-scheduler';
+					}
+
+					$as_error = __( 'Action Scheduler refused to queue the run.', 'mcp-ai-wpoos-pro' );
+				} catch ( \Throwable $e ) {
+					$as_error = $e->getMessage();
+				}
+
+				// Action Scheduler is loaded but unusable — typically because its
+				// tables were never created (a WooCommerce install that was cloned,
+				// or a plugin that only shims the AS functions). Degrade to WP-Cron
+				// instead of failing a run the user explicitly asked for.
+				self::debug_log( '[enqueue_run] Action Scheduler unusable (' . $as_error . '); falling back to WP-Cron.' );
+			}
+
+			$scheduled = wp_schedule_single_event( time(), self::DISPATCH_HOOK, $args );
+
+			if ( false === $scheduled || is_wp_error( $scheduled ) ) {
+				return new WP_Error(
+					'cron_enqueue_failed',
+					__( 'Could not schedule the background run. WP-Cron may be disabled.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Non-blocking: spin WP-Cron in a separate request rather than
+			// waiting for the next page load to trigger it.
+			if ( function_exists( 'spawn_cron' ) ) {
+				spawn_cron();
+			}
+
+			return 'wp-cron';
+		}
+
+		// -------------------------------------------------------------------------
+		// Run lifecycle
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Generate a run identifier.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @return string 12-character hex run ID.
+		 */
+		protected static function new_run_id() {
+			return substr( md5( uniqid( (string) wp_rand(), true ) ), 0, 12 );
+		}
+
+		/**
+		 * Open a run record before execution starts.
+		 *
+		 * Writing the record up front is what makes the run observable: the UI can
+		 * render `Pending`/`Running` immediately instead of showing nothing until
+		 * the worker either finishes or is killed.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param int    $user_id     User who initiated the run (0 for cron).
+		 * @param string $trigger     One of `manual`, `cron`, `retry`.
+		 * @return string The new run ID.
+		 */
+		public static function begin_run( $schedule_id, $user_id = 0, $trigger = 'cron' ) {
+			$schedule_id = (string) $schedule_id;
+			$run_id      = self::new_run_id();
+			$history     = self::load_history();
+
+			if ( ! isset( $history[ $schedule_id ] ) || ! is_array( $history[ $schedule_id ] ) ) {
+				$history[ $schedule_id ] = array();
+			}
+
+			$schedule = self::get_schedule( $schedule_id );
+
+			$history[ $schedule_id ][] = array(
+				'run_id'     => $run_id,
+				'status'     => 'pending',
+				'start_time' => time(),
+				'duration'   => 0,
+				'error'      => '',
+				'trigger'    => $trigger,
+				'user_id'    => (int) $user_id,
+				'action_log' => array(
+					'type' => $schedule && isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : self::TYPE_TASK,
+				),
+			);
+
+			if ( count( $history[ $schedule_id ] ) > self::MAX_HISTORY_PER_SCHEDULE ) {
+				$history[ $schedule_id ] = array_slice( $history[ $schedule_id ], - self::MAX_HISTORY_PER_SCHEDULE );
+			}
+
+			self::save_history( $history );
+
+			$schedules = self::load_schedules();
+			if ( isset( $schedules[ $schedule_id ] ) ) {
+				$schedules[ $schedule_id ]['last_run_status'] = 'pending';
+				$schedules[ $schedule_id ]['last_run_id']     = $run_id;
+				$schedules[ $schedule_id ]['last_run_time']   = time();
+				self::save_schedules( $schedules );
+			}
+
+			return $run_id;
+		}
+
+		/**
+		 * Flip a run from `pending` to `running` once the worker picks it up.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param string $run_id      Run identifier.
+		 * @param string $status      Target status (`running` or `pending`).
+		 */
+		protected static function set_run_status( $schedule_id, $run_id, $status ) {
+			if ( '' === (string) $run_id ) {
+				return;
+			}
+
+			$history = self::load_history();
+			$id      = (string) $schedule_id;
+
+			if ( ! isset( $history[ $id ] ) || ! is_array( $history[ $id ] ) ) {
+				return;
+			}
+
+			foreach ( $history[ $id ] as $index => $entry ) {
+				if ( isset( $entry['run_id'] ) && (string) $entry['run_id'] === (string) $run_id ) {
+					$history[ $id ][ $index ]['status'] = $status;
+					self::save_history( $history );
+					return;
+				}
+			}
+		}
+
+		/**
+		 * Fetch a single run record.
+		 *
+		 * Used by the status-poller so the UI can follow one specific run instead
+		 * of re-reading (and re-sorting) the whole history on every tick.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param string $run_id      Run identifier.
+		 * @return array|null Run record, or null when not found.
+		 */
+		public static function get_run( $schedule_id, $run_id ) {
+			$history = self::load_history();
+			$id      = (string) $schedule_id;
+
+			if ( ! isset( $history[ $id ] ) || ! is_array( $history[ $id ] ) ) {
+				return null;
+			}
+
+			foreach ( $history[ $id ] as $entry ) {
+				if ( isset( $entry['run_id'] ) && (string) $entry['run_id'] === (string) $run_id ) {
+					return $entry;
+				}
+			}
+
+			return null;
+		}
+
+		/**
+		 * Return the run currently in flight for a schedule, if any.
+		 *
+		 * Stale records are ignored (and reaped) so a worker killed by a fatal
+		 * error cannot permanently block the schedule with an eternal `pending`.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @return array|null Active run record, or null.
+		 */
+		public static function get_active_run( $schedule_id ) {
+			$history = self::load_history();
+			$id      = (string) $schedule_id;
+
+			if ( ! isset( $history[ $id ] ) || ! is_array( $history[ $id ] ) ) {
+				return null;
+			}
+
+			// Newest first, then stop at the first terminal record.
+			foreach ( array_reverse( $history[ $id ] ) as $entry ) {
+				$status = isset( $entry['status'] ) ? (string) $entry['status'] : '';
+
+				if ( ! in_array( $status, array( 'pending', 'running' ), true ) ) {
+					return null;
+				}
+
+				$started = isset( $entry['start_time'] ) ? (int) $entry['start_time'] : 0;
+				if ( $started > 0 && ( time() - $started ) > self::RUN_STALE_AFTER ) {
+					self::reap_stale_runs( $schedule_id );
+					return null;
+				}
+
+				return $entry;
+			}
+
+			return null;
+		}
+
+		/**
+		 * Mark abandoned `pending`/`running` runs as `timeout`.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @param string $schedule_id Optional. Restrict to one schedule.
+		 * @return int Number of runs reaped.
+		 */
+		public static function reap_stale_runs( $schedule_id = '' ) {
+			// The fleet-wide sweep runs on `init`, so throttle it. A targeted sweep
+			// (one schedule) is cheap and is used on the trigger/poll hot path,
+			// where correctness matters more than the extra read.
+			if ( '' === (string) $schedule_id ) {
+				if ( get_transient( 'wp_mcp_ai_pro_sm_reap_lock' ) ) {
+					return 0;
+				}
+				set_transient( 'wp_mcp_ai_pro_sm_reap_lock', 1, 5 * MINUTE_IN_SECONDS );
+			}
+
+			$history = self::load_history();
+			$now     = time();
+			$reaped  = 0;
+			$touched = false;
+
+			$reap_message = sprintf(
+				/* translators: %d: minutes */
+				__( 'Run did not report a result within %d minutes and was marked as timed out. The worker may have been killed by a fatal error, a PHP time limit, or a gateway timeout.', 'mcp-ai-wpoos-pro' ),
+				(int) round( self::RUN_STALE_AFTER / 60 )
+			);
+
+			// Run IDs reaped per schedule, so the schedule record (which drives the
+			// list's Status column) can be brought in line with history.
+			$reaped_by_schedule = array();
+
+			foreach ( $history as $id => $runs ) {
+				if ( '' !== $schedule_id && (string) $id !== (string) $schedule_id ) {
+					continue;
+				}
+				if ( ! is_array( $runs ) ) {
+					continue;
+				}
+
+				foreach ( $runs as $index => $entry ) {
+					$status = isset( $entry['status'] ) ? (string) $entry['status'] : '';
+					if ( ! in_array( $status, array( 'pending', 'running' ), true ) ) {
+						continue;
+					}
+
+					$started = isset( $entry['start_time'] ) ? (int) $entry['start_time'] : 0;
+					if ( $started > 0 && ( $now - $started ) <= self::RUN_STALE_AFTER ) {
+						continue;
+					}
+
+					$history[ $id ][ $index ]['status'] = 'timeout';
+					$history[ $id ][ $index ]['error']  = $reap_message;
+
+					if ( isset( $entry['run_id'] ) ) {
+						$reaped_by_schedule[ $id ][] = (string) $entry['run_id'];
+					}
+
+					++$reaped;
+					$touched = true;
+				}
+			}
+
+			if ( $touched ) {
+				self::save_history( $history );
+
+				$schedules = self::load_schedules();
+				$dirty     = false;
+
+				foreach ( $reaped_by_schedule as $id => $run_ids ) {
+					if ( ! isset( $schedules[ $id ] ) ) {
+						continue;
+					}
+
+					$last_id     = isset( $schedules[ $id ]['last_run_id'] ) ? (string) $schedules[ $id ]['last_run_id'] : '';
+					$last_status = isset( $schedules[ $id ]['last_run_status'] ) ? (string) $schedules[ $id ]['last_run_status'] : '';
+
+					// Only mirror the timeout when the reaped run is still the latest
+					// one; a newer run may have already superseded it.
+					$is_latest = ( '' !== $last_id )
+						? in_array( $last_id, $run_ids, true )
+						: ( 'pending' === $last_status || 'running' === $last_status );
+
+					if ( ! $is_latest ) {
+						continue;
+					}
+
+					$schedules[ $id ]['last_run_status'] = 'timeout';
+					$schedules[ $id ]['last_error']      = $reap_message;
+					$dirty                               = true;
+				}
+
+				if ( $dirty ) {
+					self::save_schedules( $schedules );
+				}
+			}
+
+			return $reaped;
 		}
 
 		// -------------------------------------------------------------------------
@@ -930,11 +1414,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				if ( ! is_array( $runs ) ) {
 					continue;
 				}
-				$total_runs += count( $runs );
 				$start_times = array();
 				foreach ( $runs as $run ) {
-					$status     = isset( $run['status'] ) ? $run['status'] : '';
+					$status     = isset( $run['status'] ) ? (string) $run['status'] : '';
 					$start_time = isset( $run['start_time'] ) ? (int) $run['start_time'] : 0;
+
+					// In-flight runs are not outcomes yet: counting them would inflate
+					// the run total, depress the success rate, and report a failure for
+					// a worker that is still going.
+					if ( in_array( $status, array( 'pending', 'running' ), true ) ) {
+						continue;
+					}
+
+					++$total_runs;
+
 					if ( 'success' === $status ) {
 						++$success_runs;
 					}
@@ -1154,6 +1647,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * iterating all history on every page load.
 		 */
 		public static function maybe_prune_history() {
+			// Reap abandoned runs before the hourly prune lock so a dead worker
+			// cannot leave a schedule stuck on `Pending` for an hour.
+			self::reap_stale_runs();
+
 			// Run at most once per hour.
 			if ( get_transient( 'wp_mcp_ai_pro_sm_prune_lock' ) ) {
 				return;
@@ -1181,7 +1678,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Central dispatcher called by WP cron.
+		 * Central dispatcher called by WP cron and by the background queue.
 		 *
 		 * Routes to the correct execution method based on schedule_type:
 		 * - task:          fires the configured WP action hook
@@ -1191,23 +1688,53 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * Records the result, handles retry logic, and sends failure notifications.
 		 *
 		 * @param string $schedule_id Schedule ID to dispatch.
+		 * @param string $run_id      Optional. Run record opened by the trigger/caller.
+		 *                            When omitted (plain cron firing) a fresh record is
+		 *                            opened here so every run is observable.
 		 * @return bool True on success, false on failure.
 		 */
-		public static function dispatch( $schedule_id ) {
+		public static function dispatch( $schedule_id, $run_id = '' ) {
 			$schedule_id = (string) $schedule_id;
+			$run_id      = (string) $run_id;
 
 			self::debug_log( sprintf( '[dispatch] Received schedule_id=%s', $schedule_id ) );
 
 			$schedule = self::get_schedule( $schedule_id );
 
 			if ( ! $schedule ) {
+				// Deleting a schedule clears its history, so there is no queued record
+				// left to close — and writing one would resurrect a key for a schedule
+				// that no longer exists.
 				self::debug_log( sprintf( '[dispatch] Schedule not found: %s — returning false', $schedule_id ) );
 				return false;
 			}
 
 			if ( empty( $schedule['enabled'] ) ) {
 				self::debug_log( sprintf( '[dispatch] Schedule disabled: %s (%s) — returning false', $schedule_id, $schedule['name'] ) );
+
+				if ( '' !== $run_id ) {
+					// Close the queued run rather than leaving it pending until the
+					// reaper sweeps it: the user already saw a queue acknowledgement.
+					self::record_run(
+						$schedule_id,
+						false,
+						0,
+						__( 'The schedule was disabled before its queued run could start.', 'mcp-ai-wpoos-pro' ),
+						array(),
+						$run_id
+					);
+				}
+
 				return false;
+			}
+
+			// Every dispatch owns exactly one history record. Callers that already
+			// opened one (manual trigger, background queue) pass its ID in; plain
+			// cron firings get one opened here so the run is observable either way.
+			if ( '' === $run_id ) {
+				$run_id = self::begin_run( $schedule_id, 0, 'cron' );
+			} else {
+				self::set_run_status( $schedule_id, $run_id, 'running' );
 			}
 
 			$schedule_type = isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : self::TYPE_TASK;
@@ -1332,7 +1859,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 
 			// Record run result.
-			self::record_run( $schedule_id, $success, $duration, $error_msg, $action_log );
+			self::record_run( $schedule_id, $success, $duration, $error_msg, $action_log, $run_id );
 
 			/**
 			 * Fires after every Pro schedule run completes, regardless of success.
@@ -2608,21 +3135,56 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * @param float  $duration    Run duration in seconds.
 		 * @param string $error_msg   Error message if failed.
 		 * @param array  $action_log  Structured log of the action taken during this run.
+		 * @param string $run_id      Optional. Run record to close. When supplied and a
+		 *                            matching `pending`/`running` entry exists it is
+		 *                            completed in place instead of appending a duplicate.
 		 */
-		protected static function record_run( $schedule_id, $success, $duration, $error_msg = '', $action_log = array() ) {
+		protected static function record_run( $schedule_id, $success, $duration, $error_msg = '', $action_log = array(), $run_id = '' ) {
 			$history = self::load_history();
 
 			if ( ! isset( $history[ $schedule_id ] ) || ! is_array( $history[ $schedule_id ] ) ) {
 				$history[ $schedule_id ] = array();
 			}
 
-			$history[ $schedule_id ][] = array(
+			$entry = array(
 				'status'     => $success ? 'success' : 'failure',
 				'start_time' => time(),
 				'duration'   => $duration,
 				'error'      => $error_msg,
 				'action_log' => is_array( $action_log ) ? self::trim_action_log_for_history( $action_log ) : array(),
 			);
+
+			$run_id  = (string) $run_id;
+			$updated = false;
+
+			if ( '' !== $run_id ) {
+				foreach ( $history[ $schedule_id ] as $index => $existing_entry ) {
+					if ( ! isset( $existing_entry['run_id'] ) || (string) $existing_entry['run_id'] !== $run_id ) {
+						continue;
+					}
+
+					// Preserve the run's real start time and provenance.
+					$entry['run_id']     = $run_id;
+					$entry['start_time'] = isset( $existing_entry['start_time'] ) ? (int) $existing_entry['start_time'] : $entry['start_time'];
+					if ( isset( $existing_entry['trigger'] ) ) {
+						$entry['trigger'] = $existing_entry['trigger'];
+					}
+					if ( isset( $existing_entry['user_id'] ) ) {
+						$entry['user_id'] = (int) $existing_entry['user_id'];
+					}
+
+					$history[ $schedule_id ][ $index ] = $entry;
+					$updated                           = true;
+					break;
+				}
+			}
+
+			if ( ! $updated ) {
+				if ( '' !== $run_id ) {
+					$entry['run_id'] = $run_id;
+				}
+				$history[ $schedule_id ][] = $entry;
+			}
 
 			// Trim to ring buffer limit.
 			if ( count( $history[ $schedule_id ] ) > self::MAX_HISTORY_PER_SCHEDULE ) {

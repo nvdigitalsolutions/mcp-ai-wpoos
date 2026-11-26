@@ -96,9 +96,9 @@ class NV_oOS_Graphify_Tool_Get_Neighbors implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( ! $node ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Node not found.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Node not found.', 'nvoos-graphify' )
 			);
 		}
 

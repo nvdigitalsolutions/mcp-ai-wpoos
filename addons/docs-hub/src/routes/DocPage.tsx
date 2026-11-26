@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * DocPage — fetches a documentation page by slug and renders it.
  *

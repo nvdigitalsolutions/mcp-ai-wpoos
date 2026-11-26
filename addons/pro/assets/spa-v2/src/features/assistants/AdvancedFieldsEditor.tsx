@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AdvancedFieldsEditor — bespoke editors for the advanced assistant settings
  * shipped by the 090-B assistant-edit parity contract.

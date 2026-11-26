@@ -22,6 +22,17 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settin
 class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	protected function setting_schema() {
+		return array(
+			'default_currency'    => 'text',
+			'low_stock_threshold' => 'number',
+			'enable_multistore'   => 'boolean',
+		);
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -134,6 +145,7 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 	 * Render configuration tab
 	 */
 	protected function render_configuration_tab() {
+		$options = $this->stored_options();
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'E-commerce Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -142,14 +154,14 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Currency', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="text" name="default_currency" value="USD" class="regular-text" />
+						<input type="text" name="<?php echo esc_attr( $this->option_name ); ?>[default_currency]" value="<?php echo esc_attr( $options['default_currency'] ?? 'USD' ); ?>" class="regular-text" />
 						<p class="description"><?php esc_html_e( 'Default currency for pricing and reports', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Low Stock Threshold', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="low_stock_threshold" value="5" min="0" class="small-text" />
+						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[low_stock_threshold]" value="<?php echo esc_attr( $options['low_stock_threshold'] ?? '5' ); ?>" min="0" class="small-text" />
 						<p class="description"><?php esc_html_e( 'Trigger alerts when inventory falls below this level', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -157,7 +169,7 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 					<th scope="row"><?php esc_html_e( 'Enable Multi-Store Sync', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_multistore" value="1" />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_multistore]" value="1" <?php checked( $options['enable_multistore'] ?? false, 1 ); ?> />
 							<?php esc_html_e( 'Synchronize inventory across multiple stores (requires Remote Sites)', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>

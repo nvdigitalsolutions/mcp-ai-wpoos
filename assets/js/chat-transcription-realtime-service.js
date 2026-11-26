@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Real-time Transcription Service for NV oOS Chat
  *

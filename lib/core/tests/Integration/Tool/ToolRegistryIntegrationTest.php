@@ -12,6 +12,7 @@ use Nvoos\Core\Domain\Contract\EmailServiceInterface;
 use Nvoos\Core\Domain\Contract\ErlangCInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
@@ -34,6 +35,7 @@ final class ToolRegistryIntegrationTest extends TestCase
     private MemoryStoreInterface $memory;
     private AgentOrchestrationInterface $orch;
     private ImageProcessingInterface $img;
+    private HtmlToPdfInterface $pdf;
     private ProfessionRepositoryInterface $profs;
     private EmailServiceInterface $email;
     private CronStatusInterface $cron;
@@ -50,6 +52,7 @@ final class ToolRegistryIntegrationTest extends TestCase
         $this->memory    = $this->createMock(MemoryStoreInterface::class);
         $this->orch      = $this->createMock(AgentOrchestrationInterface::class);
         $this->img       = $this->createMock(ImageProcessingInterface::class);
+        $this->pdf       = $this->createMock(HtmlToPdfInterface::class);
         $this->profs     = $this->createMock(ProfessionRepositoryInterface::class);
         $this->email     = $this->createMock(EmailServiceInterface::class);
         $this->cron      = $this->createMock(CronStatusInterface::class);
@@ -204,6 +207,7 @@ final class ToolRegistryIntegrationTest extends TestCase
                 MemoryStoreInterface::class         => $this->memory,
                 AgentOrchestrationInterface::class   => $this->orch,
                 ImageProcessingInterface::class     => $this->img,
+                HtmlToPdfInterface::class           => $this->pdf,
                 ProfessionRepositoryInterface::class => $this->profs,
                 EmailServiceInterface::class        => $this->email,
                 CronStatusInterface::class          => $this->cron,

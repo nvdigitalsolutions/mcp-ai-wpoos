@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // redirects.test.ts — the redirect-map generator: the rebuild's URL rules
 // (posts/pages/products, front page → '/') merged with the stored rules the
@@ -9,6 +10,11 @@ import { describe, expect, it } from 'vitest';
 import { fetchBridgeRedirects, generateRedirects } from '../lib/redirects.ts';
 import type { SiteProfile } from '../lib/types.ts';
 import { WpClient } from '../lib/wp-client.ts';
+import {
+	fetchBridgeRedirects as fetchTemplateRedirects,
+	PORTABLE_STATUSES,
+	redirectsUrl,
+} from '../templates/blog/src/lib/bridge-redirects.ts';
 
 /**
  * A canned REST backend: path → entries (wp/v2 + wc/v3 shapes), plus the
@@ -228,5 +234,170 @@ describe( 'fetchBridgeRedirects', () => {
 		);
 		expect( result.redirects ).toEqual( [] );
 		expect( result.warnings[ 0 ] ).toContain( 'invalid JSON' );
+	} );
+} );
+
+describe( 'a materialized profile is never contacted', () => {
+	it( 'skips the bridge when the CMS is gone', async () => {
+		// `materialized` is a promise that the snapshot is the only source. The
+		// profile URL is then the REBUILT site, so the request is a self-request
+		// that can only reach the rebuild's fallback page.
+		let called = false;
+		const fetchImpl = ( async () => {
+			called = true;
+			return new Response( '{}', { headers: { 'content-type': 'application/json' } } );
+		} ) as typeof fetch;
+		const profile = {
+			url: 'https://shop.example.com',
+			collections: [],
+			content: { source: 'materialized' },
+		} as SiteProfile;
+
+		const result = await fetchBridgeRedirects( profile, { fetchImpl } );
+
+		expect( called ).toBe( false );
+		expect( result.redirects ).toEqual( [] );
+		expect( result.warnings ).toEqual( [] );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// The template's own reader (templates/blog/src/lib/bridge-redirects.ts). The
+// build calls it, so a crash there kills the build; it must only ever warn.
+// ---------------------------------------------------------------------------
+describe( 'templates/blog bridge-redirects', () => {
+	const jsonOk = ( payload: unknown ): typeof fetch =>
+		( async () =>
+			new Response( JSON.stringify( payload ), {
+				status: 200,
+				headers: { 'content-type': 'application/json' },
+			} ) ) as typeof fetch;
+
+	it( 'does NOT throw on an HTML body served at 200', async () => {
+		// The krishandramika cut-over: a retired CMS origin answers an unknown
+		// path with its own index.html and status 200, so `response.ok` is true
+		// and `response.json()` threw `Unexpected token '<'`.
+		let warned = '';
+		const original = console.warn;
+		console.warn = ( line: string ) => {
+			warned = String( line );
+		};
+		try {
+			const result = await fetchTemplateRedirects( {
+				base: 'https://krishandramikasavethe.world',
+				fetchImpl: ( async () =>
+					new Response( '<!DOCTYPE html><html><body>Not found</body></html>', {
+						status: 200,
+						headers: { 'content-type': 'text/html' },
+					} ) ) as typeof fetch,
+			} );
+			expect( result.rows ).toEqual( [] );
+			expect( result.warning ).toContain( 'non-JSON' );
+		} finally {
+			console.warn = original;
+		}
+		expect( warned ).toBe( '' );
+	} );
+
+	it( 'does not call the network for a materialized site', async () => {
+		let called = false;
+		const result = await fetchTemplateRedirects( {
+			base: 'https://krishandramikasavethe.world',
+			contentSource: 'materialized',
+			fetchImpl: ( async () => {
+				called = true;
+				return new Response( '{}' );
+			} ) as typeof fetch,
+		} );
+		expect( called ).toBe( false );
+		expect( result ).toEqual( { rows: [] } );
+	} );
+
+	it( 'stays silent when the bridge is not installed', async () => {
+		const result = await fetchTemplateRedirects( {
+			base: 'https://shop.example.com',
+			fetchImpl: ( async () => new Response( '{}', { status: 404 } ) ) as typeof fetch,
+		} );
+		expect( result ).toEqual( { rows: [] } );
+	} );
+
+	it( 'warns and ships the URL-structure map when the origin is down', async () => {
+		const result = await fetchTemplateRedirects( {
+			base: 'https://shop.example.com',
+			fetchImpl: ( async () => {
+				throw new Error( 'ECONNREFUSED' );
+			} ) as typeof fetch,
+		} );
+		expect( result.rows ).toEqual( [] );
+		expect( result.warning ).toContain( 'ECONNREFUSED' );
+	} );
+
+	it( 'maps the bridge payload and drops what a static host cannot say', async () => {
+		const result = await fetchTemplateRedirects( {
+			base: 'https://shop.example.com',
+			fetchImpl: jsonOk( {
+				redirects: [
+					{ source: '/old/', target: '/new/', type: 301 },
+					{ source: '/gone/', target: '', type: 410 },
+					{ source: '/temp/', target: '/next/', type: 302 },
+					// Unusable rows: no leading slash, front page, identity, a
+					// status a static host cannot express, a 3xx with no target.
+					{ source: 'old', target: '/new/', type: 301 },
+					{ source: '/', target: '/home/', type: 301 },
+					{ source: '/same/', target: '/same/', type: 301 },
+					{ source: '/weird/', target: '/x/', type: 200 },
+					{ source: '/dangling/', target: '', type: 301 },
+				],
+			} ),
+		} );
+		expect( result.rows ).toEqual( [
+			{ from: '/old/', to: '/new/', status: 301 },
+			{ from: '/gone/', to: '', status: 410 },
+			{ from: '/temp/', to: '/next/', status: 302 },
+		] );
+		expect( result.warning ).toBeUndefined();
+	} );
+
+	it( 'resolves the endpoint from an origin or an already-qualified endpoint', () => {
+		expect( redirectsUrl( 'https://shop.example.com' ) ).toBe(
+			'https://shop.example.com/wp-json/nvoos-forge/v1/redirects'
+		);
+		expect( redirectsUrl( 'https://shop.example.com/' ) ).toBe(
+			'https://shop.example.com/wp-json/nvoos-forge/v1/redirects'
+		);
+		expect( redirectsUrl( 'https://bridge.example.com/wp-json/nvoos-forge/v1' ) ).toBe(
+			'https://bridge.example.com/wp-json/nvoos-forge/v1/redirects'
+		);
+		expect( redirectsUrl( '' ) ).toBe( '' );
+	} );
+
+	it( 'keeps its status set in step with the forge library', () => {
+		expect( [ ...PORTABLE_STATUSES ].sort() ).toEqual( [ 301, 302, 303, 307, 308, 404, 410 ].sort() );
+	} );
+} );
+
+describe( 'CPT entries redirect to their OWN route, not /posts/', () => {
+	// The scaffold builds a CPT collection under its `basePath`
+	// (`/eca/<id>/<slug>/`); the map used to send every non-core collection to
+	// `/posts/<id>/<slug>/`, which 404s (eca.directory, 2026-11-23).
+	const profile: SiteProfile = {
+		url: 'https://eca.example',
+		frontPage: 'home',
+		collections: [
+			{ slug: 'eca', restBase: 'wp/v2/mcp_ai_eca', basePath: '/eca', fields: [ 'id', 'slug', 'link' ] },
+			{ slug: 'case-studies', restBase: 'wp/v2/case_studies', fields: [ 'id', 'slug', 'link' ] },
+		],
+	};
+	const tables = {
+		'wp/v2/mcp_ai_eca': [ { id: 10784, slug: 'art-and-craft', link: 'https://eca.example/eca/art-and-craft/' } ],
+		'wp/v2/case_studies': [ { id: 5, slug: 'acme', link: 'https://eca.example/case-studies/acme/' } ],
+	};
+
+	it( 'uses basePath when declared and /<slug>/ otherwise', async () => {
+		const client = new WpClient( { baseUrl: 'https://eca.example', fetchImpl: fakeFetch( tables ) } );
+		const { redirects } = await generateRedirects( profile, client );
+		expect( redirects ).toContainEqual( { from: '/eca/art-and-craft/', to: '/eca/10784/art-and-craft/', status: 301 } );
+		expect( redirects ).toContainEqual( { from: '/case-studies/acme/', to: '/case-studies/5/acme/', status: 301 } );
+		expect( redirects.every( ( entry ) => ! entry.to.startsWith( '/posts/' ) ) ).toBe( true );
 	} );
 } );

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-geometry.test.ts — the measured source box drives the rebuilt band.
 //

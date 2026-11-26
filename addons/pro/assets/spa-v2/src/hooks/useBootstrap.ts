@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useBootstrap — Fetches initial data when the SPA mounts.
  */

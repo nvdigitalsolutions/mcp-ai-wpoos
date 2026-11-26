@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // record-fixtures.mjs — capture golden contract fixtures from a live origin.
 //

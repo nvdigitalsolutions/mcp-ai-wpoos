@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // seo.test.ts — the template's kind-typed JSON-LD builder (Proposal 104
 // §4.6): shapes per kind, offer wiring, breadcrumbs, and the `<` escape.
@@ -202,6 +203,39 @@ describe( 'jsonLdGraph (131 §2.3)', () => {
 		expect( website.potentialAction?.target?.urlTemplate ).toBe(
 			'https://example.com/search/?q={search_term_string}'
 		);
+	} );
+
+	it( 'publishes the contact people as schema.org ContactPoint nodes', () => {
+		// The same people the contact band renders: a page that lists four
+		// addresses but publishes none as data throws away the fact a search
+		// result can surface. `email` is the only required field — a person with
+		// no address is named in the band, but is not a contact POINT.
+		const graph = jsonLdGraph( {
+			site: {
+				url: 'https://example.com',
+				name: 'Example',
+				contactPoints: [
+					{ contactType: 'ECA Coordinator', name: 'Senior School programme', email: 'eca@example.com' },
+					{ contactType: 'IT Support' },
+				],
+			},
+			page,
+		} );
+		const organization = graph[ '@graph' ][ 0 ] as { contactPoint?: Array< Record< string, string > > };
+		expect( organization.contactPoint ).toEqual( [
+			{
+				'@type': 'ContactPoint',
+				contactType: 'ECA Coordinator',
+				name: 'Senior School programme',
+				email: 'eca@example.com',
+			},
+			{ '@type': 'ContactPoint', contactType: 'IT Support' },
+		] );
+	} );
+
+	it( 'omits contactPoint entirely when no people are configured', () => {
+		const graph = jsonLdGraph( { site: { url: 'https://example.com', name: 'Example' }, page } );
+		expect( graph[ '@graph' ][ 0 ] ).not.toHaveProperty( 'contactPoint' );
 	} );
 
 	it( 'includes breadcrumbs without a nested @context', () => {

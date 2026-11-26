@@ -31,10 +31,16 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		'user_id'         => 7,
 		'tool_name'       => 'generate_veo_video',
 		'messages'        => array(
-			array( 'role' => 'user', 'content' => 'Make a video' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Make a video',
+			),
 		),
 	);
 
+	/**
+	 * Reset the OTel exporter state before each test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -48,6 +54,9 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		WP_MCP_AI_Otel_Span_Exporter::register();
 	}
 
+	/**
+	 * Reset the OTel exporter state after each test.
+	 */
 	public function tearDown(): void {
 		delete_option( 'wp_mcp_ai_otel_endpoint' );
 		WP_MCP_AI_Otel_Span_Exporter::reset_for_tests();
@@ -56,7 +65,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 
 	// ── Hook registration ──────────────────────────────────────────────────────
 
-	/** @test */
+	/**
+	 * The stored hook is registered.
+	 *
+	 * @test
+	 */
 	public function test_continuation_stored_hook_is_registered() {
 		$this->assertGreaterThan(
 			0,
@@ -64,7 +77,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		);
 	}
 
-	/** @test */
+	/**
+	 * The ready hook is registered.
+	 *
+	 * @test
+	 */
 	public function test_continuation_ready_hook_is_registered() {
 		$this->assertGreaterThan(
 			0,
@@ -72,7 +89,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		);
 	}
 
-	/** @test */
+	/**
+	 * The dispatched hook is registered.
+	 *
+	 * @test
+	 */
 	public function test_continuation_dispatched_hook_is_registered() {
 		$this->assertGreaterThan(
 			0,
@@ -80,7 +101,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		);
 	}
 
-	/** @test */
+	/**
+	 * The resumed hook is registered.
+	 *
+	 * @test
+	 */
 	public function test_continuation_resumed_hook_is_registered() {
 		$this->assertGreaterThan(
 			0,
@@ -88,7 +113,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		);
 	}
 
-	/** @test */
+	/**
+	 * The errored hook is registered.
+	 *
+	 * @test
+	 */
 	public function test_continuation_errored_hook_is_registered() {
 		$this->assertGreaterThan(
 			0,
@@ -98,7 +127,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 
 	// ── Span buffering: stored ─────────────────────────────────────────────────
 
-	/** @test */
+	/**
+	 * The stored action buffers a correctly named span.
+	 *
+	 * @test
+	 */
 	public function test_stored_action_buffers_span_with_correct_name() {
 		WP_MCP_AI_Otel_Span_Exporter::on_chat_continuation_stored( 'job_store_001', self::$snapshot );
 
@@ -109,7 +142,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		$this->assertSame( 'nvoos.chat.continuation.stored', $span['name'] );
 	}
 
-	/** @test */
+	/**
+	 * The stored action records job and session attributes.
+	 *
+	 * @test
+	 */
 	public function test_stored_action_records_job_and_session_attributes() {
 		WP_MCP_AI_Otel_Span_Exporter::on_chat_continuation_stored( 'job_store_002', self::$snapshot );
 
@@ -126,7 +163,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 
 	// ── Span buffering: ready / dispatched pair ────────────────────────────────
 
-	/** @test */
+	/**
+	 * Ready opens a span and dispatched closes it.
+	 *
+	 * @test
+	 */
 	public function test_ready_opens_span_and_dispatched_closes_it() {
 		$job_id = 'job_rd_003';
 		$snap   = array_merge( self::$snapshot, array( 'job_id' => $job_id ) );
@@ -144,7 +185,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		$this->assertContains( 'nvoos.chat.continuation.dispatched', $names );
 	}
 
-	/** @test */
+	/**
+	 * Dispatched without ready emits a point span.
+	 *
+	 * @test
+	 */
 	public function test_dispatched_without_ready_emits_point_span() {
 		$job_id = 'job_pointspan_004';
 		WP_MCP_AI_Otel_Span_Exporter::on_chat_continuation_dispatched( $job_id, self::$snapshot, 'completed' );
@@ -156,7 +201,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 
 	// ── Span buffering: resumed ────────────────────────────────────────────────
 
-	/** @test */
+	/**
+	 * The resumed action buffers a span.
+	 *
+	 * @test
+	 */
 	public function test_resumed_action_buffers_span() {
 		WP_MCP_AI_Otel_Span_Exporter::on_chat_continuation_resumed(
 			'job_res_005',
@@ -175,7 +224,11 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 
 	// ── Span buffering: errored ────────────────────────────────────────────────
 
-	/** @test */
+	/**
+	 * Errored closes the open ready span.
+	 *
+	 * @test
+	 */
 	public function test_errored_closes_open_ready_span() {
 		$job_id = 'job_err_006';
 		$snap   = array_merge( self::$snapshot, array( 'job_id' => $job_id ) );
@@ -186,12 +239,16 @@ class Test_Chat_Continuation_Otel_Hooks extends WP_UnitTestCase {
 		$open_spans = WP_MCP_AI_Otel_Span_Exporter::get_test_open_spans();
 		$this->assertArrayNotHasKey( 'continuation_' . $job_id, $open_spans );
 
-		$buffer   = WP_MCP_AI_Otel_Span_Exporter::get_test_buffer();
-		$names    = array_column( $buffer, 'name' );
+		$buffer = WP_MCP_AI_Otel_Span_Exporter::get_test_buffer();
+		$names  = array_column( $buffer, 'name' );
 		$this->assertContains( 'nvoos.chat.continuation.errored', $names );
 	}
 
-	/** @test */
+	/**
+	 * Errored without ready emits a point span.
+	 *
+	 * @test
+	 */
 	public function test_errored_without_ready_emits_point_span() {
 		WP_MCP_AI_Otel_Span_Exporter::on_chat_continuation_errored(
 			'job_err_007',

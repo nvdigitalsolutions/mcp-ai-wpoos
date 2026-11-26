@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * RecordsPage tests — remote-site persistence scoping.
  *

@@ -1,0 +1,57 @@
+---
+// SPDX-License-Identifier: MIT
+// BandBody — the component a band's KIND chooses.
+//
+// Extracted from `DesignRenderer` so a band that needs its measured media lane
+// (`ds-band-split`) can wrap the SAME body without a second, drifting copy of
+// this switch. A band with no lane renders this component directly, exactly as
+// it did before the wrapper existed — an unconditional wrapper changed the box
+// tree for every band and re-flowed a raw home band (2026-11-25).
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import Accordion from './Accordion.astro';
+import Comparison from './Comparison.astro';
+import Cta from './Cta.astro';
+import FeatureGrid from './FeatureGrid.astro';
+import Form from './Form.astro';
+import Gallery from './Gallery.astro';
+import Hero from './Hero.astro';
+import IconList from './IconList.astro';
+import LogoCloud from './LogoCloud.astro';
+import Marquee from './Marquee.astro';
+import Pricing from './Pricing.astro';
+import Stats from './Stats.astro';
+import Steps from './Steps.astro';
+import Team from './Team.astro';
+import Testimonial from './Testimonial.astro';
+import TextBlock from './TextBlock.astro';
+
+interface Props {
+	section: SemanticSection;
+	kind: string;
+	theme?: SectionTheme;
+	columns?: Record< string, number >;
+	media?: Array< { src?: string; alt?: string } >;
+	uid?: string;
+}
+
+const { section, kind, theme, columns, media, uid } = Astro.props;
+---
+
+{kind === 'hero' && <Hero section={section} theme={theme} media={media} />}
+{kind === 'accordion' && <Accordion section={section} theme={theme} />}
+{kind === 'feature-grid' && <FeatureGrid section={section} columns={columns} theme={theme} />}
+{kind === 'icon-list' && <IconList section={section} columns={columns} theme={theme} />}
+{kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
+{kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
+{kind === 'cta' && <Cta section={section} theme={theme} />}
+{kind === 'gallery' && <Gallery section={section} theme={theme} />}
+{kind === 'form' && <Form section={section} theme={theme} />}
+{kind === 'pricing' && <Pricing section={section} theme={theme} />}
+{kind === 'stats' && <Stats section={section} theme={theme} />}
+{kind === 'steps' && <Steps section={section} theme={theme} />}
+{kind === 'team' && <Team section={section} theme={theme} />}
+{kind === 'marquee' && <Marquee section={section} uid={uid} />}
+{kind === 'comparison' && <Comparison section={section} theme={theme} />}
+{kind === 'text' && (section.html ? <div class="post-body ds-section ds-text-band" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
+{kind === 'raw' && <div class="post-body ds-section ds-text-band" set:html={section.html ?? ''} />}

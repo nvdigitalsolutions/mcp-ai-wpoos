@@ -296,6 +296,22 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   app alone never changes the live console; every spa-v2 source fix must
   be compiled into **both** `addons/pro/assets/spa-v2/assets/dist/` and
   `examples/nvoos-complete-velocity/dist/` (see the rebuild map below).
+- **Console backend profile is a runtime setting (2026-11-23):** one artifact
+  serves both the WordPress plugin and the Laravel runtime. `scripts/serve.mjs`
+  reads `NVOOS_BACKEND` (`wordpress|laravel|hybrid`), proxies the matching
+  prefixes (`/wp-json…` vs `/api`, `/mcp`, `/sanctum`), and stamps the client:
+  the served SPA entry gets `<script src="/app-config.js">`, and that route
+  answers `window.__NVOOS_BACKEND__="<profile>"`, which `buildTimeBackend()`
+  reads **before** the build-time `VITE_NVOOS_BACKEND`. Keep the stamp external
+  (so a future `script-src 'self'` CSP needs no nonce/hash) and `no-cache` +
+  ETag. Two failure modes: a WordPress-profile bundle behind a laravel proxy
+  calls `/wp-json/...`, which is not forwarded → the static handler answers
+  `index.html` (200 text/html, no error, and the boot assertion no-ops for the
+  wordpress profile); and the **mirror artifact is shared** by every
+  `*-complete-velocity` app, so never rebuild `dist/` in a Laravel profile to
+  switch one deployment — set the env var. Sanctum must list the **browser**
+  origin (`serve.mjs` forwards Origin for laravel), and the proxy strips
+  `Set-Cookie: Domain`, leaving host-only session cookies.
 - **Console nav gating (Proposal 084 Phase 0, shipped 2026-10-20):**
   the sidebar, dashboard quick-actions, and route guards all consume one
   catalogue — `examples/nvoos-complete-velocity/src/console/nav-features.tsx`
@@ -815,6 +831,43 @@ is standalone, never embedded inline in wp-admin).
    Dry-run mergeability without touching the worktree:
    `git merge-tree --write-tree HEAD origin/<base>` (exit 0 = clean).
 
+### React 19 + `@ai-sdk/react` — error #185 while streaming (PR #8272)
+
+`useChat` (the 1.x line) keeps its state in **four** SWR caches — `messages`,
+`streamData`, `status`, `error`. With no throttle every streamed delta mutates
+all of them, and React 19 counts a cache notification that lands during an
+in-progress render as a *nested update*. Past 50 it throws
+**#185 "Maximum update depth exceeded"**, once per token. The stack is
+unmistakable:
+
+```
+sse-adapter → processDataStream → onTextPart / onReasoningPart
+  → onUpdate → mutateByKey → SWR cache setter → subscribeCache
+    → forceStoreRerender → getRootForUpdatedFiber → Error #185
+```
+
+The turn still completes and the transcript still saves — so it is easy to
+dismiss as noise. It isn't: it is one uncaught rejection per delta plus real
+jank. Two fixes, both needed:
+
+1. **`experimental_throttle: 60`** on `useChat` — the AI SDK's documented remedy
+   for this exact error; coalesces updates to ~16/s. (Named `throttle` in AI SDK
+   5+; `experimental_throttle` in the 1.x line. Confirm the option exists in the
+   installed version before relying on it.)
+2. **Memoise the message row.** `useChat` replaces *only* the trailing message
+   object, so `React.memo( MessageView, areEqual )` keyed on message identity
+   bails out for every settled message. Without it each token re-renders — and
+   re-parses the Markdown of — the whole transcript, which is quadratic in
+   conversation length.
+
+Comparator caveats, both learned the hard way:
+
+- The agent panel rebuilds `delegations` (derived from *all* messages) and
+  `jobs` (job-bus state) on every delta. Compare those by **size**, not
+  identity, or the memo never bails for any message.
+- Check every callback prop is `useCallback`-stable. One inline arrow
+  (`stateFor`, `onRegenerate`, …) defeats the entire boundary.
+
 ## @xyflow/react v12 (upgraded from reactflow 11)
 
 - **No default export** — `import { ReactFlow, ... } from '@xyflow/react'`.
@@ -888,6 +941,16 @@ bootstrap fixture and heavy-view mocks (see `api.test.tsx`).
   with Builder at ~63 KB.
 - Lint gates: `npm run lint:a11y` (`eslint-plugin-jsx-a11y`, `--max-warnings 0`)
   must pass; typecheck with `npm run typecheck`; tests with `npm test`.
+- **ESLint is flat-config since 2026-11-16 (ESLint 9, `@wordpress/eslint-plugin`
+v25).** The root `.eslintrc.json` + `.eslintignore` pair is gone; the config is
+  `eslint.config.cjs`. v25 ships **flat configs only**, so
+  `extends: ["plugin:@wordpress/eslint-plugin/recommended"]` has no equivalent —
+  the preset is spread and **re-scoped to `src/**`** to preserve the previous
+  behaviour (it never applied to `assets/js/**`, which stays on
+  `@typescript-eslint/recommended`). Copy the existing file's scoping when adding
+  a package-level config (`addons/saas-controller/eslint.config.cjs` is the
+  model); do not reintroduce `.eslintignore` (flat config uses `ignores`). Node 18
+  is no longer a CI target (Node 20+).
 - PRs: branch `add/<slug>` from `alpha-working`, PR back to `alpha-working`,
   commit built artifacts and lockfiles.
 - Shared worktree caution: another agent or a sync process can revert a file

@@ -104,7 +104,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * get_for_date_and_time() must exist as a public static method.
+	 * Get_for_date_and_time() must exist as a public static method.
 	 */
 	public function test_get_for_date_and_time_method_exists() {
 		if ( ! $this->load_vitals_log_cct() ) {
@@ -118,7 +118,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_for_date_and_time() must return null when the table does not exist.
+	 * Get_for_date_and_time() must return null when the table does not exist.
 	 */
 	public function test_get_for_date_and_time_returns_null_without_table() {
 		if ( ! $this->load_vitals_log_cct() ) {
@@ -138,7 +138,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * is_near_duplicate() must return false when the incoming data contains
+	 * Is_near_duplicate() must return false when the incoming data contains
 	 * a numeric field that the existing row does not have (new data — not dup).
 	 */
 	public function test_is_near_duplicate_false_when_existing_lacks_incoming_field() {
@@ -151,8 +151,8 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Existing row has bp_systolic; incoming also has egfr (not in existing).
-		$existing              = new stdClass();
-		$existing->bp_systolic = 120;
+		$existing                   = new stdClass();
+		$existing->bp_systolic      = 120;
 		$existing->measurement_time = '';
 
 		$incoming = array(
@@ -165,7 +165,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * is_near_duplicate() must return true when all incoming numeric fields match
+	 * Is_near_duplicate() must return true when all incoming numeric fields match
 	 * and times are within DEDUP_WINDOW.
 	 */
 	public function test_is_near_duplicate_true_when_values_and_times_match() {
@@ -177,14 +177,14 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'is_near_duplicate' );
 		$method->setAccessible( true );
 
-		$existing              = new stdClass();
-		$existing->bp_systolic = 105;
-		$existing->bp_diastolic = 56;
+		$existing                   = new stdClass();
+		$existing->bp_systolic      = 105;
+		$existing->bp_diastolic     = 56;
 		$existing->measurement_time = '18:00';
 
 		$incoming = array(
-			'bp_systolic'  => 105,
-			'bp_diastolic' => 56,
+			'bp_systolic'      => 105,
+			'bp_diastolic'     => 56,
 			'measurement_time' => '18:03', // 3 min apart — within dedup window.
 		);
 
@@ -213,7 +213,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * parse_json_array() must return a successful result with correct row count
+	 * Parse_json_array() must return a successful result with correct row count
 	 * for the sample ED visit payload (8 records).
 	 */
 	public function test_parse_json_array_handles_sample_ed_payload() {
@@ -237,28 +237,28 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 					'creatinine'       => 1.44,
 				),
 				array(
-					'member_id'        => 2976,
-					'measurement_date' => '2026-02-09',
-					'measurement_time' => '18:00',
-					'source'           => 'import',
-					'notes'            => 'ED vitals.',
-					'bp_systolic'      => 105,
-					'bp_diastolic'     => 56,
-					'heart_rate'       => 67,
+					'member_id'         => 2976,
+					'measurement_date'  => '2026-02-09',
+					'measurement_time'  => '18:00',
+					'source'            => 'import',
+					'notes'             => 'ED vitals.',
+					'bp_systolic'       => 105,
+					'bp_diastolic'      => 56,
+					'heart_rate'        => 67,
 					'oxygen_saturation' => 96,
-					'respiratory_rate' => 19,
+					'respiratory_rate'  => 19,
 				),
 				array(
-					'member_id'        => 2976,
-					'measurement_date' => '2026-02-09',
-					'measurement_time' => '18:20',
-					'source'           => 'import',
-					'notes'            => 'ED vitals.',
-					'bp_systolic'      => 90,
-					'bp_diastolic'     => 61,
-					'heart_rate'       => 65,
+					'member_id'         => 2976,
+					'measurement_date'  => '2026-02-09',
+					'measurement_time'  => '18:20',
+					'source'            => 'import',
+					'notes'             => 'ED vitals.',
+					'bp_systolic'       => 90,
+					'bp_diastolic'      => 61,
+					'heart_rate'        => 65,
 					'oxygen_saturation' => 96,
-					'respiratory_rate' => 19,
+					'respiratory_rate'  => 19,
 				),
 			)
 		);
@@ -271,7 +271,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * parse_json_array() must exclude the member_id field from the output row.
+	 * Parse_json_array() must exclude the member_id field from the output row.
 	 */
 	public function test_parse_json_array_excludes_member_id_from_row() {
 		$tool = $this->get_import_vitals_tool();
@@ -300,7 +300,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * parse_json_array() must accept a single JSON object (not wrapped in an array).
+	 * Parse_json_array() must accept a single JSON object (not wrapped in an array).
 	 */
 	public function test_parse_json_array_accepts_single_object() {
 		$tool = $this->get_import_vitals_tool();
@@ -324,7 +324,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * parse_json_array() must return an error for non-JSON input.
+	 * Parse_json_array() must return an error for non-JSON input.
 	 */
 	public function test_parse_json_array_returns_error_for_invalid_json() {
 		$tool = $this->get_import_vitals_tool();
@@ -341,7 +341,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * measurement_time must be empty string (not '00:00') when the parsed row
+	 * Measurement_time must be empty string (not '00:00') when the parsed row
 	 * carries an empty time value, so the upsert can distinguish timed from
 	 * untimed records.
 	 */
@@ -383,7 +383,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * get_decimal_vital_fields() must exist and return an array that includes
+	 * Get_decimal_vital_fields() must exist and return an array that includes
 	 * the renal indicators affected by the decimal-truncation bug.
 	 */
 	public function test_get_decimal_vital_fields_includes_renal_indicators() {
@@ -419,7 +419,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_row_format() must return '%f' for decimal fields, '%d' for integer
+	 * Build_row_format() must return '%f' for decimal fields, '%d' for integer
 	 * fields, and '%s' for text fields.
 	 */
 	public function test_build_row_format_returns_correct_specifiers() {
@@ -475,7 +475,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * maybe_migrate_decimal_columns() must exist and be a no-op when the table
+	 * Maybe_migrate_decimal_columns() must exist and be a no-op when the table
 	 * does not exist.
 	 */
 	public function test_maybe_migrate_decimal_columns_noop_without_table() {
@@ -587,14 +587,14 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$constant   = $reflection->getConstant( 'CSV_COLUMN_MAP' );
 
 		$spot_checks = array(
-			'hct'       => 'hematocrit',
-			'rbc'       => 'rbc',
-			'wbc'       => 'wbc',
-			'plt'       => 'platelets',
-			'mcv'       => 'mcv',
-			'mch'       => 'mch',
-			'mchc'      => 'mchc',
-			'rdw'       => 'rdw',
+			'hct'  => 'hematocrit',
+			'rbc'  => 'rbc',
+			'wbc'  => 'wbc',
+			'plt'  => 'platelets',
+			'mcv'  => 'mcv',
+			'mch'  => 'mch',
+			'mchc' => 'mchc',
+			'rdw'  => 'rdw',
 		);
 
 		foreach ( $spot_checks as $alias => $field ) {
@@ -608,7 +608,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * parse_csv() must recognise a "hemoglobin" column header and populate
+	 * Parse_csv() must recognise a "hemoglobin" column header and populate
 	 * the hemoglobin field in the resulting row.
 	 */
 	public function test_parse_csv_parses_hemoglobin_column() {
@@ -629,7 +629,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * parse_csv() must recognise the "hgb" column alias for hemoglobin.
+	 * Parse_csv() must recognise the "hgb" column alias for hemoglobin.
 	 */
 	public function test_parse_csv_parses_hgb_alias() {
 		$tool = $this->get_import_vitals_tool();
@@ -653,7 +653,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * parse_fhir_json() must map LOINC code 718-7 to the hemoglobin field.
+	 * Parse_fhir_json() must map LOINC code 718-7 to the hemoglobin field.
 	 */
 	public function test_parse_fhir_json_maps_hemoglobin_loinc_718_7() {
 		$tool = $this->get_import_vitals_tool();
@@ -662,23 +662,31 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'parse_fhir_json' );
 		$method->setAccessible( true );
 
-		$fhir = json_encode( array(
-			'resourceType' => 'Bundle',
-			'entry'        => array(
-				array(
-					'resource' => array(
-						'resourceType'     => 'Observation',
-						'effectiveDateTime' => '2026-03-01T09:00:00Z',
-						'code'             => array(
-							'coding' => array(
-								array( 'system' => 'http://loinc.org', 'code' => '718-7' ),
+		$fhir = json_encode(
+			array(
+				'resourceType' => 'Bundle',
+				'entry'        => array(
+					array(
+						'resource' => array(
+							'resourceType'      => 'Observation',
+							'effectiveDateTime' => '2026-03-01T09:00:00Z',
+							'code'              => array(
+								'coding' => array(
+									array(
+										'system' => 'http://loinc.org',
+										'code'   => '718-7',
+									),
+								),
+							),
+							'valueQuantity'     => array(
+								'value' => 13.5,
+								'unit'  => 'g/dL',
 							),
 						),
-						'valueQuantity'    => array( 'value' => 13.5, 'unit' => 'g/dL' ),
 					),
 				),
-			),
-		) );
+			)
+		);
 
 		$result = $method->invoke( $tool, $fhir );
 
@@ -693,7 +701,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * parse_json_array() must accept hemoglobin as a recognised numeric field
+	 * Parse_json_array() must accept hemoglobin as a recognised numeric field
 	 * and include it in the output row.
 	 */
 	public function test_parse_json_array_accepts_hemoglobin_field() {
@@ -703,12 +711,14 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'parse_json_array' );
 		$method->setAccessible( true );
 
-		$payload = json_encode( array(
+		$payload = json_encode(
 			array(
-				'measurement_date' => '2026-03-01',
-				'hemoglobin'       => 13.5,
-			),
-		) );
+				array(
+					'measurement_date' => '2026-03-01',
+					'hemoglobin'       => 13.5,
+				),
+			)
+		);
 
 		$result = $method->invoke( $tool, $payload );
 
@@ -719,7 +729,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_numeric_vital_fields() must include hemoglobin so that all three
+	 * Get_numeric_vital_fields() must include hemoglobin so that all three
 	 * import paths (JSON, CSV, FHIR) treat it as a numeric vital.
 	 */
 	public function test_get_numeric_vital_fields_includes_hemoglobin() {
@@ -733,7 +743,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_decimal_vital_fields() must include hemoglobin so that g/dL values
+	 * Get_decimal_vital_fields() must include hemoglobin so that g/dL values
 	 * are stored with decimal precision.
 	 */
 	public function test_get_decimal_vital_fields_includes_hemoglobin() {
@@ -747,7 +757,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_row_format() must return "%f" for hemoglobin (decimal field).
+	 * Build_row_format() must return "%f" for hemoglobin (decimal field).
 	 */
 	public function test_build_row_format_returns_float_for_hemoglobin() {
 		if ( ! $this->load_vitals_log_cct() ) {

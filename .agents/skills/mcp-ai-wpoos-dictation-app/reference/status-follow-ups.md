@@ -376,3 +376,144 @@ New this session (2026-11-12): **v0.4.0 release bump + mirror-sync test
   bumped. Release-sync test path: tag `nvoos-dictate-v0.4.0`, publish the
   draft release, then dispatch
   `mirror-nvoos-cognition-release.yml` with the tag.
+
+New this session (2026-11-21): **hand-gesture input, Proposal 153 (M1–M4
+  core).** New `src/gestures/` module — 14 files, three deliberate layers:
+  pure decision code (`geometry`, `classifier`, `normalize`, `stabilize`,
+  `motion`, `router`, `catalogue`) is **always compiled and always tested**;
+  only `landmarks.rs` / `models.rs` / `controller.rs` bodies sit behind the
+  new `gestures` feature (which implies `camera` and reuses the pinned `ort`
+  rc.9 that `vision` already pulls in). Vocabulary: 8 static poses + 5
+  motions in `catalogue.rs`, mapped to a 10-variant `ActionId` that has **no**
+  representation for delete/purge/send/purchase. Safety: explicit arming
+  (`OpenPalm` held 600 ms), `ClosedFist` disarm, one allowlist check in
+  `router.rs`, and `ToggleDictation`/`StopDictation` guarded by a
+  `confirm_hold_ms` (1500) pose hold — a short flash emits
+  `gesture://pending-confirm` and executes nothing. Camera: a second ring
+  `frame_vision` (≤640 px) beside the 320 px preview, one decode feeding
+  both. Dictation routes through the existing
+  `dictation::request_stop/request_toggle` globals; `src/hotkey/` untouched.
+  UI: Home "Camera preview" gained a Hand-gestures toggle, 10 Hz snapshot
+  polling, the 21-point MediaPipe skeleton on the existing overlay canvas,
+  an armed chip + confidence bar, and a pending-confirm banner.
+  **Model pinning (M0) is still open by design:** `models.rs` ships no URL
+  and no hash (`download()` errors naming M0) because MediaPipe distributes
+  `.task`/TFLite, not ONNX, and no verified ONNX export with provenance was
+  found; users supply a local `.onnx` via `Settings.gestures.model_path`.
+  Gates run: fmt, `clippy -D warnings` on default / `vision` / `camera` /
+  `gestures` / `gestures,vision` / `snippet` / `document` / `memory` / `mcp` /
+  `agent` / `snippet-onnx`, `cargo test` on default (304) / `gestures` (308)
+  / `vision` (316) / `gestures,vision` (316) across all targets,
+  `--example gesture_probe`, and `npm run build`. **M5 shipped as "point +
+  ask"** (`gestures/deictic.rs` + `AppState::ask_camera` + the Home panel):
+  the gesture supplies the referent and a typed question supplies the intent;
+  the crop (≤512 px) goes only to the configured local LM Studio/Ollama
+  endpoint and the answer is display-only. The spoken leg is deferred — the
+  app has no in-memory last transcript, and adding one means changing the
+  dictation state machine. **M6's rulebook shipped, not wired**
+  (`gestures/arbiter.rs`: not-allowed → ignore, guarded never promoted,
+  fallback only when allowed *and* safe; a test proves the request cannot
+  serialise pixels). Also fixed in this session, both found by the new
+  per-feature gate: (1) `--features snippet-pdf` alone did not compile
+  (`cannot find pdf in document`) — it declared `["snippet", "dep:lopdf"]`
+  while `export_pdf.rs` re-rasterizes pages through the `document`-gated
+  `document::pdf`, so it now declares `["document", "dep:lopdf"]`;
+  (2) `--features silero-vad` alone did not compile either — `error.rs` gated
+  `impl From<ort::Error>` on that feature while the feature only enabled
+  `dep:ort-sys`, so `ort::Error` was unresolved; `silero-vad` is dropped from
+  that cfg (`audio/vad.rs` maps the error by hand). CI (`feature-matrix` job,
+  `cargo hack clippy --each-feature`) now enforces the whole class.
+
+  Also in this session: the intermittent `hotkey::win_hook` failure is **fixed**.
+  `ptt_pressed_alone()` read the live `GetKeyboardState`, so a stray held key
+  (left-Alt is deliberately not an allowed modifier) made a synthetic PTT press
+  pass through; the assertion failed and the panic poisoned `TEST_LOCK`, which
+  is why all three tests failed together. The decision is now the pure
+  `alone_from_state(&[u8; 256], ptt)` with a `#[cfg(test)] TEST_KEY_STATE`
+  override; 200 consecutive full-suite runs are clean and the module now
+  covers shift/ctrl tolerance, left-Alt rejection and a real Alt-combo
+  pass-through. Cargo caching moved from `actions/cache@v4` (whole `target/`,
+  40+ GB per entry, one key per OS) to `Swatinem/rust-cache@v2` (dependency
+  artifacts only, pruned, keyed per dependency profile).
+
+  Engine features are now covered too: a new **advisory** `engine-matrix` job
+  (`ubuntu-latest` + `cmake libclang-dev clang`, `continue-on-error: true`)
+  clippy-checks `whisper`, `parakeet`, `fastconformer` and the three together.
+  It found a fourth bug of the same class within minutes: `--features
+  fastconformer` alone did not compile (`cannot find function replace_dir`) —
+  the sherpa installer is gated `any(parakeet, fastconformer)` but
+  `replace_dir`/`replace_dir_backoff` were `parakeet`-only. Both helpers and
+  the three shared-installer tests are now `any(parakeet, fastconformer)`.
+  Note for local runs: VS 2022 ships CMake; prepend
+  `.../Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin` and set
+  `LIBCLANG_PATH='C:/Program Files/LLVM/bin'` to build `whisper` without
+  installing anything.
+
+### Startup wedge — `get_status` self-deadlock on the gesture mutex (fixed 2026-11-21)
+
+**Symptom.** Debug exe "not responding" at startup: window painted, CPU flat,
+`Responding: False`, every UI panel blank. Reported as "started after gestures".
+
+**Root cause.** `ipc::get_status` locked `state.gestures` once per struct-literal
+field (two gesture fields added for M4). Rust keeps the first `MutexGuard`
+temporary alive to the end of the enclosing statement, and `std::sync::Mutex` is
+not reentrant, so the thread blocked on itself. Because non-`async`
+`#[tauri::command]`s run on Tauri's **main thread**, and Windows IPC is
+synchronous, that single lock froze the app *and* the renderer (which is why
+even CDP `Runtime.evaluate` later hung).
+
+**Fix.** One guard in a named helper, `ipc::gesture_status_fields(&state.gestures)`,
+covered by `ipc::tests::gesture_status_fields_reads_do_not_deadlock` (worker
+thread + `recv_timeout(5s)`, so a regression fails instead of hanging).
+
+**Diagnosis recipe (reuse it).** Don't trust `Responding` alone:
+1. Launch with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9222 --remote-allow-origins=*"`.
+2. Confirm the page really loaded: `document.readyState`, `#root` children, `typeof __TAURI_INTERNALS__`.
+3. Race an `invoke('get_settings')` against a 1–2 s timeout, repeatedly, to get a
+   timeline of when IPC dies (+3.7 s undefined → +4.0 s OK → +5.2 s dead here).
+4. Add a one-line `tracing::info!("CMD enter: <name>")` to each mount-path command;
+   the last enter with no return names the blocker. Then remove the logs.
+
+**Also reverted.** The `nvoos-aux-windows` worker thread and
+`NVOOS_SKIP_AUX_WINDOWS` hatch: the overlay/snippet windows are created from
+`setup` on the main thread again. Creating Win32 windows off their message-pump
+thread was never a safe workaround, and the "builder never returns" evidence was
+this same deadlock blocking the main thread. Verified: `main`, `overlay` and
+`snippet` webviews all exist and the app stays responsive.
+
+**Rule.** Never lock the same `Mutex` twice in one expression — especially in
+`struct { .. }` literals or argument lists. Sync Tauri commands run on the main
+thread, so the blast radius is the whole app, not one request.
+
+### Hand-landmark model: pinned + downloadable (2026-11-21)
+
+The gesture catalogue is no longer fail-closed. `Settings → Gestures` has a
+**Download hand-landmark** button (shown only while the file is missing), and it
+installs a hash-verified artifact via the vision download path.
+
+* Artifact: OpenCV Zoo `handpose_estimation_mediapipe_2023feb.onnx`, Apache-2.0.
+* URL pinned to revision `4b2a0b446e5cf2f11fb6b2c7251091c035d2c1f7`; size
+  4,099,621 B; SHA-256 `db0898ae…bef6d81c` (constants in
+  `gestures/models.rs`: `HAND_LANDMARK_URL`, `HAND_LANDMARK_SHA256`).
+* Measured contract: input `input_1` **[1,224,224,3] NHWC 0..1**; outputs
+  `Identity[1,63]` landmarks, `Identity_1[1,1]` confidence,
+  `Identity_2[1,1]` handedness, `Identity_3[1,63]` world landmarks.
+
+Two things to remember when pointing at a new export:
+
+1. **Layout is auto-detected** from the declared input dims (`InputLayout`,
+   `layout_from_dims`), defaulting to NCHW. An NHWC export is reordered by
+   `chw_to_hwc` — no code change needed.
+2. **Anonymous outputs resolve by shape** (`roles_from_shapes`): 63/42 floats =
+   the 21 landmarks, then the 1-element heads are confidence, handedness. Before
+   this, a tf2onnx export lost its confidence head and *every* frame decoded as a
+   hand (score pinned at 1.0).
+
+Verification that matters: `gesture_probe` scores **0.829** on a real hand photo
+and **0.001** on the Open Hand Monument sculpture — the confidence head
+discriminates. `cargo run --features gestures --example gesture_probe --
+--model <onnx> --image <jpg>` is the fastest way to re-check any candidate.
+
+**Limitation:** the MediaPipe landmark model expects a *cropped* hand; there is no
+palm detector in the pipeline, so the hand must fill a good share of the frame.
+A palm-detector first stage is the follow-up for arm's-length use.

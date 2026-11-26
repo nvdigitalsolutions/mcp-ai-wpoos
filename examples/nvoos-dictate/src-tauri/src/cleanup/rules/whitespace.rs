@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Whitespace normalization: collapse runs, fix space-before-punctuation,
 //! trim. Runs for both raw and cleaned output.
 

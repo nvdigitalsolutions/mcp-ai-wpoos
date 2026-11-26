@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { defineConfig, type Plugin, type Connect } from 'vite';
 import type { ServerResponse } from 'node:http';
 import { fileURLToPath, URL } from 'node:url';

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Assembles the nvoos-funiq-velocity mirror tree from a BUILT Payload CMS
  * checkout in the private repo nvdigitalsolutions/nvoos-funiq-pwa.

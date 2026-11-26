@@ -85,10 +85,9 @@ class WP_MCP_AI_Ability_Bridge {
 			$tool     = $registry->get_tool( $slug );
 
 			if ( ! $tool ) {
-				return array(
-					'success' => false,
-					'message' => 'Tool not available.',
-					'code'    => 'tool_not_found',
+				return new WP_Error(
+					'tool_not_found',
+					__( 'Tool not available.', 'mcp-ai-wpoos' )
 				);
 			}
 

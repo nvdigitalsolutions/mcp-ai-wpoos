@@ -1,0 +1,10 @@
+# Runtime secrets — never commit.
+.env
+*.local
+
+# Rotated Intuit refresh token state.
+.qbo-state.json
+
+node_modules/
+npm-debug.log*
+coverage/

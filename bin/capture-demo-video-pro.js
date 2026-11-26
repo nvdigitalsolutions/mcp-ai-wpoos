@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * NV oOS Demo Video — Pro Plugin Features (Phase 2)
  *

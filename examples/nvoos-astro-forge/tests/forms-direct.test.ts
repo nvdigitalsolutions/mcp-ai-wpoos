@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms-direct.test.ts — the emitted DIRECT-delivery endpoint (Proposal 138).
 //
@@ -9,7 +10,8 @@
 //   - the emitted text is syntactically valid TypeScript
 //   - the throttle keys on the PROXY-AWARE client address, not the socket peer
 //   - the shared client envelope (`{ fields: { … } }`) is flattened
-//   - Turnstile is verified server-side, before the throttle, and fails open
+//   - Turnstile is verified server-side, before the throttle, and a tokenless
+//     POST is rejected
 //
 // The peer-keyed throttle shipped once and made the rate limit site-wide:
 // behind the platform proxy every visitor shares one bucket (2026-11-15).
@@ -82,9 +84,9 @@ describe('renderDirectFormsEndpointTs', () => {
 	it('reads the shared client envelope through the shared parser', () => {
 		// The flatten + reserved-field rules live in lib/forms.ts so the bridge
 		// fallback cannot drift from this endpoint; they are unit-tested there.
-		expect(source).toContain(
-			"import { readSubmissionFields, submissionMessage } from '../../../forge/forms.ts';"
-		);
+		expect(source).toContain("from '../../../forge/forms.ts';");
+		expect(source).toContain('readSubmissionFields');
+		expect(source).toContain('submissionMessage');
 		expect(source).toContain('const fields = await readSubmissionFields( request );');
 	});
 
@@ -112,12 +114,23 @@ describe('renderDirectFormsEndpointTs — Turnstile', () => {
 		expect(throttleAt).toBeGreaterThan(verifyAt);
 	});
 
-	it('binds the token to this site and this widget', () => {
-		expect(turnstileSource).toContain("const TURNSTILE_HOSTNAME = 'virtuallyjamaica.com';");
-		expect(turnstileSource).toContain("const TURNSTILE_ACTION = 'contact';");
+	it( 'binds the token to this site and this widget', () => {
+		expect(turnstileSource).toContain("const TURNSTILE_HOSTNAME: string = 'virtuallyjamaica.com';");
+		expect(turnstileSource).toContain("const TURNSTILE_ACTION: string = 'contact';");
 		expect(turnstileSource).toContain('payload.hostname !== expected');
 		expect(turnstileSource).toContain('payload.action !== TURNSTILE_ACTION');
-	});
+	} );
+
+	it( 'types the baked Turnstile constants as string', () => {
+		// A literal initializer infers a LITERAL type, so the endpoint's own
+		// `TURNSTILE_ACTION !== ''` guard becomes ts(2367) "no overlap" under
+		// `astro check` — exactly the two errors virtuallyjamaica's generated
+		// project reported (2026-11-15). The annotation keeps the guards legal
+		// and lets a profile bake an empty value.
+		expect(turnstileSource).toContain("const TURNSTILE_SITE_KEY: string = '1x00000000000000000000AA';");
+		expect(turnstileSource).toContain("const TURNSTILE_ACTION: string = 'contact';");
+		expect(turnstileSource).toContain("const TURNSTILE_HOSTNAME: string = 'virtuallyjamaica.com';");
+	} );
 
 	it('treats a bad token as a rejection, not a transport error', () => {
 		// Single-use 300 s tokens replay as `timeout-or-duplicate`; that is a
@@ -139,12 +152,19 @@ describe('renderDirectFormsEndpointTs — Turnstile', () => {
 		expect(strict).toContain("const TURNSTILE_ON_ERROR: 'allow' | 'block' = 'block';");
 	});
 
-	it('accepts a missing token unverified, but loudly', () => {
-		// A widget that never rendered is a CSP/script fault far more often
-		// than a bot; 400ing on it is the silent-drop failure class this
-		// endpoint exists to prevent.
-		expect(turnstileSource).toContain("if ( token === '' ) {");
-		expect(turnstileSource).toContain('Turnstile token missing - accepted unverified');
+	it('rejects a missing token by default', () => {
+		// The widget renders for every real visitor, so a tokenless POST is a
+		// script hitting the route directly — the spam class of 2026-11-16.
+		expect(turnstileSource).toContain('const TURNSTILE_REQUIRE_TOKEN: boolean = true;');
+		expect(turnstileSource).toContain('if ( TURNSTILE_REQUIRE_TOKEN ) {');
+		expect(turnstileSource).toContain('Turnstile token missing - rejected');
+	});
+
+	it('lets a profile opt back into accepting a missing token', () => {
+		const lenient = renderDirectFormsEndpointTs({ siteKey: 'k', requireToken: false });
+
+		expect(lenient).toContain('const TURNSTILE_REQUIRE_TOKEN: boolean = false;');
+		expect(lenient).toContain('Turnstile token missing - accepted unverified');
 	});
 
 	it('keeps the token out of the email body', () => {
@@ -156,5 +176,37 @@ describe('renderDirectFormsEndpointTs — Turnstile', () => {
 	it('does not crash when TURNSTILE_SECRET is unset yet', () => {
 		expect(turnstileSource).toContain("const secret = ( runtimeEnv().TURNSTILE_SECRET ?? '' ).trim();");
 		expect(turnstileSource).toContain("if ( secret === '' ) {");
+	});
+
+	it('drops a harvested payload even when its token is real', () => {
+		// A minted token does not make a scraped field list legitimate
+		// (virtuallyjamaica, 2026-11-16 12:24 UTC). Silent, so the sender
+		// learns nothing.
+		expect(turnstileSource).toContain('const harvested = harvestedField( fields );');
+		expect(turnstileSource).toContain('dropped harvested payload');
+	});
+
+	it('requires the page carrier the form script sends', () => {
+		expect(turnstileSource).toContain(
+			'const siteHost = TURNSTILE_HOSTNAME || new URL( request.url ).hostname;'
+		);
+		expect(turnstileSource).toContain('if ( ! carriesPage( fields, siteHost ) ) {');
+		expect(turnstileSource).toContain('dropped submission without the page carrier');
+		// Both gates run before the throttle so a dropped bot burns no slot.
+		const carrierAt = turnstileSource.indexOf('carriesPage( fields, siteHost )');
+		const throttleAt = turnstileSource.indexOf('if ( throttled( ip, Date.now() ) )');
+		expect(carrierAt).toBeGreaterThan(-1);
+		expect(throttleAt).toBeGreaterThan(carrierAt);
+	});
+
+	it('imports the provenance helpers only when they are emitted', () => {
+		expect(turnstileSource).toContain('harvestedField,');
+		expect(turnstileSource).toContain('carriesPage,');
+
+		// A profile that keeps the no-JS POST floor has no `page` to send, so
+		// the gate must not be emitted there (and the import must stay clean).
+		const lenient = renderDirectFormsEndpointTs({ siteKey: 'k', requireToken: false });
+		expect(lenient).not.toContain('carriesPage');
+		expect(lenient).not.toContain('harvestedField');
 	});
 });

@@ -1,0 +1,154 @@
+{
+  "version": 1,
+  "comment": "Cross-language documentation contract (Proposal 166). Consumed by bin/check-file-docs.php and bin/check-license-boundary.sh. Licence evidence is recorded in docs/project/proposals/166-cross-language-documentation-contract-proposal.md Appendix A.",
+  "extensions": ["ts", "tsx", "js", "jsx", "mjs", "cjs", "astro", "rs"],
+  "exclude_dirs": ["vendor", "node_modules", "dist", "build", "target", "coverage", ".git", ".next", ".astro", "gen"],
+  "exclude_paths": [
+    "**/*.min.js",
+    "**/*.min.css",
+    "**/*.bundle.js",
+    "examples/nvoos-dictate/vendor/**",
+    "addons/canvas/assets/canvas/**",
+    "tests/fixtures/headers/**"
+  ],
+  "scopes": [
+    {
+      "name": "ts:includes",
+      "paths": ["includes/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": "GPL-3.0-or-later"
+    },
+    {
+      "name": "ts:extensions",
+      "paths": ["extensions/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": "GPL-3.0-or-later"
+    },
+    {
+      "name": "ts:docs",
+      "paths": ["docs/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": "GPL-3.0-or-later"
+    },
+    {
+      "name": "ts:docker",
+      "paths": ["docker/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": "LicenseRef-Proprietary"
+    },
+    {
+      "name": "ts:repo-tooling",
+      "paths": [".github/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}", "*.{ts,tsx,js,jsx,mjs,cjs}"],
+      "manifest": "package.json",
+      "fallback": "GPL-3.0-or-later"
+    },
+    {
+      "name": "ts:root",
+      "paths": [
+        "assets/js/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}",
+        "src/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"
+      ],
+      "manifest": "package.json",
+      "fallback": "GPL-3.0-or-later"
+    },
+    {
+      "name": "ts:packages",
+      "paths": ["packages/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": "MIT"
+    },
+    {
+      "name": "ts:addons",
+      "paths": ["addons/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": null
+    },
+    {
+      "name": "ts:plugins",
+      "paths": ["plugins/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": null
+    },
+    {
+      "name": "ts:examples",
+      "paths": ["examples/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": null
+    },
+    {
+      "name": "ts:tests",
+      "paths": ["tests/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": "GPL-3.0-or-later"
+    },
+    {
+      "name": "ts:bin",
+      "paths": ["bin/**/*.{ts,tsx,js,jsx,mjs,cjs,astro}"],
+      "manifest": "package.json",
+      "fallback": "GPL-3.0-or-later"
+    },
+    {
+      "name": "rust:dictate",
+      "paths": ["examples/nvoos-dictate/src-tauri/**/*.rs"],
+      "manifest": "Cargo.toml",
+      "fallback": "LicenseRef-Proprietary"
+    }
+  ],
+  "product_licences": {
+    "addons/algorave": "AGPL-3.0-or-later",
+    "addons/canvas": "LicenseRef-Proprietary",
+    "addons/canvas-toolkit": "GPL-3.0-or-later",
+    "addons/chatgpt-gateway-plugin": "GPL-3.0-or-later",
+    "addons/chatgpt-plugin": "GPL-3.0-or-later",
+    "addons/chat-spa": "GPL-3.0-or-later",
+    "addons/checkout-api": "LicenseRef-Proprietary",
+    "addons/claude-gateway-plugin": "GPL-3.0-or-later",
+    "addons/cloudways-dashboard": "GPL-3.0-or-later",
+    "addons/comic-reader": "GPL-3.0-or-later",
+    "addons/cornerstone3d": "LicenseRef-Proprietary",
+    "addons/docs-hub": "GPL-3.0-or-later",
+    "addons/document-editor": "GPL-3.0-or-later",
+    "addons/embedded": "LicenseRef-Proprietary",
+    "addons/fantasy-football": "LicenseRef-Proprietary",
+    "addons/fleet-operator": "GPL-3.0-or-later",
+    "addons/graphify": "LicenseRef-Proprietary",
+    "addons/librechat": "GPL-3.0-or-later",
+    "addons/mcp-gateway": "GPL-3.0-or-later",
+    "addons/mcp-wordpress-gateway": "GPL-3.0-or-later",
+    "addons/media-studio": "GPL-3.0-or-later",
+    "addons/media-worker": "LicenseRef-Proprietary",
+    "addons/nvoos-astro-bridge": "LicenseRef-Proprietary",
+    "addons/nvoos-design-system": "GPL-3.0-or-later",
+    "addons/nvoos-wifi": "GPL-3.0-or-later",
+    "addons/page-agent": "GPL-3.0-or-later",
+    "addons/pro": "LicenseRef-Proprietary",
+    "addons/saas-controller": "LicenseRef-Proprietary",
+    "addons/schedule-anything-platform": "LicenseRef-Proprietary",
+    "addons/schedule-anything-spa": "LicenseRef-Proprietary",
+    "addons/tenant-router": "LicenseRef-Proprietary",
+    "addons/toolkit-shell": "GPL-3.0-or-later",
+    "docker/laravel": "LicenseRef-Proprietary",
+    "plugins/nvoos-content-graph": "GPL-3.0-or-later",
+    "plugins/nvoos-content-graph-ai": "LicenseRef-Proprietary",
+    "plugins/nvoos-content-graph-ai-platform": "LicenseRef-Proprietary",
+    "plugins/nvoos-content-graph-pro": "LicenseRef-Proprietary",
+    "plugins/nvoos-forge-bridge": "GPL-3.0-or-later",
+    "examples/funiq-bridge-velocity": "LicenseRef-Proprietary",
+    "examples/nvoos-astro-forge": "MIT",
+    "examples/nvoos-astro-velocity": "MIT",
+    "examples/nvoos-complete-velocity": "LicenseRef-Proprietary",
+    "examples/nvoos-dictate": "LicenseRef-Proprietary",
+    "examples/nvoos-pro-spa-vite": "LicenseRef-Proprietary",
+    "examples/nvoos-service-exchange": "LicenseRef-Proprietary",
+    "examples/nvoos-vite-demo": "LicenseRef-Proprietary",
+    "examples/qb-desktop-mcp": "MIT",
+    "examples/qb-online-mcp": "LicenseRef-Proprietary",
+    "examples/schedule-anything-velocity": "LicenseRef-Proprietary"
+  },
+  "pending_licence": [],
+  "folder_readmes": [
+    "examples/nvoos-dictate/src-tauri",
+    "examples/nvoos-dictate/src-tauri/examples",
+    "examples/nvoos-dictate/src-tauri/tests"
+  ]
+}

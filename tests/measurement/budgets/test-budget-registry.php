@@ -13,6 +13,9 @@
  */
 class Test_WP_MCP_AI_Budget_Registry extends WP_UnitTestCase {
 
+	/**
+	 * Reset the registry, the persisted option and the budget hooks.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Budget_Registry::reset_instance();
@@ -22,28 +25,44 @@ class Test_WP_MCP_AI_Budget_Registry extends WP_UnitTestCase {
 		remove_all_actions( 'wp_mcp_ai_register_budgets' );
 	}
 
+	/**
+	 * Reset the registry and remove the persisted option.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Budget_Registry::reset_instance();
 		delete_option( WP_MCP_AI_Budget_Registry::PERSISTENT_OPTION );
 		parent::tearDown();
 	}
 
+	/**
+	 * A registered budget can be retrieved and is listed.
+	 */
 	public function test_register_and_retrieve() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
 		$env = $reg->register(
-			array( 'slug' => 'req_cost', 'metric_ids' => array( 'model.cost_usd' ), 'limit' => 0.5 )
+			array(
+				'slug'       => 'req_cost',
+				'metric_ids' => array( 'model.cost_usd' ),
+				'limit'      => 0.5,
+			)
 		);
 		$this->assertInstanceOf( 'WP_MCP_AI_Budget_Envelope', $env );
 		$this->assertSame( $env, $reg->get( 'req_cost' ) );
 		$this->assertCount( 1, $reg->all() );
 	}
 
+	/**
+	 * An empty registration returns a WP_Error.
+	 */
 	public function test_invalid_register_returns_wp_error() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
 		$res = $reg->register( array() );
 		$this->assertInstanceOf( 'WP_Error', $res );
 	}
 
+	/**
+	 * Boot fires the registration hook exactly once.
+	 */
 	public function test_boot_fires_registration_hook_once() {
 		$counter = 0;
 		add_action(
@@ -58,16 +77,34 @@ class Test_WP_MCP_AI_Budget_Registry extends WP_UnitTestCase {
 		$this->assertSame( 1, $counter );
 	}
 
+	/**
+	 * Consumption accumulates and fires warn, then exceeded, each once.
+	 */
 	public function test_consume_accumulates_and_fires_warn_then_exceeded() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
 		$reg->register(
-			array( 'slug' => 'req', 'metric_ids' => array( 'm' ), 'limit' => 1.0, 'warn_ratio' => 0.5 )
+			array(
+				'slug'       => 'req',
+				'metric_ids' => array( 'm' ),
+				'limit'      => 1.0,
+				'warn_ratio' => 0.5,
+			)
 		);
 
 		$warned   = 0;
 		$exceeded = 0;
-		add_action( 'wp_mcp_ai_budget_warned', static function () use ( &$warned ) { ++$warned; } );
-		add_action( 'wp_mcp_ai_budget_exceeded', static function () use ( &$exceeded ) { ++$exceeded; } );
+		add_action(
+			'wp_mcp_ai_budget_warned',
+			static function () use ( &$warned ) {
+				++$warned;
+			}
+		);
+		add_action(
+			'wp_mcp_ai_budget_exceeded',
+			static function () use ( &$exceeded ) {
+				++$exceeded;
+			}
+		);
 
 		$reg->consume( 'req', 0.3 );
 		$this->assertSame( 0, $warned );
@@ -89,46 +126,108 @@ class Test_WP_MCP_AI_Budget_Registry extends WP_UnitTestCase {
 		$this->assertSame( 1, $exceeded );
 	}
 
+	/**
+	 * Jumping straight past the limit still fires the warn.
+	 */
 	public function test_skip_warn_fires_implicitly_when_exceeded_directly() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
 		$reg->register(
-			array( 'slug' => 'req', 'metric_ids' => array( 'm' ), 'limit' => 1.0, 'warn_ratio' => 0.5 )
+			array(
+				'slug'       => 'req',
+				'metric_ids' => array( 'm' ),
+				'limit'      => 1.0,
+				'warn_ratio' => 0.5,
+			)
 		);
-		$warned = 0;
+		$warned   = 0;
 		$exceeded = 0;
-		add_action( 'wp_mcp_ai_budget_warned', static function () use ( &$warned ) { ++$warned; } );
-		add_action( 'wp_mcp_ai_budget_exceeded', static function () use ( &$exceeded ) { ++$exceeded; } );
+		add_action(
+			'wp_mcp_ai_budget_warned',
+			static function () use ( &$warned ) {
+				++$warned;
+			}
+		);
+		add_action(
+			'wp_mcp_ai_budget_exceeded',
+			static function () use ( &$exceeded ) {
+				++$exceeded;
+			}
+		);
 
-		$reg->consume( 'req', 2.0 ); // leap past warn straight into exceeded
+		$reg->consume( 'req', 2.0 ); // leap past warn straight into exceeded.
 		$this->assertSame( 1, $warned, 'Implicit warn still fires when we jump the limit' );
 		$this->assertSame( 1, $exceeded );
 	}
 
+	/**
+	 * Only matching metric ids are accumulated.
+	 */
 	public function test_on_metric_recorded_tracks_only_matching_ids() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
 		$reg->boot();
 		$reg->register(
-			array( 'slug' => 'req', 'metric_ids' => array( 'model.cost_usd' ), 'limit' => 10.0 )
+			array(
+				'slug'       => 'req',
+				'metric_ids' => array( 'model.cost_usd' ),
+				'limit'      => 10.0,
+			)
 		);
 
-		$reg->on_metric_recorded( array( 'id' => 'model.cost_usd', 'value' => 2.0 ) );
-		$reg->on_metric_recorded( array( 'id' => 'unrelated', 'value' => 99.0 ) );
-		$reg->on_metric_recorded( array( 'id' => 'model.cost_usd', 'value' => 3.0 ) );
+		$reg->on_metric_recorded(
+			array(
+				'id'    => 'model.cost_usd',
+				'value' => 2.0,
+			)
+		);
+		$reg->on_metric_recorded(
+			array(
+				'id'    => 'unrelated',
+				'value' => 99.0,
+			)
+		);
+		$reg->on_metric_recorded(
+			array(
+				'id'    => 'model.cost_usd',
+				'value' => 3.0,
+			)
+		);
 
 		$this->assertEqualsWithDelta( 5.0, $reg->get_consumption( 'req' ), 0.0001 );
 	}
 
+	/**
+	 * Zero and non-numeric values are ignored.
+	 */
 	public function test_zero_and_non_numeric_values_are_ignored() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
-		$reg->register( array( 'slug' => 'req', 'metric_ids' => array( 'm' ), 'limit' => 1.0 ) );
+		$reg->register(
+			array(
+				'slug'       => 'req',
+				'metric_ids' => array( 'm' ),
+				'limit'      => 1.0,
+			)
+		);
 
-		$reg->on_metric_recorded( array( 'id' => 'm', 'value' => 0 ) );
-		$reg->on_metric_recorded( array( 'id' => 'm', 'value' => 'nope' ) );
+		$reg->on_metric_recorded(
+			array(
+				'id'    => 'm',
+				'value' => 0,
+			)
+		);
+		$reg->on_metric_recorded(
+			array(
+				'id'    => 'm',
+				'value' => 'nope',
+			)
+		);
 		$reg->on_metric_recorded( array( 'bad' => 'shape' ) );
 
 		$this->assertSame( 0.0, $reg->get_consumption( 'req' ) );
 	}
 
+	/**
+	 * A persistent scope round-trips through the option store.
+	 */
 	public function test_persistent_scope_roundtrips_via_option() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
 		$reg->register(
@@ -156,6 +255,9 @@ class Test_WP_MCP_AI_Budget_Registry extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 4.0, $reg2->get_consumption( 'daily' ), 0.0001 );
 	}
 
+	/**
+	 * Resetting a persistent scope clears its accumulator.
+	 */
 	public function test_reset_persistent_clears_accumulator() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
 		$reg->register(
@@ -171,10 +273,19 @@ class Test_WP_MCP_AI_Budget_Registry extends WP_UnitTestCase {
 		$this->assertSame( 0.0, $reg->get_consumption( 'daily' ) );
 	}
 
+	/**
+	 * The snapshot reports envelope, consumption and state.
+	 */
 	public function test_snapshot_shape() {
 		$reg = WP_MCP_AI_Budget_Registry::get_instance();
 		$reg->register(
-			array( 'slug' => 'req', 'metric_ids' => array( 'm' ), 'limit' => 2.0, 'warn_ratio' => 0.5, 'unit' => 'usd' )
+			array(
+				'slug'       => 'req',
+				'metric_ids' => array( 'm' ),
+				'limit'      => 2.0,
+				'warn_ratio' => 0.5,
+				'unit'       => 'usd',
+			)
 		);
 		$reg->consume( 'req', 1.5 );
 		$snap = $reg->snapshot();

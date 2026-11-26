@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // section-kinds.test.ts — the `data-section` drift gate.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test-only helper: start an Express app on an ephemeral port.
  *

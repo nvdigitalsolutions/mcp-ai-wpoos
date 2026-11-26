@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Minimal static server for the NV oOS Complete Console on Cloudways
  * Velocity (and `npm run serve`).
@@ -19,8 +20,26 @@
  * WordPress host and the app origin would never see the session.
  *
  * Backend profile: NVOOS_BACKEND=wordpress|laravel|hybrid selects the proxy
- * prefixes. The console build must use the matching VITE_NVOOS_BACKEND;
- * runtime-config.ts asserts the contract at boot (Proposal 090-B, ADR-6).
+ * prefixes AND stamps the client-side profile at runtime — the served
+ * index.html gets a same-origin `<script src="/app-config.js">` and that
+ * route answers `window.__NVOOS_BACKEND__=<profile>` from this env var. One
+ * prebuilt bundle therefore serves every runtime: a build-time
+ * VITE_NVOOS_BACKEND in the artifact is only the fallback when the stamp is
+ * absent (an older server, or `vite dev` / `vite preview`). runtime-config.ts
+ * reads the global first and asserts the contract at boot (090-B, ADR-6).
+ *
+ * The stamp is an external script, never inline: a future CSP can stay strict
+ * (`script-src 'self'`) without a nonce or hash exception (OWASP CSP cheat
+ * sheet).
+ *
+ * Connected-app proxy (Proposal 090-p W6): /connected/<key>/* mounts a remote
+ * product same-origin so its island needs no CORS. The upstream origin comes
+ * from NVOOS_CONNECTED_APPS (never from the request), only the four known
+ * product keys are reachable, browser cookies/authorization are dropped, a
+ * per-app token is attached server-side, and the response is no-store unless
+ * the app opts into a public TTL. /features advertises `connected_proxy: true`
+ * so the console only rewrites a discovered URL when this proxy is present.
+ * Never set NVOOS_CONNECTED_APPS to a host you do not control.
  *
  * Caching contract (keeps browser + Velocity CDN load off WordPress):
  *   - index.html → `Cache-Control: no-cache` + weak ETag → 304 revalidation
@@ -57,6 +76,12 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
+import {
+  parseConnectedApps,
+  normaliseConnectedPath,
+  buildConnectedRequestHeaders,
+  buildConnectedResponseHeaders,
+} from './connected-apps.mjs';
 
 const PORT = Number(process.env.PORT || 4181);
 
@@ -99,6 +124,55 @@ const BACKEND_PREFIXES = {
   ],
 };
 const PROXY_PREFIXES = BACKEND_PREFIXES[BACKEND] || BACKEND_PREFIXES.wordpress;
+
+/**
+ * Client profile stamped into the SPA at runtime.
+ *
+ * Unknown values fall back to wordpress exactly like the proxy prefixes, so a
+ * typo can never point the client at a /api surface the server will not proxy.
+ */
+const PROFILE = Object.prototype.hasOwnProperty.call(BACKEND_PREFIXES, BACKEND)
+  ? BACKEND
+  : 'wordpress';
+
+/**
+ * Runtime-config endpoint (same-origin, no cookies, no CORS).
+ *
+ * Kept as a file rather than an inline script so a strict `script-src 'self'`
+ * policy needs no nonce/hash. `no-cache` + ETag: the body only changes when a
+ * deploy restarts the process, and a 304 keeps boots cheap.
+ */
+const APP_CONFIG_PATHNAME = '/app-config.js';
+const APP_CONFIG_BODY =
+  PROFILE === 'wordpress'
+    ? '/* NV oOS console: no backend-stamped profile (wordpress default) */\n'
+    : `window.__NVOOS_BACKEND__=${JSON.stringify(PROFILE)};\n`;
+const APP_CONFIG_TAG = `<script src="${APP_CONFIG_PATHNAME}"></script>`;
+
+// Connected-app proxy (Proposal 090-p W6): a same-origin mount for remote
+// products that cannot send credentialed CORS. Off unless the operator
+// configures an allowlist — a bare console must never expose an open proxy.
+const CONNECTED_PREFIX = '/connected';
+const CONNECTED_APPS = parseConnectedApps(process.env.NVOOS_CONNECTED_APPS);
+const CONNECTED_ENABLED = CONNECTED_APPS.size > 0;
+// Connected products are often self-hosted behind an internal CA. Cert
+// validation stays on by default; opt out only for a product you control.
+const CONNECTED_INSECURE = process.env.NVOOS_CONNECTED_INSECURE === '1';
+// The availability read carries the advertisement (`connected_proxy: true`),
+// so the console only rewrites a discovered URL when this proxy is actually
+// in front of it.
+const FEATURES_PATH = /^\/(?:wp-json\/mcp-ai|mcp-ai|api)\/v1\/features$/;
+
+/**
+ * Is this path the availability read (`/features`) the console consumes?
+ *
+ * @param {string} pathname Request path.
+ * @returns {boolean}
+ */
+function isFeaturesPath(pathname) {
+  return FEATURES_PATH.test(pathname);
+}
+
 // Hop-by-hop headers Node manages itself — passing them through would
 // conflict with its own framing/connection handling.
 const HOP_BY_HOP = new Set([
@@ -199,15 +273,22 @@ function pickContentEncoding(req, entry) {
   return null;
 }
 
-async function loadStaticFile(file) {
-  const cached = staticCache.get(file);
+async function loadStaticFile(file, transform) {
+  // One transform per file today (the SPA entry), so a distinct cache key is
+  // enough to keep stamped and raw variants from colliding.
+  const cacheKey = transform ? `${file}#stamped` : file;
+  const cached = staticCache.get(cacheKey);
   const st = await stat(file);
-  if (cached && cached.size === st.size && cached.mtimeMs === st.mtimeMs) {
+  // Invalidate on the SOURCE file's size/mtime: `size` below is the served
+  // (possibly stamped) length, which the source length cannot be compared to.
+  if (cached && cached.sourceSize === st.size && cached.mtimeMs === st.mtimeMs) {
     return cached;
   }
-  const identity = await readFile(file);
+  const raw = await readFile(file);
+  const identity = transform ? Buffer.from(transform(raw.toString('utf8')), 'utf8') : raw;
   const entry = {
     size: identity.length,
+    sourceSize: st.size,
     mtimeMs: st.mtimeMs,
     // Weak ETag: the body varies with Accept-Encoding (see Vary below).
     etag: `W/"${identity.length.toString(16)}-${Math.floor(st.mtimeMs).toString(16)}"`,
@@ -216,8 +297,52 @@ async function loadStaticFile(file) {
     gzip: null,
     br: null,
   };
-  if (identity.length <= STATIC_CACHE_MAX_BYTES) staticCache.set(file, entry);
+  if (identity.length <= STATIC_CACHE_MAX_BYTES) staticCache.set(cacheKey, entry);
   return entry;
+}
+
+/**
+ * Add the runtime-config script to the SPA entry HTML.
+ *
+ * Idempotent: a future build that already carries the tag (or a dist built
+ * from a template that does) is served untouched, so the script can never run
+ * twice. Module scripts are deferred, so a classic script in <head> sets the
+ * global before the bundle evaluates — no `defer`/`async` needed.
+ *
+ * @param {string} html Entry document.
+ * @returns {string}
+ */
+function stampBackendProfile(html) {
+  if (html.includes(APP_CONFIG_PATHNAME)) return html;
+  const headEnd = html.search(/<\/head\s*>/i);
+  if (headEnd === -1) return APP_CONFIG_TAG + html;
+  return html.slice(0, headEnd) + APP_CONFIG_TAG + html.slice(headEnd);
+}
+
+/**
+ * Answer the runtime-config request.
+ *
+ * @param {import('node:http').IncomingMessage}  req Request.
+ * @param {import('node:http').ServerResponse}   res Response.
+ */
+function serveAppConfig(req, res) {
+  const body = Buffer.from(APP_CONFIG_BODY, 'utf8');
+  const etag = `W/"${body.length.toString(16)}-${PROFILE}"`;
+  const headers = {
+    'Content-Type': 'text/javascript; charset=utf-8',
+    // Never let a CDN or browser pin a profile across a redeploy.
+    'Cache-Control': 'no-cache',
+    ETag: etag,
+    'Content-Length': body.length,
+    ...SECURITY_HEADERS,
+  };
+  if (etagMatches(req.headers['if-none-match'], etag)) {
+    res.writeHead(304, headers);
+    res.end();
+    return;
+  }
+  res.writeHead(200, headers);
+  res.end(String(req.method ?? 'GET').toUpperCase() === 'HEAD' ? undefined : body);
 }
 
 // --- Proxy response micro-cache ----------------------------------------
@@ -240,7 +365,11 @@ function proxyCacheKey(req, incoming) {
   // encoding bucket is part of the key (clients are consistent per URL).
   const accept = String(req.headers['accept-encoding'] ?? '').toLowerCase();
   const encoding = accept.includes('br') ? 'br' : accept.includes('gzip') ? 'gzip' : 'identity';
-  return `${req.method} ${incoming.pathname}${incoming.search} ${encoding}`;
+  // The estate selector changes the payload of every tenant-scoped route.
+  // Omitting it would let one estate's publicly-cacheable response be
+  // replayed to another — the multi-tenant cache-key rule.
+  const tenant = String(req.headers['x-tenant-id'] ?? '').trim();
+  return `${req.method} ${incoming.pathname}${incoming.search} ${encoding} ${tenant}`;
 }
 
 /**
@@ -382,6 +511,7 @@ function proxyRequest(req, res) {
     clientCacheControl.includes('no-store') ||
     String(req.headers.pragma ?? '').toLowerCase().includes('no-cache') ||
     isLoginPage ||
+    (CONNECTED_ENABLED && isFeaturesPath(incoming.pathname)) ||
     incoming.pathname === '/wp-admin' ||
     incoming.pathname.startsWith('/wp-admin/');
   const cacheKey = bypassCache ? null : proxyCacheKey(req, incoming);
@@ -409,7 +539,15 @@ function proxyRequest(req, res) {
     delete headers.origin;
     delete headers.referer;
   }
-  if (isLoginPage) delete headers['accept-encoding']; // Identity body, so it can be rewritten.
+  if (isLoginPage || (CONNECTED_ENABLED && isFeaturesPath(incoming.pathname))) {
+    delete headers['accept-encoding']; // Identity body, so it can be rewritten.
+  }
+  // Keep the declared body length: dropping it makes Node re-frame the request
+  // as chunked, and PHP's built-in server does not read a chunked body, so the
+  // app sees an empty POST.
+  if (req.headers['content-length'] !== undefined) {
+    headers['content-length'] = req.headers['content-length'];
+  }
   headers.host = upstreamUrl.host;
 
   const upstream = transport(
@@ -429,6 +567,36 @@ function proxyRequest(req, res) {
         isLoginPage &&
         contentType.includes('text/html') &&
         !upRes.headers['content-encoding'];
+      const canAdvertiseConnected =
+        CONNECTED_ENABLED &&
+        isFeaturesPath(incoming.pathname) &&
+        contentType.includes('application/json') &&
+        !upRes.headers['content-encoding'];
+
+      // Additive: the console needs to know a same-origin mount exists before
+      // it rewrites a discovered product URL to it. Buffered because the body
+      // is rewritten; /features is small and already uncached on both
+      // runtimes.
+      if (canAdvertiseConnected) {
+        const chunks = [];
+        upRes.on('data', (chunk) => chunks.push(chunk));
+        upRes.on('end', () => {
+          const raw = Buffer.concat(chunks).toString('utf8');
+          let body = raw;
+          try {
+            body = JSON.stringify(injectConnectedProxy(JSON.parse(raw)));
+          } catch {
+            // Not JSON after all — pass it through untouched.
+          }
+          res.writeHead(upRes.statusCode ?? 502, upRes.statusMessage, {
+            ...outHeaders,
+            'Content-Length': Buffer.byteLength(body),
+          });
+          res.end(body);
+        });
+        upRes.on('error', () => res.destroy());
+        return;
+      }
 
       if (!canRewrite) {
         const ttl = cacheKey ? proxyCacheableTtl(upRes) : 0;
@@ -518,9 +686,159 @@ function proxyRequest(req, res) {
   req.pipe(upstream);
 }
 
+/**
+ * JSON error for the connected-app branch.
+ *
+ * @param {import('node:http').ServerResponse} res     Response.
+ * @param {number}                             status  HTTP status.
+ * @param {string}                             code    Machine code.
+ * @param {string}                             message Operator copy.
+ */
+function connectedError(res, status, code, message) {
+  if (res.headersSent) {
+    res.destroy();
+    return;
+  }
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...SECURITY_HEADERS,
+  });
+  res.end(JSON.stringify({ code, message }));
+}
+
+/**
+ * Advertise the proxy on the availability payload.
+ *
+ * The console rewrites a discovered `endpoint_urls` entry to
+ * `/connected/<key>` only when this flag is present, so a deployment
+ * without NVOOS_CONNECTED_APPS keeps using the product's absolute URL.
+ *
+ * @param {unknown} payload Parsed /features body.
+ * @returns {unknown}
+ */
+function injectConnectedProxy(payload) {
+  const advertisement = {
+    connected_proxy: true,
+    connected_apps: [...CONNECTED_APPS.keys()],
+  };
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+
+  const envelope = /** @type {Record<string, unknown>} */ (payload);
+  const data = envelope.data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    return { ...envelope, data: { ...data, ...advertisement } };
+  }
+
+  return { ...envelope, ...advertisement };
+}
+
+/**
+ * Answer a `/connected/<key>/*` request.
+ *
+ * The key selects an upstream from the operator allowlist; the rest of the
+ * path is joined onto that base. Nothing the client sends can name a host —
+ * see scripts/connected-apps.mjs for the threat model.
+ *
+ * @param {import('node:http').IncomingMessage}  req Request.
+ * @param {import('node:http').ServerResponse}   res Response.
+ * @param {URL}                                  url Parsed request URL.
+ */
+function proxyConnectedRequest(req, res, url) {
+  if (!CONNECTED_ENABLED) {
+    connectedError(res, 404, 'nvoos_connected_disabled', 'No connected apps are configured.');
+    return;
+  }
+
+  const match = /^\/connected\/([^/]+)(\/.*)?$/.exec(url.pathname);
+  if (!match) {
+    connectedError(res, 400, 'nvoos_connected_path_invalid', 'Expected /connected/<key>/<path>.');
+    return;
+  }
+
+  const key = match[1];
+  const app = CONNECTED_APPS.get(key);
+  if (!app) {
+    connectedError(res, 404, 'nvoos_connected_unknown_app', `Unknown connected app "${key}".`);
+    return;
+  }
+
+  const rest = normaliseConnectedPath(match[2]);
+  if (rest === null) {
+    connectedError(
+      res,
+      400,
+      'nvoos_connected_path_invalid',
+      'Path must not traverse, encode a separator, or name a host.',
+    );
+    return;
+  }
+
+  let upstreamUrl;
+  try {
+    upstreamUrl = new URL(app.base + rest);
+    upstreamUrl.search = url.search;
+  } catch {
+    connectedError(res, 400, 'nvoos_connected_path_invalid', 'Path is not a valid URL.');
+    return;
+  }
+
+  // Defence in depth: the join must stay on the configured origin.
+  if (upstreamUrl.origin !== new URL(app.base).origin) {
+    connectedError(res, 400, 'nvoos_connected_path_invalid', 'Path escapes the configured origin.');
+    return;
+  }
+
+  const transport = upstreamUrl.protocol === 'https:' ? httpsRequest : httpRequest;
+
+  const upstream = transport(
+    {
+      hostname: upstreamUrl.hostname,
+      port: upstreamUrl.port || (upstreamUrl.protocol === 'https:' ? 443 : 80),
+      path: upstreamUrl.pathname + upstreamUrl.search,
+      method: req.method,
+      headers: buildConnectedRequestHeaders(req.headers, app),
+      rejectUnauthorized: !CONNECTED_INSECURE,
+    },
+    (upRes) => {
+      res.writeHead(
+        upRes.statusCode ?? 502,
+        upRes.statusMessage,
+        buildConnectedResponseHeaders(upRes.headers, app),
+      );
+      upRes.pipe(res);
+    },
+  );
+
+  upstream.on('error', (error) => {
+    connectedError(
+      res,
+      502,
+      'nvoos_connected_bad_gateway',
+      `Connected app "${app.key}" unreachable: ${error.message}`,
+    );
+  });
+
+  req.on('error', () => upstream.destroy());
+  req.pipe(upstream);
+}
+
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? '/', 'http://localhost');
+
+    if (url.pathname === CONNECTED_PREFIX || url.pathname.startsWith(`${CONNECTED_PREFIX}/`)) {
+      proxyConnectedRequest(req, res, url);
+      return;
+    }
+
+    if (url.pathname === APP_CONFIG_PATHNAME) {
+      serveAppConfig(req, res);
+      return;
+    }
 
     if (PROXY_TARGET && isProxyPath(url.pathname)) {
       proxyRequest(req, res);
@@ -556,7 +874,10 @@ const server = createServer(async (req, res) => {
       file = join(ROOT, 'index.html');
     }
 
-    const entry = await loadStaticFile(file);
+    const entry = await loadStaticFile(
+      file,
+      file.endsWith('index.html') ? stampBackendProfile : undefined,
+    );
 
     // Industry SPA caching contract: the entry HTML is never cached
     // (revalidated via ETag → 304); hashed bundle assets are immutable for
@@ -622,9 +943,12 @@ server.on('error', (error) => {
 
 server.listen(PORT, () => {
   console.log(`[nvoos-complete-console] serving ${DIST_DIR} on :${PORT}`);
+  console.log(
+    `[nvoos-complete-console] client profile=${PROFILE} (stamped via ${APP_CONFIG_PATHNAME})`,
+  );
   if (PROXY_TARGET) {
     console.log(
-      `[nvoos-complete-console] backend=${BACKEND} · proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,
+      `[nvoos-complete-console] backend=${PROFILE} · proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,
     );
     console.log(
       `[nvoos-complete-console] proxy micro-cache ${PROXY_CACHE_ENABLED ? `on (TTL cap ${PROXY_CACHE_TTL_CAP}s)` : 'off (NVOOS_PROXY_CACHE=0)'}`,
@@ -632,6 +956,11 @@ server.listen(PORT, () => {
   } else {
     console.log(
       '[nvoos-complete-console] no NVOOS_TARGET_SITE set — the SPA loads, but REST/auth calls have no backend (set it to your WordPress or Laravel site URL)',
+    );
+  }
+  if (CONNECTED_ENABLED) {
+    console.log(
+      `[nvoos-complete-console] connected-app proxy on · ${[...CONNECTED_APPS.keys()].join(', ')} → ${CONNECTED_PREFIX}/<key>/*`,
     );
   }
 });

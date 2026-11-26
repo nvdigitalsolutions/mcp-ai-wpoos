@@ -4,7 +4,7 @@ namespace App\Support;
 
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Entity\ContentItem;
-use Nvoos\Core\Domain\Exception\NotFoundException;
+use Nvoos\Core\Domain\Error\NotFoundException;
 
 /**
  * Workflow records — the storage contract shared by the workflow and run

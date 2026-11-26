@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // managed-runtime.test.ts — Proposal 135 Phase 2: the emitted managed surface.
 //
@@ -71,10 +72,34 @@ describe( 'managed runtime — proxy helper', () => {
 		expect( src ).toContain( "responseHeaders.delete('set-cookie')" );
 	} );
 
-	it( 'sends a same-origin request server-to-server', () => {
+	it( 'strips the upstream framing it has already decoded', () => {
+		// The runtime decodes a compressed body but leaves upstream's
+		// Content-Encoding/Length on the response. Relayed untouched, they label
+		// plain bytes as gzip — and a browser then decodes the file to nothing
+		// (eca's logo loaded at 0px while curl showed a healthy 43 KB).
+		expect( src ).toContain( 'DECODED_BY_FETCH' );
+		expect( src ).toContain( "responseHeaders.delete('content-encoding')" );
+		expect( src ).toContain( "responseHeaders.delete('content-length')" );
+		expect( src ).toContain( "responseHeaders.delete('transfer-encoding')" );
+		// …and the hop asks for identity, so the common case needs no strip.
+		expect( src ).toContain( "headers.set('accept-encoding', 'identity')" );
+	} );
+
+	it( 'caps a relayed Cache-Control that would outlive the fix', () => {
+		// The proxied URL is the CMS's own path, not content-hashed, so a year-long
+		// immutable TTL makes a broken answer unreachable by any later fix.
+		expect( src ).toContain( 'RELAY_MAX_AGE_SECONDS' );
+		expect( src ).toContain( 'capCacheControl' );
+		expect( src ).toContain( 'responseHeaders.set("cache-control", capCacheControl(cacheControl))' );
+	} );
+
+	it( 'forwards an allowlist instead of the inbound header set', () => {
+		// Copied wholesale, the inbound request drags hop-by-hop headers and the
+		// edge's own cf-* / x-forwarded-* markers upstream, which a CDN can read
+		// as a spoofed request. Only the headers the CMS actually needs cross.
 		expect( src ).toContain( 'process.env.ASTRO_SITE' );
-		expect( src ).toContain( "headers.delete('host')" );
-		expect( src ).toContain( "headers.delete('origin')" );
+		expect( src ).toContain( 'FORWARDED_HEADERS' );
+		expect( src ).not.toContain( 'new Headers(request.headers)' );
 		expect( src ).toContain( "headers.set('origin', PUBLIC_ORIGIN)" );
 	} );
 
@@ -310,6 +335,16 @@ describe( 'managed runtime — deploy-tree boot gate', () => {
 	it( 'treats any HTTP answer as booted (the CMS may be unreachable from the runner)', () => {
 		expect( src ).toContain( 'res.statusCode' );
 		expect( src ).toContain( 'no HTTP response on port' );
+	} );
+
+	it( 'refuses a 2xx that names an encoding the body does not carry', () => {
+		// The one failure a status-and-bytes check cannot see: the runtime decodes
+		// the CMS response, the proxy relays upstream's content-encoding anyway,
+		// and the browser decodes plain bytes to nothing. Every probe stayed green
+		// while eca's logo rendered at 0px.
+		expect( src ).toContain( 'const MAGIC = { gzip: "1f8b"' );
+		expect( src ).toContain( 'answer.head.startsWith(magic)' );
+		expect( src ).toContain( 'so a browser loads it as 0 bytes' );
 	} );
 
 	it( 'never fails a passing gate on Windows temp cleanup', () => {

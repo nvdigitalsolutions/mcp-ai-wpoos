@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the image batch route (Proposal 079, Appendix B):
  * POST /api/image/batch.

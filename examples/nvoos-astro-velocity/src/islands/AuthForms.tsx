@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // AuthForms island — sign-in / register forms against the commerce contract.
 //

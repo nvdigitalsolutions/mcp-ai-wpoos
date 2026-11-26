@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scaffold.test.ts — template copy, FORGE-marker rewrite, vendoring, gates.
 // ---------------------------------------------------------------------------
 
-import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
@@ -12,7 +13,8 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { auditTokenBlock, readableBandType, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { rmTemp } from './helpers/tmp.ts';
+import { auditTokenBlock, cardInkFor, readableBandType, mergeBandType, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -69,7 +71,7 @@ async function tempDir(): Promise<string> {
 }
 
 afterEach(async () => {
-	await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(tempDirs.splice(0).map((dir) => rmTemp(dir)));
 });
 
 describe('scaffold — built-in template fixture', () => {
@@ -118,6 +120,10 @@ describe('scaffold — built-in template fixture', () => {
 		const envExample = await readFile(path.join(target, '.env.example'), 'utf8');
 		expect(envExample).toContain('WP_SITE_URL=https://shop.example.com');
 		expect(envExample).toContain('WP_APPLICATION_PASSWORD=');
+		// Proposal 152 — the page-gate names are listed, blank by default.
+		expect(envExample).toContain('WP_GATE_USERNAME=');
+		expect(envExample).toContain('WP_GATE_PASSWORD=');
+		expect(envExample).not.toMatch(/WP_GATE_PASSWORD=\S+/);
 	});
 });
 
@@ -158,6 +164,7 @@ describe('scaffold — production blog template', () => {
 			'src/lib/tracking.generated.ts',
 			'src/lib/managed.generated.ts',
 			'public/tokens.dtcg.json',
+			'gate.generated.json',
 		]);
 	});
 
@@ -483,6 +490,73 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 		expect( module ).toContain( "footerInk: 'rgba(255, 255, 255, 0.7)'" );
 	} );
 
+	it( 'bakes a footer LINE\u2019s anchor as a separate footerLinks fact', () => {
+		// The © statement stays ONE string; the credit it carries is recorded by
+		// text so the layout can re-anchor the suffix of the line.
+		const withLinks: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: {
+					...profile.design!.chrome!,
+					footerBlocks: [ { items: [ '© 2026 SITE IS POWERED BY NV DIGITAL SOLUTIONS.' ] } ],
+					footerLinks: [ { text: 'NV DIGITAL SOLUTIONS.', href: 'http://www.nvdigitalsolutions.com/' } ],
+				},
+			},
+		};
+		const module = renderChromeGenerated( withLinks );
+		expect( module ).toContain( "items: ['© 2026 SITE IS POWERED BY NV DIGITAL SOLUTIONS.']" );
+		expect( module ).toContain(
+			"footerLinks: [ { text: 'NV DIGITAL SOLUTIONS.', href: 'http://www.nvdigitalsolutions.com/' } ]"
+		);
+		expect( module ).toContain( 'footerLinks?: Array<{ text: string; href: string }>' );
+	} );
+
+	it( 'bakes an href-less social badge without an href key', () => {
+		// The source drives these from JS (`<a href="">`), so the fact has no
+		// href at all and the rebuild renders the badge as a non-link.
+		const withBadges: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: { ...profile.design!.chrome!, social: [ { label: 'Facebook' } ] },
+			},
+		};
+		expect( renderChromeGenerated( withBadges ) ).toContain( "social: [ { label: 'Facebook' } ]" );
+	} );
+
+	it( 'bakes the measured social BADGE box and © line type', () => {
+		// A builder's filled social style is a rounded SQUARE, and its footer-html
+		// block is centred at a smaller type scale than the template's body copy.
+		const withRow: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: {
+					...profile.design!.chrome!,
+					footerBrand: {
+						...profile.design!.chrome!.footerBrand,
+						social: { size: '51px', radius: '3px', bg: 'rgb(237, 242, 247)', ink: 'rgb(45, 55, 72)' },
+						text: {
+							size: '14px',
+							weight: '600',
+							ink: 'rgb(45, 55, 72)',
+							linkInk: 'rgb(49, 130, 206)',
+							align: 'center',
+						},
+					},
+				},
+			},
+		};
+		const module = renderChromeGenerated( withRow );
+		expect( module ).toContain(
+			"social: { size: '51px', radius: '3px', bg: 'rgb(237, 242, 247)', ink: 'rgb(45, 55, 72)' }"
+		);
+		expect( module ).toContain(
+			"text: { size: '14px', weight: '600', ink: 'rgb(45, 55, 72)', linkInk: 'rgb(49, 130, 206)', align: 'center' }"
+		);
+	} );
+
 	it( 'bakes the footer logo’s block association (the brand column)', () => {
 		// The logo lives INSIDE the first footer block when the source renders it
 		// as that column’s first widget (jayainc’s subfooter).
@@ -673,6 +747,49 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 		);
 	} );
 
+	it( 'emits a panel’s OWN box when the slab fills only part of the band', () => {
+		// The source halves the band and centres the heading on that half
+		// (virtuallysrilanka's "How it Works": a #dd3333 right half, 720 of 1440).
+		// Without the box the rebuild painted a full-bleed slab and centred the
+		// eyebrow on the viewport — 360px left of every source heading.
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [ { id: '8d6ec26', panel: { bg: '#dd3333', ink: '#ffffff', width: '720px', align: 'end' } } ],
+			},
+		} );
+		expect( module ).toContain( "panel: { bg: '#dd3333', ink: '#ffffff', width: '720px', align: 'end' }" );
+	} );
+
+	it( 'prefers the MEASURED panel box over a declared colour alone', () => {
+		// The static parse can only see the fill; only the browser knows where it
+		// ends. A band that carries both must take the box.
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [ { id: '8d6ec26', panel: { bg: '#dd3333', ink: '#ffffff' } } ],
+			},
+			bandFacts: {
+				'8d6ec26': { panel: { bg: 'rgb(221, 51, 51)', ink: '#ffffff', width: '720px', align: 'end' } },
+			},
+		} );
+		expect( module ).toContain( "panel: { bg: 'rgb(221, 51, 51)', ink: '#ffffff', width: '720px', align: 'end' }" );
+	} );
+
+	it( 'leaves a full-bleed panel as a colour + ink, with no box', () => {
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [ { id: 'aaaaaaa', panel: { bg: '#081a43', ink: '#ffffff' } } ],
+			},
+		} );
+		expect( module ).toContain( "panel: { bg: '#081a43', ink: '#ffffff' }" );
+		expect( module ).not.toContain( "ink: '#ffffff', width" );
+	} );
+
 	it( 'emits the split-hero + collage facts into sections.generated', () => {
 		const module = renderSectionsGenerated( profile );
 		expect( module ).toContain( "layout: 'split'" );
@@ -710,6 +827,36 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 		const module = renderDesignGenerated( profile, { accent: '#0b5f4e' } );
 		expect( module ).toContain( 'export const webFonts' );
 		expect( module ).toContain( "family: 'rubik', weights: [ 300, 400, 500, 600, 700 ]" );
+	} );
+
+	it( 'carries the measured heading FAMILY into the band facts', () => {
+		// A band can wear several faces (monicarajiv: a Karma h1 beside a Dancing
+		// Script `alt-font` h3), so the family belongs to the LEVEL. Emitting it is
+		// what lets a raw band stop rendering every heading in the body face.
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [ { id: 's1', type: { headings: { h1: { size: '56px', family: 'Karma' } } } } ],
+			},
+		} );
+		expect( module ).toContain( "family: 'Karma'" );
+	} );
+
+	it( 'loads a family a BAND wears that neither role uses (the alt-font accent)', () => {
+		// Loading only display+body left a per-level rule pointing at a family
+		// with no @font-face: the browser fell back and the rule did nothing.
+		// A one-off accent only needs its measured weight, not a 300-700 ladder.
+		const withAccent: SiteProfile = {
+			...profile,
+			bandFacts: {
+				'834b9c9': {
+					headings: { h3: { size: '32px', family: 'Dancing Script' } },
+				},
+			},
+		};
+		const module = renderDesignGenerated( withAccent, { accent: '#0b5f4e' } );
+		expect( module ).toContain( "family: 'Dancing Script', weights: [ 400 ]" );
 	} );
 
 	it( 'skips system stacks in the webfont list', () => {
@@ -1166,8 +1313,24 @@ describe( 'scaffold — hybrid local content (Proposal 106 P2)', () => {
 	it( 'keeps non-hybrid collections on the plain WP loader', () => {
 		const out = renderContentConfig(PROFILE);
 		expect(out).toContain('collection: postsCollection, auth: applicationAuth, local: { pattern:');
-		// The products collection (no local source) stays plain.
-		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth, userAgent: import.meta.env.WP_USER_AGENT }) })');
+		// The products collection (no local source) stays plain. Every loader
+		// carries the transport knob (`WP_FETCH_TIMEOUT_MS`): a big Elementor
+		// page tree is megabytes in one REST response and 15s is not enough.
+		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth, userAgent: import.meta.env.WP_USER_AGENT, timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined }) })');
+	} );
+
+	it( 'bakes the profile fetch cap as the loader fallback, env still winning', () => {
+		const out = renderContentConfig( { ...PROFILE, fetch: { timeoutMs: 60_000 } } );
+		// eca.directory needs >26s; a host that knows nothing about the source must
+		// still get a cap that fits it, so the profile value ships as the fallback.
+		expect( out ).toContain('timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || 60000');
+
+		// An unusable value is ignored rather than baked in as `|| NaN` or a
+		// negative number AbortSignal.timeout would throw on.
+		for ( const timeoutMs of [ -1, 0, Number.NaN ] ) {
+			const bad = renderContentConfig( { ...PROFILE, fetch: { timeoutMs } } );
+			expect( bad ).toContain('timeoutMs: Number(import.meta.env.WP_FETCH_TIMEOUT_MS) || undefined');
+		}
 	} );
 } );
 
@@ -1262,6 +1425,40 @@ describe( 'scaffold — design rebuild (Proposal 114)', () => {
 		// A transparent band shows the page canvas — the comparison has to use it.
 		const onCanvas = readableBandType( black, { id: 'x' }, { ...PROFILE, pageBackground: '#000000' } );
 		expect( onCanvas.body.color ).toBeUndefined();
+	} );
+
+	it( 'keeps an operator type pin even when the measured ink is unreadable on the band', () => {
+		// virtuallyjamaica 1ff4891: the cards sit on a nested #dd3333 column the
+		// build DOES ship, so the measured white ink is right even though the
+		// band's own flat surface is #ededed. The pin is the explicit correction;
+		// the fallback must never drop it a second time.
+		const measured = {
+			headings: { h3: { size: '40px', color: '#ffffff' } },
+			body: { size: '13px', color: '#ffffff' },
+		};
+		const readable = readableBandType( measured, { id: '1ff4891', bgColor: '#ededed' }, PROFILE );
+		expect( readable.headings?.h3.color ).toBeUndefined();
+		expect( readable.body?.color ).toBeUndefined();
+
+		const merged = mergeBandType( readable, {
+			headings: { h3: { color: 'rgb(255, 255, 255)' } },
+			body: { color: 'rgb(255, 255, 255)' },
+		} );
+		expect( merged.headings?.h3 ).toEqual( { size: '40px', color: 'rgb(255, 255, 255)' } );
+		expect( merged.body ).toEqual( { size: '13px', color: 'rgb(255, 255, 255)' } );
+	} );
+
+	it( 'merges a colour-only type pin over the measured facts', () => {
+		const merged = mergeBandType(
+			{ headings: { h2: { size: '36px', weight: '700' } }, body: { size: '16px' } },
+			{ headings: { h2: { color: '#111111' } } }
+		);
+		expect( merged.headings?.h2 ).toEqual( { size: '36px', weight: '700', color: '#111111' } );
+		expect( merged.body ).toEqual( { size: '16px' } );
+
+		// No pin → the measured object is returned untouched.
+		const measured = { body: { size: '13px' } };
+		expect( mergeBandType( measured, undefined ) ).toBe( measured );
 	} );
 
 	it( 'emits per-element surfaces and pinned heights (structural paths)', () => {
@@ -1510,6 +1707,14 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 			expect( revalidate ).toContain( 'cache.invalidate({ tags })' );
 			expect( revalidate ).toContain( 'export const prerender = false;' );
 
+			// The diagnostic surface (2026-11-26): "is the BFF wired, and what does
+			// the CMS say?" in one request, without shell access to the app.
+			const health = await readFile( path.join( target, 'src/pages/api/health.ts' ), 'utf8' );
+			expect( health ).toContain( 'NVOOS_TARGET_SITE is not configured.' );
+			expect( health ).toContain( 'export const prerender = false;' );
+			// Public route: the target origin must be redacted out of any error.
+			expect( health ).toContain( "join('<target>')" );
+
 			// Proposal 135 Phase 5 — the preview seam.
 			const previewApi = await readFile( path.join( target, 'src/pages/api/preview.ts' ), 'utf8' );
 			expect( previewApi ).toContain( "const COOKIE = 'nvoos_preview';" );
@@ -1526,6 +1731,12 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 			const verifyTree = await readFile( path.join( target, 'scripts/verify-deploy-tree.mjs' ), 'utf8' );
 			expect( verifyTree ).toContain( "spawn(process.execPath, ['server.js']" );
 			expect( verifyTree ).toContain( "'install', '--omit=dev'" );
+			// Booting "/" is not enough: a tree whose BFF routes are absent starts
+			// green and serves 502s to every visitor (eca.directory, 2026-11-26).
+			expect( verifyTree ).toContain( '/media/__forge_probe__.png' );
+			expect( verifyTree ).toContain( '/api/__forge_probe__' );
+			expect( verifyTree ).toContain( "path: '/api/revalidate'" );
+			expect( verifyTree ).toContain( "method: 'POST'" );
 
 			const config = await readFile( path.join( target, 'astro.config.mjs' ), 'utf8' );
 			expect( config ).toContain( 'memoryCache' );
@@ -1671,6 +1882,66 @@ describe( 'scaffold — form delivery mode (direct vs bridge)', () => {
 		await expect(
 			scaffold( { profile: directProfile( false ), targetDir: target, template: 'blog' } )
 		).rejects.toThrow( /forms\.mail/ );
+	} );
+
+	it( 'refuses a Turnstile site key that is a placeholder or a bad paste', async () => {
+		for ( const siteKey of [ 'REPLACE_ME', '0x4AAAAAAGCKYhse', 'paste-here' ] ) {
+			const root = await tempDir();
+			const target = path.join( root, `turnstile-bad-${ siteKey.length }` );
+			await expect(
+				scaffold( {
+					profile: {
+						...PROFILE,
+						deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+						forms: {
+							delivery: 'direct',
+							mail: { provider: 'brevo', from: 'a@b.c', to: 'd@e.f' },
+							turnstile: { siteKey },
+						},
+					},
+					targetDir: target,
+					template: 'blog',
+				} )
+			).rejects.toThrow( /not a Turnstile site key/ );
+		}
+	} );
+
+	it( 'accepts a real and a documented test Turnstile site key', async () => {
+		for ( const siteKey of [ '0x4AAAAAAGCKYhseWgY5Z15-', '1x00000000000000000000AA' ] ) {
+			const root = await tempDir();
+			const target = path.join( root, `turnstile-ok-${ siteKey.slice( 0, 2 ) }` );
+			await scaffold( {
+				profile: {
+					...PROFILE,
+					deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+					forms: {
+						delivery: 'direct',
+						mail: { provider: 'brevo', from: 'a@b.c', to: 'd@e.f' },
+						turnstile: { siteKey, action: 'contact', onProviderError: 'allow' },
+					},
+				},
+				targetDir: target,
+				template: 'blog',
+			} );
+
+			const endpoint = await readFile( path.join( target, 'src', 'pages', 'api', 'forms', 'submit.ts' ), 'utf8' );
+			expect( endpoint ).toContain( `const TURNSTILE_SITE_KEY: string = '${ siteKey }';` );
+
+			// A key without a named secret is a form that verifies NOTHING (the
+			// endpoint warns once and accepts), so the env example must say it.
+			const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+			expect( env ).toContain( 'TURNSTILE_SECRET=' );
+			expect( env ).not.toMatch( /TURNSTILE_SECRET=\S+/ );
+		}
+	} );
+
+	it( 'omits the Turnstile secret from the env example without a site key', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'turnstile-nokey' );
+		await scaffold( { profile: directProfile(), targetDir: target, template: 'blog' } );
+
+		const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+		expect( env ).not.toContain( 'TURNSTILE_SECRET' );
 	} );
 
 	it( 'refuses a direct fallback outside the managed runtime', async () => {
@@ -1861,6 +2132,107 @@ describe( 'scaffold — content snapshot (fallback while the CMS lives)', () => 
 	} );
 } );
 
+describe( 'scaffold — materialized content (the CMS is gone)', () => {
+	it( 'copies the snapshot and makes every collection local-only', async () => {
+		const root = await tempDir();
+		const snapshot = path.join( root, 'site.content' );
+		await mkdir( path.join( snapshot, 'posts' ), { recursive: true } );
+		await writeFile(
+			path.join( snapshot, 'posts', 'application.mdx' ),
+			'---\ntitle: Application\nslug: application\n---\n',
+			'utf8'
+		);
+		await writeFile(
+			path.join( snapshot, 'posts', 'application.html' ),
+			'<section><p>Recovered</p></section>',
+			'utf8'
+		);
+		const target = path.join( root, 'materialized' );
+
+		await scaffold( {
+			profile: { ...PROFILE, content: { source: 'materialized' } },
+			targetDir: target,
+			template: 'blog',
+			contentDir: snapshot,
+		} );
+
+		await expect( stat( path.join( target, 'src', 'content', 'posts', 'application.html' ) ) ).resolves.toBeTruthy();
+
+		// Every collection reads the snapshot and never fetches — posts keeps its
+		// canonical glob, and the extra collection gets the same shape.
+		const config = await readFile( path.join( target, 'src', 'content.config.ts' ), 'utf8' );
+		expect( config ).toContain(
+			"local: { pattern: '**/*.mdx', base: './src/content/posts' }, localOnly: true"
+		);
+		expect( config ).toContain(
+			"local: { pattern: '**/*.mdx', base: './src/content/products' }, localOnly: true"
+		);
+		// A collection the snapshot does not carry is EMPTY, not fatal.
+		expect( config ).toContain( 'optional: true' );
+
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.contentSource ).toBe( 'materialized' );
+	} );
+
+	it( 'warns when a materialized profile has no snapshot to copy', async () => {
+		const root = await tempDir();
+		const result = await scaffold( {
+			profile: { ...PROFILE, content: { source: 'materialized' } },
+			targetDir: path.join( root, 'materialized-missing' ),
+			template: 'blog',
+		} );
+
+		// The build would be empty, so the operator must hear it at scaffold time.
+		expect( result.warnings.join( '\n' ) ).toContain( 'the site will build EMPTY' );
+	} );
+
+	it( 'leaves the managed BFF without a target CMS (no self-proxy)', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'materialized-managed' );
+		await scaffold( {
+			profile: {
+				...PROFILE,
+				content: { source: 'materialized' },
+				deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+			},
+			targetDir: target,
+			template: 'blog',
+		} );
+
+		// The dead CMS must never become the BFF's upstream: pointing
+		// NVOOS_TARGET_SITE at the public origin makes /api proxy to itself.
+		const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+		expect( env ).toContain( 'NVOOS_TARGET_SITE=\n' );
+		expect( env ).not.toContain( 'NVOOS_TARGET_SITE=https://shop.example.com' );
+	} );
+} );
+
+describe( 'scaffold — build policy (route conflicts)', () => {
+	it( 'writes build.strictRoutes only when the profile asks for it', async () => {
+		const root = await tempDir();
+		const strict = path.join( root, 'strict' );
+		await scaffold( {
+			profile: { ...PROFILE, build: { strictRoutes: true } },
+			targetDir: strict,
+			template: 'blog',
+		} );
+
+		const manifest = JSON.parse( await readFile( path.join( strict, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.build ).toEqual( { strictRoutes: true } );
+		// The config is the consumer — a regression here silently downgrades the
+		// policy back to Astro's `warn` default.
+		const config = await readFile( path.join( strict, 'astro.config.mjs' ), 'utf8' );
+		expect( config ).toContain( "manifest.build?.strictRoutes ? 'error' : 'warn'" );
+
+		// Absent by default: an existing site must not start failing on a
+		// pre-existing duplicate its CMS happens to publish.
+		const plain = path.join( root, 'plain' );
+		await scaffold( { profile: PROFILE, targetDir: plain, template: 'blog' } );
+		const plainManifest = JSON.parse( await readFile( path.join( plain, 'nvoos.json' ), 'utf8' ) );
+		expect( plainManifest.build ).toBeUndefined();
+	} );
+} );
+
 describe( 'scaffold — media snapshot (the CMS-less outage net)', () => {
 	it( 'refuses a media snapshot it cannot find', async () => {
 		// Same promise as content.snapshot: a net that is silently absent is
@@ -1897,5 +2269,72 @@ describe( 'scaffold — media snapshot (the CMS-less outage net)', () => {
 		await expect( stat( path.join( target, 'media-snapshot', 'media', 'abc-font.woff' ) ) ).resolves.toBeTruthy();
 		const manifest = JSON.parse( await readFile( path.join( target, 'media-snapshot', 'manifest.json' ), 'utf8' ) );
 		expect( manifest.entries[ 'https://cms.example.com/font.woff' ].file ).toBe( 'media/abc-font.woff' );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// The band's CARD ink.
+//
+// `.ds-section .ds-card p { color: var(--forge-muted) }` exists because a band
+// ink harvested from a DARK PANEL repainted a white card (virtuallysrilanka).
+// It also breaks parity wherever the card sits on the surface the ink was
+// measured against: eca.directory's benefit/update cards are the page's own
+// surface and the source paints their copy `#747474`, while `muted` is
+// Elementor's `#69727d` (ΔE00 6.4 on two bands, reported by `verify --colors`).
+//
+// The discriminator is the SURFACE, not contrast: reuse the measured ink for
+// cards only when the band and the card paint the same paint.
+// ---------------------------------------------------------------------------
+describe( 'card ink — the band\'s own cards', () => {
+	const cardProfile = ( section: Record< string, unknown > ): SiteProfile => ( {
+		url: 'https://eca.example/',
+		name: 'ECA',
+		collections: [],
+		pageBackground: '#ffffff',
+		bandFacts: {
+			aaa1111: { body: { color: 'rgb(116, 116, 116)' } },
+			bbb2222: { body: { color: 'rgb(255, 255, 255)' } },
+		},
+		design: {
+			mode: 'rebuild',
+			source: { url: 'https://eca.example', analyzedAt: '2026-11-24T00:00:00.000Z' },
+			concept: 'test',
+			palette: { roles: {}, unassigned: [], confidence: {} },
+			typography: { display: 'Epilogue', body: 'Inter', scalePx: [ 14, 16 ] },
+			spacing: { scalePx: [ 8, 16 ] },
+			radii: { valuesPx: [] },
+			shadows: { count: 0 },
+			components: {},
+			modes: { dark: 'auto', contrast: 'auto' },
+			adaptation: { keep: [], replace: [], remix: [], licensingNote: '', attribution: [] },
+			sections: [ section as never ],
+		},
+	} );
+
+	it( 'reuses the measured ink when the band and the card share a surface', () => {
+		const profile = cardProfile( { id: 'aaa1111' } );
+		expect( cardInkFor( profile.design!.sections![ 0 ], { body: { color: 'rgb(116, 116, 116)' } }, profile ) ).toBe(
+			'rgb(116, 116, 116)'
+		);
+	} );
+
+	it( 'leaves a card on a DARK band to the template (the ink came from the panel)', () => {
+		// virtuallysrilanka: the band's copy was measured over its own dark panel,
+		// and the rebuild paints a white card. That ink must not reach the card.
+		const profile = cardProfile( { id: 'bbb2222', bgColor: '#101010' } );
+		expect( cardInkFor( profile.design!.sections![ 0 ], { body: { color: 'rgb(255, 255, 255)' } }, profile ) ).toBeUndefined();
+	} );
+
+	it( 'emits nothing when the band measured no body ink', () => {
+		const profile = cardProfile( { id: 'aaa1111' } );
+		expect( cardInkFor( profile.design!.sections![ 0 ], { body: { size: '16px' } }, profile ) ).toBeUndefined();
+	} );
+
+	it( 'writes cardInk into sections.generated only for the same-surface band', () => {
+		const flat = renderSectionsGenerated( cardProfile( { id: 'aaa1111' } ) );
+		expect( flat ).toContain( "cardInk: 'rgb(116, 116, 116)'" );
+
+		const dark = renderSectionsGenerated( cardProfile( { id: 'bbb2222', bgColor: '#101010' } ) );
+		expect( dark ).not.toContain( 'cardInk:' );
 	} );
 } );

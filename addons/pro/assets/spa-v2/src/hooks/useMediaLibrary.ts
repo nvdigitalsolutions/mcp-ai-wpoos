@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useMediaLibrary — Hook for browsing WordPress Media Library items.
  *

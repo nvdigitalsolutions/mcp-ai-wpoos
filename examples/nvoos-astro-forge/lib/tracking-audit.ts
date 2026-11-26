@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tracking-audit.ts — the `forge verify --tracking` gate (Proposal 130 §3.3).
 //

@@ -104,13 +104,13 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
-		 * Test that the wp_ajax hook has a valid handler (admin handler) and
-		 * the wp_ajax_nopriv hook uses the shortcode handler.
-		 *
-		 * After PR #5731, the wp_ajax_ variant is handled by
-		 * WP_MCP_AI_Admin_AJAX_Handlers (which accepts both nonces),
-		 * while wp_ajax_nopriv_ remains with the professional selector shortcode.
-		 */
+	 * Test that the wp_ajax hook has a valid handler (admin handler) and
+	 * the wp_ajax_nopriv hook uses the shortcode handler.
+	 *
+	 * After PR #5731, the wp_ajax_ variant is handled by
+	 * WP_MCP_AI_Admin_AJAX_Handlers (which accepts both nonces),
+	 * while wp_ajax_nopriv_ remains with the professional selector shortcode.
+	 */
 	public function test_both_hooks_have_valid_handlers() {
 		global $wp_filter;
 

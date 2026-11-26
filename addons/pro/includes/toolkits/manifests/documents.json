@@ -5,7 +5,7 @@
   "description": "Policy and knowledge document register.",
   "icon": "📄",
   "feature": "documents",
-  "screens": ["settings", "entities", "dashboard"],
+  "screens": ["settings", "entities", "research", "dashboard"],
   "settings": [
     {
       "key": "default_collection",

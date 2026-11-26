@@ -116,6 +116,12 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 	 * `WPAjaxDieContinueException` / `WPAjaxDieStopException` is caught and the
 	 * caller can focus on assertions.
 	 *
+	 * `_handleAjax()` fires only `wp_ajax_{$action}`, so an unregistered action
+	 * returns an empty body — byte-identical to the body a `wp_die()` rejection
+	 * leaves behind (both decode to `success: false, data: ''`). The dispatch
+	 * therefore fails the test when no callback is bound, rather than letting a
+	 * dropped registration masquerade as a rejection.
+	 *
 	 * @param string $action  Action name (without the `wp_ajax_` prefix).
 	 * @param array  $payload Optional `$_POST` payload to set before dispatch.
 	 *                        Keys are merged on top of `$_POST`.
@@ -123,6 +129,25 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 	 *               `array( 'success' => false, 'data' => $raw )`.
 	 */
 	protected function dispatch( $action, array $payload = array() ) {
+		// `_handleAjax()` fires only `wp_ajax_{$action}`, so an unregistered
+		// action produces no output at all — an empty body that decodes to
+		// `success: false, data: ''`, byte-identical to a `wp_die()` rejection.
+		// Without this guard a dropped registration turns a handler test into
+		// either a vacuous pass (rejection assertions) or an unexplained
+		// failure (success assertions). Registrations are dropped by
+		// wp-phpunit's per-test _restore_hooks(), which reverts $wp_filter to a
+		// once-per-process snapshot, so a handler bound by a file-scope
+		// add_action() in a file another suite autoloaded first is gone by the
+		// time this class runs.
+		if ( false === has_action( 'wp_ajax_' . $action ) ) {
+			$this->fail(
+				sprintf(
+					'No callback is registered for "wp_ajax_%s"; the dispatch would return an empty body, which is indistinguishable from a rejection. Bind the handler before dispatching (re-register it in setUp() when a file-scope add_action() was dropped by the per-test hook restore).',
+					$action
+				)
+			);
+		}
+
 		$_POST['action'] = $action;
 		foreach ( $payload as $k => $v ) {
 			$_POST[ $k ] = $v;
@@ -205,16 +230,22 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 	 * grounds. Either an HTTP-403-style `wp_die` (no JSON body) or a
 	 * `success: false` response with a permissions-y message is acceptable.
 	 *
+	 * A `check_ajax_referer( …, …, true )` failure leaves an empty body under
+	 * this harness: `wp_die()` is routed to wp-phpunit's `dieHandler`, which
+	 * captures nothing and throws before the `-1` payload can be echoed. An
+	 * empty body is therefore accepted here — and cannot by itself distinguish
+	 * a real rejection from a dispatch that never reached a handler.
+	 *
 	 * @param array       $response Decoded response from {@see self::dispatch()}.
 	 * @param string|null $message  Optional failure message.
 	 */
 	protected function assertAjaxForbidden( $response, $message = null ) {
 		$this->assertIsArray( $response );
-		// Either: nonce failure produced -1 / no JSON, or success:false.
+		// Either: nonce failure produced -1 / an empty body, or success:false.
 		if ( isset( $response['success'] ) && false === $response['success'] ) {
 			return;
 		}
-		// `wp_die( -1 )` from `check_ajax_referer( …, …, true )` produces "-1".
+		// A raw `-1` only reaches the buffer on paths that echo before dying.
 		$this->assertSame(
 			'-1',
 			isset( $response['data'] ) ? trim( (string) $response['data'] ) : '',

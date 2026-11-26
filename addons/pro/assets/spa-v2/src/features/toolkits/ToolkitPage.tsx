@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ToolkitPage — the shell for one manifest-driven toolkit.
  *

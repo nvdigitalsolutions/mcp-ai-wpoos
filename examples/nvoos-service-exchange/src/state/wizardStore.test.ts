@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { create } from 'zustand';
 import { STEPS, useWizardStore } from './wizardStore';
 import type { Blueprint } from '../types';

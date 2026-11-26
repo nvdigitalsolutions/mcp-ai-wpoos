@@ -504,7 +504,7 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 	/**
 	 * Test that OpenAI image model support flag correctly gates response_format.
 	 *
-	 * gpt-image-1 and gpt-image-1.5 must NOT support response_format, while
+	 * The gpt-image-1 and gpt-image-1.5 models must NOT support response_format, while
 	 * DALL-E variants must. This verifies the existing helper that the fixed
 	 * edit_image() method now uses.
 	 */
@@ -591,7 +591,10 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 			return array(
 				'headers'       => array( 'content-type' => 'text/html; charset=utf-8' ),
 				'body'          => '<html></html>',
-				'response'      => array( 'code' => 200, 'message' => 'OK' ),
+				'response'      => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 				'cookies'       => array(),
 				'http_response' => null,
 			);
@@ -624,7 +627,10 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 			return array(
 				'headers'       => array( 'content-type' => 'image/png' ),
 				'body'          => '',
-				'response'      => array( 'code' => 404, 'message' => 'Not Found' ),
+				'response'      => array(
+					'code'    => 404,
+					'message' => 'Not Found',
+				),
 				'cookies'       => array(),
 				'http_response' => null,
 			);
@@ -659,7 +665,10 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 			return array(
 				'headers'       => array( 'content-type' => 'image/png' ),
 				'body'          => $png_data,
-				'response'      => array( 'code' => 200, 'message' => 'OK' ),
+				'response'      => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 				'cookies'       => array(),
 				'http_response' => null,
 			);
@@ -707,7 +716,10 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 			return array(
 				'headers'       => array( 'content-type' => 'text/html' ),
 				'body'          => '<html></html>',
-				'response'      => array( 'code' => 200, 'message' => 'OK' ),
+				'response'      => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 				'cookies'       => array(),
 				'http_response' => null,
 			);

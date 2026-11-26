@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // modes/astro-theme.ts — Astro theme source mode (Proposal 098 Phase 1.2).
 //

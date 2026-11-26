@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! RapidOCR (PP-OCR det + rec) ONNX pipeline — the portable/multilingual
 //! backend for snippet OCR (Proposal 100, M4).
 //!

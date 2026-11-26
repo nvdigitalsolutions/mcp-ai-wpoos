@@ -31,6 +31,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Transcript_Repository {
 
 	/**
+	 * Cache-key prefix for the storage-byte aggregate.
+	 *
+	 * @since 1.2.24
+	 * @var string
+	 */
+	const STORAGE_BYTES_CACHE_PREFIX = 'wp_mcp_ai_tb_';
+
+	/**
+	 * User meta key holding the cache-busting version for the aggregate.
+	 *
+	 * @since 1.2.24
+	 * @var string
+	 */
+	const STORAGE_BYTES_VERSION_META = '_wp_mcp_ai_tb_version';
+
+	/**
+	 * Default freshness window for the cached aggregate, in seconds.
+	 *
+	 * @since 1.2.24
+	 * @var int
+	 */
+	const STORAGE_BYTES_CACHE_TTL = 300;
+
+	/**
+	 * Lifetime of the last known-good figure, in seconds.
+	 *
+	 * Used as a backstop when a recompute exceeds its time budget.
+	 *
+	 * @since 1.2.24
+	 * @var int
+	 */
+	const STORAGE_BYTES_BACKSTOP_TTL = 604800;
+
+	/**
+	 * Default maximum time the aggregate may run, in milliseconds.
+	 *
+	 * @since 1.2.24
+	 * @var int
+	 */
+	const STORAGE_BYTES_TIME_BUDGET_MS = 2000;
+
+	/**
 	 * Get the transcript table name
 	 *
 	 * @return string Table name or empty string if not available.
@@ -241,14 +283,114 @@ class WP_MCP_AI_Transcript_Repository {
 	 * session storage — the Pro SPA keeps transcripts in this table, not in
 	 * localStorage, so a client-side quota meter always reads ~0 there.
 	 *
+	 * The aggregate has to read every matching `LONGTEXT` payload, so its cost
+	 * grows with the corpus and a cold table can take seconds. The SPA calls the
+	 * list endpoint more than once per page load, so the figure is cached per
+	 * user/assistant pair and recomputed at most once per freshness window —
+	 * see the `wp_mcp_ai_transcript_storage_bytes_ttl` filter. A recompute is
+	 * additionally bounded by a statement time limit and falls back to the last
+	 * known-good figure rather than stalling the console — see the
+	 * `wp_mcp_ai_transcript_storage_bytes_time_budget_ms` filter.
+	 *
 	 * Uses the same custom `user_id` column with `cct_author_id` fallback
 	 * as `get_sessions()`, and returns 0 when the table is unavailable.
+	 *
+	 * @since 1.0.0
+	 * @since 1.2.24 Caches the aggregate and bounds the recompute.
 	 *
 	 * @param int $user_id      User identifier.
 	 * @param int $assistant_id Optional assistant ID to filter by.
 	 * @return int Total stored bytes (0 when unavailable or empty).
 	 */
 	public function get_storage_bytes( $user_id, $assistant_id = 0 ) {
+		if ( ! $this->table_exists() ) {
+			return 0;
+		}
+
+		$user_id      = absint( $user_id );
+		$assistant_id = absint( $assistant_id );
+
+		/**
+		 * Filters how long the transcript storage total is cached, in seconds.
+		 *
+		 * Return 0 to disable caching, so every read recomputes the aggregate.
+		 *
+		 * @since 1.2.24
+		 *
+		 * @param int $ttl          Freshness window in seconds. Default 300.
+		 * @param int $user_id      User identifier.
+		 * @param int $assistant_id Assistant identifier (0 = all assistants).
+		 */
+		$ttl = (int) apply_filters( 'wp_mcp_ai_transcript_storage_bytes_ttl', self::STORAGE_BYTES_CACHE_TTL, $user_id, $assistant_id );
+
+		$cache_key = $this->get_storage_bytes_cache_key( $user_id, $assistant_id );
+
+		if ( $ttl > 0 ) {
+			$cached = get_transient( $cache_key );
+
+			if ( is_array( $cached ) && isset( $cached['bytes'] ) ) {
+				return (int) $cached['bytes'];
+			}
+		}
+
+		$bytes = $this->query_storage_bytes( $user_id, $assistant_id );
+
+		if ( null === $bytes ) {
+			// The recompute hit its time budget (or the query failed). Serve the
+			// last known-good figure and back off for a minute so a pathological
+			// corpus cannot stall every console load.
+			$backstop = get_transient( $this->get_storage_bytes_backstop_key( $user_id, $assistant_id ) );
+			$fallback = is_numeric( $backstop ) ? (int) $backstop : 0;
+
+			if ( $ttl > 0 ) {
+				set_transient(
+					$cache_key,
+					array(
+						'bytes'       => $fallback,
+						'computed_at' => time(),
+						'degraded'    => true,
+					),
+					min( $ttl, MINUTE_IN_SECONDS )
+				);
+			}
+
+			return $fallback;
+		}
+
+		$bytes = (int) $bytes;
+
+		if ( $ttl > 0 ) {
+			set_transient(
+				$cache_key,
+				array(
+					'bytes'       => $bytes,
+					'computed_at' => time(),
+				),
+				$ttl
+			);
+			set_transient(
+				$this->get_storage_bytes_backstop_key( $user_id, $assistant_id ),
+				$bytes,
+				self::STORAGE_BYTES_BACKSTOP_TTL
+			);
+		}
+
+		return $bytes;
+	}
+
+	/**
+	 * Run the storage-byte aggregate without caching.
+	 *
+	 * Each statement runs under a statement time limit; when that limit is hit
+	 * the method returns null instead of blocking the request indefinitely.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param int $user_id      User identifier.
+	 * @param int $assistant_id Optional assistant ID to filter by.
+	 * @return int|null Byte total, or null when the query failed or timed out.
+	 */
+	protected function query_storage_bytes( $user_id, $assistant_id = 0 ) {
 		global $wpdb;
 
 		if ( ! $this->table_exists() ) {
@@ -281,8 +423,11 @@ class WP_MCP_AI_Transcript_Repository {
          {$where_part}";
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
-		$bytes = (int) $wpdb->get_var( $wpdb->prepare( $query_template, $where_values ) );
+		$bytes = $this->run_aggregate_query( $wpdb->prepare( $query_template, $where_values ) );
+
+		if ( null === $bytes ) {
+			return null;
+		}
 
 		// Fallback to JetEngine's built-in cct_author_id field when the
 		// custom user_id column yields nothing.
@@ -302,11 +447,201 @@ class WP_MCP_AI_Transcript_Repository {
              WHERE {$fallback_where_sql}";
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
-			$bytes = (int) $wpdb->get_var( $wpdb->prepare( $fallback_query_template, $fallback_where_values ) );
+			$bytes = $this->run_aggregate_query( $wpdb->prepare( $fallback_query_template, $fallback_where_values ) );
 		}
 
 		return $bytes;
+	}
+
+	/**
+	 * Execute an aggregate SELECT under a statement time limit.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param string $query Prepared SQL.
+	 * @return int|null Integer result, or null on failure or timeout.
+	 */
+	protected function run_aggregate_query( $query ) {
+		global $wpdb;
+
+		/**
+		 * Filters the maximum time the transcript storage aggregate may run.
+		 *
+		 * Return 0 to run without a limit.
+		 *
+		 * @since 1.2.24
+		 *
+		 * @param int $budget_ms Time budget in milliseconds. Default 2000.
+		 */
+		$budget_ms = (int) apply_filters( 'wp_mcp_ai_transcript_storage_bytes_time_budget_ms', self::STORAGE_BYTES_TIME_BUDGET_MS );
+
+		$previous = $this->apply_statement_time_limit( $budget_ms );
+
+		// The time limit reports an overrun as a database error, so silence it
+		// for the duration of this statement; the null result carries the signal.
+		$suppress = $wpdb->suppress_errors( true );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query prepared by the caller; direct query required for custom-table aggregation.
+		$result = $wpdb->get_var( $query );
+
+		$wpdb->suppress_errors( $suppress );
+
+		$this->restore_statement_time_limit( $previous );
+
+		if ( null === $result ) {
+			// Clear the interruption message so a later wpdb call in the same
+			// request cannot surface it (the aggregate always returns one row,
+			// so a null result means the statement failed or timed out).
+			$wpdb->last_error = '';
+
+			return null;
+		}
+
+		return (int) $result;
+	}
+
+	/**
+	 * Apply a server-side statement time limit to the current connection.
+	 *
+	 * Handles MariaDB (`max_statement_time`, seconds) and MySQL
+	 * (`max_execution_time`, milliseconds) and captures the previous value so
+	 * it can be restored exactly. When neither setting is available the query
+	 * simply runs unbounded.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param int $budget_ms Time budget in milliseconds.
+	 * @return array|null State to pass to restore_statement_time_limit(), or null.
+	 */
+	protected function apply_statement_time_limit( $budget_ms ) {
+		global $wpdb;
+
+		$budget_ms = (int) $budget_ms;
+
+		if ( $budget_ms <= 0 ) {
+			return null;
+		}
+
+		if ( ! method_exists( $wpdb, 'db_server_info' ) ) {
+			return null;
+		}
+
+		$server = (string) $wpdb->db_server_info();
+
+		if ( false !== stripos( $server, 'mariadb' ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Reading a session variable.
+			$previous = $wpdb->get_var( 'SELECT @@SESSION.max_statement_time' );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Session-scoped SET; value bound through prepare().
+			$applied = $wpdb->query( $wpdb->prepare( 'SET SESSION max_statement_time = %f', $budget_ms / 1000 ) );
+
+			if ( false === $applied ) {
+				return null;
+			}
+
+			return array(
+				'type'  => 'mariadb',
+				'value' => null === $previous ? 0.0 : (float) $previous,
+			);
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Reading a session variable.
+		$previous = $wpdb->get_var( 'SELECT @@SESSION.max_execution_time' );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Session-scoped SET; value bound through prepare().
+		$applied = $wpdb->query( $wpdb->prepare( 'SET SESSION max_execution_time = %d', $budget_ms ) );
+
+		if ( false === $applied ) {
+			return null;
+		}
+
+		return array(
+			'type'  => 'mysql',
+			'value' => null === $previous ? 0 : (int) $previous,
+		);
+	}
+
+	/**
+	 * Restore the statement time limit captured by apply_statement_time_limit().
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param array|null $previous State returned by apply_statement_time_limit().
+	 * @return void
+	 */
+	protected function restore_statement_time_limit( $previous ) {
+		global $wpdb;
+
+		if ( ! is_array( $previous ) || empty( $previous['type'] ) ) {
+			return;
+		}
+
+		if ( 'mariadb' === $previous['type'] ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Session-scoped SET; value bound through prepare().
+			$wpdb->query( $wpdb->prepare( 'SET SESSION max_statement_time = %f', (float) $previous['value'] ) );
+			return;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Session-scoped SET; value bound through prepare().
+		$wpdb->query( $wpdb->prepare( 'SET SESSION max_execution_time = %d', (int) $previous['value'] ) );
+	}
+
+	/**
+	 * Build the cache key for a user/assistant pair.
+	 *
+	 * The key carries a per-user version so that invalidating every
+	 * assistant-scoped entry needs a single meta write rather than enumerating
+	 * keys. Old entries expire on their own.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param int $user_id      User identifier.
+	 * @param int $assistant_id Assistant identifier (0 = all assistants).
+	 * @return string Cache key.
+	 */
+	protected function get_storage_bytes_cache_key( $user_id, $assistant_id ) {
+		$user_id      = absint( $user_id );
+		$assistant_id = absint( $assistant_id );
+		$version      = 0;
+
+		if ( $user_id > 0 ) {
+			$version = (int) get_user_meta( $user_id, self::STORAGE_BYTES_VERSION_META, true );
+		}
+
+		return self::STORAGE_BYTES_CACHE_PREFIX . $user_id . '_' . $assistant_id . '_' . $version;
+	}
+
+	/**
+	 * Build the version-independent backstop key for a user/assistant pair.
+	 *
+	 * The backstop survives cache invalidation so a timed-out recompute can
+	 * still report the last figure that was successfully measured.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param int $user_id      User identifier.
+	 * @param int $assistant_id Assistant identifier (0 = all assistants).
+	 * @return string Cache key.
+	 */
+	protected function get_storage_bytes_backstop_key( $user_id, $assistant_id ) {
+		return self::STORAGE_BYTES_CACHE_PREFIX . absint( $user_id ) . '_' . absint( $assistant_id ) . '_last';
+	}
+
+	/**
+	 * Invalidate every cached storage total for a user.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @param int $user_id User identifier.
+	 * @return void
+	 */
+	public function flush_storage_bytes_cache( $user_id ) {
+		$user_id = absint( $user_id );
+
+		if ( $user_id <= 0 ) {
+			return;
+		}
+
+		$version = (int) get_user_meta( $user_id, self::STORAGE_BYTES_VERSION_META, true );
+		update_user_meta( $user_id, self::STORAGE_BYTES_VERSION_META, $version + 1 );
 	}
 
 	/**
@@ -657,6 +992,10 @@ class WP_MCP_AI_Transcript_Repository {
 				),
 				array( '%s', '%d' )
 			);
+		}
+
+		if ( false !== $deleted && $deleted > 0 ) {
+			$this->flush_storage_bytes_cache( $user_id );
 		}
 
 		return $deleted;

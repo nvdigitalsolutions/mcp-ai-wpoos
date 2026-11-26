@@ -21,6 +21,17 @@ class Phase3dTest extends TestCase
 
     private const ONE_PIXEL_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
+    /**
+     * Minimal containers that libmagic types correctly.
+     *
+     * An MP3 frame header and an ISO-BMFF `ftyp` box are what the sniffer keys
+     * on, so four bytes and twenty-eight bytes are enough to prove the gate — a
+     * recording would prove nothing about the allowlist that these do not.
+     */
+    private const MP3_HEADER = 'fffb9064';
+
+    private const MP4_FTYP = '0000001c6674797069736f6d0000020069736f6d69736f32';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -67,10 +78,81 @@ class Phase3dTest extends TestCase
                 'author',
             ]);
 
-        $this->assertStringStartsWith('/storage/media/', (string) $response->json('source_url'));
+        // `media/` used to prefix the object key and a random suffix used to keep
+        // names unique. §162.7 moved the write to `FileStore`, which keys objects
+        // by ULID under `{tenant}/{visibility}/{Y}/{m}` — so uniqueness no longer
+        // needs to be part of the display name, and the slug is the sanitised stem
+        // WordPress would emit rather than `pixel-<random>`.
+        $url = (string) $response->json('source_url');
+
+        $this->assertStringStartsWith('/storage/', $url);
+        $this->assertStringEndsWith('.png', $url);
+        $this->assertStringContainsString('/public/', $url);
         $this->assertSame(1, $response->json('media_details.width'));
         $this->assertSame(1, $response->json('media_details.height'));
-        $this->assertMatchesRegularExpression('/^pixel-[a-z0-9]{10}\.png$/', (string) $response->json('slug').'.png');
+        $this->assertSame('pixel', $response->json('slug'));
+    }
+
+    public function test_a_second_upload_of_the_same_name_gets_the_next_slug(): void
+    {
+        // wp_unique_post_slug() appends -2; the media surface now reads the slug
+        // column rather than deriving it from the stored filename.
+        $this->actAsUser();
+
+        $this->post('/api/v1/media', ['file' => $this->png()], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('slug', 'pixel');
+
+        $this->post('/api/v1/media', ['file' => $this->png()], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('slug', 'pixel-2');
+    }
+
+    public function test_upload_accepts_audio_and_video(): void
+    {
+        $this->actAsUser();
+
+        // Audio is a library asset in its own right: the transcription tools
+        // resolve one by id, so a user has to be able to add one.
+        $audio = $this->post('/api/v1/media', [
+            'file' => UploadedFile::fake()->createWithContent('memo.mp3', (string) hex2bin(self::MP3_HEADER)),
+        ], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('mime_type', 'audio/mpeg');
+
+        $this->assertStringEndsWith('.mp3', (string) $audio->json('source_url'));
+
+        $video = $this->post('/api/v1/media', [
+            'file' => UploadedFile::fake()->createWithContent('clip.mp4', (string) hex2bin(self::MP4_FTYP)),
+        ], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('mime_type', 'video/mp4');
+
+        $this->assertStringEndsWith('.mp4', (string) $video->json('source_url'));
+
+        // Dimensions are an image question; probing a video there would be a
+        // `getimagesize()` on bytes it cannot read.
+        $this->assertSame(0, $video->json('media_details.width'));
+        $this->assertSame(0, $video->json('media_details.height'));
+    }
+
+    public function test_list_filters_the_audio_family(): void
+    {
+        $this->actAsUser();
+
+        $this->post('/api/v1/media', ['file' => $this->png('holiday.png')], ['Accept' => 'application/json'])->assertCreated();
+        $this->post('/api/v1/media', [
+            'file' => UploadedFile::fake()->createWithContent('memo.mp3', (string) hex2bin(self::MP3_HEADER)),
+        ], ['Accept' => 'application/json'])->assertCreated();
+
+        $this->getJson('/api/v1/media?media_type=audio')
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.mime_type', 'audio/mpeg');
+
+        $this->getJson('/api/v1/media?media_type=video')
+            ->assertOk()
+            ->assertJsonCount(0);
     }
 
     public function test_upload_rejects_a_disallowed_mime_type(): void

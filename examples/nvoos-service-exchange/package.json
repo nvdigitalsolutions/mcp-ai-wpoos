@@ -17,8 +17,6 @@
     "serve": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "probe:cloudways": "node scripts/cloudways-api-probe.mjs",
-    "probe:mcp": "node scripts/cloudways-mcp-probe.mjs",
     "validate:skills": "node scripts/validate-skill-frontmatter.mjs"
   },
   "dependencies": {

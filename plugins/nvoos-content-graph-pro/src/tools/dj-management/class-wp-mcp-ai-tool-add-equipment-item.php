@@ -132,9 +132,9 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['name'] ) || empty( $arguments['type'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Equipment name and type are required.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Equipment name and type are required.', 'nvoos-content-graph-pro' )
 			);
 		}
 
@@ -148,9 +148,9 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 			$existing_equipment = get_post( $equipment_id );
 
 			if ( ! $existing_equipment || 'dj_equipment' !== $existing_equipment->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Equipment item not found.', 'nvoos-content-graph-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_not_found',
+					__( 'Equipment item not found.', 'nvoos-content-graph-pro' )
 				);
 			}
 
@@ -160,9 +160,9 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'You do not have permission to update this equipment item.', 'nvoos-content-graph-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'You do not have permission to update this equipment item.', 'nvoos-content-graph-pro' )
 				);
 			}
 
@@ -192,10 +192,9 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 			$result = wp_update_post( $post_data );
 
 			if ( is_wp_error( $result ) ) {
-				return array(
-					'success' => false,
-					'error'   => $result->get_error_message(),
-				);
+				// Re-return the inner error rather than its message: unwrapping loses
+				// the code and any extra data a caller branches on.
+				return $result;
 			}
 		} else {
 			// Create equipment post.
@@ -209,10 +208,7 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 			$equipment_id = wp_insert_post( $post_data );
 
 			if ( is_wp_error( $equipment_id ) ) {
-				return array(
-					'success' => false,
-					'error'   => $equipment_id->get_error_message(),
-				);
+				return $equipment_id;
 			}
 		}
 

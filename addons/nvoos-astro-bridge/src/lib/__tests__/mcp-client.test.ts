@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Wire-shape conformance for the /mcp client (Proposal 095 §4.1) — the
  * modern 2026-07-28 dialect the storefront handshake tests pin: SEP-2243

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sync-bridge-fixtures.mjs — the storefront side of the Phase 2.7 contract
 // drift guard.

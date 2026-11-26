@@ -29,7 +29,9 @@ All controllers extend `WP_MCP_AI_REST_Controller_Base` and share its `REST_NAME
 | `WP_MCP_AI_REST_Tools_Controller` | `class-wp-mcp-ai-rest-tools-controller.php` | `POST /tools`, `GET /tools` |
 | `WP_MCP_AI_REST_A2A_Controller` | `class-wp-mcp-ai-rest-a2a-controller.php` | Agent-to-agent JSON-RPC (when enabled) |
 | `WP_MCP_AI_REST_Approval_Controller` | `class-wp-mcp-ai-rest-approval-controller.php` | Approval queue routes |
-| `WP_MCP_AI_REST_Teams_Controller` | `class-wp-mcp-ai-rest-teams-controller.php` | Teams CRUD + invocation |
+| `WP_MCP_AI_REST_Teams_Controller` | `class-wp-mcp-ai-rest-teams-controller.php` | Teams CRUD + invocation (the agent-team catalogue) |
+| `WP_MCP_AI_REST_Professions_Controller` | `class-wp-mcp-ai-rest-professions-controller.php` | `GET /professions`, `GET /professions/{slug}` — admin-gated profession catalogue (090-p W1) |
+| `WP_MCP_AI_REST_Org_Teams_Controller` | `class-wp-mcp-ai-rest-org-teams-controller.php` | `GET\|POST /org/teams`, `GET\|PATCH\|DELETE /org/teams/{team}`, `POST /org/teams/{team}/members`, `PATCH\|DELETE /org/teams/{team}/members/{user}` — the tenant's users-with-roles teams (090-p W7); a different primitive from the agent-team catalogue above |
 | `WP_MCP_AI_REST_Slash_Command_Controller` | `class-wp-mcp-ai-rest-slash-command-controller.php` | Slash-command surface |
 | `WP_MCP_AI_REST_Threads_Controller` | `class-wp-mcp-ai-rest-threads-controller.php` | Thread CRUD + messages (9 routes) |
 | `WP_MCP_AI_REST_Profiles_Controller` | `class-wp-mcp-ai-rest-profiles-controller.php` | Tool permission profiles (9 routes) |

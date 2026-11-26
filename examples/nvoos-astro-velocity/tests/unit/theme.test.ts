@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // theme.test.ts — Proposal 104 P1: the client theme module + registry.
 // Pins: storage-as-truth resolution, idempotent application, contrast axis,
 // registry derivation from the ADS bundle, and the cycle math.

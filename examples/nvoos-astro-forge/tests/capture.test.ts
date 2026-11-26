@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // capture.test.ts — the screenshot contract (Proposal 118 §2): endpoint
 // resolution, payload normalization, dropped-artifact reads.
@@ -10,6 +11,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { captureEndpoint, captureRemote, listArtifacts, normalizeImagePayload, readArtifact } from '../lib/capture.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const tempDirs: string[] = [];
 async function tempDir(): Promise<string> {
@@ -17,11 +19,8 @@ async function tempDir(): Promise<string> {
 	tempDirs.push( dir );
 	return dir;
 }
-afterEach( () => {
-	for ( const dir of tempDirs.splice( 0 ) ) {
-		// Best-effort cleanup; OS temp sweeps leftovers.
-		void import( 'node:fs/promises' ).then( ( { rm } ) => rm( dir, { recursive: true, force: true } ) );
-	}
+afterEach( async () => {
+	await Promise.all( tempDirs.splice( 0 ).map( ( dir ) => rmTemp( dir ) ) );
 } );
 
 describe( 'captureEndpoint', () => {

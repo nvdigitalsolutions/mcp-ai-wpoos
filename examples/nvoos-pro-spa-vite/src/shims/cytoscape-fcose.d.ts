@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Type shim for cytoscape-fcose (no bundled types).
  *

@@ -7,14 +7,36 @@
 
 // --- Minimal WordPress stubs -------------------------------------------------
 class WP_Error {
+	/**
+	 * Error code.
+	 *
+	 * @var string
+	 */
 	private $code;
+
+	/**
+	 * Error message.
+	 *
+	 * @var string
+	 */
 	private $message;
 
+	/**
+	 * Constructor.
+	 *
+	 * @param string $code    Error code.
+	 * @param string $message Error message.
+	 */
 	public function __construct( $code = '', $message = '' ) {
 		$this->code    = $code;
 		$this->message = $message;
 	}
 
+	/**
+	 * Return the stored error message.
+	 *
+	 * @return string
+	 */
 	public function get_error_message() {
 		return $this->message;
 	}
@@ -22,44 +44,111 @@ class WP_Error {
 
 $GLOBALS['_stub_transients'] = array();
 
+/**
+ * Whether a value is a WP_Error instance.
+ *
+ * @param mixed $thing Value to test.
+ * @return bool
+ */
 function is_wp_error( $thing ) {
 	return $thing instanceof WP_Error;
 }
 
+/**
+ * Return the supplied default, ignoring storage.
+ *
+ * @param string $key     Option name.
+ * @param mixed  $default Value to return.
+ * @return mixed
+ */
 function get_option( $key, $default = array() ) {
 	return $default;
 }
 
+/**
+ * Read a value from the in-memory transient stub.
+ *
+ * @param string $key Transient name.
+ * @return mixed
+ */
 function get_transient( $key ) {
 	return isset( $GLOBALS['_stub_transients'][ $key ] ) ? $GLOBALS['_stub_transients'][ $key ] : false;
 }
 
+/**
+ * Store a value in the in-memory transient stub.
+ *
+ * @param string $key   Transient name.
+ * @param mixed  $value Value to store.
+ * @param int    $ttl   Unused TTL.
+ * @return bool
+ */
 function set_transient( $key, $value, $ttl = 0 ) {
 	$GLOBALS['_stub_transients'][ $key ] = $value;
 
 	return true;
 }
 
+/**
+ * Translation passthrough.
+ *
+ * @param string      $text   Text to return.
+ * @param string|null $domain Unused text domain.
+ * @return string
+ */
 function __( $text, $domain = null ) {
 	return $text;
 }
 
+/**
+ * Trim a value as a string.
+ *
+ * @param mixed $value Value to sanitise.
+ * @return string
+ */
 function sanitize_text_field( $value ) {
 	return trim( (string) $value );
 }
 
+/**
+ * Lowercase a value and strip it to key characters.
+ *
+ * @param mixed $value Value to sanitise.
+ * @return string
+ */
 function sanitize_key( $value ) {
 	return strtolower( preg_replace( '/[^a-z0-9_\-]/', '', (string) $value ) );
 }
 
+/**
+ * Absolute integer cast.
+ *
+ * @param mixed $value Value to cast.
+ * @return int
+ */
 function absint( $value ) {
 	return abs( (int) $value );
 }
 
+/**
+ * Merge arguments over defaults.
+ *
+ * @param array|object $args     Supplied arguments.
+ * @param array        $defaults Default values.
+ * @return array
+ */
 function wp_parse_args( $args, $defaults = array() ) {
 	return array_merge( $defaults, (array) $args );
 }
 
+/**
+ * Build a random alphanumeric password.
+ *
+ * @param int  $length  Password length.
+ * @param bool $special Unused special-character flag.
+ * @param bool $extra   Unused extra-character flag.
+ * @return string
+ */
 function wp_generate_password( $length = 12, $special = true, $extra = false ) {
 	$chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	$out   = '';
@@ -70,14 +159,32 @@ function wp_generate_password( $length = 12, $special = true, $extra = false ) {
 	return $out;
 }
 
+/**
+ * Strip trailing slashes.
+ *
+ * @param string $value Value to trim.
+ * @return string
+ */
 function untrailingslashit( $value ) {
 	return rtrim( $value, '/\\' );
 }
 
+/**
+ * Ensure a single trailing slash.
+ *
+ * @param string $value Value to normalise.
+ * @return string
+ */
 function trailingslashit( $value ) {
 	return rtrim( $value, '/\\' ) . '/';
 }
 
+/**
+ * Recursively create a directory.
+ *
+ * @param string $dir Directory path.
+ * @return bool
+ */
 function wp_mkdir_p( $dir ) {
 	if ( ! is_dir( $dir ) ) {
 		mkdir( $dir, 0755, true );
@@ -86,14 +193,32 @@ function wp_mkdir_p( $dir ) {
 	return is_dir( $dir );
 }
 
+/**
+ * JSON-encode a value.
+ *
+ * @param mixed $data Value to encode.
+ * @return string|false
+ */
 function wp_json_encode( $data ) {
 	return json_encode( $data );
 }
 
+/**
+ * Strip HTML tags from a value.
+ *
+ * @param mixed $text Value to strip.
+ * @return string
+ */
 function wp_strip_all_tags( $text ) {
 	return strip_tags( (string) $text );
 }
 
+/**
+ * Build a slug from a title.
+ *
+ * @param string $title Title to slugify.
+ * @return string
+ */
 function sanitize_title( $title ) {
 	return preg_replace( '/[^a-z0-9_\-]+/', '-', strtolower( (string) $title ) );
 }
@@ -121,18 +246,24 @@ foreach ( $fnb_classes as $fnb_class_file ) {
 
 // Report-builder smoke: R-03 weekend plan and R-08 cost review build cleanly.
 $r03 = WP_MCP_AI_Fnb_Report_Builder::build( 'R-03', array( 'date' => '2026-10-09' ) );
-$r08 = WP_MCP_AI_Fnb_Report_Builder::build( 'R-08', array( 'month' => '2026-09', 'prev_month' => '2026-08' ) );
+$r08 = WP_MCP_AI_Fnb_Report_Builder::build(
+	'R-08',
+	array(
+		'month'      => '2026-09',
+		'prev_month' => '2026-08',
+	)
+);
 if ( is_wp_error( $r03 ) || empty( $r03['sections'] ) ) {
 	echo "[FAIL] R-03 weekend prep plan did not build\n";
 	++$failures;
 } else {
-	echo "[PASS] R-03 weekend prep plan built (" . count( $r03['sections'] ) . " sections)\n";
+	echo '[PASS] R-03 weekend prep plan built (' . count( $r03['sections'] ) . " sections)\n";
 }
 if ( is_wp_error( $r08 ) || empty( $r08['sections'] ) ) {
 	echo "[FAIL] R-08 monthly cost review did not build\n";
 	++$failures;
 } else {
-	echo "[PASS] R-08 monthly cost review built (" . count( $r08['sections'] ) . " sections)\n";
+	echo '[PASS] R-08 monthly cost review built (' . count( $r08['sections'] ) . " sections)\n";
 }
 
 $oracle = require $toolkit_dir . '/tests/expected-values.php';
@@ -202,7 +333,7 @@ $check( 'M-11 kWh per cover Sep', $num( 'kwh_per_cover_2026_09' ), $m11['value']
 $m18 = WP_MCP_AI_Fnb_Metrics::m18_waste_pct( '2026-09' );
 $check( 'M-18 waste value Sep', $num( 'waste_logged_value_2026_09' ), $m18['waste_value'], 0.2 );
 
-$m20 = WP_MCP_AI_Fnb_Metrics::m20_budget_variance( '2026-09' );
+$m20     = WP_MCP_AI_Fnb_Metrics::m20_budget_variance( '2026-09' );
 $by_line = array();
 foreach ( $m20['rows'] as $row ) {
 	$by_line[ $row['line'] ] = $row;
@@ -210,9 +341,9 @@ foreach ( $m20['rows'] as $row ) {
 $check( 'M-20 food revenue vs budget', $num( 'food_revenue_sep_vs_budget' ), $by_line['Food revenue']['variance'], 0.2 );
 $check( 'M-20 maintenance vs budget', $num( 'maintenance_sep_vs_budget' ), $by_line['Maintenance']['variance'], 0.2 );
 
-$eng = WP_MCP_AI_Fnb_Metrics::menu_engineering( '2026-09' );
+$eng       = WP_MCP_AI_Fnb_Metrics::menu_engineering( '2026-09' );
 $quadrants = array_count_values( array_column( $eng['rows'], 'quadrant' ) );
 echo 'Menu-engineering quadrants (Sep): ' . wp_json_encode( $quadrants ) . "\n";
 
-echo $failures === 0 ? "=== ALL CHECKS PASSED ===\n" : "=== $failures CHECK(S) FAILED ===\n";
-exit( $failures === 0 ? 0 : 1 );
+echo 0 === $failures ? "=== ALL CHECKS PASSED ===\n" : "=== $failures CHECK(S) FAILED ===\n";
+exit( 0 === $failures ? 0 : 1 );

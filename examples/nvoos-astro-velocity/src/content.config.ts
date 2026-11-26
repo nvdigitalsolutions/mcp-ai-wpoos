@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Content collections — Proposal 106 §2 hybrid local.
 //

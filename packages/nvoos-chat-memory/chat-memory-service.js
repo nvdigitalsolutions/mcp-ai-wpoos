@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Chat Memory Service for NV oOS Chat
  *

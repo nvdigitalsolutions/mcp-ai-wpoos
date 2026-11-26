@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Fleet audit sink (Phase 3 of Proposal 094).
  *

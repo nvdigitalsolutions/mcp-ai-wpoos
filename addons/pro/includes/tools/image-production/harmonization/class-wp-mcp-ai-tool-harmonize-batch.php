@@ -168,7 +168,7 @@ class WP_MCP_AI_Tool_Harmonize_Batch extends WP_MCP_AI_Tool_Harmonization_Base i
 				++$failed;
 				$results[] = array(
 					'subject_input' => is_scalar( $subject_input ) ? (string) $subject_input : '',
-					'success'       => false,
+					'success'       => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Per-item row in a batch report, not the tool's return envelope.
 					'error'         => array(
 						'code'    => $result->get_error_code(),
 						'message' => $result->get_error_message(),

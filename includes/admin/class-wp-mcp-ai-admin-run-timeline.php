@@ -218,6 +218,31 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	}
 
 	/**
+	 * Let the test harness' request-termination exception escape the AJAX
+	 * handlers' generic catch.
+	 *
+	 * Under PHPUnit, wp_die() throws WPDieException (and its AJAX subclasses)
+	 * instead of exiting. Both AJAX handlers below wrap their body — including
+	 * wp_send_json_*() — in `catch ( Throwable )`, which would swallow that
+	 * signal, log it as an error, and emit a second response. The second
+	 * wp_die() then closes PHPUnit's own output buffer. Rethrowing keeps the
+	 * production catch-all intact while letting tests observe the real
+	 * termination path.
+	 *
+	 * @param Throwable $e Caught throwable.
+	 * @throws Throwable The same throwable, when it is a test die signal.
+	 */
+	private static function rethrow_test_request_termination( $e ) {
+		if ( ! defined( 'WP_MCP_AI_TESTS_RUNNING' ) || ! WP_MCP_AI_TESTS_RUNNING ) {
+			return;
+		}
+
+		if ( class_exists( 'WPDieException', false ) && $e instanceof WPDieException ) {
+			throw $e;
+		}
+	}
+
+	/**
 	 * AJAX: list recent runs (lightweight summaries).
 	 */
 	public function ajax_list_runs() {
@@ -238,6 +263,7 @@ class WP_MCP_AI_Admin_Run_Timeline {
 			$runs = self::load_run_summaries( $page, $assistant_id );
 			wp_send_json_success( $runs );
 		} catch ( Throwable $e ) {
+			self::rethrow_test_request_termination( $e );
 			$this->log_error_safe(
 				'Run Timeline: ajax_list_runs threw an exception.',
 				array(
@@ -291,6 +317,7 @@ class WP_MCP_AI_Admin_Run_Timeline {
 
 			wp_send_json_success( $detail );
 		} catch ( Throwable $e ) {
+			self::rethrow_test_request_termination( $e );
 			$this->log_error_safe(
 				'Run Timeline: ajax_get_run threw an exception.',
 				array(

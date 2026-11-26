@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // smoke.mjs — P6 end-to-end smoke: fixture contract server + BFF + built app.
 //

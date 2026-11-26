@@ -1,0 +1,66 @@
+name: Docs Contract
+
+# Proposal 166 (Unix Theory P8–P12): every first-party source file carries the
+# licence of its nearest manifest and a purpose header sized to its class.
+#
+#   .github/docs-scopes.json   scope -> globs -> manifest authority
+#   .github/docs-budget.json   the ratchet baseline
+#   bin/check-file-docs.php    the checker
+#
+# See docs/developer/file-header-convention.md.
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Documentation contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          # The pack is ~39 GB for 2,136 commits, so a full-history checkout
+          # never finishes on a hosted runner. Depth 1 plus the explicit
+          # depth-1 base fetch below is enough: the checker falls back to a
+          # two-dot tree diff when the repository is shallow.
+          fetch-depth: 1
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Inserter self-test
+        run: php bin/check-file-docs.php --self-test
+
+      - name: Scope audit
+        run: php bin/check-file-docs.php --audit-scopes
+
+      - name: Full contract (ratchet)
+        run: php bin/check-file-docs.php --strict
+
+      - name: Fetch base branch
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --depth=1 origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+
+      - name: New files must be clean
+        if: github.event_name == 'pull_request'
+        run: php bin/check-file-docs.php --new-files-only --strict --base=origin/${{ github.base_ref }}
+
+      - name: Licence boundary
+        run: bash bin/check-license-boundary.sh
+
+      - name: Folder READMEs
+        run: php bin/check-file-docs.php --folder-docs
+
+      - name: Folder READMEs (PHP)
+        run: php bin/check-folder-readmes.php --scope=all --strict

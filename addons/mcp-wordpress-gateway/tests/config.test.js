@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Config module tests: fail-closed validation, timing-safe auth, list parsing.
  */

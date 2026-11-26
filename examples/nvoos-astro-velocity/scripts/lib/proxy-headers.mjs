@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Proxy header + body transforms — pure helpers for scripts/serve.mjs (BFF).
 //

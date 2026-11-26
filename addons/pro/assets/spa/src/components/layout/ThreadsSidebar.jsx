@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ThreadsSidebar — Left sidebar with agent threads grouped by scope.
  *

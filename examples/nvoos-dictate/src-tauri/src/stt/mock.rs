@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Deterministic mock engine.
 //!
 //! Always compiled. Used by the default build (no native engine features),

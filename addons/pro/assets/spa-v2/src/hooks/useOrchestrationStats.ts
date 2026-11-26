@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useOrchestrationStats — Hook for the consolidated orchestration overview.
  */

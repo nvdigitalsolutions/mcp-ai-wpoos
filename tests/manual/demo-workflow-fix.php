@@ -76,7 +76,7 @@ class Workflow_Demo {
 			}
 
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'error'   => 'You do not have sufficient permissions to execute this workflow. The following tasks require higher privileges: ' . implode( ', ', $task_list ),
 			);
 		}

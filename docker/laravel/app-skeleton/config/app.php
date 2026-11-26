@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | The product version this deployment reports. Diagnostics, portability and
+    | the runtime identity tool all read it, and until now every one of them fell
+    | back to a hard-coded `1.2.0` because the key was never declared. Declaring
+    | it keeps those defaults intact while making the value configurable.
+    |
+    */
+
+    'version' => env('APP_VERSION', '1.2.0'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

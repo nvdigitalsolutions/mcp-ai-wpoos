@@ -41,24 +41,39 @@
 class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/**
-	 * Ensure the orchestration dashboard's AJAX actions are registered.
+	 * Ensure this cluster's file-scope AJAX handlers are loaded.
 	 *
-	 * The plugin's admin loader only includes the dashboard class when
-	 * is_admin() is true, which never happens in the CLI test environment.
-	 * The file self-instantiates at the bottom, registering its wp_ajax_*
-	 * actions. Doing this in setUpBeforeClass() means the registrations are
-	 * captured by every test's hook-backup snapshot and survive the per-test
-	 * rollback.
+	 * The plugin's admin loader only includes the orchestration dashboard when
+	 * is_admin() is true, which never happens in the CLI test environment. The
+	 * financial-planner page is not included by any loader this cluster reaches,
+	 * so it is only present when another suite autoloads it. Loading both here
+	 * keeps the file's behaviour independent of suite ordering.
+	 *
+	 * The registrations themselves are (re-)bound in setUp() below, because
+	 * wp-phpunit snapshots hooks once per process and restores that snapshot
+	 * after every test, wiping anything registered at include time.
 	 */
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
 		// Load the dashboard class once; its hooks are (re-)registered in
-		// setUp() below because wp-phpunit snapshots hooks once per process
-		// and restores that snapshot after every test, wiping any hooks
-		// registered here when this class runs after another test file.
+		// setUp() below because the per-test hook restore drops anything
+		// registered after the once-per-process snapshot.
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' ) ) {
 			$path = WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+
+		// Load the financial-planner toolkit page for the same reason. Its
+		// yfinance handler is declared (and bound) at file scope, so without
+		// this the three yfinance tests only run when another suite happens to
+		// autoload the page first — and then fail, because the per-test hook
+		// restore has already dropped the binding made at include time. Loading
+		// it here plus the setUp() re-bind makes the cluster order-independent.
+		if ( ! function_exists( 'wp_mcp_ai_ajax_clear_yfinance_cache' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$path = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-financial-planner-settings-page.php';
 			if ( file_exists( $path ) ) {
 				require_once $path;
 			}
@@ -66,12 +81,20 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	/**
-	 * Re-register the dashboard's wp_ajax_* actions per test.
+	 * Bind the file-scope AJAX handlers this cluster covers.
 	 *
-	 * wp-phpunit's _restore_hooks() reverts $wp_filter to the once-per-process
-	 * snapshot after every test, which removes hooks registered after the
-	 * first test of the run. Re-instantiate (cheap: constructor only adds
-	 * actions) so dispatches in this file work regardless of run order.
+	 * Two different load shapes are repaired here:
+	 *
+	 * 1. Orchestration dashboard — included only when is_admin() is true, which
+	 *    never happens in the CLI runner. Re-instantiate (cheap: the constructor
+	 *    only adds actions) so dispatches work regardless of run order.
+	 * 2. Financial planner settings page — registers its yfinance handler at
+	 *    file scope. Another suite may autoload the page first
+	 *    (tests/pro/admin/test-toolkit-settings-persistence.php instantiates all
+	 *    nine toolkit pages), after which wp-phpunit's once-per-process
+	 *    _restore_hooks() drops the action while the function definition
+	 *    survives. Re-bind the action so the dispatch reaches the handler
+	 *    instead of terminating with an empty body.
 	 */
 	public function setUp(): void {
 		parent::setUp();
@@ -79,6 +102,68 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		if ( class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' )
 			&& ! has_action( 'wp_ajax_wp_mcp_ai_get_orchestration_stats' ) ) {
 			new WP_MCP_AI_Admin_Orchestration_Dashboard();
+		}
+
+		if ( function_exists( 'wp_mcp_ai_ajax_clear_yfinance_cache' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_clear_yfinance_cache' ) ) {
+			add_action( 'wp_ajax_wp_mcp_ai_clear_yfinance_cache', 'wp_mcp_ai_ajax_clear_yfinance_cache' );
+		}
+
+		$this->bind_admin_handlers();
+	}
+
+	/**
+	 * Bind the base and Pro admin handlers this cluster covers.
+	 *
+	 * Every one of these is registered from an admin-only loader or a
+	 * file-scope `add_action()` that nothing runs in the CLI runner, and
+	 * wp-phpunit's per-test hook restore drops whatever a previous suite
+	 * registered. Unbound, the dispatch ends with an empty body that reads
+	 * exactly like a rejection.
+	 */
+	private function bind_admin_handlers(): void {
+		$pro = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : '';
+
+		// class, action that proves it is bound, file to load.
+		$pages = array(
+			array( 'WP_MCP_AI_Admin_Create_Assistant_Button', 'wp_mcp_ai_build_assistant_from_conversation', WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php' ),
+			array( 'WP_MCP_AI_Admin_Create_Team_Button', 'wp_mcp_ai_create_team_from_modal', WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-create-team-button.php' ),
+			array( 'WP_MCP_AI_Add_Assistant_Page', 'wp_mcp_ai_create_from_professional', WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php' ),
+			array( 'WP_MCP_AI_Add_Team_Page', 'wp_mcp_ai_deploy_team', WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-team-page.php' ),
+			array( 'WP_MCP_AI_Reg_Product_Research_Page', 'wp_mcp_ai_preview_excel', $pro . 'includes/admin/class-wp-mcp-ai-reg-product-research-page.php' ),
+			array( 'WP_MCP_AI_Health_Records_Consolidate_Page', 'wp_mcp_ai_get_member_records_preview', $pro . 'includes/admin/class-wp-mcp-ai-health-records-consolidate-page.php' ),
+		);
+
+		foreach ( $pages as $page ) {
+			list( $class, $probe, $file ) = $page;
+
+			if ( false !== has_action( 'wp_ajax_' . $probe ) ) {
+				continue;
+			}
+
+			if ( ! class_exists( $class ) && '' !== $file && file_exists( $file ) ) {
+				require_once $file;
+			}
+
+			if ( class_exists( $class ) && is_callable( array( $class, 'init' ) ) ) {
+				call_user_func( array( $class, 'init' ) );
+			}
+		}
+
+		// Instance-registered handlers.
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_cpt_chat' )
+			&& class_exists( 'WP_MCP_AI_Pro_CPT_AI_Integration' ) ) {
+			// The constructor is a no-op outside is_admin(), so bind the instance
+			// method directly; the singleton caches that decision forever.
+			$cpt_integration = WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+			if ( false === has_action( 'wp_ajax_wp_mcp_ai_cpt_chat' ) && method_exists( $cpt_integration, 'handle_ajax_chat' ) ) {
+				add_action( 'wp_ajax_wp_mcp_ai_cpt_chat', array( $cpt_integration, 'handle_ajax_chat' ) );
+			}
+		}
+
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_test_pro_package' )
+			&& class_exists( 'WP_MCP_AI_Pro_Packages_Settings_Page' ) ) {
+			new WP_MCP_AI_Pro_Packages_Settings_Page();
 		}
 	}
 

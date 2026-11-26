@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Pro Toolkit MCP Servers Admin Page — client-side behaviour.
  *

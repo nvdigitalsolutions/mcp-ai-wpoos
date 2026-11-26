@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Sites Page — list all WordPress apps across all servers.
  *

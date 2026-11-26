@@ -112,10 +112,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'icon'   => 'dashicons-admin-users',
 					'fields' => array(
 						// Global Access Control.
+						'_heading_global_access',
 						'require_authentication_all',
 						'allow_guest_access',
 						'bypass_auth_for_logged_in',
 						// REST API protection.
+						'_heading_rest_api',
 						'require_auth_chat_endpoints',
 						'require_auth_tool_execution',
 						'mcp_require_assistant_scope',
@@ -123,19 +125,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'require_auth_transcripts',
 						'require_auth_file_operations',
 						// Media protection.
+						'_heading_media_protection',
 						'protect_media_urls',
 						'protect_attachment_pages',
 						'allow_public_thumbnails',
 						'protected_file_extensions',
 						// RBAC.
+						'_heading_role_controls',
 						'restrict_to_roles',
 						'minimum_capability',
 						// Guest token policy (new).
+						'_heading_guest_policy',
 						'guest_token_ttl_hours',
 						// A2A authentication (new).
+						'_heading_a2a_auth',
 						'enable_a2a_jwt_validation',
 						'require_capability_on_delegate',
 						// Advanced security.
+						'_heading_advanced_security',
 						'enable_root_security_key',
 						'root_security_key',
 						'enable_2fa_requirement',
@@ -149,37 +156,44 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'icon'   => 'dashicons-networking',
 					'fields' => array(
 						// IP filtering.
+						'_heading_network_security',
 						'enable_ip_whitelist',
 						'ip_whitelist',
 						'enable_ip_blacklist',
 						'ip_blacklist',
 						'require_https',
 						// Rate limiting.
+						'_heading_rate_limiting',
 						'enable_rate_limiting',
 						'rate_limit_requests',
 						'rate_limit_window',
 						'rate_limit_by',
 						// Tool rate limiting (agent-aware).
+						'_heading_tool_rate_limiting',
 						'tool_rate_limit_max',
 						'tool_rate_limit_window',
 						'tool_rate_limit_exempt_tokens',
 						// Webhook secret status (1.2.0).
 						'_webhook_secret_status',
 						// Auth brute-force rate limiting (1.2.0).
+						'_heading_auth_brute_force',
 						'enable_auth_rate_limiting',
 						'auth_rate_limit_threshold',
 						'auth_rate_limit_window',
 						// OAuth endpoint rate limiting.
 						'enable_oauth_token_rate_limit',
 						// Connection & payload limits (1.2.0).
+						'_heading_connection_limits',
 						'max_sse_connections_per_user',
 						'max_request_body_size_kb',
 						'max_json_depth',
 						// Error disclosure (1.2.0).
+						'_heading_error_verbosity',
 						'api_error_verbosity',
 						// Asset version stripping (1.2.0).
 						'strip_asset_versions',
 						// Security headers.
+						'_heading_security_headers',
 						'enable_security_headers',
 						'enable_hsts',
 						'hsts_max_age',
@@ -195,17 +209,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'label'  => __( '🤖 AI Safety', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-warning',
 					'fields' => array(
+						'_heading_ai_safety',
 						'enable_prompt_injection_detector',
 						'prompt_injection_sensitivity',
 						'prompt_injection_mode',
+						'_heading_pii_filter',
 						'enable_pii_filter',
 						'pii_filter_patterns',
 						'pii_filter_side',
 						'pii_filter_mode',
+						'_heading_hitl',
 						'enable_hitl_for_write_tools',
 						'hitl_write_tool_threshold',
+						'_heading_sandbox',
 						'enable_sandbox_mode',
 						// AI Cost Control (1.2.0).
+						'_heading_ai_cost_control',
 						'enable_ai_cost_tracking',
 						'ai_daily_budget_usd',
 						'ai_monthly_budget_usd',
@@ -217,6 +236,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'icon'   => 'dashicons-clipboard',
 					'fields' => array_merge(
 						array(
+							'_heading_audit_logging',
 							'enable_security_audit_log',
 							'log_successful_auth',
 							'log_file_access',
@@ -224,6 +244,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						),
 						// OTel config is Pro-only.
 						defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
+							'_heading_otel_security',
 							'enable_otel_security_export',
 							'otel_security_endpoint',
 							'otel_security_bearer_token',
@@ -237,6 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'label'  => __( '🏷️ AI Transparency', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-visibility',
 					'fields' => array(
+						'_heading_ai_transparency',
 						'enable_ai_disclosure',
 						'ai_disclosure_message',
 						'ai_disclosure_position',
@@ -1196,6 +1218,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				$quick_wins = $report['quick_wins'];
 			}
 
+			// The scorer emits the full Mozilla Observatory band set (A+ … F), so
+			// colour by letter family rather than exact string — a band such as
+			// "A-" is not a key here and used to fall through to the error red,
+			// which made a good score look like a failing control.
 			$grade_color = array(
 				'A' => '#46b450',
 				'B' => '#72aee6',
@@ -1203,7 +1229,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				'D' => '#d63638',
 				'F' => '#8c1c1c',
 			);
-			$color       = $grade_color[ $grade ] ?? '#d63638';
+			$color       = $grade_color[ substr( $grade, 0, 1 ) ] ?? '#d63638';
+
+			// lib/core's catalogue lists every runtime's controls; the ones this
+			// runtime cannot evaluate are excluded from the score's denominator.
+			$applicable_count = 0;
+			foreach ( $signals as $signal ) {
+				if ( ! isset( $signal['applicable'] ) || $signal['applicable'] ) {
+					++$applicable_count;
+				}
+			}
 
 			// Recent security events.
 			$recent_events = array_slice( array_reverse( get_option( 'wp_mcp_ai_security_audit_log', array() ) ), 0, 10 );
@@ -1247,7 +1282,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		<div>
 			<?php /* translators: %d: security posture score (0-100) */ ?>
 			<h3 style="margin:0 0 4px;"><?php echo esc_html( sprintf( __( 'Security Posture: %d / 100', 'mcp-ai-wpoos' ), $score ) ); ?></h3>
-			<p style="margin:0;color:#646970;"><?php echo esc_html( sprintf( /* translators: %d: number of weighted security signals */ __( 'Computed from %d weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ), count( $signals ) ) ); ?></p>
+			<p style="margin:0;color:#646970;">
+				<?php
+				if ( count( $signals ) === $applicable_count ) {
+					/* translators: %d: number of weighted security signals */
+					echo esc_html( sprintf( __( 'Computed from %d weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ), $applicable_count ) );
+				} else {
+					/* translators: 1: number of signals scored on this runtime, 2: total number of catalogue signals */
+					echo esc_html( sprintf( __( 'Computed from %1$d of %2$d weighted signals — the rest do not apply to WordPress. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ), $applicable_count, count( $signals ) ) );
+				}
+				?>
+			</p>
 			<button type="button" class="button button-small wp-mcp-ai-refresh-posture" style="margin-top:8px;">
 				<span class="dashicons dashicons-update" style="vertical-align:middle;"></span>
 				<?php esc_html_e( 'Refresh Now', 'mcp-ai-wpoos' ); ?>
@@ -1304,12 +1349,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				</tr>
 			</thead>
 			<tbody>
-			<?php foreach ( $signals as $signal ) : ?>
+			<?php
+			foreach ( $signals as $signal ) :
+				$applicable = ! isset( $signal['applicable'] ) || $signal['applicable'];
+
+				if ( ! $applicable ) {
+					// Runtime-specific control: shown for parity with the Laravel
+					// console, but neither scored nor presented as a failure.
+					$icon        = '➖';
+					$detail_tone = '#646970';
+				} else {
+					$passed      = ! empty( $signal['passed'] );
+					$icon        = $passed ? '✅' : '❌';
+					$detail_tone = $passed ? '#46b450' : '#d63638';
+				}
+				?>
 				<tr>
-					<td style="text-align:center;font-size:18px;"><?php echo (bool) $signal['passed'] ? '✅' : '❌'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- emoji literals, bool-cast prevents unexpected output ?></td>
+					<td style="text-align:center;font-size:18px;"><?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- emoji literals set from a fixed list above ?></td>
 					<td><?php echo esc_html( $signal['label'] ); ?></td>
-					<td><?php echo esc_html( $signal['weight'] ); ?></td>
-					<td style="color:<?php echo esc_attr( (bool) $signal['passed'] ? '#46b450' : '#d63638' ); ?>;"><?php echo esc_html( $signal['detail'] ); ?></td>
+					<td><?php echo esc_html( $applicable ? $signal['weight'] : '—' ); ?></td>
+					<td style="color:<?php echo esc_attr( $detail_tone ); ?>;"><?php echo esc_html( $signal['detail'] ); ?></td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
@@ -1748,9 +1807,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			$field_keys = $subtab_groups[ $active_subtab ]['fields'];
 
 			foreach ( $field_keys as $key ) {
-				if ( isset( $all_fields[ $key ] ) ) {
-					$this->render_field( $key, $all_fields[ $key ] );
+				if ( ! isset( $all_fields[ $key ] ) ) {
+					continue;
 				}
+
+				// Headings separate field groups; they carry no input.
+				if ( $this->is_heading_field( $all_fields[ $key ] ) ) {
+					$this->render_heading_field( $all_fields[ $key ] );
+					continue;
+				}
+
+				$this->render_field( $key, $all_fields[ $key ] );
 			}
 
 			// Render tool-specific extra UI for Network and Audit subtabs.

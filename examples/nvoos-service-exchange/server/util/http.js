@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Minimal JSON HTTP client with timeout + bounded retry.
  *

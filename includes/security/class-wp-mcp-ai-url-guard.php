@@ -174,6 +174,37 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 		}
 
 		/**
+		 * Resolve a hostname to the IP addresses this guard would validate.
+		 *
+		 * Public so callers that pin an address (`CURLOPT_RESOLVE`) can pin the
+		 * exact set the guard checked — resolving twice would leave a window for
+		 * the second answer to differ from the first (DNS rebinding).
+		 *
+		 * This does NOT validate; pair it with {@see is_blocked_ip()}.
+		 *
+		 * @since 1.2.22
+		 * @param string $host Hostname or IP literal.
+		 * @return array<string>|false Resolved IPs, or false when resolution fails.
+		 */
+		public static function resolve( $host ) {
+			return self::resolve_host_all( $host );
+		}
+
+		/**
+		 * Whether a single IP sits in a blocked range.
+		 *
+		 * Public form of the per-address check {@see validate()} runs, for callers
+		 * that resolved the host themselves.
+		 *
+		 * @since 1.2.22
+		 * @param string $ip IPv4 or IPv6 address.
+		 * @return true|WP_Error True when blocked, WP_Error describing the range.
+		 */
+		public static function is_blocked_ip( $ip ) {
+			return self::check_blocked_ip( $ip );
+		}
+
+		/**
 		 * Check whether a hostname matches any blocked entry.
 		 *
 		 * @param string $host Hostname from the URL.

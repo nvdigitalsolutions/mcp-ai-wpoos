@@ -138,14 +138,14 @@ class AssistantAdvancedFieldsTest extends TestCase
     {
         $created = $this->postJson('/api/v1/assistants', [
             'title' => 'Merged Assistant',
-            'primary_role_slugs' => ['ux_designer'],
+            'primary_role_slugs' => ['ui_ux_designer'],
             'meta' => ['custom_key' => 'kept'],
             'advanced' => ['vector_store_id' => 'vs_merge'],
         ])->assertCreated();
 
         $assistant = Assistant::query()->findOrFail($created->json('id'));
 
-        $this->assertSame(['ux_designer'], $assistant->meta['primary_role_slugs']);
+        $this->assertSame(['ui_ux_designer'], $assistant->meta['primary_role_slugs']);
         $this->assertSame('kept', $assistant->meta['custom_key']);
         $this->assertSame('vs_merge', $assistant->meta['vector_store_id']);
     }

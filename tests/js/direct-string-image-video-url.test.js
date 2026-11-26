@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test suite for direct string image_url and video_url support in tool results
  * Tests the fix for issue #2513 - Add structure detection for complex nested data

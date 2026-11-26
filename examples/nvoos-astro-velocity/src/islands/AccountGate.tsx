@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Account island (Q5) — register / login / me, client-side against the
 // commerce contract's auth surface through the same-origin /api/* proxy.

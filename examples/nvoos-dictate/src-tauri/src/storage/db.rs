@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! SQLite-backed local history, dictionary, and meeting transcripts.
 //!
 //! Layout (v1, embedded migrations):

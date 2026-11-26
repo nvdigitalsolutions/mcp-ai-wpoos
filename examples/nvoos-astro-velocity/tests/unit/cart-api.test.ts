@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // cart-api.test.ts — the bridge cart proxy client (Proposal 108 Phase 2):
 // success normalization (zod-validated), typed backend errors, malformed

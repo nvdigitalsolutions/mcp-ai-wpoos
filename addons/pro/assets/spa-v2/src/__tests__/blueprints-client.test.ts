@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * BlueprintsClient contract tests (fetch mocked, zero network).
  *

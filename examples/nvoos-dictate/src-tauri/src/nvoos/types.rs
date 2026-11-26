@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Request/response types matching the plugin's REST contract.
 //!
 //! Message content is stored/validated as **segments**:

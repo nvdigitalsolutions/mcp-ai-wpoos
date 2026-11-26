@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Select — Radix Select primitives with shadcn styling.
  */

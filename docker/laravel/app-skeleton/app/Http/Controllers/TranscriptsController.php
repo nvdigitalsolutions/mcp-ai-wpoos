@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Transcripts\TranscriptPreview;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -26,15 +27,10 @@ class TranscriptsController
         $result = $store->list($filters);
 
         $sessions = array_map(static function (array $transcript): array {
-            $messages = $transcript['messages'] ?? [];
-            $preview = '';
+            $messages = is_array($transcript['messages'] ?? null) ? $transcript['messages'] : [];
 
-            foreach ($messages as $message) {
-                if (($message['role'] ?? '') === 'user' && isset($message['content'])) {
-                    $preview = mb_substr((string) $message['content'], 0, 100);
-                    break;
-                }
-            }
+            // One preview rule, shared with the `/admin` list (149 §39).
+            $preview = TranscriptPreview::firstUserMessage($messages);
 
             return [
                 'session_key' => $transcript['session_id'],

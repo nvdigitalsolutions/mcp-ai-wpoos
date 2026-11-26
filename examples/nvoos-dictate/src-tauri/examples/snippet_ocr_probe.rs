@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Snippet-OCR risk spike (Proposal 100, M0).
 //!
 //! Two legs:

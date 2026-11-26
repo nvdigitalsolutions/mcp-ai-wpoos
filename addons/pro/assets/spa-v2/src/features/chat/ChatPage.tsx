@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ChatPage — Main chat feature page for the Pro SPA v2.
  *

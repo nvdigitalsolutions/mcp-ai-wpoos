@@ -254,7 +254,7 @@ class WP_MCP_AI_Manage_Brevo_Contacts_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * add_contact action should require an email.
+	 * Add_contact action should require an email.
 	 */
 	public function test_add_contact_requires_email() {
 		$settings                  = WP_MCP_AI_Admin_Settings::get_default_settings();

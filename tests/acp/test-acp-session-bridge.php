@@ -26,19 +26,19 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
 		require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
 
-		$this->bridge       = new WP_MCP_AI_ACP_Session_Bridge();
-		
-		// Create a basic mock for the chat service
+		$this->bridge = new WP_MCP_AI_ACP_Session_Bridge();
+
+		// Create a basic mock for the chat service.
 		$this->chat_service = $this->getMockBuilder( 'WP_MCP_AI_Chat_Service' )
 			->disableOriginalConstructor()
 			->getMock();
 
 		$this->bridge->set_chat_service( $this->chat_service );
-		
+
 		wp_set_current_user( $this->factory->user->create() );
 	}
 
@@ -50,12 +50,14 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 		$session         = $session_manager->create_session( array() );
 		$session_id      = $session['sessionId'];
 
-		// Mock a successful chat service response
+		// Mock a successful chat service response.
 		$this->chat_service->expects( $this->once() )
 			->method( 'process_chat_request' )
-			->willReturn( array(
-				'response' => 'This is a mock LLM response.',
-			) );
+			->willReturn(
+				array(
+					'response' => 'This is a mock LLM response.',
+				)
+			);
 
 		$params = array(
 			'sessionId' => $session_id,
@@ -69,11 +71,11 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 
 		$result = $this->bridge->handle_prompt( $params );
 
-		// Validate the stopReason
+		// Validate the stopReason.
 		$this->assertArrayHasKey( 'stopReason', $result );
 		$this->assertEquals( 'end_turn', $result['stopReason'] );
 
-		// Validate the queued update
+		// Validate the queued update.
 		$updates = get_transient( 'acp_updates_' . $session_id );
 		$this->assertNotEmpty( $updates );
 		$this->assertEquals( 'session/update', $updates[0]['method'] );
@@ -89,7 +91,7 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 		$session         = $session_manager->create_session( array() );
 		$session_id      = $session['sessionId'];
 
-		// Mock an error chat service response
+		// Mock an error chat service response.
 		$this->chat_service->expects( $this->once() )
 			->method( 'process_chat_request' )
 			->willReturn( new WP_Error( 'test_error', 'LLM failure mock' ) );
@@ -106,10 +108,10 @@ class Test_ACP_Session_Bridge extends WP_UnitTestCase {
 
 		$result = $this->bridge->handle_prompt( $params );
 
-		// Validate the stopReason
+		// Validate the stopReason.
 		$this->assertEquals( 'refusal', $result['stopReason'] );
 
-		// Validate the queued update contains the error message
+		// Validate the queued update contains the error message.
 		$updates = get_transient( 'acp_updates_' . $session_id );
 		$this->assertNotEmpty( $updates );
 		$this->assertStringContainsString( 'LLM failure mock', $updates[0]['params']['update']['content']['text'] );

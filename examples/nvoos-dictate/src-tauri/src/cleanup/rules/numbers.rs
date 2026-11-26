@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Number normalization (inverse text normalization, tiered).
 //!
 //! Implements Proposal 144 §4.1. The previous implementation converted every

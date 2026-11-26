@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Nav gating tests — the visibility matrix and the RequireGate route guard.
  *
@@ -14,6 +15,7 @@ import {
   RequireGate,
   gateForPath,
   isNavItemVisible,
+  unavailableNavItems,
 } from '../console/nav-features';
 
 const ADMIN_CAPS = ['manage_options', 'edit_posts'];
@@ -158,5 +160,55 @@ describe('RequireGate', () => {
   it('redirects when the capability is missing even with the feature on', () => {
     renderGate({ docs_hub: true }, EDITOR_CAPS);
     expect(screen.getByText('dashboard-home')).toBeInTheDocument();
+  });
+});
+
+describe('unavailableNavItems', () => {
+  const REASONS = {
+    contentGraph: 'external-product',
+    chatChannels: 'toolkit-shaped',
+    orgTeams: 'runtime-adaptable',
+    mediaCc: 'connected-service',
+  };
+
+  it('lists an external product with operator copy', () => {
+    const items = unavailableNavItems(undefined, ADMIN_CAPS, { contentGraph: '' }, REASONS);
+    const graph = items.find((item) => item.path === '/knowledge-graph');
+
+    expect(graph).toBeDefined();
+    expect(graph?.label).toBe('Knowledge Graph');
+    expect(graph?.reason).toMatch(/separate product/);
+  });
+
+  it('lists exactly the surfaces the sidebar hides', () => {
+    // The card and the nav must not disagree: both delegate to the same gate.
+    const endpoints = { contentGraph: '', docsHub: '' };
+    const hidden = CONSOLE_NAV_ITEMS.filter(
+      (item) => !isNavItemVisible(item, undefined, ADMIN_CAPS, endpoints),
+    ).map((item) => item.path);
+    const listed = unavailableNavItems(undefined, ADMIN_CAPS, endpoints, {}).map(
+      (item) => item.path,
+    );
+
+    expect(listed.sort()).toEqual(hidden.sort());
+  });
+
+  it('does not advertise a surface the session cannot use', () => {
+    // A missing capability is a permission, not a runtime limitation —
+    // listing it would leak admin-only surfaces to an editor.
+    const items = unavailableNavItems(undefined, EDITOR_CAPS, { contentGraph: '' }, REASONS);
+
+    expect(items.find((item) => item.path === '/knowledge-graph')).toBeUndefined();
+  });
+
+  it('reports a feature-disabled surface with its own copy', () => {
+    const items = unavailableNavItems({ docs_hub: false }, ADMIN_CAPS, { docsHub: '/x' }, {});
+    const docs = items.find((item) => item.path === '/docs');
+
+    expect(docs?.reason).toBe('Disabled on this site.');
+  });
+
+  it('fails open when both maps are absent', () => {
+    expect(unavailableNavItems(undefined, ADMIN_CAPS, undefined, undefined)).toEqual([]);
   });
 });

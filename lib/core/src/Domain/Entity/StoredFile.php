@@ -40,7 +40,17 @@ final readonly class StoredFile implements \JsonSerializable
         public \DateTimeImmutable $createdAt,
         public ?string $publicUrl = null,
         public array $metadata = array(),
+        public string $visibility = 'public',
+        public string $slug = '',
     ) {
+    }
+
+    /**
+     * Whether reading this file needs an authorisation check.
+     */
+    public function isPrivate(): bool
+    {
+        return 'private' === $this->visibility;
     }
 
     /**
@@ -57,6 +67,19 @@ final readonly class StoredFile implements \JsonSerializable
     public function isPdf(): bool
     {
         return 'application/pdf' === $this->mimeType;
+    }
+
+    /**
+     * Whether the registry sniffed this file as audio.
+     *
+     * The transcription tools all need this question, and each was about to
+     * write `str_starts_with( 'audio/' )` itself. Two of them decide whether a
+     * file needs an extraction step or can be sent to a provider as it is, so a
+     * single answer is worth naming.
+     */
+    public function isAudio(): bool
+    {
+        return str_starts_with($this->mimeType, 'audio/');
     }
 
     /**
@@ -77,6 +100,8 @@ final readonly class StoredFile implements \JsonSerializable
             'filename'   => $this->filename,
             'mime_type'  => $this->mimeType,
             'size_bytes' => $this->sizeBytes,
+            'visibility' => $this->visibility,
+            'slug'       => $this->slug,
             'public_url' => $this->publicUrl,
             'metadata'   => $this->metadata,
             'owner_id'   => $this->ownerId,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // fetcher.ts — SSRF-safe design-source fetch (Proposal 098 Phase 0.2).
 //

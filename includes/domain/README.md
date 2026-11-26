@@ -9,7 +9,7 @@ Holds the plugin's pure-PHP domain layer — value objects and constant catalogu
 | | |
 |---|---|
 | **Distribution** | Base |
-| **PHP target** | 7.4+ |
+| **PHP target** | 8.1+ |
 | **Loaded by** | `includes/bootstrap/loader.php` and on-demand via `class_exists()`-driven consumers |
 | **Optional dependencies** | none (this is the leaf layer) |
 

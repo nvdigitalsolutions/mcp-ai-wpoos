@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<ruleset name="NV oOS WiFi">
+	<description>PHP_CodeSniffer ruleset for the NV oOS WiFi addon (Proposal 150).</description>
+
+	<arg value="p"/>
+	<arg name="extensions" value="php"/>
+
+	<rule ref="WordPress">
+		<!-- PSR-4: class files are named after the class (Result.php,
+		     Class_Kpi_Service.php), not WPCS's class-*.php convention. The
+		     autoloader maps NvoosWifi\{Sub}\{Class} to includes/{Sub}/{Class}.php. -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+		<!-- PHPCS 3.13.x bug — same exclusion as the base ruleset. -->
+		<exclude name="PSR12.Functions.ReturnTypeDeclaration"/>
+	</rule>
+
+	<rule ref="Squiz.PHP.Heredoc"/>
+
+	<!--
+		The four custom WPMCPAI sniffs.
+
+		The astro-bridge addon does not reference these; a *tool-bearing*
+		addon must, or the Unix Theory P0/P6 guarantees are silently absent
+		(implementation plan F2). Paths are resolved relative to this file, so
+		`../../phpcs` lands on the repository root.
+
+		Severities mirror the root ruleset exactly: the two tool-contract
+		sniffs are referenced bare, the other two carry severity 5.
+	-->
+	<rule ref="../../phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php"/>
+	<rule ref="../../phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php"/>
+	<rule ref="../../phpcs/WPMCPAI/Sniffs/Tools/ToolDescriptionGuidanceSniff.php">
+		<severity>5</severity>
+	</rule>
+	<rule ref="../../phpcs/WPMCPAI/Sniffs/Decisions/ScopeDeclaredSniff.php">
+		<severity>5</severity>
+	</rule>
+
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/build/*</exclude-pattern>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+</ruleset>

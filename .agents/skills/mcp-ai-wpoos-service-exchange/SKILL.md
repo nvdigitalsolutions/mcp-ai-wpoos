@@ -111,7 +111,8 @@ Base `https://api.cloudways.com/api/v2` (v1 at `…/api/v1` via
   numbers fail validation.
 - `GET /app/{id}` returns `status` (`running | provisioning | pending |
   deploying | failed | error`), `cname`, `app_fqdn`, **`sys_user`** (folder
-  name). Cross-checked: Samtani `tvhqswptzh`, NV Forge `bzprdqtjkk`.
+  name). Cross-checked against live apps (client-specific folder names are
+  recorded in the local ops skill, not here).
 - `POST /app/cache/purge` — route exists; payload shape unverified.
 - Errors are `{ error, error_description }`; the client surfaces the
   description (never tokens) and marks `providerCode`.
@@ -119,20 +120,6 @@ Base `https://api.cloudways.com/api/v2` (v1 at `…/api/v1` via
 Client behaviours: OAuth token cache; retry once on 5xx; `ensureApp` hydrates
 from `getApp` when the create response is minimal; `waitForApp` polls with a
 default 10-minute deadline; `siteUrlFromApp` prefers `cname`.
-
-## Probes (read-only)
-
-- `npm run probe:cloudways` — live REST route-existence probe (+ optional
-  authenticated read-only section when `CLOUDWAYS_EMAIL` / `CLOUDWAYS_API_KEY`
-  are set; prints status codes, counts, key names only).
-- `npm run probe:mcp` — connects to the Zed-configured Cloudways MCP server
-  (`cloudways-nvdigital` / `cloudways-mushroom`, Streamable HTTP,
-  `https://mcp.cloudways.com/mcp/`, protocol `2025-03-26`, 66 tools). Reads the
-  token from `~/AppData/Roaming/Zed/settings.json` at runtime and never prints
-  it. Explicit read-only allowlist; prints `sys_user` (an identifier) but never
-  passwords/IPs/emails. Useful calls: `server_list`, `server_get`, `app_list`
-  (`limit ≤ 100`, `server_id` filter), `app_get`, `app_credentials` (often
-  returns an empty `app_creds` — use `app_get.sys_user` instead).
 
 ## Gateway and commerce
 

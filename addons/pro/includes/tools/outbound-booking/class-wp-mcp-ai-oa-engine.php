@@ -475,8 +475,11 @@ class WP_MCP_AI_OA_Engine {
 		$lead_id = absint( $lead_id );
 		$body    = trim( (string) $body );
 		if ( ! get_post( $lead_id ) ) {
+			// Not a tool envelope: an engine status DTO that the ingest REST route
+			// publishes verbatim (`success` / `reason`). Converting it would change
+			// that response contract, which is outside an envelope sweep.
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Engine status DTO, not a tool envelope.
 				'reason'  => 'not_found',
 			);
 		}
@@ -600,8 +603,11 @@ class WP_MCP_AI_OA_Engine {
 			)
 		);
 		if ( is_wp_error( $outbox_id ) ) {
+			// Same DTO as above: the caller reads `reason` and renders it. The inner
+			// error's code is lost here by the DTO's own shape, which is a contract
+			// question for the REST route rather than for this sweep.
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Engine status DTO, not a tool envelope.
 				'lead_id' => $lead_id,
 				'reason'  => $outbox_id->get_error_message(),
 			);

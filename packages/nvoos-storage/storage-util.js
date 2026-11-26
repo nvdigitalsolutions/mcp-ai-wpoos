@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Storage utility for handling localStorage operations with Web Worker support.
  * 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * API Service — REST client for NV oOS endpoints.
  *

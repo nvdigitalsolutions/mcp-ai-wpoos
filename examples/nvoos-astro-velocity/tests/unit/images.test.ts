@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest';
 import { fixedImage, renderOrigin, responsiveImage } from '../../src/lib/images';
 

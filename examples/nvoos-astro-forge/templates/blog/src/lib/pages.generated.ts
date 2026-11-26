@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // pages.generated.ts — the per-PAGE band lists (scaffold overwrites this file).
 //

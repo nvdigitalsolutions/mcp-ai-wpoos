@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Local MCP server (feature `mcp`).
 //!
 //! Exposes the dictation app to AI clients:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest';
 
 import { auditBands, builtBandBlocks, formatBandReport } from '../lib/band-audit.ts';
@@ -115,6 +116,51 @@ describe( 'auditBands — per-band gate', () => {
 		expect( report.bands[ 0 ].text.status ).toBe( 'pass' );
 		expect( report.bands[ 1 ].text.status ).toBe( 'fail' );
 		expect( report.bands[ 2 ].text.status ).toBe( 'skip' );
+	} );
+
+	it( 'downgrades a text mismatch to warn for a positional outline', () => {
+		// A positional outline pairs band N with built band N, so a mismatch may
+		// only mean the rebuild composed its sections differently — the same
+		// reason band flow already demotes to warn. It must not fail the gate.
+		const html =
+			WRAP( 'aaa111', 'background:#dd3333', '<h1>We specialize in custom solutions</h1>' ) +
+			WRAP( 'bbb222', 'background:#ededed', '<h2>Unrelated replacement copy</h2>' );
+		const report = auditBands( {
+			sections: SECTIONS.slice( 0, 2 ),
+			builtHtml: html,
+			positional: true,
+			text: {
+				capturedAt: 'now',
+				url: 'https://src.test',
+				page: '',
+				sections: [
+					{ id: 'aaa111', text: 'we specialize in custom solutions' },
+					{ id: 'bbb222', text: 'the best way to promote your business' },
+				],
+				skipped: [],
+			},
+		} );
+		expect( report.bands[ 1 ].text.status ).toBe( 'warn' );
+		expect( report.bands[ 1 ].text.detail ).toContain( 'positional outline' );
+		expect( report.bands[ 1 ].status ).toBe( 'warn' );
+		expect( report.summary.fail ).toBe( 0 );
+	} );
+
+	it( 'still fails a text mismatch when the bands carry real ids', () => {
+		const html = WRAP( 'bbb222', 'background:#ededed', '<h2>Unrelated replacement copy</h2>' );
+		const report = auditBands( {
+			sections: [ SECTIONS[ 1 ] ],
+			builtHtml: html,
+			text: {
+				capturedAt: 'now',
+				url: 'https://src.test',
+				page: '',
+				sections: [ { id: 'bbb222', text: 'the best way to promote your business' } ],
+				skipped: [],
+			},
+		} );
+		expect( report.bands[ 0 ].text.status ).toBe( 'fail' );
+		expect( report.summary.fail ).toBe( 1 );
 	} );
 
 	it( 'skips (never passes) a check it cannot evaluate', () => {

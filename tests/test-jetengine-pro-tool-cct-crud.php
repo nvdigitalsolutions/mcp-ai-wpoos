@@ -1127,9 +1127,17 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 
 		// Use a mock db class that records set_format_flag and provides query().
 		$mock_db = new class() {
-			/** @var bool Whether set_format_flag() was called. */
+			/**
+			 * Whether set_format_flag() was called.
+			 *
+			 * @var bool
+			 */
 			public $flag_set = false;
-			/** @var mixed Value passed to set_format_flag(). */
+			/**
+			 * Value passed to set_format_flag().
+			 *
+			 * @var mixed
+			 */
 			public $flag_val = null;
 
 			/**
@@ -1278,7 +1286,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * bulk_create must return WP_Error when JetEngine is not active.
+	 * Bulk_create must return WP_Error when JetEngine is not active.
 	 */
 	public function test_bulk_create_returns_error_without_jetengine() {
 		if ( class_exists( 'Jet_Engine' ) || function_exists( 'jet_engine' ) ) {
@@ -1291,7 +1299,10 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 				'action'   => 'bulk_create',
 				'cct_slug' => 'vitals_log',
 				'items'    => array(
-					array( 'member_id' => 1, 'measurement_date' => '2026-01-01' ),
+					array(
+						'member_id'        => 1,
+						'measurement_date' => '2026-01-01',
+					),
 				),
 			),
 			array( 'user_id' => 1 )
@@ -1305,7 +1316,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * bulk_create must return WP_Error when cct_slug is absent.
+	 * Bulk_create must return WP_Error when cct_slug is absent.
 	 */
 	public function test_bulk_create_requires_cct_slug() {
 		$tool = $this->get_tool();
@@ -1321,7 +1332,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * bulk_create must return WP_Error when the items array is absent.
+	 * Bulk_create must return WP_Error when the items array is absent.
 	 */
 	public function test_bulk_create_requires_items_array() {
 		$tool = $this->get_tool();

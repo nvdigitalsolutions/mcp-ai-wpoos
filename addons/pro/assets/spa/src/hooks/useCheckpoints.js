@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useCheckpoints — Hook for checkpoint operations.
  */

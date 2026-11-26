@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-artcraft-ops
-description: "Operational guide for the ArtCraft MCP integration: the community Python rebuild (C:/Users/rasta/artcraft-mcp-py/artcraft_mcp_server.py), the live api.storyteller.ai/v1 API map, the reverse-engineering playbook (browser capture, cookie injection, schema fishing, handshake replay), and the generic MCP debugging playbook (snake_case servers, the shim pattern, missing protocolVersion). Use when working on ArtCraft MCP tools, debugging an artcraft connection, extending the rebuild, or diagnosing a third-party MCP handshake failure."
+description: "Operational guide for the ArtCraft MCP integration: the community Python rebuild (%USERPROFILE%/artcraft-mcp-py/artcraft_mcp_server.py), the live api.storyteller.ai/v1 API map, the reverse-engineering playbook (browser capture, cookie injection, schema fishing, handshake replay), and the generic MCP debugging playbook (snake_case servers, the shim pattern, missing protocolVersion). Use when working on ArtCraft MCP tools, debugging an artcraft connection, extending the rebuild, or diagnosing a third-party MCP handshake failure."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -50,13 +50,13 @@ zip) fails twice:
 
 | Piece | Location |
 |---|---|
-| Python MCP server (live, 11 tools) | `C:\Users\rasta\artcraft-mcp-py\artcraft_mcp_server.py` (stdlib only, no deps) |
-| CDP driver + capture hooks | `C:\Users\rasta\artcraft-mcp-py\cdp.js`, `hooks.js`, `set-file.js`, `char-upload.js` — drive/capture the desktop app's WebView2 |
-| Legacy exe + shim (disabled) | `C:\Users\rasta\Downloads\artcraft-mcp.exe`, `artcraft-mcp-shim.js` |
+| Python MCP server (live, 11 tools) | `C:\Users\%USERNAME%\artcraft-mcp-py\artcraft_mcp_server.py` (stdlib only, no deps) |
+| CDP driver + capture hooks | `C:\Users\%USERNAME%\artcraft-mcp-py\cdp.js`, `hooks.js`, `set-file.js`, `char-upload.js` — drive/capture the desktop app's WebView2 |
+| Legacy exe + shim (disabled) | `C:\Users\%USERNAME%\Downloads\artcraft-mcp.exe`, `artcraft-mcp-shim.js` |
 | Zed config | user-level `settings.json`: `artcraft` → `enabled: false`; `artcraft-py` → `enabled: true` (`python` + the script path) |
 | Zed backups | `settings.json.artcraft-backup`, `settings.json.pre-artcraft-py-backup` |
-| MITM kit (unused now) | `C:\Users\rasta\artcraft-mitm\` (CA, proxy.js, add/remove-hosts.bat) |
-| Upstream fork for the PR | `nvdigitalsolutions/artcraft-mcp`, branch `fix/mcp-wire-format-camelcase`, local clone at `C:\Users\rasta\AppData\Local\Temp\artcraft-mcp-fix` |
+| MITM kit (unused now) | `C:\Users\%USERNAME%\artcraft-mitm\` (CA, proxy.js, add/remove-hosts.bat) |
+| Upstream fork for the PR | `nvdigitalsolutions/artcraft-mcp`, branch `fix/mcp-wire-format-camelcase`, local clone at `C:\Users\%USERNAME%\AppData\Local\Temp\artcraft-mcp-fix` |
 
 **The desktop app shares the same backend, session cookies, and library.**
 Generations submitted via the Python server appear in the app's library
@@ -98,7 +98,7 @@ Env overrides: `ARTCRAFT_API_BASE` (default `https://api.storyteller.ai`),
      '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
      '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
      '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"<tool>","arguments":{}}}' \
-     | python "C:/Users/rasta/artcraft-mcp-py/artcraft_mcp_server.py"
+     | python "%USERPROFILE%/artcraft-mcp-py/artcraft_mcp_server.py"
    ```
 
 4. Never submit paid generations while probing — prefer the cost endpoint and
@@ -115,7 +115,7 @@ Env overrides: `ARTCRAFT_API_BASE` (default `https://api.storyteller.ai`),
   `is_error`), the server is non-compliant.
 - **Fix options**: upstream fix (serde `rename_all`, struct tags) or a local
   **shim** that spawns the broken server and rewrites the known fields —
-  pattern lives at `C:\Users\rasta\Downloads\artcraft-mcp-shim.js`.
+  pattern lives at `C:\Users\%USERNAME%\Downloads\artcraft-mcp-shim.js`.
 - Binary forensics: scan the exe for baked-in URLs/hosts with Node
   (`buf.toString('latin1')` + regex) — `strings` may not exist on Windows.
 - If an API 404s from scripts but works from a web app, diff the request
@@ -186,7 +186,7 @@ Env overrides: `ARTCRAFT_API_BASE` (default `https://api.storyteller.ai`),
 
 ## Cleanup notes
 
-- `C:\Users\rasta\artcraft-mitm\` is safe to delete when no future desktop-app
+- `C:\Users\%USERNAME%\artcraft-mitm\` is safe to delete when no future desktop-app
   capture is planned (contains a locally generated CA key).
 - If the upstream maintainer ships a rebuilt exe: re-test the handshake
   before deleting the shim, and re-verify the endpoints before deleting the

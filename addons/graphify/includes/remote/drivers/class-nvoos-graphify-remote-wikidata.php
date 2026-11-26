@@ -112,17 +112,14 @@ class NV_oOS_Graphify_Remote_Wikidata implements NV_oOS_Graphify_Remote_Source_I
 		$result = $this->http->get( $url );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 
 		$data = json_decode( $result['body'], true );
 		if ( empty( $data['search'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Empty results from Wikidata.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'Empty results from Wikidata.', 'nvoos-graphify' )
 			);
 		}
 

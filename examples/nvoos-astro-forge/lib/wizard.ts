@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wizard.ts — setup_wizard: one command from URL to deployed (096 §6.1).
 //
@@ -19,6 +20,7 @@ import { join } from 'node:path';
 
 import { emitDeployConfig, type DeployMode } from './deploy-config.ts';
 import { analyzeDesignInput, fetchDesignInput } from './design.ts';
+import { openGate } from './gate.ts';
 import { analyzeSite, profileFromDiscovery, type DiscoveryReport } from './discovery.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, suggestPreset, DEFAULT_THEME_POLICY, type PresetName, type RenderMode } from './presets.ts';
 import { scaffold } from './scaffold.ts';
@@ -196,9 +198,19 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 	//     rebuild block. Deterministic analysis; the ui.confirmDesign hook is
 	//     the interactive gate (TTY only). Failures warn, never cancel.
 	if ( options.design ) {
+		// Proposal 152 — the wizard never forges a holding page. Open the page
+		// gate first; a blocked source aborts with the remediation ladder.
+		const gate = await openGate( profile, { allowLoopback: options.allowLoopback === true } );
+		if ( gate.blocked ) {
+			gate.close();
+			throw new Error(
+				`The source is ${ gate.probe.state }${ gate.probe.fingerprint ? ` (${ gate.probe.fingerprint })` : '' } and could not be opened.\n` +
+					gate.probe.remediation.map( ( line, index ) => `  ${ index + 1 }. ${ line }` ).join( '\n' )
+			);
+		}
 		try {
 			const design = analyzeDesignInput(
-				await fetchDesignInput( profile.url, fetch, { allowLoopback: options.allowLoopback === true } )
+				await fetchDesignInput( profile.url, gate.fetch, { allowLoopback: options.allowLoopback === true } )
 			);
 			const apply = options.ui?.confirmDesign ? await options.ui.confirmDesign( design ) : true;
 			if ( apply ) {
@@ -211,6 +223,8 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 			warnings.push(
 				`Design extraction failed (continuing without): ${ error instanceof Error ? error.message : String( error ) }`
 			);
+		} finally {
+			gate.close();
 		}
 	}
 

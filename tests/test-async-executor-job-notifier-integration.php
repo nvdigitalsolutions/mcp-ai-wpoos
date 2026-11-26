@@ -93,6 +93,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		// Create a mock tool that returns success.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -149,13 +150,26 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
+			/**
+			 * Tool instance returned by get_tool().
+			 *
+			 * @var mixed
+			 */
 			protected $tool;
 			/**
 			 * Constructor.
+			 *
+			 * @param mixed $tool Tool instance.
 			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
+			/**
+			 * Return the tool for a slug.
+			 *
+			 * @param string $slug Tool slug.
+			 * @return mixed
+			 */
 			public function get_tool( $slug ) {
 				return $this->tool;
 			}
@@ -207,6 +221,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		// Create a mock tool that returns an error.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -259,13 +274,26 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
+			/**
+			 * Tool instance returned by get_tool().
+			 *
+			 * @var mixed
+			 */
 			protected $tool;
 			/**
 			 * Constructor.
+			 *
+			 * @param mixed $tool Tool instance.
 			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
+			/**
+			 * Return the tool for a slug.
+			 *
+			 * @param string $slug Tool slug.
+			 * @return mixed
+			 */
 			public function get_tool( $slug ) {
 				return $this->tool;
 			}
@@ -312,6 +340,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		// Create a mock tool that throws an exception.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -352,7 +381,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 			 *
 			 * @param array $arguments Tool arguments.
 			 * @param array $context Execution context.
-			 * @return array|WP_Error Tool result.
+			 * @throws Exception Always, to simulate a failing tool.
 			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				throw new Exception( 'Intentional exception for testing' );
@@ -364,13 +393,26 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
+			/**
+			 * Tool instance returned by get_tool().
+			 *
+			 * @var mixed
+			 */
 			protected $tool;
 			/**
 			 * Constructor.
+			 *
+			 * @param mixed $tool Tool instance.
 			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
+			/**
+			 * Return the tool for a slug.
+			 *
+			 * @param string $slug Tool slug.
+			 * @return mixed
+			 */
 			public function get_tool( $slug ) {
 				return $this->tool;
 			}

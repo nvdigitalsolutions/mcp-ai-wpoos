@@ -26,8 +26,8 @@ already extracted its design language — the tokens feed the template's
 | `lib/wp-loader.ts` | The Astro content-layer loader — wc/v3 commerce extraction, wp/v2 featured-media resolution, optional sources |
 | `lib/sanitize.ts` | Versioned `sanitize-html` allowlist — the XSS gate before `set:html` |
 | `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning + preset surfaces + agent stubs + render variant (Q4) + OG endpoint (Q5) |
-| `lib/presets.ts` | 104 §4.3 preset registry — `blog` / `storefront` / `minimal` descriptors (render mode + surfaces incl. `ogImages`), `suggestPreset()`, `applyPresetToProfile()` |
-| `scripts/forge.mjs` | CLI on **commander** + **@clack/prompts**: `analyze`, `wizard [--preset …] [--render …]`, `site`, `vault`, `deploy-config`, `deploy`, scaffold (`--preset`, `--render`, `--og-images`, `--no-agents`) — plain JS, Node ≥ 22.6 |
+| `lib/presets.ts` | 104 §4.3 preset registry — `blog` / `storefront` / `portfolio` / `landing` / `docs` / `minimal` descriptors (render mode + surfaces incl. `ogImages` + the variants each can carry), `suggestPreset()`, `suggestedVariant()`, `applyPresetToProfile()` |
+| `scripts/forge.mjs` | CLI on **commander** + **@clack/prompts**: `analyze`, `wizard [--preset …] [--render …]`, `site`, `vault`, `deploy-config`, `deploy`, scaffold (`--preset`, `--render`, `--variant`, `--og-images`, `--no-agents`) — plain JS, Node ≥ 22.6 |
 | `lib/discovery.ts` | `site_analyze` — root/types/counts/front-page/junk/Woo/SEO probes → draft site.json |
 | `lib/vault.ts` | Phase 3.1 credential store — AES-256-GCM entries under `~/.nvoos-forge/vault.json`, key from `NVOOS_FORGE_VAULT_KEY`, masked output |
 | `lib/sites.ts` | Phase 3.4 multi-site registry — named profile refs + default flag in `~/.nvoos-forge/sites.json` |
@@ -37,6 +37,8 @@ already extracted its design language — the tokens feed the template's
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
 | `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens, typed copy tables, theme module, `lib/seo.ts`, Tailwind token bridge, the inert `_ssr` product route (Q4) and `_og` card endpoint (Q5) |
 | `lib/contrast.ts` | WCAG 2.2 contrast math — the token gate warns on AA failures at scaffold time |
+| `sites/` | Committed site PROFILES (`<site>.json`) — the only thing the fleet workflow scaffolds. A file here must carry `{ url, collections: [...] }` or it is skipped as a non-site |
+| `compare/` | `forge compare` element specs (`<site>.json`) — passed by explicit `--elements`, never scaffolded |
 | `tests/` | Unit tests (`npm test`) + the exit-gate e2e (`npm run test:e2e`) |
 
 ## Dev loop
@@ -77,6 +79,32 @@ node scripts/forge.mjs site.json --target ./customer-frontend --check
 node scripts/forge.mjs site.json --target ./customer-frontend
 cd customer-frontend && npm install && npm run build
 ```
+
+### `embed` per collection — and when to turn it off
+
+`collections[].embed` (boolean, default `true` except product collections) makes
+the loader fetch `_embed=1`, which is what gives a post its **author display
+name** (`_embedded.author[0].name`) and its **featured image URL**
+(`_embedded['wp:featuredmedia']`). Both are read in `lib/wp-loader.ts` and used
+by every template that renders a byline or a card image.
+
+Turn it off per collection when a site renders neither — a product catalogue, a
+CPT index with no bylines, a pages-only brochure:
+
+```json
+{ "slug": "pages", "restBase": "wp/v2/pages", "fields": ["id", "slug", "title", "content"], "embed": false }
+```
+
+Two things worth knowing before you do:
+
+- **`_embed` is not a performance lever.** Measured on a live Elementor site:
+  4.11 s for 100 posts without it, 3.70 s with it — noise next to the CMS's own
+  bootstrap. If a build is slow, measure the CMS first
+  (`time wp eval 'echo 1;'` vs `--skip-plugins`) before touching this flag.
+- **You cannot replace the author half with a sidecar.** `wp/v2/users?include=…`
+  is refused with `rest_user_enum_blocked` on any hardened CMS, while `_embed`
+  still resolves authors internally — so dropping it there silently removes
+every byline. Keep `embed: true` wherever a template prints one.
 
 ### Design rebuild (Proposal 114)
 
@@ -188,6 +216,18 @@ node scripts/forge.mjs unlock site.json --target ./customer-frontend --yes   # r
 #    Re-apply just that span instead of re-scaffolding (which reinstalls deps).
 node scripts/forge.mjs tokens site.json --target ./customer-frontend --check   # drift report, exit 1
 node scripts/forge.mjs tokens site.json --target ./customer-frontend           # rewrite in place
+
+# 10. Compare individual ELEMENTS when a gate is too coarse to name the culprit.
+#    The spec names a selector and the properties to read on BOTH pages (a CSS
+#    name, or rect.width|height|left|centre); a property that differs by more
+#    than --tolerance fails the command unless --soft. Specs live in
+#    compare/<site>.json — NOT in sites/: the fleet workflow enumerates
+#    sites/*.json as site profiles and scaffolds each one, so a spec left there
+#    was built as a site and failed assertProfile (2026-11-21).
+node scripts/forge.mjs compare site.json --target ./customer-frontend \
+  --elements compare/monicarajiv.json
+node scripts/forge.mjs compare site.json --target ./customer-frontend \
+  --elements compare/monicarajiv.json --path /accommodations/ --width 390 --soft
 ```
 
 ### Environment per site (build time vs runtime)
@@ -197,6 +237,7 @@ Two different surfaces, easy to confuse:
 | Phase | Who reads it | Variables |
 |---|---|---|
 | Build (`npm run build`, CI) | the content loader fetches the CMS | `WP_SITE_URL`, `ASTRO_SITE`, `WP_FETCH_PROXY`, `WP_APPLICATION_USER` / `WP_APPLICATION_PASSWORD`, `WP_WC_CONSUMER_KEY` / `WP_WC_CONSUMER_SECRET`, `WP_USER_AGENT` |
+| **Analysis (CLI)** | `forge analyze` / `forge gate` fetch the **rendered HTML** | `WP_GATE_MODE`, `WP_GATE_USERNAME` / `WP_GATE_PASSWORD`, `WP_GATE_COOKIE`, `WP_GATE_STORAGE_STATE`, `WP_GATE_QUERY`, `WP_GATE_HEADERS_JSON`, `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`, `WP_GATE_HTTP_AUTH` |
 | Runtime (managed SSR) | the BFF proxies `/api`, `/media`, `/api/forms/submit` | `NVOOS_TARGET_SITE`, `NVOOS_REVALIDATE_TOKEN`, `MAIL_*`, `BREVO_API_KEY` |
 
 `scaffold` writes `.env.example` with every **non-secret** value already filled
@@ -224,6 +265,150 @@ BREVO_API_KEY=…                               # secret
 before WordPress sees it. Use `WP_FETCH_PROXY`, or allowlist the builder IP.
 Secrets never go in the profile or the manifest; they live in the host
 environment (Velocity's env panel, or the CI secret store).
+
+### A gated source — maintenance / coming-soon / staging auth (152)
+
+WordPress has **two credential planes**, and an Application Password only
+covers one of them. `WP_APPLICATION_*` authenticates `wp/v2`; it cannot log
+into `wp-login.php` (WordPress says so explicitly), so it cannot satisfy a
+plugin gate that checks `is_user_logged_in()`. A pre-launch site gates the
+**rendered HTML** (`503 + Retry-After`, or a `200` holding page) while
+`/wp-json/` stays open — which is why content forges and design does not.
+
+```sh
+# diagnose first — exit 0 open, 3 gated, 4 edge-auth, 5 rate-limited
+node scripts/forge.mjs gate sites/<name>.json
+
+# a user the gate's role allowlist accepts (the common case)
+WP_GATE_USERNAME=forge-reader WP_GATE_PASSWORD='…' \
+  node scripts/forge.mjs analyze https://cms.example.com --design --write sites/<name>.json
+```
+
+Mechanisms, in precedence order: `WP_GATE_COOKIE` (a captured session — the
+only option on a 2FA site) → `WP_GATE_STORAGE_STATE` (Playwright) →
+`WP_GATE_USERNAME` / `WP_GATE_PASSWORD` (one login per process) →
+`WP_GATE_QUERY` / `WP_GATE_HEADERS_JSON` (a plugin bypass token). Edge gates
+are additive: `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET` (Cloudflare
+Access service token) or `WP_GATE_HTTP_AUTH` (staging Basic auth).
+
+`analyze` **refuses** to forge a gated source (`--allow-blocked` overrides,
+and the design block will be empty). `forge gate --login --vault` stores the
+credential in the encrypted vault instead of the environment. Credentials are
+never sent to any host but the CMS, never written to the profile or the
+manifest, and every gated request is `Cache-Control: no-store` (an edge cache
+must not serve the authenticated page to the public).
+
+The probe is an HTTP fetch, so a **loopback dev site** now needs the documented
+exemption for every `analyze` run, not only `--design`/`--geometry`:
+`NVOOS_FORGE_ALLOW_LOOPBACK=1 node scripts/forge.mjs analyze http://localhost:8080 …`.
+
+**With the forge bridge installed (≥ 0.3.2) the probe stops guessing.** Every
+probe also asks `GET /wp-json/nvoos-forge/v1/gate`, which reports the site's
+gate state (`maintenance`, `mode`, `plugin`) without any credential — that is
+the only signal that separates "gate off" from "the edge served a cached
+anonymous page". The bridge reports what an **anonymous** visitor sees, so a
+successful `WP_GATE_*` login always wins over a `maintenance: true` verdict.
+No bridge → `404` on that route → the probe falls back to its HTML table.
+
+### Publication gate parity — the built site honours Elementor (165)
+
+`gate` (152) is how the forge gets *in* to a gated source. `gatePublish` is how
+the **built** site behaves while the CMS is gated:
+
+```jsonc
+// site.json
+{
+  "deploy": { "runtime": "managed", "manage": true },
+  "gatePublish": {
+    "honor": "auto",              // auto | coming_soon-only | off
+    "trust": "bridge",             // bridge (default) | probe (HTML inference)
+    "retryAfterSeconds": 600,      // 503 hint, capped at 86400
+    "static": { "policy": "replace" }, // replace the artifact | keep it
+    "bypass": { "ttlSeconds": 43200, "cookieName": "nvoos_gate" },
+    "session": { "bypass": true, "cookieName": "nvoos_forge_session" }
+  }
+}
+```
+
+| Tier | Behaviour |
+|---|---|
+| managed | the emitted `server.js` front controller answers `503 + Retry-After` (maintenance) or `200 + noindex` (coming soon) **before** the Astro router; `/api/*`, `/manage`, `/media/*`, `robots.txt` and `_astro/*` stay reachable |
+| static | the post-build pass replaces the artifact with the gate page (or keeps it when `policy: "keep"`), empties the sitemap, sets `noindex` + `no-store` |
+
+**A signed-in manager sees the real site — the Elementor behaviour.** With
+`deploy.manage: true` the scaffold emits `/manage` (a vanilla, server-rendered
+form; no React island) and `POST /api/manage/login`, which verifies a WordPress
+**Application Password** server-to-server via `wp/v2/users/me?context=edit` and
+mints a host-only HMAC session. The gate verifies that session **locally**, so
+preview keeps working while the CMS is in maintenance (or unreachable).
+
+```text
+NVOOS_TARGET_SITE=https://cms.example.com   # the CMS origin
+NVOOS_MANAGE_SECRET=<random>                # signs the /manage session (falls back to the gate secret)
+NVOOS_FORGE_GATE_SECRET=<random>            # operator bypass links: /?nvoos-gate=<token>
+```
+
+Flow: open `/manage` → sign in → the staff panel links to the real site,
+WP admin and (on an ECA profile) the Activities screen → the same browser sees
+the real site; every other visitor still gets the gate. The sign-in requires
+`edit_posts` (or `manage_options`); a subscriber is refused. No secret means
+fail-closed sign-in, and the operator `?nvoos-gate=` link remains the
+zero-dependency fallback.
+
+**The editor can be embedded instead of linked (`deploy.manageBundle: true`).**
+With the bridge's standalone bundle present, the scaffold **vendors**
+`astro-admin.{js,css}` into `public/manage-assets/` and `/manage` becomes the
+same Astro CMS the velocity app serves — posts, pages, products **and**
+activities in one editor, on the site's own origin.
+
+| `deploy.manageBundle` | `/manage` renders |
+|---|---|
+| absent / `false` | §7a — the staff panel, linking to wp-admin (+ the ECA screen) |
+| `true` | §7b — the embedded editor; the panel stays as the fallback when the bridge is absent, the account lacks `manage_astro`, or the CMS is unreachable |
+
+How it stays safe:
+
+- **The Application Password never reaches the browser.** Sign-in seals it into
+  a second host-only, `HttpOnly` cookie (`nvoos_forge_cred`, AES-256-GCM keyed
+  by HKDF from the manage secret, with the session uid as associated data).
+  Only `/api/*` — the BFF — decrypts it, per request.
+- **A credential-scoped response is never shared.** The proxy forces
+  `Cache-Control: private, no-store` whenever it attaches the credential, so an
+  edge cache cannot hand a manager's draft listing to the next visitor.
+- **SRI pins the bundle.** The page emits `integrity="sha384-…"` on both files
+  (the tokens are also recorded in `nvoos.json` → `admin.bundle` and
+  `src/lib/manage.generated.ts`), so a stale or substituted bundle is **refused
+  by the browser** instead of silently running mismatched code.
+- **`/manage` ships no inline script.** The session config travels as a
+  `type="application/json"` data block and
+  `public/manage-assets/manage-boot.js` does the injection, so the page keeps
+  working under `script-src 'self'` and never depends on `'unsafe-inline'` —
+  the CSP standard the velocity app enforces. The bundle is also preloaded
+  (`fetchpriority="high"`) on the signed-in render only.
+- **Fail closed at scaffold time.** A profile that opts in without a usable
+  bridge checkout aborts with a named error (`npm run build:standalone` in
+  `addons/nvoos-astro-bridge`, or point `NVOOS_FORGE_BRIDGE_DIR` at the addon
+  root) rather than emit a `/manage` page whose bundle 404s.
+- **The bundle lands in the CUSTOMER project only** — never in
+  `templates/blog/`, which is mirrored to the public forge repo.
+
+Rebuild the bundle after any bridge SPA change, then re-scaffold so the SRI
+hash and the vendored bytes move together; a hand-edited copy fails the
+`npm run check` drift gate because both generated modules are manifested.
+
+**Activities (ECAs) are editable from the CMS admin, not only wp-admin.** Bridge
+`1.2.0` serves `content/ecas` + `content/eca-categories`, and the Astro CMS
+bundle carries both collections (posts, pages, products **and** activities in
+one editor). The nav entry is gated on the server-authored
+`user.features` list — present only while the Pro toolkit's
+`enable_eca_management` setting is on — so a site without the feature never
+offers a route that would answer `eca_disabled`. Deleting an activity trashes
+it (activities with enrolments are never hard-deleted without an explicit
+`?force=1`). See the 165 runbook's "Open items".
+
+Gate pages ship at `/maintenance/` and `/coming-soon/` (no JS, no third-party
+assets, one `h1`, `noindex`). Design, acceptance criteria and the ECA first-run
+runbook live in `docs/project/proposals/165-forge-maintenance-mode-parity-*.md`.
 
 ### Forms — JetFormBuilder + Elementor submissions (114 §3.9)
 
@@ -304,6 +489,26 @@ the gaps, drafts never ship**. The example post makes a forged site
 build-and-render even with **no WordPress connection** — a network-level
 failure degrades to local-only with a loud loader warning (HTTP-level
 errors still fail the build).
+
+### Materialized content (a site that outlived its CMS)
+
+`content.source: "materialized"` declares the CMS **gone**. The snapshot
+beside the profile (`sites/<name>.content/`, written by
+`forge materialize`) is then the only source:
+
+- the scaffold copies it into `src/content/`, points **every** collection at
+  its `src/content/<slug>/` glob, emits `localOnly: true`, and marks every
+  collection `optional`;
+- the generated loader **never touches the network** — a dead origin that
+  answers 404, 200 HTML, or nothing at all cannot fail the build;
+- `forge <profile> --check` reports the materialized state instead of
+  probing the dead CMS;
+- the managed env example leaves `NVOOS_TARGET_SITE` blank (the BFF answers
+  503) rather than pointing it at the public origin, which would make `/api`
+  proxy to itself.
+
+`content.snapshot: true` is the opposite promise: the CMS stays authoritative
+and the snapshot is only the outage fallback (WP still runs first).
 
 ### Media pipeline
 
@@ -443,7 +648,53 @@ node scripts/forge.mjs site.json --target ./customer-frontend --theme-policy dar
 | --- | --- | --- | --- |
 | `blog` | `blog` | as discovered (the Phase 0 default) | search, feed, sitemap |
 | `storefront` | `blog` | blog + products (`wc/v3`, consumer-key auth) + front page | search, feed, sitemap |
+| `portfolio` | `blog` | posts/pages + an **optional** `projects` CPT (added only when no portfolio-ish CPT exists) | search, sitemap — no feed (browsed by facet, not subscribed) |
+| `landing` | `blog` | posts/pages, commerce pruned; sets `shape: one-pager` | sitemap only — a one-pager has nothing to search and nothing to subscribe to |
+| `docs` | `blog` | posts/pages, commerce pruned (the page hierarchy is the site) | search, sitemap — no feed |
 | `minimal` | `blog` | posts/pages only | feed, sitemap — **no search** (page + Pagefind step + nav link pruned) |
+
+Preset invariants, enforced by `presets.test.ts`: **commerce is the only thing a
+content preset prunes** (an arbitrary CPT is content and survives every preset),
+and a preset **never invents a taxonomy** — it only ensures the one collection it
+can honestly default. `suggestPreset()` picks storefront → portfolio → blog from
+the discovery report; `landing` and `docs` are only ever chosen explicitly,
+because shape and reading order are operator intent, not something a probe can
+see.
+
+### Template variants (`--variant <name>`)
+
+A variant is an **additive overlay** on the base template, not a second
+template: `templates/blog` stays the single source of truth, so a base fix
+reaches every variant for free. The six rules a new variant must clear — and
+the candidates already screened out — live in
+[`templates/variants/VARIANTS.md`](templates/variants/VARIANTS.md).
+
+```sh
+node scripts/forge.mjs site.json --target ./frontend --preset storefront --variant product-3d
+node scripts/forge.mjs site.json --target ./frontend --preset landing --variant video-hero
+```
+
+| Variant | Fits | Adds | Needs |
+| --- | --- | --- | --- |
+| `product-3d` | `storefront` | `src/lib/product-model.ts`, `src/components/ModelViewer.astro` | a self-hosted `public/vendor/model-viewer.min.js`; a product `model3d` field |
+| `video-hero` | `storefront`, `portfolio`, `landing` | `src/lib/hero-video.ts`, `src/components/VideoHero.astro` | a poster + MP4 (WebM optional) under `public/media/` |
+
+`scaffold()` refuses an incompatible preset/variant pair before any write, and
+`suggestedVariant()` reports the first variant a preset can carry — the scaffold
+prints it as a hint, never applying it automatically, because `site_analyze`
+cannot see whether product records carry a `model3d` field.
+
+**`product-3d`:** the operator authors `model3d = { src, poster?, alt?, ar? }`;
+`poster` falls back to the first catalogue image and `alt` to the product name.
+`src`/`poster` must be root-relative or `https` (a protocol-relative `//` is
+rejected, mirroring the sanitizer). See
+`templates/variants/product-3d/VARIANT.md`.
+
+**`video-hero`:** the poster is the LCP element (`eager` +
+`fetchpriority="high"`), the video is `preload="none"` so zero media bytes move
+until playback starts, and `shouldAutoplay()` vetoes reduced-motion, Save-Data
+and 2G. The poster is faded with `opacity` — never `display: none` — so its
+`alt` stays in the accessibility tree. See `templates/variants/video-hero/VARIANT.md`.
 
 ### Render variant (Proposal 104 Q4 — `--render static|ssr`)
 

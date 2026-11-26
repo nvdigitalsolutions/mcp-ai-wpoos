@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // deploy.ts — deploy tool slice (096 §3.3): the deploy-config alias and the
 // one-command setup_wizard (analyze → register → scaffold → build → git init

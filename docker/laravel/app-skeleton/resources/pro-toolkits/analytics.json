@@ -1,0 +1,34 @@
+{
+  "slug": "analytics",
+  "name": "Analytics",
+  "version": "1.0.0",
+  "description": "Retention and anomaly-detection defaults for the Analytics toolkit.",
+  "icon": "📊",
+  "feature": "analytics",
+  "screens": ["settings"],
+  "settings": [
+    {
+      "key": "data_retention",
+      "label": "Data retention period",
+      "type": "select",
+      "default": "365",
+      "options": ["90", "180", "365", "730", "-1"],
+      "description": "Days of analytics data to keep. -1 keeps it forever."
+    },
+    {
+      "key": "enable_ml",
+      "label": "Enable ML features",
+      "type": "boolean",
+      "default": true,
+      "description": "Turns on machine-learning-powered analytics."
+    },
+    {
+      "key": "anomaly_threshold",
+      "label": "Anomaly detection threshold",
+      "type": "select",
+      "default": "medium",
+      "options": ["low", "medium", "high"],
+      "description": "Sensitivity of anomaly detection; lower thresholds report more."
+    }
+  ]
+}

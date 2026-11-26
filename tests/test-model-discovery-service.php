@@ -7,6 +7,9 @@
 
 class Test_Model_Discovery_Service extends WP_UnitTestCase {
 
+	/**
+	 * Reset the discovery cache after each test.
+	 */
 	public function tearDown(): void {
 		remove_all_filters( 'wp_mcp_ai_model_discovery_enabled' );
 		remove_all_filters( 'wp_mcp_ai_model_discovery_interval' );

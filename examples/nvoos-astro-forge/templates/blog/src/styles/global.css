@@ -72,6 +72,12 @@
 html {
 	scroll-behavior: smooth;
 	scroll-padding-top: 7rem;
+	/* A horizontal-overflow guard, not a band requirement: a builder mark-up
+	 * band (raw HTML inside a themed wrap) can still carry a wide child, and
+	 * `clip` — not `hidden` — so no scroll container is created and the sticky
+	 * header keeps working. Bands themselves no longer use `100vw`, so they no
+	 * longer manufacture an overflow to hide. */
+	overflow-x: clip;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -95,8 +101,7 @@ body {
 	line-height: 1.6;
 	color: var(--forge-ink);
 	background: var(--forge-surface);
-	/* Full-bleed bands paint 100vw — clip the scrollbar-width sliver
-	 * instead of letting it scroll horizontally. */
+	/* Same guard as `html` above: a raw builder band may still overflow. */
 	overflow-x: clip;
 }
 
@@ -214,6 +219,9 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	color: var(--forge-header-nav-ink, var(--forge-header-ink, var(--forge-accent)));
 	text-decoration: none;
 	/* The source nav's own typography (jayainc: 400/16px/uppercase white). */
+	/* The source menu’s own face when it wears a third family (monicarajiv’s
+	 * menu titles are Montserrat); absent → the body face, as before. */
+	font-family: var(--forge-font-ui, var(--forge-font));
 	font-weight: var(--forge-nav-weight, 400);
 	font-size: var(--forge-nav-size, inherit);
 	text-transform: var(--forge-nav-transform, none);
@@ -326,9 +334,20 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 /* Design-rebuild pages: the themed bands are full-bleed and carry their own
  * rhythm (117/122) — the main padding would open a gap under the header and
  * above the footer the source does not have (jayainc's bands meet its
- * chrome flush). Plain/prose pages keep the padding. */
+ * chrome flush). Plain/prose pages keep the padding.
+ *
+ * The MEASURE is released too. A band used to escape this box with
+ * `width:100vw`, but `vw` counts the scrollbar while this element is sized to
+ * the CONTENT box — so on a classic 15px scrollbar the band landed 7px left of
+ * the viewport and 15px wider than it (virtuallysrilanka: wrap box
+ * left -7, width 1496 against a 1481px client). The left edge of the first
+ * card was clipped and the right edge fell short. A band is now a plain 100%
+ * child of a full-width main, which is exactly the visible width by
+ * construction, whatever the scrollbar does; each `.ds-section` still
+ * re-measures to the source's container so no copy moves. */
 .site-main:has([class*='ds-section-wrap--']) {
 	padding: 0;
+	max-width: none;
 }
 
 /* Same flush on the footer side — the last band meets the footer strips. */
@@ -388,6 +407,14 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	text-align: center;
 	padding-top: 1rem;
 	padding-bottom: 1rem;
+	/* The source's footer is ONE line: the copyright and the generator credit
+	 * share the bar instead of stacking as two block paragraphs (a 26px row plus
+	 * a blank line, which made the bar 91px against the source's 63px). */
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem 1rem;
 }
 
 /* ------------------------------------------------------------------------
@@ -433,6 +460,14 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 
 .site-topbar--center > .site-topbar-inner {
 	justify-content: center;
+}
+
+/* A topbar with exactly two items is a LEFT / RIGHT bar in every builder that
+ * ships one (Flatsome's `.header-top` is `flex-left` + `flex-right`): the
+ * measured strings alone do not say that, so both landed in a 2rem gap on the
+ * left while the source pins the contact link to the far edge. */
+.site-topbar--split > .site-topbar-inner {
+	justify-content: space-between;
 }
 
 /* The leading icon-only links (the source's social glyphs) sit at the bar's
@@ -519,6 +554,121 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 .brand-logo {
 	height: 2.5rem;
 	width: auto;
+}
+
+/* A source that CENTRES its logo in the header row (monicarajiv: a 273×74
+ * lockup centred in a 1425px bar, with the disclosure left of it) cannot be
+ * reproduced by the template’s `space-between` row: that leaves the mark at
+ * the left edge, under the disclosure. A three-track grid puts it in the
+ * middle track, so the outer slots keep the row’s own items and the header’s
+ * height still follows its content. Gated on the measured station, so a
+ * left-aligned source is untouched. */
+.site-header--brand-center > .site-header-inner {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+}
+
+.site-header--brand-center .brand-block {
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: center;
+}
+
+/* The SHELL is `display: contents`, so a grid placement on it is inert —
+ * found by `lib/css-lint.ts`, which reports box properties whose subject has
+ * no box. The toggle below is the real grid item. */
+
+/* `.site-nav-shell` is `display: contents` — it has no box, so a grid
+ * placement on the SHELL does nothing. The disclosure BUTTON is the grid
+ * item, and its `margin-inline-start: auto` (which right-aligns it beside a
+ * left-hand brand in the plain flex row) then pushed it to the middle of
+ * the bar: x=524 where the source puts it at x=195 (monicarajiv,
+ * 2026-11-20). Place the button and drop the auto margin. */
+.site-header--brand-center .site-nav-shell > .site-nav-toggle {
+	grid-column: 1;
+	grid-row: 1;
+	justify-self: start;
+	margin-inline-start: 0;
+}
+
+/* The trailing icon links take the third track. */
+.site-header--brand-center .header-actions {
+	grid-column: 3;
+	grid-row: 1;
+	justify-self: end;
+}
+
+.header-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.125rem;
+	min-height: 1.125rem;
+	color: inherit;
+	opacity: 0.9;
+}
+
+/*
+ * A labelled header CTA. Every value that makes it the SOURCE's pill is a
+ * measured chrome fact (fill / ink / padding / radius / size / weight) and
+ * arrives inline; this rule only supplies the layout floor and a cascade
+ * placeholder so an unmeasured pill still reads as a button.
+ */
+.header-cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.6rem 1.25rem;
+	border-radius: 999px;
+	background: var(--forge-cta);
+	color: var(--forge-cta-ink);
+	font: inherit;
+	font-weight: 600;
+	line-height: 1.15;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: filter 0.2s ease, transform 0.12s ease;
+}
+
+.header-cta:hover {
+	filter: brightness(0.94);
+}
+
+.header-cta:active {
+	transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.header-cta {
+		transition: none;
+	}
+}
+
+/* Phones: the pill keeps its tap target but stops competing with the nav. */
+@media (max-width: 767px) {
+	.header-cta {
+		padding: 0.5rem 0.9rem;
+		font-size: 0.9rem;
+	}
+
+	/* The source HIDES this pill on phones (`elementor-hidden-mobile`): a
+	 * measured fact, not a guess — showing it pushed the header row past the
+	 * viewport (eca.directory's “Try De…”). */
+	.header-cta--hide-mobile {
+		display: none;
+	}
+}
+
+.header-icon:hover {
+	opacity: 1;
+}
+
+.header-icon svg {
+	display: block;
+	width: 1.125rem;
+	height: 1.125rem;
+	fill: currentColor;
 }
 
 .brand-tagline {
@@ -647,12 +797,31 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 
 .site-footer-block p {
 	margin: 0 0 var(--forge-space-sm);
+	/* The MEASURED © row (`chrome.footerBrand.text`): a builder centres its
+	 * footer-html block at its own small type scale, so a footer line is not
+	 * left-aligned body copy. */
+	font-size: var(--forge-footer-text-size, inherit);
+	font-weight: var(--forge-footer-text-weight, inherit);
+	color: var(--forge-footer-text-ink, inherit);
+	text-align: var(--forge-footer-text-align, inherit);
+}
+
+/* The ink a LINK inside a footer line wears — the source's palette highlight,
+ * which is generally not the site accent the template would paint it. */
+.site-footer-block p a {
+	color: var(--forge-footer-text-link, currentColor);
 }
 
 .site-copyright,
 .site-credit {
-	margin: 0.25rem 0 0;
+	/* The bar is a flex row (`gap` owns the spacing). */
+	margin: 0;
 	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
+}
+
+/* The generator credit is subordinate to the customer's copyright. */
+.site-credit {
+	opacity: 0.8;
 }
 
 .hero {
@@ -699,6 +868,15 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	max-width: 100%;
 	height: auto;
 	border-radius: var(--forge-radius);
+}
+
+/* A raw rebuilt band keeps the builder's own markup, and builders ship SQUARE
+ * photos (flatsome.css sets no radius; monicarajiv measures 0 on every image in
+ * the section). The prose default above rounded every hero and tile photo by
+ * `--forge-radius`, which the source never had. Radius inside a band is a
+ * MEASURED fact or it is nothing. */
+.ds-section-wrap .post-body img {
+	border-radius: 0;
 }
 
 .post-body figcaption {
@@ -893,21 +1071,31 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 
 /* Full-bleed bands (120 §5): the source band backgrounds span the
  * viewport edge-to-edge (jayainc's hero photo was trapped inside the
- * --forge-measure container). The wrap escapes the measure; the inner
- * section re-measures. */
+ * --forge-measure container). The `.site-main` measure is released for
+ * band pages and the wrap fills it; the inner section re-measures. */
 .ds-section-wrap--hero,
 .ds-section-wrap--dark,
 .ds-section-wrap--alt,
 .ds-section-wrap--light {
-	/* Full-bleed: 100vw + self-referential centering (margin-left 50% of
-	 * the CONTAINING block, transform -50% of the ELEMENT) — the math
-	 * cancels the scrollbar so the band never sits 7px left of the
-	 * viewport. The motion keyframes below use the independent
-	 * `translate`/`scale` properties so they COMPOSE with this transform
-	 * instead of replacing it. */
-	width: 100vw;
-	margin-left: 50%;
-	transform: translateX(-50%);
+	/* Full-bleed by BLOCK FLOW, not by `vw`. This used to be
+	 * `width:100vw; margin-left:50%; transform:translateX(-50%)`, on the
+	 * premise that the two halves cancel the scrollbar. They do not: `50%`
+	 * resolves against the CONTAINING block (the centred, scrollbar-excluded
+	 * content box) while `-50%` resolves against the ELEMENT (100vw, which
+	 * INCLUDES the scrollbar) — so the band was displaced by half the
+	 * scrollbar width and overhung the other half. Measured on
+	 * virtuallysrilanka at a 15px scrollbar: band left -7, width 1496 vs a
+	 * 1481px client, the first card's left edge clipped.
+	 *
+	 * `width:auto` inherits the full-width `.site-main` (see the `:has()`
+	 * rule above), which IS the visible width — no arithmetic, no overflow,
+	 * nothing to clip. The inner `.ds-section` keeps the measured measure +
+	 * side padding, so band CONTENT is unchanged. The motion keyframes use
+	 * the independent `translate`/`scale` properties and never depended on
+	 * this transform. */
+	width: auto;
+	margin-left: 0;
+	transform: none;
 	/* The source bands that declare no padding are content-tight — a
 	 * modest default beats the old 70px (the padded bands carry their
 	 * own inline padding fact). */
@@ -923,12 +1111,53 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	 * content to the container width (jayainc's 1140px) while the band
 	 * background stays full-width. Absent → the site measure. */
 	max-width: var(--ds-measure, var(--forge-measure));
+	/* An explicit 100% is what makes that measure a CAP. The wrap is a COLUMN
+	 * flex container, so `margin-inline:auto` (the centring below) opts the
+	 * section out of `align-items:stretch` and leaves it at its FIT-CONTENT
+	 * width — a band whose copy is narrower than the measure then renders
+	 * narrower (virtuallysrilanka's hardware row: 989px inside the source's
+	 * 1280px container). Same fix the raw Flatsome branch already applies. */
+	width: 100%;
 	margin-left: auto;
 	margin-right: auto;
 	/* The container's column-gap gutter (gap-default 10px … wider 30px)
 	 * rides as the side padding; absent → the template clamp. */
 	padding-left: var(--ds-pad-x, clamp(1rem, 4vw, 2rem));
 	padding-right: var(--ds-pad-x, clamp(1rem, 4vw, 2rem));
+}
+
+/* Flatsome's `row-full-width` breaks a row OUT of the container to the
+ * section's own edges (monicarajiv's hero intro: 1425px inside a 1425px
+ * section at a 1425px document). The band's measured container width is the
+ * CONTAINER — capping a band that holds a full-width row insets it by 28px a
+ * side. The band keeps its own padding; only the cap goes. */
+.ds-section-wrap .ds-section:has(.row-full-width) {
+	max-width: none;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+/* A phone has no room for a measured zero gutter: virtuallyjamaica's contact
+ * band measures `--ds-pad-x: 0px` (its source hero is a full-bleed photo), so
+ * its form, fields and Turnstile widget ran edge-to-edge. The floor insets the
+ * copy while the band's own background stays full-bleed. */
+@media (max-width: 767px) {
+	.ds-section-wrap--hero .ds-section,
+	.ds-section-wrap--dark .ds-section,
+	.ds-section-wrap--alt .ds-section,
+	.ds-section-wrap--light .ds-section {
+		/* The floor is `--forge-space` MINUS the band's own side padding: a band
+		 * that already carries 30px of measured padding needs no top-up, and a
+		 * band at zero still gets the phone gutter. */
+		padding-left: max(
+			calc(var(--forge-space) - var(--ds-band-pad-x, 0px)),
+			var(--ds-pad-x, 0px)
+		);
+		padding-right: max(
+			calc(var(--forge-space) - var(--ds-band-pad-x, 0px)),
+			var(--ds-pad-x, 0px)
+		);
+	}
 }
 
 .ds-hero {
@@ -951,8 +1180,52 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	margin: 0;
 }
 
-.ds-title {
+/* A rebuilt band that keeps the builder’s own markup renders PLAIN
+ * `h1…h6`. Nothing gave them a family, so every source heading fell back
+ * to the body face — monicarajiv’s Karma headings all rendered Lato. This is
+ * the display role, and it stays WEAK on purpose: `:where()` contributes no
+ * specificity, so the per-level fact a band measured (`[data-section-id] h3`,
+ * 0,1,1) still wins and a script accent keeps its own face. */
+.post-body :where(h1, h2, h3, h4, h5, h6) {
 	font-family: var(--forge-font-display);
+}
+
+/* Flatsome’s SECTION TITLE — the flanking rules are MARKUP, not decoration:
+ *
+ *   <h3 class="section-title"><b></b><span class="section-title-main">Rajiv</span><b></b></h3>
+ *
+ * With no vendor sheet the two empty `<b>`s collapse to nothing, the row is not
+ * a flex line, and the title loses its uppercase + 1.3em display size
+ * (measured: `<h3>` 22.2px, `.section-title-main` 28.86px uppercase with
+ * 0.3em/0.8em padding, trailing rule 2px tall filling the remainder). The
+ * `-bold` variant shows only the TRAILING rule — the leading `<b>` is
+ * `display:none` on the source. */
+.post-body .section-title {
+	display: flex;
+	align-items: center;
+}
+
+.post-body .section-title-main {
+	display: block;
+	font-size: 1.3em;
+	text-transform: uppercase;
+	padding: 0.3em 0.8em;
+}
+
+.post-body .section-title b {
+	flex: 1 1 0;
+	/* A percentage height would collapse on an auto-height line. */
+	height: 2px;
+	background: currentColor;
+	display: block;
+}
+
+.post-body .section-title-bold > b:first-of-type {
+	display: none;
+}
+
+.ds-title {
+	font-family: var(--ds-title-font, var(--forge-font-display));
 	font-size: clamp(1.5rem, 2.5vw + 0.5rem, var(--forge-scale-h2, 1.75rem));
 	font-weight: 500;
 	line-height: 1.2;
@@ -971,6 +1244,25 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	color: var(--ds-title-color, inherit);
 }
 
+/* The measured EYEBROW — the small label the source stacks ABOVE its title.
+ *
+ * A builder publishes the kicker as a real heading, often the SAME tag as the
+ * title at a fraction of the size (virtuallysrilanka: 14px above 30px, both
+ * `h2`). The classifier reads tag level only, so it demoted the label into body
+ * copy and the rebuild printed it UNDER the title at body size. The browser
+ * measurement records the pair; the component carries the label's own measured
+ * size/weight/ink inline, and this rule supplies only the block rhythm and a
+ * fallback scale. */
+.ds-eyebrow {
+	font-family: var(--ds-eyebrow-font, var(--forge-font-display));
+	font-size: var(--ds-eyebrow-size, 0.875rem);
+	font-weight: var(--ds-eyebrow-weight, 600);
+	line-height: 1.4;
+	margin: 0 0 0.4em;
+	text-align: var(--ds-eyebrow-align, var(--ds-title-align, inherit));
+	color: var(--ds-eyebrow-color, var(--forge-muted));
+}
+
 /* A form band's intro: the source's lead paragraph sits at half the container
  * and centers with its title. Alignment itself comes from the band's measured
  * body fact (`[data-section-id] p{text-align:…}`), so a left-aligned source
@@ -987,6 +1279,16 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	padding: 0.65rem 1.75rem;
 }
 
+/* A phone keeps the source's centred form on its content axis: the submit
+ * hugged the left edge and the Turnstile widget rendered flush left inside
+ * its stretched row. Desktop keeps the source's own start alignment. */
+@media (max-width: 767px) {
+	.ds-form .ds-button,
+	.ds-form .cf-turnstile {
+		justify-self: center;
+	}
+}
+
 /* The source's intro copy is CONTENT-width by default. Only a centered band
  * constrains it: the source hero's description measured 673px inside a 1345px
  * row, while the left-aligned services band measured 640px inside 640px. The
@@ -1000,6 +1302,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 .ds-section-wrap--hero .ds-lede {
 	max-width: 50%;
 	margin-inline: auto;
+}
+
+/* A CENTRED icon band stacks each card on one centre line. The source's
+ * icon-box puts the glyph above the caption and centres both; a grid card
+ * left-aligns its marker, which strands the glyph at the card's edge while the
+ * heading above sits centred (virtuallysrilanka's wifi tiles). Gated on the
+ * band's own MEASURED alignment (`centeredContent`), so a left-aligned icon card
+ * keeps its leading marker. */
+.ds-section-wrap--centered .ds-grid .ds-card > .ds-icon-marker,
+.ds-body--center .ds-grid .ds-card > .ds-icon-marker {
+	justify-self: center;
 }
 
 @media (max-width: 767px) {
@@ -1059,11 +1372,18 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	 * states` gate reports. `brightness()` adapts to whatever `--forge-cta` is
 	 * (a flat colour, a gradient, a dark band) instead of hard-coding a shade.
 	 * The `prefers-reduced-motion` block below drops the transition. */
-	transition: filter 150ms ease, transform 150ms ease;
+	transition: var(--ds-btn-transition, filter 150ms ease, transform 150ms ease);
 }
 
 .ds-button:hover {
-	filter: brightness(0.94);
+	/* The band's MEASURED repaint wins; `brightness()` is the fallback for a band
+	 * that recorded no states (see `hoverComponentVars`). virtuallysrilanka's
+	 * source button goes #dd3333 → #000 with a lift shadow, and the rebuilt
+	 * control never did. */
+	background-color: var(--ds-btn-bg-hover, var(--forge-cta, var(--forge-accent)));
+	color: var(--ds-btn-ink-hover, var(--forge-cta-ink, var(--forge-accent-ink)));
+	box-shadow: var(--ds-btn-shadow-hover, none);
+	filter: var(--ds-btn-filter-hover, brightness(0.94));
 }
 
 .ds-button:active {
@@ -1099,8 +1419,10 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	margin-top: var(--forge-space);
 	/* Proposal 115 §4: the wireframe's per-breakpoint column behavior rides
 	 * these custom properties; the defaults are the standard 4 → 2 → 1
-	 * collapse at the canonical Elementor widths. */
-	grid-template-columns: repeat(var(--ds-cols-desktop, 4), minmax(0, 1fr));
+	 * collapse at the canonical Elementor widths. A band whose source row is
+	 * NOT an equal split carries its measured lane ratios in
+	 * `--ds-cols-template-desktop` (virtuallysrilanka's 432 / 432 / 571). */
+	grid-template-columns: var(--ds-cols-template-desktop, repeat(var(--ds-cols-desktop, 4), minmax(0, 1fr)));
 }
 @media (max-width: 1025px) {
 	.ds-grid {
@@ -1123,6 +1445,63 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	box-shadow: var(--forge-shadow-card);
 	display: grid;
 	gap: var(--forge-space-sm);
+}
+
+/* A band of lane SURFACES is the band: the source's slabs run the measured
+ * height, while a content-height grid leaves the band's own floor as dead space
+ * underneath (virtuallysrilanka's services band — 448px of panels inside a 536px
+ * band, then 88px of white before the next band). The floor has to land on the
+ * SECTION: a column flex item never grows into a `min-height`-only parent, so
+ * the wrap's own floor cannot reach the grid.
+ */
+.ds-section-wrap:has(.ds-card--surface) > .ds-section {
+	min-height: var(--ds-min-h, 0);
+}
+
+/* A lane that carries the SOURCE's own surface is a panel, not a card: the
+ * template's hairline and radius belong to a card the source does not have
+ * (virtuallysrilanka's services band is three flush slabs — red / photo /
+ * black). The surface itself arrives inline, measured per column. */
+.ds-card--surface {
+	border: 0;
+	border-radius: 0;
+	/* A painted lane takes the SOURCE's slab, so its copy needs the ink that slab
+	 * requires. The card default (`--forge-muted`) is a mid grey and is barely
+	 * readable on virtuallysrilanka's red and black service panels; the value is
+	 * derived from each surface's own contrast (`inkForSurface`). */
+	color: var(--ds-card-surface-ink, inherit);
+}
+
+.ds-card--surface :is(h2, h3, h4, h5, p) {
+	color: inherit;
+}
+
+/* A lane whose surface is a background PHOTO carries no copy of its own: it is
+ * the source's media panel and keeps the row's height by stretch. */
+.ds-card--surface-media {
+	padding: 0;
+}
+
+/* The band's MEASURED tile hover (`hoverComponentVars`).
+ *
+ * A builder paints the hover state on a wrapper inside the tile, keyed to the
+ * source's own classes — which the rebuild does not carry, so the state was
+ * lost (virtuallysrilanka's four wifi tiles take a black slab on hover and the
+ * rebuild never responded). Absent → the rest surface, i.e. no visible change. */
+@media (hover: hover) {
+	.ds-card {
+		transition: var( --ds-card-transition, background-color 0.3s ease );
+	}
+
+	/* Scoped to the wrap so it outranks the THEMED surface rules — and to the
+	 * GRID, because a panel band's `.ds-section-wrap--panel .ds-grid .ds-card`
+	 * carries the same specificity and comes later in the sheet, which silently
+	 * defeated the plain form. The fallback chain mirrors those rules, so a band
+	 * with no measured hover keeps its rest surface. */
+	.ds-section-wrap .ds-card:hover,
+	.ds-section-wrap .ds-grid .ds-card:hover {
+		background-color: var( --ds-card-bg-hover, var( --ds-card-bg, var( --forge-surface-alt ) ) );
+	}
 }
 
 .ds-card h3,
@@ -1149,6 +1528,40 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * panel (#7a7a7a, 4.29:1) onto a white card. */
 .ds-section .ds-card p {
 	color: var(--forge-muted);
+}
+
+/* A card's BULLET LIST (`items[].bullets`). A builder publishes these as an
+ * icon list — `ul.elementor-icon-list-items > li.elementor-icon-list-item` —
+ * and the entries are the card's copy, not sibling cards. The rebuild keeps the
+ * entries in order and draws a disc marker rather than inventing the source's
+ * glyph (the vendor icon sheet never ships). */
+.ds-card-bullets {
+	margin: 0;
+	padding-inline-start: 1.15em;
+	display: grid;
+	gap: 0.2em;
+	color: inherit;
+	font-size: inherit;
+}
+
+.ds-card-bullets li::marker {
+	color: var(--forge-muted);
+}
+
+/* A card's KICKER (`items[].kicker`) — the small label the source prints ABOVE
+ * the title (“Phase 1” over “Pilot Setup”). It sits before the heading because
+ * word ORDER is copy: printed after it the band’s text shingles stopped
+ * matching the source. */
+.ds-card-kicker {
+	margin: 0;
+	font-size: var(--forge-scale-small);
+	font-weight: 500;
+	line-height: 1.4;
+	color: var(--forge-muted);
+}
+
+.ds-card-kicker + :is(h2, h3, h4, h5, h6) {
+	margin-top: 0.15em;
 }
 
 .ds-card img {
@@ -1236,6 +1649,32 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	object-fit: contain;
 }
 
+/* A mark strip the source PAGED — a logo slider, not a static row. The track
+ * keeps the source's own slides-per-view and gutter and snaps; only the dots
+ * need JS, and `BuilderCarousel` builds them from this same geometry. A band
+ * the source did not page keeps the static grid above. */
+.ds-logos--carousel {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: var(--ds-carousel-gap, 1.5rem);
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	scrollbar-width: none;
+}
+
+.ds-logos--carousel > * {
+	flex: 0 0
+		calc(
+			( 100% - ( var( --ds-carousel-per, 6 ) - 1 ) * var( --ds-carousel-gap, 1.5rem ) ) /
+				var( --ds-carousel-per, 6 )
+		);
+	scroll-snap-align: start;
+}
+
+.ds-logos--carousel::-webkit-scrollbar {
+	display: none;
+}
+
 /* Tablets reflow to three brand columns, phones to two; the logo box
  * shortens so the marks do not dominate the phone row. */
 @media (max-width: 1025px) {
@@ -1265,6 +1704,94 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	width: 100%;
 	height: auto;
 	border-radius: var(--forge-radius-sm);
+}
+
+/* A PANEL band (`ForgeSection.panel`): the source sets its CONTENT on a coloured
+ * slab rather than on the page background — virtuallysrilanka's "How it Works"
+ * lays four icon items on a #dd3333 panel, and the rebuild rendered four white
+ * cards on the page surface. The item group takes the slab; the cards lose their
+ * own chrome so the items sit ON it, and the marker (an accent-filled circle,
+ * invisible on an accent panel) becomes an outlined glyph in the panel ink. */
+.ds-section-wrap--panel .ds-grid {
+	background: var(--ds-panel-bg);
+	color: var(--ds-panel-ink);
+	padding: var(--forge-space-lg);
+	border-radius: var(--forge-radius-lg);
+}
+
+/*
+ * A MEASURED panel box: the source paints its slab on ONE column and puts the
+ * band's heading INSIDE it, so the eyebrow and title centre on the SLAB, not
+ * the viewport — and the slab fills only its own share of the band
+ * (virtuallysrilanka's "How it Works" is a #dd3333 right half, 720 of 1440,
+ * with the four icon items inset 50px). Painting the grid full-bleed centred
+ * every heading 360px left of the source. The slab therefore moves up to the
+ * SECTION, which is the one that holds the heading.
+ */
+.ds-section-wrap--panel-box .ds-section {
+	background: var(--ds-panel-bg);
+	color: var(--ds-panel-ink);
+	border-radius: var(--forge-radius-lg);
+	width: var(--ds-panel-width);
+	max-width: var(--ds-panel-width);
+}
+
+/* Placement. A slab at the band's END is `margin-left:auto`; at the START it is
+ * `margin-right:auto`; centred it splits the slack both ways. */
+.ds-section-wrap--panel-end .ds-section {
+	margin-left: auto;
+	margin-right: 0;
+}
+
+.ds-section-wrap--panel-start .ds-section {
+	margin-left: 0;
+	margin-right: auto;
+}
+
+.ds-section-wrap--panel-center .ds-section {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* The slab is on the section now, so the grid it wraps must not paint a second
+ * one. */
+.ds-section-wrap--panel-box .ds-grid {
+	background: none;
+	padding: 0;
+}
+
+/* Below the tablet breakpoint a partial slab would be a 720px strip inside an
+ * 834px band; the source stacks there, so the slab goes full width. */
+@media (max-width: 1024px) {
+	.ds-section-wrap--panel-box .ds-section {
+		width: 100%;
+		max-width: none;
+		margin-inline: 0;
+	}
+}
+
+.ds-section-wrap--panel .ds-grid .ds-card {
+	background: transparent;
+	border-color: transparent;
+	box-shadow: none;
+	color: inherit;
+	/* The source cards are flush on the slab (the slab IS the card); a small
+	 * inset keeps the 2×2 rhythm without the template's card chrome. */
+	padding: var(--forge-space-sm) var(--forge-space);
+}
+
+.ds-section-wrap--panel .ds-grid .ds-card :is(h3, h4, h5) {
+	color: var(--ds-panel-ink);
+}
+
+.ds-section-wrap--panel .ds-grid .ds-card p {
+	color: var(--ds-panel-ink);
+}
+
+.ds-section-wrap--panel .ds-grid .ds-icon-marker {
+	background: transparent;
+	color: var(--ds-panel-ink);
+	box-shadow: inset 0 0 0 2px currentColor;
 }
 
 /* ------------------------------------------------------------------------
@@ -1341,6 +1868,23 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 .ds-section-wrap--hero > * {
 	position: relative;
 	color: #ffffff;
+}
+
+/* A card inside a PHOTO band is a LIGHT surface, but `--hero` paints its whole
+ * subtree white so copy stays legible on the photo — so an un-reset heading
+ * rendered white-on-white at 1.09:1 (virtuallysrilanka's four "How it Works"
+ * cards: LANDING PAGE / POP-UP ADS / SOCIAL INTEGRATION / EMAIL MARKETING read
+ * as ghost text on a #f5f5f4 card). `--dark` has carried this reset since 117;
+ * `--hero` never did. The two vars are the seam a THEMED card uses when the
+ * source's own panel colour is measured (`--ds-card-bg`/`--ds-card-ink`), so a
+ * red source panel can paint red with white ink instead of being flattened. */
+.ds-section-wrap--hero .ds-card {
+	background: var(--ds-card-bg, var(--forge-surface-alt));
+	color: var(--ds-card-ink, var(--forge-ink));
+}
+
+.ds-section-wrap--hero .ds-card :is(h3, h4, h5) {
+	color: var(--ds-card-ink, var(--forge-ink));
 }
 
 .ds-section-wrap--hero .ds-section {
@@ -1434,18 +1978,57 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	justify-content: center;
 }
 
+/* The centring CHAIN. Both properties here INHERIT-or-descend, so the height
+ * bridge is a SEPARATE rule below: `--ds-col-min-h` is inherited from the column
+ * that declares it, and a generic descendant selector therefore hands the
+ * column's measured height to every single-child div inside the content module.
+ * accommodations' `.box-text` took `min-height:572px` from its column,
+ * `.box-image` took it too, and a 572px box rendered 1144px tall — the band
+ * 6838px against a 2298px floor (monicarajiv, 2026-11-20). */
 .ds-section-wrap--centered .post-body :is(div, section):has(> :only-child):not(.row):not(.vc_row):not(.owl-carousel):not(.owl-stage):not([class*='brando-inner-row']):not([class*='brando_inner_row']) {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	/* A COLUMN is part of this chain too (section → container → row → column),
-	 * and its height is a MEASURED fact. The `0` here is what lets a wrapper
-	 * centre inside its parent without pinning a floor; on a column it zeroed
-	 * the source's own box (virtuallyjamaica's about band: 374px measured,
-	 * 338px rendered). Read the same `--ds-col-min-h` bridge the photo-panel
-	 * clamp uses, so a measured column height survives the centring chain
-	 * while an unmeasured wrapper still gets 0. */
+}
+
+/* A COLUMN is part of this chain too (section → container → row → column), and
+ * its height is a MEASURED fact. The `0` here is what lets a wrapper centre
+ * inside its parent without pinning a floor; on a column it zeroed the source's
+ * own box (virtuallyjamaica's about band: 374px measured, 338px rendered). Read
+ * the same `--ds-col-min-h` bridge the photo-panel clamp uses, so a measured
+ * column height survives the centring chain while an unmeasured wrapper still
+ * gets 0.
+ *
+ * `:not(.col-inner *)` is load-bearing, for the same reason the photo-panel
+ * clamp is a DIRECT-CHILD rule: the chain ends at the content box. Everything a
+ * builder draws INSIDE `.col-inner` is a content module with its own box, and
+ * it must never inherit the column's floor.
+ *
+ * `:not(.col-inner)` for the same reason one level up: the measured height is
+ * the COLUMN's (that is what `collectBandColumnFacts` measures), and the
+ * column's own generated rule already states it as `min-height`. Re-stating it
+ * on `.col-inner` — a box 30px shorter than its column, because the column pads
+ * `0 15px 30px` — grew the column by exactly that padding: monicarajiv's
+ * accommodation photo lane rendered 700px against a measured 670 (2026-11-20).
+ */
+.ds-section-wrap--centered .post-body :is(div, section):has(> :only-child):not(.col-inner):not(.col-inner *):not(.row):not(.vc_row):not(.owl-carousel):not(.owl-stage):not([class*='brando-inner-row']):not([class*='brando_inner_row']) {
 	min-height: var(--ds-col-min-h, 0);
+}
+
+/* ---------------------------------------------------------------------------
+ * Builder layout shim — Elementor flexbox containers (≥3.16)
+ *
+ * Only what the markup ALONE can state. Elementor keeps a container's
+ * direction and lane widths in its own generated CSS (per-element `--width`,
+ * `flex-direction`), which the sanitizer drops, so a shim that guessed would
+ * re-arrange the source's bands rather than restore them (tried: an equal-share
+ * row turned a full-width intro beside a full-width card stack and made the
+ * band 100px TALLER). What IS safe is the box rule the vendor sheet carried:
+ * an image never outgrows its lane.
+ * ------------------------------------------------------------------------- */
+.ds-section-wrap .post-body .e-con img {
+	max-width: 100%;
+	height: auto;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1807,7 +2390,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 .ds-section-wrap .post-body .banner-bg > img {
 	display: block;
 	width: 100%;
-	height: 100%;
+	/* A fill layer has no height of its own — the banner decides it, and a
+	 * full-height banner is `100vh`. The band also emits a measured
+	 * `img.bg{height:Npx}` fact whose `.post-body img.bg` selector ties this
+	 * rule on specificity and wins on order, so at a tall viewport the photo
+	 * covered 900px of a 1200px banner and the band surface showed beneath it
+	 * (monicarajiv hero, 2026-11-20). The fill is authoritative. */
+	height: 100% !important;
 	object-fit: cover;
 	/* The source's own crop anchor, measured (`analyze --geometry` →
 	 * `bandFacts.mediaPosition`). The default is the browser's centre. */
@@ -1857,6 +2446,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	justify-content: center;
 }
 
+/* flatsome.css: `.banner-layers>*{position:absolute!important}`. The tier
+ * blocks below are media-scoped, so the POSITION is stated once here — a
+ * layer whose offsets come from the lg tier still needs it at that width. */
+.ds-section-wrap .post-body .banner-layers > * {
+	position: absolute;
+}
+
 .ds-section-wrap .post-body .banner.is-full-height {
 	flex: 1;
 }
@@ -1866,24 +2462,163 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	width: 100%;
 }
 
-/* Banner LAYERS are absolutely positioned stages (`x50` centers on the x axis,
- * `y50`/`y100` center / bottom-anchor). The vendor utilities that express this
- * live in the builder sheet, so they ship here as part of the band shim —
- * without them the copy stacked UNDER the banner's padding and grew the band
- * (600px banner + 235px copy = 835px instead of the source's 600px). */
-.ds-section-wrap .post-body .banner-layer[class~='x50'] {
-	position: absolute;
-	left: 50%;
-	width: min(80%, 810px);
-	transform: translate(-50%, 0);
+/* Banner LAYERS are absolutely positioned stages. Flatsome expresses the
+ * position with `x`/`y` utilities (`x50` centres on the x axis, `y70` anchors
+ * 30% from the bottom) and the vendor sheet never ships, so they are restated
+ * here. Without them the copy stacked UNDER the banner's padding and grew the
+ * band (600px banner + 235px copy = 835px instead of the source's 600px) — and
+ * every layer that was not `y50` collapsed onto the same top, so doomsday's
+ * three ceremony times painted on top of each other.
+ *
+ * Transcribed from flatsome.css 3.20.7, INCLUDING its tier model: the bare
+ * classes are MOBILE-only (`@media (max-width:549px)`), `md-` is a RANGE
+ * (`550px`–`849px`) and `lg-` is a floor (`850px`). The builder emits all
+ * three tiers on one element (`x50 md-x50 lg-x5`), so a tier that is not
+ * media-scoped leaks its offsets upward. `transform` is NOT additive, so an
+ * `x50`+`y50` layer needs the combined rule — restated per tier for the same
+ * reason.
+ */
+@media (max-width: 549px) {
+.ds-section-wrap .post-body .banner-layer[class~='x0'] { position: absolute; left: 0; }
+.ds-section-wrap .post-body .banner-layer[class~='x5'] { position: absolute; left: 5%; }
+.ds-section-wrap .post-body .banner-layer[class~='x10'] { position: absolute; left: 10%; }
+.ds-section-wrap .post-body .banner-layer[class~='x15'] { position: absolute; left: 15%; }
+.ds-section-wrap .post-body .banner-layer[class~='x20'] { position: absolute; left: 20%; }
+.ds-section-wrap .post-body .banner-layer[class~='x25'] { position: absolute; left: 25%; }
+.ds-section-wrap .post-body .banner-layer[class~='x30'] { position: absolute; left: 30%; }
+.ds-section-wrap .post-body .banner-layer[class~='x35'] { position: absolute; left: 35%; }
+.ds-section-wrap .post-body .banner-layer[class~='x40'] { position: absolute; left: 40%; }
+.ds-section-wrap .post-body .banner-layer[class~='x45'] { position: absolute; left: 45%; }
+.ds-section-wrap .post-body .banner-layer[class~='x50'] { position: absolute; left: 50%; width: min(80%, 810px); transform: translateX(-50%); }
+.ds-section-wrap .post-body .banner-layer[class~='x55'] { position: absolute; right: 45%; }
+.ds-section-wrap .post-body .banner-layer[class~='x60'] { position: absolute; right: 40%; }
+.ds-section-wrap .post-body .banner-layer[class~='x65'] { position: absolute; right: 35%; }
+.ds-section-wrap .post-body .banner-layer[class~='x70'] { position: absolute; right: 30%; }
+.ds-section-wrap .post-body .banner-layer[class~='x75'] { position: absolute; right: 25%; }
+.ds-section-wrap .post-body .banner-layer[class~='x80'] { position: absolute; right: 20%; }
+.ds-section-wrap .post-body .banner-layer[class~='x85'] { position: absolute; right: 15%; }
+.ds-section-wrap .post-body .banner-layer[class~='x90'] { position: absolute; right: 10%; }
+.ds-section-wrap .post-body .banner-layer[class~='x95'] { position: absolute; right: 5%; }
+.ds-section-wrap .post-body .banner-layer[class~='x100'] { position: absolute; right: 0; }
+.ds-section-wrap .post-body .banner-layer[class~='y0'] { position: absolute; top: 0; }
+.ds-section-wrap .post-body .banner-layer[class~='y5'] { position: absolute; top: 5%; }
+.ds-section-wrap .post-body .banner-layer[class~='y10'] { position: absolute; top: 10%; }
+.ds-section-wrap .post-body .banner-layer[class~='y15'] { position: absolute; top: 15%; }
+.ds-section-wrap .post-body .banner-layer[class~='y20'] { position: absolute; top: 20%; }
+.ds-section-wrap .post-body .banner-layer[class~='y25'] { position: absolute; top: 25%; }
+.ds-section-wrap .post-body .banner-layer[class~='y30'] { position: absolute; top: 30%; }
+.ds-section-wrap .post-body .banner-layer[class~='y35'] { position: absolute; top: 35%; }
+.ds-section-wrap .post-body .banner-layer[class~='y40'] { position: absolute; top: 40%; }
+.ds-section-wrap .post-body .banner-layer[class~='y45'] { position: absolute; top: 45%; }
+.ds-section-wrap .post-body .banner-layer[class~='y50'] { position: absolute; top: 50.3%; transform: translateY(-50%); }
+.ds-section-wrap .post-body .banner-layer[class~='y55'] { position: absolute; bottom: 45%; }
+.ds-section-wrap .post-body .banner-layer[class~='y60'] { position: absolute; bottom: 40%; }
+.ds-section-wrap .post-body .banner-layer[class~='y65'] { position: absolute; bottom: 35%; }
+.ds-section-wrap .post-body .banner-layer[class~='y70'] { position: absolute; bottom: 30%; }
+.ds-section-wrap .post-body .banner-layer[class~='y75'] { position: absolute; bottom: 25%; }
+.ds-section-wrap .post-body .banner-layer[class~='y80'] { position: absolute; bottom: 20%; }
+.ds-section-wrap .post-body .banner-layer[class~='y85'] { position: absolute; bottom: 15%; }
+.ds-section-wrap .post-body .banner-layer[class~='y90'] { position: absolute; bottom: 10%; }
+.ds-section-wrap .post-body .banner-layer[class~='y95'] { position: absolute; bottom: 5%; }
+.ds-section-wrap .post-body .banner-layer[class~='y100'] { position: absolute; bottom: 0; }
+/* Both axes de-centred by one transform each — `transform` does not accumulate. */
+.ds-section-wrap .post-body .banner-layer[class~='x50'][class~='y50'] { transform: translate(-50%, -50%); }
 }
-.ds-section-wrap .post-body .banner-layer[class~='y50'] {
-	top: 50%;
-	transform: translate(-50%, -50%);
+
+/* The vendor's md tier is a RANGE, not a floor. With a bare min-width the
+ * md transforms survived into the lg tier: a `x50 md-x50 lg-x5` layer
+ * rendered at `left:5%` MINUS half its own width (x = −333 instead of 72 on
+ * krishandramikasavethe.world, 2026-11-19). */
+@media (min-width: 550px) and (max-width: 849px) {
+	.ds-section-wrap .post-body .banner-layer[class~='md-x0'] { left: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x5'] { left: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x10'] { left: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x15'] { left: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x20'] { left: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x25'] { left: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x30'] { left: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x35'] { left: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x40'] { left: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x45'] { left: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x50'] { left: 50%; width: fit-content; max-width: min(80%, 810px); transform: translateX(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x55'] { right: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x60'] { right: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x65'] { right: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x70'] { right: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x75'] { right: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x80'] { right: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x85'] { right: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x90'] { right: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x95'] { right: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x100'] { right: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y0'] { top: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y5'] { top: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y10'] { top: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y15'] { top: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y20'] { top: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y25'] { top: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y30'] { top: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y35'] { top: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y40'] { top: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y45'] { top: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y50'] { top: 50%; transform: translateY(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y55'] { bottom: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y60'] { bottom: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y65'] { bottom: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y70'] { bottom: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y75'] { bottom: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y80'] { bottom: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y85'] { bottom: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y90'] { bottom: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y95'] { bottom: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-y100'] { bottom: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='md-x50'][class~='md-y50'] { transform: translate(-50%, -50%); }
 }
-.ds-section-wrap .post-body .banner-layer[class~='y100'] {
-	top: 100%;
-	transform: translate(-50%, 0);
+
+@media (min-width: 850px) {
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x0'] { left: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x5'] { left: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x10'] { left: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x15'] { left: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x20'] { left: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x25'] { left: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x30'] { left: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x35'] { left: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x40'] { left: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x45'] { left: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x50'] { left: 50%; width: fit-content; max-width: min(80%, 810px); transform: translateX(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x55'] { right: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x60'] { right: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x65'] { right: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x70'] { right: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x75'] { right: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x80'] { right: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x85'] { right: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x90'] { right: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x95'] { right: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x100'] { right: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y0'] { top: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y5'] { top: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y10'] { top: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y15'] { top: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y20'] { top: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y25'] { top: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y30'] { top: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y35'] { top: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y40'] { top: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y45'] { top: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y50'] { top: 50%; transform: translateY(-50%); }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y55'] { bottom: 45%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y60'] { bottom: 40%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y65'] { bottom: 35%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y70'] { bottom: 30%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y75'] { bottom: 25%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y80'] { bottom: 20%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y85'] { bottom: 15%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y90'] { bottom: 10%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y95'] { bottom: 5%; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-y100'] { bottom: 0; }
+	.ds-section-wrap .post-body .banner-layer[class~='lg-x50'][class~='lg-y50'] { transform: translate(-50%, -50%); }
 }
 
 .ds-section-wrap .post-body .text-inner.text-center {
@@ -1893,15 +2628,24 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 /* A builder SLIDER is a one-slide stage: without the vendor JS every slide
  * stacks (doomsday's testimonial carousel rendered as a 6,000px column). The
  * first slide shows; its banner copy flows so the stage keeps a height
- * (an absolutely positioned layer inside a 0-height slide would vanish). */
-.ds-section-wrap .post-body .slider > *:not(:first-child) {
-	display: none;
-}
-
-.ds-section-wrap .post-body .slider .banner-layer {
+ * (an absolutely positioned layer inside a 0-height slide would vanish).
+ *
+ * `.banner-layer.banner-layer` is deliberate: it must out-rank the positional
+ * pack above, whose combined `x50`+`y50` rule is (0,5,0). At (0,4,0) this reset
+ * lost on `transform` while still winning on `position`, so a centred layer
+ * kept a −50% shift with no `left` to offset it and rendered half off-screen
+ * (doomsday's testimonial sat at x=−309 inside a 1050px column). */
+.ds-section-wrap .post-body .slider .banner-layer.banner-layer {
 	position: static;
+	left: auto;
+	top: auto;
+	bottom: auto;
 	width: auto;
 	transform: none;
+}
+
+.ds-section-wrap .post-body .slider > *:not(:first-child) {
+	display: none;
 }
 
 /* Flatsome's responsive VISIBILITY utilities. The source pairs a small-only
@@ -1991,6 +2735,109 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	.ds-section-wrap .post-body .col[class~='large-10'] { grid-column: span 10; }
 	.ds-section-wrap .post-body .col[class~='large-11'] { grid-column: span 11; }
 	.ds-section-wrap .post-body .col[class~='large-12'] { grid-column: span 12; }
+}
+
+/* `.row.align-center` — Flatsome's own centring model.
+ *
+ * Flatsome centres a row's flex LINES (`display:flex; flex-wrap:wrap;
+ * justify-content:center`), so a lone `large-10` column sits one 1/12 track in
+ * from each edge AND a `5 + 5` pair centres as a group. The 12-track grid above
+ * expresses neither: auto-placement always starts at track 1, so the
+ * accommodations intro ran flush left (900px inside 1080, one empty track on
+ * the right) where the source centres it. Offsetting each item's grid start
+ * fixes the lone-column case and breaks the pair (both land on the same
+ * tracks), so the row switches to the source's model and each column takes its
+ * span as a flex basis. Non-`.align-center` rows keep the grid. */
+.ds-section-wrap .post-body .row.align-center {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-1'] { flex: 0 0 8.3333%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-2'] { flex: 0 0 16.6667%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-3'] { flex: 0 0 25%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-4'] { flex: 0 0 33.3333%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-5'] { flex: 0 0 41.6667%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-6'] { flex: 0 0 50%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-7'] { flex: 0 0 58.3333%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-8'] { flex: 0 0 66.6667%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-9'] { flex: 0 0 75%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-10'] { flex: 0 0 83.3333%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-11'] { flex: 0 0 91.6667%; }
+.ds-section-wrap .post-body .row.align-center > .col[class~='small-12'] { flex: 0 0 100%; }
+
+@media (min-width: 550px) {
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-1'] { flex: 0 0 8.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-2'] { flex: 0 0 16.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-3'] { flex: 0 0 25%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-4'] { flex: 0 0 33.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-5'] { flex: 0 0 41.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-6'] { flex: 0 0 50%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-7'] { flex: 0 0 58.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-8'] { flex: 0 0 66.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-9'] { flex: 0 0 75%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-10'] { flex: 0 0 83.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-11'] { flex: 0 0 91.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='medium-12'] { flex: 0 0 100%; }
+}
+
+@media (min-width: 850px) {
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-1'] { flex: 0 0 8.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-2'] { flex: 0 0 16.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-3'] { flex: 0 0 25%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-4'] { flex: 0 0 33.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-5'] { flex: 0 0 41.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-6'] { flex: 0 0 50%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-7'] { flex: 0 0 58.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-8'] { flex: 0 0 66.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-9'] { flex: 0 0 75%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-10'] { flex: 0 0 83.3333%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-11'] { flex: 0 0 91.6667%; }
+	.ds-section-wrap .post-body .row.align-center > .col[class~='large-12'] { flex: 0 0 100%; }
+}
+
+/* Flatsome DECORATIVE DIVIDERS (`<div class="is-divider">`). The markup ships
+ * the element but the vendor sheet sized it, so a rebuild rendered it 0px tall
+ * with `width:auto` — the hero's two rules between the eyebrow, title and
+ * names vanished and each text box came out ~6px short on a 300px block.
+ * Values from flatsome.css 3.20.7; `1em` resolves against the band body size. */
+.ds-section-wrap .post-body .is-divider {
+	height: 3px;
+	width: 30px;
+	margin: 1em auto;
+	background-color: currentColor;
+}
+
+/* Flatsome CONVERTING buttons (`a.button.primary`).
+ *
+ * The vendor sheet makes `.button` an inline-block pill — uppercase, 700, 2.4
+ * leading, .03em tracking, .97em type, no underline. None of that is a
+ * MEASURED box, so the class facts carry only padding/margin/ink and the
+ * rebuild rendered a 16px underlined inline link where the source has a 43px
+ * button (accommodations' "Check Rates").
+ *
+ * The element itself is inside `:where()` so this stays a DEFAULT: the class
+ * facts now also carry the type a class DECLARES (see `MeasuredBox.fontSize`),
+ * and `.ds-section-wrap .post-body a.button` (0,3,1) outranked the band's
+ * `[data-section-id] .button` (0,2,0) — so the home hero's CTAs kept the 2.4
+ * guess against a measured 2.19 while every other band was correct
+ * (monicarajiv, 2026-11-21). */
+.ds-section-wrap .post-body :where(a.button) {
+	display: inline-block;
+	font-size: .97em;
+	line-height: 2.4;
+	font-weight: 700;
+	letter-spacing: .03em;
+	text-transform: uppercase;
+	text-decoration: none;
+}
+
+/* `.button` sizes in `em` against its CONTAINER, and the builder's container
+ * inherits the source's body size (17.76px here vs the template's 13px base),
+ * so the band publishes the measured size (DesignRenderer) and the containers
+ * read it. `inherit` when a band has no body fact keeps other builders as-is. */
+.ds-section-wrap .post-body :is(.col-inner, .text-box-content, .text-inner) {
+	font-size: var(--ds-body-size, inherit);
 }
 
 /*
@@ -2250,6 +3097,46 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	letter-spacing: var(--ds-title-ls, normal);
 }
 
+/* A MEASURED device size is not an anchor for the clamp above — it is the value
+ * the source paints at that device, so it replaces the whole `clamp()`.
+ *
+ * The two clamps shrink a headline to a hard-coded floor (1.5rem / 1.75rem),
+ * which is a guess about the source's phone scale: monicarajiv's band title is
+ * 22.2px on desktop and 16px under 768px, so the hero clamp's 28px floor held
+ * the headline at the 22.2px cap — a phone headline 39% larger than the source's
+ * (measured 2026-11-21). Where the source does not change size at a device the
+ * var is absent and the clamp stands.
+ *
+ * These sit AFTER every clamp definition on purpose: the selectors are as
+ * specific as the rules they override, so source order decides. */
+@media (width<=1024px) {
+	.ds-hero-split .ds-title {
+		font-size: var(--ds-title-size-md, clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem))));
+	}
+
+	.ds-section-wrap--hero .ds-title {
+		font-size: var(--ds-title-size-md, clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h1, 2.25rem))));
+	}
+
+	.ds-body .ds-title {
+		font-size: var(--ds-title-size-md, clamp(1.5rem, 2.5vw + 0.5rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem))));
+	}
+}
+
+@media (width<=767px) {
+	.ds-hero-split .ds-title {
+		font-size: var(--ds-title-size-sm, clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem))));
+	}
+
+	.ds-section-wrap--hero .ds-title {
+		font-size: var(--ds-title-size-sm, clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h1, 2.25rem))));
+	}
+
+	.ds-body .ds-title {
+		font-size: var(--ds-title-size-sm, clamp(1.5rem, 2.5vw + 0.5rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem))));
+	}
+}
+
 /* The centered heading band (125 §7) — title + divider ride the grid's
  * justify-items; the text centers like the source's aux-widget-inner. */
 .ds-body--center {
@@ -2317,7 +3204,12 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--forge-space);
-	padding: 1rem 0;
+	/* The source's OWN disclosure metrics (`box` facts): a builder's tab title is
+	 * a padded row at `line-height: 1`, not the band's body rhythm. Without them
+	 * the row inherits the 27.2px body line-height and renders 59px against the
+	 * source's 48px, so every row of an eight-item accordion drifts. */
+	padding: var(--ds-acc-title-pad, 1rem 0);
+	line-height: var(--ds-acc-title-lh, normal);
 	cursor: pointer;
 	font-weight: 700;
 	list-style: none;
@@ -2359,7 +3251,8 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 }
 
 .ds-accordion-panel {
-	padding-bottom: 1rem;
+	/* The source's panel padding (`box` facts). */
+	padding: var(--ds-acc-content-pad, 0 0 1rem);
 }
 
 .ds-accordion-panel p {
@@ -2392,6 +3285,78 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	margin-inline: auto;
 	width: var(--ds-shape-w, auto);
 	height: var(--ds-shape-h, auto);
+}
+
+/* ---------------------------------------------------------------------------
+ * The hero's MEASURED collage layers.
+ *
+ * A builder stacks its hero art as separate painted spacers — a blob, two
+ * shapes, then the photograph — overlapping them with a transform the vendor
+ * sheet owns. Flattening that to one image loses the composition: the green
+ * blob behind the student IS the design (eca.directory). Each layer is placed
+ * at the top of a box sized to the media lane's measured height, in DOM order,
+ * so the photograph (last) sits over the art it was designed to sit on.
+ * ------------------------------------------------------------------------- */
+.ds-hero-collage--layered {
+	position: relative;
+	height: var(--ds-collage-h, auto);
+	min-height: var(--ds-collage-h, 0);
+}
+
+.ds-collage-layer {
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline-start: 0;
+	width: 100%;
+	height: var(--ds-layer-h, auto);
+	max-width: none;
+	object-fit: contain;
+	object-position: top center;
+}
+
+/* Below the split's own breakpoint the collage returns to static flow: absolute
+ * art on a phone pokes past the viewport edge where the body's overflow guard
+ * clips it mid-photo. */
+@media (width<=767px) {
+	.ds-hero-collage--layered {
+		height: auto;
+	}
+
+	.ds-collage-layer {
+		position: static;
+		width: auto;
+		max-width: 100%;
+		height: auto;
+		margin-inline: auto;
+	}
+}
+
+/* The hero's measured STAT strip (a rating chip, an avatar stack, a count). */
+.ds-hero-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--forge-space);
+	margin: 0;
+}
+
+.ds-hero-stat {
+	display: grid;
+	gap: 0.15rem;
+}
+
+.ds-hero-stat__value {
+	margin: 0;
+	font-family: var(--forge-font-display);
+	font-size: var(--ds-h3-size, 1.5rem);
+	font-weight: 700;
+	line-height: 1.1;
+	color: var(--ds-ink, currentColor);
+}
+
+.ds-hero-stat__label {
+	margin: 0;
+	font-size: var(--forge-scale-small);
+	color: var(--forge-muted);
 }
 
 .ds-collage-media {
@@ -2488,8 +3453,39 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * floats over the hero and paints nothing. Declared AFTER the sticky variant so
  * the surface fallback above cannot paint the template's own colour over the
  * photo; the hairline goes too — the strip belongs to the band behind it.
+ *
+ * It also has to LEAVE THE FLOW. A transparent header kept in flow pushes the
+ * first band down by a header height and leaves its own chrome sitting on the
+ * page background — virtuallysrilanka's source header is `position:absolute`
+ * over a red hero with a white+grey SVG wordmark, so the rebuild opened with
+ * 79px of near-white above the band and the white half of the logo vanished.
+ *
+ * The `:not(.site-header--float)` guard matters: that variant is `position:
+ * fixed` and declares it own contract, and an unconditional `absolute` here
+ * would out-rank it (equal specificity, later in the file). `--pinned` is NOT
+ * excluded — the pinned variant re-states `position:absolute; top:auto` and its
+ * keyframes take over, and excluding it here also skipped the paint reset, which
+ * left the base hairline (`1px solid var(--forge-line)`) drawn across the band
+ * behind a transparent header (measured: 1px solid rgb(43,43,43)).
+ *
+ * `z-index` is required: the bands are positioned layers painted later in the
+ * DOM, so without it the header would sit behind the hero photo.
  */
-.site-header--overlay {
+.site-header--overlay:not(.site-header--float) {
+	/* A transparent header rests OVER the first band. Without this the header
+	 * stays in flow and the hero starts one header-height lower — the source's
+	 * `#header` and its hero both start at y=0 (krishandramikasavethe.world,
+	 * 2026-11-19: hero y=79 against the source's y=0). `top:auto` keeps the
+	 * STATIC position, so a topbar still sits above it. The pinned variant is
+	 * NOT excluded: it re-states `position:absolute; top:auto` itself. */
+	position: absolute;
+	top: auto;
+	right: 0;
+	left: 0;
+	/* The band follows the header in the DOM and paints its own positioned
+	 * layers, so an overlay header needs a z-index to stay above them (the
+	 * source header sits at 1001). */
+	z-index: 2;
 	background: transparent;
 	border-bottom: none;
 	box-shadow: none;
@@ -2515,6 +3511,24 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	animation: ds-header-pin linear both, ds-header-position linear both;
 	animation-timeline: scroll(root), scroll(root);
 	animation-range: 0 120px, 0 120px;
+}
+
+/*
+ * An overlay header that ALSO pins keeps the RESTING paint of an overlay: at
+ * scroll 0 the strip belongs to the band behind it. The block above excludes
+ * `.site-header--pinned` for `position` (the pinned variant owns its own), and
+ * that exclusion also skipped `border-bottom: none` — so the template's base
+ * hairline (`.site-header { border-bottom: 1px solid var(--forge-line) }`)
+ * survived and drew a dark line across the band behind a fully transparent
+ * header. Measured on monicarajiv 2026-11-19: `1px solid rgb(43, 43, 43)` under
+ * a transparent 158px header, at rest AND while pinned.
+ *
+ * Only the PAINT is cleared, and only the colour — `border-bottom: none` would
+ * drop the 1px box and shift the band by a pixel. The pinned keyframes already
+ * own the surface, the shadow and the height.
+ */
+.site-header--overlay.site-header--pinned {
+	border-bottom-color: transparent;
 }
 
 @keyframes ds-header-position {
@@ -2632,8 +3646,16 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 }
 
 @keyframes ds-parallax-media {
-	from { translate: 0 var(--ds-parallax-from, var(--ds-parallax-range, 24px)); }
-	to { translate: 0 var(--ds-parallax-to, calc(var(--ds-parallax-range, 24px) * -1)); }
+	/* Two channels, one keyframe: a VERTICAL piece writes --ds-parallax-from/to
+	 * (the band fallback), a HORIZONTAL piece writes --ds-parallax-x-from/to and
+	 * pins the Y pair to 0. The X defaults keep every pre-existing source
+	 * byte-identical. */
+	from {
+		translate: var(--ds-parallax-x-from, 0px) var(--ds-parallax-from, var(--ds-parallax-range, 24px));
+	}
+	to {
+		translate: var(--ds-parallax-x-to, 0px) var(--ds-parallax-to, calc(var(--ds-parallax-range, 24px) * -1));
+	}
 }
 
 /* The hero/about media: all images, side by side (the source two-up). */
@@ -2798,16 +3820,21 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2.25rem;
-	height: 2.25rem;
-	border-radius: 999px;
-	background: rgba(0, 0, 0, 0.06);
-	color: inherit;
+	/* The MEASURED badge box (`chrome.footerBrand.social`): a builder's filled
+	 * style is a 51px rounded SQUARE, and a 2.25rem circle is a different
+	 * component at every width. Without the fact the template's own chip. */
+	width: var(--forge-footer-social-size, 2.25rem);
+	height: var(--forge-footer-social-size, 2.25rem);
+	border-radius: var(--forge-footer-social-radius, 999px);
+	background: var(--forge-footer-social-bg, rgba(0, 0, 0, 0.06));
+	color: var(--forge-footer-social-ink, inherit);
 }
 
 .site-social a:hover,
 .site-social a:focus-visible {
-	background: rgba(0, 0, 0, 0.12);
+	/* Tint OVER the measured fill without touching the glyph — an inset spread
+	 * works for both the source's opaque chip and the template's 6% one. */
+	box-shadow: inset 0 0 0 100px rgba(0, 0, 0, 0.08);
 }
 
 /* A network the rebuild has no inline glyph for is drawn by the SOURCE's own
@@ -2815,6 +3842,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 .site-social i {
 	font-size: 1rem;
 	line-height: 1;
+}
+
+/* The glyph is HALF the badge box (Kadence: a 26px mark inside a 51px chip), so
+ * the template's own 2.25rem chip keeps its 18px mark. */
+.site-social a svg {
+	inline-size: calc(var(--forge-footer-social-size, 2.25rem) / 2);
+	block-size: calc(var(--forge-footer-social-size, 2.25rem) / 2);
 }
 
 .ds-lede {
@@ -2903,6 +3937,62 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	margin: 0;
 	font-size: var(--forge-scale-small);
 	color: var(--forge-muted);
+}
+
+/*
+ * A degraded enquiry band (a form this build cannot post) names the people who
+ * answer instead. The list is a card grid so four contacts read as a team, not
+ * as a paragraph of email addresses, and it collapses to one column on a
+ * phone without a media query.
+ */
+.ds-contact-direct {
+	display: grid;
+	gap: var(--forge-space);
+}
+
+.ds-contact-people {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+	gap: var(--forge-space);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ds-contact-person {
+	display: grid;
+	gap: 0.15em;
+	padding: var(--forge-space);
+	background: var(--forge-surface);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius-sm);
+}
+
+.ds-contact-mail {
+	font-weight: 600;
+	color: var(--forge-ink);
+	text-decoration-color: var(--forge-accent);
+	text-underline-offset: 0.2em;
+}
+
+.ds-contact-mail:hover {
+	color: var(--forge-accent);
+}
+
+.ds-contact-mail:focus-visible {
+	outline: 2px solid var(--forge-accent);
+	outline-offset: 2px;
+}
+
+.ds-contact-role,
+.ds-contact-email {
+	font-size: var(--forge-scale-small);
+	color: var(--forge-muted);
+}
+
+/* A long school address must wrap inside its card, not overflow it. */
+.ds-contact-email {
+	overflow-wrap: anywhere;
 }
 
 /* The honeypot: invisible to humans, an inviting trap for bots. */
@@ -3352,4 +4442,95 @@ span.forge-icon-missing::before {
 	content: "\2022" !important;
 	font-family: var(--forge-font) !important;
 	font-weight: 400;
+}
+
+/* Builder lightbox (BuilderLightbox.astro) — the source's gallery opened a
+ * vendor lightbox; a forged site ships neither the script nor its stylesheet.
+ * A native <dialog> carries the modal semantics (focus trap, Escape, inert
+ * background), so this block is presentation only. */
+.ds-lightbox {
+	max-width: none;
+	max-height: none;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	overflow: visible;
+}
+
+.ds-lightbox::backdrop {
+	background: rgba(0, 0, 0, 0.82);
+}
+
+.ds-lightbox img {
+	display: block;
+	width: auto;
+	height: auto;
+	max-width: min(92vw, 1600px);
+	max-height: 88vh;
+	margin: auto;
+	border-radius: var(--forge-radius, 4px);
+	background: var(--forge-surface, #fff);
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+
+.ds-lightbox__close {
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	z-index: 1;
+	width: 2.75rem;
+	height: 2.75rem;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.92);
+	color: #111;
+	font: inherit;
+	font-size: 1.75rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.ds-lightbox__close:hover {
+	background: #fff;
+}
+
+/* ---------------------------------------------------------------------------
+ * Elementor's VISIBILITY utilities — the sanitizer keeps the class, the vendor
+ * sheet that gave it meaning never ships.
+ *
+ * `screen-only` is a real heading: it has to stay in the accessibility tree, so
+ * this is the clip pattern, not `display: none`. Without it eca.directory's
+ * "Courses List" label — a 1px clipped h2 above the ECA grid — rendered as a
+ * purple bar across the band (2026-11-24).
+ * ------------------------------------------------------------------------- */
+.elementor-screen-only {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* The responsive show/hide utilities, at the builder's own breakpoints. */
+@media (max-width: 767px) {
+	.elementor-hidden-mobile {
+		display: none !important;
+	}
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+	.elementor-hidden-tablet {
+		display: none !important;
+	}
+}
+
+@media (min-width: 1025px) {
+	.elementor-hidden-desktop {
+		display: none !important;
+	}
 }

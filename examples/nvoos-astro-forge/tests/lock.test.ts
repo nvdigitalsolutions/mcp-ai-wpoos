@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -16,6 +17,7 @@ import {
 } from '../lib/lock.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 let dir: string;
 
@@ -57,7 +59,7 @@ beforeEach( async () => {
 } );
 
 afterEach( async () => {
-	await rm( dir, { recursive: true, force: true } );
+	await rmTemp( dir );
 } );
 
 describe( 'lock records', () => {

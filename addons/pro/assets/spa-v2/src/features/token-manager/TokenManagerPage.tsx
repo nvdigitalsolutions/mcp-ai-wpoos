@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * TokenManagerPage — assistant credential + restriction management
  * (Proposal 084 Phase 3).

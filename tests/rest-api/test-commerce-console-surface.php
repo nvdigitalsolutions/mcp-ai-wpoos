@@ -703,8 +703,12 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Phase 4f — the dashboards schema gates the three commerce dashboards
-	 * on their toolkit toggles (enabled → catalogue, disabled → guidance).
+	 * Phase 4f — the dashboards schema gates the merged commerce surface on its
+	 * toolkit toggles (any connector enabled → catalogue, none → guidance).
+	 *
+	 * 158 D1 merged `ezuite`, `shopify` and `flowhub` into one `connectors`
+	 * surface with a section per connector, so the assertions are about that
+	 * surface and about the retirement of the three ids — not about three rows.
 	 */
 	public function test_dashboards_schema_gates_commerce_entries() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboards_REST_Controller' ) ) {
@@ -716,14 +720,24 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 
 		$controller = new WP_MCP_AI_Pro_Dashboards_REST_Controller();
 
-		// All toggles off → all three land in the `disabled` guidance map.
+		// All toggles off → the merged connector surface lands in the guidance map
+		// under its own id. The three ids it replaced are retired (158 D1), so they
+		// are neither dashboards nor guidance rows.
 		update_option( 'wp_mcp_ai_settings', array() );
 		$data = $controller->get_schema( new WP_REST_Request() )->get_data();
-		$this->assertArrayHasKey( 'ezuite', $data['disabled'] );
-		$this->assertArrayHasKey( 'shopify', $data['disabled'] );
-		$this->assertArrayHasKey( 'flowhub', $data['disabled'] );
+		$this->assertArrayHasKey( 'connectors', $data['disabled'] );
 
-		// Toggles on → all three land in the catalogue with metric cards.
+		foreach ( array( 'ezuite', 'shopify', 'flowhub' ) as $retired ) {
+			$this->assertArrayNotHasKey( $retired, $data['disabled'], 'Retired ids must not appear as guidance rows.' );
+			$this->assertArrayNotHasKey( $retired, $data['dashboards'], 'Retired ids must not appear as dashboards.' );
+		}
+
+		// But they are published as aliases, which is what lets a client migrate
+		// its own saved state instead of losing the link.
+		$this->assertSame( 'connectors', $data['aliases']['ezuite'] );
+
+		// Toggles on → one surface in the catalogue, one section per connector and
+		// every metric key namespaced by its section (158 D1).
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
@@ -733,22 +747,24 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 			)
 		);
 		$data = $controller->get_schema( new WP_REST_Request() )->get_data();
-		$this->assertArrayHasKey( 'ezuite', $data['dashboards'] );
-		$this->assertArrayHasKey( 'shopify', $data['dashboards'] );
-		$this->assertArrayHasKey( 'flowhub', $data['dashboards'] );
+		$this->assertArrayHasKey( 'connectors', $data['dashboards'] );
 
-		$metric_keys = wp_list_pluck( $data['dashboards']['ezuite']['metrics'], 'key' );
-		$this->assertContains( 'in_stock', $metric_keys );
-		$this->assertContains( 'total_value', $metric_keys );
+		$metric_keys = wp_list_pluck( $data['dashboards']['connectors']['metrics'], 'key' );
+		$this->assertContains( 'ezuite_in_stock', $metric_keys );
+		$this->assertContains( 'ezuite_total_value', $metric_keys );
+		$this->assertContains( 'shopify_cost_remaining_pct', $metric_keys );
 
-		$metric_keys = wp_list_pluck( $data['dashboards']['shopify']['metrics'], 'key' );
-		$this->assertContains( 'cost_remaining_pct', $metric_keys );
+		// The namespacing is the reason the merge is safe: EZuite and FlowHub both
+		// publish `in_stock`, and a flat list cannot carry two entries with one key.
+		$this->assertContains( 'flowhub_in_stock', $metric_keys );
+		$this->assertNotContains( 'in_stock', $metric_keys, 'A bare key would collide across connectors.' );
 	}
 
 	/**
 	 * Phase 4f — the commerce dashboard data path dispatches to the widget
-	 * seams: a structured 501 when the CCT manager is absent (the default
-	 * bootstrap), the payload shape when it is present.
+	 * seams. A retired id resolves to the merged surface and the response
+	 * reports the RESOLVED id; a section whose provider is unavailable degrades
+	 * to a per-connector error string rather than failing the whole surface.
 	 */
 	public function test_commerce_dashboard_data_contract() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboards_REST_Controller' ) ) {
@@ -767,22 +783,29 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 			)
 		);
 
+		// Asking for the retired id is the whole point of the alias: it must
+		// resolve rather than 404, and the response must say which surface the
+		// client actually received so it can update its own saved state.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/ezuite/data' );
 		$request->set_param( 'id', 'ezuite' );
 
 		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
 
+		$this->assertNotWPError( $result );
+
+		$data = $result->get_data();
+		$this->assertSame( 'connectors', $data['dashboard'] );
+
 		if ( class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
-			$this->assertNotWPError( $result );
-			$data = $result->get_data();
-			$this->assertSame( 'ezuite', $data['dashboard'] );
-			$this->assertArrayHasKey( 'in_stock', $data['data'] );
-			$this->assertArrayHasKey( 'warehouses', $data['data'] );
+			$this->assertArrayHasKey( 'ezuite_in_stock', $data['data'] );
+			$this->assertArrayHasKey( 'ezuite_warehouses', $data['data'] );
+
 			return;
 		}
 
-		$this->assertWPError( $result );
-		$this->assertSame( 'ezuite_cct_unavailable', $result->get_error_code() );
-		$this->assertSame( 501, $result->get_error_data()['status'] );
+		// No CCT manager: that connector reports a health string and the other
+		// enabled connectors still answer, which is why the merged surface does
+		// not turn one missing provider into a 501 for the whole dashboard.
+		$this->assertArrayHasKey( 'ezuite_error', $data['data'] );
 	}
 }

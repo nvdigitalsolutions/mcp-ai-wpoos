@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tokens-ink.test.ts — rendered body ink beats the declared role.
 //

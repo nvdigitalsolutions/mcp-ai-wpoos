@@ -112,9 +112,9 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['registration_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Registration ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Registration ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -123,9 +123,10 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 		// Verify registration exists.
 		$registration = get_post( $registration_id );
 		if ( ! $registration || 'mcp_ai_registration' !== $registration->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Registration not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Registration not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'registration_id' => $registration_id )
 			);
 		}
 

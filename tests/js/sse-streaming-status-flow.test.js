@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Integration test simulating real SSE event flow for streaming status
  * 

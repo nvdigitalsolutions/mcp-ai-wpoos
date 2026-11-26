@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Schema generation — the one-config contract: required/min/max rules
  * derive from FieldConfig exactly as the REST layer enforces them.

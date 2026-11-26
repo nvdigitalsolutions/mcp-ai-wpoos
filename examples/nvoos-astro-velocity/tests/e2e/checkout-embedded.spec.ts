@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // checkout-embedded.spec.ts — Proposal 110 Phase B e2e gates: the embedded
 // checkout end to end on the woo fixture pair (8126/4324, serial — it
 // places orders and mutates per-session fixture state).

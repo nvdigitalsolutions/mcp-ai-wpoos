@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ModelComparisonView — Side-by-side model response comparison.
  * Zed equivalent: Multi-model inline alternatives — cycle through outputs.

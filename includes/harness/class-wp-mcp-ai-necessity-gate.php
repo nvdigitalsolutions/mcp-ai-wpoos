@@ -26,6 +26,8 @@
  *
  * - Filter: `wp_mcp_ai_necessity_gate_enabled` — per-request override.
  * - Filter: `wp_mcp_ai_necessity_gate_verdict` — modify the final verdict.
+ * - Filter: `wp_mcp_ai_necessity_gate_pre_approved` — slugs that skip the
+ *   approval step because their risk is spend rather than damage.
  * - Action: `wp_mcp_ai_necessity_gate_blocked` — fired when a call is blocked.
  * - Action: `wp_mcp_ai_necessity_gate_warned` — fired when a call gets a warning.
  *
@@ -165,6 +167,18 @@ class WP_MCP_AI_Necessity_Gate {
 		 * @param array  $arguments Tool arguments.
 		 */
 		$verdict = apply_filters( 'wp_mcp_ai_necessity_gate_verdict', $verdict, $tool_slug, $arguments );
+
+		// ── Pre-approved tools (spend, not damage) ───────────────────────
+		// Same list as the Laravel runtime, from `lib/core`, so the two cannot
+		// disagree. Applied only to `approval_required`: a `block` is a
+		// malformed or overeager call and is never waived.
+		if (
+			WP_MCP_AI_Action_Safety_Profile::VERDICT_APPROVAL_REQUIRED === $verdict['verdict']
+			&& self::is_pre_approved( $tool_slug )
+		) {
+			self::log_decision( $tool_slug, 'allow', 'pre_approved_tool' );
+			return null;
+		}
 
 		switch ( $verdict['verdict'] ) {
 			case WP_MCP_AI_Action_Safety_Profile::VERDICT_ALLOW:
@@ -522,6 +536,35 @@ class WP_MCP_AI_Necessity_Gate {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Whether the operator has pre-approved a tool past the approval step.
+	 *
+	 * The default is the shared corpus list in `lib/core`, so WordPress and
+	 * Laravel agree about which tools spend budget rather than cause damage.
+	 * Returning an empty array from the filter restores the prompt for every
+	 * tool; adding a slug widens the list for this site only.
+	 *
+	 * @since 1.2.23
+	 *
+	 * @param string $tool_slug Tool slug.
+	 * @return bool
+	 */
+	public static function is_pre_approved( $tool_slug ) {
+		/**
+		 * Filter the slugs that skip the necessity gate's approval step.
+		 *
+		 * @since 1.2.23
+		 *
+		 * @param string[] $slugs Pre-approved tool slugs.
+		 */
+		$slugs = apply_filters(
+			'wp_mcp_ai_necessity_gate_pre_approved',
+			\Nvoos\Core\Domain\Service\Safety\PreApprovedTools::slugs()
+		);
+
+		return in_array( (string) $tool_slug, (array) $slugs, true );
 	}
 
 	/**

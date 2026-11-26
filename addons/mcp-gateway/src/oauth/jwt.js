@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * OAuth 2.1 access-token (JWT) validation for the gateway resource server.
  *

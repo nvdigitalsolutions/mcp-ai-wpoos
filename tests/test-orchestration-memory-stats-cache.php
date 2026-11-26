@@ -252,7 +252,7 @@ class Test_Orchestration_Memory_Stats_Cache extends WP_Ajax_UnitTestCase {
 		// Capture AJAX output.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_refresh_memory_stats' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected exception, check response.
 		}
 

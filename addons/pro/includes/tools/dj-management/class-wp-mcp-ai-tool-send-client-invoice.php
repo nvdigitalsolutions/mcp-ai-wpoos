@@ -96,18 +96,18 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['booking_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Booking ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Booking ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$booking_id = absint( $arguments['booking_id'] );
 
 		if ( ! get_post( $booking_id ) || get_post_type( $booking_id ) !== 'dj_booking' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid booking ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Invalid booking ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -161,9 +161,11 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 				'amount_due'     => $balance,
 			);
 		} else {
-			return array(
-				'success' => false,
-				'error'   => __( 'Failed to send invoice email.', 'mcp-ai-wpoos-pro' ),
+			// The transport refused the message. This is an execution error, not a
+			// successful send: `wp_mail` folds transport failures into `false`.
+			return new WP_Error(
+				'wp_mcp_ai_email_failed',
+				__( 'Failed to send invoice email.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 	}

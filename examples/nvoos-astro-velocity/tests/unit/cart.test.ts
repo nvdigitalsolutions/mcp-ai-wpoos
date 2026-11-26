@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
 	addToCart,

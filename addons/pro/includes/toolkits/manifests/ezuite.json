@@ -1,0 +1,58 @@
+{
+  "slug": "ezuite",
+  "name": "EZuite ERP Sync",
+  "version": "1.0.0",
+  "description": "Sync cadence, direction and CCT storage for the EZuite ERP Sync toolkit. The connection checklist reads the Remote Sites store and the field mapping is a key/value table, so neither is expressible here and both are configured on the WordPress screen.",
+  "icon": "🏭",
+  "feature": "ezuite",
+  "screens": ["settings"],
+  "tab_labels": {
+    "sync": "Sync",
+    "inventory": "Inventory",
+    "cct": "CCT"
+  },
+  "settings": [
+    {
+      "key": "sync_interval",
+      "label": "Sync interval (minutes)",
+      "type": "select",
+      "tab": "sync",
+      "default": "15",
+      "options": ["5", "15", "30", "60", "120", "360", "720", "1440"],
+      "description": "How often the full sync runs. Shorter intervals increase API load."
+    },
+    {
+      "key": "sync_direction",
+      "label": "Sync direction",
+      "type": "select",
+      "tab": "sync",
+      "default": "ezuite_to_woo",
+      "options": ["ezuite_to_woo", "bidirectional", "read_only"],
+      "description": "Read-only caches the catalog without writing to WooCommerce."
+    },
+    {
+      "key": "enable_wc_sync",
+      "label": "Update WooCommerce stock",
+      "type": "boolean",
+      "tab": "inventory",
+      "default": false,
+      "description": "Writes EZuite stock quantities back to WooCommerce products."
+    },
+    {
+      "key": "low_stock_threshold",
+      "label": "Low stock threshold",
+      "type": "number",
+      "tab": "inventory",
+      "default": 5,
+      "description": "Quantity below which an item is reported as low stock."
+    },
+    {
+      "key": "cct_slug",
+      "label": "CCT slug",
+      "type": "text",
+      "tab": "cct",
+      "default": "",
+      "description": "JetEngine CCT slug used for inventory storage, which must be unique. Leave blank to use the toolkit default."
+    }
+  ]
+}

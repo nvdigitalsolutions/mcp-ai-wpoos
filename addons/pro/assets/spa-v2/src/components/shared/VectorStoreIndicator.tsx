@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * VectorStoreIndicator — Subtle status badge showing whether the current
  * assistant's vector store / knowledge base is ready, syncing, or in error.

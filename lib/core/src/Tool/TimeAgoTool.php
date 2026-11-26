@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class TimeAgoTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class TimeAgoTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     private const I = array('year' => 31536000,'month' => 2592000,'week' => 604800,'day' => 86400,'hour' => 3600,'minute' => 60,'second' => 1);
     public function getSlug(): string
@@ -63,5 +66,18 @@ class TimeAgoTool extends AbstractTool
             }
         }
         return $this->success($expr ?? '', array('input' => $date,'timestamp' => $ts,'now' => $now,'diff_secs' => $now - $ts,'expression' => $expr ?? '','is_future' => $future));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // region-colors.ts — the colour-system gate: chrome and page surfaces.
 //
@@ -40,7 +41,9 @@
 // ---------------------------------------------------------------------------
 
 import { hexToRgb, rgbToHex } from './color.ts';
-import type { ForgeColorModes, ForgeSection, InkShare, RegionColors } from './types.ts';
+import { gateContextOptions } from './gate.ts';
+import { settle } from './page-settle.ts';
+import type { ForgeChrome, ForgeColorModes, ForgeSection, InkShare, RegionColors } from './types.ts';
 
 export type { InkShare } from './types.ts';
 
@@ -58,9 +61,14 @@ export interface ColorRegion {
 	 * Resolve the surface from the region's OWN fill layer as well as its
 	 * ancestors. A builder paints a band's background on a child (`.section-bg`,
 	 * `.banner`), never on the band element, so the ancestor walk reads the page
-	 * body and every band looks transparent (Flatsome, 2026-11-11). Only set this
-	 * for BANDS — a header's child topbar would otherwise lend it the topbar's
-	 * colour.
+	 * body and every band looks transparent (Flatsome, 2026-11-11).
+	 *
+	 * Set this where a CHILD layer really is the region's paint: bands, and the
+	 * header/footer ELEMENTS — Elementor's `header.elementor-location-header`
+	 * is transparent with its inner container painting the strip
+	 * (eca.directory, 2026-11-23). The 50%-of-area floor in `readBackground`
+	 * keeps a small child (a topbar, a button, a form field) from lending its
+	 * colour to the region.
 	 */
 	descendantFill?: boolean;
 }
@@ -74,6 +82,13 @@ export const DEFAULT_COLOR_REGIONS: ColorRegion[] = [
 	{ name: 'body', selectors: [ 'body' ] },
 	{
 		name: 'header',
+		// Chrome is painted on a CHILD layer as often as on the element itself:
+		// Elementor's `header.elementor-location-header` is transparent and its
+		// inner `.e-con.e-parent` band paints the strip (eca.directory, 2026-11-23).
+		// Without the descendant scan the header measured `transparent`, the
+		// colour gate SKIPPED it, and the rebuild themed the header from a
+		// stylesheet guess.
+		descendantFill: true,
 		selectors: [
 			'header',
 			'[role="banner"]',
@@ -89,6 +104,9 @@ export const DEFAULT_COLOR_REGIONS: ColorRegion[] = [
 	},
 	{
 		name: 'footer',
+		// Same CHILD-layer rule as the header: the footer element is transparent
+		// and its inner band paints the bar.
+		descendantFill: true,
 		selectors: [
 			'[role="contentinfo"]',
 			'.site-footer',
@@ -199,44 +217,300 @@ export function normalizeCssValue( input: string ): string {
 export const GRADIENT_SURFACE_RE = /(?:repeating-)?(?:linear|radial|conic)-gradient\(/i;
 
 /**
+ * A CSS identifier: what `#<value>` may legally contain.
+ */
+const CSS_IDENTIFIER_RE = /^-?[_a-zA-Z][_a-zA-Z0-9-]*$/;
+
+/**
+ * Every selector that can address a DOM id, best first.
+ *
+ * Builders mint ids like `6daaaef9`, and a CSS identifier cannot start with a
+ * digit — `querySelector('#6daaaef9')` throws a SyntaxError, which aborted the
+ * whole colour gate on every forged page whose band ids are hashes
+ * (eca.directory, 2026-11-24). An attribute selector is always valid, so `#id`
+ * is emitted only when the id is a legal identifier.
+ */
+export function idSelectors( id: string ): string[] {
+	const value = String( id ?? '' );
+	if ( value === '' ) {
+		return [];
+	}
+	const quoted = `[id="${ value.replace( /"/g, '\\"' ) }"]`;
+	return CSS_IDENTIFIER_RE.test( value ) ? [ `#${ value }`, quoted ] : [ quoted ];
+}
+
+/** The single best selector for a DOM id (never an invalid one). */
+export function cssIdSelector( id: string ): string {
+	return idSelectors( id )[ 0 ] ?? '';
+}
+
+/**
+ * Every selector a REBUILT band can be addressed by, best first.
+ *
+ * The scaffold wraps each band in `<div data-section-id="<id>" class="ds-section-wrap">`
+ * and deliberately emits no `id` attribute (a band id is a builder hash, not a
+ * fragment a visitor should land on). So the marker is the ONLY reliable handle
+ * — addressing built bands by `id` measured nothing and reported all seven
+ * baselines as "dropped" on eca.directory (2026-11-24). `idSelectors` stays as
+ * a fallback for a hand-authored wrapper that does carry one.
+ */
+export function builtBandSelectors( id: string ): string[] {
+	const value = String( id ?? '' );
+	if ( value === '' ) {
+		return [];
+	}
+	const marker = `[data-section-id="${ value.replace( /"/g, '\\"' ) }"]`;
+	return [ marker, ...idSelectors( value ) ];
+}
+
+/**
+ * The selector a SOURCE band can be addressed by.
+ *
+ * A nav anchor (`#about`) is the friendliest handle, but most builder bands
+ * have none — an Elementor container is a plain div whose only handle is its
+ * `elementor-element-<id>` class. Without it the colour/geometry passes resolve
+ * nothing and the harvest's guess ships unopposed (eca.directory: 2 of 9 bands
+ * addressable, and the unaddressed ones kept invented backgrounds).
+ */
+export function bandRegionSelector( section: ForgeSection ): string | undefined {
+	const anchor = String( section.anchor ?? '' );
+	if ( anchor !== '' ) {
+		const selector = cssIdSelector( anchor );
+		if ( selector !== '' ) {
+			return selector;
+		}
+	}
+	if ( section.vendorId ) {
+		return `.elementor-element-${ section.vendorId }`;
+	}
+	return undefined;
+}
+
+/**
+ * The colour-region name for a source band. Anchored bands keep `band:<anchor>`
+ * so baselines recorded before `vendorId` existed still compare; everything else
+ * is keyed by the band id.
+ */
+export function bandRegionName( section: ForgeSection ): string | undefined {
+	if ( ! bandRegionSelector( section ) ) {
+		return undefined;
+	}
+	return section.anchor ? `band:${ section.anchor }` : `band:${ section.id }`;
+}
+
+export interface ApplyBandSurfaceOptions {
+	/**
+	 * Bands whose surface facts are OPERATOR-OWNED: skip them entirely.
+	 *
+	 * The analysis builds this from `profile.pins` (`sections.<id>.bgColor` …), so
+	 * a pin beats a measurement while a harvested guess does not. Without it a
+	 * pin could only survive by re-application later — and a caller that runs the
+	 * measurement AFTER the pins (the per-page pass) would lose them.
+	 */
+	preserve?: ( section: ForgeSection ) => boolean;
+}
+
+/**
  * Copy a measured BAND surface onto the section facts.
  *
  * A builder paints a band's surface on a child layer and declares it in a
  * `<style>` block the sanitizer drops, so the browser measurement is the only
- * exact source. Gradients go to the existing `bgGradient` field (the renderer
- * emits it as the `background` shorthand; `resolveSectionTheme` classifies from
- * the stop its content sits on). Flat fills go to `bgColor`, unless the
- * composited value is
- * the page body's own — that is "transparent", not a band fact.
+ * exact source. MEASUREMENT WINS over the stylesheet harvest: the harvest reads
+ * declarations, and a declaration can belong to a child layer or a variant the
+ * page never renders — eca.directory's header was painted magenta from a
+ * `#d30c5c` rule while the browser computed `transparent`, and five content
+ * bands carried backgrounds from rules for layers inside them.
  *
- * `pinned` facts win: an existing `bgColor`/`bgGradient`/`bgImage` is never
- * overwritten, so an operator pin survives a re-analysis.
+ * A band whose composited surface equals the page body paints NOTHING: its
+ * harvested `bgColor`/`bgGradient` are cleared rather than kept ("transparent"
+ * is a fact, and a colour inherited from the body is not the band's). Operator
+ * pins are the exception — see `ApplyBandSurfaceOptions.preserve`.
+ *
+ * A photo `url()` is captured on the region but never wired to `bgImage`:
+ * `resolveSectionTheme` would read it as a hero band.
  */
 export function applyBandSurfaces(
 	sections: ForgeSection[],
 	lookup: ( section: ForgeSection ) => RegionColors | undefined,
-	bodyBackground?: string
+	bodyBackground?: string,
+	options: ApplyBandSurfaceOptions = {}
 ): void {
 	for ( const section of sections ) {
+		if ( options.preserve?.( section ) ) {
+			continue;
+		}
 		const surface = lookup( section );
+		// Not measured (no selector, or the region did not resolve) — the harvest
+		// stands. Clearing on an absent measurement would erase real facts.
 		if ( ! surface ) {
 			continue;
 		}
-		if ( surface.image && ! section.bgGradient && ! section.bgImage && GRADIENT_SURFACE_RE.test( surface.image ) ) {
-			section.bgGradient = surface.image;
+		const image = surface.image;
+		if ( image && GRADIENT_SURFACE_RE.test( image ) ) {
+			section.bgGradient = image;
+			delete section.bgColor;
+			continue;
 		}
-		const background = surface.background;
-		if (
-			background &&
-			background !== TRANSPARENT &&
-			background !== bodyBackground &&
-			! section.bgColor &&
-			! section.bgGradient
-		) {
-			section.bgColor = background;
+		const flat = surface.background;
+		if ( ! flat || flat === TRANSPARENT || flat === bodyBackground ) {
+			// The band paints nothing of its own — inherit the page surface.
+			delete section.bgColor;
+			delete section.bgGradient;
+		} else {
+			section.bgColor = flat;
+			delete section.bgGradient;
+		}
+		// Only a band with NO background image whatsoever loses a harvested one.
+		// A photo is left unwired (see above), so it must not be deleted either.
+		if ( ! image ) {
+			delete section.bgImage;
 		}
 	}
 }
+
+export interface ApplyChromeSurfacesOptions {
+		/** Operator-owned chrome facts (`chrome.<field>` pins): skip them. */
+		preserve?: ( path: string ) => boolean;
+	}
+
+	/**
+	 * Copy the MEASURED chrome surface and ink onto the design's chrome facts.
+	 *
+	 * `analyzeChrome` reads DECLARATIONS out of the stylesheets, and a
+	 * declaration can belong to a layer or a variant the page never paints.
+	 * eca.directory measured worse on every chrome surface than the browser does:
+	 * header and footer bar background `#d30c5c` (a Kadence customizer colour
+	 * nothing renders), footer ink = the link accent, and the header pills'
+	 * fill = Elementor's translucent hover shade. The browser disagrees on all of
+	 * them, so measurement WINS; an operator pin survives through `preserve`
+	 * (and `applyDesignPins` re-applies it on the merge).
+	 *
+	 * A region that could not be measured leaves the harvest alone — absence is
+	 * not evidence. A header that honestly paints nothing takes the BODY surface:
+	 * the strip shows the page behind it, and painting the harvest's guess over
+	 * that is the bug this function exists to stop.
+	 *
+	 * @return The `chrome.<field>` paths that were applied (for logging).
+	 */
+export function applyChromeSurfaces(
+		chrome: ForgeChrome | undefined,
+		measured: ForgeColorModes | undefined,
+		options: ApplyChromeSurfacesOptions = {}
+	): string[] {
+		if ( ! chrome ) {
+			return [];
+		}
+		const light = normalizeColorModes( measured ).light ?? {};
+		const body = light.body?.background;
+		const applied: string[] = [];
+		const write = (
+			field: 'headerBg' | 'headerInk' | 'navInk' | 'footerBarBg' | 'footerInk' | 'footerBarInk',
+			value: string
+		): void => {
+			if ( options.preserve?.( `chrome.${ field }` ) ) {
+				return;
+			}
+			// The profile stores colours as `#rrggbb` (the token/contrast passes parse
+			// hex only); the browser hands back `rgb()`.
+			const normalized = normalizeCssColor( value );
+			chrome[ field ] = normalized === TRANSPARENT ? value : normalized;
+			applied.push( `chrome.${ field }` );
+		};
+		const dominantInk = ( region: RegionColors | undefined ): string | undefined => {
+			const ink = region?.inks?.[ 0 ]?.color;
+			return ink && ink !== TRANSPARENT ? ink : undefined;
+		};
+		const roleInk = ( region: RegionColors | undefined, role: 'heading' | 'body' ): string | undefined => {
+			const ink = region?.roles?.[ role ];
+			return ink && ink !== TRANSPARENT ? ink : undefined;
+		};
+
+		const header = light.header;
+		if ( header ) {
+			const surface = header.background;
+			if ( surface && surface !== TRANSPARENT ) {
+				write( 'headerBg', surface );
+			} else if ( body && body !== TRANSPARENT ) {
+				write( 'headerBg', body );
+			}
+			const ink = dominantInk( header );
+			if ( ink ) {
+				write( 'headerInk', ink );
+			}
+			// The nav ink is a measured palette entry too. A `--design`-only refresh
+			// re-reads the stylesheet and can land on `#000000` while the painted nav
+			// is the header's dominant ink (eca.directory: #27104a). When the
+			// harvested value is absent from the header's OWN palette, the palette
+			// wins.
+			const inks: Array< { color: string } > = ( header.inks ?? [] ).map( ( entry ) => ( { color: entry.color } ) );
+			const firstInk = inks.length > 0 ? inks[ 0 ].color : undefined;
+			const navInk = chrome.navInk;
+			if ( navInk && firstInk ) {
+				let present = false;
+				for ( const entry of inks ) {
+					// `colorDeltaE` is undefined when either side does not parse — an
+					// unresolved builder var is NOT a palette entry, so it never matches.
+					const delta = colorDeltaE( entry.color, String( navInk ) );
+					if ( delta !== undefined && delta <= 3 ) {
+						present = true;
+						break;
+					}
+				}
+				if ( ! present ) {
+					write( 'navInk', firstInk );
+				}
+			}
+		}
+
+		const footer = light.footer;
+		if ( footer ) {
+			const surface = footer.background;
+			if ( surface && surface !== TRANSPARENT ) {
+				write( 'footerBarBg', surface );
+			} else if ( body && body !== TRANSPARENT ) {
+				write( 'footerBarBg', body );
+			}
+			const ink = dominantInk( footer );
+			// The HEADING slot. The template paints the rebuilt block titles (H3)
+			// from `footerInk` and the list copy from `footerBrand.text.ink`, but a
+			// region has ONE palette — and its winner is the ink that covers the most
+			// glyph AREA, which on a footer is the longer link lists, never the three
+			// titles. eca.directory measured 62% `#747474` link items over 38%
+			// `#27104a` block titles, so the dominant write recoloured every title
+			// grey; the colour gate then reported BOTH source inks as drift, because
+			// the rebuild carried only the one it had painted everywhere
+			// (2026-11-24). Roles when measured, the palette winner otherwise.
+			const headingInk = roleInk( footer, 'heading' ) ?? ink;
+			const bodyInk = roleInk( footer, 'body' ) ?? ink;
+			if ( headingInk ) {
+				write( 'footerInk', headingInk );
+			}
+			// The © bar is BODY copy, so it takes the body ink.
+			if ( bodyInk ) {
+				write( 'footerBarInk', bodyInk );
+			}
+			// A footer whose headings and copy paint DIFFERENT colours needs both
+			// slots filled; that is the only way the rebuild can reproduce a
+			// two-ink palette the gate compares ink by ink. On a single-ink footer
+			// the second slot would repeat the first — noise on every fleet site
+			// — so it is written only when the roles measurably differ.
+			if ( headingInk && bodyInk ) {
+				const delta = colorDeltaE( headingInk, bodyInk );
+				const bodyHex = normalizeCssColor( bodyInk );
+				if (
+					delta !== undefined &&
+					delta > 3 &&
+					bodyHex !== TRANSPARENT &&
+					! options.preserve?.( 'chrome.footerBrand.text.ink' )
+				) {
+					const brand = chrome.footerBrand ?? {};
+					chrome.footerBrand = { ...brand, text: { ...brand.text, ink: bodyHex } };
+					applied.push( 'chrome.footerBrand.text.ink' );
+				}
+			}
+		}
+		return applied;
+	}
 
 /** sRGB → CIE Lab (D65 white point), the space CIEDE2000 works in. */
 export function srgbToLab( r: number, g: number, b: number ): [ number, number, number ] {
@@ -784,17 +1058,22 @@ export interface MeasureColorOptions {
 	try {
 		const measured: ForgeColorModes = {};
 		for ( const mode of modes ) {
-			const context = await browser.newContext( {
+			const context = await browser.newContext( gateContextOptions( {
 				viewport,
 				deviceScaleFactor: 1,
 				colorScheme: mode === 'dark' ? 'dark' : 'light',
 				reducedMotion: 'reduce',
 				locale: 'en-US',
 				timezoneId: 'UTC',
-			} );
+			} ) );
 			try {
 				const page = await context.newPage();
 				await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+				// Fonts/lazy images/animations move boxes AND surfaces. Without this the
+				// read raced the builder's own stylesheet: eca.directory's form fields
+				// and accent button still spanned the full 1440px band row, and the
+				// descendant-fill scan took the 53px button for the band surface.
+				await settle( page );
 				const colors = await page.evaluate(
 					( args ) => {
 						// Alpha is the FOURTH colour component — never the blue channel. A
@@ -845,6 +1124,16 @@ export interface MeasureColorOptions {
 									continue;
 								}
 								if ( style.position !== 'absolute' && style.position !== 'fixed' ) {
+									continue;
+								}
+								// A pseudo at reduced opacity is a VEIL, not a surface: the band's own
+								// paint shows through it. eca.directory's phased-delivery band paints
+								// `linear-gradient(#27104a 30%, #ffffff 0%)` on the box and a decorative
+								// `url(bg-01.png)` on `::before` at opacity 0.2 — reading the pseudo
+								// first recorded the PHOTO as the surface, so the gradient was never
+								// emitted, the band rendered white, and its white intro copy was then
+								// dropped as "invisible on white" (2026-11-24).
+								if ( Number.parseFloat( style.opacity ) < 0.5 ) {
 									continue;
 								}
 								const image = style.backgroundImage;
@@ -898,7 +1187,8 @@ export interface MeasureColorOptions {
 								// transparent background-colour (Flatsome).
 								const bandRect = element.getBoundingClientRect();
 								const width = bandRect.width;
-								const candidates: Array< { bg: string; image?: string; area: number; w: number } > = [];
+								const bandArea = Math.max( 1, width * bandRect.height );
+								const candidates: Array< { bg: string; image?: string; area: number; w: number; h: number } > = [];
 								for ( const node of element.querySelectorAll( '*' ) ) {
 									const style = getComputedStyle( node );
 									const background = style.backgroundColor;
@@ -929,6 +1219,7 @@ export interface MeasureColorOptions {
 										...( nodePseudo?.image || hasImage ? { image: nodePseudo?.image ?? backgroundImage } : {} ),
 										area: rect.width * rect.height,
 										w: rect.width,
+										h: rect.height,
 									} );
 								}
 								let best: ( typeof candidates )[ number ] | undefined;
@@ -937,15 +1228,19 @@ export interface MeasureColorOptions {
 										best = candidate;
 									}
 								}
-								// Two half-width columns paint the band between them without any
-								// SINGLE layer reaching 60% of its width (Flatsome's 2-col banner
-								// row, monicarajiv.com). Accept the winning colour when same-coloured
-								// siblings TILE at least 90% of the band width.
-								if ( best && best.w < width * 0.6 ) {
+								// A painted CHILD is the band's SURFACE only when it BANDS the
+								// region. A full-width CONTROL is not: eca.directory's
+								// "Explore Our Activities" band read #8764a0 because its accent
+								// button spanned the row (53px of 250px), and the contact band read
+								// #ffffff off a full-width form field — both before the builder's
+								// own layout CSS applied. Require half the band's AREA, or
+								// same-coloured siblings tiling the width AND the height (a
+								// two-column banner).
+								if ( best && best.area < bandArea * 0.5 ) {
 									const tiled = candidates
 										.filter( ( candidate ) => candidate.bg === best!.bg && candidate.image === best!.image )
 										.reduce( ( sum, candidate ) => sum + candidate.w, 0 );
-									if ( tiled < width * 0.9 ) {
+									if ( tiled < width * 0.9 || best.h < bandRect.height * 0.5 ) {
 										best = undefined;
 									}
 								}
@@ -1000,6 +1295,8 @@ export interface MeasureColorOptions {
 								background: string;
 								image?: string;
 								inks: Array< { color: string; mass: number } >;
+								heading: Array< { color: string; mass: number } >;
+								body: Array< { color: string; mass: number } >;
 								selector: string;
 								width: number;
 								height: number;
@@ -1013,8 +1310,37 @@ export interface MeasureColorOptions {
 						// and weighted by its RENDERED INK AREA (`inkMass`), so the palette is
 						// the share of the region's text each colour actually paints. Counting
 						// ELEMENTS instead is what made a lone caption outvote a paragraph.
-						const readInk = ( element: Element ): Array< { color: string; mass: number } > => {
+						const readInk = (
+							element: Element
+						): {
+							inks: Array< { color: string; mass: number } >;
+							heading: Array< { color: string; mass: number } >;
+							body: Array< { color: string; mass: number } >;
+						} => {
 							const masses = new Map< string, number >();
+							// The same mass, split by ROLE. A region's palette cannot say which of
+							// its inks is a heading, and the chrome slots need exactly that: the
+							// rebuilt footer paints H3s from `footerInk` and list copy from a
+							// separate text slot. eca.directory's footer is 62% `#747474` link
+							// lists over 38% `#27104a` block titles, so the palette winner put
+							// the LINK colour on the titles (2026-11-24).
+							const headingMasses = new Map< string, number >();
+							const bodyMasses = new Map< string, number >();
+							// A builder's heading is frequently NOT a heading element: Elementor
+							// publishes its block titles as `div.elementor-heading-title`. The tag
+							// alone misses them, so a heading/title class at semibold-or-heavier
+							// counts too. Per text-bearing element, never a container: the class
+							// sits on the widget and the text sits on its child.
+							const headingLike = ( node: Element, weight: string ): boolean => {
+								if ( /^h[1-6]$/i.test( node.tagName ) ) {
+									return true;
+								}
+								const className = node.getAttribute( 'class' ) ?? '';
+								if ( ! /heading|title/i.test( className ) ) {
+									return false;
+								}
+								return ( Number.parseInt( weight, 10 ) || 400 ) >= 600;
+							};
 							// The region's OWN painted box. A builder leaves legacy descendants
 							// in the DOM that render outside the element and are covered by the
 							// next band — jayainc's site-title link sits 23px under its hero, so
@@ -1052,6 +1378,8 @@ export interface MeasureColorOptions {
 								const fontPx = Number.parseFloat( style.fontSize ) || 16;
 								const mass = characters * fontPx * fontPx;
 								masses.set( style.color, ( masses.get( style.color ) ?? 0 ) + mass );
+								const role = headingLike( node, style.fontWeight ) ? headingMasses : bodyMasses;
+								role.set( style.color, ( role.get( style.color ) ?? 0 ) + mass );
 							};
 							consider( element );
 							for ( const node of element.querySelectorAll( '*' ) ) {
@@ -1061,11 +1389,23 @@ export interface MeasureColorOptions {
 							// colour reports a difference between two invisible values (the hero
 							// band is an image + a chevron). An empty palette makes the ink
 							// metric not apply, exactly like a transparent surface.
-							return [ ...masses.entries() ].map( ( [ color, mass ] ) => ( { color, mass } ) );
+							const toList = ( map: Map< string, number > ): Array< { color: string; mass: number } > =>
+								[ ...map.entries() ].map( ( [ color, mass ] ) => ( { color, mass } ) );
+							return { inks: toList( masses ), heading: toList( headingMasses ), body: toList( bodyMasses ) };
 						};
 						for ( const region of args.regions ) {
 							for ( const selector of region.selectors ) {
-								const element = document.querySelector( selector );
+								// A malformed selector must cost THIS region its measurement, never
+								// the whole gate: `querySelector('#6daaaef9')` throws because a CSS
+								// identifier cannot start with a digit, and one unescaped id took
+								// down every colour comparison on the page (eca.directory,
+								// 2026-11-24). Builders mint digit-leading ids constantly.
+								let element = null;
+								try {
+									element = document.querySelector( selector );
+								} catch {
+									element = null;
+								}
 								if ( element ) {
 									const surface = readBackground(
 										element,
@@ -1073,10 +1413,12 @@ export interface MeasureColorOptions {
 										region.descendantFill === true
 									);
 									const box = element.getBoundingClientRect();
-									const inks = readInk( element );
+									const ink = readInk( element );
 									out[ region.name ] = {
 										background: surface.color,
-										inks,
+										inks: ink.inks,
+										heading: ink.heading,
+										body: ink.body,
 										selector,
 										width: box.width,
 										height: box.height,
@@ -1095,6 +1437,12 @@ export interface MeasureColorOptions {
 					// The palette is summarised in Node, not the page: it is pure maths
 					// (alpha collapse, ΔE merge, share rounding) and belongs in a unit test.
 					const inks = summarizeInk( values.inks );
+					// The role inks are the SAME maths over one bucket each: the single
+					// dominant colour of the heading text and of the body text. No share
+					// floor — a region whose headings are 4% of its glyphs still HAS a
+					// heading ink, and the chrome slots need it.
+					const headingInk = summarizeInk( values.heading, { limit: 1, minShare: 0 } )[ 0 ]?.color;
+					const bodyInk = summarizeInk( values.body, { limit: 1, minShare: 0 } )[ 0 ]?.color;
 					baseline[ region ] = {
 						background: normalizeCssColor( values.background ),
 						// `text` stays the DOMINANT ink so a baseline recorded before palettes
@@ -1102,6 +1450,14 @@ export interface MeasureColorOptions {
 						// colour per region. `inks` carries the whole measured palette.
 						text: inks[ 0 ]?.color ?? TRANSPARENT,
 						...( inks.length > 0 ? { inks } : {} ),
+						...( headingInk || bodyInk
+							? {
+									roles: {
+										...( headingInk ? { heading: headingInk } : {} ),
+										...( bodyInk ? { body: bodyInk } : {} ),
+									},
+							  }
+							: {} ),
 						// A gradient/URL is not a colour — pass it through verbatim rather
 						// than letting `normalizeCssColor` collapse it to `transparent`.
 						...( values.image ? { image: values.image } : {} ),

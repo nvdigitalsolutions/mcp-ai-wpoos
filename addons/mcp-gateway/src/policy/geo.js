@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Geo country resolution (Phase 2 of Proposal 094).
  *

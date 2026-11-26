@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design.ts — the forge design-import module (Proposal 114 P1/P5).
 //
@@ -24,10 +25,13 @@ import { createRequire } from 'node:module';
 import { expandHex, hexToRgb, hslToHex, rgbToHex } from './color.ts';
 import { contrastRatio, relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
+import { stripAdminChrome } from './admin-chrome.ts';
 import { extractBandsFromHtml } from './bands.ts';
+import { extractElementCss } from './element-css.ts';
 import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
-import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import { containerRows, isCardContainer, isContainerNode } from './semantic.ts';
+import type { ComparisonRow, ForgeChrome, ForgeChromeAction, ForgeChromeGeometry, ForgeChromeStyle, ForgeDesign, ForgeMark, ForgeMeasuredHeaderAction, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
 
@@ -36,6 +40,33 @@ export interface DesignFetchInput {
 	url: string;
 	html: string;
 	css: string[];
+	/**
+	 * Keep bands that state no fact.
+	 *
+	 * The band list is normally filtered to the bands that STATE something — an
+	 * empty band is not a design fact. The per-PAGE pass needs every band instead:
+	 * it merges facts onto an already-measured section list by id, and a band the
+	 * extractor drops can never be matched (eca.directory's about-us keeps 4
+	 * bands but the extractor named 2, 2026-11-25).
+	 */
+	includeBare?: boolean;
+	/**
+	 * The DESIGN-ORIGIN subset of `css` — theme, uploads (the builder's
+	 * generated kit/post sheets), inline `<style>` and core. Plugin sheets are
+	 * omitted: a plugin's widget UI is not the site's design language, and one
+	 * chat/consent/CMP stylesheet can outvote the whole theme on palette and
+	 * type (eca.directory's NV oOS chat sheet turned `text` into
+	 * Catppuccin's `#cdd6f4` against an Elementor kit of #747474). Design
+	 * facts read this first; `css` stays the full, document-ordered cascade.
+	 */
+	designCss?: string[];
+	/**
+	 * The inline `<style>` blocks that can carry design facts. WordPress prints
+	 * plugin widget CSS inline with the plugin handle and no URL, so a block
+	 * scoped entirely to one component (the NV oOS chat widget paints
+	 * `font-family:"star"` and a Catppuccin palette) is excluded here.
+	 */
+	inlineCss?: string[];
 	/** Logo-variant dominant colors by absolute src (the contrast-based
 	 * logo assignment, 124 §1) — absent when the assets were not fetched. */
 	logoColors?: Record<string, string[]>;
@@ -81,6 +112,44 @@ const MAX_HTML_BYTES = 2 * 1024 * 1024;
 // ~886KB) — a 512KB cut lands mid-@media block and the dangling brace
 // swallows every stylesheet fetched after it.
 const MAX_CSS_BYTES = 2 * 1024 * 1024;
+
+/**
+ * Stylesheets only an AUTHENTICATED session receives.
+ *
+ * The gate logs the forge in, and WordPress answers a logged-in page with its
+ * own UI assets: the admin toolbar's sheet, dashicons, Elementor's notes
+ * module and editor themes, WooCommerce's store-visibility badge CSS. They are
+ * not the site's design — harvesting them made eca.directory resolve `text` to
+ * Catppuccin's `#cdd6f4` (an admin sheet) on a page whose copy is dark ink on
+ * white. An anonymous visitor never receives these, so skipping them cannot
+ * change a public-site analysis.
+ */
+const ADMIN_ONLY_STYLESHEET = /\/(?:admin-bar|dashicons|coming-soon|theme-light|theme-dark)(?:\.min)?\.css$|\/modules\/notes(?:\.min)?\.css$/i;
+
+/**
+ * A stylesheet that carries SITE design (as opposed to a plugin's own widget
+ * UI): the active theme, the builder's generated sheets under uploads, the
+ * core reset, or an inline `<style>` block.
+ */
+const DESIGN_STYLESHEET = /^\/wp-content\/(?:themes|uploads)\//i;
+
+/** A selector that styles the document or a theme-level landmark. */
+const DOCUMENT_SCOPED_SELECTOR =
+	/^(?:html|body|:root|\*|h[1-6]\b|p\b|a\b|img\b|ul\b|ol\b|li\b|blockquote\b|table\b|input\b|button\b|select\b|textarea\b|\.site-|\.entry-|\.elementor-kit|\.wp-block-|#content\b|#page\b|#main\b)/i;
+
+/**
+ * An inline block that styles ONE widget and nothing else — a plugin's UI
+ * theme, never the site's. Its values must not reach the palette or the type
+ * pairing (eca.directory: the chat widget contributed `text` #111827 and a
+ * `"star"` body face against a kit of #747474 / Inter).
+ */
+function isComponentScopedCss( cssText: string ): boolean {
+	const rules = topLevelRules( cssText ).filter( ( rule ) => rule.selector.trim() && ! rule.selector.trim().startsWith( '@' ) );
+	if ( rules.length < 3 ) {
+		return false;
+	}
+	return ! rules.some( ( rule ) => DOCUMENT_SCOPED_SELECTOR.test( rule.selector.trim() ) );
+}
 
 // -- logo color extraction (124 §1) -------------------------------------------
 
@@ -349,8 +418,14 @@ export async function fetchDesignInput(
 	if ( ! home.ok ) {
 		throw new Error( `Design fetch failed: ${ home.status } ${ home.statusText } for ${ base }` );
 	}
-	const html = ( await home.text() ).slice( 0, MAX_HTML_BYTES );
+	// The gate analyses a LOGGED-IN page: strip the admin toolbar before any
+	// design fact is read from it (the chrome pass read WPCode's "Header (0)"
+	// admin link as the site nav — see lib/admin-chrome.ts). The head stays:
+	// the favicon/icon stylesheets live there.
+	const html = stripAdminChrome( await home.text() ).slice( 0, MAX_HTML_BYTES );
 	const css: string[] = [];
+	const designCss: string[] = [];
+	const inlineCss: string[] = [];
 	// Collect stylesheets in DOCUMENT order — inline <style> blocks
 	// interleave with the linked sheets at their printed positions (WP
 	// prints the inline blocks after the links; an inline 16px nav rule
@@ -362,6 +437,9 @@ export async function fetchDesignInput(
 		if ( tag.startsWith( '<style' ) ) {
 			const body = tag.replace( /^<style[^>]*>|<\/style>$/gi, '' ).slice( 0, MAX_CSS_BYTES );
 			css.push( body );
+			if ( ! isComponentScopedCss( body ) ) {
+				inlineCss.push( body );
+			}
 			continue;
 		}
 		if ( cssTotalBytes >= MAX_CSS_TOTAL_BYTES ) {
@@ -377,6 +455,9 @@ export async function fetchDesignInput(
 			if ( new URL( absolute ).hostname !== new URL( base ).hostname ) {
 				continue;
 			}
+			if ( ADMIN_ONLY_STYLESHEET.test( new URL( absolute ).pathname ) ) {
+				continue;
+			}
 		} catch {
 			continue;
 		}
@@ -386,6 +467,9 @@ export async function fetchDesignInput(
 				const body = ( await res.text() ).slice( 0, MAX_CSS_BYTES );
 				css.push( body );
 				cssTotalBytes += body.length;
+				if ( DESIGN_STYLESHEET.test( new URL( absolute ).pathname ) ) {
+					designCss.push( body );
+				}
 			}
 		} catch {
 			// A missing stylesheet is never fatal — the remaining signals stand.
@@ -425,7 +509,7 @@ export async function fetchDesignInput(
 			// A missing logo asset is never fatal — the heuristics stand.
 		}
 	}
-	return { url: base, html, css, logoColors };
+	return { url: base, html, css, designCss, inlineCss, logoColors };
 }
 
 // -- analysis ----------------------------------------------------------------
@@ -462,7 +546,7 @@ function familyFrequencies( cssText: string ): Array<{ family: string; weight: n
 	const bump = ( raw: string ) => {
 		const first = raw.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
 		// Generic/system families are stack fallbacks, not design choices.
-		if ( ! first || GENERIC_FAMILIES.has( first ) || first.startsWith( 'var(' ) ) {
+		if ( ! first || GENERIC_FAMILIES.has( first ) || first.startsWith( 'var(' ) || ICON_FAMILY.test( first ) || CODE_FAMILY.test( first ) ) {
 			return;
 		}
 		counts.set( first, ( counts.get( first ) ?? 0 ) + 1 );
@@ -470,9 +554,13 @@ function familyFrequencies( cssText: string ): Array<{ family: string; weight: n
 	for ( const match of cssText.matchAll( /font-family\s*:\s*([^;}]+)/gi ) ) {
 		bump( match[ 1 ] );
 	}
-	// Font values carried by typography custom properties
-	// (--e-global-typography-*-font-family, --forge-font-display, …).
-	for ( const match of cssText.matchAll( /(--[\w-]*font[\w-]*)\s*:\s*([^;}]+)/gi ) ) {
+	// Font values carried by typography custom properties. Accept the
+	// `*-font-family` convention, the Gutenberg `--wp--preset--font-family--*`
+	// form, and the template's own `--forge-font` / `--forge-font-display`
+	// tokens — but NOT a sibling face token: `--…-font-weight: normal` once put
+	// the keyword `normal` into the pairing, and the rebuild then requested a
+	// Google family literally named "normal" (eca.directory, 2026-11-23).
+	for ( const match of cssText.matchAll( /(--[\w-]*font-family(?:--[\w-]+)?|--[\w-]*font(?:-(?:display|body|ui|accent|mono|heading))?)\s*:\s*([^;}]+)/gi ) ) {
 		bump( match[ 2 ] );
 	}
 	return [ ...counts.entries() ]
@@ -485,6 +573,15 @@ const GENERIC_FAMILIES = new Set( [
 	'inherit',
 	'initial',
 	'unset',
+	// Weight/style keywords are not families either — a `font-weight` token
+	// read as a family must not become a Google Fonts request.
+	'normal',
+	'bold',
+	'bolder',
+	'lighter',
+	'italic',
+	'oblique',
+	'small-caps',
 	'ui-monospace',
 	'ui-sans-serif',
 	'ui-serif',
@@ -496,6 +593,27 @@ const GENERIC_FAMILIES = new Set( [
 	'cursive',
 	'fantasy',
 ] );
+
+/**
+ * An icon/glyph font is never a typeface.
+ *
+ * Flatsome ships `fl-icons` (it ranked high enough to become monicarajiv's
+ * accent face); Kadence ships the WooCommerce rating font literally named
+ * `star` (eca.directory read it as the BODY face, which would have loaded a
+ * non-existent Google family and rendered the whole site in the fallback).
+ * `^star` is anchored on purpose — a real family such as "Starlight" stays.
+ */
+const ICON_FAMILY = /(?:^star(?:[-_]|$)|icon|awesome|dashicons|glyph|symbol)/i;
+
+/**
+ * A CODE face (a theme's `<code>`/`<pre>` stack) is not a design type
+ * pairing — Kadence ships `"Courier 10 Pitch",Courier,monospace`, and it
+ * became eca.directory's accent face. Marketing sources rarely pick a
+ * monospace accent, and the generic `monospace` keyword is already a
+ * `GENERIC_FAMILIES` member.
+ */
+const CODE_FAMILY =
+	/^(?:courier(?: new| 10 pitch)?|monaco|menlo|consolas|andale mono|dejavu sans mono|liberation mono|lucida console|source code pro|fira code|jetbrains mono|inconsolata|sfmono-regular|roboto mono|ibm plex mono)$/i;
 
 /** Sorted numeric values extracted from px declarations (font-size/margin/…). */
 function pxValues( cssText: string, patterns: Array<{ pattern: RegExp; pxPerUnit?: number }> ): number[] {
@@ -723,6 +841,43 @@ interface ResolveElementOptions {
 }
 
 /**
+ * Is a `background-image` gradient a SURFACE or an OVERLAY?
+ *
+ * Elementor paints every button twice: `background-color: #8764a0` (the real
+ * pill) plus `background-image: linear-gradient(0deg, rgba(0,0,0,.35),
+ * transparent 75%)` (its hover shade). Treating the gradient as the fill
+ * shipped a see-through header pill with a 35%-black veil
+ * (eca.directory, 2026-11-23). A gradient is a surface only when every stop is
+ * opaque — or when it is a photo, which always paints.
+ */
+function gradientPaintsSurface( value: string ): boolean {
+	if ( /url\(/i.test( value ) ) {
+		return true;
+	}
+	// `transparent` is the giveaway stop in every builder shade overlay.
+	if ( /\btransparent\b/i.test( value ) ) {
+		return false;
+	}
+	const stops = value.match( /rgba?\([^)]+\)|#[0-9a-f]{3,8}\b/gi ) ?? [];
+	return stops.every( ( stop ) => {
+		const rgba = /rgba?\(([^)]+)\)/i.exec( stop );
+		if ( rgba ) {
+			const parts = rgba[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() ).filter( Boolean );
+			return parts.length < 4 || Number( parts[ 3 ] ) >= 0.95;
+		}
+		const hex = /^#([0-9a-f]{4}|[0-9a-f]{8})$/i.exec( stop );
+		if ( hex ) {
+			const alpha =
+				hex[ 1 ].length === 4
+					? parseInt( hex[ 1 ][ 3 ] + hex[ 1 ][ 3 ], 16 ) / 255
+					: parseInt( hex[ 1 ].slice( 6, 8 ), 16 ) / 255;
+			return alpha >= 0.95;
+		}
+		return true;
+	} );
+}
+
+/**
  * The specificity-approximated cascade shared by the CTA harvest and the
  * chrome typography pass: per property, the rule whose selector matches the
  * MOST of the element's tokens wins (`own * 1e6 + context * 1e8 + ruleIndex`,
@@ -730,9 +885,11 @@ interface ResolveElementOptions {
  * scoped rules like `.site-header-section .aux-button` are the element's
  * real rules and must beat the generic `.aux-button`/size-ladder rules. The
  * frequency schemes this replaces let base rules out-vote the real
- * size/pill/ink rules. The FILL prefers gradients: a gradient
+ * size/pill/ink rules. The FILL prefers an OPAQUE gradient: a gradient
  * background-image is the effective paint over any flat background-color
- * (jayainc's yellow call button; flat hover/outline colors lose).
+ * (jayainc's yellow call button; flat hover/outline colors lose). A
+ * TRANSLUCENT gradient is an overlay over the colour, so the colour wins —
+ * see `gradientPaintsSurface`.
  * Pseudo-state rules (`:hover` etc.) are skipped — the rebuild targets the
  * resting design.
  */
@@ -802,6 +959,21 @@ function resolveElementRules( classes: string[], cssText: string, extra: string[
 			ruleIndex++;
 			continue;
 		}
+		// A rule scoped to a DIFFERENT Elementor element must not contribute at
+		// all. `selector.includes(token)` is per-token, so
+		// `.elementor-86 .elementor-element.elementor-element-424e0cff
+		//   .elementor-button` “matched” the SIBLING pill through the header
+		// class alone and its colour leaked onto both header CTAs
+		// (eca.directory: the accent “Try Demo” and the dark “Sign In” both came
+		// back #27104a, 2026-11-23). Any `elementor-element-<id>` in the selector
+		// that this element does not carry means the rule belongs elsewhere.
+		const foreignScope = ( selector.match( /elementor-element-[0-9a-f]{4,}/g ) ?? [] ).some(
+			( scope ) => ! tokens.includes( scope )
+		);
+		if ( foreignScope ) {
+			ruleIndex++;
+			continue;
+		}
 		const ownMatches = own.filter( ( token ) => selector.includes( token ) ).length;
 		const contextMatches = matchCount - ownMatches;
 		const spec = ownMatches * 1000000 + contextMatches * 100000000 + ruleIndex;
@@ -821,13 +993,22 @@ function resolveElementRules( classes: string[], cssText: string, extra: string[
 		if ( fillEligible ) {
 			const gradientMatch = body.match( BG_GRADIENT_RE );
 			if ( gradientMatch && better( hasOwn, spec, imp( gradientMatch ), gradientBest ) ) {
-				gradient = gradientMatch[ 1 ].trim();
+				gradient = resolveCssVars( gradientMatch[ 1 ].trim(), cssText );
 				gradientBest = { own: hasOwn, spec, important: imp( gradientMatch ) };
 			}
 			const colorMatch = body.match( BG_COLOR_RE );
 			if ( colorMatch ) {
-				const value = bgForCss( colorMatch[ 1 ].trim() );
-				if ( value && value !== 'transparent' && better( hasOwn, spec, imp( colorMatch ), colorBest ) ) {
+				// Resolve a builder var first: Elementor paints a button with
+				// `background-color: var( --e-global-color-primary )`, and
+				// `normalizeColor` rejects `var(...)`, so the element's own FILL was
+				// dropped whenever the theme used its global palette
+				// (eca.directory's header pills, 2026-11-23).
+				const value = bgForCss( resolveCssVars( colorMatch[ 1 ].trim(), cssText ) );
+				// A residual `var(` means the token is not in the harvested CSS (the
+				// Elementor kit typography lives in a stylesheet the harvest may not
+				// fetch). Emitting it would make the rebuild's declaration invalid —
+				// no spec is better than a dead one.
+				if ( value && value !== 'transparent' && ! /\bvar\(/i.test( value ) && better( hasOwn, spec, imp( colorMatch ), colorBest ) ) {
 					color = value;
 					colorBest = { own: hasOwn, spec, important: imp( colorMatch ) };
 				}
@@ -837,8 +1018,8 @@ function resolveElementRules( classes: string[], cssText: string, extra: string[
 		if ( inkMatch ) {
 			// Alpha-preserving: rgba(255,255,255,0.7) stays raw — the 70%
 			// translucency IS the source's look (the copyright bar ink).
-			const value = bgForCss( inkMatch[ 1 ].trim() );
-			if ( value && value !== 'transparent' && better( hasOwn, spec, imp( inkMatch ), inkBest ) ) {
+			const value = bgForCss( resolveCssVars( inkMatch[ 1 ].trim(), cssText ) );
+			if ( value && value !== 'transparent' && ! /\bvar\(/i.test( value ) && better( hasOwn, spec, imp( inkMatch ), inkBest ) ) {
 				ink = value;
 				inkBest = { own: hasOwn, spec, important: imp( inkMatch ) };
 			}
@@ -847,13 +1028,15 @@ function resolveElementRules( classes: string[], cssText: string, extra: string[
 			const regex = PROP_RE[ key ];
 			const match = body.match( regex );
 			const value = match ? match[ 1 ].trim() : undefined;
-			if ( value && better( hasOwn, spec, imp( match ), specs[ key ].best ) ) {
+			// Same rule as the fill/ink: an unresolved builder var is a dead
+			// declaration in the rebuild, not a fact.
+			if ( value && ! /\bvar\(/i.test( value ) && better( hasOwn, spec, imp( match ), specs[ key ].best ) ) {
 				specs[ key ] = { value, best: { own: hasOwn, spec, important: imp( match ) } };
 			}
 		}
 		ruleIndex++;
 	}
-	out.fill = gradient ?? color;
+	out.fill = gradient && gradientPaintsSurface( gradient ) ? gradient : color ?? gradient;
 	if ( ink ) {
 		out.ink = ink;
 	}
@@ -886,20 +1069,69 @@ function rootRuleFact( cssText: string, tag: 'body' | 'html', prop: string ): st
 	let best: string | undefined;
 	let bestSpec = -1;
 	let ruleIndex = 0;
+	// The FIRST selector of a rule list must target the element ITSELF — the
+	// bare tag, or the tag with state classes (`body.woocommerce`). A
+	// descendant rule is not a body fact: Kadence's
+	// `body.woocommerce … .star-rating { font-family:"star" }` is the rating
+	// icon font, and accepting it made "star" the site's BODY face
+	// (eca.directory, 2026-11-23).
+	const ownTarget = new RegExp( `^${ tag }(?:[.#][\\w-]+)*$` );
+	const ownHtmlBody = /^html\s+body(?:[.#][\w-]+)*$/;
 	for ( const rule of topLevelRules( cssText ) ) {
 		const selector = rule.selector.trim().toLowerCase();
-		const isTarget =
-			selector === tag ||
-			selector.startsWith( tag + ' ' ) ||
-			selector.startsWith( tag + '.' ) ||
-			selector.startsWith( tag + '#' ) ||
-			( tag === 'body' && selector.startsWith( 'html body' ) );
+		const first = selector.split( ',' )[ 0 ].trim();
+		const isTarget = ownTarget.test( first ) || ( tag === 'body' && ownHtmlBody.test( first ) );
 		if ( isTarget ) {
 			const match = rule.body.match( new RegExp( '(?:^|;)\\s*' + prop + '\\s*:\\s*([^;!]+)', 'i' ) );
 			const value = match ? match[ 1 ].trim() : '';
 			// A var() reference carries no fact (the rebuilt token layer's
 			// `body { font-family: var(--forge-font) }` must not pollute the
 			// source analysis — and neither must it when scoring the built).
+			if ( value && ! value.startsWith( 'var(' ) && ruleIndex >= bestSpec ) {
+				best = value;
+				bestSpec = ruleIndex;
+			}
+		}
+		ruleIndex++;
+	}
+	return best;
+}
+
+/** The NAVIGATION rule’s declaration for `prop` — the source’s UI face.
+ * Flatsome (and most builders) set the menu link typography on its own
+ * selector, so a site can carry a third family that is neither the body
+ * nor the heading face: monicarajiv’s menu titles are Montserrat while
+ * body copy is Lato and headings Karma, and the two-role harvest saw
+ * only Lato + Karma. Without it the rebuilt nav inherits the body face. */
+/** Every rule, INCLUDING those nested inside `@media`/`@supports` blocks.
+ * `topLevelRules` stops at an at-rule’s opening brace, so a builder that
+ * sets its nav typography inside a breakpoint block (Flatsome does) is
+ * invisible to a top-level scan — the menu face was never found and the
+ * rebuilt nav fell back to the body family. */
+function nestedRules( cssText: string, depth = 0 ): Array<{ selector: string; body: string }> {
+	const out: Array<{ selector: string; body: string }> = [];
+	for ( const rule of topLevelRules( cssText ) ) {
+		if ( rule.selector.trim().startsWith( '@' ) && depth < 3 ) {
+			out.push( ...nestedRules( rule.body, depth + 1 ) );
+		} else {
+			out.push( rule );
+		}
+	}
+	return out;
+}
+
+function navRuleFact( cssText: string, prop: string ): string | undefined {
+	let best: string | undefined;
+	let bestSpec = -1;
+	let ruleIndex = 0;
+	for ( const rule of nestedRules( cssText ) ) {
+		const selector = rule.selector.trim().toLowerCase();
+		// A MENU rule: `.nav`, `.menu-item`, `.header-top`, `.topbar` — but
+		// not a generic `a` rule, which is the body face again.
+		const isNav = /\b(nav|menu|topbar|header-top)\b/.test( selector ) && ! /\.nav-(?:shell|toggle|bars)/.test( selector );
+		if ( isNav ) {
+			const match = rule.body.match( new RegExp( '(?:^|;)\\s*' + prop + '\\s*:\\s*([^;!]+)', 'i' ) );
+			const value = match ? match[ 1 ].trim() : '';
 			if ( value && ! value.startsWith( 'var(' ) && ruleIndex >= bestSpec ) {
 				best = value;
 				bestSpec = ruleIndex;
@@ -959,6 +1191,15 @@ function chromeSizeFrom( cssText: string ): string | undefined {
 		const pct = /^([\d.]+)%$/i.exec( bodySize.trim() );
 		if ( pct ) {
 			return `${ Math.round( ( Number( pct[ 1 ] ) / 100 ) * base ) }px`;
+		}
+		// `rem` resolves against the html root rule, exactly like the percent and
+		// `em` branches. Matched BEFORE them because `1.125rem` ends in "em": the
+		// `em` pattern is anchored, so it quietly declined the value and the chain
+		// fell through to the element resolution this function exists to avoid
+		// (monicarajiv declares `body { font-size: 1.125rem }` — 2026-11-21).
+		const rem = /^([\d.]+)rem$/i.exec( bodySize.trim() );
+		if ( rem ) {
+			return `${ Math.round( Number( rem[ 1 ] ) * base ) }px`;
 		}
 		const em = /^([\d.]+)em$/i.exec( bodySize.trim() );
 		if ( em ) {
@@ -1192,9 +1433,394 @@ function topLevelRules( cssText: string ): Array<{ selector: string; body: strin
 }
 const BG_GRADIENT_RE = /background-image\s*:\s*((?:repeating-)?(?:linear|radial|conic)-gradient\([^;]+)(\s*!\s*important)?/i;
 const BG_IMAGE_RE = /background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i;
+// The image's BOX. Elementor always declares these beside the URL; without them
+// the rebuild paints the image at native scale (a dot pattern becomes a
+// checkerboard over the whole band).
+const BG_SIZE_RE = /background-size\s*:\s*([^;!]+)/i;
+const BG_REPEAT_RE = /background-repeat\s*:\s*([^;!]+)/i;
+const BG_POSITION_RE = /background-position\s*:\s*([^;!]+)/i;
 const BG_COLOR_RE = /background-color\s*:\s*([^;!]+)(\s*!\s*important)?/i;
 const PADDING_RE = /padding\s*:\s*([^;!]+)/i;
 const SECTION_ID_RE = /elementor-element-([0-9a-f]{4,})/;
+
+/**
+ * The element tokens that paint a background PHOTO.
+ *
+ * A container-mode lane usually paints its picture on a CHILD — an inner
+ * `e-con`, or an absolutely-positioned spacer — so the lane's own
+ * `elementor-element-<id>` has no rule and a split detector that reads the lane
+ * alone sees no media column (eca.directory's about-us hero + "Why … makes a
+ * difference", 2026-11-25).
+ */
+function paintedElementTokens( cssText: string ): Set< string > {
+	const out = new Set< string >();
+	for ( const rule of topLevelRules( cssText ) ) {
+		if ( ! /background(?:-image)?\s*:[^;}]*url\(/i.test( rule.body ) ) {
+			continue;
+		}
+		for ( const token of rule.selector.matchAll( /elementor-element-([0-9a-f]{4,})/gi ) ) {
+			out.add( `elementor-element-${ token[ 1 ].toLowerCase() }` );
+		}
+	}
+	return out;
+}
+
+/** A band needs at least this many marks before it reads as a logo wall. */
+const MARK_STRIP_MIN = 3;
+
+/** Never carry more marks than a wall can render. */
+const MARK_STRIP_MAX = 24;
+
+/** A `url(…)` capture → an absolute http(s) src, or undefined. */
+function markSrc( value: string | undefined ): string | undefined {
+	if ( ! value ) {
+		return undefined;
+	}
+	const url = value.trim().replace( /^['"]|['"]$/g, '' );
+	return /^https?:\/\//i.test( url ) ? url : undefined;
+}
+
+/**
+ * The band's MARK STRIP — a logo wall / partner row (see `ForgeSection.logos`).
+ *
+ * Collects both `<img>` marks and `background-image` slides. The second form is
+ * the one that matters: a builder's image carousel publishes each logo as a
+ * `<div style="background-image:url(…)">`, so a classifier reading `<img>` sees
+ * nothing, and the inline `style` that carries the URL never survives
+ * sanitisation — the fact has to be recorded here, against the RAW source HTML.
+ *
+ * A band that carries prose is not a mark strip (a services band's copy panel
+ * sits beside a photo column), so prose disqualifies the whole band. Fewer than
+ * three marks is a lone illustration, not a wall.
+ */
+function markStripOf( section: HNodeLike ): ForgeMark[] | undefined {
+	const marks: ForgeMark[] = [];
+	const seen = new Set< string >();
+	let prose = false;
+
+	const add = ( src: string | undefined, alt?: string ): void => {
+		const url = markSrc( src );
+		if ( ! url || seen.has( url ) || marks.length >= MARK_STRIP_MAX ) {
+			return;
+		}
+		seen.add( url );
+		marks.push( alt ? { src: url, alt } : { src: url } );
+	};
+
+	const visit = ( node: HNodeLike ): void => {
+		for ( const child of childNodes( node ) ) {
+			if ( child.type !== 'tag' ) {
+				continue;
+			}
+			if ( child.name === 'p' && nodeText( child ).trim() ) {
+				prose = true;
+				return;
+			}
+			if ( child.name === 'img' ) {
+				add( child.attribs?.src ?? child.attribs?.[ 'data-src' ], child.attribs?.alt );
+			}
+			const style = child.attribs?.style;
+			if ( style ) {
+				for ( const match of style.matchAll( /background-image\s*:\s*url\(([^)]+)\)/gi ) ) {
+					add( match[ 1 ] );
+				}
+			}
+			visit( child );
+		}
+	};
+	visit( section );
+
+	return prose || marks.length < MARK_STRIP_MIN ? undefined : marks;
+}
+
+/** A comparison matrix never carries more of either. */
+const COMPARISON_MAX_COLUMNS = 8;
+const COMPARISON_MAX_ROWS = 24;
+
+/** Every class token in a subtree (a cell's mark lives on an `<i>`/`<svg>` deep inside). */
+function classTokens( node: HNodeLike ): string[] {
+	const out: string[] = [];
+	const visit = ( current: HNodeLike ): void => {
+		if ( current.attribs?.class ) {
+			out.push( ...current.attribs.class.split( /\s+/ ).filter( Boolean ) );
+		}
+		for ( const child of childNodes( current ) ) {
+			if ( child.type === 'tag' ) {
+				visit( child );
+			}
+		}
+	};
+	visit( node );
+	return out;
+}
+
+/**
+ * The band's COMPARISON MATRIX — role columns against feature rows (see
+ * `ForgeSection.comparison`).
+ *
+ * The build-time classifier can NEVER see this: a builder publishes each check
+ * and cross as an `<svg>`, and `sanitizeHtml` strips every `<svg>` before
+ * classification runs (eca.directory's "Compare User Roles": 52 SVGs raw, 0
+ * sanitised). The fact is therefore recorded at ANALYZE time against the raw
+ * HTML, and as TEXT (`✓` / `✗`), so nothing downstream depends on an icon font.
+ *
+ * The structural contract, checked strictly because a false positive invents a
+ * table the source does not have:
+ *   - a container of ≥3 sibling ROW containers, every row with the SAME ≥3 cells;
+ *   - row 0 is the header: an empty first cell, then one text label per column;
+ *   - every body row: a text LABEL in cell 0, then icon-only value cells;
+ *   - every value cell carries exactly one recognised mark and no text.
+ *
+ * A cell that carries both text and a mark is not a value cell — that is a
+ * feature list with ticks, not a matrix.
+ */
+export function comparisonOf( section: HNodeLike ): ForgeSection[ 'comparison' ] | undefined {
+	const MARK_CHECK = /(?:^|[\s-])(?:check|checkmark|check-circle|circle-check)(?:$|[\s-])/i;
+	const MARK_CROSS = /(?:^|[\s-])(?:times|times-circle|circle-xmark|xmark|close|cross)(?:$|[\s-])/i;
+	const tagChildren = ( node: HNodeLike ): HNodeLike[] =>
+		childNodes( node ).filter( ( child ) => child.type === 'tag' );
+	const markOf = ( cell: HNodeLike ): '✓' | '✗' | undefined => {
+		if ( nodeText( cell ).trim() ) {
+			return undefined;
+		}
+		const tokens = classTokens( cell ).join( ' ' );
+		// A cell carrying BOTH is ambiguous (a minus next to a check) — refuse it.
+		const check = MARK_CHECK.test( tokens );
+		const cross = MARK_CROSS.test( tokens );
+		if ( check === cross ) {
+			return undefined;
+		}
+		return check ? '✓' : '✗';
+	};
+
+	let found: ForgeSection[ 'comparison' ] | undefined;
+	const visit = ( node: HNodeLike ): void => {
+		if ( found ) {
+			return;
+		}
+		const rows = tagChildren( node );
+		const width = rows[ 0 ] ? tagChildren( rows[ 0 ] ).length : 0;
+		if (
+			rows.length >= 3 &&
+			rows.length <= COMPARISON_MAX_ROWS + 1 &&
+			width >= 3 &&
+			width <= COMPARISON_MAX_COLUMNS + 1 &&
+			rows.every( ( row ) => tagChildren( row ).length === width )
+		) {
+			const header = tagChildren( rows[ 0 ] );
+			const columns = header.slice( 1 ).map( ( cell ) => nodeText( cell ).trim().replace( /\s+/g, ' ' ) );
+			const leadEmpty = nodeText( header[ 0 ] ).trim() === '';
+			if ( leadEmpty && columns.every( Boolean ) ) {
+				const body: ComparisonRow[] = [];
+				let valid = true;
+				for ( const row of rows.slice( 1 ) ) {
+					const cells = tagChildren( row );
+					const label = nodeText( cells[ 0 ] ).trim().replace( /\s+/g, ' ' );
+					const values = cells.slice( 1 ).map( markOf );
+					if ( ! label || values.some( ( value ) => ! value ) ) {
+						valid = false;
+						break;
+					}
+					body.push( { label, values: values as string[] } );
+				}
+				if ( valid && body.length >= 2 ) {
+					const caption = comparisonCaption( section, node );
+					found = {
+						columns: columns as string[],
+						rows: body,
+						...( caption ? { caption } : {} ),
+						...( hiddenAt( node ).length > 0 ? { hiddenAt: hiddenAt( node ) } : {} ),
+					};
+					return;
+				}
+			}
+		}
+		for ( const child of rows ) {
+			visit( child );
+		}
+	};
+	visit( section );
+	return found;
+}
+
+/**
+ * The devices a source container is HIDDEN at.
+ *
+ * A builder hides whole sub-trees per device (`elementor-hidden-mobile`), and
+ * the sanitizer keeps the class while the vendor stylesheet that gave it meaning
+ * never ships — so the rebuild rendered content the source hides. eca.directory's
+ * "Compare User Roles" matrix is `elementor-hidden-mobile`: the source shows a
+ * 3-column table on desktop and NOTHING on a phone, and the rebuild showed a
+ * squeezed table at 390px.
+ *
+ * Only the two ends the template renders are reported. The extra Elementor
+ * breakpoints collapse onto them (their `_extra` ranges sit inside the template's
+ * tablet/mobile buckets, so hiding at the bucket end over-hides a narrow band —
+ * recorded rather than guessed at a range the template cannot express).
+ */
+function hiddenAt( node: HNodeLike ): Array< 'tablet' | 'mobile' > {
+	const classes = ( node.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
+	const devices: Array< 'tablet' | 'mobile' > = [];
+	if ( classes.includes( 'elementor-hidden-tablet' ) || classes.includes( 'elementor-hidden-tablet_extra' ) ) {
+		devices.push( 'tablet' );
+	}
+	if (
+		classes.includes( 'elementor-hidden-mobile' ) ||
+		classes.includes( 'elementor-hidden-phone' ) ||
+		classes.includes( 'elementor-hidden-mobile_extra' )
+	) {
+		devices.push( 'mobile' );
+	}
+	return devices;
+}
+
+/**
+ * The matrix's own heading, from the container that holds it.
+ *
+ * A builder puts the label (`Compare User Roles`) in a heading widget beside the
+ * grid, so it never reaches the classifier's slots — and without it the rebuilt
+ * table has no caption and its label rides the band as loose body copy.
+ */
+function comparisonCaption( section: HNodeLike, grid: HNodeLike ): string | undefined {
+	const headings = ( node: HNodeLike, skip: HNodeLike ): string[] => {
+		const out: string[] = [];
+		const walk = ( current: HNodeLike ): void => {
+			if ( current === skip || out.length > 0 ) {
+				return;
+			}
+			if ( current.type === 'tag' && /^h[1-6]$/i.test( current.name ?? '' ) ) {
+				const text = nodeText( current ).trim().replace( /\s+/g, ' ' );
+				if ( text && text.length <= 80 ) {
+					out.push( text );
+				}
+				return;
+			}
+			for ( const child of childNodes( current ) ) {
+				if ( child.type === 'tag' ) {
+					walk( child );
+				}
+			}
+		};
+		walk( node );
+		return out;
+	};
+	// The NEAREST ancestor that carries a heading which is not inside the grid.
+	// A builder nests the label in a widget wrapper beside the grid, and the band
+	// itself may carry other headings (the phase cards), so distance matters:
+	// walking from the band would caption the matrix "Phase 1".
+	let node: HNodeLike | undefined = grid.parent ?? undefined;
+	for ( let depth = 0; node && depth < 4 && node !== section.parent; depth++, node = node.parent ?? undefined ) {
+		const found = headings( node, grid );
+		if ( found.length > 0 ) {
+			return found[ found.length - 1 ];
+		}
+	}
+	return undefined;
+}
+
+/**
+ * Resolve `var(--token[, fallback])` against the source's own custom-property
+ * declarations. Elementor paints a coloured panel with
+ * `background-color: var(--e-global-color-accent)`, which means nothing in the
+ * rebuild (the vendor stylesheet never ships) — the literal has to be baked.
+ * One level is enough for a builder's global colours; anything still unresolved
+ * is left verbatim so the caller can reject it.
+ */
+function resolveCssVars( value: string, cssText: string ): string {
+	if ( ! /var\(/i.test( value ) ) {
+		return value;
+	}
+	return value.replace(
+		/var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,\s*([^()]+?))?\s*\)/g,
+		( whole: string, name: string, fallback?: string ) => {
+			const escaped = name.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+			const declared = new RegExp( `${ escaped }\\s*:\\s*([^;}]+)`, 'i' ).exec( cssText );
+			const resolved = declared?.[ 1 ]?.trim();
+			if ( resolved && ! /var\(/i.test( resolved ) ) {
+				return resolved;
+			}
+			return fallback ? fallback.trim() : whole;
+		}
+	);
+}
+
+/**
+ * The legible foreground for a painted surface (white or near-black).
+ *
+ * Exported because the geometry pass derives the same fact for sub-pages
+ * (see `measureBandFacts`): one ink rule, so the band audit compares like
+ * with like.
+ */
+export function inkForSurface( bg: string ): string {
+	const white = contrast( '#ffffff', bg );
+	const dark = contrast( '#111111', bg );
+	return ( white ?? 0 ) >= ( dark ?? 0 ) ? '#ffffff' : '#111111';
+}
+
+/**
+ * A column's own painted SURFACE (see `ForgeSectionColumn.bgColor`).
+ *
+ * Two places carry it, and both must be read:
+ *
+ *  - the COLUMN itself (an inline `style`, or a rule scoped to its own
+ *    `elementor-element-<id>`);
+ *  - the WRAPPER one level in — Elementor paints
+ *    `.elementor-widget-wrap.elementor-element-populated` and scopes the rule to
+ *    THAT element's id (virtuallysrilanka's red and black panels live here, not
+ *    on the column).
+ *
+ * A gradient is a surface too, but it is emitted as the flat `bgColor` the
+ * source's own rule declares beside it; the classifier has no gradient channel
+ * per column. Undefined when the column paints nothing.
+ */
+function columnSurfaceOf(
+	column: HNodeLike,
+	rules: Array<{ selector: string; body: string }>
+): { bgColor?: string; bgImage?: string } | undefined {
+	const read = ( node: HNodeLike ): { bgColor?: string; bgImage?: string } | undefined => {
+		const classes = sectionClasses( node );
+		const id = classes.map( ( c ) => SECTION_ID_RE.exec( c ) ).find( Boolean )?.[ 1 ];
+		let color = inlineStyle( node, 'background-color', BG_COLOR_RE );
+		let image = inlineStyle( node, 'background-image', BG_IMAGE_RE );
+		if ( id && ( ! color || ! image ) ) {
+			for ( const rule of rules ) {
+				if ( ! rule.selector.includes( `elementor-element-${ id }` ) ) {
+					continue;
+				}
+				if ( ! image ) {
+					const found = rule.body.match( BG_IMAGE_RE );
+					if ( found ) {
+						image = found[ 1 ].trim();
+					}
+				}
+				if ( ! color ) {
+					const found = rule.body.match( BG_COLOR_RE );
+					if ( found ) {
+						color = found[ 1 ].trim();
+					}
+				}
+			}
+		}
+		const surface: { bgColor?: string; bgImage?: string } = {};
+		const trimmed = color?.trim();
+		if ( trimmed && ! /^(?:transparent|rgba\(\s*0,\s*0,\s*0,\s*0\s*\)|none)$/i.test( trimmed ) ) {
+			surface.bgColor = trimmed;
+		}
+		if ( image ) {
+			surface.bgImage = image;
+		}
+		return Object.keys( surface ).length > 0 ? surface : undefined;
+	};
+
+	const own = read( column );
+	if ( own ) {
+		return own;
+	}
+	const populated =
+		collectNodes( column, ( n ) => n.type === 'tag' && sectionClasses( n ).includes( 'elementor-element-populated' ) )[ 0 ] ??
+		collectNodes( column, ( n ) => n.type === 'tag' && sectionClasses( n ).includes( 'elementor-widget-wrap' ) )[ 0 ];
+	return populated ? read( populated ) : undefined;
+}
 
 /** One top-level column's responsive facts (124 §6) — Elementor's per-device
  * width/order/visibility classes. Undefined when the column carries none. */
@@ -1229,6 +1855,128 @@ function columnFactsOf( node: HNodeLike ): ForgeSectionColumn | undefined {
 		facts.hiddenDesktop = true;
 	}
 	return Object.keys( facts ).length > 0 ? facts : undefined;
+}
+
+/**
+ * The LANE facts of a container-mode band.
+ *
+ * Elementor 4's container model has no `.elementor-column` at all: a row of
+ * cards is a group of sibling `e-con` elements, so the legacy read above finds
+ * no container and the band records NO lane facts. That silently disabled the
+ * whole per-device lane contract (visibility, width overrides) on every
+ * container-built site — eca.directory among them.
+ *
+ * The lane set is the band's biggest card row (a card = a heading plus a list);
+ * when nothing is card-shaped the biggest sibling row is still the row the
+ * source lays out as lanes. Lanes are returned in DOCUMENT order, which is the
+ * order the classifier emits the rebuilt cards in — that is what lets the
+ * renderer address lane *i* as the grid's *i*-th child without ever reordering.
+ *
+ * EXPLICIT ONLY. An implicit `--width` is the desktop split, and applying it as
+ * a per-device override squeezes the rebuilt grid (the 3589820 lane drift:
+ * 286/954 -> 273/907). A lane set is a fact only when the source STATES a
+ * per-device intent: a `elementor-hidden-*` class (still in the DOM) or a
+ * media-scoped `--width` on the lane's own `elementor-element-<id>` selector.
+ */
+function containerLaneFactsOf(
+	section: HNodeLike,
+	rules: Array<{ selector: string; body: string; media?: string }>
+): ForgeSectionColumn[] | undefined {
+	type SemanticNode = Parameters< typeof containerRows >[ 0 ];
+	const seeds = containerRows( section as unknown as SemanticNode ) as unknown as HNodeLike[][];
+	// `containerRows` groups siblings by SHAPE, and a lane carrying a per-device
+	// class (`elementor-hidden-mobile`) has a different shape from its peers — so
+	// the hidden lane is split out of its own row and the lane set loses exactly
+	// the lane the fact is about. Re-group the parent with the responsive
+	// vocabulary normalised away. Local on purpose: `containerShape` is shared
+	// with the card/comparison readers, and changing it would relayout bands that
+	// are already verified byte-identical.
+	const normalisedShape = ( node: HNodeLike ): string =>
+		sectionClasses( node )
+			.filter(
+				( token ) =>
+					! /^elementor-element-/.test( token ) &&
+					! /^elementor-(?:hidden|reverse|col-|md-|sm-|widget-)/.test( token )
+			)
+			.join( ' ' );
+	const rows: HNodeLike[][] = [];
+	const seenParents = new Set< HNodeLike >();
+	for ( const seed of seeds ) {
+		const parent = seed[ 0 ]?.parent;
+		if ( ! parent || seenParents.has( parent ) ) {
+			rows.push( seed );
+			continue;
+		}
+		seenParents.add( parent );
+		const groups = new Map< string, HNodeLike[] >();
+		for ( const child of parent.children ?? [] ) {
+			if ( child.type !== 'tag' || ! isContainerNode( child as unknown as SemanticNode ) ) {
+				continue;
+			}
+			const shape = normalisedShape( child );
+			if ( shape === '' ) {
+				continue;
+			}
+			groups.set( shape, [ ...( groups.get( shape ) ?? [] ), child ] );
+		}
+		for ( const group of groups.values() ) {
+			if ( group.length >= 2 ) {
+				rows.push( group );
+			}
+		}
+	}
+	const cardRows = rows.filter( ( row ) =>
+		row.every( ( node ) => isCardContainer( node as unknown as SemanticNode ) )
+	);
+	const pool = cardRows.length > 0 ? cardRows : rows;
+	const lanes = pool.reduce< HNodeLike[] >( ( best, row ) => ( row.length > best.length ? row : best ), [] );
+	if ( lanes.length < 2 ) {
+		return undefined;
+	}
+	const widthAt = ( widths: ReturnType< typeof responsiveLength >, device: 'tablet' | 'mobile' ): number | undefined => {
+		const value = widths && typeof widths === 'object' ? widths[ device ] : undefined;
+		const match = value ? /^(\d+(?:\.\d+)?)%$/.exec( value.trim() ) : null;
+		return match ? parseFloat( match[ 1 ] ) : undefined;
+	};
+	const facts = lanes.map( ( lane ) => {
+		const fact: ForgeSectionColumn = {};
+		for ( const device of hiddenAt( lane ) ) {
+			if ( device === 'mobile' ) {
+				fact.hiddenMobile = true;
+			} else {
+				fact.hiddenTablet = true;
+			}
+		}
+		const id = sectionClasses( lane )
+			.map( ( token ) => SECTION_ID_RE.exec( token ) )
+			.find( Boolean )?.[ 1 ];
+		if ( id ) {
+			// Elementor's container width is a `--width` custom property, re-declared
+			// inside the breakpoint's media block (never an inline style).
+			const widths = responsiveLength( rules, `elementor-element-${ id }`, '--width' );
+			const tablet = widthAt( widths, 'tablet' );
+			const mobile = widthAt( widths, 'mobile' );
+			if ( tablet !== undefined ) {
+				fact.widthTablet = tablet;
+			}
+			if ( mobile !== undefined ) {
+				fact.widthMobile = mobile;
+			}
+		}
+		return fact;
+	} );
+	if (
+		! facts.some(
+			( fact ) =>
+				fact.hiddenMobile ||
+				fact.hiddenTablet ||
+				fact.widthTablet !== undefined ||
+				fact.widthMobile !== undefined
+		)
+	) {
+		return undefined;
+	}
+	return facts;
 }
 
 /** Elementor's column-gap class → the side padding it adds to the column
@@ -1363,18 +2111,53 @@ function responsiveLength(
 	return repeatsDesktop ? undefined : values;
 }
 
-function allSectionNodes( node: HNodeLike, out: HNodeLike[] ): void {
+/**
+ * A top-level band node: Elementor's legacy `.elementor-top-section` or the
+ * current flexbox-container `.e-parent` (≥3.16, the default since 3.19). Both
+ * wrap exactly the page's band list; `.elementor-section` / `.e-child` inside
+ * them are a band's content.
+ */
+function isTopLevelBandClasses( classes: string[] ): boolean {
+	return classes.includes( 'elementor-top-section' ) || classes.includes( 'e-parent' );
+}
+
+function allSectionNodes( node: HNodeLike, out: HNodeLike[], insideChrome = false ): void {
 	for ( const child of childNodes( node ) ) {
+		const chrome = insideChrome || isChromeContainer( child );
 		// TOP-level sections only (124 §6) — inner sections are a column's
 		// content, never a band; their elementor-element ids must not leak
 		// into the band facts (an inner section's margin is a widget-level
 		// spacing fact, not a band pull).
-		if ( child.type === 'tag' && sectionClasses( child ).some( ( c ) => c === 'elementor-top-section' ) ) {
+		if ( ! chrome && child.type === 'tag' && isTopLevelBandClasses( sectionClasses( child ) ) ) {
 			out.push( child );
 		} else {
-			allSectionNodes( child, out );
+			allSectionNodes( child, out, chrome );
 		}
 	}
+}
+
+/**
+ * A node that belongs to the site CHROME, not the page content.
+ *
+ * Elementor renders its `header.elementor-location-header` and
+ * `footer.elementor-location-footer` templates INTO the homepage, but they are
+ * not part of the page's content — the REST `content.rendered` the build uses
+ * excludes them. Counting those bands as content bands meant the profile
+ * carried 9 bands where the build renders 7, so every POSITIONAL audit (band
+ * flow, per-band text, geometry) compared band N against band N+2 and failed
+ * wholesale (eca.directory, 2026-11-23: 9/9 bands failed text at 0–2%).
+ * `analyzeChrome` owns the chrome; a band inside it is never a content band.
+ */
+function isChromeContainer( node: HNodeLike ): boolean {
+	if ( node.type !== 'tag' ) {
+		return false;
+	}
+	if ( node.name === 'header' || node.name === 'footer' ) {
+		return true;
+	}
+	return sectionClasses( node ).some(
+		( name ) => name === 'elementor-location-header' || name === 'elementor-location-footer'
+	);
 }
 
 function inlineStyle( node: HNodeLike, name: string, regex: RegExp ): string | undefined {
@@ -1398,6 +2181,43 @@ function inlineStyle( node: HNodeLike, name: string, regex: RegExp ): string | u
  * Extract the ordered source-section backgrounds from the fetched homepage
  * + stylesheets. Deterministic; an empty html yields an empty list.
  */
+/**
+ * The COMPARISON MATRIX per section id, from the raw html (see
+ * `ForgeSection.comparison`).
+ *
+ * Kept separate from `analyzeSections` because the band MODEL a profile uses is
+ * decided LATER: a builder page whose section pass keeps fewer bands than the
+ * vendor-agnostic outline falls back to the outline (eca.directory is exactly
+ * that case, `bandSource: outline`), and the outline bands carry no comparison
+ * of their own. Recording by ID lets either model pick the fact up.
+ */
+export function comparisonFactsById( html: string ): Record< string, NonNullable< ForgeSection[ 'comparison' ] > > {
+	const out: Record< string, NonNullable< ForgeSection[ 'comparison' ] > > = {};
+	if ( ! html.trim() ) {
+		return out;
+	}
+	const handler = new DomHandler( undefined, {} );
+	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
+	parser.write( html );
+	parser.end();
+	const sections: HNodeLike[] = [];
+	allSectionNodes( handler.root as unknown as HNodeLike, sections );
+	for ( const section of sections ) {
+		const idMatch = sectionClasses( section )
+			.map( ( className ) => SECTION_ID_RE.exec( className ) )
+			.find( Boolean );
+		const id = idMatch?.[ 1 ];
+		if ( ! id || out[ id ] ) {
+			continue;
+		}
+		const comparison = comparisonOf( section );
+		if ( comparison ) {
+			out[ id ] = comparison;
+		}
+	}
+	return out;
+}
+
 export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 	const handler = new DomHandler( undefined, {} );
 	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
@@ -1411,6 +2231,9 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 	// Every rule with the media condition guarding it — the per-section pass
 	// below reads top-level rules only, so device-scoped overrides were invisible.
 	const scopedRules = rulesInMedia( cssText );
+	// Which element tokens paint a photo — see `paintedElementTokens`. Read once
+	// per page: the split detector asks per band whether a LANE's subtree paints.
+	const paintedBoxes = paintedElementTokens( cssText );
 	const facts: ForgeSection[] = [];
 	for ( const section of sections ) {
 		const classes = sectionClasses( section );
@@ -1461,6 +2284,11 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		if ( inlineColor ) {
 			fact.bgColor = inlineColor;
 		}
+		// The box can sit inline too (a hand-built band), so read it before the
+		// stylesheet pass and let the pass fill only what is missing.
+		fact.bgSize = inlineStyle( section, 'background-size', BG_SIZE_RE );
+		fact.bgRepeat = inlineStyle( section, 'background-repeat', BG_REPEAT_RE );
+		fact.bgPosition = inlineStyle( section, 'background-position', BG_POSITION_RE );
 		// Same-origin CSS rules scoped to this section's id.
 		for ( const rule of topLevelRules( cssText ) ) {
 			const selector = rule.selector;
@@ -1479,6 +2307,35 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			if ( image && ! fact.bgImage ) {
 				fact.bgImage = image[ 1 ].trim();
 			}
+			// The box rides the SAME rule as the image (Elementor's background layer
+			// pseudo-element); a band that declares no box keeps the renderer's
+			// default rather than a fabricated value.
+			const size = body.match( BG_SIZE_RE );
+			if ( size && ! fact.bgSize ) {
+				fact.bgSize = size[ 1 ].trim();
+			}
+			const repeat = body.match( BG_REPEAT_RE );
+			if ( repeat && ! fact.bgRepeat ) {
+				fact.bgRepeat = repeat[ 1 ].trim();
+			}
+			const position = body.match( BG_POSITION_RE );
+			if ( position && ! fact.bgPosition ) {
+				fact.bgPosition = position[ 1 ].trim();
+			}
+			// The LAYER. Elementor fades a band image through `--overlay-opacity` on
+			// the element and may blend the `::before` layer over the band colour.
+			// Without both, the image paints at full strength over the copy.
+			const layerOpacity = body.match( /--overlay-opacity\s*:\s*([\d.]+)/i );
+			if ( layerOpacity && fact.bgLayerOpacity === undefined ) {
+				const value = parseFloat( layerOpacity[ 1 ] );
+				if ( Number.isFinite( value ) && value >= 0 && value < 1 ) {
+					fact.bgLayerOpacity = value;
+				}
+			}
+			const blend = selector.includes( '::before' ) ? body.match( /mix-blend-mode\s*:\s*([a-z-]+)/i ) : null;
+			if ( blend && ! fact.bgBlendMode ) {
+				fact.bgBlendMode = blend[ 1 ].trim();
+			}
 			const color = body.match( BG_COLOR_RE );
 			// The overlay rule's color belongs to the overlay layer — it must
 			// never become the band's own background color.
@@ -1487,7 +2344,13 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 					fact.overlay = color[ 1 ].trim();
 				}
 			} else if ( color && ! fact.bgColor ) {
-				fact.bgColor = color[ 1 ].trim();
+				// Elementor names its palette through a global var; the rebuild never
+				// ships that stylesheet, so an unresolved token is not a fact. The
+				// stats band's dark purple is exactly this case.
+				const resolved = resolveCssVars( color[ 1 ].trim(), cssText );
+				if ( /^(?:#[0-9a-f]{3,8}|rgba?|hsla?)/i.test( resolved ) ) {
+					fact.bgColor = resolved;
+				}
 			}
 			const padding = body.match( PADDING_RE );
 			if ( padding && ! fact.padding ) {
@@ -1535,13 +2398,94 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-container' )
 		);
 		if ( container ) {
+			// Parsed once per band for the per-column surface read (a column panel
+			// is measured against the same stylesheet the band facts came from).
+			const columnRules = topLevelRules( cssText );
 			const columns = childNodes( container )
 				.filter( ( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-column' ) )
-				.map( ( column ) => columnFactsOf( column ) )
-				.filter( ( column ) => column !== undefined );
+				.map( ( column ) => {
+					const facts = columnFactsOf( column ) ?? {};
+					const surface = columnSurfaceOf( column, columnRules );
+					if ( ! surface ) {
+						return facts;
+					}
+					// Bake the literal: `var(--e-global-color-accent)` names a stylesheet
+					// the rebuild never ships. An UNRESOLVABLE token is not a fact — drop it
+					// rather than emit CSS the rebuild cannot evaluate.
+					if ( surface.bgColor ) {
+						const resolved = resolveCssVars( surface.bgColor, cssText );
+						if ( /^(?:#[0-9a-f]{3,8}|rgba?|hsla?)/i.test( resolved ) ) {
+							surface.bgColor = resolved;
+						} else {
+							delete surface.bgColor;
+						}
+					}
+					return Object.keys( surface ).length > 0 ? { ...facts, ...surface } : facts;
+				} )
+				// A column with no width fact and no surface is not a fact at all.
+				.filter( ( column ) => Object.keys( column ).length > 0 );
 			if ( columns.length >= 2 || columns.some( ( column ) => column.widthTablet || column.widthMobile || column.reverseMobile || column.reverseTablet || column.hiddenMobile || column.hiddenTablet || column.hiddenDesktop ) ) {
 				fact.columns = columns;
+				// Exactly ONE coloured column and no photo column = the source sets the
+				// band's content on a single slab (virtuallysrilanka's "How it Works":
+				// four icon items on a #dd3333 panel). Baked to a literal — the source's
+				// own `var(--e-global-color-accent)` names a stylesheet the rebuild
+				// never ships. Two or more DIFFERENT surfaces are per-column panels,
+				// which the flat rebuilt markup cannot address; left to the geometry
+				// pass rather than painted wrongly.
+				const panelColumns = columns.filter( ( column ) => column.bgColor );
+				const photoColumns = columns.filter( ( column ) => column.bgImage );
+				if ( panelColumns.length === 1 && photoColumns.length === 0 ) {
+					const bg = resolveCssVars( panelColumns[ 0 ].bgColor as string, cssText );
+					if ( /^(?:#[0-9a-f]{3,8}|rgba?|hsla?)/i.test( bg ) ) {
+						fact.panel = { bg, ink: inkForSurface( bg ) };
+					}
+				}
 			}
+		}
+		// Container-mode bands (`e-con`) have no `.elementor-container`, so the
+		// legacy read above sees nothing and the per-device contract goes dark.
+		// Their lanes are the sibling `e-con` row (see `containerLaneFactsOf`).
+		if ( ! fact.columns ) {
+			const lanes = containerLaneFactsOf( section, scopedRules );
+			if ( lanes ) {
+				fact.columns = lanes;
+			}
+		}
+		// A band whose colour is declared through Elementor's global palette
+		// (`background-color: var(--e-global-color-secondary)`) can sit inside a
+		// block the top-level rule scan drops — the token still resolves, so read
+		// it from the raw sheet as a last resort. Without the colour the band's ink
+		// assumes a surface that is never painted (white text on white, 2026-11-25).
+		if ( ! fact.bgColor ) {
+			const fallback = new RegExp(
+				`elementor-element-${ id }[^{}]*\\{[^{}]*background-color\\s*:\\s*([^;}]+)`,
+				'i'
+			).exec( cssText );
+			if ( fallback ) {
+				const resolved = resolveCssVars( fallback[ 1 ].trim(), cssText );
+				if ( /^(?:#[0-9a-f]{3,8}|rgba?|hsla?)/i.test( resolved ) ) {
+					fact.bgColor = resolved;
+				}
+			}
+		}
+		// The band's MARK STRIP (a logo wall / partner row). A builder
+		// carousel publishes each logo as a `background-image` DIV, so the
+		// build-time classifier — which reads `<img>` only, on HTML the
+		// sanitizer has already stripped `style` from — saw an empty band.
+		const logos = markStripOf( section );
+		if ( logos ) {
+			fact.logos = logos;
+		}
+		// The band's COMPARISON MATRIX (see `comparisonOf`). Recorded here, against
+		// the RAW html, because the check/cross marks are `<svg>` — and sanitisation
+		// strips every one of them before the build-time classifier runs.
+		const comparison = comparisonOf( section );
+		if ( comparison ) {
+			fact.comparison = comparison;
+			// The generic channel (see `ForgeSection.structure`): one slot for every
+			// measured structure, so the next detector needs no profile plumbing.
+			fact.structure = [ { type: 'comparison', data: comparison } ];
 		}
 		// The boxed container's measure + column gap (124 §3): boxed sections
 		// constrain their CONTENT (the band bg stays full-width) — the rebuilt
@@ -1625,14 +2569,102 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		};
 		const COPY_WIDGET_RE = /^elementor-widget-(?:heading|text-editor|button|aux_modern_heading|aux_button|aux_text)$/;
 		const MEDIA_WIDGET_RE = /^elementor-widget-(?:aux_image|image)$/;
-		const splitContainer = childNodes( section ).find(
-			( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-container' )
-		);
+		// Elementor 3.16+ flexbox containers replaced the
+		// `.elementor-container > .elementor-column` pair with
+		// `.e-con-inner > .e-con.e-child`; the widget vocabulary is unchanged,
+		// so only the two wrappers need a second name. A container-only source
+		// (eca.directory) never split a two-column hero without this.
+		const isColumnNode = ( node: HNodeLike ): boolean => {
+			const classes = sectionClasses( node );
+			return classes.includes( 'elementor-column' ) || classes.includes( 'e-child' );
+		};
+		const findWrapped = ( node: HNodeLike, names: string[] ): HNodeLike | undefined => {
+			// BREADTH-FIRST, over the whole band. Elementor nests the row one level
+			// down (`… .e-con-boxed.e-child > .e-con-inner`), so a direct-children
+			// read found nothing and the band never split (eca.directory's about-us
+			// hero, 2026-11-25). The shallowest match is the band's own row.
+			const queue: HNodeLike[] = [ node ];
+			while ( queue.length > 0 ) {
+				const current = queue.shift() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					if ( child.type !== 'tag' ) {
+						continue;
+					}
+					if ( sectionClasses( child ).some( ( name ) => names.includes( name ) ) ) {
+						return child;
+					}
+					queue.push( child );
+				}
+			}
+			return undefined;
+		};
+		const findWidgetNode = ( node: HNodeLike, pattern: RegExp ): HNodeLike | undefined => {
+			const queue: HNodeLike[] = [ node ];
+			while ( queue.length > 0 ) {
+				const current = queue.shift() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					if ( child.type === 'tag' && sectionClasses( child ).some( ( cls ) => pattern.test( cls ) ) ) {
+						return child;
+					}
+					queue.push( child );
+				}
+			}
+			return undefined;
+		};
+		// A container hero often uses an icon-box as its copy unit instead of a
+		// heading + text pair; it is copy only when it actually carries a title
+		// (an image-only icon-box is media).
+		const isCopyColumn = ( column: HNodeLike ): boolean => {
+			if ( hasWidget( column, COPY_WIDGET_RE ) ) {
+				return true;
+			}
+			const box = findWidgetNode( column, /^elementor-widget-icon-box$/ );
+			return Boolean( box && findWidgetNode( box, /^elementor-icon-box-title$/ ) );
+		};
+		const splitContainer =
+			findWrapped( section, [ 'elementor-container' ] ) ??
+			findWrapped( section, [ 'e-con-inner' ] ) ??
+			// A container can place its `.e-child` lanes directly in the band.
+			( childNodes( section ).some( ( child ) => child.type === 'tag' && isColumnNode( child ) ) ? section : undefined );
 		const domColumns = splitContainer
-			? childNodes( splitContainer ).filter( ( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-column' ) )
+			? childNodes( splitContainer ).filter( ( child ) => child.type === 'tag' && isColumnNode( child ) )
 			: [];
-		const copyColumn = domColumns.find( ( column ) => hasWidget( column, COPY_WIDGET_RE ) && ! hasWidget( column, MEDIA_WIDGET_RE ) && ! hasWidget( column, /aux-simple-shape/ ) );
-		const mediaColumn = domColumns.find( ( column ) => ( hasWidget( column, MEDIA_WIDGET_RE ) || hasWidget( column, /aux-simple-shape/ ) ) && ! hasWidget( column, COPY_WIDGET_RE ) );
+		const copyColumn = domColumns.find(
+			( column ) => isCopyColumn( column ) && ! hasWidget( column, MEDIA_WIDGET_RE ) && ! hasWidget( column, /aux-simple-shape/ )
+		);
+		// A container lane can carry the photo on its own background instead of
+		// an image widget; that is still the media column.
+		const hasColumnPhoto = ( node: HNodeLike ): boolean =>
+			/background(?:-image)?\s*:[^;"']*url\(/i.test( node.attribs?.style ?? '' );
+		// …and Elementor often paints it on a CHILD instead (`5a4bb73b` under the
+		// lane, a spacer, an inner `e-con`), so read the whole subtree against the
+		// page's photo rules. Without this no lane ever looked like media.
+		const subtreePaintsPhoto = ( node: HNodeLike ): boolean => {
+			// The lane ITSELF may be the painted box (about-us's hero media lane).
+			if ( sectionClasses( node ).some( ( cls ) => paintedBoxes.has( cls ) ) ) {
+				return true;
+			}
+			const stack: HNodeLike[] = [ node ];
+			while ( stack.length > 0 ) {
+				const current = stack.pop() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					if ( child.type !== 'tag' ) {
+						continue;
+					}
+					if ( sectionClasses( child ).some( ( cls ) => paintedBoxes.has( cls ) ) ) {
+						return true;
+					}
+					stack.push( child );
+				}
+			}
+			return false;
+		};
+		const isMediaColumn = ( column: HNodeLike ): boolean =>
+			hasWidget( column, MEDIA_WIDGET_RE ) ||
+			hasWidget( column, /aux-simple-shape/ ) ||
+			hasColumnPhoto( column ) ||
+			subtreePaintsPhoto( column );
+		const mediaColumn = domColumns.find( ( column ) => isMediaColumn( column ) && ! isCopyColumn( column ) );
 		const hasImageSrc = ( node: HNodeLike ): boolean => {
 			const stack: HNodeLike[] = [ node ];
 			while ( stack.length > 0 ) {
@@ -1646,38 +2678,51 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			}
 			return false;
 		};
-		const mediaColumnReal = mediaColumn && ( hasImageSrc( mediaColumn ) || hasWidget( mediaColumn, /aux-simple-shape/ ) );
+		const mediaColumnReal =
+			mediaColumn &&
+			( hasImageSrc( mediaColumn ) ||
+				hasWidget( mediaColumn, /aux-simple-shape/ ) ||
+				hasColumnPhoto( mediaColumn ) ||
+				subtreePaintsPhoto( mediaColumn ) );
 		// A photo-background hero never splits: the band itself IS the media
 		// (jayainc's hero carries an empty aux_image shell in its second
-		// column — a builder leftover, not content).
-		if ( ! fact.bgImage && domColumns.length === 2 && copyColumn && mediaColumnReal ) {
+		// column — a builder leftover, not content). A FADED band image is a
+		// decorative LAYER, not a photo (`bgLayerOpacity` marks the `::before`
+		// that carries it) — eca.directory's hero keeps a 5%-opacity dot pattern
+		// over its two-column row and must still split.
+		if ( ( ! fact.bgImage || fact.bgLayerOpacity !== undefined ) && domColumns.length === 2 && copyColumn && mediaColumnReal ) {
 			fact.layout = 'split';
+			// Which way round the source puts them — see `ForgeSection.mediaSide`.
+			fact.mediaSide = domColumns.indexOf( mediaColumn as HNodeLike ) < domColumns.indexOf( copyColumn ) ? 'left' : 'right';
 			// The body paragraphs sit in sub-columns (jayainc: two side-by-side).
-			const innerSection = ( () => {
-				const stack: HNodeLike[] = [ copyColumn ];
-				while ( stack.length > 0 ) {
-					const current = stack.pop() as HNodeLike;
+			// Legacy nests `.elementor-inner-section > .elementor-container >
+			// .elementor-column`; containers nest `.e-con.e-child > .e-con-inner >
+			// .e-con.e-child`. Breadth-first so the shallowest match wins.
+			const innerColumns = ( () => {
+				const queue: HNodeLike[] = [ copyColumn ];
+				while ( queue.length > 0 ) {
+					const current = queue.shift() as HNodeLike;
 					for ( const child of childNodes( current ) ) {
-						if ( child.type === 'tag' && sectionClasses( child ).includes( 'elementor-inner-section' ) ) {
-							return child;
+						if ( child.type !== 'tag' ) {
+							continue;
 						}
-						stack.push( child );
+						const classes = sectionClasses( child );
+						if ( classes.includes( 'elementor-inner-section' ) ) {
+							const innerContainer = findWrapped( child, [ 'elementor-container' ] );
+							return innerContainer
+								? childNodes( innerContainer ).filter( ( node ) => node.type === 'tag' && isColumnNode( node ) )
+								: [];
+						}
+						if ( classes.includes( 'e-con-inner' ) ) {
+							return childNodes( child ).filter( ( node ) => node.type === 'tag' && isColumnNode( node ) );
+						}
+						queue.push( child );
 					}
 				}
-				return undefined;
+				return [];
 			} )();
-			if ( innerSection ) {
-				const innerContainer = childNodes( innerSection ).find(
-					( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-container' )
-				);
-				const innerColumns = innerContainer
-					? childNodes( innerContainer ).filter(
-							( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-column' )
-					  )
-					: [];
-				if ( innerColumns.length >= 2 ) {
-					fact.bodyColumns = innerColumns.length;
-				}
+			if ( innerColumns.length >= 2 ) {
+				fact.bodyColumns = innerColumns.length;
 			}
 		}
 		const headingIds: string[] = [];
@@ -1838,10 +2883,15 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		// invisibly (jayainc's hero: rgba(8,26,67,0.9) under jaya-3-1.jpg).
 		// Storing it as the band color makes the rebuilt hero paint the tint
 		// OVER the photo — the opposite of the source. Drop it.
-		if ( fact.bgImage ) {
+		//
+		// EXCEPT on a LAYER band: the image there is a `::before` at partial
+		// opacity, so the colour is the BASE the layer sits on, not an underlay.
+		// eca.directory's stats band is 20% halftone over #27104A; dropping the
+		// colour left white text on white (2026-11-25).
+		if ( fact.bgImage && fact.bgLayerOpacity === undefined ) {
 			delete fact.bgColor;
 		}
-		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog ) {
+		if ( input.includeBare || fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog || fact.logos || fact.comparison || fact.panel ) {
 			facts.push( fact );
 		}
 	}
@@ -1871,7 +2921,18 @@ export function bandOutline( input: DesignFetchInput ): {
 	// `builder` is the tech that was fingerprinted; `bands[].via` is the layer
 	// that produced the boundaries (they differ when a theme rewrites the
 	// builder's row wrapper away — Brando keeps wpb_column, drops vc_row).
-	return { outline: detected.bands, builder: detected.builder ?? detected.adapter };
+	//
+	// Prefer the ADAPTER when a real builder produced the bands: the fingerprint
+	// pass records the FIRST adapter mentioned anywhere in the document, and a
+	// Flatsome page usually carries a stray `wp-block-*` class, so `builder`
+	// came out as `gutenberg` while every band was segmented by `flatsome`.
+	// Builder utilities are keyed by this id, so the mislabel silently produced
+	// the wrong table (`text-center` inert on every Flatsome band).
+	const structural =
+		detected.adapter && detected.adapter !== 'semantic' && detected.adapter !== 'visual'
+			? detected.adapter
+			: detected.builder;
+	return { outline: detected.bands, builder: structural ?? detected.builder };
 }
 
 /**
@@ -1890,6 +2951,16 @@ export function bandOutline( input: DesignFetchInput ): {
  */
 export function diffDesignFacts( before: ForgeDesign | undefined, after: ForgeDesign | undefined ): string[] {
 	const dropped: string[] = [];
+	// The BAND MODEL decides where every section fact comes from, and a refresh
+	// can flip it (the Elementor section pass keeps only bands that STATE a fact,
+	// so a page whose sections carry fewer facts than the vendor-agnostic outline
+	// silently switches to `outline`). The outline bands carry no
+	// `bgColor`/`bgGradient`, so the flip repaints every band transparent —
+	// eca.directory's phased-delivery gradient, the point of an earlier fix,
+	// vanished that way with no warning at all (2026-11-25).
+	if ( before?.bandSource && after?.bandSource && before.bandSource !== after.bandSource ) {
+		dropped.push( `band model ${ before.bandSource } → ${ after.bandSource }` );
+	}
 	const afterById = new Map( ( after?.sections ?? [] ).map( ( section ) => [ section.id, section ] ) );
 	for ( const section of before?.sections ?? [] ) {
 		if ( ! section.id ) {
@@ -1902,6 +2973,13 @@ export function diffDesignFacts( before: ForgeDesign | undefined, after: ForgeDe
 		}
 		if ( section.anchor && section.anchor !== next.anchor ) {
 			dropped.push( `section ${ section.id }'s anchor "${ section.anchor }"` );
+		}
+		// A band SURFACE is the most expensive fact to lose: it decides the theme,
+		// the ink and the contrast audit. Named per band so the loss is attributable.
+		for ( const key of [ 'bgColor', 'bgGradient', 'bgImage', 'overlay', 'panel' ] as const ) {
+			if ( section[ key ] !== undefined && next[ key ] === undefined ) {
+				dropped.push( `section ${ section.id }'s ${ key }` );
+			}
 		}
 	}
 	// Chrome facts only: a palette or typography role that shifts is a source
@@ -1929,7 +3007,11 @@ export function diffDesignFacts( before: ForgeDesign | undefined, after: ForgeDe
  */
 export function promoteOutlineBands( bands?: BandCandidate[] ): ForgeSection[] {
 	return ( bands ?? [] ).map( ( band ) => ( {
-		id: band.id,
+		// The vendor's addressable id when it has one (see `vendorId`): it is
+		// what the source CSS/browser can select, so geometry and colour
+		// measurement resolve instead of reporting 0 of N bands.
+		id: band.vendorId ?? band.id,
+		...( band.vendorId ? { vendorId: band.vendorId } : {} ),
 		anchor: band.anchor ?? band.domId,
 		bgColor: band.bgColor,
 		bgImage: band.bgImage,
@@ -2126,13 +3208,24 @@ function paragraphNodesOf( node: HNodeLike ): HNodeLike[] {
  *     nav links paint their own colour; `restInk` is that container colour, and
  *     `chrome.navInk` (unchanged) stays the link colour.
  *
+ * PINNING is not the only reason to reconcile: a header that is merely OUT OF
+ * FLOW at rest (`position: absolute` / `fixed`) also floats over the first band.
+ * For those, only the RESTING facts are taken — the pinned ones describe a
+ * transition that never happens.
+ *
  * Pure, so the reconcile is testable without a browser.
  */
 export function applyMeasuredHeader(
 	chrome: ForgeChrome | undefined,
 	sticky: ForgeStickyHeader | undefined
 ): void {
-	if ( ! chrome || ! sticky?.sticky ) {
+	if ( ! chrome || ! sticky ) {
+		return;
+	}
+	const floats = sticky.position === 'absolute' || sticky.position === 'fixed';
+	// A header that neither pins nor floats is outside this contract: its
+	// resting background is the harvest's, not the measurement's.
+	if ( ! sticky.sticky && ! floats ) {
 		return;
 	}
 	if ( sticky.restBg ) {
@@ -2140,13 +3233,136 @@ export function applyMeasuredHeader(
 		delete chrome.headerTransparent;
 	} else {
 		// A transparent resting header paints nothing — the strip belongs to the
-		// band behind it.
+		// band behind it. This now covers the OVERLAY case too: virtuallysrilanka's
+		// header is `position:absolute` over a red hero, so the rebuild must lift
+		// the header out of the flow (`.site-header--overlay`) instead of leaving
+		// white-on-white chrome on the page background.
 		delete chrome.headerBg;
 		chrome.headerTransparent = true;
 	}
 	if ( sticky.restInk ) {
 		chrome.headerInk = sticky.restInk;
 	}
+}
+
+/**
+ * Replace the harvested header pills with the BROWSER's computed facts.
+ *
+ * Matched by visible text, so a re-ordered header still lands each fact on the
+ * right control; a pill the harvest missed entirely is CREATED from the
+ * measurement. A measured pill with no fill/ink keeps the harvest's (absence is
+ * not a fact). Returns whether anything was applied.
+ *
+ * Pure, so the overlay is testable without a browser.
+ */
+export function applyMeasuredHeaderActions(
+	chrome: ForgeChrome | undefined,
+	measured: ForgeMeasuredHeaderAction[] | undefined
+): boolean {
+	if ( ! chrome || ! measured || measured.length === 0 ) {
+		return false;
+	}
+	const actions = chrome.headerActions ?? [];
+	let applied = false;
+	for ( const fact of measured ) {
+		const text = fact.text.trim();
+		if ( ! text ) {
+			continue;
+		}
+		const existing = actions.find( ( action ) => ( action.text ?? action.label ?? '' ).trim() === text );
+		if ( existing ) {
+			if ( fact.fill && existing.fill !== fact.fill ) {
+				existing.fill = fact.fill;
+				applied = true;
+			}
+			if ( fact.ink && existing.ink !== fact.ink ) {
+				existing.ink = fact.ink;
+				applied = true;
+			}
+			if ( fact.style && Object.keys( fact.style ).length > 0 ) {
+				existing.style = { ...existing.style, ...fact.style };
+				applied = true;
+			}
+			if ( fact.hideMobile !== undefined && existing.hideMobile !== fact.hideMobile ) {
+				existing.hideMobile = fact.hideMobile;
+				applied = true;
+			}
+			continue;
+		}
+		actions.push( {
+			label: text,
+			text,
+			href: fact.href ?? '',
+			...( fact.fill ? { fill: fact.fill } : {} ),
+			...( fact.ink ? { ink: fact.ink } : {} ),
+			...( fact.hideMobile ? { hideMobile: true } : {} ),
+			...( fact.style ? { style: fact.style } : {} ),
+		} );
+		applied = true;
+	}
+	if ( applied ) {
+		chrome.headerActions = actions;
+	}
+	return applied;
+}
+
+/**
+ * Replace the nav's static type guess with the browser's computed truth.
+ *
+ * `chrome.navStyle` is resolved from the stylesheet by `lib/design.ts`, which
+ * reads a relative `font-size` against the 16px root and leaves `em` tracking
+ * unresolved — so a menu defined as `.888em` was recorded as `16px` and its
+ * `.02em` tracking as `em`, and every forged page rendered the menu one step
+ * too large (monicarajiv, 2026-11-21). `measureChromeGeometry` reads the LINK's
+ * computed style instead, which needs no resolution at all.
+ *
+ * Measured REPLACES the guess wholesale: a half-merged object would pin the
+ * wrong size beside the right tracking. `navInk` and the family role are
+ * separate facts and are left alone (`navFamily` is promoted to
+ * `design.typography.ui` by `analyze`).
+ *
+ * Pure, so the overlay is testable without a browser.
+ */
+export function applyMeasuredNavStyle(
+	chrome: ForgeChrome | undefined,
+	geometry: ForgeChromeGeometry | undefined
+): boolean {
+	const measured = geometry?.navStyle;
+	if ( ! chrome || ! measured || Object.keys( measured ).length === 0 ) {
+		return false;
+	}
+	chrome.navStyle = { ...measured };
+	return true;
+}
+
+/**
+ * Replace the chrome size guess with the copyright's computed truth.
+ *
+ * `analyze` resolves `chrome.chromeSize` from the stylesheet (`chromeSizeFrom`),
+ * which reads DECLARATIONS: monicarajiv declares `body { font-size: 1.125rem }`,
+ * which is not a resolvable px/em/percent value, so the chain fell through to the
+ * element resolution and the rebuilt footer bar painted 18px where the source's
+ * `.copyright-footer` paints 15.984px (measured 2026-11-21).
+ *
+ * `measureChromeGeometry` reads the copyright node's computed style, which needs
+ * no resolution. Measured wins when present; an absent fact keeps the guess so
+ * profiles measured before `chromeSize` existed still render.
+ *
+ * Pure, so the overlay is testable without a browser.
+ */
+export function applyMeasuredChromeSize(
+	chrome: ForgeChrome | undefined,
+	geometry: ForgeChromeGeometry | undefined
+): boolean {
+	const measured = geometry?.chromeSize;
+	if ( ! chrome || typeof measured !== 'string' || ! /^\d+(\.\d+)?px$/.test( measured ) ) {
+		return false;
+	}
+	if ( chrome.chromeSize === measured ) {
+		return false;
+	}
+	chrome.chromeSize = measured;
+	return true;
 }
 
 /**
@@ -2352,7 +3568,16 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		const navResolved = resolveStyle( navLinkNode, [ headerNode ] );
 		const navStyle = pickTextStyle( navResolved );
 		if ( navStyle ) {
-			chrome.navStyle = navStyle;
+			// The harvest reads DECLARATIONS, so a builder typography token arrives
+			// unresolved (`var( --e-global-typography-…-font-size )`) and the rebuild
+			// emits a value the browser cannot use (eca.directory's nav had no size,
+			// weight or casing). Resolve against the same CSS before baking.
+			chrome.navStyle = Object.fromEntries(
+				Object.entries( navStyle ).map( ( [ key, value ] ) => [
+					key,
+					typeof value === 'string' ? resolveCssVars( value, cssText ) : value,
+				] )
+			) as ForgeChromeStyle;
 		}
 		if ( navResolved.ink ) {
 			chrome.navInk = navResolved.ink;
@@ -2439,6 +3664,73 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 				call.style = callStyle;
 			}
 			chrome.call = call;
+		}
+
+		// 5b. Header CTA PILLS — a labelled button in the header (“Try Demo”,
+		//     “Sign In”). They are not nav links and they are not icon links, so a
+		//     rebuild that only knew those two shapes dropped the source's primary
+		//     conversion controls entirely (eca.directory, 2026-11-23). The pill's
+		//     own fill, ink and box come from the shared cascade.
+		//
+		//     Each pill resolves with its enclosing WIDGET in context: Elementor
+		//     scopes a button's colour to `.elementor-element-<widget id>`, and
+		//     without that token both pills resolved the same generic button rule
+		//     (eca.directory's accent “Try Demo” and dark “Sign In” both came back
+		//     #27104a).
+		const enclosingWidget = ( node: HNodeLike ): HNodeLike | undefined => {
+			let current = node.parent;
+			for ( let depth = 0; current && depth < 10; depth++ ) {
+				if ( elementIdOf( tagClasses( current ) ) ) {
+					return current;
+				}
+				current = current.parent;
+			}
+			return undefined;
+		};
+		const pillNodes = collectNodes(
+			headerNode,
+			( n ) =>
+				n.type === 'tag' &&
+				n.name === 'a' &&
+				/(?:^|\s)(?:elementor-button|button|btn)(?:\s|$)/.test( tagClasses( n ) ) &&
+				Boolean( nodeText( n ).trim() )
+		).slice( 0, 2 );
+		if ( pillNodes.length > 0 ) {
+			const actions: ForgeChromeAction[] = [];
+			for ( const pill of pillNodes ) {
+				const text = nodeText( pill ).trim();
+				if ( ! text || actions.some( ( action ) => action.text === text ) ) {
+					continue;
+				}
+				const resolved = resolveStyle( pill, [ headerNode, enclosingWidget( pill ) ] );
+				const action: ForgeChromeAction = { label: text, text, href: pill.attribs?.href ?? '' };
+				if ( resolved.fill ) {
+					action.fill = resolveCssVars( resolved.fill, cssText );
+				}
+				if ( resolved.ink ) {
+					action.ink = resolveCssVars( resolved.ink, cssText );
+				}
+				const pillStyle: ForgeChromeStyle = {};
+				if ( resolved.padding ) {
+					pillStyle.padding = resolved.padding;
+				}
+				if ( resolved.radius ) {
+					pillStyle.radius = resolved.radius;
+				}
+				if ( resolved.size ) {
+					pillStyle.size = resolved.size;
+				}
+				if ( resolved.weight ) {
+					pillStyle.weight = resolved.weight;
+				}
+				if ( Object.keys( pillStyle ).length > 0 ) {
+					action.style = pillStyle;
+				}
+				actions.push( action );
+			}
+			if ( actions.length > 0 ) {
+				chrome.headerActions = actions;
+			}
 		}
 	}
 
@@ -2552,6 +3844,39 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 				chrome.footerLogo = { src: footerImg.attribs?.src, alt: footerImg.attribs?.alt };
 			}
 		}
+		// A builder that keeps the footer mark INSIDE the <footer> and outside a
+		// footer-widget ASIDE never populated the pool above, so the rebuild had
+		// no footer logo at all (virtuallysrilanka's Kadence `.footer-widget1`).
+		// Scan the footer element itself: a logo/brand marker on the class, alt or
+		// FILENAME is the brand here, not a content image — the site-wide
+		// `isLogoImg` filename ban exists to keep the variant pool honest, and it
+		// is too strict for a region that is small and semantically the footer.
+		if ( ! chrome.footerLogo && ! widgetAside ) {
+			const inMediaWidget = ( node: HNodeLike ): boolean => {
+				let current = node.parent;
+				while ( current && current !== footerNode ) {
+					if ( /widget_media|media_image|site-info/i.test( current.attribs?.class ?? '' ) ) {
+						return true;
+					}
+					current = current.parent;
+				}
+				return false;
+			};
+			const footerImgs = collectNodes( footerNode, ( n ) => n.type === 'tag' && n.name === 'img' && Boolean( n.attribs?.src ) );
+			const brandImgs = footerImgs.filter( ( img ) => {
+				if ( isLogoImg( img ) ) {
+					return true;
+				}
+				return /logo|brand|wordmark/i.test( `${ img.attribs?.alt ?? '' } ${ img.attribs?.src ?? '' }` );
+			} );
+			// A partner/logo WALL is not the brand: a media widget wins, and a lone
+			// hinted image is unambiguous on its own.
+			const brandImg = brandImgs.find( inMediaWidget ) ?? ( brandImgs.length === 1 ? brandImgs[ 0 ] : undefined );
+			if ( brandImg ) {
+				footerLogoNode = brandImg;
+				chrome.footerLogo = { src: brandImg.attribs?.src, alt: brandImg.attribs?.alt };
+			}
+		}
 		const blocks: Array<{ title?: string; items: string[] }> = [];
 		// The nodes behind the FIRST block — the brand column when the source
 		// renders its logo above the intro copy. Kept for the logo association below.
@@ -2604,6 +3929,46 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		}
 		if ( blocks.length > 0 ) {
 			chrome.footerBlocks = blocks;
+		}
+
+		// The LINKS the footer LINES carry. A builder publishes the © statement
+		// as ONE line with only the credit anchored (virtuallysrilanka:
+		// `… IS POWERED BY <a class="gray-text" href="http://www.nvdigitalsolutions.com/">NV
+		// DIGITAL SOLUTIONS.</a>`). Flattening the line to its text printed the
+		// credit as dead copy and the rebuild could not tell it had been a link.
+		// Recorded as a lookup so a footer line stays a plain string.
+		const footerLines = blocks.flatMap( ( block ) => block.items );
+		if ( footerLines.length > 0 ) {
+			const footerLinks: Array<{ text: string; href: string }> = [];
+			for ( const scope of scopes ) {
+				const anchors = collectNodes( scope, ( n ) => {
+					if ( n.type !== 'tag' || n.name !== 'a' ) {
+						return false;
+					}
+					const href = ( n.attribs?.href ?? '' ).trim();
+					// A fragment is an in-page jump, not a link the line carries.
+					return href.length > 0 && ! href.startsWith( '#' );
+				} );
+				for ( const anchor of anchors ) {
+					const href = ( anchor.attribs?.href ?? '' ).trim();
+					const text = nodeText( anchor );
+					if ( ! text || text.length > 120 ) {
+						continue;
+					}
+					// Only an anchor INSIDE a captured line — a footer nav or utility
+					// link is its own element, not a suffix of a sentence.
+					if ( ! footerLines.some( ( line ) => line.includes( text ) ) ) {
+						continue;
+					}
+					if ( footerLinks.some( ( link ) => link.text === text && link.href === href ) ) {
+						continue;
+					}
+					footerLinks.push( { text, href } );
+				}
+			}
+			if ( footerLinks.length > 0 ) {
+				chrome.footerLinks = footerLinks;
+			}
 		}
 
 		// Where the logo SITS. A builder renders it as the first widget of the
@@ -2876,6 +4241,14 @@ function parallaxPieceOf( node: HNodeLike, settings: Record<string, unknown> | u
 	if ( attrs[ 'data-parallax-type' ] === 'background' || attrs[ 'data-parallax-type' ] === 'position' ) {
 		piece.type = attrs[ 'data-parallax-type' ];
 	}
+	// Axis: the generic conventions only ever declare the ODD case. Vertical is
+	// what the renderer assumes, so a `y` spelling is a no-op either way.
+	const axisAttr = attrs[ 'data-parallax-axis' ] ?? attrs[ 'data-scroll-axis' ];
+	if ( axisAttr === 'x' || axisAttr === 'horizontal' ) {
+		piece.axis = 'x';
+	} else if ( attrs[ 'data-rellax-horizontal' ] !== undefined || attrs[ 'data-parallax-horizontal' ] !== undefined ) {
+		piece.axis = 'x';
+	}
 	if ( depth !== undefined ) {
 		piece.depth = depth;
 	}
@@ -2892,14 +4265,21 @@ function parallaxPieceOf( node: HNodeLike, settings: Record<string, unknown> | u
 	}
 
 	if ( motionPiece ) {
-		const direction = motionFxValue( settings, 'motion_fx_translateY_direction' ) ?? motionFxValue( settings, 'motion_fx_translateX_direction' );
+		// Which axis the source actually drives. translateY wins when BOTH are
+		// enabled: the vertical reading is the common one, and keeping it first
+		// leaves every pre-existing site's generated output byte-identical.
+		const axisKey = motionFxValue( settings, 'motion_fx_translateY_effect' ) === 'yes' ? 'translateY' : 'translateX';
+		if ( axisKey === 'translateX' ) {
+			piece.axis = 'x';
+		}
+		const direction = motionFxValue( settings, `motion_fx_${ axisKey }_direction` );
 		piece.direction = direction === 'negative' ? 'negative' : 'positive';
-		const speedEntry = ( motionFxValue( settings, 'motion_fx_translateY_speed' ) ?? motionFxValue( settings, 'motion_fx_translateX_speed' ) ) as { size?: unknown } | undefined;
+		const speedEntry = motionFxValue( settings, `motion_fx_${ axisKey }_speed` ) as { size?: unknown } | undefined;
 		const speed = numberOf( speedEntry?.size );
 		if ( speed !== undefined && speed > 0 ) {
 			piece.speed = speed;
 		}
-		const rangeEntry = ( motionFxValue( settings, 'motion_fx_translateY_affectedRange' ) ?? motionFxValue( settings, 'motion_fx_translateX_affectedRange' ) ) as { sizes?: { start?: unknown; end?: unknown } } | undefined;
+		const rangeEntry = motionFxValue( settings, `motion_fx_${ axisKey }_affectedRange` ) as { sizes?: { start?: unknown; end?: unknown } } | undefined;
 		const start = numberOf( rangeEntry?.sizes?.start );
 		const end = numberOf( rangeEntry?.sizes?.end );
 		if ( start !== undefined || end !== undefined ) {
@@ -2994,7 +4374,7 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 			const classes = tagClasses( node );
 			const id = elementIdOf( classes );
 			const classList = sectionClasses( node );
-			const isTopSection = classList.includes( 'elementor-top-section' );
+			const isTopSection = isTopLevelBandClasses( classList );
 			const isSection = classList.includes( 'elementor-section' );
 			if ( ( isTopSection || isSection ) && id ) {
 				sectionStack.push( { id, top: isTopSection } );
@@ -3095,40 +4475,56 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 
 export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	const cssText = input.css.join( '\n' );
-	const roles: Record<string, string> = {};
+	// The site's OWN sheets carry the design language; the full cascade is the
+	// fallback for a source whose design lives in a plugin (a builder-only
+	// theme). See `DesignFetchInput.designCss` / `inlineCss`.
+	const designSheets = [ ...( input.designCss ?? [] ), ...( input.inlineCss ?? [] ) ];
+	const designText = designSheets.length > 0 ? designSheets.join( '\n' ) : cssText;
+	const roles: Record< string, string > = {};
 	const confidence: Record<string, RoleConfidence> = {};
 	const varHits: Record<string, { value: string; role: string }> = {};
 	let designCtaStyle: { padding?: string; radius?: string } | undefined;
 
-	// 1. CSS custom properties with role hints — the highest-quality signal.
-	for ( const match of cssText.matchAll( CSS_VAR_RE ) ) {
-		const name = match[ 1 ];
-		const raw = match[ 2 ].trim();
-		if ( ! COLOR_VALUE_RE.test( raw ) ) {
-			continue;
-		}
-		const value = normalizeColor( raw );
-		if ( ! value ) {
-			continue;
-		}
-		let role: string | undefined;
-		// Elementor globals first (--e-global-color-primary → accent).
-		const elementor = /^--e-global-color-([\w-]+)$/i.exec( name );
-		if ( elementor ) {
-			role = ELEMENTOR_ROLE_NAMES[ elementor[ 1 ].toLowerCase() ] ?? `custom-${ elementor[ 1 ].toLowerCase() }`;
-		} else {
-			for ( const [ candidate, regex ] of Object.entries( VAR_ROLE_HINTS ) ) {
-				if ( regex.test( name ) ) {
-					role = candidate;
-					break;
+	const collectRoles = ( source: string ): void => {
+		for ( const match of source.matchAll( CSS_VAR_RE ) ) {
+			const name = match[ 1 ];
+			const raw = match[ 2 ].trim();
+			if ( ! COLOR_VALUE_RE.test( raw ) ) {
+				continue;
+			}
+			const value = normalizeColor( raw );
+			if ( ! value ) {
+				continue;
+			}
+			let role: string | undefined;
+			// Elementor globals first (--e-global-color-primary → accent).
+			const elementor = /^--e-global-color-([\w-]+)$/i.exec( name );
+			if ( elementor ) {
+				role = ELEMENTOR_ROLE_NAMES[ elementor[ 1 ].toLowerCase() ] ?? `custom-${ elementor[ 1 ].toLowerCase() }`;
+			} else {
+				for ( const [ candidate, regex ] of Object.entries( VAR_ROLE_HINTS ) ) {
+					if ( regex.test( name ) ) {
+						role = candidate;
+						break;
+					}
 				}
 			}
+			if ( role && ! roles[ role ] ) {
+				roles[ role ] = value;
+				confidence[ role ] = 'high';
+				varHits[ role ] = { value, role };
+			}
 		}
-		if ( role && ! roles[ role ] ) {
-			roles[ role ] = value;
-			confidence[ role ] = 'high';
-			varHits[ role ] = { value, role };
-		}
+	};
+
+	// 1. CSS custom properties with role hints — the highest-quality signal.
+	//    DESIGN-ORIGIN sheets only: a plugin's UI theme must not fill a role the
+	//    site left unset (that is how a chat widget's `--…-color-surface`
+	//    recoloured a purple/white brand). Plugin sheets are read only when the
+	//    site's own sheets yielded NO roles at all (a builder-only theme).
+	collectRoles( designText );
+	if ( Object.keys( roles ).length === 0 && designText !== cssText ) {
+		collectRoles( cssText );
 	}
 
 	// 1b. The untouched-builder-default override: when the var role is one
@@ -3136,7 +4532,7 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	// the dominant CTA color IS the brand accent (jayainc: the global
 	// primary stays #6ec1e4 while every button renders #fccd0f).
 	if ( roles.accent && DEFAULT_BUILDER_PRIMARIES.has( roles.accent ) ) {
-		const cta = dominantCtaColor( cssText );
+		const cta = dominantCtaColor( designText ) ?? dominantCtaColor( cssText );
 		if ( cta && cta !== roles.accent ) {
 			roles.accent = cta;
 			confidence.accent = 'high';
@@ -3165,7 +4561,12 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	}
 
 	// 2. Frequency + saturation heuristics fill the confident gaps.
-	const frequencies = colorFrequencies( cssText );
+	const frequencies = colorFrequencies( designText );
+	if ( frequencies.size === 0 && designText !== cssText ) {
+		for ( const [ value, count ] of colorFrequencies( cssText ) ) {
+			frequencies.set( value, count );
+		}
+	}
 	const ranked = [ ...frequencies.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] );
 	const unassigned: string[] = [];
 	const seen = new Set( Object.values( roles ) );
@@ -3210,22 +4611,43 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	// @font-face blocks are load evidence, not usage — they inflate
 	// local google-fonts sheets (roboto.css carries ~5 faces) and flip the
 	// ranking away from the families elements actually wear.
-	const cssForFamilies = cssText.replace( /@font-face\s*\{[^{}]*\}/gi, '' );
+	const cssForFamilies = designText.replace( /@font-face\s*\{[^{}]*\}/gi, '' );
 	const families = familyFrequencies( cssForFamilies ).map( ( entry ) => entry.family );
 	// The body-selector rule is the authoritative body family (later rules
 	// win) — the frequency ranking miscounts builder-default families that
 	// sit unused in Elementor's typography tokens (jayainc: `roboto` is a
 	// token-layer leftover while the body really renders Rubik). The
 	// h1-h6 rule is the authoritative DISPLAY family the same way.
-	const bodyRuleFamily = bodyRuleFact( cssText, 'font-family' )?.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
-	const headingRuleFamily = headingRuleFact( cssText, 'font-family' )?.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
+	const bodyRuleFamily = ( bodyRuleFact( designText, 'font-family' ) ?? bodyRuleFact( cssText, 'font-family' ) )?.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
+	const headingRuleFamily = ( headingRuleFact( designText, 'font-family' ) ?? headingRuleFact( cssText, 'font-family' ) )?.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
 	const bodyFamily = bodyRuleFamily && ! GENERIC_FAMILIES.has( bodyRuleFamily ) ? bodyRuleFamily : families[ 1 ];
 	const headingFamily = headingRuleFamily && ! GENERIC_FAMILIES.has( headingRuleFamily ) ? headingRuleFamily : undefined;
 	const displayFamily = headingFamily ?? ( families[ 0 ] && families[ 0 ] !== bodyFamily ? families[ 0 ] : families.find( ( family ) => family !== bodyFamily ) ?? bodyFamily );
-	const bodyWeight = bodyRuleFact( cssText, 'font-weight' );
-	const scale = trimScaleLadder( pxValues( cssText, FONT_SCALE_PATTERNS ) );
-	const spacing = trimSpaceLadder( pxValues( cssText, SPACE_PATTERNS ) );
-	const radii = trimLadder( pxValues( cssText, RADIUS_PATTERNS ), 8 );
+	// The UI face (nav links). Only a MENU rule counts, and a family already
+	// serving body or display is not a third role — the nav simply uses it.
+	const navFamilies = families.filter( ( family ) => family !== bodyFamily && family !== displayFamily );
+	const navRuleFamily = ( navRuleFact( designText, 'font-family' ) ?? navRuleFact( cssText, 'font-family' ) )?.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
+	const uiFamily =
+		navRuleFamily && ! GENERIC_FAMILIES.has( navRuleFamily ) && navRuleFamily !== bodyFamily && navRuleFamily !== displayFamily
+			? navRuleFamily
+			: undefined;
+	// The ACCENT face: the family the source uses on a marked heading but not on
+	// the body, the display role or the menu (monicarajiv: Dancing Script on
+	// `h3.alt-font`). A CLASS carries it, so it becomes a token the builder’s
+	// own utility can point at — a per-level fact cannot, because a band can
+	// hold a Dancing Script `h3.alt-font` beside a Karma `h3`.
+	// An ICON font is never a typeface (see `ICON_FAMILY`) — `familyFrequencies`
+	// already drops them, so this list is typefaces only.
+	const accentFamily = families.find(
+		( family ) => family !== bodyFamily && family !== displayFamily && family !== uiFamily && ! ICON_FAMILY.test( family )
+	);
+	const bodyWeight = bodyRuleFact( designText, 'font-weight' ) ?? bodyRuleFact( cssText, 'font-weight' );
+	const designScale = trimScaleLadder( pxValues( designText, FONT_SCALE_PATTERNS ) );
+	const scale = designScale.length > 0 ? designScale : trimScaleLadder( pxValues( cssText, FONT_SCALE_PATTERNS ) );
+	const designSpacing = trimSpaceLadder( pxValues( designText, SPACE_PATTERNS ) );
+	const spacing = designSpacing.length > 0 ? designSpacing : trimSpaceLadder( pxValues( cssText, SPACE_PATTERNS ) );
+	const designRadii = trimLadder( pxValues( designText, RADIUS_PATTERNS ), 8 );
+	const radii = designRadii.length > 0 ? designRadii : trimLadder( pxValues( cssText, RADIUS_PATTERNS ), 8 );
 	const shadows = ( cssText.match( /box-shadow\s*:/gi ) ?? [] ).length;
 
 	// The section-background pass (117 §2) — the per-band theming data the
@@ -3237,17 +4659,30 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	// out #f5f5f4, 2026-11-09). The renderer maps outline bands positionally,
 	// which `bandSource` tells it to do.
 	const elementorSections = input.html ? analyzeSections( input ) : undefined;
+	const comparisonById = input.html ? comparisonFactsById( input.html ) : {};
 	const outline = input.html ? bandOutline( input ) : {};
-	const sections =
-		elementorSections && elementorSections.length > 0
-			? elementorSections
-			: promoteOutlineBands( outline.outline );
-	const bandSource =
-		elementorSections && elementorSections.length > 0
-			? 'sections'
-			: sections.length > 0
-				? 'outline'
-				: undefined;
+	const outlineBands = promoteOutlineBands( outline.outline );
+	// A TRUNCATED Elementor list is worse than the outline: the renderer themes
+	// positionally, so a 2-of-9 list mis-themes every band after the second and
+	// the geometry/text passes measure nothing past it. The section pass keeps
+	// only bands that STATE a fact, and an Elementor container page is mostly
+	// transparent, unpadded bands (eca.directory: 2 kept of 9). Use it only when
+	// it covers the whole band list; otherwise keep the vendor-agnostic outline.
+	const useElementorSections =
+		elementorSections !== undefined &&
+		elementorSections.length > 0 &&
+		( outlineBands.length === 0 || elementorSections.length >= outlineBands.length );
+	const sections = ( useElementorSections ? elementorSections : outlineBands ).map( ( section ) => {
+		// The comparison matrix is recorded per ID so it reaches BOTH band models
+		// (see `comparisonFactsById`) — the outline bands never see it otherwise.
+		const comparison = section.id ? comparisonById[ section.id ] : undefined;
+		return comparison && ! section.comparison ? { ...section, comparison } : section;
+	} );
+	const bandSource = useElementorSections
+		? 'sections'
+		: sections.length > 0
+			? 'outline'
+			: undefined;
 
 	return {
 		mode: 'rebuild',
@@ -3257,6 +4692,10 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		typography: {
 			display: displayFamily,
 			body: bodyFamily,
+			// A THIRD family only when the source really wears one (a menu face);
+			// absent → the nav keeps the body family, as before.
+			...( uiFamily ? { ui: uiFamily } : {} ),
+			...( accentFamily ? { accent: accentFamily } : {} ),
 			scalePx: scale.length > 0 ? scale : [ 14, 16, 20, 28, 40 ],
 			bodyWeight,
 		},
@@ -3276,6 +4715,11 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		...( input.html ? outline : {} ),
 		chrome: input.html ? analyzeChrome( input ) : undefined,
 		behavior: input.html ? analyzeScrollBehavior( input ) : undefined,
+		// The builder's PER-ELEMENT rules recovered from its own <style> blocks
+		// (lib/element-css.ts): the layout the class conventions cannot express —
+		// gap heights, column padding, element widths. Without them the rebuild
+		// re-derives the box and loses it.
+		elementCss: input.html ? extractElementCss( input.html ) : undefined,
 		ctaStyle: designCtaStyle,
 		adaptation: {
 			keep: [
@@ -3405,6 +4849,16 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 	if ( design.typography.display ) {
 		tokens[ 'font-display' ] = `'${ design.typography.display }', ${ DEFAULT_FONT_STACK }`;
 	}
+	if ( design.typography.accent ) {
+		// The class-driven accent face (`alt-font`). Falls back to the display
+		// face in the stylesheet, so an absent token is inert.
+		tokens[ 'font-accent' ] = `'${ design.typography.accent }', ${ DEFAULT_FONT_STACK }`;
+	}
+	if ( design.typography.ui ) {
+		// The nav/menu face, when the source wears a distinct one. It falls back
+		// to the body face in the stylesheet, so an absent token is inert.
+		tokens[ 'font-ui' ] = `'${ design.typography.ui }', ${ DEFAULT_FONT_STACK }`;
+	}
 	if ( design.typography.body ) {
 		// Always emit the body font — even when body === display the body
 		// token must not fall through to the system stack (a single-family
@@ -3469,7 +4923,7 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 	return tokens;
 }
 
-const DEFAULT_FONT_STACK = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+export const DEFAULT_FONT_STACK = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 // -- adaptation + contrast fixes (114 §3.5) ----------------------------------
 
@@ -3744,7 +5198,12 @@ export function builtBandsOf( html: string ): BuiltBand[] {
 	// tag, then read its attributes independently. The FIRST tag per id wins:
 	// the outermost wrapper carries the background, and nested elements repeat
 	// the id.
-	for ( const match of html.matchAll( /<div\b[^>]*>/gi ) ) {
+	//
+	// The tag NAME is not part of the contract either: the renderer emits a
+	// `<div>` wrapper, but a RAW band keeps the source's own element (an
+	// Elementor band is a `<section>`). Matching only `div` reported every raw
+	// band as dropped while its box geometry and colour both passed.
+	for ( const match of html.matchAll( /<(?:div|section|article|main)\b[^>]*>/gi ) ) {
 		const attributes = match[ 0 ];
 		const id = /\bdata-section-id="([^"]*)"/i.exec( attributes )?.[ 1 ];
 		if ( ! id || seen.has( id ) ) {

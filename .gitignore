@@ -283,6 +283,7 @@ docker/craft/app/*
 !docker/craft/app/.gitkeep
 lib/core/.phpstan-cache/
 lib/core/.phpunit.cache/
+addons/nvoos-wifi/.phpunit.cache/
 
 # Playwright MCP browser-tool capture artifacts (console/page logs — never commit)
 .playwright-mcp/
@@ -305,3 +306,17 @@ docs/videos/narration/audio/
 # committed artifact (see examples/nvoos-astro-forge/sites/README.md).
 examples/*-frontend/
 examples/nvoos-astro-forge/*-local/
+
+# Internal Cloudways probe CLIs — local-only under
+# ~/.agents/skills/nv-digital-cloudways-wpcli/assets/. Never commit; a stopgap
+# against `git add -A` reintroducing them from a stale worktree.
+examples/nvoos-service-exchange/scripts/cloudways-*-probe.mjs
+
+# Nested git worktrees (e.g. .wt-ajax-guard/) — registered via `git worktree add`,
+# not part of the tree. Keeps them out of `git add -A` sweeps.
+.wt-*/
+
+# PHPCS ratchet — saved JSON reports used with --input.
+# See docs/developer/phpcs-ratchet.md.
+.phpcs-ratchet.json
+build/phpcs.json

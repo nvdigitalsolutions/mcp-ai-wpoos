@@ -72,7 +72,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_toggle_tool' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -94,7 +94,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_toggle_tool' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -124,7 +124,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_toggle_tool' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -149,7 +149,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_toggle_tool' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -171,7 +171,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_toggle_tool' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -193,7 +193,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_toggle_tool' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 

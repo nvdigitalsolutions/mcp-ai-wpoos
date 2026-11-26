@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * FlowCanvas — the main React Flow editor surface.
  *

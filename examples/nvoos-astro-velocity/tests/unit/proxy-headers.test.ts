@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // BFF proxy header transforms — unit tests for scripts/lib/proxy-headers.mjs.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media-snapshot.test.ts — the committed media net for a CMS-less site.
 //
@@ -8,11 +9,13 @@
 // ---------------------------------------------------------------------------
 
 import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { writeMediaSnapshot } from '../lib/media-snapshot.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const roots: string[] = [];
 
@@ -23,7 +26,7 @@ async function tempDir(): Promise<string> {
 }
 
 afterEach(async () => {
-	await Promise.all(roots.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(roots.splice(0).map((dir) => rmTemp(dir)));
 });
 
 const CSS_URL = 'https://cms.example.com/wp-content/themes/x/icon.css';
@@ -110,5 +113,103 @@ describe('writeMediaSnapshot', () => {
 		expect((await stat(join(out, 'media', 'old-font.woff'))).size).toBe(3);
 		const manifest = JSON.parse(await readFile(join(out, 'manifest.json'), 'utf8'));
 		expect(manifest.entries[FONT_URL].file).toBe('media/def-font.woff');
+	});
+
+	it('warns when a sheet was snapshotted without its source text', async () => {
+		// A build that predates the report's `sourceFile` field only has the
+		// REWRITTEN sheet. The snapshot then resolves `/media/...` against the
+		// origin and 404s every font on the next cold build (virtuallysrilanka,
+		// 2026-11-22). Advisory: the operator may no longer be able to reproduce
+		// the build.
+		const project = await projectWithReport();
+		await writeFile(
+			join(project, '.forge-cache', 'media-localize.json'),
+			JSON.stringify({
+				localized: [
+					{ url: CSS_URL, file: '/media/abc-icon.css', contentType: 'text/css', bytes: 37 },
+					{ url: FONT_URL, file: '/media/def-font.woff', contentType: 'font/woff', bytes: 10 },
+				],
+			})
+		);
+		const out = join(await tempDir(), 'site.media');
+
+		const result = await writeMediaSnapshot({ projectDir: project, outDir: out });
+
+		expect(result.warnings.join('\n')).toContain('sourceFile');
+	});
+
+	it('warns when a sheet source still points at its own /media output', async () => {
+		const project = await projectWithReport();
+		await writeFile(
+			join(project, '.forge-cache', 'source-stylesheets', 'abc-icon.css'),
+			'@font-face{font-family:X;src:url(/media/def-font.woff)}'
+		);
+		const out = join(await tempDir(), 'site.media');
+
+		const result = await writeMediaSnapshot({ projectDir: project, outDir: out });
+
+		expect(result.warnings.join('\n')).toMatch(/rewritten sheet/);
+	});
+
+	it('warns about origin assets the report never localized', async () => {
+		// An image Astro's <Image> consumed has no `localized` entry. A
+		// materialized rebuild renders it as a plain <img>, misses the snapshot
+		// and leaves a dead hotlink. Canonical/og page URLs are not assets.
+		const project = await projectWithReport();
+		const uncovered = 'https://cms.example.com/wp-content/uploads/hero.png';
+		await writeFile(
+			join(project, '.forge-cache', 'media-localize.json'),
+			JSON.stringify({
+				origin: 'https://cms.example.com',
+				localized: [{ url: FONT_URL, file: '/media/def-font.woff', contentType: 'font/woff', bytes: 10 }],
+			})
+		);
+		await writeFile(
+			join(project, 'dist', 'client', 'index.html'),
+			`<link rel="canonical" href="https://cms.example.com/contact/"><img src="${uncovered}">`
+		);
+		const out = join(await tempDir(), 'site.media');
+
+		const result = await writeMediaSnapshot({ projectDir: project, outDir: out });
+
+		const joined = result.warnings.join('\n');
+		expect(joined).toContain(uncovered);
+		expect(joined).not.toContain('/contact/');
+	});
+
+	it('fails a --strict run, but still writes a coherent snapshot', async () => {
+		// CI wants a red run, not a silently poisoned net. The write completes
+		// first so the operator can inspect what was captured and a re-run merges
+		// over it (never a half-written snapshot).
+		const project = await projectWithReport();
+		await writeFile(
+			join(project, '.forge-cache', 'media-localize.json'),
+			JSON.stringify({
+				localized: [
+					{ url: CSS_URL, file: '/media/abc-icon.css', contentType: 'text/css', bytes: 37 },
+					{ url: FONT_URL, file: '/media/def-font.woff', contentType: 'font/woff', bytes: 10 },
+				],
+			})
+		);
+		const out = join(await tempDir(), 'site.media');
+
+		await expect(writeMediaSnapshot({ projectDir: project, outDir: out, strict: true })).rejects.toThrow(
+			/sourceFile/
+		);
+
+		expect(existsSync(join(out, 'manifest.json'))).toBe(true);
+		expect(existsSync(join(out, 'media', 'def-font.woff'))).toBe(true);
+	});
+
+	it('does not fail a strict run on a clean snapshot', async () => {
+		const project = await projectWithReport();
+		const out = join(await tempDir(), 'site.media');
+
+		const result = await writeMediaSnapshot({ projectDir: project, outDir: out, strict: true });
+
+		expect(result.warnings).toEqual([]);
+		// The fixture build carries no origin HTML references, so nothing is
+		// uncovered; the source sheet resolves its font relatively.
+		expect(existsSync(join(out, 'manifest.json'))).toBe(true);
 	});
 });

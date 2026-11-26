@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest';
 
 import { promoteOutlineBands, renderableBands } from '../lib/design.ts';
@@ -98,5 +99,67 @@ describe( 'a vendor DOM id becomes the band anchor when the source has none', ()
 			{ id: '45f5e88', anchor: 'about', domId: 'section_99', via: 'flatsome' },
 		] as BandCandidate[] );
 		expect( band.anchor ).toBe( 'about' );
+	} );
+} );
+
+describe( 'a band MARK STRIP reaches the renderer (ForgeSection.logos)', () => {
+	const profileOf = ( section: ForgeSection ) =>
+		( { url: 'https://src.test', collections: [], design: { sections: [ section ] } } ) as unknown as SiteProfile;
+
+	it( 'emits the marks on the band entry, and the interface accepts them', () => {
+		const module = renderSectionsGenerated(
+			profileOf( {
+				id: 'a5d0ddc',
+				anchor: 'hardware',
+				logos: [ { src: 'https://src.test/1.png' }, { src: 'https://src.test/2.png', alt: 'Linksys' } ],
+			} )
+		);
+		expect( module ).toContain( 'logos?: Array<{ src: string; alt?: string }>;' );
+		expect( module ).toContain(
+			'logos: [{"src":"https://src.test/1.png"},{"src":"https://src.test/2.png","alt":"Linksys"}]'
+		);
+	} );
+
+	it( 'omits the key entirely when the band has no marks', () => {
+		const module = renderSectionsGenerated( profileOf( { id: 'a5d0ddc', anchor: 'hardware' } ) );
+		expect( module ).not.toContain( 'logos:' );
+	} );
+} );
+
+describe( 'a band PANEL surface reaches the renderer (ForgeSection.panel)', () => {
+	const profileOf = ( section: ForgeSection ) =>
+		( { url: 'https://src.test', collections: [], design: { sections: [ section ] } } ) as unknown as SiteProfile;
+
+	it( 'emits the column surfaces and the resolved panel', () => {
+		const module = renderSectionsGenerated(
+			profileOf( {
+				id: '8d6ec26',
+				anchor: 'wifi',
+				columns: [ { width: 50 }, { width: 50, bgColor: '#dd3333' } ],
+				panel: { bg: '#dd3333', ink: '#ffffff' },
+			} )
+		);
+
+		expect( module ).toContain( 'bgColor?: string;' );
+		expect( module ).toContain( 'bgImage?: string;' );
+		expect( module ).toContain( "bgColor: '#dd3333'" );
+		expect( module ).toContain( "panel: { bg: '#dd3333', ink: '#ffffff' }" );
+	} );
+
+	it( 'emits a column PHOTO surface and no panel', () => {
+		const module = renderSectionsGenerated(
+			profileOf( {
+				id: '116ce85',
+				anchor: 'services',
+				columns: [
+					{ width: 33, bgColor: '#dd3333' },
+					{ width: 33, bgImage: 'https://src.test/phone.jpg' },
+					{ width: 33 },
+				],
+			} )
+		);
+
+		expect( module ).toContain( "bgImage: 'https://src.test/phone.jpg'" );
+		expect( module ).not.toContain( 'panel:' );
 	} );
 } );

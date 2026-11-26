@@ -499,3 +499,88 @@ Gotchas baked into the shim (each was a real failure while building it):
 - Prefer a completed `*-vendor` volume when one exists (see cross-worktree
   runs) — this shim is the fallback, not the default.
 
+### Running the Content Graph Pro suite locally (vendor shadow, matrices)
+
+`plugins/nvoos-content-graph-pro/phpunit.xml.dist` is what both `PHPUnit Pro
+Addon` matrix jobs run, and it can be reproduced locally — with two traps.
+
+**Trap 1: `plugins/nvoos-content-graph/vendor` shadows the root PHPUnit.** That
+vendor is a PHPUnit 9 dev install (gitignored, left by a standalone build). The
+Pro bootstrap requires the ecosystem plugin entries, the CG core entry requires
+its `vendor/autoload.php`, and that classmap then answers
+`PHPUnit\Runner\TestSuiteLoader` with the PHPUnit 9 *interface*:
+
+```
+Cannot instantiate interface PHPUnit\Runner\TestSuiteLoader
+```
+
+Do not try to scrub the maps. The shadow surface is large — PHPUnit classmap
+entries in both `autoload_classmap.php` and `autoload_static.php`, ~200
+`SebastianBergmann` entries, and an `autoload_files.php` entry for PHPUnit's
+`Assert/Functions.php` (which would redeclare functions). Move the directory
+instead; it is reversible and the plugin entry registers its own PSR-4 fallback
+(`spl_autoload_register` on `NvoosContentGraph\`, entry lines 37-48), so its
+classes still load:
+
+```sh
+mv plugins/nvoos-content-graph/vendor plugins/nvoos-content-graph/vendor.off
+# ... run ...
+mv plugins/nvoos-content-graph/vendor.off plugins/nvoos-content-graph/vendor
+```
+
+A pre-existing `vendor.bak-phpunit-conflict/` beside it is an earlier agent's
+version of the same workaround. Both names are untracked — never stage them.
+
+**Trap 2: the matrix is an env var, not a config.** Monolith (base plugin
+active, base classes served) is the default; standalone needs
+`-e WP_MCP_AI_PRO_STANDALONE=1` on the `docker exec`.
+
+**Budget the run by file, not by suite.** The local bind mount makes the full CG
+suite impractical: its network-bound tests crawl (a 5-test standalone run took
+10 minutes) and the full run exceeded 30 minutes with no result, while CI
+finishes it in ~12 s. Run the affected test file in both matrices instead, plus
+the base-side counterpart in the root suite:
+
+```sh
+# monolith; add -e WP_MCP_AI_PRO_STANDALONE=1 for standalone
+docker exec -e WP_CORE_DIR=/var/www/html ... oos-wp sh -c 'cd .../mcp-ai-wpoos \
+  && php -d memory_limit=1G tmp-dev-phpunit.php \
+  -c plugins/nvoos-content-graph-pro/phpunit.xml.dist --no-coverage \
+  plugins/nvoos-content-graph-pro/tests/<file>.php'
+```
+
+### Reading a detached run's result (9p bind mount)
+
+On the `F:` drive behind Docker's 9p mount a run spends most of its wall time
+in bootstrap (`D` state on `p9_client_rpc`), while the tests themselves take
+seconds. Launch detached and poll:
+
+```bash
+docker exec -d -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db \
+  -e WP_DB_NAME=wordpress_test -e WP_DB_USER=wordpress -e WP_DB_PASSWORD=wordpress \
+  oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && \
+  php -d memory_limit=1G tmp-dev-phpunit.php --no-coverage <files…> > /tmp/run.log 2>&1'
+
+docker exec oos-wp sh -c 'grep -oE "[0-9]+ / [0-9]+" /tmp/run.log | tail -1'   # progress
+docker exec oos-wp sh -c 'ps -o stat,etime -C php'                              # D vs R
+```
+
+`STAT D` means it is waiting on the mount, not hung; `R` means tests are
+executing. Budget from a measurement, not a guess: one bootstrap plus **134
+tests** (`test-pro-schedule-manager.php` 93 + `test-schedule-manager-ajax.php`
+41) took **~30 min wall**, of which ~15 was bootstrap. One combined invocation
+is still cheaper than two separate ones - do not split "to save time".
+
+Read the summary by pattern, never by `tail`: WordPress debug output keeps
+flushing into the same log, so the summary line gets buried and interleaved.
+
+```bash
+docker exec oos-wp sh -c 'grep -E "^(OK|FAILURES|ERRORS|Tests:|Time:)" /tmp/run.log'
+```
+
+`OK, but there were issues!` is **not** a failure - it reports warnings and
+PHPUnit deprecations while `Failures`/`Errors` stay at 0. Match `Tests:` and
+`Assertions:` against the known baseline instead of grepping for the literal
+`OK` (134 tests / 403 assertions was the clean baseline for manager + AJAX;
+the same files run alone give 93/274 and 41/129, and the totals sum).
+

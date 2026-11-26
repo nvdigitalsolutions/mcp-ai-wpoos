@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * NV oOS Canvas Toolkit — Whiteboard canvas (tldraw v5).
  *

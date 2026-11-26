@@ -64,7 +64,7 @@ class Test_FlowHub_Client extends WP_UnitTestCase {
 	// ------------------------------------------------------------------ //
 
 	/**
-	 * get_key() falls back to the centralized settings option.
+	 * Get_key() falls back to the centralized settings option.
 	 */
 	public function test_get_key_falls_back_to_settings() {
 		update_option(
@@ -79,7 +79,7 @@ class Test_FlowHub_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_client_id() falls back to the centralized settings option.
+	 * Get_client_id() falls back to the centralized settings option.
 	 */
 	public function test_get_client_id_falls_back_to_settings() {
 		update_option(
@@ -94,7 +94,7 @@ class Test_FlowHub_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_api_key() remains as a legacy alias of get_key().
+	 * Get_api_key() remains as a legacy alias of get_key().
 	 */
 	public function test_get_api_key_aliases_get_key() {
 		update_option(
@@ -113,7 +113,7 @@ class Test_FlowHub_Client extends WP_UnitTestCase {
 	// ------------------------------------------------------------------ //
 
 	/**
-	 * make_request() must reject missing credentials with a WP_Error.
+	 * Make_request() must reject missing credentials with a WP_Error.
 	 */
 	public function test_make_request_returns_error_when_credentials_missing() {
 		delete_option( 'wp_mcp_ai_settings' );

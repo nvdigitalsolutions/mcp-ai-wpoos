@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // checkout.spec.ts — Proposal 106 P3 e2e gates (WooCommerce handoff) +
 // Proposal 111: in NATIVE mode (the default fixture pair) /checkout renders
 // the hosted-checkout interstitial instead of the embedded island.

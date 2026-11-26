@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * CommandCenterClient contract tests (fetch mocked, zero network).
  *

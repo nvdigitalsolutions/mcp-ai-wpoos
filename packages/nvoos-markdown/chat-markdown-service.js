@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Markdown Rendering Service for NV oOS Chat (Optimized)
  * 

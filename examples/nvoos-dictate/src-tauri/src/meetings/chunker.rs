@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Meeting chunker: split long recordings into STT-friendly segments.
 //!
 //! Parakeet TDT/CTC models have a ~4-5 minute decode limit, so recordings

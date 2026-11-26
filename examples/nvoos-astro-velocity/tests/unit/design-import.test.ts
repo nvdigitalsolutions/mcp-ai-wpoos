@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design-import.test.ts — Phase 0 gates for the design-language import
 // pipeline (Proposal 098): deterministic analyzer fixtures + the SSRF fetcher

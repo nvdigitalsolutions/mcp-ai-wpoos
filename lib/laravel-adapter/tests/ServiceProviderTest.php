@@ -18,11 +18,16 @@ use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\AudioTranscriptionInterface;
+use Nvoos\Core\Domain\Contract\ChunkedUploadInterface;
+use Nvoos\Core\Domain\Contract\ControlledDocumentInterface;
+use Nvoos\Core\Domain\Contract\DocsCorpusInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
+use Nvoos\Core\Domain\Contract\VideoFrameExtractionInterface;
 use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
@@ -42,6 +47,11 @@ final class ServiceProviderTest extends TestCase {
 			SchemaStoreInterface::class,
 			ProfessionRepositoryInterface::class,
 			HttpClientInterface::class,
+			VideoFrameExtractionInterface::class,
+			AudioTranscriptionInterface::class,
+			ChunkedUploadInterface::class,
+			DocsCorpusInterface::class,
+			ControlledDocumentInterface::class,
 		);
 
 		foreach ( $bindings as $binding ) {

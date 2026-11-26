@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Blueprint, EstateSummary } from '../types';

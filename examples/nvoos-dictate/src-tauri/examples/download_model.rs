@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Model download CLI — pulls a registry entry through the same streaming
 //! SHA-256 + atomic-install path the GUI uses (never bundle weights).
 //!

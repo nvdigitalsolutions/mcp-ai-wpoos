@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import './style.css';
 import { initMarkdown } from './sections/markdown';
 import { initStream } from './sections/stream';

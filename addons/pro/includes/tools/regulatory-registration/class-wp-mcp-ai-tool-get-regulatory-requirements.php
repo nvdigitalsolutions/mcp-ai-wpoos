@@ -141,9 +141,9 @@ class WP_MCP_AI_Tool_Get_Regulatory_Requirements implements WP_MCP_AI_Tool_Inter
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['country'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Country is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Country is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

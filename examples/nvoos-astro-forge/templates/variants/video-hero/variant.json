@@ -1,0 +1,15 @@
+{
+	"id": "video-hero",
+	"version": 1,
+	"description": "Poster-first hero video: the still image is the LCP element and the video is deferred behind reduced-motion and Save-Data gates.",
+	"adds": [
+		"VARIANT.md",
+		"src/components/VideoHero.astro",
+		"src/lib/hero-video.ts"
+	],
+	"requires": {
+		"runtime": "none — native <video>; self-host the media under public/media/",
+		"authoring": "a poster image plus an MP4 (and optionally a WebM/AV1 sibling)",
+		"note": "Autoplay is muted-only by browser policy. The poster stays in the DOM (opacity, not display) so the accessible name survives the swap."
+	}
+}

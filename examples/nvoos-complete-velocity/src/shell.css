@@ -299,6 +299,42 @@ body,
   white-space: nowrap;
 }
 
+/* Estate switcher (Laravel multi-estate sessions, 149 §21). Hidden on a
+   single-estate runtime — there is nothing to switch. */
+.nvoos-console-nav__estate {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 2px 4px;
+}
+
+.nvoos-console-nav__estate-label {
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-console-nav__estate-select {
+  width: 100%;
+  min-height: 36px; /* clear of the 24×24 target floor with room to tap */
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  color: var(--nvoos-text, #1e1e1e);
+  background: var(--nvoos-bg, #ffffff);
+  border: 1px solid var(--nvoos-border, #dcdcde);
+  border-radius: 6px;
+}
+
+.nvoos-console-nav__estate-select:focus-visible {
+  outline: 2px solid var(--nvoos-primary, #2271b1);
+  outline-offset: 1px;
+}
+
 /* ── Content area (SA p-6 format) ────────────────────────────────────────── */
 
 .nvoos-console-content {
@@ -1028,6 +1064,60 @@ body,
   cursor: default;
 }
 
+/* ── Estate picker (Laravel multi-estate selection, 149 §21) ─────────────── */
+
+.nvoos-estate-picker__list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nvoos-estate-picker__option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px; /* WCAG 2.2 SC 2.5.8 target size */
+  box-sizing: border-box;
+  padding: 10px 14px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--shell-text);
+  background: #10131b;
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.nvoos-estate-picker__option:hover {
+  border-color: var(--shell-accent);
+  background: #171b28;
+}
+
+.nvoos-estate-picker__option:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+  background: #171b28;
+}
+
+.nvoos-estate-picker__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nvoos-estate-picker__role {
+  font-size: 12px;
+  color: var(--shell-muted);
+}
+
+.nvoos-estate-picker__signout {
+  width: 100%;
+}
+
 .nvoos-login__field {
   display: flex;
   flex-direction: column;
@@ -1201,4 +1291,30 @@ body,
 }
 .nvoos-gateway-error {
 	color: #b91c1c;
+}
+
+/* Dashboard — unavailable surfaces (090-p W2). */
+.nvoos-console-unavailable__lede {
+	margin: 0 0 0.75rem;
+	color: var(--nvoos-line);
+	line-height: 1.5;
+}
+.nvoos-console-unavailable {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0.5rem;
+}
+.nvoos-console-unavailable__item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem 0.75rem;
+	padding: 0.5rem 0.75rem;
+	border: var(--nvoos-border);
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary);
+}
+.nvoos-console-unavailable__reason {
+	color: var(--nvoos-line);
 }

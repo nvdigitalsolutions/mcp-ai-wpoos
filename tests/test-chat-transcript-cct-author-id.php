@@ -91,8 +91,19 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 	public function provide_transcript_handler() {
 		if ( ! $this->transcript_handler ) {
 			$this->transcript_handler = new class() {
+				/**
+				 * Stored transcript records.
+				 *
+				 * @var array
+				 */
 				public $records = array();
 
+				/**
+				 * Capture an updated transcript item.
+				 *
+				 * @param array $record Transcript record.
+				 * @return bool
+				 */
 				public function update_item( $record ) {
 					$this->records[] = $record;
 					return true;

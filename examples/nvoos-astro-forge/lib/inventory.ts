@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // inventory.ts — page-inventory discovery (Proposal 115 §1/§2).
 //
@@ -203,24 +204,28 @@ async function waybackPaths( fetchImpl: typeof fetch, base: string, deps: Invent
 }
 
 /** REST-covered page paths (the pages collection, paginated + bounded). */
-async function coveredPaths( profile: SiteProfile, deps: InventoryDeps ): Promise<{ covered: string[]; excluded: string[] }> {
+async function coveredPaths(
+	profile: SiteProfile,
+	deps: InventoryDeps
+): Promise<{ covered: string[]; excluded: string[]; titles: Record< string, string > }> {
 	const pagesCollection = profile.collections.find( ( c ) => c.slug === 'pages' );
 	if ( ! pagesCollection ) {
-		return { covered: [], excluded: [] };
+		return { covered: [], excluded: [], titles: {} };
 	}
 	const base = profile.url.replace( /\/+$/, '' );
 	const covered = new Set<string>( [ '/' ] );
+	const titles: Record< string, string > = {};
 	const maxPages = deps.maxRestPages ?? 5;
 	for ( let page = 1; page <= maxPages; page++ ) {
 		const { status, text } = await fetchText(
 			deps.fetch,
-			`${ base }/wp-json/${ pagesCollection.restBase }?_fields=slug,link&per_page=100&page=${ page }`,
+			`${ base }/wp-json/${ pagesCollection.restBase }?_fields=slug,link,title&per_page=100&page=${ page }`,
 			deps
 		);
 		if ( status !== 200 ) {
 			break;
 		}
-		let rows: Array<{ slug?: string; link?: string }>;
+		let rows: Array<{ slug?: string; link?: string; title?: { rendered?: string } }>;
 		try {
 			rows = JSON.parse( text );
 		} catch {
@@ -233,6 +238,10 @@ async function coveredPaths( profile: SiteProfile, deps: InventoryDeps ): Promis
 			const path = normalizePath( row.link ?? `/${ row.slug ?? '' }/`, base );
 			if ( path && path !== '/' ) {
 				covered.add( path );
+			}
+			const title = ( row.title?.rendered ?? '' ).replace( /<[^>]+>/g, ' ' ).replace( /\s+/g, ' ' ).trim();
+			if ( path && title ) {
+				titles[ path ] = title;
 			}
 		}
 		if ( rows.length < 100 ) {
@@ -249,7 +258,7 @@ async function coveredPaths( profile: SiteProfile, deps: InventoryDeps ): Promis
 	if ( profile.frontPage ) {
 		covered.add( '/' );
 	}
-	return { covered: [ ...covered ].sort(), excluded: [ ...excluded ].sort() };
+	return { covered: [ ...covered ].sort(), excluded: [ ...excluded ].sort(), titles };
 }
 
 /** Homepage nav targets: anchors (#x, /#x) and distinct page paths, from the
@@ -334,6 +343,7 @@ export async function discoverInventory( profile: SiteProfile, deps: InventoryDe
 		navAnchors: anchors,
 		navPages,
 		covered: rest.covered,
+		titles: rest.titles,
 		excluded: rest.excluded,
 		missing,
 		danglingAnchors: danglingAnchors( home.text, anchors ),

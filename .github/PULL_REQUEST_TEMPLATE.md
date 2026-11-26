@@ -71,6 +71,8 @@ Created: YYYY-MM-DD HH:MM:SS
 <!-- Based on GSD × BMAD Phase 6 validation — check all that apply -->
 - [ ] All acceptance criteria met
 - [ ] PHPDoc blocks on all new classes and methods
+- [ ] New TS/JS/Rust/Astro files carry an SPDX line and a purpose header (`@fileoverview` / `//!`)
+- [ ] Docs budget unchanged, or raised with `--allow-increase` and a reason (`composer run docs:check-file:strict`)
 - [ ] Security review complete:
   - [ ] Input sanitized (`sanitize_text_field()`, `absint()`, etc.)
   - [ ] Output escaped (`esc_html()`, `esc_url()`, etc.)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ProfessionCatalogue;
 use Illuminate\Http\JsonResponse;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
@@ -78,7 +79,7 @@ class TeamCatalogueController
             $members[] = array(
                 'slug' => (string) $profession['slug'],
                 'title' => (string) $profession['name'],
-                'category' => $this->categoryLabel((string) $profession['category']),
+                'category' => ProfessionCatalogue::categoryLabel((string) $profession['category']),
                 'category_slug' => (string) $profession['category'],
                 'excerpt' => $description,
                 'description' => $description,
@@ -130,24 +131,5 @@ class TeamCatalogueController
             array_map(static fn ($slug): string => is_string($slug) ? trim($slug) : '', $value),
             static fn (string $slug): bool => '' !== $slug,
         ));
-    }
-
-    /**
-     * Same label map the WordPress controller sends, so the console renders
-     * identical text.
-     */
-    private function categoryLabel(string $slug): string
-    {
-        $labels = array(
-            'advisory' => 'Advisory/Consulting',
-            'creative' => 'Creative Services',
-            'technical' => 'Technical',
-            'healthcare' => 'Healthcare',
-            'legal' => 'Legal',
-            'financial' => 'Financial',
-            'other' => 'Other',
-        );
-
-        return $labels[$slug] ?? ('' === $slug ? '' : ucfirst($slug));
     }
 }

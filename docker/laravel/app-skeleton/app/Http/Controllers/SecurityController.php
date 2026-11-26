@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Security\SecuritySnapshotStore;
 use App\Support\SettingsSchema;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Nvoos\Core\Application\Security\PostureEvaluator;
 use Nvoos\Core\Application\Security\PostureScorer;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
@@ -17,6 +16,9 @@ use Nvoos\Core\Domain\Security\SecuritySignalCatalogue;
 
 class SecurityController
 {
+    public function __construct(private readonly SecuritySnapshotStore $snapshots)
+    {
+    }
     /**
      * Security posture for the console.
      *
@@ -31,10 +33,15 @@ class SecurityController
     {
         $settings = $store->all();
         $https = $request->isSecure() || str_starts_with((string) config('app.url'), 'https://');
-        $providers = ! empty($settings['openai_api_key'])
-            || ! empty($settings['google_api_key'])
-            || ! empty($settings['anthropic_api_key'])
-            || ! empty($settings['ollama_endpoint']);
+
+        // Read the keys the provider clients read. The settings surface spells
+        // Gemini's key `google_api_key`; the client asks for `gemini_api_key`.
+        // Asking the surface spelling here reported "no credentials" for a
+        // deployment that could authenticate perfectly well.
+        $providers = ! empty($settings[SettingsSchema::providerCredentialKey('openai')])
+            || ! empty($settings[SettingsSchema::providerCredentialKey('gemini')])
+            || ! empty($settings[SettingsSchema::providerCredentialKey('anthropic')])
+            || ! empty($settings['ollama_endpoint_url']);
 
         $security = (array) config('oos.security', []);
         $hstsMaxAge = (int) ($security['hsts_max_age'] ?? 0);
@@ -179,10 +186,8 @@ class SecurityController
 
     public function snapshots(): JsonResponse
     {
-        $rows = DB::table('nvoos_security_snapshots')->orderByDesc('created_at')->limit(50)->get();
-
         return response()->json([
-            'snapshots' => array_map([$this, 'snapshotRecord'], $rows->all()),
+            'snapshots' => $this->snapshots->list(),
         ]);
     }
 
@@ -202,17 +207,10 @@ class SecurityController
             }
         }
 
-        $id = (string) Str::uuid();
-
-        DB::table('nvoos_security_snapshots')->insert([
-            'id' => $id,
-            'label' => $data['label'] ?? 'Snapshot '.now()->toDateTimeString(),
-            'payload' => json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return response()->json($this->snapshotRecord(DB::table('nvoos_security_snapshots')->find($id)), 201);
+        return response()->json(
+            $this->snapshots->save($data['label'] ?? null, $payload),
+            201
+        );
     }
 
     public function restoreSnapshot(Request $request, SettingsStoreInterface $store): JsonResponse
@@ -221,7 +219,9 @@ class SecurityController
             'snapshot_id' => ['required', 'string', 'max:64'],
         ]);
 
-        $row = DB::table('nvoos_security_snapshots')->find($data['snapshot_id']);
+        // Scoped: another estate's id answers 404 rather than restoring that
+        // estate's configuration into this one (§51).
+        $row = $this->snapshots->find($data['snapshot_id']);
 
         if ($row === null) {
             return response()->json([
@@ -311,18 +311,5 @@ class SecurityController
             'success' => true,
             'checks' => $checks,
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function snapshotRecord(object $row): array
-    {
-        return [
-            'snapshot_id' => (string) $row->id,
-            'id' => (string) $row->id,
-            'label' => (string) ($row->label ?? ''),
-            'created_at' => (string) ($row->created_at ?? ''),
-        ];
     }
 }

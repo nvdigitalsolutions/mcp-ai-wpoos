@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Process generated NV oOS Forge Bridge artwork into the wp.org asset set.
  *

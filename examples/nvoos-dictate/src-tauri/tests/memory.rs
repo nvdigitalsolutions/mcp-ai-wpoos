@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Memory layer integration tests (Proposal 127): schema, triggers, the
 //! fan-out path from the capture tables into the corpus, and the cascade
 //! discipline. Everything runs on the mock path — no network, no ort.

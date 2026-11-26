@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-column-facts.test.ts — the measured height of a builder's COLUMNS.
 //

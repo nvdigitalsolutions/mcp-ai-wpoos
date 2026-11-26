@@ -56,7 +56,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		 *
 		 * @var array<string, array>|null
 		 */
-		protected static $tool_index = null;
+	protected static $tool_index = null;
 
 		/**
 		 * Get the tool presets configuration.
@@ -587,6 +587,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_site_uptime',
 					'check_site_security',
 					'research_site_best_practices',
+					// Venue WiFi health (nvoos-wifi addon): controller liveness and
+					// KPI freshness for a site's access points.
+					'wifi_health_check',
 					// Comment moderation (ported from docdyhr/mcp-wordpress, MIT).
 					'list_comments',
 					'get_comment',

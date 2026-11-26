@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Windows fallback PTT detection via `GetAsyncKeyState` polling.
 //!
 //! Rationale: Windows can silently stop delivering `WH_KEYBOARD_LL` events

@@ -38,7 +38,7 @@ class WP_MCP_AI_Product_Page_Hook_Detection_Test extends WP_UnitTestCase {
 		// Get the expected hook based on parent menu and page slug.
 		// Parent: wp-mcp-ai-ecommerce-toolkit (custom top-level menu)
 		// Page slug: research-product
-		// Expected hook: wp-mcp-ai-ecommerce-toolkit_page_research-product
+		// Expected hook: wp-mcp-ai-ecommerce-toolkit_page_research-product.
 		$expected_hook = 'wp-mcp-ai-ecommerce-toolkit_page_research-product';
 
 		// Simulate WordPress calling enqueue_assets with the correct hook.
@@ -55,7 +55,7 @@ class WP_MCP_AI_Product_Page_Hook_Detection_Test extends WP_UnitTestCase {
 
 		// Since we can't directly test if the function returned early,
 		// we verify the hook format matches what the code expects.
-		$page_slug   = 'research-product'; // From WP_MCP_AI_Product_Research_Page::PAGE_SLUG
+		$page_slug   = 'research-product'; // From WP_MCP_AI_Product_Research_Page::PAGE_SLUG.
 		$parent_slug = 'wp-mcp-ai-ecommerce-toolkit';
 
 		$this->assertEquals(
@@ -87,14 +87,14 @@ class WP_MCP_AI_Product_Page_Hook_Detection_Test extends WP_UnitTestCase {
 		// Get the expected hook based on parent menu and page slug.
 		// Parent: wp-mcp-ai-ecommerce-toolkit (custom top-level menu)
 		// Page slug: product-consolidate
-		// Expected hook: wp-mcp-ai-ecommerce-toolkit_page_product-consolidate
+		// Expected hook: wp-mcp-ai-ecommerce-toolkit_page_product-consolidate.
 		$expected_hook = 'wp-mcp-ai-ecommerce-toolkit_page_product-consolidate';
 
 		// The WRONG hook that was previously used:
-		// 'product_page_product-consolidate' (this would be for a CPT parent)
+		// 'product_page_product-consolidate' (this would be for a CPT parent).
 		$wrong_hook = 'product_page_product-consolidate';
 
-		$page_slug   = 'product-consolidate'; // From WP_MCP_AI_Product_Consolidate_Page::PAGE_SLUG
+		$page_slug   = 'product-consolidate'; // From WP_MCP_AI_Product_Consolidate_Page::PAGE_SLUG.
 		$parent_slug = 'wp-mcp-ai-ecommerce-toolkit';
 
 		// Verify the expected hook matches the WordPress pattern.
@@ -117,7 +117,7 @@ class WP_MCP_AI_Product_Page_Hook_Detection_Test extends WP_UnitTestCase {
 	 */
 	public function test_wordpress_hook_patterns() {
 		// Custom parent menu (add_menu_page):
-		// Hook format: {parent_slug}_page_{child_slug}
+		// Hook format: {parent_slug}_page_{child_slug}.
 		$custom_parent = 'wp-mcp-ai-ecommerce-toolkit';
 		$child_slug    = 'research-product';
 		$custom_hook   = $custom_parent . '_page_' . $child_slug;
@@ -129,7 +129,7 @@ class WP_MCP_AI_Product_Page_Hook_Detection_Test extends WP_UnitTestCase {
 		);
 
 		// CPT parent menu (edit.php?post_type=X):
-		// Hook format: {post_type}_page_{child_slug}
+		// Hook format: {post_type}_page_{child_slug}.
 		$cpt_post_type = 'mcp_ai_quiz';
 		$cpt_hook      = $cpt_post_type . '_page_research-quiz';
 

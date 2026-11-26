@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // discovery.test.ts — site_analyze over a canned WordPress backend.
 // ---------------------------------------------------------------------------
@@ -200,6 +201,66 @@ describe( 'mergeProfileDraft (Proposal 118 §3)', () => {
 		expect( merged.collections.length ).toBe( 2 );
 		expect( merged.frontPage ).toBe( 'home' );
 		expect( merged.name ).toBe( 'JAYAINC' );
+	} );
+
+	it( 'carries a band SURFACE across a refresh that flipped the band model', () => {
+		// eca.directory, 2026-11-25: `--design --write` switched the model
+		// elementor → outline and the surviving outline bands carried no bgColor,
+		// repainting every band transparent — including the gradient an earlier
+		// fix existed to capture.
+		const existing = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		existing.design = {
+			...( fresh.design as NonNullable< typeof fresh.design > ),
+			bandSource: 'sections',
+			sections: [
+				{ id: 'a4ad586', bgGradient: 'linear-gradient(rgb(39, 16, 74) 30%, rgb(255, 255, 255) 0%)' },
+				{ id: 'b1', bgColor: '#f7f7f7' },
+			],
+		};
+		const refreshed = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		refreshed.design = {
+			...( fresh.design as NonNullable< typeof fresh.design > ),
+			bandSource: 'outline',
+			sections: [ { id: 'a4ad586' }, { id: 'b1' }, { id: 'c2' } ],
+		};
+
+		const merged = mergeProfileDraft( existing, refreshed );
+		expect( merged.design?.bandSource ).toBe( 'outline' );
+		expect( merged.design?.sections?.find( ( s ) => s.id === 'a4ad586' )?.bgGradient ).toContain( '39, 16, 74' );
+		expect( merged.design?.sections?.find( ( s ) => s.id === 'b1' )?.bgColor ).toBe( '#f7f7f7' );
+		// A band the previous model never had is untouched — nothing to carry.
+		expect( merged.design?.sections?.find( ( s ) => s.id === 'c2' ) ).toEqual( { id: 'c2' } );
+	} );
+
+	it( 'does not carry a surface when the band model is unchanged', () => {
+		// Same model → a surface the source genuinely removed must GO.
+		const existing = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		existing.design = { ...( fresh.design as NonNullable< typeof fresh.design > ), bandSource: 'sections', sections: [ { id: 'a4ad586', bgColor: '#111111' } ] };
+		const refreshed = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		refreshed.design = { ...( fresh.design as NonNullable< typeof fresh.design > ), bandSource: 'sections', sections: [ { id: 'a4ad586' } ] };
+
+		const merged = mergeProfileDraft( existing, refreshed );
+		expect( merged.design?.sections?.[ 0 ]?.bgColor ).toBeUndefined();
+	} );
+
+	it( 'carries a measured chrome geometry across a design-only refresh', () => {
+		const existing = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		existing.design = {
+			...( fresh.design as NonNullable< typeof fresh.design > ),
+			chrome: {
+				navStyle: { size: '16px', weight: '500', transform: 'capitalize' },
+				geometry: {
+					wide: { padX: 30, logoHeight: '49px', logoAlign: 'start' },
+					navStyle: { size: '16px', weight: '500', transform: 'capitalize' },
+				},
+			},
+		} as never;
+		// A --design-only draft re-harvests the chrome and carries no geometry.
+		const designOnly = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		designOnly.design = { mode: 'rebuild', chrome: { navStyle: { size: 'var( --e-global-typography-x-font-size )' } } } as never;
+		const merged = mergeProfileDraft( existing, designOnly );
+		// The measurement survives, so reconcileHeader can re-derive the styles.
+		expect( merged.design?.chrome?.geometry?.wide?.padX ).toBe( 30 );
 	} );
 
 	it( 'refreshes the animation inventory only when the draft measured one', () => {

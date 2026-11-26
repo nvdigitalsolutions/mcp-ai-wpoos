@@ -205,6 +205,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 			'social-media',
 			'content-generation',
 			'ai-integration',
+			'read-only',              // Returns ideas; nothing is scheduled or published.
 		);
 	}
 

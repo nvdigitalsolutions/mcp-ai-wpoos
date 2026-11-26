@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * The cookie-auth request discipline (the P0 regression): every request
  * carries X-WP-Nonce, and a stale nonce (rest_cookie_invalid_nonce) is

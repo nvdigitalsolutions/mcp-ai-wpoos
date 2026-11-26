@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! NV oOS Cognition — library entry point (Tauri mobile-ready split).
+//!
+//! Modules are grouped by pipeline stage: capture (`audio`, `camera`),
+//! recognition (`stt`, `vision`, `document`), post-processing (`cleanup`,
+//! `memory`), and delivery (`paste`, `hotkey`, `ipc`).
 
 pub mod agent;
 pub mod audio;
@@ -8,6 +13,7 @@ pub mod config;
 pub mod dictation;
 pub mod document;
 pub mod error;
+pub mod gestures;
 pub mod hotkey;
 pub mod ipc;
 #[cfg(feature = "mcp")]
@@ -36,7 +42,7 @@ fn ensure_overlay(app: &tauri::AppHandle) {
     if app.get_webview_window("overlay").is_some() {
         return;
     }
-    let _ = tauri::WebviewWindowBuilder::new(
+    let built = tauri::WebviewWindowBuilder::new(
         app,
         "overlay",
         tauri::WebviewUrl::App("index.html?window=overlay".into()),
@@ -51,6 +57,10 @@ fn ensure_overlay(app: &tauri::AppHandle) {
     .focused(false)
     .visible(false)
     .build();
+    match built {
+        Ok(_) => tracing::info!("startup: overlay window created"),
+        Err(e) => tracing::warn!("overlay window creation failed: {e}"),
+    }
 }
 
 /// Create the snippet selection window (Proposal 100): the inverse of the
@@ -61,7 +71,7 @@ fn ensure_snippet_window(app: &tauri::AppHandle) {
     if app.get_webview_window("snippet").is_some() {
         return;
     }
-    let _ = tauri::WebviewWindowBuilder::new(
+    let built = tauri::WebviewWindowBuilder::new(
         app,
         "snippet",
         tauri::WebviewUrl::App("index.html?window=snippet".into()),
@@ -76,6 +86,10 @@ fn ensure_snippet_window(app: &tauri::AppHandle) {
     .focused(false)
     .visible(false)
     .build();
+    match built {
+        Ok(_) => tracing::info!("startup: snippet window created"),
+        Err(e) => tracing::warn!("snippet window creation failed: {e}"),
+    }
 }
 
 /// Whether a navigation inside the console window is allowed: only the
@@ -185,22 +199,43 @@ pub fn run() {
         })
         .setup(|app| {
             let handle = app.handle().clone();
+            tracing::info!("startup: opening database + state");
             state::setup(&handle)?;
+
+            // Auxiliary windows (overlay capsule + snippet selection) are
+            // created here, on the main thread. `setup` runs on the main
+            // thread, which is the thread that owns the message pump — window
+            // creation must not be moved to a worker thread (Win32 requires a
+            // window to be created and pumped by the same thread). Both start
+            // hidden and are shown later by their controllers.
+            //
+            // Historical note: an earlier revision moved these to a worker
+            // thread because the snippet builder appeared to hang here. That
+            // hang was a symptom of a self-deadlock in `ipc::get_status`
+            // (two `state.gestures.lock()` calls in one struct literal), which
+            // blocked the main thread and therefore the builder's queued work.
+            // With that fixed, main-thread creation returns promptly.
+            tracing::info!("startup: creating auxiliary windows");
             ensure_overlay(&handle);
             ensure_snippet_window(&handle);
 
             // Load persisted settings into state and start the core graph.
             let app_state = handle.state::<state::AppState>();
+            tracing::info!("startup: loading settings");
             let _ = app_state.reload_settings();
             // Memory worker + encoder follow the persisted settings
             // (failure-soft: a missing model leaves keyword-only retrieval).
             {
                 let settings = app_state.settings_snapshot();
                 let models_dir = app_state.models_dir();
+                tracing::info!("startup: applying memory settings");
                 app_state.memory.apply_settings(&settings, &models_dir);
             }
+            tracing::info!("startup: spawning dictation controller");
             dictation::DictationController::spawn(handle.clone())?;
+            tracing::info!("startup: starting snippet controller");
             snippet::controller::SnippetController::start(&handle)?;
+            tracing::info!("startup: setup complete");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -225,6 +260,15 @@ pub fn run() {
             ipc::get_vision_models,
             ipc::download_vision_model,
             ipc::test_vision_polish,
+            ipc::gestures_available,
+            ipc::start_gestures,
+            ipc::stop_gestures,
+            ipc::get_gesture_state,
+            ipc::set_gesture_arming,
+            ipc::get_gesture_catalogue,
+            ipc::get_gesture_models,
+            ipc::download_gesture_model,
+            ipc::ask_camera,
             ipc::agent_available,
             ipc::agent_run,
             ipc::agent_status,

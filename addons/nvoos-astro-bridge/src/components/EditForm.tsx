@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Generic edit/create form — renders the correct field component based on
  * config, validated with a zod schema generated from the same config.

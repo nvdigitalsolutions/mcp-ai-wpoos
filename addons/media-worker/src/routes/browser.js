@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Browser route — Puppeteer screenshots + PDF generation.
  *
  * Endpoints:
- *   POST /api/browser/screenshot — capture webpage screenshot
- *   POST /api/browser/pdf        — render webpage to PDF
+ *   POST /api/browser/screenshot — capture webpage screenshot, answered with
+ *                                  `output_path` and inline `b64` bytes (§164.53)
+ *   POST /api/browser/pdf        — render webpage to PDF (path only: its caller,
+ *                                  web_browser, is still deferred)
  *
  * Security: uses the hardened launcher (sandbox kept enabled) and validates
  * every user-supplied URL before navigation (SSRF guard).
@@ -15,6 +18,7 @@ import path from 'path';
 import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
 import { siteDirFor, pathGuard } from '../utils/site-paths.js';
+import { inlineFile } from '../utils/inline-bytes.js';
 
 export const browserRouter = Router();
 
@@ -66,8 +70,22 @@ browserRouter.post('/screenshot', async (req, res) => {
     await page.screenshot({ path: outPath, ...screenshotOpts });
     await browser.close();
 
-    const stats = fs.statSync(outPath);
-    res.json({ success: true, output_path: outPath, size: stats.size, format: screenshotOpts.type });
+    // The bytes travel with the answer (§164.53): `output_path` names a file on
+    // this worker's volume, which the calling host cannot read. Past the inline
+    // cap this throws with status 413 and the error handler below reports it.
+    const inline = inlineFile(
+      outPath,
+      'jpeg' === screenshotOpts.type ? 'image/jpeg' : `image/${ screenshotOpts.type }`
+    );
+
+    res.json({
+      success: true,
+      output_path: outPath,
+      size: inline.size,
+      format: screenshotOpts.type,
+      b64: inline.b64,
+      mime: inline.mime,
+    });
   } catch (err) {
     if (browser) await browser.close().catch(() => {});
     res.status(err.status && err.status >= 400 && err.status < 600 ? err.status : 500)

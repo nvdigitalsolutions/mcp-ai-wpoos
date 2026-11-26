@@ -92,6 +92,85 @@ under `dist/media` — see the astro-forge `reference/performance-budget.md`.
 - Velocity settings: Framework `Astro-ssr` · Output Directory `.` ·
   Entry **`server.js`** (PM2 must start the repo-root entry) · Node 24.x.
 
+## The runtime is derived from the profile (shipped 2026-11-26)
+
+`lib/deploy-config.ts` exports `requiredRuntime( profile )` and
+`resolveRuntime( profile, requested )`, and both the `deploy` and
+`deploy-config` commands call the latter. A profile that names a managed-only
+feature can no longer be emitted as a static tree:
+
+| Profile says | Runtime |
+|---|---|
+| `deploy.runtime: "managed"` | managed |
+| `forms.delivery: "direct"` | managed (the provider key stays server-side) |
+| `forms.fallback: "direct"` | managed (re-delivery) |
+| everything else — incl. `forms.delivery: "bridge"` | **static** |
+
+`bridge` is static-safe on purpose: the browser POSTs to
+`/wp-json/nvoos-forge/v1/forms/submit` and WordPress owns the mailer. Only
+`direct` sends from the runtime. Likewise `eca.booking.mode: "external"` is a
+hand-off and needs no server.
+
+Why the gate exists: an ECA site shipped a **static** artifact (no `server.js`,
+no deps, the no-op build) into an app configured **Astro-SSR** with Entry
+`server.js`. The deploy reached PM2 and failed with
+`Script not found: …/server.js`, and the previous artifact kept serving. The
+mirror was fine; the tier was never checked on the app side.
+
+Symptom-to-cause table when a Velocity deploy fails at "Starting application":
+
+| Log | Cause | Fix |
+|---|---|---|
+| `Script not found: …/server.js` + `audited 1 package` | static artifact, managed app | either `Astro-csr` + blank Entry, or publish a managed tree |
+| missing dependency manifest | managed tree without `dependencies`/lockfile | `sync-deploy-tree.mjs`; `mirror-push` refuses it |
+| `Port detected from .env: N` vs the DNS record's port | mismatch | align the record |
+
+### Reading a managed 502 correctly (2026-11-26)
+
+An edge in front of the app (Cloudflare, or the Cloudways node proxy)
+**replaces a 5xx body with its own**, so a 16-byte `error code: 502` is not
+proof the origin is down — it only proves the app (or nginx) answered 5xx. The
+app's own access log is the truthful source, and it is reachable without SSH:
+
+```
+monitoring / get_app_logs → type=access, resource=backend, app_fqdn=<app_fqdn>
+```
+
+That log shows what the Node process returned, which maps 1:1 onto the generated
+BFF:
+
+| App answers | Meaning | Fix |
+|---|---|---|
+| `502` + `upstream_unreachable` | the proxy's `fetch()` threw: a malformed `NVOOS_TARGET_SITE` (a stray space/newline survives `replace(/\/+$/, '')` → `Failed to parse URL`), DNS, or **no IPv6 egress** for the CF AAAA record | re-enter the env var, then restart |
+| `504` + `upstream_timeout` | CMS slower than `NVOOS_PROXY_TIMEOUT_MS` (default 10 s) | raise it, or fix the origin |
+| `503` `NVOOS_TARGET_SITE is not configured.` | the env is not on the running process | set it, then restart |
+| `404` with an **HTML** body | the route is absent from the build | rebuild; the boot gate now fails this |
+
+`GET /api/health?probe=1` answers the same question in one request — it reports
+the wiring and the redacted upstream error, so a broken BFF is diagnosable from
+a browser. `/api/revalidate` is **POST-only**: a `GET` that returns the 404 page
+is correct, not a missing route (a false positive worth not repeating).
+
+The Cloudways *error* log (`resource=apache`) carries nginx only for Velocity
+apps — not the PM2/Node stdout — so it will never show the proxy's
+`[proxy] … unreachable (…)` line. Use the access log.
+
+### You can diagnose the app settings but not write them
+
+`velocity_build_config_get` reads the whole Deployment Settings tab (framework,
+`app_mode`, Entry File, Output Directory, commands, port, Node runtime), and
+`velocity_vcs_repo_tree_get` on `site/<name>` proves which tier the branch
+actually carries — a static tree lists `index.html` + `_astro/` and a ~157-byte
+`package.json`, and has **no `server.js`**. Together those two reads settle the
+tier mismatch above without touching the app.
+
+**`velocity_build_config_update` 403s** (`insufficient_scope`) with the fleet
+Cloudways token, as does `velocity_domain_add`/`velocity_env_vars_upsert`. So an
+app whose framework disagrees with its artifact cannot be repaired over the MCP:
+report the exact target settings and have the operator change them in the
+Cloudways panel, then redeploy. Do not retry the write or conclude the app is
+broken — the token is read-only on that endpoint, nothing was saved.
+
 ## The step everyone forgets
 
 **A mirror push does not always redeploy the app — check `auto_deploy` first.**
@@ -150,9 +229,9 @@ Rehearse the merge, not just the edit: a push touching `sites/**` rebuilds
 **every** profile, and the site’s own merge re-forges it with a cold media
 cache. With `content.source: materialized` the CMS is gone, so which
 `/wp-content/` derivatives 404 changes build to build (the CDN copy expires
-piecemeal). Content degrades cleanly (`source not found (marked optional)`) and
-`verify --minimal` still passes; check that no `<img>` loses its last local
-`srcset` candidate before merging.
+piecemeal). Content itself is local-only (the loader never fetches, so the
+build cannot die on the dead origin); `verify --minimal` still passes — check
+that no `<img>` loses its last local `srcset` candidate before merging.
 
 ## Hand deploy without CI (2026-11-15)
 
@@ -178,9 +257,39 @@ node scripts/forge.mjs verify sites/<name>.json --target <dir> --minimal
 - `MIRROR_TOKEN` is a repo-scoped token; locally `gh auth token` works.
 - **Check the artifact before pushing**: `verify-deploy-tree.mjs` is the gate.
   A managed tree that cannot boot is not a deploy.
-- After a cutover the profile's `url` is no longer a CMS, so every build dies at
-  `Endpoint not found: wp/v2/pages` — see the astro-forge reference
+- After a cutover the profile's `url` is no longer a CMS. Declare it gone
+  (`content.source: 'materialized'` + a committed `sites/<name>.content/`):
+  the scaffold then wires every collection local-only and the build never
+  fetches. Without that flag every build dies at `Endpoint not found:
+  wp/v2/pages` — see the astro-forge reference
   `cms-removal-materialized-content.md`.
+
+**Never rebuild an EXISTING generated project as the deploy step (2026-11-16).**
+`npm run build` re-renders that project's own `src/content` and generated
+modules; both freeze at scaffold time. A tree scaffolded before a content or
+profile fix merged ships the OLD site — a hand deploy of virtuallyjamaica that
+ran only `npm run build` silently reverted #7832 (hardware heading above its
+subtitle, footer 2023→2026, hero mobile centring, the carousel lightbox). No
+gate failed: the build was internally consistent, it was just old.
+
+The same stale tree carried the Cloudflare **test** site key
+(`1x00000000000000000000AA`) in `nvoos.json`, because the manifest is baked at
+scaffold time too. Patching that one value made the deploy look right while
+every other reverted fix stayed reverted — a single wrong value in a generated
+tree is a symptom of staleness, not the bug.
+
+- Scaffold into a FRESH target for every hand deploy
+  (`--target <new dir> --content sites/<name>.content`). Re-forging is offline
+  (the media cache is local) and costs minutes, not a re-analysis.
+- Building in place is only safe when you first re-copy the changed SOURCE —
+  `sites/<name>.content/**` into `src/content`, and the generated modules
+  (`src/lib/*.generated.ts`, `nvoos.json`) — never assume `npm run build`
+  re-derives them.
+- Prove freshness in the artifact, not in a status code: grep the built HTML
+  for the exact string the commit changed (a reordered heading, a footer year)
+  before `mirror-push`.
+- Stale generated trees left on disk (`<name>-frontend/`, an old
+  `tmp/<…>-out/`) are how this recurs — delete them once a newer target exists.
 
 Hand-edited projects may not carry `scripts/mirror-push.mjs` (the scaffold owns
 it). Emit it without touching the source:
@@ -206,8 +315,11 @@ Never echo the token. For an operator run, read it with `gh auth token` inside a
 small wrapper (`execFileSync('gh', ['auth','token'])`) and pass it via env.
 
 Then follow the `auto_deploy` branch above. Verify the live page with a
-cache-buster (`?cb=deploy-<sha>`); `last-modified` should match the deploy and
-`cf-cache-status` is normally `DYNAMIC` (no purge needed). Current example:
+cache-buster (`?cb=deploy-<sha>`) **and compare it against the plain URL**:
+`last-modified` should match the deploy, and `cf-cache-status` is **not always
+`DYNAMIC`** — CMS-served paths such as `/media/*` do come back `HIT` (eca,
+2026-11-26: `HIT`, `age: 2951`). A plain `HIT` whose body disagrees with the
+`MISS` is an edge copy, not broken code (gotcha 17). Current example:
 jayainc app `6771968` on server `1685799`, branch `site/jayainc`.
 
 ## Post-deploy checklist (a CMS-less site)
@@ -279,6 +391,42 @@ ls dist media server.js deploy.json      # shape check
 ```
 
 List the tree instead of guessing: `gh api "repos/.../contents?ref=site/<name>"`.
+
+## Cloudflare rate limiting on a forged site (2026-11-16)
+
+An app-side form gate (Turnstile, duration-of-fill, payload provenance) sees one
+request at a time; a distributed spam run is only slowed at the edge. Measured
+constraints on the zone that fronts a forged contact form:
+
+- **Free plan: 1 rule, `Block` only**, `period` and `mitigation_timeout` both
+  **10 s** (the API rejects the longer values Pro+ allows). Budget the single
+  slot for the form endpoint, not the whole site.
+- The legacy `/zones/{id}/rate_limits` API is **410 Gone** (`This API has been
+deprecated. Please use the Rulesets API instead.`). The only path is the
+  rulesets phase entrypoint:
+
+  ```sh
+  PUT /zones/{id}/rulesets/phases/http_ratelimit/entrypoint   # create/update
+  GET /zones/{id}/rulesets/phases/http_ratelimit/entrypoint   # 404 = none yet
+  ```
+
+  Rules carry `ratelimit: { characteristics, period, requests_per_period,
+  mitigation_timeout }`; `dry_run=true` validates without persisting.
+- **Read access is not write access.** A Cloudflare MCP connection can `GET`
+  the phase (and returns 404 `could not find entrypoint` when none exists) but
+  the `PUT` needs **`account-waf.write`** or **`account-rulesets.write`** —
+  without it every attempt is a `403 Authentication error` that lists the
+  accepted scopes. Confirm the scope before planning an apply; reconnecting is
+  a browser OAuth step the operator has to do.
+- Shape that fits a forged contact form (POST-only, per IP):
+
+  ```text
+  expression: (http.request.method eq "POST" and http.request.uri.path eq "/api/forms/submit")
+  characteristics: ["ip.src"]   period: 10   requests_per_period: 5   mitigation_timeout: 10
+  ```
+
+A rate rule does not replace the app gate and vice versa: the rule caps a
+flood, the token/provenance checks stop a single crafted request.
 
 ## Gotchas — each one cost a deploy
 
@@ -364,6 +512,110 @@ List the tree instead of guessing: `gh api "repos/.../contents?ref=site/<name>"`
     `grep -o 'href="https://<production-host>[^"]*"' dist/index.html | sort -u`.
     The fix belongs in sanitisation (same-origin absolute → path), so every site
     becomes host-independent at once.
+15. **A 200 that a browser cannot decode passes every check you have.** Node's
+    `fetch` decodes a compressed CMS response but leaves upstream's
+    `content-encoding` on the response object, so a proxy relaying
+    `new Headers(upstream.headers)` labels plain bytes as `gzip`. The browser then
+    decodes plain text, fails, and renders **nothing** — status `200`, 43 KB on
+    the wire, `naturalWidth: 0` in the DOM, and all six `/media` URLs returning
+    `200 image/svg+xml` to `curl`. Diagnose in the page, not in the shell:
+    `const r = await fetch(p); const t = await r.text(); ({ e: r.headers.get('content-encoding'), bytes: t.length })`
+    — `gzip` with `bytes: 0` is this bug. `curl -w '%{size_download}'` reports the
+    raw transfer and does **not** decode, so it reports a healthy size for a
+    response the browser throws away; add `--compressed` to see the truth. Fix in
+    the proxy: strip `content-encoding`/`content-length`/`transfer-encoding` from
+    the relayed response and ask upstream for `accept-encoding: identity`. The
+    boot gate now fails a 2xx whose body lacks the magic number of the encoding
+    it claims.
+16. **A `materialized` site must never use the `/media/<uploads path>` proxy
+    form.** Its uploads are mirrored under hashed names
+    (`/media/<hash>-<name>.webp`) and only the post-build localizer knows that
+    mapping. Rewriting to the proxy path first (a) names a path nothing serves —
+    there is no CMS to proxy to — and (b) hides the URL from the localizer's
+    report, so the JSON-LD logo and the header logo are never repaired and the
+    `retired cms` gate fires. `mediaUrl()` therefore returns the CMS URL
+    untouched when `contentSource === 'materialized'`, and the localizer does the
+    mapping. Related blind spot: a ROOT-RELATIVE `/wp-content/…` is invisible to
+    that gate (it matches `//host/wp-content/`), so the post-build pass rescues
+    those from the same report.
+17. **A fixed asset can stay broken at the edge, and a shared zone cannot be
+    purged.** After the `/media` decode fix shipped, eca's logo still loaded at
+    0 px: the edge answered `HIT` with `age: 2951` while the identical URL plus
+    `?cb=<ts>` returned the correct 43 020 bytes. Confirm it is cache, not code,
+    before touching the origin — fetch the plain URL and the cache-busted one and
+    diff them. `cloudflare_get_details` returns `data: []` for that app: with no
+    CDN-attached domain the host sits on Cloudways' **shared**
+    `cloudwaysnodeapps.com` zone, so there is **no purge path** at all. Two
+    remedies, both shipped 2026-11-26: cap the relayed `max-age` (a proxied path
+    is not content-hashed, so the CMS's `max-age=31536000, immutable` must not be
+    passed through), and stamp the managed `/media` path with `?v=<build>` so every
+    deploy is a fresh cache key. The stamp covers media emitted through
+    `mediaUrl()` (header logo, favicon); band/CSS images rely on the TTL cap, which
+    bounds a bad copy to five minutes.
+
+18. **A managed deploy can gate perfectly and still refuse every login POST.**
+    Cloudflare → nginx → PM2 rewrites `Host`, so the Node process sees the
+    internal hostname; Astro's `security.checkOrigin` compares the browser's
+    `Origin` with it and answers `403 Cross-site POST form submissions are
+    forbidden` **before** the route runs. The symptoms mislead: `/manage`
+    renders fine, a `curl` POST with no `Origin` passes (that path is allowed),
+    and only the browser's POST dies — so it reads like a credential bug. Fix
+    with `security.allowedDomains` naming the public host in
+    `astro.config.mjs`, plus `x-forwarded-host` pinned from `ASTRO_SITE` in
+    `server.js`. Triage `/manage` by its `?error=` code: `config` = no signing
+    key, `origin` = this, `credentials` = WordPress said no, `upstream` = the
+    CMS did not answer in time (4–9 s per REST call is normal on an Elementor
+    site with no object cache, and the login client caps at 8 s).
+
+19. **A forged page only exists at its slashed URL — verify with the slash.**
+    `build.format 'directory'` emits `dist/client/<slug>/index.html` alone, so
+    `/about-us` 404s while `/about-us/` serves the same document with 200.
+    Before #8330 shipped, `createStatic` had no directory-index fallback, so
+    every legacy WordPress inbound link 404'd after cutover. A 404 on a live
+    site is therefore worth re-requesting with the trailing slash first — it is
+    a routing fact, not a content, gate or build failure (SSR routes such as
+    `/manage` and `/api/*` match both forms and mask the pattern).
+
+20. **Branch a deploy from CURRENT `alpha-working`, or it silently reverts merged
+    scaffold fixes.** The scaffold is generated from the forging worktree's
+    `templates/` and `lib/`, so whatever commit you build from is exactly what
+    the artifact ships — nothing warns that the tree is behind. A trailing-slash
+    fix deployed from a branch five PRs old silently dropped
+    `security.allowedDomains` from `astro.config.mjs`; every browser login POST
+    then returned 403 `Cross-site POST form submissions are forbidden` while
+    `/manage/` still rendered 200 and a `curl` POST with no `Origin` still
+    passed — so it read like a credential bug, not a stale build. Guard before
+    scaffolding: `git fetch origin alpha-working` then
+    `git merge-base --is-ancestor origin/alpha-working HEAD && echo current`
+    (or branch straight off `origin/alpha-working`). When a merged fix
+    “disappears” in production, diff the built artifact against the template at
+    `origin/alpha-working` before debugging the code.
+
+## Mirror-push mechanics (verified 2026-11-24)
+
+- **`forge deploy --mirror-repo` is self-sufficient.** It emits
+  `.github/workflows/{deploy,rebuild}.yml`, `scripts/{mirror-push,verify-deployed,verify-dispatch}.mjs`
+  and then runs `mirror-push` itself — so a project scaffolded WITHOUT deploy
+  options can still be mirrored. No re-scaffold, no missing-script error.
+- **The token has three homes, in this order:** `GITHUB_TOKEN` env → the vault →
+  fail. A green `gh auth status` does NOT help: `gh` never exports its token and
+  the forge will not shell-substitute one into place, so a logged-in CLI still
+  refuses the deploy.
+- **The vault needs a key.** `NVOOS_FORGE_VAULT_KEY`, or the documented
+  `NVOOS_FORGE_VAULT_PLAINTEXT=1` fallback. **A vault written in plaintext mode
+  must be opened in plaintext mode** — `vault list` and `vault delete` otherwise
+  throw `VaultError: Vault file … was written in plaintext mode`. A one-off
+  plaintext push therefore leaves a credential that cannot be removed unless you
+  remember the flag; re-run the delete with it and confirm the file
+  (`~/.nvoos-forge/vault.json`) holds no `gh*_` prefix afterwards.
+- **`deploy.json` ships `buildId: ""`** unless `FORGE_BUILD_ID` is set at BUILD
+  time. The deployed-smoke then has no identity to compare against, so a stale
+  artifact passes as fresh. Set it in CI, never by hand.
+- **Never invent a `*.cloudwaysapps.com` canonical.** Those hostnames belong to
+  specific apps — `eca-6797003…`, for instance, is the **Laravel runtime**, not
+  whatever site is being forged. A guessed host bakes wrong `canonical`/`og:url`
+  into every page. With no public origin yet, canonicalise to the eventual
+  production domain and pair it with `NVOOS_FORGE_NOINDEX=1` (pitfall 9).
 
 ## Where the rest lives
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // auth.ts — nvoos-astro-forge MCP authorization (Proposal 096 Phase 4; 095
 // pattern). Write tools are gated on a bearer NVOOS_FORGE_MCP_TOKEN with a

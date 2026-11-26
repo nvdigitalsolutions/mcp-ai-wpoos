@@ -21,7 +21,12 @@ use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 
 class TokenUsage implements TokenUsageInterface {
 
-	private const TABLE = 'nvoos_token_usage';
+	/**
+	 * The spend record. Public because readers outside this package aggregate it —
+	 * the metrics catalogue (149 §99) and the budget store both name it, and a
+	 * second literal of a table name is a literal that drifts.
+	 */
+	public const TABLE = 'nvoos_token_usage';
 
 	/**
 	 * {@inheritDoc}
@@ -33,6 +38,13 @@ class TokenUsage implements TokenUsageInterface {
 
 		DB::table( self::TABLE )->insert( array(
 			'user_id' => $userId,
+			// The estate is written as a column so queries can scope by it; the
+			// metadata copy stays for debugging (Proposal 152 §3 D4).
+			'tenant_id' => $this->tenantFrom( $metadata ),
+			// The assistant, for the same reason and at the same altitude
+			// (Proposal 154 slice D): a per-assistant budget must not filter a
+			// JSON blob on the enforcement path. `0` is "not attributed".
+			'assistant_id' => $this->assistantFrom( $metadata ),
 			'model_id' => $modelId,
 			'prompt_tokens' => max( 0, $promptTokens ),
 			'completion_tokens' => max( 0, $completionTokens ),
@@ -58,14 +70,18 @@ class TokenUsage implements TokenUsageInterface {
 	}
 
 	/**
-	 * Site-wide cost summary for the Analytics page.
+	 * Cost summary for one estate, or the whole deployment when `null`.
+	 *
+	 * `$tenantId` is required rather than defaulted: `null` means every estate,
+	 * and only an operator surface may ask for that. A default would let a new
+	 * call site leak without noticing (Proposal 152 §3 D5).
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function summary( int $days = 30 ): array {
+	public function summary( int $days, ?string $tenantId ): array {
 		$days = max( 1, $days );
 		$start = now()->subDays( $days - 1 )->startOfDay();
-		$rows = $this->rows( $start );
+		$rows = $this->rows( $start, $tenantId );
 
 		$totalCost = 0.0;
 		$totalTokens = 0;
@@ -136,15 +152,21 @@ class TokenUsage implements TokenUsageInterface {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function trend( int $days = 30 ): array {
+	public function trend( int $days, ?string $tenantId ): array {
 		$days = max( 1, $days );
 		$start = now()->subDays( $days - 1 )->startOfDay();
 		$map = array();
 
-		foreach ( $this->rows( $start ) as $row ) {
+		foreach ( $this->rows( $start, $tenantId ) as $row ) {
 			$date = substr( (string) $row->created_at, 0, 10 );
 			$map[ $date ] = ( $map[ $date ] ?? 0 ) + (float) $row->cost;
 		}
+
+		// §80 — raw rows are pruned at the retention window; the daily rollup
+		// outlives them. A day that still has raw rows is authoritative (it is
+		// the source the rollup was built from); a day without them falls back
+		// to the aggregate, so a long trend keeps its shape after retention.
+		$rollup = app( TokenUsageRollup::class )->dailyCosts( $start->toDateString(), $tenantId );
 
 		$labels = array();
 		$data = array();
@@ -152,7 +174,9 @@ class TokenUsage implements TokenUsageInterface {
 		for ( $i = $days - 1; $i >= 0; $i-- ) {
 			$date = now()->subDays( $i )->toDateString();
 			$labels[] = $date;
-			$data[] = (float) ( $map[ $date ] ?? 0 );
+			$data[] = array_key_exists( $date, $map )
+				? $map[ $date ]
+				: (float) ( $rollup[ $date ] ?? 0 );
 		}
 
 		return array(
@@ -174,8 +198,8 @@ class TokenUsage implements TokenUsageInterface {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function byProvider( int $days = 30 ): array {
-		$summary = $this->summary( $days );
+	public function byProvider( int $days, ?string $tenantId ): array {
+		$summary = $this->summary( $days, $tenantId );
 		$labels = array_keys( $summary['by_provider'] );
 		$data = array_values( $summary['by_provider'] );
 		$palette = array( '#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2' );
@@ -232,14 +256,48 @@ class TokenUsage implements TokenUsageInterface {
 	}
 
 	/**
+	 * @param \Carbon\CarbonImmutable $start
+	 * @param string|null              $tenantId `null` = every estate.
 	 * @return \Illuminate\Support\Collection<int, object>
 	 */
-	private function rows( $start ) {
+	private function rows( $start, ?string $tenantId ) {
 		if ( ! Schema::hasTable( self::TABLE ) ) {
 			return collect();
 		}
 
-		return DB::table( self::TABLE )->where( 'created_at', '>=', $start )->get();
+		return DB::table( self::TABLE )
+			->where( 'created_at', '>=', $start )
+			->when( null !== $tenantId, fn ( $query ) => $query->where( 'tenant_id', $tenantId ) )
+			->get();
+	}
+
+	/**
+	 * The estate a usage row belongs to.
+	 *
+	 * The writer supplies it in metadata; a missing value is the default estate,
+	 * which is the only defensible attribution for a row that records none
+	 * (Proposal 152 §3 D3).
+	 *
+	 * @param array<string, mixed> $metadata
+	 */
+	private function tenantFrom( array $metadata ): string {
+		$tenant = trim( (string) ( $metadata['tenant_id'] ?? '' ) );
+
+		return '' !== $tenant ? substr( $tenant, 0, 64 ) : 'default';
+	}
+
+	/**
+	 * The assistant that produced the turn, or `0` when the caller did not name
+	 * one.
+	 *
+	 * Never negative: the column is unsigned, and a negative id would make the
+	 * row unattributable *and* throw on MySQL's strict mode, failing a telemetry
+	 * write after a chat that already succeeded.
+	 *
+	 * @param array<string, mixed> $metadata
+	 */
+	private function assistantFrom( array $metadata ): int {
+		return max( 0, (int) ( $metadata['assistant_id'] ?? 0 ) );
 	}
 
 	/**

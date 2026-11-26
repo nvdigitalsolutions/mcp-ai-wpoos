@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Decode audio files (m4a/mp3/wav/flac/ogg) and, for media containers,
 //! demux the audio track out of video (mp4/mov/mkv/webm) to mono f32 PCM via
 //! Symphonia (pure Rust — no FFmpeg sidecar). Used by "Transcribe file…" /

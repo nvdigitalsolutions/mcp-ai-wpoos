@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // plan.ts — deterministic adaptation plan (Proposal 098 Phase 3).
 //

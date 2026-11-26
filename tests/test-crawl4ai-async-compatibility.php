@@ -90,12 +90,12 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $result );
 
-		// Simulate JavaScript check: result.async === true && result.status === 'pending' && result.job_id
+		// Simulate JavaScript check: result.async === true && result.status === 'pending' && result.job_id.
 		$js_check = (
 			isset( $sanitized['async'] ) &&
-			$sanitized['async'] === true &&
+			true === $sanitized['async'] &&
 			isset( $sanitized['status'] ) &&
-			$sanitized['status'] === 'pending' &&
+			'pending' === $sanitized['status'] &&
 			isset( $sanitized['job_id'] ) &&
 			! empty( $sanitized['job_id'] )
 		);
@@ -245,8 +245,8 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 
 		// Verify JavaScript detection would work for both.
 		$crawl_js_check = (
-			$crawl_sanitized['async'] === true &&
-			$crawl_sanitized['status'] === 'pending' &&
+			true === $crawl_sanitized['async'] &&
+			'pending' === $crawl_sanitized['status'] &&
 			! empty( $crawl_sanitized['job_id'] )
 		);
 

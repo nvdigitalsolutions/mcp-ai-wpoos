@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wp-client.test.ts — hermetic tests for the WordPress REST client.
 //

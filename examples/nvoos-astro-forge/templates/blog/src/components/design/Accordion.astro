@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // Accordion — the source's disclosure band (Proposal 144).
 //
 // The source's accordion is a component, not a pile of headings: Elementor's
@@ -14,6 +15,7 @@ import type { SemanticSection } from '../../forge/semantic.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
+import { bandParagraphs } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -47,14 +49,40 @@ const dividerStyle = theme?.titleDivider
 			.filter( Boolean )
 			.join( ';' )
 	: undefined;
+
+/**
+ * One `padding`/`margin` shorthand from the band's measured `box` facts.
+ *
+ * The source's disclosure metrics are NOT the band's body rhythm: Elementor's
+ * tab title is `padding: 15px 20px` over a `line-height: 1` label, i.e. a 48px
+ * row — the rebuild's summary inherited the band's 27.2px body line-height and
+ * rendered 59px, so eight rows drifted 88px against the source and the band
+ * read as loose (virtuallysrilanka's features band, 2026-11-20).
+ */
+const boxPad = ( name: string ): string | undefined => {
+	const declaration = ( theme?.box?.[ name ]?.base ?? '' )
+		.split( ';' )
+		.map( ( part ) => part.trim() )
+		.find( ( part ) => part.startsWith( 'padding:' ) );
+	const value = declaration?.slice( 'padding:'.length ).trim();
+	return value && ! /^0px( 0px)*$/.test( value ) ? value : undefined;
+};
+
+const accordionVars = [
+	boxPad( 'elementor-tab-title' ) && `--ds-acc-title-pad:${ boxPad( 'elementor-tab-title' ) }`,
+	boxPad( 'elementor-tab-title' ) && '--ds-acc-title-lh:1',
+	boxPad( 'elementor-tab-content' ) && `--ds-acc-content-pad:${ boxPad( 'elementor-tab-content' ) }`,
+]
+	.filter( Boolean )
+	.join( ';' );
 ---
 
 <section class:list={[ 'ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center' ]}>
 	{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 	{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-	{body && body.length > 0 && (
+	{bandParagraphs(body, theme).length > 0 && (
 		<div class="ds-lede">
-			{body.map((paragraph) => (
+			{bandParagraphs(body, theme).map((paragraph) => (
 				<p>{paragraph}</p>
 			))}
 		</div>
@@ -66,20 +94,23 @@ const dividerStyle = theme?.titleDivider
 					<SmartImage src={photo.src} alt={photo.alt ?? title ?? ''} sizes="(min-width: 1025px) 50vw, 100vw" />
 				</div>
 			)}
-			<div class="ds-accordion">
+			<div class="ds-accordion" style={accordionVars || undefined}>
 				{items.map((item, index) => (
 					<details class="ds-accordion-item" open={index === 0}>
 						<summary class="ds-accordion-summary">
-							<span class="ds-accordion-label">{item.title}</span>
-							<span class="ds-accordion-marker" aria-hidden="true" />
-						</summary>
-						{item.body && (
-							<div class="ds-accordion-panel">
-								<p>{item.body}</p>
-							</div>
-						)}
-					</details>
-				))}
+						<span class="ds-accordion-label">{item.title}</span>
+						<span class="ds-accordion-marker" aria-hidden="true" />
+					</summary>
+					{item.body && (
+						<div class="ds-accordion-panel">
+							<p>
+								{item.lead && <strong>{item.lead}</strong>}
+								{item.lead ? ` ${item.body}` : item.body}
+							</p>
+						</div>
+					)}
+				</details>
+			))}
 			</div>
 		</div>
 	)}

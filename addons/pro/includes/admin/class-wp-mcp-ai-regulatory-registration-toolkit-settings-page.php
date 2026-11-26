@@ -29,6 +29,24 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settin
 class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	protected function setting_schema() {
+		return array(
+			'default_regulatory_authority'  => 'select',
+			'enable_expiry_alerts'          => 'boolean',
+			'expiry_alert_days'             => 'number',
+			'enable_pdf_generation'         => 'boolean',
+			'enable_excel_export'           => 'boolean',
+			'enable_inci_validation'        => 'boolean',
+			'enable_hs_code_validation'     => 'boolean',
+			'enable_api_sync'               => 'boolean',
+			'auto_generate_product_code'    => 'boolean',
+			'product_code_prefix'           => 'text',
+		);
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -121,6 +139,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 	 * Render configuration tab
 	 */
 	protected function render_configuration_tab() {
+		$options = $this->stored_options();
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'Regulatory Registration Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -129,14 +148,14 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Regulatory Authority', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="default_regulatory_authority" class="regular-text">
-							<option value="nmra"><?php esc_html_e( 'NMRA (Sri Lanka)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="mohap"><?php esc_html_e( 'MOHAP (UAE)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="sfda"><?php esc_html_e( 'SFDA (Saudi Arabia)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="qatar"><?php esc_html_e( 'Ministry of Public Health (Qatar)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="kuwait"><?php esc_html_e( 'Ministry of Health (Kuwait)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="oman"><?php esc_html_e( 'Ministry of Health (Oman)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="india"><?php esc_html_e( 'CDSCO (India)', 'mcp-ai-wpoos-pro' ); ?></option>
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[default_regulatory_authority]" class="regular-text">
+							<option value="nmra" <?php selected( $options['default_regulatory_authority'] ?? 'nmra', 'nmra' ); ?>><?php esc_html_e( 'NMRA (Sri Lanka)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="mohap" <?php selected( $options['default_regulatory_authority'] ?? 'nmra', 'mohap' ); ?>><?php esc_html_e( 'MOHAP (UAE)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="sfda" <?php selected( $options['default_regulatory_authority'] ?? 'nmra', 'sfda' ); ?>><?php esc_html_e( 'SFDA (Saudi Arabia)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="qatar" <?php selected( $options['default_regulatory_authority'] ?? 'nmra', 'qatar' ); ?>><?php esc_html_e( 'Ministry of Public Health (Qatar)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="kuwait" <?php selected( $options['default_regulatory_authority'] ?? 'nmra', 'kuwait' ); ?>><?php esc_html_e( 'Ministry of Health (Kuwait)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="oman" <?php selected( $options['default_regulatory_authority'] ?? 'nmra', 'oman' ); ?>><?php esc_html_e( 'Ministry of Health (Oman)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="india" <?php selected( $options['default_regulatory_authority'] ?? 'nmra', 'india' ); ?>><?php esc_html_e( 'CDSCO (India)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 						<p class="description"><?php esc_html_e( 'Primary regulatory authority for new registrations', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -145,7 +164,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					<th scope="row"><?php esc_html_e( 'Enable Document Expiry Alerts', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_expiry_alerts" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_expiry_alerts]" value="1" <?php checked( $options['enable_expiry_alerts'] ?? true, 1 ); ?> />
 							<?php esc_html_e( 'Send notifications for expiring documents and registrations', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -153,7 +172,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Expiry Alert Days', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="expiry_alert_days" value="30" min="1" max="365" class="small-text" />
+						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[expiry_alert_days]" value="<?php echo esc_attr( $options['expiry_alert_days'] ?? '30' ); ?>" min="1" max="365" class="small-text" />
 						<p class="description"><?php esc_html_e( 'Send alerts this many days before document/registration expiry', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -161,7 +180,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					<th scope="row"><?php esc_html_e( 'Enable PDF Generation', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_pdf_generation" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_pdf_generation]" value="1" <?php checked( $options['enable_pdf_generation'] ?? true, 1 ); ?> />
 							<?php esc_html_e( 'Generate PDF dossiers, cover letters, and certificates (requires PDFKit NPM package)', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -170,7 +189,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					<th scope="row"><?php esc_html_e( 'Enable Excel Export', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_excel_export" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_excel_export]" value="1" <?php checked( $options['enable_excel_export'] ?? true, 1 ); ?> />
 							<?php esc_html_e( 'Export registration data and reports to Excel (requires ExcelJS NPM package)', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -179,7 +198,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					<th scope="row"><?php esc_html_e( 'Enable INCI Validation', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_inci_validation" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_inci_validation]" value="1" <?php checked( $options['enable_inci_validation'] ?? true, 1 ); ?> />
 							<?php esc_html_e( 'Validate ingredient names against INCI (International Nomenclature Cosmetic Ingredient) standards', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -188,7 +207,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					<th scope="row"><?php esc_html_e( 'Enable HS Code Validation', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_hs_code_validation" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_hs_code_validation]" value="1" <?php checked( $options['enable_hs_code_validation'] ?? true, 1 ); ?> />
 							<?php esc_html_e( 'Validate Harmonized System (HS) codes for import/export classification', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -197,7 +216,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					<th scope="row"><?php esc_html_e( 'Enable API Sync (Phase 3)', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="enable_api_sync" value="1" />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_api_sync]" value="1" <?php checked( $options['enable_api_sync'] ?? false, 1 ); ?> />
 							<?php esc_html_e( 'Sync registration status with NMRA, MOHAP, and SFDA APIs (requires API credentials)', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Coming in Phase 3 - Direct integration with regulatory authority APIs', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -207,7 +226,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					<th scope="row"><?php esc_html_e( 'Auto-Generate Product Code', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="auto_generate_product_code" value="1" checked />
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[auto_generate_product_code]" value="1" <?php checked( $options['auto_generate_product_code'] ?? true, 1 ); ?> />
 							<?php esc_html_e( 'Automatically generate unique product codes for new products', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
@@ -215,7 +234,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Product Code Prefix', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="text" name="product_code_prefix" value="REG" maxlength="10" class="regular-text" />
+						<input type="text" name="<?php echo esc_attr( $this->option_name ); ?>[product_code_prefix]" value="<?php echo esc_attr( $options['product_code_prefix'] ?? 'REG' ); ?>" maxlength="10" class="regular-text" />
 						<p class="description"><?php esc_html_e( 'Prefix for auto-generated product codes (e.g., REG-2024-001)', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>

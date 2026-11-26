@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Save expanded section state to localStorage.
  * Called by the expand/collapse all buttons.

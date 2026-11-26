@@ -13,10 +13,15 @@
  */
 
 /**
+ * Chat continuation dispatcher tests.
+ *
  * @group continuation
  */
 class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 
+	/**
+	 * Reset the dispatcher state.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Chat_Continuation_Store::reset_for_tests();
@@ -31,6 +36,9 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 		remove_action( 'wp_mcp_ai_chat_continuation_ready', array( 'WP_MCP_AI_Chat_Continuation_LLM_Re_Entry', 'on_continuation_ready' ), 10 );
 	}
 
+	/**
+	 * Reset the dispatcher state after each test.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Chat_Continuation_Store::reset_for_tests();
 		remove_all_filters( 'wp_mcp_ai_chat_continuation_enabled' );
@@ -65,14 +73,17 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 				'provider'        => 'gemini',
 				'model'           => 'gemini-1.5-pro',
 				'messages'        => array(
-					array( 'role' => 'user', 'content' => 'Make a video.' ),
+					array(
+						'role'    => 'user',
+						'content' => 'Make a video.',
+					),
 				),
 			)
 		);
 	}
 
 	/**
-	 * job_completed without a snapshot should not schedule cron.
+	 * Job_completed without a snapshot should not schedule cron.
 	 */
 	public function test_no_snapshot_no_cron() {
 		$job_id = 'job_nosnapshot_' . wp_generate_uuid4();
@@ -84,7 +95,7 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 	}
 
 	/**
-	 * job_completed with a snapshot schedules cron.
+	 * Job_completed with a snapshot schedules cron.
 	 */
 	public function test_snapshot_present_schedules_cron() {
 		$job_id = 'job_sched_' . wp_generate_uuid4();
@@ -114,7 +125,7 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 	}
 
 	/**
-	 * should_dispatch filter blocks dispatch.
+	 * Should_dispatch filter blocks dispatch.
 	 */
 	public function test_should_dispatch_filter_blocks() {
 		$job_id = 'job_should_' . wp_generate_uuid4();
@@ -139,7 +150,7 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 		// Simulate completion: this stores terminal_status etc on the row.
 		do_action( 'wp_mcp_ai_job_completed', $job_id, array( 'url' => 'https://example.com/v.mp4' ), array() );
 
-		$ready_args = null;
+		$ready_args      = null;
 		$dispatched_args = null;
 		add_action(
 			'wp_mcp_ai_chat_continuation_ready',
@@ -182,7 +193,7 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 	}
 
 	/**
-	 * process_resume must be idempotent — second call should be a no-op.
+	 * Process_resume must be idempotent — second call should be a no-op.
 	 */
 	public function test_process_resume_is_idempotent() {
 		$job_id = 'job_idem_' . wp_generate_uuid4();
@@ -198,7 +209,7 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 	}
 
 	/**
-	 * job_failed routes the failure into the tool-result message.
+	 * Job_failed routes the failure into the tool-result message.
 	 */
 	public function test_job_failed_produces_failed_tool_message() {
 		$job_id = 'job_failed_' . wp_generate_uuid4();
@@ -221,7 +232,7 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 
 		$this->assertIsArray( $ready );
 		$this->assertEquals( 'failed', $ready['status'] );
-		$last = end( $ready['snapshot']['messages'] );
+		$last    = end( $ready['snapshot']['messages'] );
 		$decoded = json_decode( $last['content'], true );
 		$this->assertEquals( 'failed', $decoded['status'] );
 		$this->assertEquals( 'gemini_quota', $decoded['result']['error']['code'] );

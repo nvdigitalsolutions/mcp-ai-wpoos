@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — composer auto-grow hook (Proposal 080, Phase 1).
  *

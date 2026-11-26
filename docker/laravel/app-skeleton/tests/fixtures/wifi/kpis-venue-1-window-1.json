@@ -1,0 +1,132 @@
+{
+    "venue": {
+        "id": "venue-1",
+        "label": "Kingston Waterfront",
+        "timezone": "America/Jamaica",
+        "residency": "jm"
+    },
+    "window": {
+        "from": 1763337600,
+        "to": 1763424000,
+        "duration": 86400
+    },
+    "adapter": {
+        "id": "mock",
+        "label": "Mock controller (no hardware)",
+        "identity_method": "device_id"
+    },
+    "samples": [
+        {
+            "key": "wifi.clients.connected",
+            "value": 18,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": "device_id",
+            "source_adapter": "mock",
+            "de_name": "Connected Clients",
+            "unit": "count"
+        },
+        {
+            "key": "wifi.clients.unique",
+            "value": 395,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": "device_id",
+            "source_adapter": "mock",
+            "de_name": "Unique Clients",
+            "unit": "count"
+        },
+        {
+            "key": "wifi.quality.dns_failure_rate",
+            "value": 0.1,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "DNS Failure Rate",
+            "unit": "percent"
+        },
+        {
+            "key": "wifi.quality.latency",
+            "value": 147,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "Latency",
+            "unit": "ms"
+        },
+        {
+            "key": "wifi.quality.throughput_down",
+            "value": 49.1,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "Downlink Throughput",
+            "unit": "mbps"
+        },
+        {
+            "key": "wifi.quality.throughput_up",
+            "value": 118.7,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "Uplink Throughput",
+            "unit": "mbps"
+        },
+        {
+            "key": "wifi.radio.airtime_utilization",
+            "value": 44.5,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "Airtime Utilization",
+            "unit": "percent"
+        },
+        {
+            "key": "wifi.radio.channel_utilization",
+            "value": 12.1,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "Channel Utilization",
+            "unit": "percent"
+        },
+        {
+            "key": "wifi.radio.noise_floor",
+            "value": -80,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "Noise Floor",
+            "unit": "dbm"
+        },
+        {
+            "key": "wifi.radio.retry_rate",
+            "value": 4.3,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "Retry Rate",
+            "unit": "percent"
+        },
+        {
+            "key": "wifi.radio.rssi_median",
+            "value": -70,
+            "at": 1763423999,
+            "venue_id": "venue-1",
+            "method": null,
+            "source_adapter": "mock",
+            "de_name": "Median RSSI",
+            "unit": "dbm"
+        }
+    ],
+    "skipped": [],
+    "generated_at": 1763424100
+}

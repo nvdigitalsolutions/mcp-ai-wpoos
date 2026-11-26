@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // cms.ts — nvoos-astro-mcp CMS tool slice (Proposal 095 §3.3, Phase 3/4.3).
 //

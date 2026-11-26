@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useCallback } from '@wordpress/element';
 import { useThreadsStore } from '../store/threadsStore';
 import { useMessagesStore } from '../store/messagesStore';

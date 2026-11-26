@@ -6,16 +6,24 @@
  */
 
 /**
+ * QMS audit log tests.
+ *
  * @group qms
  */
 class Test_QMS_Audit_Log extends WP_UnitTestCase {
 
+	/**
+	 * Load and install the audit log table.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		require_once dirname( __DIR__, 2 ) . '/addons/pro/includes/qms/class-wp-mcp-ai-qms-audit-log.php';
 		WP_MCP_AI_QMS_Audit_Log::install();
 	}
 
+	/**
+	 * Recording writes a row and returns its id.
+	 */
 	public function test_record_writes_row_and_returns_id() {
 		$id = WP_MCP_AI_QMS_Audit_Log::record(
 			array(
@@ -36,15 +44,40 @@ class Test_QMS_Audit_Log extends WP_UnitTestCase {
 		$this->assertSame( array( 'k' => 'v' ), $rows[0]['meta'] );
 	}
 
+	/**
+	 * Queries filter by subsystem and event.
+	 */
 	public function test_query_filters_by_subsystem_and_event() {
-		WP_MCP_AI_QMS_Audit_Log::record( array( 'event' => 'foo', 'post_id' => 100, 'subsystem' => 'qms' ) );
-		WP_MCP_AI_QMS_Audit_Log::record( array( 'event' => 'bar', 'post_id' => 100, 'subsystem' => 'para' ) );
+		WP_MCP_AI_QMS_Audit_Log::record(
+			array(
+				'event'     => 'foo',
+				'post_id'   => 100,
+				'subsystem' => 'qms',
+			)
+		);
+		WP_MCP_AI_QMS_Audit_Log::record(
+			array(
+				'event'     => 'bar',
+				'post_id'   => 100,
+				'subsystem' => 'para',
+			)
+		);
 
-		$qms = WP_MCP_AI_QMS_Audit_Log::query( array( 'post_id' => 100, 'subsystem' => 'qms' ) );
+		$qms = WP_MCP_AI_QMS_Audit_Log::query(
+			array(
+				'post_id'   => 100,
+				'subsystem' => 'qms',
+			)
+		);
 		$this->assertCount( 1, $qms );
 		$this->assertSame( 'foo', $qms[0]['event'] );
 
-		$para = WP_MCP_AI_QMS_Audit_Log::query( array( 'post_id' => 100, 'subsystem' => 'para' ) );
+		$para = WP_MCP_AI_QMS_Audit_Log::query(
+			array(
+				'post_id'   => 100,
+				'subsystem' => 'para',
+			)
+		);
 		$this->assertCount( 1, $para );
 		$this->assertSame( 'bar', $para[0]['event'] );
 	}

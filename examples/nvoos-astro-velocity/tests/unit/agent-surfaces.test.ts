@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // agent-surfaces.test.ts — Proposal 136 in the storefront.
 //

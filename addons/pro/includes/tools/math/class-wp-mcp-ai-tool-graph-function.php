@@ -184,9 +184,10 @@ class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 
 		if ( false === $graph_result || isset( $graph_result['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Function graphing requires a graphing service (Chart.js/D3.js). Please implement the wp_mcp_ai_graph_function filter or set up a graphing microservice. See docs/NPM_INTEGRATION_GUIDE.md in the pro addon for implementation guide.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'Function graphing requires a graphing service (Chart.js/D3.js). Please implement the wp_mcp_ai_graph_function filter or set up a graphing microservice. See docs/NPM_INTEGRATION_GUIDE.md in the pro addon for implementation guide.', 'mcp-ai-wpoos-pro' ),
+				array( 'engine' => 'graphing' )
 			);
 		}
 
@@ -194,9 +195,9 @@ class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$url           = isset( $graph_result['url'] ) ? $graph_result['url'] : null;
 
 		if ( ! $attachment_id && ! $url ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Graph generation did not return an image.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_render_failed',
+				__( 'Graph generation did not return an image.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

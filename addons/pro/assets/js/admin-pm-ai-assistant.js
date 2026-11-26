@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Project Management AI Assistant Metabox - Inline Chat Implementation
  *

@@ -106,7 +106,7 @@ class WP_MCP_AI_Pro_Settings_React_Packages_Test extends WP_UnitTestCase {
 		// Check expected paths would be tested:
 		// 1. WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js' (if Pro is active)
 		// 2. WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js' (legacy)
-		// 3. WP_MCP_AI_PATH . 'node_modules/react' (development)
+		// 3. WP_MCP_AI_PATH . 'node_modules/react' (development).
 
 		// The result depends on environment, but method should not throw errors.
 		$this->assertIsBool( $result, 'React package check should return boolean' );

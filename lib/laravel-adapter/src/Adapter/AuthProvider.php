@@ -131,13 +131,20 @@ class AuthProvider implements AuthProviderInterface {
 		$capabilities = $options['capabilities'] ?? array( 'edit_posts' );
 		$tokenName    = $options['name'] ?? "oos-assistant-{$assistantId}";
 
-		$plainTextToken = $user->createToken( $tokenName, $capabilities )->plainTextToken;
+		$newToken       = $user->createToken( $tokenName, $capabilities );
+		$plainTextToken = $newToken->plainTextToken;
 
 		$expiresAt = null;
 		if ( ! empty( $options['expires_in_seconds'] ) ) {
 			$expiresAt = ( new \DateTimeImmutable() )->add(
 				new \DateInterval( 'PT' . (int) $options['expires_in_seconds'] . 'S' ),
 			);
+
+			// `createToken()` takes no expiry, so it has to be written onto the
+			// row. Without this the returned Credential promised an expiry the
+			// token never had — a credential that looks time-limited and is not.
+			// Sanctum rejects an expired token on its own read path.
+			$newToken->accessToken->forceFill( array( 'expires_at' => $expiresAt ) )->save();
 		}
 
 		return new Credential(

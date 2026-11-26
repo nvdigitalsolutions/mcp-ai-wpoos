@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // build-tokens.mjs — ADS generator CLI (Proposal 095). Writes the three
 // generated artifacts; refuses to write anything when validation fails.

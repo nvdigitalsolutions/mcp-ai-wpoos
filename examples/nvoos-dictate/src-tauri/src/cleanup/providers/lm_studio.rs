@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! LM Studio Stage-2 provider: delegates transcript polish to a local model
 //! served by LM Studio's OpenAI-compatible server (`http://localhost:1234/v1`
 //! by default). Nothing leaves the machine on the default path.

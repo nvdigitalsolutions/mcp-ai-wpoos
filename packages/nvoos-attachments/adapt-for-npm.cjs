@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Adaptation script: Convert WordPress chat-attachments-service.js to a standalone NPM package.
 // Source is a clean utility object — only the IIFE wrapper and the global export need stripping.
 

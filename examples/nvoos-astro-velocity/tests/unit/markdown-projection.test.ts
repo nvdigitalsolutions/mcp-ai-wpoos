@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // markdown-projection.test.ts — Portable Text → markdown (Proposal 136 §4.4).
 //

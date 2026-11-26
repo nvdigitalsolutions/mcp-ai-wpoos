@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // llms.ts — the agent-facing index (Proposal 136 §4.4, velocity port).
 //
@@ -182,6 +183,18 @@ export function markdownFromPortableText( items: unknown[] ): string {
 		case 'image': {
 			if ( item.src ) {
 				out.push( `![${ String( item.alt ?? '' ) }](${ String( item.src ) })` );
+			}
+			break;
+		}
+		case 'model3d': {
+			// The model URL is the fact an agent can act on; the poster is the
+			// accessible still that every no-JS visitor actually sees.
+			if ( item.src ) {
+				const still = item.poster ? ` — still: ${ String( item.poster ) }` : '';
+				out.push( `**3D model:** [${ String( item.alt ?? '' ) }](${ String( item.src ) })${ still }` );
+			}
+			if ( item.caption ) {
+				out.push( `*${ String( item.caption ) }*` );
 			}
 			break;
 		}

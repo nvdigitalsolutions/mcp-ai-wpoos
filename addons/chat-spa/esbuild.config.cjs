@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * esbuild configuration for the NV oOS Chat SPA addon.
  *

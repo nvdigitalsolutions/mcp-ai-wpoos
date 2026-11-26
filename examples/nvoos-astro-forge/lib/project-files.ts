@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // project-files.ts — collect a forged project's source files for pushing
 // (Phase 3.2/4). Shared by the CLI `deploy` command and the MCP

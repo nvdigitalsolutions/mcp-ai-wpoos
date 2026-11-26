@@ -100,34 +100,31 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 	public function test_connection() {
 		$feed_url = $this->get_feed_url();
 		if ( empty( $feed_url ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No feed_url configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No feed_url configured.', 'nvoos-graphify' )
 			);
 		}
 
 		$result = $this->http->get( $feed_url );
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status code */
-				'message' => sprintf( __( 'HTTP %d.', 'nvoos-graphify' ), $result['status'] ),
+				sprintf( __( 'HTTP %d.', 'nvoos-graphify' ), $result['status'] )
 			);
 		}
 
 		// Validate XML.
 		$xml = @simplexml_load_string( $result['body'] ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		if ( false === $xml ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Could not parse XML from feed.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'Could not parse XML from feed.', 'nvoos-graphify' )
 			);
 		}
 

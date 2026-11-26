@@ -6,10 +6,15 @@
  */
 
 /**
+ * QMS workflow tests.
+ *
  * @group qms
  */
 class Test_QMS_Workflow extends WP_UnitTestCase {
 
+	/**
+	 * Enable the QMS settings and load the workflow classes.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		update_option(
@@ -29,6 +34,12 @@ class Test_QMS_Workflow extends WP_UnitTestCase {
 		WP_MCP_AI_QMS_Audit_Log::install();
 	}
 
+	/**
+	 * Create a draft QMS record with the standard metadata.
+	 *
+	 * @param array $extra_meta Extra post meta to apply.
+	 * @return int Post ID.
+	 */
 	protected function make_record( $extra_meta = array() ) {
 		$post_id = self::factory()->post->create(
 			array(
@@ -47,6 +58,9 @@ class Test_QMS_Workflow extends WP_UnitTestCase {
 		return $post_id;
 	}
 
+	/**
+	 * Draft to in-review is rejected without a reviewer.
+	 */
 	public function test_draft_to_in_review_requires_reviewer() {
 		$post_id = $this->make_record();
 		$result  = WP_MCP_AI_QMS_Workflow::transition( $post_id, WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW );
@@ -54,6 +68,9 @@ class Test_QMS_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_qms_no_reviewers', $result->get_error_code() );
 	}
 
+	/**
+	 * Draft to in-review succeeds once a reviewer is set.
+	 */
 	public function test_draft_to_in_review_succeeds_with_reviewer() {
 		$user_id = self::factory()->user->create();
 		$post_id = $this->make_record( array( '_qms_reviewer_ids' => array( $user_id ) ) );
@@ -62,6 +79,9 @@ class Test_QMS_Workflow extends WP_UnitTestCase {
 		$this->assertSame( WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW, get_post_meta( $post_id, '_qms_status', true ) );
 	}
 
+	/**
+	 * An invalid transition is rejected.
+	 */
 	public function test_invalid_transition_is_rejected() {
 		$post_id = $this->make_record();
 		$result  = WP_MCP_AI_QMS_Workflow::transition( $post_id, WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_RELEASED );
@@ -69,6 +89,9 @@ class Test_QMS_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_qms_invalid_transition', $result->get_error_code() );
 	}
 
+	/**
+	 * Release requires a recorded approval signature.
+	 */
 	public function test_release_requires_approval_signature() {
 		$reviewer = self::factory()->user->create();
 		$approver = self::factory()->user->create();
@@ -87,22 +110,36 @@ class Test_QMS_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_qms_no_approval_signature', $result->get_error_code() );
 	}
 
+	/**
+	 * State transitions are written to the audit log.
+	 */
 	public function test_audit_log_records_state_transitions() {
 		$reviewer = self::factory()->user->create();
 		$post_id  = $this->make_record( array( '_qms_reviewer_ids' => array( $reviewer ) ) );
 
 		WP_MCP_AI_QMS_Workflow::transition( $post_id, WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW, array( 'reason' => 'go' ) );
-		$rows = WP_MCP_AI_QMS_Audit_Log::query( array( 'post_id' => $post_id, 'event' => 'state_transition' ) );
+		$rows = WP_MCP_AI_QMS_Audit_Log::query(
+			array(
+				'post_id' => $post_id,
+				'event'   => 'state_transition',
+			)
+		);
 		$this->assertNotEmpty( $rows );
 		$this->assertSame( 'state_transition', $rows[0]['event'] );
 		$this->assertSame( WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW, $rows[0]['to_state'] );
 	}
 
+	/**
+	 * Can_transition allows the draft entry and rejects obsolete.
+	 */
 	public function test_can_transition_rules() {
 		$this->assertTrue( WP_MCP_AI_QMS_Workflow::can_transition( '', WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_DRAFT ) );
 		$this->assertWPError( WP_MCP_AI_QMS_Workflow::can_transition( WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_OBSOLETE, WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_DRAFT ) );
 	}
 
+	/**
+	 * Signing with the wrong password fails.
+	 */
 	public function test_sign_with_wrong_password_fails() {
 		$user_id = self::factory()->user->create( array( 'user_pass' => 'correct-horse' ) );
 		$post_id = $this->make_record( array( '_qms_approver_ids' => array( $user_id ) ) );
@@ -111,6 +148,9 @@ class Test_QMS_Workflow extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_qms_auth_failed', $result->get_error_code() );
 	}
 
+	/**
+	 * Signing with the correct password records a signature.
+	 */
 	public function test_sign_with_correct_password_records_signature() {
 		$user_id = self::factory()->user->create( array( 'user_pass' => 'right-pass' ) );
 		$post_id = $this->make_record( array( '_qms_approver_ids' => array( $user_id ) ) );

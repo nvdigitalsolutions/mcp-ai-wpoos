@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DataTable — shared semantic data table for the Pro SPA console pages.
  *

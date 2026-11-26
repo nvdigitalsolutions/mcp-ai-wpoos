@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // presets-catalogue.test.ts — `presets.json` must match lib/presets.ts.
 //
@@ -20,7 +21,15 @@ describe( 'presets.json', () => {
 	} );
 
 	it( 'lists every preset once, in the canonical order', () => {
-		expect( presetCatalogue().map( ( preset ) => preset.id ) ).toEqual( [ 'blog', 'storefront', 'minimal' ] );
+		expect( presetCatalogue().map( ( preset ) => preset.id ) ).toEqual( [
+			'blog',
+			'storefront',
+			'portfolio',
+			'landing',
+			'docs',
+			'eca',
+			'minimal',
+		] );
 	} );
 
 	it( 'gives each preset a bestFor line and at least one kind', () => {

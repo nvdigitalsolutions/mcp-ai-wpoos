@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Embedder catalogue + downloader (Proposal 127, M1).
 //!
 //! Mirrors `stt::model_registry` discipline: pinned specs, streaming

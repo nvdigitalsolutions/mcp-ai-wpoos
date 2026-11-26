@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Workflow node components — the three Engine V2 node kinds
  * (Phase 3b W10.2b). Headless-styled; data is a type alias per the

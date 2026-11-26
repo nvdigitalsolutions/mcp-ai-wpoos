@@ -3,6 +3,7 @@
   "version": "1.0.4",
   "description": "Visual knowledge graph for WordPress — maps your content into an interactive, navigable graph. Zero API keys required.",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "postinstall": "node scripts/copy-vendor.js",
     "install:vendor": "node scripts/copy-vendor.js"

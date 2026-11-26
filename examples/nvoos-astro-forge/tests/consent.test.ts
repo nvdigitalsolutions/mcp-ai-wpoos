@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // consent.test.ts — the generated project's pure consent model (130 §2.5).
 // The inline bootstrap + banner script mirror this module; the constants are

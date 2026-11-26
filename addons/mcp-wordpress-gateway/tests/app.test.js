@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Integration tests for the gateway HTTP surface: health, auth rejection,
  * body limits, pass-through, and unavailable-handler behavior. Tool policy

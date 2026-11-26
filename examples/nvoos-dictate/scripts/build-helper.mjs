@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 // Build the ScreenCaptureKit sidecar (mac-helper) and stage it over the
 // externalBin stub so Tauri bundles + signs it inside the .app.
 //

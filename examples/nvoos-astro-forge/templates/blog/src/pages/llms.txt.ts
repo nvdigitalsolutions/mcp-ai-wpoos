@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // /llms.txt — the agent-facing index (Proposal 136 §4.4).
 //
 // The shape is fixed by the llms.txt v2 proposal: an H1, a blockquote summary,

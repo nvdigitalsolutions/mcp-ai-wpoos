@@ -30,7 +30,10 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 		$verifier = new WP_MCP_AI_Rule_Verifier(
 			'rule_verifier',
 			array(
-				array( 'type' => 'required', 'path' => 'answer.text' ),
+				array(
+					'type' => 'required',
+					'path' => 'answer.text',
+				),
 			)
 		);
 		$this->assertFalse( $verifier->verify( array( 'answer' => array() ) )['passed'] );
@@ -44,7 +47,11 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 		$verifier = new WP_MCP_AI_Rule_Verifier(
 			'rule_verifier',
 			array(
-				array( 'type' => 'pattern', 'path' => 'url', 'value' => '#^https://#' ),
+				array(
+					'type'  => 'pattern',
+					'path'  => 'url',
+					'value' => '#^https://#',
+				),
 			)
 		);
 		$this->assertTrue( $verifier->verify( array( 'url' => 'https://example.com' ) )['passed'] );
@@ -58,7 +65,11 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 		$verifier = new WP_MCP_AI_Rule_Verifier(
 			'rule_verifier',
 			array(
-				array( 'type' => 'enum', 'path' => 'status', 'value' => array( 'ok', 'warn' ) ),
+				array(
+					'type'  => 'enum',
+					'path'  => 'status',
+					'value' => array( 'ok', 'warn' ),
+				),
 			)
 		);
 		$this->assertTrue( $verifier->verify( array( 'status' => 'ok' ) )['passed'] );
@@ -72,8 +83,16 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 		$verifier = new WP_MCP_AI_Rule_Verifier(
 			'rule_verifier',
 			array(
-				array( 'type' => 'min', 'path' => 'score', 'value' => 0 ),
-				array( 'type' => 'max', 'path' => 'score', 'value' => 1 ),
+				array(
+					'type'  => 'min',
+					'path'  => 'score',
+					'value' => 0,
+				),
+				array(
+					'type'  => 'max',
+					'path'  => 'score',
+					'value' => 1,
+				),
 			)
 		);
 		$this->assertTrue( $verifier->verify( array( 'score' => 0.5 ) )['passed'] );
@@ -91,7 +110,7 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 					'type'     => 'callback',
 					'path'     => 'value',
 					'callback' => static function ( $v ) {
-						return is_int( $v ) && ( $v % 2 === 0 );
+						return is_int( $v ) && ( 0 === $v % 2 );
 					},
 				),
 			)
@@ -107,11 +126,19 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 		$verifier = new WP_MCP_AI_Rule_Verifier(
 			'rule_verifier',
 			array(
-				array( 'type' => 'required', 'path' => 'a', 'weight' => 3 ),
-				array( 'type' => 'required', 'path' => 'b', 'weight' => 1 ),
+				array(
+					'type'   => 'required',
+					'path'   => 'a',
+					'weight' => 3,
+				),
+				array(
+					'type'   => 'required',
+					'path'   => 'b',
+					'weight' => 1,
+				),
 			)
 		);
-		$res = $verifier->verify( array( 'a' => 'x' ) );
+		$res      = $verifier->verify( array( 'a' => 'x' ) );
 		$this->assertFalse( $res['passed'] );
 		$this->assertEqualsWithDelta( 0.75, $res['score'], 0.0001 );
 	}
@@ -123,8 +150,14 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 		$verifier = new WP_MCP_AI_Rule_Verifier(
 			'rule_verifier',
 			array(
-				array( 'type' => 'not-a-type', 'path' => 'x' ),
-				array( 'type' => 'callback', 'path' => 'x' ), // missing callback.
+				array(
+					'type' => 'not-a-type',
+					'path' => 'x',
+				),
+				array(
+					'type' => 'callback',
+					'path' => 'x',
+				), // missing callback.
 				'not an array',
 			)
 		);
@@ -140,10 +173,14 @@ class Test_WP_MCP_AI_Rule_Verifier extends WP_UnitTestCase {
 		$verifier = new WP_MCP_AI_Rule_Verifier(
 			'rule_verifier',
 			array(
-				array( 'type' => 'pattern', 'path' => 'x', 'value' => '(((' ),
+				array(
+					'type'  => 'pattern',
+					'path'  => 'x',
+					'value' => '(((',
+				),
 			)
 		);
-		$result = $verifier->verify( array( 'x' => 'y' ) );
+		$result   = $verifier->verify( array( 'x' => 'y' ) );
 		$this->assertFalse( $result['passed'] );
 	}
 }

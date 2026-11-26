@@ -200,6 +200,231 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------------------------
+	// Token-budget parameter selection (max_tokens vs max_completion_tokens).
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test requires_max_completion_tokens() recognises the V4.1 Flash family.
+	 */
+	public function test_requires_max_completion_tokens_for_flash_family() {
+		$this->assertTrue( $this->client->requires_max_completion_tokens( 'deepseek-flash' ) );
+		$this->assertTrue( $this->client->requires_max_completion_tokens( 'deepseek-v4-flash-vision-exp' ) );
+		$this->assertTrue( $this->client->requires_max_completion_tokens( 'deepseek-v4.1-flash' ) );
+		$this->assertFalse( $this->client->requires_max_completion_tokens( 'deepseek-v4-pro' ) );
+		$this->assertFalse( $this->client->requires_max_completion_tokens( 'deepseek-v3' ) );
+	}
+
+	/**
+	 * Test build_payload emits max_completion_tokens for deepseek-flash.
+	 */
+	public function test_build_payload_uses_max_completion_tokens_for_flash() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
+
+		$payload = $this->invoke_build_payload( 'deepseek-flash', array( 'max_tokens' => 3000 ) );
+
+		$this->assertIsArray( $payload );
+		$this->assertArrayHasKey( 'max_completion_tokens', $payload );
+		$this->assertSame( 3000, $payload['max_completion_tokens'] );
+		$this->assertArrayNotHasKey( 'max_tokens', $payload );
+	}
+
+	/**
+	 * Test build_payload keeps max_tokens for deepseek-v4-pro.
+	 */
+	public function test_build_payload_keeps_max_tokens_for_pro() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
+
+		$payload = $this->invoke_build_payload( 'deepseek-v4-pro', array( 'max_tokens' => 3000 ) );
+
+		$this->assertIsArray( $payload );
+		$this->assertSame( 3000, $payload['max_tokens'] );
+		$this->assertArrayNotHasKey( 'max_completion_tokens', $payload );
+	}
+
+	/**
+	 * Test an explicit max_completion_tokens is passed through for any model.
+	 */
+	public function test_build_payload_honours_explicit_max_completion_tokens() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
+
+		$payload = $this->invoke_build_payload( 'deepseek-v4-pro', array( 'max_completion_tokens' => 2048 ) );
+
+		$this->assertIsArray( $payload );
+		$this->assertSame( 2048, $payload['max_completion_tokens'] );
+		$this->assertArrayNotHasKey( 'max_tokens', $payload );
+	}
+
+	/**
+	 * Test the 400 correction flips max_tokens to max_completion_tokens.
+	 */
+	public function test_correct_unsupported_parameter_flips_to_max_completion_tokens() {
+		$decoded = array(
+			'error' => array(
+				'message' => "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+			),
+		);
+
+		$corrected = $this->invoke_correct_unsupported_parameter( 400, $decoded, array( 'max_tokens' => 3000 ) );
+
+		$this->assertIsArray( $corrected );
+		$this->assertSame( 3000, $corrected['max_completion_tokens'] );
+		$this->assertArrayNotHasKey( 'max_tokens', $corrected );
+	}
+
+	/**
+	 * Test the correction flips back when a model rejects max_completion_tokens.
+	 */
+	public function test_correct_unsupported_parameter_flips_back_to_max_tokens() {
+		$decoded = array(
+			'error' => array(
+				'message' => "Unsupported parameter: 'max_completion_tokens' is not supported with this model. Use 'max_tokens' instead.",
+			),
+		);
+
+		$corrected = $this->invoke_correct_unsupported_parameter( 400, $decoded, array( 'max_completion_tokens' => 3000 ) );
+
+		$this->assertIsArray( $corrected );
+		$this->assertSame( 3000, $corrected['max_tokens'] );
+		$this->assertArrayNotHasKey( 'max_completion_tokens', $corrected );
+	}
+
+	/**
+	 * Test the correction ignores unrelated errors.
+	 */
+	public function test_correct_unsupported_parameter_ignores_unrelated_errors() {
+		$decoded = array( 'error' => array( 'message' => 'Rate limit reached.' ) );
+
+		$this->assertNull( $this->invoke_correct_unsupported_parameter( 429, $decoded, array( 'max_tokens' => 3000 ) ) );
+		$this->assertNull( $this->invoke_correct_unsupported_parameter( 400, $decoded, array( 'max_tokens' => 3000 ) ) );
+	}
+
+	/**
+	 * Test create_chat_completion retries once with the corrected token key.
+	 */
+	public function test_create_chat_completion_retries_once_after_unsupported_parameter() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'deepseek_api_key' => 'sk-test',
+				'deepseek_model'   => 'deepseek-v4-pro',
+			)
+		);
+
+		$requests  = array();
+		$http_stub = function ( $preempt, $args ) use ( &$requests ) {
+			$requests[] = $args;
+
+			if ( 1 === count( $requests ) ) {
+				return array(
+					'headers'  => array(),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message' => "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 400,
+						'message' => 'Bad Request',
+					),
+				);
+			}
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'   => 'deepseek-v4-pro',
+						'choices' => array(
+							array(
+								'index'         => 0,
+								'message'       => array(
+									'role'    => 'assistant',
+									'content' => 'Hello!',
+								),
+								'finish_reason' => 'stop',
+							),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 2 );
+
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hi',
+				),
+			),
+			array( 'max_tokens' => 64 )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertCount( 2, $requests, 'The client should retry exactly once.' );
+
+		$first  = json_decode( $requests[0]['body'], true );
+		$second = json_decode( $requests[1]['body'], true );
+
+		$this->assertArrayHasKey( 'max_tokens', $first );
+		$this->assertArrayNotHasKey( 'max_completion_tokens', $first );
+
+		$this->assertArrayHasKey( 'max_completion_tokens', $second );
+		$this->assertArrayNotHasKey( 'max_tokens', $second );
+		$this->assertSame( 64, $second['max_completion_tokens'] );
+	}
+
+	/**
+	 * Invoke the protected build_payload() method.
+	 *
+	 * @param string $model   Model id.
+	 * @param array  $options Request options.
+	 * @return array|WP_Error
+	 */
+	private function invoke_build_payload( $model, array $options ) {
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_payload' );
+		$method->setAccessible( true );
+
+		return $method->invoke(
+			$this->client,
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Research this product.',
+				),
+			),
+			$options,
+			$model
+		);
+	}
+
+	/**
+	 * Invoke the protected correct_unsupported_parameter() method.
+	 *
+	 * @param int   $code    HTTP status code.
+	 * @param array $decoded Decoded error body.
+	 * @param array $payload Rejected payload.
+	 * @return array|null
+	 */
+	private function invoke_correct_unsupported_parameter( $code, array $decoded, array $payload ) {
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'correct_unsupported_parameter' );
+		$method->setAccessible( true );
+
+		return $method->invoke( $this->client, $code, $decoded, $payload );
+	}
+
+	// -------------------------------------------------------------------------
 	// count_tokens heuristic.
 	// -------------------------------------------------------------------------
 
@@ -487,21 +712,24 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Maps max_completion_tokens to DeepSeek's max_tokens payload key.
+	 * An explicit max_completion_tokens survives for a legacy-key model.
+	 *
+	 * The caller chose the newer spelling, so the client sends it as-is even
+	 * for a model that normally uses `max_tokens`. A rejection is still
+	 * recovered by the one-shot "Unsupported parameter" correction.
 	 */
-	public function test_build_payload_supports_max_completion_tokens() {
+	public function test_build_payload_preserves_explicit_max_completion_tokens_for_legacy_model() {
 		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
-		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'build_payload' );
-		$method->setAccessible( true );
 		$messages = array(
 			array(
 				'role'    => 'user',
 				'content' => 'Hi',
 			),
 		);
-		$payload  = $method->invoke( $this->client, $messages, array( 'max_completion_tokens' => 200 ), 'deepseek-chat' );
-		$this->assertEquals( 200, $payload['max_tokens'] );
+		$payload  = $this->invoke_build_payload( 'deepseek-chat', array( 'max_completion_tokens' => 200 ) );
+
+		$this->assertSame( 200, $payload['max_completion_tokens'] );
+		$this->assertArrayNotHasKey( 'max_tokens', $payload );
 	}
 
 	/**

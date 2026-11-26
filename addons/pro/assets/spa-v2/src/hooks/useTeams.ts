@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useTeams — Hook for the teams catalogue + per-team members.
  */

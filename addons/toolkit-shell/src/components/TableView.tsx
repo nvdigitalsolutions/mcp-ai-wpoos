@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Generic table view — renders a Resource's rows with TanStack Table.
  *

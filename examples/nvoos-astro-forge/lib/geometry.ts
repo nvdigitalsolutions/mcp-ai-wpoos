@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // geometry.ts — rendered box geometry, measured instead of inferred.
 //
@@ -17,6 +18,10 @@ import type { AddressInfo } from 'node:net';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 
+import { inkForSurface } from './design.ts';
+import { gateContextOptions } from './gate.ts';
+import { settle } from './page-settle.ts';
+
 import type {
 	BandBoxDeclaration,
 	BandBoxFacts,
@@ -29,11 +34,13 @@ import type {
 	ForgeBandCarouselFact,
 	ForgeBandColumnFact,
 	ForgeBandFacts,
+	ForgeBandRowLayout,
 	ForgeChromeBox,
 	ForgeChrome,
 	ForgeChromeGeometry,
 	ForgeFooterBrand,
 	ForgeGeometry,
+	ForgeMeasuredHeaderAction,
 	ForgeMobileNav,
 	ForgeStickyHeader,
 	ForgeTopbarFacts,
@@ -99,43 +106,6 @@ export async function loadChromium(): Promise< PlaywrightChromium > {
 	}
 }
 
-/**
- * Wait until the page's boxes have stopped moving: fonts loaded, every
- * viewport scrolled through so lazy images have fetched, and animations off.
- * Lazy image loading is the one thing that silently changes band height.
- */
-async function settle( page: import('playwright').Page ): Promise< void > {
-	await page.addStyleTag( {
-		content:
-			'*,*::before,*::after{animation:none!important;transition:none!important;' +
-			'scroll-behavior:auto!important}html{scroll-behavior:auto!important}',
-	} );
-	await page.evaluate( async () => {
-		const doc = document as Document & { fonts?: { ready: Promise< unknown > } };
-		if ( doc.fonts ) {
-			await doc.fonts.ready;
-		}
-		const height = document.body.scrollHeight;
-		for ( let y = 0; y < height; y += window.innerHeight ) {
-			window.scrollTo( 0, y );
-			await new Promise( ( resolve ) => setTimeout( resolve, 60 ) );
-		}
-		window.scrollTo( 0, 0 );
-		await Promise.all(
-			Array.from( document.images )
-				.filter( ( image ) => ! image.complete )
-				.map(
-					( image ) =>
-						new Promise( ( resolve ) => {
-							image.addEventListener( 'load', resolve, { once: true } );
-							image.addEventListener( 'error', resolve, { once: true } );
-							setTimeout( resolve, 3000 );
-						} )
-				)
-		);
-	} );
-}
-
 export interface MeasureOptions {
 	url: string;
 	/** The section ids to measure (the profile's bands). */
@@ -161,7 +131,7 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		const geometry: ForgeGeometry = {};
 		for ( const viewport of options.viewports ?? DEFAULT_GEOMETRY_VIEWPORTS ) {
@@ -181,7 +151,11 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						marginTop: number;
 						marginBottom: number;
 						columns?: number[];
+						columnWidths?: number[];
+						content?: { width: number; x: number; padTop?: number; padBottom?: number };
 						kind?: string;
+						/** The build declares it renders this band shorter (see `BandGeometry.collapsed`). */
+						collapsed?: boolean;
 					}
 				> = {};
 				for ( const id of ids ) {
@@ -241,7 +215,62 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					// whose children sit side by side and tile the row. Recorded so a
 					// rebuilt grid that stretches equal-height columns is a reported
 					// deviation (virtuallyjamaica's 700px + 948px pair).
-					const columnsOf = ( band: Element ): number[] | undefined => {
+					/**
+					 * The band's painted SLAB, when it fills only part of the band.
+					 *
+					 * A builder paints the slab on a column's INNER wrapper and the sibling
+					 * column can collapse, so the lane pass never sees a row — the paint is the
+					 * only fact (`collectBandPanelFacts` records it for the scaffold). Here it
+					 * lets the content box describe the SAME box on both sides: the rebuild
+					 * constrains its section to the slab, the source keeps its container.
+					 * One slab only; two or more are per-column panels and say nothing about
+					 * the band's content box.
+					 */
+					const slabOf = ( band: Element, bandRect: DOMRect ): DOMRect | undefined => {
+						const solid = ( node: Element ): boolean => {
+							const value = getComputedStyle( node ).backgroundColor;
+							const match = /^rgba?\(([^)]*)\)$/i.exec( value );
+							if ( ! match ) {
+								return false;
+							}
+							const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() );
+							return ( parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1 ) >= 0.95;
+						};
+						const found: DOMRect[] = [];
+						for ( const node of [ band, ...Array.from( band.querySelectorAll( '*' ) ) ] ) {
+							if ( /^(style|script|link|template|noscript|img|svg|path|source)$/i.test( node.tagName ) ) {
+								continue;
+							}
+							const rect = node.getBoundingClientRect();
+							if ( rect.width < bandRect.width * 0.25 || rect.height < bandRect.height * 0.5 ) {
+								continue;
+							}
+							if ( solid( node ) ) {
+								found.push( rect );
+							}
+						}
+						// Nested boxes of the same fill are ONE slab; count distinct boxes.
+						const outer = found.filter(
+							( rect ) =>
+								! found.some(
+									( other ) =>
+										other !== rect &&
+										other.width >= rect.width &&
+										other.height >= rect.height &&
+										other.left <= rect.left &&
+										other.right >= rect.right &&
+										other.top <= rect.top &&
+										other.bottom >= rect.bottom
+								)
+						);
+						if ( outer.length !== 1 ) {
+							return undefined;
+						}
+						// A full-bleed slab IS the band; it says nothing about the container.
+						return outer[ 0 ].width < bandRect.width - 8 ? outer[ 0 ] : undefined;
+					};
+
+					const columnsOf = ( band: Element ): { heights: number[]; widths: number[] } | undefined => {
 						let row: Element = band;
 						for ( let guard = 0; guard < 6 && row.children.length === 1; guard++ ) {
 							row = row.children[ 0 ] as Element;
@@ -272,13 +301,126 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						if ( ! isGrid && ( ! sameTop || ! tiled ) ) {
 							return undefined;
 						}
-						return rects.map( ( box ) => Math.round( box.height ) );
+						return {
+							heights: rects.map( ( box ) => Math.round( box.height ) ),
+							widths: rects.map( ( box ) => Math.round( box.width ) ),
+						};
+					};
+					/**
+					 * The band's CONTENT column — the box the copy sits in (see
+					 * `BandGeometry.content`).
+					 *
+					 * The FIRST descendant that is narrower than the band: that is the
+					 * container, on both sides — `.elementor-top-section > .elementor-container`
+					 * on a builder, `.ds-section-wrap > .ds-section` on the rebuild. A band that
+					 * shrink-wrapped to its text is caught here even though its WRAPPER still
+					 * spans the viewport, and the probe stops before a band's own inner padding
+					 * can read as a narrowing.
+					 *
+					 * A band whose content sits on a PARTIAL slab reports the SLAB instead:
+					 * the slab, not the container, is what the rebuild constrains, so both
+					 * sides then describe the same box (virtuallysrilanka's "How it Works" is
+					 * a #dd3333 right half, 720 of 1440) — and a slab that regressed to
+					 * full-bleed reports the container and fails.
+					 */
+					const contentOf = ( band: Element ): { width: number; x: number; padTop?: number; padBottom?: number } | undefined => {
+						const bandRect = band.getBoundingClientRect();
+						if ( bandRect.width <= 0 ) {
+							return undefined;
+						}
+						// The CONTENT STAGE's own block padding travels with the box: builders
+						// inset the copy with `e-con-inner { padding: 60px 0 80px }` rather than
+						// the band, so a rebuild that reads only the band's padding starts the
+						// copy 60–80px high (eca.directory's benefits band, 2026-11-25).
+						const stagePadding = ( node: Element ): { padTop?: number; padBottom?: number } => {
+							const style = getComputedStyle( node );
+							const padTop = Math.round( parseFloat( style.paddingTop ) || 0 );
+							const padBottom = Math.round( parseFloat( style.paddingBottom ) || 0 );
+							return padTop > 0 || padBottom > 0 ? { padTop, padBottom } : {};
+						};
+						const slab = slabOf( band, bandRect );
+						if ( slab ) {
+							return { width: Math.round( slab.width ), x: Math.round( slab.x - bandRect.x ) };
+						}
+						let node: Element = band;
+						let best: { width: number; x: number } | undefined;
+						// The block padding is the SUM of every container in the chain: a builder
+						// nests `e-con-inner` (padding 60) > `e-con-inner` (padding 0) and the copy
+						// sits 60 below the band, whichever one states it.
+						let padTop = 0;
+						let padBottom = 0;
+						const visibleChildren = ( parent: Element ): Element[] =>
+							[ ...parent.children ].filter(
+								( child ) =>
+									! /^(style|script|link|template|noscript)$/i.test( child.tagName ) &&
+									getComputedStyle( child ).display !== 'none'
+							);
+						for ( let guard = 0; guard < 8; guard++ ) {
+							const next = visibleChildren( node );
+							if ( next.length === 0 ) {
+								break;
+							}
+							// Several element children means the band stacks SEVERAL stages (a rebuilt
+							// hardware band is a heading section plus a logo row). The band's content is
+							// as wide as its WIDEST stage — the same container the source states once.
+							const candidate =
+								next.length > 1
+									? next.reduce( ( widest, child ) =>
+											child.getBoundingClientRect().width > widest.getBoundingClientRect().width ? child : widest
+									  )
+									: next[ 0 ];
+							const box = candidate.getBoundingClientRect();
+							if ( box.width <= 0 || box.height < 8 ) {
+								break;
+							}
+							// A NARROWING that keeps most of the band is a container — and a builder
+							// nests them (`e-con-boxed > e-con-inner` at 1280 inside `e-con-inner` at
+							// 1100), so keep the DEEPEST substantial one. Below 60% it is a column or
+							// a slab, not the band's container, and deeper reads are the copy box.
+							if ( box.width < bandRect.width - 2 ) {
+								if ( box.width < bandRect.width * 0.6 ) {
+									break;
+								}
+								// Keep the DEEPEST substantial container, but never let an EQUAL-WIDTH
+								// wrapper overwrite the box that stated the block padding — a builder
+								// nests `e-con-inner > e-con-full` at the same width, and the inner one
+								// carries none (eca.directory's stats band lost its 60px inset this way).
+								if ( ! best || box.width < best.width - 2 ) {
+									best = { width: Math.round( box.width ), x: Math.round( box.x - bandRect.x ) };
+								}
+								const stage = stagePadding( candidate );
+								padTop += stage.padTop ?? 0;
+								padBottom += stage.padBottom ?? 0;
+							}
+							// Descend through a SINGLE stage only. A full-bleed stage with one child
+							// is a wrapper (Elementor's `e-con-boxed`); anything else is ambiguous
+							// and the deepest box we recorded stays the answer.
+							if ( next.length !== 1 ) {
+								if ( next.length > 1 && box.width >= bandRect.width - 2 && visibleChildren( candidate ).length === 1 ) {
+									node = candidate;
+									continue;
+								}
+								break;
+							}
+							node = candidate;
+						}
+						return best
+							? {
+									...best,
+									...( padTop > 0 ? { padTop } : {} ),
+									...( padBottom > 0 ? { padBottom } : {} ),
+							  }
+							: undefined;
 					};
 					const columns = columnsOf( element );
+					const content = contentOf( element );
 					// A COMPONENT band is forged from a component, so its DOM has no
 					// builder columns even when the source row did. Tag the kind so the
 					// column diff can tell that apart from a row that went missing.
 					const bandKind = kind === 'built' ? element.getAttribute( 'data-section' ) : null;
+					// The build declares a band it deliberately renders SHORTER (its grid
+					// folded away or its list is empty) — see `BandGeometry.collapsed`.
+					const collapsed = kind === 'built' && element.hasAttribute( 'data-section-collapsed' );
 					out[ id ] = {
 						height: rect.height,
 						width: rect.width,
@@ -288,8 +430,10 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						paddingRight: parseFloat( style.paddingRight ) || 0,
 						marginTop: parseFloat( style.marginTop ) || 0,
 						marginBottom: parseFloat( style.marginBottom ) || 0,
-						...( columns ? { columns } : {} ),
+						...( columns ? { columns: columns.heights, columnWidths: columns.widths } : {} ),
+						...( content ? { content } : {} ),
 						...( bandKind ? { kind: bandKind } : {} ),
+						...( collapsed ? { collapsed: true } : {} ),
 					};
 				}
 				return out;
@@ -306,6 +450,9 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					marginTop: Math.round( band.marginTop ),
 					marginBottom: Math.round( band.marginBottom ),
 					...( band.columns ? { columns: band.columns } : {} ),
+					...( band.columnWidths ? { columnWidths: band.columnWidths } : {} ),
+					...( band.collapsed ? { collapsed: true } : {} ),
+					...( band.content ? { content: band.content } : {} ),
 					...( band.kind ? { kind: band.kind } : {} ),
 				};
 			}
@@ -352,10 +499,16 @@ function collectBandTypeFacts( input: {
 		{
 				containerWidth: number;
 				containerPadX: number;
+				containerPadTop: number;
+				containerPadBottom: number;
 				containerInner: boolean;
 				containerFlush: boolean;
 				headings: Record< string, BandTypeProperties >;
 				body?: BandTypeProperties;
+				/** The largest heading's text — the band's real title. */
+				titleText?: string;
+				/** The small label the source stacks ABOVE that title. */
+				eyebrow?: BandTypeProperties & { text: string; level?: number };
 			}
 	> {
 const pick = ( selector: string ): Element | null => {
@@ -398,6 +551,8 @@ const pick = ( selector: string ): Element | null => {
 		{
 			containerWidth: number;
 			containerPadX: number;
+			containerPadTop: number;
+			containerPadBottom: number;
 			containerInner: boolean;
 			containerFlush: boolean;
 			headings: Record< string, BandTypeProperties >;
@@ -471,6 +626,12 @@ const pick = ( selector: string ): Element | null => {
 			container.getBoundingClientRect().width - padLeft - padRight
 		);
 		const containerPadX = Math.round( Math.max( padLeft, padRight ) * 100 ) / 100;
+		// The container's BLOCK padding. A builder insets the copy with
+		// `e-con-inner { padding: 60px 0 80px }` rather than the band, so a rebuild
+		// that reads only the band's own padding starts the copy 60–80px high
+		// (eca.directory's benefits band, 2026-11-25).
+		const containerPadTop = Math.round( ( parseFloat( containerStyle.paddingTop ) || 0 ) * 100 ) / 100;
+		const containerPadBottom = Math.round( ( parseFloat( containerStyle.paddingBottom ) || 0 ) * 100 ) / 100;
 		// Does the band's own grid cancel that gutter? A Bootstrap-family `.row`
 		// carries a NEGATIVE horizontal margin that pulls its columns back out over
 		// the container's padding. The rebuild's stylesheet never defines `.row`, so
@@ -519,13 +680,75 @@ const pick = ( selector: string ): Element | null => {
 				body = fact( sampled );
 			}
 		}
+		// The band's TITLE is the LARGEST heading it renders, and its EYEBROW is a
+		// clearly smaller heading stacked ABOVE that title in the SAME lane.
+		//
+		// The classifier can only read tag level, so its kicker heuristic gives up on
+		// a kicker longer than six words and promotes the sentence to title.
+		// virtuallysrilanka's hardware band is exactly that: a 14px all-caps
+		// sentence above a 42px `SUPPORTED HARDWARE`, rebuilt with the sentence set
+		// at 42px and the real title demoted to body copy. Rendered size is the only
+		// signal that separates the two, and only the browser has it.
+		const headingNodes = Array.from(
+			element.querySelectorAll( 'h1,h2,h3,h4,h5,h6' )
+		).filter(
+			( node ) =>
+				! node.closest( 'form' ) && ( node.textContent ?? '' ).trim().length > 0
+		);
+		let titleNode: Element | undefined;
+		let titlePx = 0;
+		for ( const node of headingNodes ) {
+			const px = parseFloat( getComputedStyle( node ).fontSize ) || 0;
+			if ( px > titlePx ) {
+				titlePx = px;
+				titleNode = node;
+			}
+		}
+		let eyebrow: ( BandTypeProperties & { text: string; level?: number } ) | undefined;
+		if ( titleNode ) {
+			// The LANE is the nearest builder column. Two headings in DIFFERENT
+			// columns are column headings (virtuallysrilanka's services band), never an
+			// eyebrow/title stack — and painting one over the other would be a lie.
+			const laneOf = ( node: Element ): Element | null =>
+				node.closest( '.elementor-column, .e-con' );
+			const titleLane = laneOf( titleNode );
+			const titleTop = titleNode.getBoundingClientRect().top;
+			let bestTop = -Infinity;
+			for ( const node of headingNodes ) {
+				if ( node === titleNode || laneOf( node ) !== titleLane ) {
+					continue;
+				}
+				const px = parseFloat( getComputedStyle( node ).fontSize ) || 0;
+				// "Clearly smaller": a sibling heading at the title's own size is a
+				// second title (a two-line hero), not a label.
+				if ( px <= 0 || px >= titlePx * 0.8 ) {
+					continue;
+				}
+				const top = node.getBoundingClientRect().top;
+				if ( top >= titleTop || top <= bestTop ) {
+					continue;
+				}
+				bestTop = top;
+				eyebrow = {
+					...fact( node ),
+					text: ( node.textContent ?? '' ).trim().replace( /\s+/g, ' ' ),
+					level: Number( ( node.tagName || 'H6' ).slice( 1 ) ),
+				};
+			}
+		}
 		facts[ id ] = {
 			containerWidth,
 			containerPadX,
+			containerPadTop,
+			containerPadBottom,
 			containerInner,
 			containerFlush,
 			headings,
 			...( body ? { body } : {} ),
+			...( titleNode
+				? { titleText: ( titleNode.textContent ?? '' ).trim().replace( /\s+/g, ' ' ) }
+				: {} ),
+			...( eyebrow ? { eyebrow } : {} ),
 		};
 	}
 	return facts;
@@ -568,6 +791,37 @@ export interface MeasuredBox {
 	 * restating it can never fight the parent that legitimately sets it.
 	 */
 	color?: string;
+	/**
+	 * A VISIBLE border, as a CSS shorthand (`2px solid rgba(0, 0, 0, 0.1)`), when
+	 * all four sides agree.
+	 *
+	 * A border changes the rendered box: Flatsome frames a section title with a
+	 * 2px hairline, and a rebuild without it is 4px narrow and 4px short at every
+	 * breakpoint — inside a band whose height is otherwise exact, so no gate saw
+	 * it (monicarajiv, 2026-11-20). A PER-SIDE border is not recorded: one
+	 * shorthand cannot carry four different sides, and a wrong rule is worse
+	 * than the template default.
+	 */
+	border?: string;
+	/**
+	 * The type this class DECLARES on its own element — a value that differs from
+	 * what it inherits, which is the only thing a class fact can honestly claim.
+	 *
+	 * A band can hold two `h1`s that are styled apart by a class: Flatsome puts the
+	 * accent line in `.alt-font` (Dancing Script, no caps, 1.3 leading) beside the
+	 * real heading (Karma, uppercase, 1.2). The band's tag fact can only describe
+	 * ONE of them, so the accent shipped in capitals with the heading's leading
+	 * (monicarajiv's salon band, 2026-11-21). A class fact outranks the tag fact,
+	 * so the outlier re-states itself.
+	 *
+	 * Recorded only when the computed value DIFFERS from the parent's: an
+	 * inherited value says nothing about the class, and re-stating it would fight
+	 * whatever legitimately sets it.
+	 */
+	fontSize?: string;
+	lineHeight?: string;
+	textTransform?: string;
+	letterSpacing?: string;
 }
 
 /**
@@ -634,6 +888,77 @@ export function collectBandBoxFacts( input: {
 		[ 'marginTop', 'marginRight', 'marginBottom', 'marginLeft' ]
 			.map( ( side ) => px( getComputedStyle( node )[ side as 'marginTop' ] ) )
 			.join( ' ' );
+	/**
+	 * A uniform, VISIBLE border as a shorthand, or `''`.
+	 *
+	 * Four sides must agree on width, style AND colour: a shorthand cannot express
+	 * `border-bottom` alone, and emitting the wrong one would draw a frame the
+	 * source never had. A zero-width or `none` side is not a border.
+	 */
+	const borderOf = ( node: Element ): string => {
+		const style = getComputedStyle( node );
+		const sides = [ 'Top', 'Right', 'Bottom', 'Left' ] as const;
+		const width = style[ `border${ sides[ 0 ] }Width` ];
+		const line = style[ `border${ sides[ 0 ] }Style` ];
+		const ink = style[ `border${ sides[ 0 ] }Color` ];
+		if ( ! width || parseFloat( width ) === 0 || line === 'none' || line === 'hidden' ) {
+			return '';
+		}
+		for ( const side of sides ) {
+			if (
+				style[ `border${ side }Width` ] !== width ||
+				style[ `border${ side }Style` ] !== line ||
+				style[ `border${ side }Color` ] !== ink
+			) {
+				return '';
+			}
+		}
+		return `${ px( width ) } ${ line } ${ ink }`;
+	};
+	/**
+	 * The type this node DECLARES versus what it inherits, or `undefined` for each
+	 * property it merely inherits.
+	 *
+	 * TEXT-LEVEL elements only. A wrapper (`div.text-box`, `.banner-layer`, `.x50`)
+	 * also inherits a size that differs from its parent's, but re-stating it there
+	 * buys nothing and hands the rule a chance to outrank something real. What a
+	 * class fact is for is the OUTLIER: a heading or paragraph whose class styles
+	 * it apart from the band's tag fact (`.alt-font` in the salon band).
+	 *
+	 * A computed `line-height` is px, so a node that keeps the parent's RATIO but
+	 * changes its font-size reports both as different — correct: a class fact must
+	 * carry the resolved leading it actually paints.
+	 */
+	const TEXT_LEVEL = /^(h[1-6]|p|a|span|strong|em|b|i|small|li|blockquote|figcaption|button|label)$/i;
+	const ownTypeOf = ( node: Element ): { size?: string; leading?: string; transform?: string; tracking?: string } => {
+		const parent = node.parentElement;
+		if ( ! parent || ! TEXT_LEVEL.test( node.tagName ) ) {
+			return {};
+		}
+		const style = getComputedStyle( node );
+		const inherited = getComputedStyle( parent );
+		// Did this element declare ANY type of its own? If not, the class says
+		// nothing and its type is whatever it inherits — a fact that would fight
+		// the band's tag rule for no reason.
+		const declares =
+			style.fontSize !== inherited.fontSize ||
+			style.lineHeight !== inherited.lineHeight ||
+			style.textTransform !== inherited.textTransform ||
+			style.letterSpacing !== inherited.letterSpacing;
+		if ( ! declares ) {
+			return {};
+		}
+		// Complete, not partial: a class that changes its size also states the
+		// transform and tracking it ends up with. `.alt-font` differs from its
+		// parent only in SIZE, yet it must say `text-transform:none` or the band's
+		// `h1{text-transform:uppercase}` still paints the accent in capitals.
+		return {
+			size: style.fontSize,
+			leading: style.lineHeight,
+			transform: style.textTransform,
+			tracking: style.letterSpacing,
+		};
+	};
 	// The Bootstrap grid is a COUPLED set: `.container-fluid` carries 15px of
 	// side padding that `.row`'s -15px margin cancels. Restating one half without
 	// the other shrinks the band (virtuallyjamaica's #wifi rendered 1376px wide
@@ -641,6 +966,12 @@ export function collectBandBoxFacts( input: {
 	// grid, so the measured sheet restates the COLUMN and module boxes — which is
 	// where the source's layout actually lives — and leaves the scaffolding alone.
 	const SCAFFOLDING = /(^|\s)(container|container-fluid|row|vc_row|wpb_row|vc_row-fluid)(\s|$)/;
+	// A CONTENT module can carry the grid utility too: Flatsome writes
+	// `<div class="container section-title-container">`, and skipping the whole
+	// node lost its own box (a 26.64px bottom margin the rebuild never had).
+	// The scaffolding TOKENS are still excluded — `.container` is seen on pure
+	// wrappers elsewhere, so it resolves to ambiguous and is dropped anyway.
+	const CONTENT_MODULE = /(^|\s)(section-title-container|section-title|icon-box|icon-box-text|text-box)(\s|$)/;
 	const out: Record<
 		string,
 		{
@@ -697,6 +1028,8 @@ export function collectBandBoxFacts( input: {
 				pads: Set< string >;
 				mars: Set< string >;
 				colors: Set< string >;
+				borders: Set< string >;
+				types: Map< string, Set< string > >;
 				onModule: boolean;
 				onScaffold: boolean;
 			}
@@ -727,9 +1060,12 @@ export function collectBandBoxFacts( input: {
 			if ( classes.length === 0 ) {
 				continue;
 			}
-			const scaffolding = SCAFFOLDING.test( node.getAttribute( 'class' ) ?? '' );
+			const classAttribute = node.getAttribute( 'class' ) ?? '';
+			const scaffolding = SCAFFOLDING.test( classAttribute ) && ! CONTENT_MODULE.test( classAttribute );
 			const pad = boxesOf( node );
 			const mar = marginsOf( node );
+			const border = borderOf( node );
+			const ownType = ownTypeOf( node );
 			// The class's OWN ink: a colour that differs from the one the node
 			// inherits. An inherited colour says nothing about the class (the parent
 			// already painted it), so it is recorded as the empty string and a class
@@ -779,6 +1115,8 @@ export function collectBandBoxFacts( input: {
 						pads: new Set(),
 						mars: new Set(),
 						colors: new Set(),
+						borders: new Set(),
+						types: new Map(),
 						onModule: false,
 						onScaffold: false,
 					} );
@@ -787,12 +1125,24 @@ export function collectBandBoxFacts( input: {
 					pads: Set< string >;
 					mars: Set< string >;
 					colors: Set< string >;
+					borders: Set< string >;
+					types: Map< string, Set< string > >;
 					onModule: boolean;
 					onScaffold: boolean;
 				};
 				entry.pads.add( pad );
 				entry.mars.add( mar );
 				entry.colors.add( ownColor );
+				entry.borders.add( border );
+				for ( const [ property, value ] of Object.entries( ownType ) ) {
+					if ( typeof value !== 'string' || value === '' ) {
+						continue;
+					}
+					if ( ! entry.types.has( property ) ) {
+						entry.types.set( property, new Set() );
+					}
+					( entry.types.get( property ) as Set< string > ).add( value );
+				}
 				if ( scaffolding ) {
 					entry.onScaffold = true;
 				} else {
@@ -838,6 +1188,31 @@ export function collectBandBoxFacts( input: {
 			if ( entry.colors.size === 1 && color ) {
 				box.color = color;
 			}
+			// Only a border every instance AGREES on, and only a visible one: an
+			// empty string is “no border”, which is the template default and needs
+			// no rule.
+			const border = [ ...entry.borders ][ 0 ];
+			if ( entry.borders.size === 1 && border ) {
+				box.border = border;
+			}
+			// A type the class declares on every instance that carries it. One
+			// dissenting instance means the token is not the cause, so the fact is
+			// dropped — the same rule every other box property follows.
+			for ( const [ property, values ] of entry.types ) {
+				if ( values.size !== 1 ) {
+					continue;
+				}
+				const value = [ ...values ][ 0 ];
+				if ( property === 'size' ) {
+					box.fontSize = value;
+				} else if ( property === 'leading' ) {
+					box.lineHeight = value;
+				} else if ( property === 'transform' ) {
+					box.textTransform = value;
+				} else if ( property === 'tracking' ) {
+					box.letterSpacing = value;
+				}
+			}
 			if ( Object.keys( box ).length > 0 ) {
 				facts[ name ] = box;
 			}
@@ -872,9 +1247,9 @@ export function collectBandBoxFacts( input: {
  * without recording a redundant map for the common case.
  */
 export function mergeElementFacts(
-	desktop?: Array< { path: string; bg?: string; height?: number } >,
-	tablet?: Array< { path: string; bg?: string; height?: number } >,
-	mobile?: Array< { path: string; bg?: string; height?: number } >
+	desktop?: Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } >,
+	tablet?: Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } >,
+	mobile?: Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } >
 ): ForgeBandElement[] | undefined {
 	if ( ! desktop || desktop.length === 0 ) {
 		return undefined;
@@ -884,7 +1259,9 @@ export function mergeElementFacts(
 		byPath.set( fact.path, {
 			path: fact.path,
 			...( fact.bg ? { bg: fact.bg } : {} ),
+			...( fact.veil ? { veil: fact.veil } : {} ),
 			...( typeof fact.height === 'number' ? { height: fact.height } : {} ),
+			...( typeof fact.width === 'number' ? { width: fact.width } : {} ),
 		} );
 	}
 	for ( const [ device, list ] of [
@@ -893,20 +1270,193 @@ export function mergeElementFacts(
 	] as const ) {
 		for ( const fact of list ?? [] ) {
 			const entry = byPath.get( fact.path );
-			if ( ! entry || typeof fact.height !== 'number' ) {
+			if ( ! entry ) {
 				continue;
 			}
-			const base = typeof entry.height === 'number' ? entry.height : entry.height?.desktop;
-			if ( fact.height === base ) {
-				continue;
+			// Height and width merge the same way: keep the desktop value and
+			// record a per-device override only where the source changes it.
+			for ( const key of [ 'height', 'width' ] as const ) {
+				const value = fact[ key ];
+				if ( typeof value !== 'number' ) {
+					continue;
+				}
+				const current = entry[ key ];
+				const base = typeof current === 'number' ? current : current?.desktop;
+				if ( value === base ) {
+					continue;
+				}
+				entry[ key ] = {
+					...( typeof current === 'object' ? current : current ? { desktop: current } : {} ),
+					[ device ]: value,
+				};
 			}
-			entry.height = {
-				...( typeof entry.height === 'object' ? entry.height : entry.height ? { desktop: entry.height } : {} ),
-				[ device ]: fact.height,
-			};
 		}
 	}
 	return [ ...byPath.values() ];
+}
+
+/**
+ * Measure the header's labelled CTA pills (“Try Demo”, “Sign In”) as the
+ * browser paints them.
+ *
+ * The stylesheet harvest reads DECLARATIONS: it resolves a builder var against
+ * the first `--e-global-color-primary` it finds, and Elementor scopes a button's
+ * colour to a rule that may live in a stylesheet the harvest never fetched.
+ * eca.directory's accent pill came back `#d9534f` (a foreign Bootstrap red)
+ * beside a correctly-resolved dark pill. Computed styles are the only faithful
+ * source, exactly as they are for the nav's type and the footer's size.
+ *
+ * Desktop viewport on purpose: a builder hides conversion controls on phones
+ * (`elementor-hidden-mobile`) and a hidden control measures 0×0.
+ */
+export async function measureHeaderActions( options: {
+	url: string;
+	timeout?: number;
+} ): Promise< ForgeMeasuredHeaderAction[] > {
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const context = await browser.newContext( gateContextOptions( { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 } ) );
+		const page = await context.newPage();
+		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+		await settle( page );
+		const actions = await page.evaluate( () => {
+			const alphaOf = ( value: string ): number => {
+				const match = /rgba?\(([^)]+)\)/.exec( value );
+				if ( ! match ) {
+					return value === 'transparent' ? 0 : 1;
+				}
+				const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() ).filter( Boolean );
+				return parts.length >= 4 ? Number( parts[ 3 ] ) : 1;
+			};
+			// The profile stores colours as `#rrggbb` (the token/contrast passes
+			// parse hex only), so an OPAQUE computed `rgb()` collapses here. A
+			// translucent ink keeps its `rgba()` form — the alpha is the look.
+			const toHex = ( value: string ): string => {
+				const match = /rgba?\(([^)]+)\)/.exec( value );
+				if ( ! match ) {
+					return value;
+				}
+				const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() ).filter( Boolean );
+				if ( parts.length >= 4 && Number( parts[ 3 ] ) < 0.95 ) {
+					return value;
+				}
+				const channels = parts.slice( 0, 3 ).map( ( channel ) => Math.max( 0, Math.min( 255, Math.round( parseFloat( channel ) ) ) ) );
+				return `#${ channels.map( ( channel ) => channel.toString( 16 ).padStart( 2, '0' ) ).join( '' ) }`;
+			};
+			// A gradient is a surface only when every stop is opaque: Elementor's
+			// hover shade (`rgba(0,0,0,.35)` → transparent) is an overlay, and the
+			// flat background-colour beneath it is the pill.
+			const gradientIsSurface = ( image: string ): boolean => {
+				if ( ! image || image === 'none' ) {
+					return false;
+				}
+				if ( image.includes( 'url(' ) ) {
+					return true;
+				}
+				const stops = image.match( /rgba?\([^)]+\)/g ) ?? [];
+				return stops.length > 0 && stops.every( ( stop ) => alphaOf( stop ) >= 0.95 );
+			};
+			const header = document.querySelector( 'header, #masthead, #header, .site-header, .elementor-location-header, nav' );
+			if ( ! header ) {
+				return [];
+			}
+			const out: Array< {
+				text: string;
+				href?: string;
+				fill?: string;
+				ink?: string;
+				hideMobile?: boolean;
+				style?: { padding?: string; radius?: string; size?: string; weight?: string; transform?: string };
+			} > = [];
+			for ( const node of header.querySelectorAll( 'a, button' ) ) {
+				const classes = typeof node.className === 'string' ? node.className : '';
+				if ( ! /(?:^|\s)(?:elementor-button|btn|button|aux-button)(?:\s|$)/.test( classes ) ) {
+					continue;
+				}
+				const text = ( node.textContent || '' ).replace( /\s+/g, ' ' ).trim();
+				if ( ! text || out.some( ( action ) => action.text === text ) ) {
+					continue;
+				}
+				const rect = node.getBoundingClientRect();
+				const style = getComputedStyle( node );
+				if ( rect.width < 1 || rect.height < 1 || style.visibility === 'hidden' || style.display === 'none' ) {
+					continue;
+				}
+				const action: ( typeof out )[ number ] = { text };
+				const href = node.getAttribute( 'href' );
+				if ( href ) {
+					action.href = href;
+				}
+				if ( alphaOf( style.backgroundColor ) >= 0.95 ) {
+					action.fill = toHex( style.backgroundColor );
+				} else if ( gradientIsSurface( style.backgroundImage ) ) {
+					action.fill = style.backgroundImage;
+				}
+				if ( style.color && alphaOf( style.color ) >= 0.5 ) {
+					action.ink = toHex( style.color );
+				}
+				const box: NonNullable< ( typeof out )[ number ][ 'style' ] > = {};
+				const sides = [ style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft ];
+				if ( new Set( sides ).size <= 2 ) {
+					box.padding = sides[ 0 ] === sides[ 1 ] ? sides[ 0 ] : `${ sides[ 0 ] } ${ sides[ 1 ] }`;
+				}
+				if ( style.borderRadius && style.borderRadius !== '0px' ) {
+					box.radius = style.borderRadius;
+				}
+				if ( style.fontSize ) {
+					box.size = style.fontSize;
+				}
+				if ( style.fontWeight ) {
+					box.weight = style.fontWeight;
+				}
+				if ( style.textTransform && style.textTransform !== 'none' ) {
+					box.transform = style.textTransform;
+				}
+				if ( Object.keys( box ).length > 0 ) {
+					action.style = box;
+				}
+				out.push( action );
+				if ( out.length >= 2 ) {
+					break;
+				}
+			}
+			return out;
+		} );
+		// A builder hides its conversion pills on phones (`elementor-hidden-mobile`,
+		// a `.hide-sm` utility). Measured at desktop only, the rebuild rendered them
+		// at 390px too and the header row overflowed (eca.directory's “Try De…”).
+		// One extra viewport records the fact instead of guessing it.
+		if ( actions.length > 0 ) {
+			await page.setViewportSize( { width: 390, height: 844 } );
+			await page.waitForTimeout( 400 );
+			const visibleMobile = await page.evaluate( ( texts: string[] ) => {
+				const header = document.querySelector( 'header, #masthead, #header, .site-header, .elementor-location-header, nav' );
+				if ( ! header ) {
+					return texts.map( () => false );
+				}
+				return texts.map( ( text ) => {
+					for ( const node of header.querySelectorAll( 'a, button' ) ) {
+						if ( ( node.textContent || '' ).replace( /\s+/g, ' ' ).trim() !== text ) {
+							continue;
+						}
+						const rect = node.getBoundingClientRect();
+						const style = getComputedStyle( node );
+						return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden';
+					}
+					return false;
+				} );
+			}, actions.map( ( action ) => action.text ) );
+			actions.forEach( ( action, index ) => {
+				if ( visibleMobile[ index ] === false ) {
+					action.hideMobile = true;
+				}
+			} );
+		}
+		return actions;
+	} finally {
+		await browser.close();
+	}
 }
 
 /**
@@ -944,7 +1494,7 @@ function collectBandElementFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, Array< { path: string; bg?: string; height?: number } > > {
+} ): Record< string, Array< { path: string; bg?: string; veil?: string; height?: number } > > {
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -966,7 +1516,7 @@ function collectBandElementFacts( input: {
 		const index = parent ? Array.prototype.indexOf.call( parent.children, element ) + 1 : 1;
 		return `${ tag }:nth-child(${ index })`;
 	};
-	const out: Record< string, Array< { path: string; bg?: string; height?: number } > > = {};
+	const out: Record< string, Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } > > = {};
 	for ( const id of input.ids ) {
 		const candidates =
 			input.kind === 'built'
@@ -978,7 +1528,7 @@ function collectBandElementFacts( input: {
 		if ( ! band ) {
 			continue;
 		}
-		const facts: Array< { path: string; bg?: string; height?: number } > = [];
+		const facts: Array< { path: string; bg?: string; veil?: string; height?: number; width?: number } > = [];
 		const walk = ( element: Element, depth: number, prefix: string ): void => {
 			if ( depth > 7 || facts.length >= 48 ) {
 				return;
@@ -993,11 +1543,33 @@ function collectBandElementFacts( input: {
 					const alpha = alphaOf( style.backgroundColor );
 					const hasImage = style.backgroundImage !== 'none';
 					const paintsColor = alpha >= 0.95;
-					if ( paintsColor || hasImage ) {
-						const fact: { path: string; bg?: string; height?: number } = { path };
-						fact.bg = hasImage
-							? `background-image:${ style.backgroundImage.slice( 0, 400 ) }`
-							: `background-color:${ style.backgroundColor }`;
+					// A builder sizes IMAGES through CSS, never through the attributes:
+					// Flatsome ships `width="1" height="1"` and puts the real box on the
+					// WRAPPER. The vendor rule that did it is keyed by an `#image_*` id the
+					// source re-issues between analysis and build, so it lands on nothing;
+					// the wrapper’s own MEASURED width, keyed by a structural path, still
+					// resolves (monicarajiv’s hero chevron: 108x72 source, 1x1 rebuild).
+					const wrapsImage = /^image_/.test( child.id ) || [ ...child.classList ].includes( 'img' );
+					const holdsImage = wrapsImage && child.querySelector( 'img' ) !== null;
+					// A VEIL is a translucent layer over the band's photo. Its alpha sits
+					// below the solid-fill gate on purpose — that gate exists so a photo
+					// scrim never becomes the band surface — but dropping the layer entirely
+					// left the hero unshaded (monicarajiv, 2026-11-19). Gated on the
+					// convention's class so a decorative translucent tile stays unrecorded.
+					const isVeil = alpha > 0 && alpha < 0.95 && [ ...child.classList ].includes( 'overlay' );
+					if ( paintsColor || hasImage || holdsImage || isVeil ) {
+						const fact: { path: string; bg?: string; veil?: string; width?: number; height?: number } = { path };
+						if ( isVeil ) {
+							fact.veil = `background-color:${ style.backgroundColor }`;
+						}
+						if ( holdsImage ) {
+							fact.width = Math.round( rect.width );
+						}
+						if ( paintsColor || hasImage ) {
+							fact.bg = hasImage
+								? `background-image:${ style.backgroundImage.slice( 0, 400 ) }`
+								: `background-color:${ style.backgroundColor }`;
+						}
 						// A PINNED stage keeps its box; a card follows its copy. A builder's
 						// tile grid is often ABSOLUTE-positioned (Flatsome's banner mosaic
 						// gives every tile `position:absolute` and sizes it from the row), so
@@ -1016,6 +1588,44 @@ function collectBandElementFacts( input: {
 			}
 		};
 		walk( band, 0, '' );
+		// IMAGE WRAPPERS get their own pass: a builder nests an image five levels
+		// deep (banner > banner-layers > text-box > text-inner > .img), past the
+		// walk’s depth limit, so the hero chevron was never seen. A wrapper is
+		// identifiable outright (`#image_*` or `.img`), so a direct query is both
+		// cheaper and complete.
+		const seenPaths = new Set( facts.map( ( fact ) => fact.path ) );
+		for ( const wrapper of [ ...band.querySelectorAll( '[id^="image_"], .img' ) ] ) {
+			if ( facts.length >= 48 ) {
+				break;
+			}
+			if ( wrapper.querySelector( 'img' ) === null ) {
+				continue;
+			}
+			const wrapperRect = wrapper.getBoundingClientRect();
+			if ( wrapperRect.width < 24 || wrapperRect.height < 16 ) {
+				continue;
+			}
+			const segments: string[] = [];
+			let node: Element | null = wrapper;
+			while ( node && node !== band ) {
+				const parent: Element | null = node.parentElement;
+				if ( ! parent ) {
+					break;
+				}
+				segments.unshift( segmentOf( node ) );
+				node = parent;
+			}
+			const wrapperPath = segments.join( ' > ' );
+			if ( node !== band || ! wrapperPath || seenPaths.has( wrapperPath ) ) {
+				continue;
+			}
+			seenPaths.add( wrapperPath );
+			facts.push( {
+				path: wrapperPath,
+				width: Math.round( wrapperRect.width ),
+				height: Math.round( wrapperRect.height ),
+			} );
+		}
 		if ( facts.length > 0 ) {
 			out[ id ] = facts;
 		}
@@ -1086,13 +1696,53 @@ function collectBandColumnFacts( input: {
 		for ( let guard = 0; guard < 6 && row.children.length === 1; guard++ ) {
 			row = row.children[ 0 ] as Element;
 		}
-		const kids = [ ...row.children ].filter( ( child ) => {
-			const rect = child.getBoundingClientRect();
-			// Not a lane: a spacer column (see the twin filter in
-			// `measureGeometry`). virtuallyjamaica's contact band ships a pair of
-			// 2px-tall spacers whose heights are not a layout fact.
-			return rect.width >= 40 && rect.height >= 8 && getComputedStyle( child ).display !== 'none';
-		} );
+		// The chain only follows SINGLE-child wrappers, but a builder nests the
+		// row beside its background layer (`section > section-bg + section-content
+		// > .row`), so the chain stops at the band. Resolve the row explicitly.
+		if ( ! ROW.test( row.getAttribute( 'class' ) ?? '' ) ) {
+			const explicit = [ ...band.querySelectorAll( '[class~="row"],[class~="row-collapse"],[class~="banner-grid"]' ) ].find(
+				( node ) => node.children.length >= 2
+			);
+			if ( explicit ) {
+				row = explicit;
+			}
+		}
+		const laneKids = ( node: Element ): Element[] =>
+			[ ...node.children ].filter( ( child ) => {
+				const rect = child.getBoundingClientRect();
+				const style = getComputedStyle( child );
+				// Not a lane: a spacer column (see the twin filter in
+				// `measureGeometry`). virtuallyjamaica's contact band ships a pair of
+				// 2px-tall spacers whose heights are not a layout fact.
+				//
+				// Nor is an ABSOLUTELY-POSITIONED child: Elementor paints its
+				// decorative blobs and shapes on `elementor-absolute` spacers beside
+				// the real lanes, and counting one as a lane put a 14.8% / 85.2%
+				// "split" on eca.directory's about-us hero (2026-11-25). Lanes are
+				// in-flow by definition.
+				return (
+					rect.width >= 40 &&
+					rect.height >= 8 &&
+					style.display !== 'none' &&
+					style.position !== 'absolute' &&
+					style.position !== 'fixed'
+				);
+			} );
+		let kids = laneKids( row );
+		// A container-mode band often puts its real row one level down
+		// (`… .e-con-boxed > .e-con-inner > .e-child`), so the band's own children
+		// are a decorative layer plus a wrapper. Descend to the shallowest row
+		// that actually has two in-flow lanes.
+		if ( kids.length < 2 ) {
+			const queue: Element[] = [ ...band.querySelectorAll( '[class~="e-con-inner"],[class~="elementor-container"]' ) ];
+			for ( const candidate of queue ) {
+				if ( candidate !== band && laneKids( candidate ).length >= 2 ) {
+					row = candidate;
+					kids = laneKids( candidate );
+					break;
+				}
+			}
+		}
 		if ( kids.length < 2 ) {
 			continue;
 		}
@@ -1100,9 +1750,25 @@ function collectBandColumnFacts( input: {
 		// A GRID is a row even when it STACKS (the source's `col-md-12` columns at
 		// tablet/mobile): the class family proves it, and their heights still have
 		// to be recorded per device or a stacked photo panel loses its box.
+		//
+		// A FLEX ROW of plain widgets is a row too, even with no column classes: an
+		// Elementor counter row (`e-con-full` with `justify-content: space-between`)
+		// lays `elementor-widget`s side by side, and without its lanes the rebuild's
+		// equal cells cannot state the source's 151 / 253 / 197 / 163 distribution
+		// (eca.directory's about-us stats, 2026-11-25). The tile test is what keeps
+		// a background layer plus a content stage out: those do not tile.
+		const rowBox = row.getBoundingClientRect();
+		const sameTop = rects.every(
+			( box ) => Math.abs( box.top - rects[ 0 ].top ) <= Math.max( 8, box.height * 0.25 )
+		);
+		const tiled = rects.reduce( ( sum, box ) => sum + box.width, 0 ) >= rowBox.width * 0.9;
 		const isGrid =
 			ROW.test( row.getAttribute( 'class' ) ?? '' ) ||
-			kids.some( ( child ) => COLUMN.test( child.getAttribute( 'class' ) ?? '' ) || /column|e-con/i.test( child.getAttribute( 'class' ) ?? '' ) );
+			kids.some(
+				( child ) =>
+					COLUMN.test( child.getAttribute( 'class' ) ?? '' ) || /column|e-con/i.test( child.getAttribute( 'class' ) ?? '' )
+			) ||
+			( /flex|grid/.test( getComputedStyle( row ).display ) && ( sameTop || tiled ) );
 		// Only a GRID has columns. A band whose single-child chain lands on a
 		// wrapper (Flatsome's `section > section-bg + section-content`) has two
 		// "children" that happen to tile the row and share a top — they are the
@@ -1113,29 +1779,360 @@ function collectBandColumnFacts( input: {
 			continue;
 		}
 		const facts: ForgeBandColumnFact[] = [];
+		// A lane's POSITION is recorded as a PAIR (`nth-child` + `nth-last-child`), not
+		// as a bare index. `[data-section-id] .col:nth-child(1)` matches the first
+		// column of EVERY row in the band: airport-transfer's four-card row put a
+		// 478px floor on the two single-column rows beside it and a 766px band
+		// rendered 1494px (monicarajiv, 2026-11-20). The pair names a lane in a row of
+		// exactly N lanes, so a row of another shape never matches.
+		//
+		// The count skips nodes the sanitizer drops (`<style>`, `<script>`): a builder
+		// emits `<style>` inside its rows, and counting them would offset the pair
+		// against the rebuilt markup, which carries none.
+		const lanes = [ ...row.children ].filter(
+			( node ) => ! /^(style|script|link|template|noscript)$/i.test( node.tagName )
+		);
 		kids.forEach( ( child, index ) => {
-			const selector = tokenOf( band!, child );
-			if ( ! selector ) {
-				return;
-			}
+			// A unique class token when the band offers one; otherwise the
+			// column’s POSITION in the row. Without the fallback a band whose
+			// columns share every class (`medium-6 large-6` on both) recorded no
+			// columns at all, so per-column facts had nowhere to live.
+			const laneIndex = lanes.indexOf( child ) + 1;
+			const selector =
+				tokenOf( band!, child ) ??
+				`col:nth-child(${ laneIndex }):nth-last-child(${ lanes.length - laneIndex + 1 })`;
 			const style = getComputedStyle( child );
-			const image = style.backgroundImage !== 'none';
+			// A SOLID fill only: a photo overlay is translucent by design, and a scrim
+			// is never the slab the copy sits on.
+			const solidFill = ( node: Element | null ): string | undefined => {
+				if ( ! node ) {
+					return undefined;
+				}
+				const value = getComputedStyle( node ).backgroundColor;
+				const match = /^rgba?\(([^)]*)\)$/i.exec( value );
+				if ( ! match ) {
+					return undefined;
+				}
+				const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() );
+				const alpha = parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1;
+				return alpha >= 0.95 ? value : undefined;
+			};
+			// The lane's PAINTED layer. A builder scopes the slab rule to a wrapper
+			// (Elementor paints `.elementor-element-populated`), and that wrapper is
+			// not always the column's FIRST element child — a `<style>` or a link
+			// wrapper can sit ahead of it, which is how virtuallysrilanka's black
+			// third column and its photo column both went unrecorded. Find the first
+			// FULL-SIZE painted box instead: a button or a badge inside the lane is
+			// small, and must never be mistaken for the lane's own surface.
+			const paintedOf = ( column: Element ): {
+				fill?: string;
+				image?: string;
+				attachment?: string;
+				size?: string;
+			} => {
+				const box = column.getBoundingClientRect();
+				const minW = box.width * 0.8;
+				const minH = box.height * 0.5;
+				for ( const node of [ column, ...Array.from( column.querySelectorAll( '*' ) ) ] ) {
+					if ( /^(style|script|link|template|noscript)$/i.test( node.tagName ) ) {
+						continue;
+					}
+					const rect = node.getBoundingClientRect();
+					if ( rect.width < minW || rect.height < minH ) {
+						continue;
+					}
+					const computed = getComputedStyle( node );
+					const fill = solidFill( node );
+					const image = computed.backgroundImage !== 'none' ? computed.backgroundImage : undefined;
+					if ( fill || image ) {
+						return {
+							fill,
+							image,
+							attachment: computed.backgroundAttachment,
+							size: computed.backgroundSize,
+						};
+					}
+				}
+				return {};
+			};
+			const painted = paintedOf( child );
 			const fact: ForgeBandColumnFact = {
 				selector,
 				height: Math.round( rects[ index ].height ),
+				// The rendered WIDTH — the lane's share of the row. The source's three
+				// services lanes are 432 / 432 / 571, not equal thirds, and a grid built
+				// on the CSS `col-33` declaration renders them equal.
+				width: Math.round( rects[ index ].width ),
 			};
-			if ( image ) {
+			if ( painted.fill ) {
+				fact.bg = painted.fill;
+			}
+			// The column’s INNER padding: per column, so it cannot live in the
+			// class-keyed box map.
+			const inner = child.querySelector( ':scope > .col-inner' ) ?? child.querySelector( ':scope > div' );
+			if ( inner ) {
+				const innerPad = getComputedStyle( inner ).padding;
+				if ( innerPad && ! /^0px( 0px)*$/.test( innerPad.trim() ) ) {
+					fact.pad = innerPad.trim();
+				}
+			}
+			if ( painted.image ) {
 				fact.image = true;
-				fact.attachment = style.backgroundAttachment.includes( 'fixed' ) ? 'fixed' : 'scroll';
-				if ( style.backgroundSize && style.backgroundSize !== 'auto' ) {
-					fact.size = style.backgroundSize;
+				fact.attachment = ( painted.attachment ?? '' ).includes( 'fixed' ) ? 'fixed' : 'scroll';
+				if ( painted.size && painted.size !== 'auto' ) {
+					fact.size = painted.size;
 				}
 			}
 			facts.push( fact );
 		} );
 		if ( facts.length >= 2 ) {
-			out[ id ] = facts;
+				out[ id ] = facts;
+			}
 		}
+		return out;
+	}
+
+	/**
+	 * How the band's OWN row lays its lanes out, per device (`ForgeBandRowLayout`).
+	 *
+	 * The column pass records each lane's rendered WIDTH. Width alone cannot say
+	 * whether the lanes are side by side or stacked: two 1280px lanes inside a
+	 * 1280px content column describe a COLUMN, and normalising them into a
+	 * two-track grid laid eca.directory's about-us CTA beside itself and pushed
+	 * the copy 319px left (2026-11-25). The row's computed `flex-direction` is the
+	 * fact that settles it; `row-gap` is the space between the stacked lanes (the
+	 * band's empty middle child still takes a gap, so the band height is
+	 * 60 + 135 + 40 + 0 + 40 + 53 + 60).
+	 *
+	 * Resolves the row exactly as `collectBandColumnFacts` does, so both facts
+	 * describe the same container.
+	 */
+	function collectBandRowLayoutFacts( input: {
+		ids: string[];
+		kind: 'built' | 'source';
+		selectors?: Record< string, string >;
+	} ): Record< string, ForgeBandRowLayout > {
+		const pick = ( selector: string ): Element | null => {
+			try {
+				return document.querySelector( selector );
+			} catch {
+				return null;
+			}
+		};
+		const COLUMN = /(^|\s)(wpb_column|vc_column_container)(\s|$)/;
+		const ROW = /(^|\s)(row|vc_row|wpb_row)(\s|$)|brando[_-](inner[_-])?row/;
+		const out: Record< string, ForgeBandRowLayout > = {};
+		for ( const id of input.ids ) {
+			const candidates =
+				input.kind === 'built'
+					? [ `[data-section-id="${ id }"]` ]
+					: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+							( value ): value is string => Boolean( value )
+					  );
+			let band = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) ) ?? null;
+			if ( input.kind === 'source' && band && COLUMN.test( band.getAttribute( 'class' ) ?? '' ) ) {
+				let parentRow: Element | null = null;
+				for ( let up = band.parentElement; up; up = up.parentElement ) {
+					if ( up.tagName === 'SECTION' ) {
+						band = up;
+						parentRow = null;
+						break;
+					}
+					if ( ! parentRow && ROW.test( up.getAttribute( 'class' ) ?? '' ) ) {
+						parentRow = up;
+					}
+				}
+				if ( parentRow ) {
+					band = parentRow;
+				}
+			}
+			if ( ! band ) {
+				continue;
+			}
+			let row: Element = band;
+			for ( let guard = 0; guard < 6 && row.children.length === 1; guard++ ) {
+				row = row.children[ 0 ] as Element;
+			}
+			if ( ! ROW.test( row.getAttribute( 'class' ) ?? '' ) ) {
+				const explicit = [ ...band.querySelectorAll( '[class~="row"],[class~="row-collapse"],[class~="banner-grid"]' ) ].find(
+					( node ) => node.children.length >= 2
+				);
+				if ( explicit ) {
+					row = explicit;
+				}
+			}
+			const laneKids = ( node: Element ): Element[] =>
+				[ ...node.children ].filter( ( child ) => {
+					const rect = child.getBoundingClientRect();
+					const style = getComputedStyle( child );
+					return (
+						rect.width >= 40 &&
+						rect.height >= 8 &&
+						style.display !== 'none' &&
+						style.position !== 'absolute' &&
+						style.position !== 'fixed'
+					);
+				} );
+			if ( laneKids( row ).length < 2 ) {
+				const queue: Element[] = [ ...band.querySelectorAll( '[class~="e-con-inner"],[class~="elementor-container"]' ) ];
+				for ( const candidate of queue ) {
+					if ( candidate !== band && laneKids( candidate ).length >= 2 ) {
+						row = candidate;
+						break;
+					}
+				}
+			}
+			if ( laneKids( row ).length < 2 ) {
+				continue;
+			}
+			const style = getComputedStyle( row );
+			const gap = Math.round( parseFloat( style.rowGap ) || 0 );
+			// `normal` is the initial value for both axes; a `space-between` row and a
+			// `center` stack ARE layout facts and travel with the row. Chromium
+			// serialises the flow-relative keywords (`align-items: end` computes to
+			// `flow-end`), so map them to the flex keywords the rebuild can emit — an
+			// unknown keyword would be dropped by the browser as invalid.
+			const flexKeyword = ( value: string ): string | undefined => {
+				switch ( value ) {
+					case 'start':
+					case 'self-start':
+					case 'flex-start':
+						return 'flex-start';
+					case 'end':
+					case 'self-end':
+					case 'flow-end':
+					case 'flex-end':
+						return 'flex-end';
+					case 'center':
+						return 'center';
+					default:
+						return undefined;
+				}
+			};
+			const justifyRaw = style.justifyContent;
+			const justify =
+				justifyRaw === 'normal' || justifyRaw === 'start' || justifyRaw === 'flex-start'
+					? undefined
+					: [ 'space-between', 'space-around', 'space-evenly', 'center' ].includes( justifyRaw )
+						? justifyRaw
+						: flexKeyword( justifyRaw );
+			const align = flexKeyword( style.alignItems );
+			// The band's LABEL ink: a counter title (`dd` / `.elementor-counter-title`)
+			// carries the source's own muted colour, which is white on a dark panel.
+			const labelNode = band.querySelector( '.elementor-counter-title, dd, small' );
+			const labelInk =
+				labelNode && getComputedStyle( labelNode ).color !== 'rgb(0, 0, 0)'
+					? getComputedStyle( labelNode ).color
+					: undefined;
+			out[ id ] = {
+				direction: style.flexDirection === 'column' ? 'column' : 'row',
+				...( gap > 0 ? { gap } : {} ),
+				...( justify ? { justify } : {} ),
+				...( align ? { align } : {} ),
+				...( labelInk ? { labelInk } : {} ),
+			};
+		}
+		return out;
+	}
+
+/**
+ * The band's PANEL as the browser PAINTS it — the slab's own box
+ * (`ForgeBandFacts.panel`).
+ *
+ * `collectBandColumnFacts` finds the slab through the LANE it fills, which
+ * needs two lanes to read as a row. A builder can paint the slab on a column
+ * whose sibling collapses to a 1px spacer: the lane pass then sees one lane,
+ * records no columns, and the rebuild received the slab's COLOUR from the
+ * static parse and no box at all — so it painted a full-bleed slab where the
+ * source fills half the band and centres the band's heading on it
+ * (virtuallysrilanka's "How it Works" red right half, 2026-11-20).
+ *
+ * The PAINT is the fact. A band whose content sits on ONE slab yields exactly
+ * one opaque, near-full-height filled box; two or more are per-column panels
+ * (the services band's red / photo / black trio), which the flat rebuilt markup
+ * still cannot address, so they record nothing. A slab that spans the band
+ * records nothing either — the rebuild already draws that.
+ */
+export function collectBandPanelFacts( input: {
+	ids: string[];
+	kind: 'built' | 'source';
+	selectors?: Record< string, string >;
+} ): Record< string, { bg: string; width: number; bandWidth: number; x: number } > {
+	const pick = ( selector: string ): Element | null => {
+		try {
+			return document.querySelector( selector );
+		} catch {
+			return null;
+		}
+	};
+	const out: Record< string, { bg: string; width: number; bandWidth: number; x: number } > = {};
+	for ( const id of input.ids ) {
+		const candidates =
+			input.kind === 'built'
+				? [ `[data-section-id="${ id }"]` ]
+				: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+						( value ): value is string => Boolean( value )
+				  );
+		const band = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) );
+		if ( ! band ) {
+			continue;
+		}
+		const bandRect = band.getBoundingClientRect();
+		if ( bandRect.width <= 0 || bandRect.height <= 0 ) {
+			continue;
+		}
+		const solid = ( node: Element ): string | undefined => {
+			const value = getComputedStyle( node ).backgroundColor;
+			const match = /^rgba?\(([^)]*)\)$/i.exec( value );
+			if ( ! match ) {
+				return undefined;
+			}
+			const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() );
+			const alpha = parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1;
+			return alpha >= 0.95 ? value : undefined;
+		};
+		const filled: Array< { el: Element; rect: DOMRect; bg: string } > = [];
+		for ( const node of [ band, ...Array.from( band.querySelectorAll( '*' ) ) ] ) {
+			if ( /^(style|script|link|template|noscript|img|svg|path|source)$/i.test( node.tagName ) ) {
+				continue;
+			}
+			const rect = node.getBoundingClientRect();
+			// A slab, not a chip: wide enough to hold the band's copy and tall
+			// enough to be its stage.
+			if ( rect.width < bandRect.width * 0.25 || rect.height < bandRect.height * 0.5 ) {
+				continue;
+			}
+			const bg = solid( node );
+			if ( bg ) {
+				filled.push( { el: node, rect, bg } );
+			}
+		}
+		// Nested boxes that share the same fill are ONE slab — keep the outermost.
+		const slabs = filled.filter(
+			( entry ) =>
+				! filled.some(
+					( other ) =>
+						other !== entry &&
+						other.bg === entry.bg &&
+						other.el.contains( entry.el ) &&
+						other.rect.width >= entry.rect.width &&
+						other.rect.height >= entry.rect.height
+				)
+		);
+		if ( slabs.length !== 1 ) {
+			continue;
+		}
+		const slab = slabs[ 0 ];
+		// A full-bleed slab is already what the rebuild paints.
+		if ( slab.rect.width >= bandRect.width - 8 ) {
+			continue;
+		}
+		out[ id ] = {
+			bg: slab.bg,
+			width: Math.round( slab.rect.width ),
+			bandWidth: Math.round( bandRect.width ),
+			x: Math.round( slab.rect.x - bandRect.x ),
+		};
 	}
 	return out;
 }
@@ -1169,7 +2166,11 @@ export function collectBandCarouselFacts( input: {
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
 } ): Record< string, ForgeBandCarouselFact[] > {
-	const ROOT = '.owl-carousel';
+	// The slider ROOTS we can read. Owl and Elementor's Swiper publish the same
+	// geometry under different class names; a logo wall is as often one as the
+	// other (virtuallysrilanka's hardware band is a 7-slide Swiper that the
+	// rebuild rendered as a static strip, because `.swiper` was not read at all).
+	const ROOT = '.owl-carousel, .swiper';
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -1232,7 +2233,8 @@ export function collectBandCarouselFacts( input: {
 			// The VIEWPORT is the carousel root (Owl's `.owl-stage-outer` only ever
 			// clips it); the SLIDES live one level down when Owl has wrapped them.
 			const track = root;
-			const slideParent = root.querySelector( '.owl-stage' ) ?? root;
+			const slideParent =
+				root.querySelector( '.owl-stage' ) ?? root.querySelector( '.swiper-wrapper' ) ?? root;
 			const slides = [ ...slideParent.children ].filter( ( child ) => {
 				const rect = child.getBoundingClientRect();
 				return rect.width >= 20 && getComputedStyle( child ).display !== 'none';
@@ -1249,10 +2251,13 @@ export function collectBandCarouselFacts( input: {
 				perView: Math.max( 1, Math.round( trackWidth / first.width ) ),
 				gap: Math.max( 0, Math.round( second.left - first.right ) ),
 			};
-			// Owl renders its pagination as a SIBLING of the track (`.owl-dots`),
-			// so it is searched from the parent. A single dot is a "no pagination"
-			// control in Owl (one page) — recorded as-is and read that way.
-			const dotCount = root.parentElement?.querySelectorAll( '.owl-dot' ).length ?? 0;
+			// Owl and Elementor BOTH render pagination as a SIBLING of the track
+			// (`.owl-dots` / `.swiper-pagination`), so it is searched from the parent.
+			// A single dot is a "no pagination" control (one page) — recorded as-is
+			// and read that way.
+			const dotCount =
+				( root.parentElement?.querySelectorAll( '.owl-dot' ).length ?? 0 ) +
+				( root.parentElement?.querySelectorAll( '.swiper-pagination-bullet' ).length ?? 0 );
 			if ( dotCount > 0 ) {
 				fact.dots = dotCount;
 			}
@@ -1292,7 +2297,16 @@ export function collectBandLayoutFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, { split?: number[]; centered?: boolean } > {
+} ): Record<
+	string,
+	{
+		split?: number[];
+		centered?: boolean;
+		rows?: Array< { id: string; widths: number[] } >;
+		copyWidth?: number;
+		narrowBoxes?: Array< { parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string } >;
+	}
+> {
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -1305,7 +2319,16 @@ export function collectBandLayoutFacts( input: {
 	// The SAME structural signature the template's hero rule uses, so a measured
 	// ratio always lands on the element the rule will lay out.
 	const TRACK = ':is(div, section):has(> div > h1):has(> div > img)';
-	const out: Record< string, { split?: number[]; centered?: boolean } > = {};
+	const out: Record<
+		string,
+		{
+			split?: number[];
+			centered?: boolean;
+			rows?: Array< { id: string; widths: number[] } >;
+			copyWidth?: number;
+			narrowBoxes?: Array< { parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string } >;
+		}
+	> = {};
 	for ( const id of input.ids ) {
 		const candidates =
 			input.kind === 'built'
@@ -1338,7 +2361,13 @@ export function collectBandLayoutFacts( input: {
 		// renderer keeps its historical default for a profile that has no fact
 		// (older profiles, unmeasured pages) and only opts OUT on an explicit
 		// `false`.
-		const entry: { split?: number[]; centered?: boolean } = { centered: false };
+		const entry: {
+			split?: number[];
+			centered?: boolean;
+			rows?: Array< { id: string; widths: number[] } >;
+			copyWidth?: number;
+			narrowBoxes?: Array< { parentId: string; width: number; align: 'start' | 'center' | 'end'; alignItems?: string } >;
+		} = { centered: false };
 		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
 			const style = getComputedStyle( node );
 			if ( style.display === 'table-cell' && style.verticalAlign === 'middle' ) {
@@ -1361,8 +2390,33 @@ export function collectBandLayoutFacts( input: {
 		} catch {
 			track = null;
 		}
+		// The structural TRACK signature is the TEMPLATE's rule, so a measured ratio
+		// always lands where the rebuild will lay it out — but it only recognises a
+		// copy column holding an h1 beside an image column two levels down. An
+		// Elementor hero nests the h1 inside a widget (`e-con-inner > e-con-full >
+		// widget > div > h1`), so the row is resolved the SAME way the column probe
+		// resolves it: the shallowest container with two in-flow lanes.
+		const laneKids = ( node: Element ): Element[] =>
+			[ ...node.children ].filter( ( child ) => {
+				const rect = child.getBoundingClientRect();
+				const style = getComputedStyle( child );
+				return (
+					rect.width >= 40 &&
+					rect.height >= 8 &&
+					style.display !== 'none' &&
+					style.position !== 'absolute' &&
+					style.position !== 'fixed'
+				);
+			} );
+		if ( ! track || laneKids( track ).length < 2 ) {
+			const queue: Element[] = [ ...element.querySelectorAll( '[class~="e-con-inner"],[class~="elementor-container"]' ) ];
+			const found = queue.find( ( candidate ) => candidate !== element && laneKids( candidate ).length >= 2 );
+			if ( found ) {
+				track = found;
+			}
+		}
 		if ( track ) {
-			const children = Array.from( track.children ).filter( ( child ) => {
+			const children = laneKids( track ).filter( ( child ) => {
 				const rect = child.getBoundingClientRect();
 				return rect.width > 0 && rect.height > 0;
 			} );
@@ -1377,8 +2431,127 @@ export function collectBandLayoutFacts( input: {
 			if ( sideBySide && total > 0 ) {
 				entry.split = rects.map( ( rect ) => Math.round( ( rect.width / total ) * 1000 ) / 1000 );
 			}
+			// The COPY lane's inner MEASURE. A builder pins a split hero's lede to a
+			// fraction of its lane (`elementor-widget__width-initial`), and the vendor
+			// sheet that stated it never ships — so the rebuilt paragraph ran the full
+			// lane and wrapped one line longer (eca.directory's about-us hero: 610 of
+			// an 811px lane, 2026-11-25). Recorded only when it is genuinely narrower
+			// than the lane; an unconstrained lane needs no rule.
+			if ( sideBySide && children.length >= 2 ) {
+				const textLength = ( node: Element ): number => ( node.textContent ?? '' ).replace( /\s+/g, ' ' ).trim().length;
+				const copy = children.reduce( ( best, child ) => ( textLength( child ) > textLength( best ) ? child : best ) );
+				const laneWidth = copy.getBoundingClientRect().width;
+				let measure = 0;
+				for ( const node of Array.from( copy.querySelectorAll( 'p, ul, ol, blockquote' ) ) ) {
+					if ( node.closest( 'nav, form, footer, header' ) ) {
+						continue;
+					}
+					const rect = node.getBoundingClientRect();
+					if ( rect.height < 8 || textLength( node ) < 40 ) {
+						continue;
+					}
+					measure = Math.max( measure, rect.width );
+				}
+				if ( measure >= 200 && measure < laneWidth - 8 ) {
+					entry.copyWidth = Math.round( measure );
+				}
+			}
 		}
-		if ( entry.split || entry.centered !== undefined ) {
+		// NESTED ROWS (see `ForgeBandRowFact`). A raw band loses the vendor's
+		// flex layout, so every container inside it stacks — but only the rows
+		// that carry their own element id can be addressed by a scoped rule. The
+		// band's own row is excluded: the column facts already carry it.
+		const rows: Array< { id: string; widths: number[] } > = [];
+		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
+			const id = /elementor-element-([0-9a-f]{4,})/i.exec( node.getAttribute( 'class' ) ?? '' )?.[ 1 ];
+			if ( ! id ) {
+				continue;
+			}
+			const lanes = Array.from( node.children ).filter( ( child ) => {
+				const box = child.getBoundingClientRect();
+				return box.width >= 40 && box.height >= 8 && getComputedStyle( child ).display !== 'none';
+			} );
+			if ( lanes.length < 2 ) {
+				continue;
+			}
+			const boxes = lanes.map( ( lane ) => lane.getBoundingClientRect() );
+			// Side by side, and together they TILE their container. Either test alone
+			// is fooled: equal tops describe a 2-row grid as one row, and a tiled
+			// sum describes a vertical stack whose children all span the width.
+			const sameTop = boxes.every(
+				( box ) => Math.abs( box.top - boxes[ 0 ].top ) <= Math.max( 8, box.height * 0.25 )
+			);
+			const tiled =
+				boxes.reduce( ( sum, box ) => sum + box.width, 0 ) >= node.getBoundingClientRect().width * 0.9;
+			if ( ! sameTop || ! tiled ) {
+				continue;
+			}
+			rows.push( { id, widths: boxes.map( ( box ) => Math.round( box.width ) ) } );
+		}
+		if ( rows.length > 0 ) {
+			entry.rows = rows;
+		}
+		// NARROW nested containers (see `ForgeBandNarrowBox`): a builder insets copy
+		// by wrapping it in a smaller centred container — eca.directory's about-us
+		// CTA puts the eyebrow, the title and the button in a 500px `e-con-inner`
+		// inside a 1280px band, so the chip shrank to its text and the copy wrapped
+		// at 500. The wrapper carries no id, so the fact names its PARENT.
+		const narrowBoxes: Array< {
+			parentId: string;
+			width: number;
+			align: 'start' | 'center' | 'end';
+			alignItems?: string;
+		} > = [];
+		for ( const node of Array.from(
+			element.querySelectorAll( '[class~="e-con-inner"], [class~="elementor-container"]' )
+		) ) {
+			const parent = node.parentElement;
+			if ( ! parent ) {
+				continue;
+			}
+			const parentId = /elementor-element-([0-9a-f]{4,})/i.exec( parent.getAttribute( 'class' ) ?? '' )?.[ 1 ];
+			if ( ! parentId ) {
+				continue;
+			}
+			const rect = node.getBoundingClientRect();
+			const parentRect = parent.getBoundingClientRect();
+			// A full-width stage is not an inset; a tiny one is a widget, not a lane.
+			// The band-relative floor keeps the band's own content box out of the list.
+			const bandWidth = element.getBoundingClientRect().width;
+			if ( rect.width < 120 || rect.width > parentRect.width - 8 || rect.width >= bandWidth * 0.85 ) {
+				continue;
+			}
+			const gapLeft = Math.round( rect.left - parentRect.left );
+			const gapRight = Math.round( parentRect.right - rect.right );
+			const align = Math.abs( gapLeft - gapRight ) <= 2 ? 'center' : gapLeft <= 2 ? 'start' : 'end';
+			const alignItems = ( ( value: string ): string | undefined => {
+				switch ( value ) {
+					case 'start':
+					case 'self-start':
+					case 'flex-start':
+						return 'flex-start';
+					case 'end':
+					case 'self-end':
+					case 'flow-end':
+					case 'flex-end':
+						return 'flex-end';
+					case 'center':
+						return 'center';
+					default:
+						return undefined;
+				}
+			} )( getComputedStyle( node ).alignItems );
+			narrowBoxes.push( {
+				parentId,
+				width: Math.round( rect.width ),
+				align,
+				...( alignItems ? { alignItems } : {} ),
+			} );
+		}
+		if ( narrowBoxes.length > 0 ) {
+			entry.narrowBoxes = narrowBoxes;
+		}
+		if ( entry.split || entry.centered !== undefined || entry.rows ) {
 			out[ id ] = entry;
 		}
 	}
@@ -1390,10 +2563,20 @@ export function boxDeclarations( box: MeasuredBox ): string {
 	return [
 		box.pad && `padding:${ box.pad }`,
 		box.mar && `margin:${ box.mar }`,
+		// A uniform border changes the rendered box on every side (see
+		// `MeasuredBox.border`), so it is emitted before the size facts.
+		box.border && `border:${ box.border }`,
 		// The class's own ink override (see `MeasuredBox.color`). Last on purpose:
 		// a declaration string is diffed per device by `mergeBoxFacts`, so the
 		// order only has to be stable.
 		box.color && `color:${ box.color }`,
+		// The type the class DECLARES (see `MeasuredBox.fontSize`). Emitted after
+		// the box so a reader sees the box first, and before `height` because a
+		// pinned height is the most specific statement in the list.
+		box.fontSize && `font-size:${ box.fontSize }`,
+		box.lineHeight && `line-height:${ box.lineHeight }`,
+		box.textTransform && `text-transform:${ box.textTransform }`,
+		box.letterSpacing && `letter-spacing:${ box.letterSpacing }`,
 		box.height && `height:${ box.height }`,
 	]
 		.filter( Boolean )
@@ -1493,6 +2676,45 @@ export function columnDeclarations( fact: ForgeBandColumnFact | undefined, unequ
  *
  * Pure and exported so the merge is testable without a browser.
  */
+/**
+ * The per-column INNER padding, as a box map keyed by the column’s unique
+ * class. The renderer targets `.<class> > .col-inner` with it.
+ *
+ * It cannot live in the class-keyed box map: the padding differs on every
+ * column, so `.col-inner` is dropped as ambiguous and each column rendered
+ * flush (monicarajiv ’s Rajiv column: 50/180/60/108 in the source, 0 in the
+ * rebuild, 2026-11-20).
+ */
+export function columnInnerFacts( columns: BandColumnFacts ): BandBoxFacts {
+	const bySelector = new Map< string, { desktop?: string; tablet?: string; mobile?: string } >();
+	for ( const device of [ 'desktop', 'tablet', 'mobile' ] as const ) {
+		for ( const column of columns[ device ] ?? [] ) {
+			if ( ! column.pad ) {
+				continue;
+			}
+			const entry = bySelector.get( column.selector ) ?? {};
+			entry[ device ] = column.pad;
+			bySelector.set( column.selector, entry );
+		}
+	}
+	const out: BandBoxFacts = {};
+	for ( const [ selector, entry ] of bySelector ) {
+		const base = entry.desktop;
+		if ( ! base ) {
+			continue;
+		}
+		const declaration: BandBoxDeclaration = { base: `padding:${ base }` };
+		for ( const device of [ 'tablet', 'mobile' ] as const ) {
+			const value = entry[ device ];
+			if ( value && value !== base ) {
+				declaration[ device ] = `padding:${ value }`;
+			}
+		}
+		out[ selector ] = declaration;
+	}
+	return out;
+}
+
 export function columnBoxFacts( columns: BandColumnFacts ): BandBoxFacts {
 	const bySelector = new Map<
 		string,
@@ -1700,7 +2922,7 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		const measureTypeAt = async (
 			device: DeviceKey
@@ -1709,10 +2931,14 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			{
 				containerWidth: number;
 				containerPadX: number;
+				containerPadTop: number;
+				containerPadBottom: number;
 				containerInner: boolean;
 				containerFlush: boolean;
 				headings: Record< string, BandTypeProperties >;
 				body?: BandTypeProperties;
+				titleText?: string;
+				eyebrow?: BandTypeProperties & { text: string; level?: number };
 			}
 		> > => {
 			const { width, height } = BAND_FACT_VIEWPORTS[ device ];
@@ -1766,6 +2992,20 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		// Whether the band's row is a ROW or a STACK, and the gap between its
+		// lanes (see `collectBandRowLayoutFacts`).
+		const desktopRowLayout = await page.evaluate( collectBandRowLayoutFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
+		// The band's painted SLAB and its own box (a panel that fills only part of
+		// the band) — see `collectBandPanelFacts`.
+		const desktopPanels = await page.evaluate( collectBandPanelFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		// The band's paged carousels (slides-per-view, gap, dots), per device — a
 		// vendor slider's `items` option exists nowhere else (see
 		// `collectBandCarouselFacts`).
@@ -1809,6 +3049,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		const tabletRowLayout = await page.evaluate( collectBandRowLayoutFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		const tabletCarousels = await page.evaluate( collectBandCarouselFacts, {
 			ids: options.ids,
 			kind: options.kind,
@@ -1826,6 +3071,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			selectors: options.selectors,
 		} );
 		const mobileColumns = await page.evaluate( collectBandColumnFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
+		const mobileRowLayout = await page.evaluate( collectBandRowLayoutFacts, {
 			ids: options.ids,
 			kind: options.kind,
 			selectors: options.selectors,
@@ -1850,19 +3100,32 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				| {
 						containerWidth: number;
 						containerPadX: number;
+						containerPadTop: number;
+						containerPadBottom: number;
 						containerInner: boolean;
 						containerFlush: boolean;
 				  }
 				| undefined
 		): ForgeBandContainer | undefined =>
 			entry && entry.containerInner && entry.containerWidth > 0
-				? { content: entry.containerWidth, padX: entry.containerPadX, flush: entry.containerFlush }
+				? {
+						content: entry.containerWidth,
+						padX: entry.containerPadX,
+						padTop: entry.containerPadTop,
+						padBottom: entry.containerPadBottom,
+						flush: entry.containerFlush,
+				  }
 				: undefined;
 		for ( const [ id, desktopFacts ] of Object.entries( base ) ) {
 			const band: ForgeBandFacts = {
 				containerWidth: desktopFacts.containerWidth,
 				headings: { ...desktopFacts.headings },
 				...( desktopFacts.body ? { body: { ...desktopFacts.body } } : {} ),
+				// The measured eyebrow/title pair is TEXT, so it is taken once from the
+				// desktop pass — the label's own scale is the desktop one, and the
+				// title's per-device scaling already rides `headings`.
+				...( desktopFacts.titleText ? { titleText: desktopFacts.titleText } : {} ),
+				...( desktopFacts.eyebrow ? { eyebrow: { ...desktopFacts.eyebrow } } : {} ),
 			};
 			const container = {
 				desktop: containerAt( desktopFacts ),
@@ -1881,8 +3144,23 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			if ( layout?.split && layout.split.length >= 2 ) {
 				band.splitColumns = layout.split;
 			}
+			// The copy lane's inner MEASURE (see `collectBandLayoutFacts`): the
+			// widest paragraph block, when the builder pins it narrower than the lane.
+			if ( layout?.copyWidth ) {
+				band.copyWidth = layout.copyWidth;
+			}
 			if ( layout?.centered ) {
 				band.centeredContent = true;
+			}
+			// The rows NESTED inside the band, so a RAW band can get its row back
+			// (see `ForgeBandRowFact`).
+			if ( layout?.rows && layout.rows.length > 0 ) {
+				band.rows = layout.rows;
+			}
+			// The NARROW, centred containers inside the band (see
+			// `ForgeBandNarrowBox`) — the copy lane a component band rebuilds.
+			if ( layout?.narrowBoxes && layout.narrowBoxes.length > 0 ) {
+				band.narrowBoxes = layout.narrowBoxes;
 			}
 			const box = mergeBoxFacts( desktopBox[ id ]?.boxes, tabletBox[ id ]?.boxes, mobileBox[ id ]?.boxes );
 			if ( box ) {
@@ -1919,10 +3197,53 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				tablet: tabletColumns[ id ],
 				mobile: mobileColumns[ id ],
 			};
+			// The SLAB the content sits on: exactly one coloured column and no photo
+			// column. Two or more DIFFERENT surfaces are per-column panels, which the
+			// flat rebuilt markup cannot address — left unpainted rather than painted
+			// wrongly. This is the sub-page counterpart of the `design.ts` rule, whose
+			// absence made alpha’s panel-surface fix homepage-only.
+			{
+				const measuredColumns = columns.desktop ?? [];
+				const filled = measuredColumns.filter( ( column ) => column.bg );
+				const photos = measuredColumns.filter( ( column ) => column.image );
+				if ( filled.length === 1 && photos.length === 0 && filled[ 0 ].bg ) {
+					band.panel = { bg: filled[ 0 ].bg, ink: inkForSurface( filled[ 0 ].bg ) };
+				}
+			}
+			// The slab's own BOX, when it fills only part of the band. The lane rule
+			// above needs two lanes to see a row at all, so a builder that halves the
+			// band and collapses the other half records no slab — the paint pass is
+			// the one that sees it (see `collectBandPanelFacts`).
+			{
+				const slab = desktopPanels[ id ];
+				if ( slab && slab.bandWidth > 0 && slab.width > 0 ) {
+					const shared = slab.bandWidth - slab.width;
+					const align =
+						slab.x <= 2 ? 'start' : Math.abs( slab.x - shared ) <= 2 ? 'end' : 'center';
+					band.panel = {
+						bg: slab.bg,
+						ink: inkForSurface( slab.bg ),
+						width: `${ slab.width }px`,
+						align,
+					};
+				}
+			}
 			if ( columns.desktop || columns.tablet || columns.mobile ) {
 				band.columns = Object.fromEntries(
 					Object.entries( columns ).filter( ( [ , value ] ) => value !== undefined )
 				) as ForgeBandFacts[ 'columns' ];
+			}
+			// Whether the row is a ROW or a STACK, per device — the fact the lane
+			// widths alone cannot state (see `ForgeBandRowLayout`).
+			const rowLayout = {
+				desktop: desktopRowLayout[ id ],
+				tablet: tabletRowLayout[ id ],
+				mobile: mobileRowLayout[ id ],
+			};
+			if ( rowLayout.desktop || rowLayout.tablet || rowLayout.mobile ) {
+				band.rowLayout = Object.fromEntries(
+					Object.entries( rowLayout ).filter( ( [ , value ] ) => value !== undefined )
+				) as ForgeBandFacts[ 'rowLayout' ];
 			}
 			// The band's paged carousels per device: slides-per-view, gap and the
 			// source's own dot count (see `collectBandCarouselFacts`).
@@ -1993,7 +3314,7 @@ export async function measureChromeGeometry( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );
@@ -2009,7 +3330,9 @@ export async function measureChromeGeometry( options: {
 				}
 				const headerRect = header.getBoundingClientRect();
 				const brand =
-					header.querySelector( 'a[rel="home"], .site-logo, .navbar-brand, a[href="/"]' ) ?? header.querySelector( 'a' );
+					header.querySelector(
+						'a[rel="home"], .site-logo, .navbar-brand, a.logo, .logo a, a[href="/"]'
+					) ?? header.querySelector( 'a' );
 				if ( ! brand ) {
 					return null;
 				}
@@ -2044,9 +3367,129 @@ export async function measureChromeGeometry( options: {
 					.reverse()
 					.find( ( entry ) => entry.padLeft > 0 && entry.rect.width >= headerRect.width * 0.6 );
 				const boxed = padded && padded.rect.width <= headerRect.width - 8 ? padded : null;
+				// The brand MARK. A builder sizes it through CSS, so the tag attributes
+				// say nothing; the rendered box is the only truth. `logoHeight` sizes the
+				// rebuilt mark (a pinned 40px default rendered monicarajiv’s 74px mark
+				// 2.4x too small); `logoAlign` is its STATION across the bar, read from
+				// the mark’s CENTRE against the header’s thirds so a wide logo cell still
+				// reads as the position a reader sees.
+				// The mark is inside the brand anchor on most builders; when the anchor
+				// itself is unidentifiable it is still the header’s logo-marked image.
+				// A builder ships SEVERAL logo variants (sticky, dark, light) and hides
+				// all but one, so the first match is usually a 0x0 `display:none` sticky
+				// variant. Take the first mark that actually has a box.
+				const markImgs = [
+					...brand.querySelectorAll( 'img, svg' ),
+					...header.querySelectorAll(
+						'img[class*="logo"], img[id*="logo"], img[src*="logo"], img[src*="brand"]'
+					),
+				];
+				const markImg = markImgs.find( ( node ) => {
+					const rect = node.getBoundingClientRect();
+					return rect.width > 0 && rect.height > 0;
+				} );
+				const markRect = ( markImg ?? brand ).getBoundingClientRect();
+				const stationOf = ( rect: DOMRect ): 'start' | 'center' | 'end' => {
+					const centre = rect.x + rect.width / 2;
+					if ( centre < headerRect.x + headerRect.width / 3 ) {
+						return 'start';
+					}
+					if ( centre > headerRect.x + ( headerRect.width * 2 ) / 3 ) {
+						return 'end';
+					}
+					return 'center';
+				};
 				return {
 					measure: binding ? Math.round( binding.maxWidth ) : boxed ? Math.round( boxed.rect.width ) : undefined,
 					padX: Math.round( ( padded ?? capped )?.padLeft ?? brandRect.x - headerRect.x ),
+					logoHeight: markRect.height > 0 ? `${ Math.round( markRect.height ) }px` : undefined,
+					logoAlign: markRect.width > 0 ? stationOf( markRect ) : undefined,
+					// The nav LINK's type, computed. The static CSS resolver reads a
+					// relative `font-size` against the 16px root and reported 16px
+					// where the browser paints 14.208px (`.888em`), so a whole site's
+					// menu rebuilt one step too large (monicarajiv, 2026-11-21). A
+					// browser is already open for the box facts — ask it.
+					navStyle: ( () => {
+						// A builder's menu is a <nav>, a <ul class="nav"> or a `.mobile-nav`:
+						// Flatsome ships `ul.nav.nav-left` and a plain `nav a` probe found
+						// nothing, which is how the type fact stayed silently unmeasured.
+						const NAV_LINKS = 'nav a, ul.nav a, .nav a, [class*="-nav"] a';
+						// VISIBLE links only, and a MAJORITY per property. The same builder
+						// ships a mobile menu that is `display:none` at this viewport and
+						// computes `text-transform:none` on its <a>, so "first match"
+						// recorded the hidden copy's transform.
+						const links = [ ...header.querySelectorAll( NAV_LINKS ) ].filter( ( anchor ) => {
+							const text = ( anchor.textContent ?? '' ).trim();
+							if ( text.length === 0 || /^(?:tel|mailto|javascript):/i.test( anchor.getAttribute( 'href' ) ?? '' ) ) {
+								return false;
+							}
+							const rect = anchor.getBoundingClientRect();
+							return rect.width > 0 && rect.height > 0;
+						} );
+						if ( links.length === 0 ) {
+							return undefined;
+						}
+						const majority = ( pick: ( style: CSSStyleDeclaration ) => string ): string => {
+							const votes = new Map< string, number >();
+							for ( const link of links ) {
+								const value = pick( getComputedStyle( link ) );
+								votes.set( value, ( votes.get( value ) ?? 0 ) + 1 );
+							}
+							return [ ...votes.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ][ 0 ];
+						};
+						const tracking = majority( ( style ) => style.letterSpacing );
+						return {
+							size: majority( ( style ) => style.fontSize ),
+							weight: majority( ( style ) => style.fontWeight ),
+							transform: majority( ( style ) => style.textTransform ),
+							// `normal`/`0px` is NO tracking, and dropping it lets the shim
+							// default stand rather than pinning an explicit nothing.
+							letterSpacing: /^(?:normal|0px|0)$/i.test( tracking ) ? undefined : tracking,
+							family: majority( ( style ) => ( style.fontFamily || '' ).split( ',' )[ 0 ].replace( /["']/g, '' ).trim() ),
+						};
+					} )(),
+					// The footer COPYRIGHT's computed size (see
+					// `ForgeChromeGeometry.chromeSize`). The builder's own class names are
+					// the only hint, so the ladder ends at the last short paragraph in the
+					// footer — no paragraph at all means no fact.
+					chromeSize: ( () => {
+						const COPYRIGHT =
+							'.copyright-footer, .site-copyright, .copyright, .site-credit, .absolute-footer p';
+						const candidates = [ ...document.querySelectorAll( COPYRIGHT ) ];
+						for ( const node of candidates ) {
+							const text = ( node.textContent ?? '' ).trim();
+							if ( text.length === 0 || text.length > 120 ) continue;
+							const rect = node.getBoundingClientRect();
+							if ( rect.width === 0 || rect.height === 0 ) continue;
+							return getComputedStyle( node ).fontSize;
+						}
+						return undefined;
+					} )(),
+
+					// The trailing ICON links: an anchor with no text whose glyph is a font
+					// icon (`<i class="icon-envelop">`). The vendor font never ships, so the
+					// rebuild re-draws it instead of emitting a missing-glyph box.
+					actions: ( () => {
+						const found: Array< { icon?: string; label?: string; href?: string } > = [];
+						for ( const anchor of [ ...header.querySelectorAll( 'a' ) ] ) {
+							const rect = anchor.getBoundingClientRect();
+							if ( rect.width < 8 || rect.height < 8 ) {
+								continue;
+							}
+							const glyph = anchor.querySelector( 'i[class*="icon-"], span[class*="icon-"]' );
+							const text = ( anchor.textContent ?? '' ).trim();
+							if ( ! glyph || text.length > 0 ) {
+								continue;
+							}
+							const glyphClass = [ ...glyph.classList ].find( ( name ) => /^icon-/.test( name ) );
+							found.push( {
+								icon: glyphClass ? glyphClass.replace( /^icon-/, '' ) : undefined,
+								label: anchor.getAttribute( 'aria-label' ) ?? anchor.getAttribute( 'title' ) ?? undefined,
+								href: anchor.getAttribute( 'href' ) ?? undefined,
+							} );
+						}
+						return found.slice( 0, 4 );
+					} )(),
 				};
 			} );
 			if ( ! box ) {
@@ -2058,6 +3501,33 @@ export async function measureChromeGeometry( options: {
 			}
 			if ( typeof box.padX === 'number' && box.padX >= 0 ) {
 				entry.padX = box.padX;
+			}
+			if ( typeof box.logoHeight === 'string' && /^\d+px$/.test( box.logoHeight ) ) {
+				entry.logoHeight = box.logoHeight;
+			}
+			// The mark’s station: a centred logo cannot be reproduced by the
+			// template’s `space-between` row, which leaves it at the left edge.
+			if ( box.logoAlign === 'start' || box.logoAlign === 'center' || box.logoAlign === 'end' ) {
+				entry.logoAlign = box.logoAlign;
+			}
+			// The trailing controls are one desktop fact, like the mark.
+			if ( device === 'desktop' && Array.isArray( box.actions ) && box.actions.length > 0 ) {
+				out.actions = box.actions;
+			}
+			// The menu's type is one desktop fact too: it is chrome, not content.
+			if ( device === 'desktop' && typeof box.chromeSize === 'string' && /^\d+(\.\d+)?px$/.test( box.chromeSize ) ) {
+				out.chromeSize = box.chromeSize;
+			}
+			if ( device === 'desktop' && box.navStyle && typeof box.navStyle.size === 'string' ) {
+				out.navStyle = {
+					...( box.navStyle.size ? { size: box.navStyle.size } : {} ),
+					...( box.navStyle.weight ? { weight: box.navStyle.weight } : {} ),
+					...( box.navStyle.transform ? { transform: box.navStyle.transform } : {} ),
+					...( box.navStyle.letterSpacing ? { letterSpacing: box.navStyle.letterSpacing } : {} ),
+				};
+				if ( box.navStyle.family ) {
+					out.navFamily = box.navStyle.family;
+				}
 			}
 			if ( Object.keys( entry ).length > 0 ) {
 				out[ device ] = entry;
@@ -2090,7 +3560,7 @@ export async function measureFooterBrand( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );
@@ -2179,7 +3649,20 @@ export async function measureFooterBrand( options: {
 					}
 					return 'center';
 				};
-				const entry: { logo?: string; socials?: string; logoHeight?: string; divider?: boolean } = {};
+				const entry: {
+					logo?: string;
+					socials?: string;
+					logoHeight?: string;
+					divider?: boolean;
+					social?: { size?: string; radius?: string; bg?: string; ink?: string };
+					text?: {
+						size?: string;
+						weight?: string;
+						ink?: string;
+						linkInk?: string;
+						align?: 'start' | 'center' | 'end';
+					};
+				} = {};
 				const logoAlign = alignOf( logo ? box( logo ) : null );
 				if ( logoAlign ) {
 					entry.logo = logoAlign;
@@ -2195,6 +3678,78 @@ export async function measureFooterBrand( options: {
 				const socialsAlign = alignOf( socialsRect );
 				if ( socialsAlign ) {
 					entry.socials = socialsAlign;
+				}
+				// The social BADGE box. A builder's filled style is a rounded SQUARE
+				// (Kadence: 51px, r3, palette-7 bg) — the template's default 2.25rem
+				// circle is a different component, not a tuning difference.
+				const badge = groupLinks[ 0 ] ?? iconLinks[ 0 ];
+				if ( badge ) {
+					const badgeStyle = getComputedStyle( badge );
+					const badgeRect = box( badge );
+					const side = Math.round( Math.min( badgeRect.width, badgeRect.height ) );
+					const social: { size?: string; radius?: string; bg?: string; ink?: string } = {};
+					if ( side > 0 ) {
+						social.size = `${ side }px`;
+					}
+					// `0px` is the answer for a bare icon strip — record it as-is so the
+					// rebuild does not paint a chip the source does not have.
+					if ( badgeStyle.borderTopLeftRadius ) {
+						social.radius = badgeStyle.borderTopLeftRadius;
+					}
+					const badgeBg = badgeStyle.backgroundColor;
+					if ( badgeBg && badgeBg !== 'rgba(0, 0, 0, 0)' && badgeBg !== 'transparent' ) {
+						social.bg = badgeBg;
+					}
+					if ( badgeStyle.color ) {
+						social.ink = badgeStyle.color;
+					}
+					if ( Object.keys( social ).length > 0 ) {
+						entry.social = social;
+					}
+				}
+				// The footer's TEXT line (the © row). A builder centres its `footer-html`
+				// block at its own small type scale; the rebuild renders footer blocks as
+				// left-aligned body copy, so the © line lands a size and a weight off.
+				const textNode =
+					footer.querySelector(
+						'.footer-html-inner p, .footer-html p, .site-info p, .site-copyright, [class*="copyright" i], small'
+					);
+				if ( textNode ) {
+					const textStyle = getComputedStyle( textNode );
+					const text: {
+						size?: string;
+						weight?: string;
+						ink?: string;
+						linkInk?: string;
+						align?: 'start' | 'center' | 'end';
+					} = {};
+					if ( textStyle.fontSize ) {
+						text.size = textStyle.fontSize;
+					}
+					if ( textStyle.fontWeight ) {
+						text.weight = textStyle.fontWeight;
+					}
+					if ( textStyle.color ) {
+						text.ink = textStyle.color;
+					}
+					// The ink a LINK inside the line wears — a builder's palette highlight,
+					// not necessarily the site accent.
+					const textLink = textNode.querySelector( 'a' );
+					if ( textLink ) {
+						const linkInk = getComputedStyle( textLink ).color;
+						if ( linkInk ) {
+							text.linkInk = linkInk;
+						}
+					}
+					const align = textStyle.textAlign;
+					if ( align === 'center' || align === 'right' || align === 'end' ) {
+						text.align = align === 'right' || align === 'end' ? 'end' : 'center';
+					} else if ( align === 'left' || align === 'start' ) {
+						text.align = 'start';
+					}
+					if ( Object.keys( text ).length > 0 ) {
+						entry.text = text;
+					}
 				}
 				// The hairline above the copyright bar. A builder puts it on the row's
 				// bottom edge (virtuallyjamaica's `.row.footer-border.border-bottom`); a
@@ -2240,6 +3795,16 @@ export async function measureFooterBrand( options: {
 			if ( device === 'desktop' && typeof measured.divider === 'boolean' ) {
 				out.divider = measured.divider;
 			}
+			// The badge box and the © line's type are whole-element facts (they do
+			// not migrate with the viewport the way the row's alignment does).
+			if ( device === 'desktop' ) {
+				if ( measured.social ) {
+					out.social = measured.social;
+				}
+				if ( measured.text ) {
+					out.text = measured.text;
+				}
+			}
 		}
 		return out;
 	} finally {
@@ -2266,7 +3831,7 @@ export async function measureFooterSocials( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );
@@ -2366,12 +3931,12 @@ export async function measureMobileNav( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( {
+		const context = await browser.newContext( gateContextOptions( {
 			viewport: { width: 390, height: 844 },
 			deviceScaleFactor: 1,
 			isMobile: true,
 			hasTouch: true,
-		} );
+		} ) );
 		const page = await context.newPage();
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 		await settle( page );
@@ -2446,6 +4011,34 @@ export async function measureMobileNav( options: {
 					link.textContent.trim().length > 0
 				);
 			} );
+			// A builder may TELEPORT the opened menu out of the header (Flatsome
+			// clones it into an `.mfp-wrap` off-canvas appended to <body>). The
+			// in-header walk then finds nothing and used to report `overlay: false` —
+			// "the source pushes the page down" — for a full-screen fixed sheet
+			// (krishandramikasavethe.world, 2026-11-19: a 390×844 `#0a0a0a` overlay
+			// against `#main` at y=0). Re-find the links in the document when the
+			// header holds none: they must sit inside a POSITIONED sheet that covers
+			// a real part of the viewport, so a cookie bar or a stray positioned link
+			// is not mistaken for the menu.
+			if ( menuLinks.length === 0 ) {
+				for ( const link of document.querySelectorAll( 'a' ) ) {
+					const box = link.getBoundingClientRect();
+					if ( box.height < 8 || box.width < 20 || ! link.textContent.trim() ) {
+						continue;
+					}
+					for ( let node = link.parentElement; node && node !== document.body; node = node.parentElement ) {
+						const position = getComputedStyle( node ).position;
+						if ( position !== 'fixed' && position !== 'absolute' ) {
+							continue;
+						}
+						const sheet = node.getBoundingClientRect();
+						if ( sheet.width >= innerWidth * 0.5 && sheet.height >= innerHeight * 0.4 ) {
+							menuLinks.push( link );
+						}
+						break;
+					}
+				}
+			}
 			if ( menuLinks.length === 0 ) {
 				return { overlay: false };
 			}
@@ -2506,7 +4099,17 @@ export async function measureMobileNav( options: {
 				}
 			}
 			pitches.sort( ( a, b ) => a - b );
-			const biggest = [ ...boxes ].sort( ( a, b ) => b.area - a.area )[ 0 ];
+			// The drawer's ink is the colour the MENU uses, not its largest (or
+			// first) row — the current page's row is painted in the accent
+			// (eca.directory's "Home"), so taking one link reported the ACTIVE
+			// state as the menu colour and the rebuild painted every drawer link
+			// accent (2026-11-23). Vote by AREA so one highlighted row cannot
+			// outvote the rest.
+			const areaByColor = new Map< string, number >();
+			for ( const box of boxes ) {
+				areaByColor.set( box.color, ( areaByColor.get( box.color ) ?? 0 ) + box.area );
+			}
+			const dominantInk = [ ...areaByColor.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ]?.[ 0 ];
 			const position = getComputedStyle( panel ?? list ).position;
 			return {
 				...( opaque
@@ -2514,7 +4117,7 @@ export async function measureMobileNav( options: {
 					: panel && surfaceStyle.backgroundImage !== 'none'
 						? { background: surfaceStyle.backgroundImage }
 						: {} ),
-				...( biggest ? { ink: biggest.color } : {} ),
+				...( dominantInk ? { ink: dominantInk } : {} ),
 				padX: Math.round( Number.parseFloat( surfaceStyle.paddingLeft ) || 0 ),
 				padY: Math.round( Number.parseFloat( surfaceStyle.paddingTop ) || 0 ),
 				...( pitches.length > 0 ? { itemPitch: Math.round( pitches[ Math.floor( pitches.length / 2 ) ] ) } : {} ),
@@ -2550,7 +4153,7 @@ export async function measureNavToggle( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.setViewportSize( { width: 1440, height: 900 } );
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
@@ -2619,7 +4222,7 @@ export async function measureTopbar( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.setViewportSize( { width: 1440, height: 900 } );
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
@@ -2803,7 +4406,7 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const page = await context.newPage();
 		await page.setViewportSize( { width: 1440, height: 900 } );
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
@@ -2970,8 +4573,16 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 				[ rest, pinned, stripInfo ]
 					.filter( ( value ): value is NonNullable< typeof value > => Boolean( value ) )
 					.some( ( value ) => value.position === 'fixed' || value.position === 'sticky' );
+			// OUT OF FLOW at rest (`absolute` / `fixed`) is a different fact from
+			// PINNING on scroll. An `absolute` header sits at y=0 with the first band
+			// flowing beneath it — the source's overlay — and it never pins. The early
+			// return below used to discard every resting fact for it (virtuallysrilanka:
+			// `position:absolute` over a red hero), so the rebuild kept the header in
+			// the flow: the band started one header-height lower and a white+grey SVG
+			// wordmark sat on the near-white page background instead of the red band.
+			const floats = rest.position === 'absolute' || rest.position === 'fixed';
 			const sticky = pinsByStyle || classGained;
-			if ( ! sticky ) {
+			if ( ! sticky && ! floats ) {
 				return { sticky: false };
 			}
 			const clean = ( value: string | undefined ) => ( value === undefined || /^rgba\(0, 0, 0, 0\)$/.test( value ) ? undefined : value );
@@ -2988,10 +4599,10 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 					? pinned.height
 					: stripFill?.height;
 			return {
-				sticky: true,
-				// `fixed` — not `sticky` — is the source's own overlay: the header
-				// floats OVER the first band, so a sticky rebuild pushes that band down
-				// and leaves white chrome on the page background.
+				sticky,
+				// `fixed` / `absolute` is the source's own overlay: the header floats
+				// OVER the first band, so a rebuild that keeps it in the flow pushes
+				// that band down and leaves chrome sitting on the page background.
 				position: rest.position,
 				...( restBg ? { restBg } : {} ),
 				...( clean( restInk ) ? { restInk: clean( restInk ) } : {} ),
@@ -3000,12 +4611,14 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 				// omitting it left a 47px header where the source has 75px (and the
 				// opened mobile panel then sat 28px too high, 2026-11-12).
 				restHeight: rest.height,
-				...( bgChanged && pinnedBg ? { pinnedBg } : {} ),
-				...( bgChanged && stripInk && stripInk !== restInk ? { pinnedInk: stripInk } : {} ),
-				...( pinnedHeight ? { pinnedHeight } : {} ),
-				...( shadow ? { shadow } : {} ),
-				bgChanged,
-				heightChanged: headerShrank || Boolean( stripInfo && Math.abs( stripInfo.height - rest.height ) >= 2 ),
+				// Only a header that actually PINS has a pinned state; an overlay-only
+				// header that scrolled out of view is not a transition.
+				...( sticky && bgChanged && pinnedBg ? { pinnedBg } : {} ),
+				...( sticky && bgChanged && stripInk && stripInk !== restInk ? { pinnedInk: stripInk } : {} ),
+				...( sticky && pinnedHeight ? { pinnedHeight } : {} ),
+				...( sticky && shadow ? { shadow } : {} ),
+				bgChanged: sticky && bgChanged,
+				heightChanged: sticky && ( headerShrank || Boolean( stripInfo && Math.abs( stripInfo.height - rest.height ) >= 2 ) ),
 			};
 		} );
 	} finally {
@@ -3225,7 +4838,10 @@ export async function builtStaticRoot( distDir: string ): Promise< string > {
 export async function serveDir( root: string ): Promise<{ url: string; server: Server } > {
 	const server = createServer( async ( request, response ) => {
 		try {
-			const pathname = decodeURIComponent( new URL( request.url ?? '/', 'http://localhost' ).pathname );
+			// Collapse repeated slashes: `//` reaches here from any caller that joins a
+			// base that already ends in `/` with a path that starts with one, and it
+			// 404s a request the plain path serves.
+			const pathname = decodeURIComponent( new URL( request.url ?? '/', 'http://localhost' ).pathname ).replace( /\/{2,}/g, '/' );
 			const relative = normalize( pathname ).replace( /^([/\\])+/, '' );
 			const target = relative === '' || relative.endsWith( sep ) || ! extname( relative )
 				? join( root, relative, 'index.html' )
@@ -3305,6 +4921,14 @@ export function diffGeometry(
 				} );
 				continue;
 			}
+			if ( actual.collapsed ) {
+				// The build DECLARED this band shorter: its grid folded away (every card
+				// was the band's own sub-heading) or its query loop has nothing
+				// published. The source's height is the height WITH that content, so a
+				// comparison here reports drift where the build made a decision. The
+				// wrapper's `data-section-collapsed` is the record of why.
+				continue;
+			}
 			for ( const { key, metric } of METRICS ) {
 				const expectedValue = expected[ metric as keyof typeof expected ] as number;
 				const actualValue = actual[ metric as keyof typeof actual ] as number;
@@ -3369,7 +4993,90 @@ export function diffGeometry(
 					} );
 				}
 			}
+			// The band's CONTENT box. The wrapper spans the viewport on both sides, so
+		// it can never see the mistake that matters: a boxed band whose section
+		// shrink-wrapped to its text kept a full-width wrapper while its copy
+		// rendered 989px against the source's 1280px (virtuallysrilanka's hardware
+		// row). A content WIDTH drift is a whole-class failure, so it fails; a
+		// shifted box is a warning (a full-bleed source row has no inset to match).
+		//
+		// Compared at DESKTOP only: below it the template deliberately floors the
+		// side gutter on a phone (see the `max(forge-space, --ds-pad-x)` rule) and
+		// the source has no such floor, so a 20–32px difference there is the
+		// template's choice rather than a lost container.
+		if ( viewport === 'desktop' && expected.content && ! actual.content ) {
+			// The source's band sits in a container and the build's does not — a
+			// full-bleed slab where the source halves the band, or a container the
+			// rebuild dropped. Silence here would hide the whole class.
+			deviations.push( {
+				sectionId: id,
+				viewport,
+				metric: 'content width',
+				expected: expected.content.width,
+				actual: null,
+				delta: -expected.content.width,
+				severity: 'fail',
+			} );
 		}
+		if ( viewport === 'desktop' && expected.content && actual.content ) {
+			const widthDelta = actual.content.width - expected.content.width;
+			if ( Math.abs( widthDelta ) > Math.max( tolerance.width, 4 ) ) {
+				deviations.push( {
+					sectionId: id,
+					viewport,
+					metric: 'content width',
+					expected: expected.content.width,
+					actual: actual.content.width,
+					delta: widthDelta,
+					severity: 'fail',
+				} );
+			}
+			const xDelta = actual.content.x - expected.content.x;
+			if ( Math.abs( xDelta ) > Math.max( tolerance.width, 8 ) ) {
+				deviations.push( {
+					sectionId: id,
+					viewport,
+					metric: 'content offset',
+					expected: expected.content.x,
+					actual: actual.content.x,
+					delta: xDelta,
+					severity: 'warn',
+				} );
+			}
+		}
+		// The lane WIDTHS. A row of 432 / 432 / 571 rebuilt as equal thirds kept
+		// every lane's height and passed the column diff above, while the reader
+		// saw the black slab shrink by a third (virtuallysrilanka's services
+		// band). Compared only when BOTH sides measured a row of the same length,
+		// and never for a COMPONENT band — a component lays its own lanes out (the
+		// split-hero's 16px gap is a template choice, not the source's row).
+		const expectedWidths = expected.columnWidths;
+		const actualWidths = actual.columnWidths;
+		if (
+			! rebuiltComponent &&
+			expectedWidths &&
+			actualWidths &&
+			expectedWidths.length >= 2 &&
+			expectedWidths.length === actualWidths.length
+		) {
+			const limit = Math.max( tolerance.width, 6 );
+			expectedWidths.forEach( ( width, index ) => {
+				const delta = actualWidths[ index ] - width;
+				if ( Math.abs( delta ) <= limit ) {
+					return;
+				}
+				deviations.push( {
+					sectionId: id,
+					viewport,
+					metric: `lane ${ index + 1 } width`,
+					expected: width,
+					actual: actualWidths[ index ],
+					delta,
+					severity: Math.abs( delta ) > limit * 2 ? 'fail' : 'warn',
+				} );
+			} );
+		}
+	}
 	}
 	return deviations;
 }

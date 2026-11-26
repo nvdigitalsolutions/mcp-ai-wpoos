@@ -370,6 +370,23 @@ weekly (or on demand), independent of any release.
   `1.1.43`/`1.1.51`/`1.1.54`/`1.2.4`, model-foundry `1.6.0` → `1.2.4`,
   chart-fence + chart-recipes-JS `1.4.0` → `1.2.4`).
 
+- **An in-window `@since` may name a version that will never ship — correct it to the
+  shipping version, in-pass.** The 1.2.22 window added **14** tags reading
+  `1.2.23`/`1.2.24` (`includes/class-wp-mcp-ai-endpoint-capabilities.php`,
+  `-rest.php`, `connected-apps/class-wp-mcp-ai-connected-app-registry.php`,
+  `rest/class-wp-mcp-ai-rest-features-controller.php`,
+  `rest/class-wp-mcp-ai-sse-handler.php` ×4, `security/class-wp-mcp-ai-url-guard.php` ×2,
+  three `lib/laravel-adapter` migrations and one `tests/connected-apps` file), and
+  the same PRs stamped `.context/rest-api.md` with `v1.2.23`/`1.2.24`. This is a
+  narrow, *in-window-only* correction — it does **not** reopen OI-1's parked
+  historical reconciliation, and it is safe because the tag is a docblock on code
+  that has never shipped under that number. Detect it mechanically rather than by
+  eye: `git diff -U0 <prev-catchup>..HEAD -- '*.php' | grep "^+.*@since"` and tally
+  with `sed -E 's/.*@since +//' | cut -d' ' -f1`; anything that is not the shipping
+  version, an addon's own version (the WiFi addon's `@since 0.1.0` ×50 is correct),
+  or a recorded `lib/core`/`lib/laravel-adapter` package tag is a defect. The tally
+  also needs `@since +` (not `@since `): three of the 14 use
+  `@since   1.2.23` with three spaces.
 - **Shipped knowledge-base facts refresh (adopted 2026-11-06).** The
   profession knowledge base (`includes/knowledge-base/**` — the
   `wpoos_developer` document + playbook + `professions/technology.json` entry
@@ -760,6 +777,16 @@ Files the 24-file map misses (all touched in the September 2026 run):
   and fix in one sweep
 
 ### B2. Hard rules & invariants (do not break)
+
+- **The Laravel runtime mirrors the catalog; it never owns it.**
+  `docker/laravel/app-skeleton/resources/model-catalog.json` is generated from
+  `includes/data/model-catalog.json` by `bin/generate-laravel-model-catalog.php`
+  and seeds the `nvoos_model_configs` table (per **1M** there; the source is per
+  **1K**). A catalog refresh that skips the regeneration leaves `/ops/models` and
+  the 13 `model_catalog:<provider>` settings selects serving the previous
+  catalogue — and because sync is **additive** (`insertOrIgnore`), the stale rows
+  persist rather than being replaced. Regenerate, then run
+  `php artisan nvoos:sync-models`, as part of the refresh.
 
 - The catalog JSON is the single source of truth — never hand-edit a derived
   file without a matching catalog entry.

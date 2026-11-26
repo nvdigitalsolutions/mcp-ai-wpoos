@@ -60,19 +60,20 @@ class Test_Graphify_Generic_GraphQL_Driver extends WP_UnitTestCase {
 	}
 
 	/**
-	 * test_connection without endpoint_url returns a structured failure
-	 * (no fatal, no remote call).
+	 * Test_connection without endpoint_url returns WP_Error, per the source
+	 * interface contract (no fatal, no remote call).
 	 */
 	public function test_connection_returns_failure_when_endpoint_missing() {
 		$driver = new NV_oOS_Graphify_Remote_Generic_GraphQL();
 		$driver->set_config( array() );
 		$result = $driver->test_connection();
-		$this->assertFalse( $result['success'] );
-		$this->assertNotEmpty( $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'nvoos_graphify_connection_failed', $result->get_error_code() );
+		$this->assertNotEmpty( $result->get_error_message() );
 	}
 
 	/**
-	 * fetch_nodes / fetch_edges return [] when not configured rather than
+	 * Fetch_nodes / fetch_edges return [] when not configured rather than
 	 * raising — matches generic_rest behaviour.
 	 */
 	public function test_fetch_returns_empty_when_not_configured() {

@@ -82,7 +82,7 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 		$reflection = new ReflectionClass( $executor );
 		$source     = file_get_contents( $reflection->getFileName() );
 
-		// Pattern: $context['in_async_executor'] = true;
+		// Pattern: $context['in_async_executor'] = true;.
 		$this->assertStringContainsString(
 			'$context[\'in_async_executor\'] = true',
 			$source,
@@ -90,7 +90,7 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 		);
 
 		// Verify context is passed to tool->execute().
-		// Pattern: $tool->execute( $arguments, $context )
+		// Pattern: $tool->execute( $arguments, $context ).
 		$this->assertStringContainsString(
 			'->execute( $arguments, $context )',
 			$source,
@@ -135,6 +135,12 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 		// Create a mock tool class that tracks context.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
+			/**
+			 * Context received by execute().
+			 *
+			 * @var array|null
+			 */
 			public $received_context = null;
 
 			/**
@@ -223,7 +229,7 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 		);
 
 		// Verify the flag is added to existing context (not replacing it).
-		// Pattern: $context['in_async_executor'] = true;
+		// Pattern: $context['in_async_executor'] = true;.
 		$this->assertStringContainsString(
 			'[\'in_async_executor\'] = true',
 			$source,
@@ -241,6 +247,7 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 		// Create a mock "old" tool that doesn't know about in_async_executor.
 		$old_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *

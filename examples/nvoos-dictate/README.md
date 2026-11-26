@@ -37,6 +37,17 @@ repo root for the full design).
   relabels detection boxes with a local vision-language model (LM Studio /
   Ollama serving Qwen2.5-VL) for accurate names instead of generic COCO labels.
   Pixels never leave the machine; no facial recognition or identity.
+- **Hand gestures** (feature `gestures`, Proposal 153) — hold an open palm to
+  arm, then a small deliberate vocabulary (8 poses + 5 motions: swipe,
+  point, fist, stop) drives app actions. Dictation-affecting actions are
+  **guarded**: the pose must be held ~1.5 s to confirm, otherwise the app only
+  announces it and runs nothing. Everything is classified on-device, nothing
+  is sent anywhere, and there is no delete/send/purchase action in the
+  vocabulary at all. An opt-in **"ask your camera"** path lets you point at
+  something and ask a question about it; the crop goes only to your local
+  LM Studio / Ollama model, the answer is shown (never pasted), and the
+  feature is off by default. The vocabulary, defaults and tuning are
+  documented in [`docs/gesture-vocabulary.md`](docs/gesture-vocabulary.md).
 - **Screen OCR** (feature `snippet`, Proposal 100) — press **Win+Shift+T**
   (macOS: ⌘⇧T) anywhere to freeze the screen, drag a region over it, and
   the text in that region lands on the clipboard (optionally auto-pasted),
@@ -112,10 +123,11 @@ cargo build --release --features silero-vad         # neural Silero VAD (model: 
 cargo build --release --features mcp                # local MCP stdio server (nvoos-dictate --mcp)
 cargo build --release --features camera             # live webcam preview (nokhwa)
 cargo build --release --features vision             # object detection + tracking (implies camera)
+cargo build --release --features gestures           # hand-gesture input (implies camera; reuses ort)
 cargo build --release --features snippet            # screen OCR (native engines, zero-download)
 cargo build --release --features snippet-onnx       # + RapidOCR (PP-OCR) ONNX packs (implies snippet)
 cargo build --release --features document           # + PDF / multi-page TIFF / image OCR (implies snippet)
-cargo build --release --features snippet-pdf        # + searchable-PDF export (implies snippet)
+cargo build --release --features snippet-pdf        # + searchable-PDF export (implies document)
 cargo build --release --features memory             # + local hybrid memory index and cited answers
 ```
 

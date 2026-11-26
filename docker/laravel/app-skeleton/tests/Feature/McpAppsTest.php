@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Assistant;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -73,6 +74,26 @@ final class McpAppsTest extends TestCase
             ->assertJsonPath('app_count', 1)
             ->assertJsonPath('apps.0.server_url', 'https://mcp.example.com/mcp')
             ->assertJsonPath('apps.0.auth_type', 'bearer');
+    }
+
+    public function test_null_boolean_fields_fall_back_to_defaults(): void
+    {
+        $id = $this->assistant();
+
+        // A partial payload (a panel row that never touched a toggle) must not
+        // read as "false": null means "not supplied".
+        $this->putJson("/api/v1/mcp-apps/{$id}", array(
+            'apps' => array(array(
+                'server_url' => 'https://mcp.example.com/mcp',
+                'enabled' => null,
+                'verify_ssl' => null,
+                'timeout' => null,
+            )),
+        ))
+            ->assertOk()
+            ->assertJsonPath('apps.0.enabled', true)
+            ->assertJsonPath('apps.0.verify_ssl', true)
+            ->assertJsonPath('apps.0.timeout', 30);
     }
 
     public function test_a_replace_removes_the_previous_list(): void
@@ -157,6 +178,33 @@ final class McpAppsTest extends TestCase
         );
     }
 
+    public function test_a_read_projection_cannot_be_saved_back_as_a_token(): void
+    {
+        $id = $this->assistant();
+        $url = 'https://mcp.example.com/mcp';
+
+        $this->putJson("/api/v1/mcp-apps/{$id}", array(
+            'apps' => array(array('server_url' => $url, 'token' => 'first-token')),
+        ))->assertOk();
+
+        $sealed = Assistant::find($id)->meta['_wp_mcp_ai_mcp_apps'][0]['token_sealed'];
+
+        // A bulk editor that reads the list and writes it straight back sends
+        // the mask. Treating it as a value would seal `••••••••` as the token
+        // and silently replace a working credential.
+        $read = $this->getJson("/api/v1/mcp-apps/{$id}")->assertOk()->json('apps');
+
+        $this->assertSame("\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}", $read[0]['token']);
+
+        $this->putJson("/api/v1/mcp-apps/{$id}", array('apps' => $read))->assertOk();
+
+        $this->assertSame(
+            $sealed,
+            Assistant::find($id)->meta['_wp_mcp_ai_mcp_apps'][0]['token_sealed'],
+            'A round-tripped mask must keep the sealed token.'
+        );
+    }
+
     public function test_more_than_ten_apps_is_rejected(): void
     {
         $id = $this->assistant();
@@ -203,6 +251,29 @@ final class McpAppsTest extends TestCase
     public function test_an_unknown_assistant_is_a_404(): void
     {
         $this->getJson('/api/v1/mcp-apps/999')->assertNotFound();
+    }
+
+    /**
+     * Route-model binding resolved any id: `Assistant` has no global tenant
+     * scope, so without this check an estate administrator could read — and
+     * overwrite — another estate's assistant configuration.
+     */
+    public function test_a_foreign_estate_assistant_is_not_readable_or_writable(): void
+    {
+        Tenant::query()->create(array(
+            'id' => 'estate-b',
+            'name' => 'Estate B',
+            'slug' => 'estate-b',
+        ));
+
+        Sanctum::actingAs(User::factory()->admin()->inEstate('estate-b', 'owner')->create());
+        $foreignId = $this->assistant('Estate B assistant');
+
+        // A caller whose request resolves to the default estate.
+        Sanctum::actingAs(User::factory()->admin()->create());
+
+        $this->getJson("/api/v1/mcp-apps/{$foreignId}")->assertNotFound();
+        $this->putJson("/api/v1/mcp-apps/{$foreignId}", array('apps' => array()))->assertNotFound();
     }
 
     public function test_the_endpoint_is_reported_available(): void

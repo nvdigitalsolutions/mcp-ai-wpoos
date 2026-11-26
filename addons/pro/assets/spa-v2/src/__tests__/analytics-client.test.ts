@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AnalyticsClient + chart spec contract tests (fetch mocked, zero network).
  *

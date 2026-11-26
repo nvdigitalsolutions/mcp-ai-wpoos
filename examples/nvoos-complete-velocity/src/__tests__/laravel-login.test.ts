@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Laravel login/logout path tests (Proposal 090-B Phase 1).
  *
@@ -16,7 +17,6 @@ const jsonResponse = (body: unknown, status = 200): Response =>
   });
 
 afterEach(() => {
-  
   vi.unstubAllGlobals();
 });
 
@@ -37,7 +37,14 @@ describe('submitWpLogin (laravel)', () => {
 
     const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
     expect(url).toBe('/api/v1/session/login');
-    expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBe('nonce-1');
+    // Laravel validates the raw session token in `X-CSRF-TOKEN`. The
+    // `X-WP-Nonce` translation shim was removed with AcceptWpNonce, so a bare
+    // `X-WP-Nonce` is a 419 — which is what the CI e2e smoke first surfaced.
+    // Asserting the old header here pinned the client's assumption instead of
+    // the server's contract, so the suite stayed green while sign-in was dead.
+    const headers = init.headers as Record<string, string>;
+    expect(headers['X-CSRF-TOKEN']).toBe('nonce-1');
+    expect(headers['X-WP-Nonce']).toBeUndefined();
     expect(JSON.parse(String(init.body))).toEqual({
       email: 'owner@example.com',
       password: 'secret',
@@ -58,6 +65,24 @@ describe('submitWpLogin (laravel)', () => {
     expect(result.ok).toBe(false);
     expect(result.message).toBe('Invalid username or password.');
   });
+
+  it('surfaces a 419 as unavailable rather than invalid credentials', async () => {
+    // A 419 means the CSRF alias did not match — a configuration or contract
+    // fault, not a wrong password. Telling the user their password is wrong
+    // would send them down the wrong path, and (per OWASP A07) leaking the
+    // distinction is not useful here anyway.
+    vi.stubGlobal('__NVOOS_BACKEND__', 'laravel');
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ success: true, nonce: 'nonce-1' }))
+      .mockResolvedValueOnce(jsonResponse({ message: 'CSRF token mismatch.' }, 419));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await submitWpLogin({ username: 'owner@example.com', password: 'secret' });
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toBe('Sign-in is temporarily unavailable. Please try again.');
+  });
 });
 
 describe('logoutFromWordPress (laravel)', () => {
@@ -74,6 +99,8 @@ describe('logoutFromWordPress (laravel)', () => {
     expect(result.ok).toBe(true);
     const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
     expect(url).toBe('/api/v1/session/logout');
-    expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBe('nonce-2');
+    const headers = init.headers as Record<string, string>;
+    expect(headers['X-CSRF-TOKEN']).toBe('nonce-2');
+    expect(headers['X-WP-Nonce']).toBeUndefined();
   });
 });

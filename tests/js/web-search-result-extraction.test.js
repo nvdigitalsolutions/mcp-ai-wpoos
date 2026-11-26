@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test suite for web_search tool result extraction and display
  * Tests the fix for web_search results not being properly displayed in chat client

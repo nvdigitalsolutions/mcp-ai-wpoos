@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // region-surfaces-browser.test.ts — P5 (pseudo surfaces) and P6 (ancestor
 // gradients) against a hermetic fixture page.
@@ -62,6 +63,12 @@ const FIXTURE_HTML = `<!doctype html>
 		inset: 0;
 		background: rgb(0, 64, 128);
 	}
+	/* A full-width CONTROL inside a transparent band is CONTENT, not a surface. */
+	#control-band { min-height: 250px; }
+	#control-band button { display: block; width: 100%; height: 53px; border: 0; background: rgb(135, 100, 160); }
+	/* A full-bleed FILL child IS the band surface. */
+	#fill-band { min-height: 200px; }
+	#fill-band .fill { height: 200px; background: rgb(0, 128, 0); }
 </style>
 </head>
 <body>
@@ -72,6 +79,8 @@ const FIXTURE_HTML = `<!doctype html>
 	<div id="pseudo-band" class="band"></div>
 	<div id="static-band" class="band"></div>
 	<div id="own-band" class="band"></div>
+	<div id="control-band" class="band"><button type="button">Try Demo</button></div>
+	<div id="fill-band" class="band"><div class="fill"></div></div>
 </body>
 </html>`;
 
@@ -82,6 +91,8 @@ const REGIONS = [
 	{ name: 'pseudo-band-plain', selectors: [ '#pseudo-band' ] },
 	{ name: 'static-band', selectors: [ '#static-band' ], descendantFill: true },
 	{ name: 'own-band', selectors: [ '#own-band' ], descendantFill: true },
+	{ name: 'control-band', selectors: [ '#control-band' ], descendantFill: true },
+	{ name: 'fill-band', selectors: [ '#fill-band' ], descendantFill: true },
 ];
 
 describe.skipIf( ! hasChromium )( 'band surfaces (pseudo + ancestor gradients)', () => {
@@ -143,5 +154,15 @@ describe.skipIf( ! hasChromium )( 'band surfaces (pseudo + ancestor gradients)',
 
 	it( 'P5 — a positioned overlay paints above the element’s own colour', () => {
 		expect( modes.light[ 'own-band' ].background ).toBe( '#004080' );
+	} );
+
+	it( 'ignores a full-width control: a button is content, not the band surface', () => {
+		// eca.directory read #8764a0 for two transparent bands this way: the
+		// accent button spanned the band row before the layout settled.
+		expect( modes.light[ 'control-band' ].background ).toBe( 'transparent' );
+	} );
+
+	it( 'accepts a full-bleed child fill as the band surface', () => {
+		expect( modes.light[ 'fill-band' ].background ).toBe( '#008000' );
 	} );
 } );

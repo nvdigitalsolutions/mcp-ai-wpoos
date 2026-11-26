@@ -1,0 +1,75 @@
+{
+  "slug": "shopify-sync",
+  "name": "Shopify Sync",
+  "version": "1.0.0",
+  "description": "Sync cadence, direction and CCT storage for the Shopify Sync toolkit. Two WordPress controls are deliberately absent: the connection checklist reads the Remote Sites store, and Catalog API search terms are persisted as an array rather than a string, so neither round-trips through the manifest settings store.",
+  "icon": "🛍️",
+  "feature": "shopify-sync",
+  "screens": ["settings"],
+  "tab_labels": {
+    "sync": "Sync",
+    "inventory": "Inventory",
+    "cct": "CCT"
+  },
+  "settings": [
+    {
+      "key": "sync_interval",
+      "label": "Sync interval (minutes)",
+      "type": "select",
+      "tab": "sync",
+      "default": "15",
+      "options": ["5", "15", "30", "60"],
+      "description": "How often the full sync runs. Webhooks cover the gaps at zero API cost."
+    },
+    {
+      "key": "sync_mode",
+      "label": "Sync mode",
+      "type": "select",
+      "tab": "sync",
+      "default": "full",
+      "options": ["full", "minimal"],
+      "description": "Full pulls images, prices, tags, vendor and every inventory level; minimal pulls title, SKU and stock only."
+    },
+    {
+      "key": "sync_direction",
+      "label": "Sync direction",
+      "type": "select",
+      "tab": "sync",
+      "default": "shopify_to_woo",
+      "options": ["shopify_to_woo", "bidirectional", "read_only"],
+      "description": "Read-only caches the catalog without writing to WooCommerce."
+    },
+    {
+      "key": "enable_webhooks",
+      "label": "Enable webhooks",
+      "type": "boolean",
+      "tab": "sync",
+      "default": true,
+      "description": "Real-time inventory updates pushed by Shopify, at zero API cost."
+    },
+    {
+      "key": "enable_wc_sync",
+      "label": "Update WooCommerce stock",
+      "type": "boolean",
+      "tab": "inventory",
+      "default": false,
+      "description": "Writes Shopify stock quantities back to WooCommerce products."
+    },
+    {
+      "key": "low_stock_threshold",
+      "label": "Low stock threshold",
+      "type": "number",
+      "tab": "inventory",
+      "default": 5,
+      "description": "Quantity below which an item is reported as low stock."
+    },
+    {
+      "key": "cct_slug",
+      "label": "CCT slug",
+      "type": "text",
+      "tab": "cct",
+      "default": "",
+      "description": "JetEngine CCT slug used for inventory storage, which must be unique. Leave blank to use the toolkit default."
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Dev launcher — starts the Vite dev server with a proxy target.
  *

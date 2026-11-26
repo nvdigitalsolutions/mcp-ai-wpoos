@@ -28,9 +28,11 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Tool;
 
-use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ToolGuardInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagResolution;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
 /**
  * Blocks state-changing tools while a read-only profile is active.
@@ -42,15 +44,16 @@ final class ReadOnlyToolGuard implements ToolGuardInterface
     /**
      * Flags that disqualify a tool while the profile is active.
      *
+     * Defined in {@see CapabilityFlagVocabulary}, mirroring the WordPress chat
+     * profile's list, so every reader of capability flags agrees on spelling.
+     * This constant previously gated `state_changing` (written by 6 corpus
+     * tools) against a corpus that writes `state-changing` (275), and omitted
+     * `data-destruction`, `irreversible`, `financial-impact`,
+     * `access-control-change` and `mass-email`.
+     *
      * @var list<string>
      */
-    public const DEFAULT_GATED_FLAGS = array(
-        'write',
-        'state_changing',
-        'mutating',
-        'destructive',
-        'external_side_effect',
-    );
+    public const DEFAULT_GATED_FLAGS = CapabilityFlagVocabulary::READ_ONLY_GATED;
 
     /**
      * @param ToolResolverInterface $tools          Resolver used to read a tool's flags.
@@ -63,6 +66,7 @@ final class ReadOnlyToolGuard implements ToolGuardInterface
         private readonly array $gatedFlags = self::DEFAULT_GATED_FLAGS,
         private readonly array $allowedSlugs = array(),
         private readonly bool $blockUndeclared = true,
+        private readonly ?CapabilityFlagOverridesInterface $overrides = null,
     ) {
     }
 
@@ -84,14 +88,18 @@ final class ReadOnlyToolGuard implements ToolGuardInterface
             return null;
         }
 
-        if (! $tool instanceof ToolCapabilityFlagsInterface) {
+        $flags = $this->declaredFlags($slug, $tool);
+
+        if (null === $flags) {
             return $this->blockUndeclared
                 ? sprintf('Tool "%s" is blocked by the read-only profile because it declares no capability flags.', $slug)
                 : null;
         }
 
-        $flags = array_map('strtolower', $tool->getCapabilityFlags());
-        $hit   = array_values(array_intersect($flags, $this->gatedFlags));
+        $hit = array_values(array_intersect(
+            $flags,
+            CapabilityFlagVocabulary::normalise($this->gatedFlags)
+        ));
 
         if (array() === $hit) {
             return null;
@@ -102,5 +110,22 @@ final class ReadOnlyToolGuard implements ToolGuardInterface
             $slug,
             implode(', ', $hit)
         );
+    }
+
+    /**
+     * Flags for a tool: its own declaration, else the corpus catalogue, plus any
+     * administrator additions.
+     *
+     * The three-step lookup lives in {@see CapabilityFlagResolution} so this
+     * guard, `NecessityGuard` and the chat-profile delegate cannot disagree
+     * about the order. Additions are unioned in last and cannot remove a flag;
+     * an undeclared tool stays undeclared, because otherwise an override could
+     * turn "we could not tell" into "we checked and it is fine".
+     *
+     * @return list<string>|null Null when nothing is declared anywhere.
+     */
+    private function declaredFlags(string $slug, object $tool): ?array
+    {
+        return CapabilityFlagResolution::resolve($slug, $tool, $this->overrides);
     }
 }

@@ -13,6 +13,15 @@ namespace Nvoos\Core\Tool;
 
 class HuggingFaceDatasetSearchTool extends AbstractHuggingFaceTool
 {
+    /**
+     * The datasets-server endpoint this tool calls.
+     *
+     * Public because the dataset browser derives its catalogue from it:
+     * one declaration, two readers, and an endpoint change cannot leave
+     * the page describing a route that no longer exists.
+     */
+    public const ENDPOINT = '/search';
+
     public function getSlug(): string
     {
         return 'huggingface_dataset_search';
@@ -70,7 +79,7 @@ class HuggingFaceDatasetSearchTool extends AbstractHuggingFaceTool
         $split  = $this->stringParam($arguments, 'split', 'train');
         try {
             $data = $this->apiGet(
-                '/search',
+                self::ENDPOINT,
                 array(
                     'dataset' => $dataset,
                     'config'  => $config,

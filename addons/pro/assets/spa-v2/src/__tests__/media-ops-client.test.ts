@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * MediaOpsClient contract tests (fetch mocked) — Phase 4 W14.
  */
@@ -97,15 +98,23 @@ describe( 'formatBytes', () => {
 		expect( formatBytes( 3 * 1024 * 1024 * 1024 ) ).toBe( '3.0 GB' );
 	} );
 
-	it( 'falls back to zero for non-numeric values', () => {
-		expect( formatBytes( undefined ) ).toBe( '0 B' );
-		expect( formatBytes( 'nope' ) ).toBe( '0 B' );
+	it( 'formats a real zero as zero, not as unknown', () => {
+		expect( formatBytes( 0 ) ).toBe( '0 B' );
+	} );
+
+	it( 'falls back to an em dash for non-numeric values', () => {
+		expect( formatBytes( undefined ) ).toBe( '—' );
+		expect( formatBytes( 'nope' ) ).toBe( '—' );
+		// Without the isFinite guard the loop turns this into `Infinity TB`.
+		expect( formatBytes( Infinity ) ).toBe( '—' );
 	} );
 } );
 
 describe( 'formatPercent', () => {
-	it( 'formats percentages and falls back to zero', () => {
+	it( 'formats percentages and falls back to an em dash', () => {
 		expect( formatPercent( 70 ) ).toBe( '70%' );
-		expect( formatPercent( undefined ) ).toBe( '0%' );
+		expect( formatPercent( 0 ) ).toBe( '0%' );
+		expect( formatPercent( undefined ) ).toBe( '—' );
+		expect( formatPercent( '70' ) ).toBe( '—' );
 	} );
 } );

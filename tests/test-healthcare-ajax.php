@@ -37,6 +37,31 @@ if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 
 class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
+	/**
+	 * Bind the Pro health pages' AJAX actions for the duration of the test.
+	 *
+	 * Both pages register from static init(), which production calls on an
+	 * admin request; unbound, every dispatch ends with an empty body that the
+	 * rejection assertions accept.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		$pages = array(
+			'WP_MCP_AI_Health_Records_Consolidate_Page' => 'wp_mcp_ai_import_vitals_to_cct',
+			'WP_MCP_AI_Medical_Vitals_Dashboard_Page'   => 'wp_mcp_ai_mv_dashboard_get_vital_signs',
+		);
+
+		foreach ( $pages as $class => $probe ) {
+			if ( false !== has_action( 'wp_ajax_' . $probe ) ) {
+				continue;
+			}
+			if ( class_exists( $class ) && is_callable( array( $class, 'init' ) ) ) {
+				call_user_func( array( $class, 'init' ) );
+			}
+		}
+	}
+
 	/** Nonce for hw_dashboard handler. */
 	const NONCE_HW = 'wp_mcp_ai_hw_dashboard';
 
@@ -231,14 +256,11 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
 		}
 
-		// The handler requires `read` cap only; however a subscriber without
-		// `read` override should fail the cap check.
-		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		// The handler requires `read` only, so exercise a user with no role at all:
+		// WP_User::remove_cap( 'read' ) on a subscriber is a no-op, because
+		// get_role_caps() merges the role's caps straight back in.
+		$user_id = $this->factory->user->create( array( 'role' => '' ) );
 		wp_set_current_user( $user_id );
-
-		// Force remove the `read` cap to simulate a user without any capability.
-		$user = get_user_by( 'id', $user_id );
-		$user->remove_cap( 'read' );
 
 		$response = $this->dispatch(
 			'wp_mcp_ai_get_member_vitals_preview',

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DashboardPage tests — welcome card, live stats, quick-action navigation.
  */
@@ -122,5 +123,32 @@ describe('DashboardPage', () => {
     renderDashboard({ dockOpen: false });
     expect(screen.getByRole('button', { name: /open chat dock/i })).toBeInTheDocument();
     expect(screen.getByText('Closed')).toBeInTheDocument();
+  });
+
+  it('hides a quick action the runtime does not serve', () => {
+    renderDashboard({ endpoints: { contentGraph: '' } });
+
+    expect(screen.queryByRole('link', { name: /Knowledge Graph/i })).not.toBeInTheDocument();
+  });
+
+  it('explains unavailable surfaces with their supply class', () => {
+    renderDashboard({
+      endpoints: { contentGraph: '' },
+      endpointReasons: { contentGraph: 'external-product' },
+    });
+
+    expect(
+      screen.getByRole('heading', { name: /Unavailable on this runtime/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/separate product/i)).toBeInTheDocument();
+    expect(screen.getByText('Knowledge Graph')).toBeInTheDocument();
+  });
+
+  it('renders no unavailable card when every surface is served', () => {
+    renderDashboard();
+
+    expect(
+      screen.queryByRole('heading', { name: /Unavailable on this runtime/i }),
+    ).not.toBeInTheDocument();
   });
 });

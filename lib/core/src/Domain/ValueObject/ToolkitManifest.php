@@ -29,7 +29,7 @@ final class ToolkitManifest
     public const SCREENS = array( 'settings', 'entities', 'research', 'consolidate', 'dashboard' );
 
     /** Setting widget types. */
-    public const SETTING_TYPES = array( 'text', 'number', 'boolean', 'select', 'secret' );
+    public const SETTING_TYPES = array( 'text', 'textarea', 'number', 'boolean', 'select', 'secret' );
 
     /** Column value types the entity workbench knows how to render and sort. */
     public const COLUMN_TYPES = array( 'string', 'number', 'currency', 'boolean', 'date', 'enum' );
@@ -49,6 +49,7 @@ final class ToolkitManifest
         'feature',
         'screens',
         'settings',
+        'tab_labels',
         'entities',
         'dashboard',
     );
@@ -177,6 +178,78 @@ final class ToolkitManifest
     }
 
     /**
+     * Optional settings-screen tab labels, keyed by tab id.
+     *
+     * A manifest without tabs returns an empty map; {@see settingTabs()} then
+     * presents every setting under one "General" tab so a renderer never
+     * special-cases the untabbed shape.
+     *
+     * @return array<string, string>
+     */
+    public function tabLabels(): array
+    {
+        $labels = array();
+
+        foreach ((array) ( $this->raw['tab_labels'] ?? array() ) as $key => $label) {
+            $labels[ (string) $key ] = (string) $label;
+        }
+
+        return $labels;
+    }
+
+    /**
+     * Settings grouped into render-ready tabs, in declared order.
+     *
+     * The grouping lives here rather than in each renderer so the panel and
+     * the console cannot disagree about which tab a field belongs to.
+     *
+     * @return list<array{key: string, label: string, settings: list<array<string, mixed>>}>
+     */
+    public function settingTabs(): array
+    {
+        $settings = $this->settings();
+        $labels   = $this->tabLabels();
+
+        if (array() === $labels) {
+            return array(
+                array(
+                    'key'      => 'general',
+                    'label'    => 'General',
+                    'settings' => $settings,
+                ),
+            );
+        }
+
+        $tabs  = array();
+        $index = array();
+
+        foreach ($labels as $key => $label) {
+            $index[ $key ] = \count($tabs);
+            $tabs[]        = array(
+                'key'      => $key,
+                'label'    => $label,
+                'settings' => array(),
+            );
+        }
+
+        foreach ($settings as $setting) {
+            $tab = (string) ( $setting['tab'] ?? '' );
+
+            if (isset($index[ $tab ])) {
+                $tabs[ $index[ $tab ] ]['settings'][] = $setting;
+            }
+        }
+
+        return $tabs;
+    }
+
+    /**
+     * Declared entities; **empty for a settings-only toolkit**.
+     *
+     * CRM and chat channels own no engine records — their real entities live on
+     * CPT/REST surfaces — so their manifests declare `screens: ["settings"]`
+     * and omit `entities`.
+     *
      * @return array<int, array<string, mixed>>
      */
     public function entities(): array
@@ -224,7 +297,22 @@ final class ToolkitManifest
      */
     private static function validateEntities(array $raw, array &$errors): array
     {
-        if (! isset($raw['entities']) || ! \is_array($raw['entities']) || array() === $raw['entities']) {
+        // A **settings-only** toolkit omits `entities` entirely: its records
+        // live on their own surfaces (CRM's deals/companies are CPTs), and the
+        // engine owns no table for them. An explicit empty list is still
+        // rejected — declaring `entities` and naming none is a mistake, not a
+        // decision. Omission is the decision.
+        if (! isset($raw['entities'])) {
+            return array();
+        }
+
+        if (! \is_array($raw['entities'])) {
+            $errors[] = 'entities must be a list';
+
+            return array();
+        }
+
+        if (array() === $raw['entities']) {
             $errors[] = 'entities must be a non-empty list';
 
             return array();
@@ -318,7 +406,13 @@ final class ToolkitManifest
      */
     private static function validateSettings(array $raw, array &$errors): void
     {
+        $tabLabels = self::validateTabLabels($raw, $errors);
+
         if (! isset($raw['settings'])) {
+            if (array() !== $tabLabels) {
+                $errors[] = 'tab_labels requires settings';
+            }
+
             return;
         }
 
@@ -327,7 +421,8 @@ final class ToolkitManifest
             return;
         }
 
-        $seen = array();
+        $seen     = array();
+        $usedTabs = array();
 
         foreach (\array_values($raw['settings']) as $index => $setting) {
             $path = 'settings[' . $index . ']';
@@ -364,7 +459,84 @@ final class ToolkitManifest
                     $errors[] = $path . '.options must be a non-empty list for select settings';
                 }
             }
+
+            // `rows` is a textarea hint and nothing else. A stray hint on
+            // another type would be silently ignored by every renderer, which
+            // is the kind of manifest lie the fail-closed rule exists to catch.
+            if (isset($setting['rows'])) {
+                if ('textarea' !== $type) {
+                    $errors[] = $path . '.rows applies only to textarea settings';
+                } elseif (! \is_int($setting['rows']) || $setting['rows'] < 2 || $setting['rows'] > 20) {
+                    $errors[] = $path . '.rows must be an integer between 2 and 20';
+                }
+            }
+
+            // Tabs are all-or-nothing: a manifest either declares a label for
+            // every tab and assigns every setting to one, or it stays a single
+            // General tab. A half-tabbed manifest would render an unlabelled
+            // tab, so it is rejected rather than guessed at.
+            $tab = $setting['tab'] ?? null;
+
+            if (null !== $tab) {
+                if (! \is_string($tab) || ! \preg_match(self::KEY_PATTERN, $tab)) {
+                    $errors[] = $path . '.tab must match ' . self::KEY_PATTERN;
+                } elseif (array() === $tabLabels) {
+                    $errors[] = $path . '.tab requires a top-level tab_labels map';
+                } elseif (! isset($tabLabels[ $tab ])) {
+                    $errors[] = $path . '.tab "' . $tab . '" is not declared in tab_labels';
+                } else {
+                    $usedTabs[ $tab ] = true;
+                }
+            } elseif (array() !== $tabLabels) {
+                $errors[] = $path . '.tab is required when tab_labels is declared';
+            }
         }
+
+        foreach (\array_keys($tabLabels) as $tab) {
+            if (! isset($usedTabs[ $tab ])) {
+                $errors[] = 'tab_labels.' . $tab . ' is not used by any setting';
+            }
+        }
+    }
+
+    /**
+     * Validate the optional tab label map.
+     *
+     * @param array<string, mixed> $raw
+     * @param array<int, string>   $errors Passed by reference.
+     *
+     * @return array<string, string> Declared labels; empty when the manifest has none.
+     */
+    private static function validateTabLabels(array $raw, array &$errors): array
+    {
+        if (! isset($raw['tab_labels'])) {
+            return array();
+        }
+
+        if (! \is_array($raw['tab_labels']) || array() === $raw['tab_labels']) {
+            $errors[] = 'tab_labels must be a non-empty object';
+            return array();
+        }
+
+        $labels = array();
+
+        foreach ($raw['tab_labels'] as $key => $label) {
+            $key = (string) $key;
+
+            if (! \preg_match(self::KEY_PATTERN, $key)) {
+                $errors[] = 'tab_labels key "' . $key . '" must match ' . self::KEY_PATTERN;
+                continue;
+            }
+
+            if (! \is_string($label) || '' === \trim($label)) {
+                $errors[] = 'tab_labels.' . $key . ' must be a non-empty label';
+                continue;
+            }
+
+            $labels[ $key ] = $label;
+        }
+
+        return $labels;
     }
 
     /**
@@ -530,7 +702,7 @@ final class ToolkitManifest
     {
         $raw['screens']  = \array_values((array) ( $raw['screens'] ?? array() ));
         $raw['settings'] = \array_values((array) ( $raw['settings'] ?? array() ));
-        $raw['entities'] = \array_values((array) $raw['entities']);
+        $raw['entities'] = \array_values((array) ( $raw['entities'] ?? array() ));
 
         foreach ($raw['entities'] as $index => $entity) {
             $raw['entities'][ $index ]['columns'] = \array_values((array) $entity['columns']);

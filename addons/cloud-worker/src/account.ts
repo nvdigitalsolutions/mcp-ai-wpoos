@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Account endpoints — balance, top-up, revoke. All require a valid Connect
  * Token (mounted under `requireToken`).

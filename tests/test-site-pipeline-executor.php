@@ -58,11 +58,22 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_execute_simple_linear_pipeline() {
 		$graph = array(
 			'nodes' => array(
-				'text_a' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'Hello' ) ),
-				'text_b' => array( 'slug' => 'text_block', 'inputs' => array( 'tag' => 'p' ) ),
+				'text_a' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'Hello' ),
+				),
+				'text_b' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'tag' => 'p' ),
+				),
 			),
 			'edges' => array(
-				array( 'source' => 'text_a', 'sourcePort' => 'html', 'target' => 'text_b', 'targetPort' => 'content' ),
+				array(
+					'source'     => 'text_a',
+					'sourcePort' => 'html',
+					'target'     => 'text_b',
+					'targetPort' => 'content',
+				),
 			),
 		);
 
@@ -89,13 +100,32 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_execute_forked_pipeline() {
 		$graph = array(
 			'nodes' => array(
-				'child_1'  => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'Child A' ) ),
-				'child_2'  => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'Child B' ) ),
-				'flex'     => array( 'slug' => 'flex_container', 'inputs' => array( 'direction' => 'row' ) ),
+				'child_1' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'Child A' ),
+				),
+				'child_2' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'Child B' ),
+				),
+				'flex'    => array(
+					'slug'   => 'flex_container',
+					'inputs' => array( 'direction' => 'row' ),
+				),
 			),
 			'edges' => array(
-				array( 'source' => 'child_1', 'sourcePort' => 'html', 'target' => 'flex', 'targetPort' => 'children' ),
-				array( 'source' => 'child_2', 'sourcePort' => 'html', 'target' => 'flex', 'targetPort' => 'children' ),
+				array(
+					'source'     => 'child_1',
+					'sourcePort' => 'html',
+					'target'     => 'flex',
+					'targetPort' => 'children',
+				),
+				array(
+					'source'     => 'child_2',
+					'sourcePort' => 'html',
+					'target'     => 'flex',
+					'targetPort' => 'children',
+				),
 			),
 		);
 
@@ -120,13 +150,32 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 		// so the chain wraps the leaf value: A must flow through both hops.
 		$graph = array(
 			'nodes' => array(
-				'text_a' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'A' ) ),
-				'text_b' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'B' ) ),
-				'text_c' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'C' ) ),
+				'text_a' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'A' ),
+				),
+				'text_b' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'B' ),
+				),
+				'text_c' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'C' ),
+				),
 			),
 			'edges' => array(
-				array( 'source' => 'text_a', 'sourcePort' => 'html', 'target' => 'text_b', 'targetPort' => 'content' ),
-				array( 'source' => 'text_b', 'sourcePort' => 'html', 'target' => 'text_c', 'targetPort' => 'content' ),
+				array(
+					'source'     => 'text_a',
+					'sourcePort' => 'html',
+					'target'     => 'text_b',
+					'targetPort' => 'content',
+				),
+				array(
+					'source'     => 'text_b',
+					'sourcePort' => 'html',
+					'target'     => 'text_c',
+					'targetPort' => 'content',
+				),
 			),
 		);
 
@@ -150,8 +199,18 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 				'node_b' => array( 'slug' => 'text_block' ),
 			),
 			'edges' => array(
-				array( 'source' => 'node_a', 'sourcePort' => 'html', 'target' => 'node_b', 'targetPort' => 'content' ),
-				array( 'source' => 'node_b', 'sourcePort' => 'html', 'target' => 'node_a', 'targetPort' => 'content' ),
+				array(
+					'source'     => 'node_a',
+					'sourcePort' => 'html',
+					'target'     => 'node_b',
+					'targetPort' => 'content',
+				),
+				array(
+					'source'     => 'node_b',
+					'sourcePort' => 'html',
+					'target'     => 'node_a',
+					'targetPort' => 'content',
+				),
 			),
 		);
 
@@ -165,7 +224,10 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	 * Test that an empty pipeline returns WP_Error.
 	 */
 	public function test_empty_pipeline_returns_error() {
-		$graph  = array( 'nodes' => array(), 'edges' => array() );
+		$graph  = array(
+			'nodes' => array(),
+			'edges' => array(),
+		);
 		$result = $this->executor->execute( $graph );
 
 		$this->assertWPError( $result );
@@ -178,7 +240,7 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_missing_slug_returns_error() {
 		$graph = array(
 			'nodes' => array(
-				'bad_node' => array( 'inputs' => array() ), // no 'slug' key
+				'bad_node' => array( 'inputs' => array() ), // no 'slug' key.
 			),
 			'edges' => array(),
 		);
@@ -195,7 +257,10 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_unregistered_node_returns_error() {
 		$graph = array(
 			'nodes' => array(
-				'ghost' => array( 'slug' => 'nonexistent_node_type', 'inputs' => array() ),
+				'ghost' => array(
+					'slug'   => 'nonexistent_node_type',
+					'inputs' => array(),
+				),
 			),
 			'edges' => array(),
 		);
@@ -216,7 +281,10 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 			'nodes' => array(
 				'isolated' => array(
 					'slug'   => 'text_block',
-					'inputs' => array( 'content' => 'Static content', 'tag' => 'h1' ),
+					'inputs' => array(
+						'content' => 'Static content',
+						'tag'     => 'h1',
+					),
 				),
 			),
 			'edges' => array(),
@@ -234,11 +302,22 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_edge_values_override_static_inputs() {
 		$graph = array(
 			'nodes' => array(
-				'source' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'From upstream' ) ),
-				'target' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'Will be overridden' ) ),
+				'source' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'From upstream' ),
+				),
+				'target' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'Will be overridden' ),
+				),
 			),
 			'edges' => array(
-				array( 'source' => 'source', 'sourcePort' => 'html', 'target' => 'target', 'targetPort' => 'content' ),
+				array(
+					'source'     => 'source',
+					'sourcePort' => 'html',
+					'target'     => 'target',
+					'targetPort' => 'content',
+				),
 			),
 		);
 
@@ -255,7 +334,10 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_standalone_node_executes() {
 		$graph = array(
 			'nodes' => array(
-				'only' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'Solo' ) ),
+				'only' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'Solo' ),
+				),
 			),
 			'edges' => array(),
 		);
@@ -274,7 +356,10 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_cache_reuse_on_second_execution() {
 		$graph = array(
 			'nodes' => array(
-				'cached_node' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'Cache me' ) ),
+				'cached_node' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'Cache me' ),
+				),
 			),
 			'edges' => array(),
 		);
@@ -300,7 +385,10 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_clear_cache_removes_pipeline_entries() {
 		$graph = array(
 			'nodes' => array(
-				'node_x' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'X' ) ),
+				'node_x' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'X' ),
+				),
 			),
 			'edges' => array(),
 		);
@@ -335,14 +423,20 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_changing_inputs_produces_different_output() {
 		$graph_a = array(
 			'nodes' => array(
-				'node' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'Version A' ) ),
+				'node' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'Version A' ),
+				),
 			),
 			'edges' => array(),
 		);
 
 		$graph_b = array(
 			'nodes' => array(
-				'node' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'Version B' ) ),
+				'node' => array(
+					'slug'   => 'text_block',
+					'inputs' => array( 'content' => 'Version B' ),
+				),
 			),
 			'edges' => array(),
 		);

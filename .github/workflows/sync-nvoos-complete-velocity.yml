@@ -116,6 +116,7 @@ jobs:
           # Syntax + shape gates, then boot the VELOCITY ENTRY (server.js
           # shim → serve.mjs) and exercise the static branch.
           node --check scripts/serve.mjs
+          node --check scripts/connected-apps.mjs
           node --check server.js
           test -f dist/index.html
           test -n "$(find dist/assets -maxdepth 1 -name 'index-*.js' | head -n1)"

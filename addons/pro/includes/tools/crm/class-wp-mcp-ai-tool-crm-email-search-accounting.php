@@ -446,11 +446,13 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		$cached    = $this->cache_get( $cache_key );
 
 		if ( false === $cached ) {
-			return array(
-				'success'  => false,
-				'message'  => __( 'No cached results found. Run action=search first to populate the cache.', 'mcp-ai-wpoos-pro' ),
-				'records'  => array(),
-				'total'    => 0,
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'No cached results found. Run action=search first to populate the cache.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'records' => array(),
+					'total'   => 0,
+				)
 			);
 		}
 
@@ -499,10 +501,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		$result = wp_schedule_event( time(), $recurrence, self::CRON_HOOK );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
-			);
+			return $result;
 		}
 
 		return array(

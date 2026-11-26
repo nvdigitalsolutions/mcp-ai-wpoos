@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Mirrors the Funiq PWA frontend types — shared between admin SPA and REST API.
  */

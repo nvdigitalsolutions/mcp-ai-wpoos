@@ -57,6 +57,17 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 		$this->has_embedded_addon = class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' );
+
+		// The dataset preview/search actions belong to the datasets admin page,
+		// which registers them from its constructor on an admin request only.
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_load_dataset_preview' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-datasets-admin-page.php';
+			}
+			if ( class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
+				new WP_MCP_AI_Datasets_Admin_Page();
+			}
+		}
 	}
 
 	// ---

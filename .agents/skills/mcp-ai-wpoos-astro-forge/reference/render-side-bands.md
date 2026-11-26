@@ -173,3 +173,73 @@ band facts describe the page they were measured on, or a sub-page inherits the
 front page's 1800px band); and a **cloned sticky header** measurement
 (`.header-wrapper.stuck` lives in another subtree). Full contract, gotchas and
 the measured result: [`flatsome-and-outline-rebuild.md`](flatsome-and-outline-rebuild.md).
+
+## 9. Per-element facts: anchored paths + the height bridge (2026-11-16)
+
+`bandFacts[].elements` (the measured per-element surfaces and pinned stage
+heights, `collectBandElementFacts` in `lib/geometry.ts`) is the fact class that
+brought a forged Flatsome site to a **solid single-colour page**: the hero photo
+was invisible and both columns of an alternating image/text band were 0px tall,
+while the markup and text were all correct.
+
+Two independent faults, both in the emitter.
+
+### 9.1 The path must be anchored to the raw band's root
+
+`path` is a chain of positional segments
+(`div:nth-child(2) > div:nth-child(1)`) measured from the **source band root's
+children**. The raw rebuild nests that root exactly one level inside
+`.post-body`, so the emitted rule must be:
+
+```css
+/* RIGHT - leading segment is a CHILD of the band root */
+[data-section-id="X"] .post-body > * > div:nth-child(2) > div:nth-child(1){...}
+/* WRONG - the leading segment is a DESCENDANT of the whole band */
+[data-section-id="X"] div:nth-child(2) > div:nth-child(1){...}
+```
+
+Unanchored, `div:nth-child(2) > div:nth-child(1)` matched **three** nodes in
+the hero band, not one: `.section-content > .banner` (intended), plus
+
+- `.banner-layers > .fill.banner-link` (the full-bleed link overlay), and
+- `.text-box > div` (the first child inside the banner's text layer).
+
+Those two inherited the band's surface (`background-color: rgb(221,51,51)`) and
+its pinned `min-height: 900px`, so an **810x900 opaque block** painted over the
+hero photo. The tell: the page is uniformly the band colour and only a strip of
+the hero is still visible above the header. Fix: anchor every element-path rule
+(surface, ink and the per-device height overrides) to `.post-body > * > `.
+
+### 9.2 A pinned height needs the `--ds-col-min-h` bridge
+
+`.ds-section-wrap--centered` re-states `min-height: var(--ds-col-min-h, 0)` on
+single-child wrappers at a specificity around (0,9,2), higher than an element
+path rule's ~(0,7,5). A pinned stage therefore computed to **0**: both `.banner`
+photo columns collapsed and their images (absolutely positioned inside them)
+disappeared, while the text columns kept driving the row height.
+
+Reading the property - the same bridge the photo-panel clamp already uses -
+makes a measured height win on VALUE instead of fighting the cascade:
+
+```css
+[data-section-id="X"] .post-body > * > <path>{--ds-col-min-h:900px;min-height:900px;aspect-ratio:auto}
+[data-section-id="X"] .post-body > * > <path> > *{--ds-col-min-h:initial}
+```
+
+The subtree reset is not optional: the property inherits, so without it a
+nested single-child wrapper inside the measured stage picks up the floor. The
+tablet/mobile overrides carry the same `--ds-col-min-h` + `min-height` pair.
+
+### 9.3 Guards, and what is still missing
+
+- `tests/forge-e2e.test.ts` carries a `bandFacts.elements` fixture and pins the
+  anchored selector, the `--ds-col-min-h:900px;min-height:900px` pairing and the
+  `> *{--ds-col-min-h:initial}` reset. There was no such assertion before, which
+  is why this shipped unnoticed: that profile was the first to carry `elements`
+  facts.
+- **Overlay tints are NOT captured.** The source dims its photos with
+  `rgba(0,0,0,0.55)` on the hero and `0.30`/`0.32` on the column photos;
+  `collectBandElementFacts` only records a background at alpha >= 0.95
+  (`paintsColor`), so the rebuilt photos render brighter than the source. A
+  dedicated overlay fact (or an alpha-band exception for `.overlay` /
+  `.section-bg-overlay`) plus a re-analyse is the fix.

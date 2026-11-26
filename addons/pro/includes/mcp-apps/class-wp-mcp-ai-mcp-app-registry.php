@@ -1001,6 +1001,8 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * returns the discovery results grouped per app.
 	 *
 	 * @since 1.9.2
+	 * @since 1.2.22 Applies the QuickBooks MCP tool-category switches.
+	 *
 	 * @param int $assistant_id Assistant post ID.
 	 * @return array<int, array{app_config: array, tools: array, label: string}>
 	 */
@@ -1064,6 +1066,14 @@ class WP_MCP_AI_MCP_App_Registry {
 					);
 				}
 				continue;
+			}
+
+			// QuickBooks Online MCP category switches mirror the upstream
+			// QUICKBOOKS_DISABLE_WRITE/UPDATE/DELETE flags. Enforce them here so a
+			// cached discovery list or a stale bridge registration never exposes
+			// a suppressed verb to the model.
+			if ( ! empty( $tools ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$tools = WP_MCP_AI_Pro_Remote_Site_Manager::filter_quickbooks_mcp_tool_definitions( $tools, $app_config );
 			}
 
 			if ( empty( $tools ) ) {

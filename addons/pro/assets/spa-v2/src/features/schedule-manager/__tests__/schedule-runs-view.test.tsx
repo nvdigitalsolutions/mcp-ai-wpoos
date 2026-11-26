@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ScheduleRunsView tests — the Runs & Reports surface.
  *

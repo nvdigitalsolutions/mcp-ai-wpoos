@@ -1,0 +1,196 @@
+{
+  "slug": "media",
+  "name": "Media",
+  "version": "1.0.0",
+  "description": "AI design, Sharp processing, OCR, batch and storage settings for the Media toolkit.",
+  "icon": "🖼️",
+  "feature": "media",
+  "screens": ["settings"],
+  "tab_labels": {
+    "toolkit": "Media toolkit",
+    "sharp": "Sharp processing",
+    "ocr": "OCR & preprocessing",
+    "batch": "Batch processing",
+    "storage": "Storage & cleanup"
+  },
+  "settings": [
+    {
+      "key": "enable_ai_design",
+      "label": "Enable AI design generation",
+      "type": "boolean",
+      "tab": "toolkit",
+      "default": false,
+      "description": "Allow AI-powered design generation for media."
+    },
+    {
+      "key": "default_template_category",
+      "label": "Default template category",
+      "type": "select",
+      "tab": "toolkit",
+      "default": "social_media",
+      "options": ["social_media", "blog_graphics", "marketing", "presentations"],
+      "description": "Category shown first when browsing design templates."
+    },
+    {
+      "key": "enable_smart_tagging",
+      "label": "Enable smart tagging",
+      "type": "boolean",
+      "tab": "toolkit",
+      "default": false,
+      "description": "Tag uploaded media automatically using AI."
+    },
+    {
+      "key": "enable_remote_sync",
+      "label": "Enable remote media sync",
+      "type": "boolean",
+      "tab": "toolkit",
+      "default": false,
+      "description": "Synchronise media with remote WordPress sites; requires the Remote Sites toolkit."
+    },
+    {
+      "key": "max_collection_size",
+      "label": "Max collection size",
+      "type": "number",
+      "tab": "toolkit",
+      "default": 100,
+      "description": "Maximum number of items allowed in one media collection."
+    },
+    {
+      "key": "sharp_processing_mode",
+      "label": "Sharp processing mode",
+      "type": "select",
+      "tab": "sharp",
+      "default": "local",
+      "options": ["local", "microservice"],
+      "description": "Local uses a bundled Sharp install; microservice offloads processing to a remote Node.js service."
+    },
+    {
+      "key": "sharp_microservice_url",
+      "label": "Microservice URL",
+      "type": "text",
+      "tab": "sharp",
+      "default": "",
+      "description": "Full URL of the Sharp microservice endpoint. Only used in microservice mode."
+    },
+    {
+      "key": "sharp_microservice_api_key",
+      "label": "Microservice API key",
+      "type": "secret",
+      "tab": "sharp",
+      "description": "Optional authentication key for the microservice."
+    },
+    {
+      "key": "sharp_timeout",
+      "label": "Processing timeout (seconds)",
+      "type": "number",
+      "tab": "sharp",
+      "default": 60,
+      "description": "How long to wait for a Sharp operation before giving up. Raise it for very large images."
+    },
+    {
+      "key": "sharp_default_quality",
+      "label": "Default image quality",
+      "type": "number",
+      "tab": "sharp",
+      "default": 80,
+      "description": "Quality for lossy compression, 1-100. Lower values produce smaller files."
+    },
+    {
+      "key": "sharp_enable_webp",
+      "label": "Enable WebP conversion",
+      "type": "boolean",
+      "tab": "sharp",
+      "default": false,
+      "description": "Generate WebP versions of images alongside the original."
+    },
+    {
+      "key": "sharp_max_concurrent",
+      "label": "Max concurrent operations",
+      "type": "number",
+      "tab": "sharp",
+      "default": 3,
+      "description": "Simultaneous Sharp operations. Lower values reduce server load."
+    },
+    {
+      "key": "enable_ocr",
+      "label": "Enable OCR service",
+      "type": "boolean",
+      "tab": "ocr",
+      "default": true,
+      "description": "Extract text from images and scanned PDFs."
+    },
+    {
+      "key": "ocr_primary_provider",
+      "label": "Primary OCR provider",
+      "type": "select",
+      "tab": "ocr",
+      "default": "tesseract",
+      "options": ["tesseract", "openai", "gemini", "ollama"],
+      "description": "Falls back to the other providers when the primary one fails."
+    },
+    {
+      "key": "enable_image_preprocess",
+      "label": "Enable image preprocessing",
+      "type": "boolean",
+      "tab": "ocr",
+      "default": true,
+      "description": "Apply grayscale, normalisation, sharpening and noise reduction before OCR."
+    },
+    {
+      "key": "ocr_max_dimension",
+      "label": "OCR max image dimension (pixels)",
+      "type": "number",
+      "tab": "ocr",
+      "default": 2048,
+      "description": "Images larger than this are resized before OCR."
+    },
+    {
+      "key": "batch_chunk_size",
+      "label": "Batch chunk size",
+      "type": "number",
+      "tab": "batch",
+      "default": 10,
+      "description": "Images processed per batch. Lower values reduce memory use."
+    },
+    {
+      "key": "enable_background_processing",
+      "label": "Enable background processing",
+      "type": "boolean",
+      "tab": "batch",
+      "default": true,
+      "description": "Run large batches through WordPress cron instead of the request."
+    },
+    {
+      "key": "batch_timeout",
+      "label": "Batch operation timeout (seconds)",
+      "type": "number",
+      "tab": "batch",
+      "default": 300,
+      "description": "Maximum time allowed for a batch operation."
+    },
+    {
+      "key": "temp_storage_path",
+      "label": "Temporary files location",
+      "type": "text",
+      "tab": "storage",
+      "default": "wp-content/uploads/media-temp",
+      "description": "Path relative to the WordPress root for temporary processing files."
+    },
+    {
+      "key": "auto_cleanup_temp",
+      "label": "Auto-cleanup temporary files",
+      "type": "boolean",
+      "tab": "storage",
+      "default": true,
+      "description": "Delete temporary files once processing finishes."
+    },
+    {
+      "key": "temp_retention_hours",
+      "label": "Temp files retention (hours)",
+      "type": "number",
+      "tab": "storage",
+      "default": 24,
+      "description": "How long temporary files are kept before automatic cleanup."
+    }
+  ]
+}

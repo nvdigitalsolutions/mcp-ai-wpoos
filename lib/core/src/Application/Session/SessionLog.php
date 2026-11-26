@@ -34,6 +34,15 @@ final class SessionLog
     public const TYPE_STEERING_MESSAGE = 'steering_message';
     public const TYPE_CONTEXT_COMPACTED = 'context_compacted';
 
+    /**
+     * A turn crossed the warn band of a token ceiling (Proposal 149 §179).
+     *
+     * Durable rather than a log line so the operator can see *when* a turn was
+     * close to being refused, from the same transcript they already read — a warn
+     * band with no reader would be an inert setting.
+     */
+    public const TYPE_BUDGET_WARNING  = 'budget_warning';
+
     /** @var SessionEvent[] */
     private array $events = array();
 

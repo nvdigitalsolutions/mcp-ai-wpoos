@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AgentPanel — Main conversation view with streaming responses,
  * profile/model selectors, checkpoints, and @-mention context.

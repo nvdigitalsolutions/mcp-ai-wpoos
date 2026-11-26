@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Health Records Consolidate & Add Page JavaScript
  *

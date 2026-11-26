@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Theme policy — Proposal 105 §3 (forge canonical module). The velocity
 // storefront mirrors this file's ladder — keep the two copies textually

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // registry.ts — SINGLE SOURCE OF TRUTH (096 §3.3 / 095 registry pattern):
 // every tool name → Zod schema + annotations + write flag + handler. The
@@ -16,6 +17,7 @@ import { CONTENT_TOOLS } from './tools/content.ts';
 import { DEPLOY_TOOLS } from './tools/deploy.ts';
 import { DESIGN_TOOLS } from './tools/design.ts';
 import { DISCOVERY_TOOLS } from './tools/discovery.ts';
+import { GATE_TOOLS } from './tools/gate.ts';
 import { GITHUB_TOOLS } from './tools/github.ts';
 import { REBUILD_TOOLS } from './tools/rebuild.ts';
 import { SCAFFOLD_TOOLS } from './tools/scaffold.ts';
@@ -64,6 +66,7 @@ const RECIPES: Array<{ match: RegExp; steps: string[]; note: string }> = [
 export const ALL_TOOLS: ToolDef[] = [
 	...SITE_TOOLS,
 	...DISCOVERY_TOOLS,
+	...GATE_TOOLS,
 	...SCAFFOLD_TOOLS,
 	...DESIGN_TOOLS,
 	...CONTENT_TOOLS,

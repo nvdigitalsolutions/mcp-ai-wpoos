@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Support\ActivityRecorder;
 use App\Support\HealthSampler;
+use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -90,7 +91,7 @@ final class TelemetryTest extends TestCase
     {
         $this->activity()->record('workflow.completed', 'Done', 7, array('run_id' => 3));
 
-        $recent = $this->activity()->recent();
+        $recent = $this->activity()->recent(8, TenantContext::current());
 
         $this->assertCount(1, $recent);
         $this->assertSame('workflow.completed', $recent[0]['type']);
@@ -107,7 +108,7 @@ final class TelemetryTest extends TestCase
             $this->activity()->record('test.event', $message);
         }
 
-        $recent = $this->activity()->recent(2);
+        $recent = $this->activity()->recent(2, TenantContext::current());
 
         $this->assertCount(2, $recent);
         $this->assertSame('third', $recent[0]['message']);
@@ -118,10 +119,55 @@ final class TelemetryTest extends TestCase
     {
         $this->activity()->record('system.tick');
 
-        $recent = $this->activity()->recent();
+        $recent = $this->activity()->recent(8, TenantContext::current());
 
         $this->assertNull($recent[0]['agent_id']);
         $this->assertSame('', $recent[0]['message']);
+    }
+
+    /**
+     * §106 — a row belongs to the estate that produced it.
+     *
+     * The recorder reads `TenantContext` at write time rather than accepting a
+     * tenant from the caller: a second source would be a second truth to keep
+     * in step (§152 §9.3).
+     */
+    public function test_an_event_records_the_estate_pinned_at_write_time(): void
+    {
+        TenantContext::set('acme');
+
+        $this->activity()->record('workflow.completed', 'Done');
+
+        $this->assertSame('acme', DB::table('nvoos_activity_events')->value('tenant_id'));
+    }
+
+    /**
+     * §106 — the reader is scoped, and the unscoped read is explicit.
+     *
+     * `null` means every estate and is passed deliberately; a default would let
+     * a new call site read the whole platform without noticing (§152 §3 D5).
+     */
+    public function test_the_feed_reads_one_estate_and_null_reads_every_estate(): void
+    {
+        TenantContext::set('acme');
+        $this->activity()->record('test.event', 'acme one');
+
+        TenantContext::set('globex');
+        $this->activity()->record('test.event', 'globex one');
+
+        TenantContext::forget();
+
+        $acme = $this->activity()->recent(8, 'acme');
+
+        $this->assertCount(1, $acme);
+        $this->assertSame('acme one', $acme[0]['message']);
+
+        $globex = $this->activity()->recent(8, 'globex');
+
+        $this->assertCount(1, $globex);
+        $this->assertSame('globex one', $globex[0]['message']);
+
+        $this->assertCount(2, $this->activity()->recent(8, null));
     }
 
     public function test_prune_drops_only_expired_events(): void

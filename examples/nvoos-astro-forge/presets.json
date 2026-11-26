@@ -40,11 +40,102 @@
 				"stats",
 				"comparison",
 				"testimonial",
-				"cta"
+				"cta",
+				"model-3d"
 			],
 			"surfaces": [
 				"search",
 				"feed",
+				"sitemap"
+			]
+		},
+		{
+			"id": "portfolio",
+			"bestFor": "Creative work: a project/case-study catalogue with an optional journal.",
+			"detect": [
+				"a portfolio/projects/case-study CPT is advertised",
+				"no wc/v3 namespace advertised"
+			],
+			"render": "static",
+			"kinds": [
+				"hero",
+				"gallery",
+				"feature-grid",
+				"stats",
+				"testimonial",
+				"steps",
+				"comparison",
+				"cta"
+			],
+			"surfaces": [
+				"search",
+				"sitemap"
+			]
+		},
+		{
+			"id": "landing",
+			"bestFor": "A single marketing page: hero, proof, and one call to action.",
+			"detect": [
+				"one-page source with no blog or catalogue",
+				"a single conversion goal"
+			],
+			"render": "static",
+			"kinds": [
+				"hero",
+				"feature-grid",
+				"icon-list",
+				"stats",
+				"testimonial",
+				"pricing",
+				"accordion",
+				"cta"
+			],
+			"surfaces": [
+				"sitemap"
+			]
+		},
+		{
+			"id": "docs",
+			"bestFor": "Documentation: a page hierarchy read in order, with search.",
+			"detect": [
+				"many nested pages",
+				"no products",
+				"no dated posts"
+			],
+			"render": "static",
+			"kinds": [
+				"hero",
+				"text",
+				"steps",
+				"accordion",
+				"comparison",
+				"content"
+			],
+			"surfaces": [
+				"search",
+				"sitemap"
+			]
+		},
+		{
+			"id": "eca",
+			"bestFor": "Schools and clubs: an extra-curricular activities catalogue.",
+			"detect": [
+				"mcp_ai_eca post type advertised",
+				"activity/course records with a schedule",
+				"no wc/v3 namespace required"
+			],
+			"render": "static",
+			"kinds": [
+				"hero",
+				"feature-grid",
+				"stats",
+				"testimonial",
+				"steps",
+				"cta",
+				"content"
+			],
+			"surfaces": [
+				"search",
 				"sitemap"
 			]
 		},

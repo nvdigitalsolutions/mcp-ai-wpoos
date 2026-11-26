@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // TextBlock — the fallback bucket for classified sections: plain text
 // rebuilt as escaped paragraphs, plus any media/links the classifier
 // captured. Nothing the semantic model found gets dropped here. The
@@ -9,6 +10,7 @@ import type { SemanticSection } from '../../forge/semantic.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
+import { bandParagraphs } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -16,7 +18,16 @@ interface Props {
 }
 
 const { section, theme } = Astro.props;
-const { title, body, media, links } = section.slots;
+// The band's TITLE, from the measurement when the classifier found none.
+//
+// A page-title band renders its heading through a widget the tag-based
+// classifier cannot see as a heading (Elementor's `theme-page-title` prints a
+// plain div), so `slots.title` was empty while the measurement recorded the
+// 47.78px title. The band rendered its paragraph under a page h1 that the
+// template had already moved off-screen for it — a page with no visible
+// heading at all (eca.directory /about-us/, 2026-11-24).
+const title = section.slots.title ?? theme?.titleText;
+const { body, media, links } = section.slots;
 
 const titleVars = [
 	theme?.titleStyle?.size && `--ds-title-size:${theme.titleStyle.size}`,
@@ -44,7 +55,7 @@ const dividerStyle = theme?.titleDivider
 <section class:list={['ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center']}>
 	{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 	{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-	{body?.map((paragraph) => <p class="ds-text">{paragraph}</p>)}
+	{bandParagraphs(body, theme).map((paragraph) => <p class="ds-text">{paragraph}</p>)}
 	{media?.map((image) => (
 		<SmartImage class="ds-media" src={image.src} alt={image.alt ?? ''} />
 	))}

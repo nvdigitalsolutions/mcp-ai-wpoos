@@ -11,9 +11,22 @@
 
 class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 
+	/**
+	 * Slash command orchestrator under test.
+	 *
+	 * @var object
+	 */
 	protected $orchestrator;
+	/**
+	 * Workflow handler under test.
+	 *
+	 * @var object
+	 */
 	protected $handler;
 
+	/**
+	 * Build the orchestrator and handler.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->handler      = $this->getMockBuilder( 'WP_MCP_AI_Slash_Command_Handler' )
@@ -22,6 +35,9 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 		$this->orchestrator = new WP_MCP_AI_Slash_Command_Workflow_Orchestrator( $this->handler );
 	}
 
+	/**
+	 * Reset the orchestrator after each test.
+	 */
 	public function tearDown(): void {
 		// Clean up saved states.
 		delete_option( 'wp_mcp_ai_workflow_states' );
@@ -55,7 +71,7 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 				$call_count++;
 				if ( $call_count < 3 ) {
 					return array(
-						'success' => false,
+						'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 						'error'   => 'temp_failure',
 					);
 				}

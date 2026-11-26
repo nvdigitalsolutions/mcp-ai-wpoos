@@ -108,9 +108,9 @@ class WP_MCP_AI_Tool_Reserve_Equipment implements WP_MCP_AI_Tool_Interface, WP_M
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['equipment_ids'] ) || empty( $arguments['start_date'] ) || empty( $arguments['end_date'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Equipment IDs, start date, and end date are required.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Equipment IDs, start date, and end date are required.', 'nvoos-content-graph-pro' )
 			);
 		}
 
@@ -124,9 +124,9 @@ class WP_MCP_AI_Tool_Reserve_Equipment implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Validate dates.
 		if ( strtotime( $start_date ) > strtotime( $end_date ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Start date must be before end date.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_invalid_arguments',
+				__( 'Start date must be before end date.', 'nvoos-content-graph-pro' )
 			);
 		}
 

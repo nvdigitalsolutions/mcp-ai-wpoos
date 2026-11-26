@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // bands.ts — vendor-agnostic band (section) detection.
 //
@@ -67,6 +68,16 @@ export interface BandCandidate {
 	columns?: BandColumn[];
 	/** Which layer produced this band: an adapter id, 'semantic' or 'visual'. */
 	via: string;
+	/**
+	 * The vendor's own addressable band id when the markup exposes one as a
+	 * CLASS (`elementor-element-44d664a5`). Elementor container bands are plain
+	 * divs with no `id` attribute, so this is the ONLY handle the browser and
+	 * the scoped CSS give them — `--geometry`, `--colors` and the band-colour
+	 * regions address `.elementor-element-<id>`. Without it the outline fell
+	 * back to a structural hash and measured 0 of 9 bands (eca.directory,
+	 * 2026-11-23).
+	 */
+	vendorId?: string;
 }
 
 /**
@@ -180,6 +191,13 @@ const ofFraction = ( classes: string[] ): number | undefined => {
 /** Explicit inline width (a plain % or a flex-basis) → percentage. */
 const inlineWidth = ( node: BandNode ): number | undefined => {
 	const style = node.attribs?.style ?? '';
+	// Elementor's flexbox containers express a column's share as a custom
+	// property (`--width:33%`), never as `width` — the only inline signal a
+	// container-rendered band gives.
+	const custom = /(?:^|;)\s*--width\s*:\s*([\d.]+)%/.exec( style );
+	if ( custom ) {
+		return Math.round( Number( custom[ 1 ] ) * 100 ) / 100;
+	}
 	const pct = /(?:^|;)\s*width\s*:\s*([\d.]+)%/.exec( style );
 	if ( pct ) {
 		return Math.round( Number( pct[ 1 ] ) * 100 ) / 100;
@@ -226,9 +244,16 @@ export function builderUtilitiesFor(
 export const BUILDER_ADAPTERS: BandAdapter[] = [
 	{
 		id: 'elementor',
-		detect: [ /elementor-top-section/, /elementor-element-/ ],
-		band: [ /^elementor-top-section$/ ],
-		column: [ /^elementor-column$/ ],
+		// Two Elementor generations. Legacy: `.elementor-top-section` wraps
+		// `.elementor-column`s. Current (≥3.16 flexbox containers, the default
+		// since 3.19): `.e-con.e-parent` is the TOP-LEVEL container and nested
+		// containers are `.e-con.e-child` — same band/column semantics under
+		// different names. Detected on both so a mixed document works; a
+		// container-only home page (eca.directory) previously yielded ZERO
+		// adapter bands and fell through to the semantic layer, which saw two.
+		detect: [ /elementor-top-section/, /elementor-element-/, /\be-con\b/ ],
+		band: [ /^elementor-top-section$/, /^e-parent$/ ],
+		column: [ /^elementor-column$/, /^e-child$/ ],
 		width: ( classes ) => ofTwelve( classes, /^elementor-col-(\d+)$/ ),
 	},
 	{
@@ -281,7 +306,7 @@ export const BUILDER_ADAPTERS: BandAdapter[] = [
 				base: 'position:relative;overflow:hidden;background-size:cover;background-position:center center;background-repeat:no-repeat',
 			},
 			'vertical-align-middle': { base: 'vertical-align:middle' },
-			'alt-font': { base: 'font-family:var(--forge-font-display)' },
+			'alt-font': { base: 'font-family:var(--forge-font-accent, var(--forge-font-display))' },
 			'text-medium': { base: 'font-size:14px;font-weight:500;line-height:24px' },
 			'text-small': { base: 'font-size:11px;font-weight:500;line-height:20px' },
 			'font-weight-300': { base: 'font-weight:300' },
@@ -357,6 +382,26 @@ export const BUILDER_ADAPTERS: BandAdapter[] = [
 		band: [ /^section$/ ],
 		column: [ /^col$/ ],
 		width: ( classes ) => ofBreakpoint( classes, [ 'large', 'medium', 'small' ], undefined, 12 ),
+		// UX Builder's alignment/type utilities. These are REAL classes the markup
+		// relies on and the vendor sheet is never shipped, so `text-center` was
+		// inert: a band's `col-inner text-center` computed `text-align:start` and
+		// its button row jammed to the left edge (airport-transfer: 156px buttons
+		// at x=15 where the source centres 200px buttons at x=521).
+		utilities: {
+			'text-center': { base: 'text-align:center' },
+			'text-left': { base: 'text-align:left' },
+			'text-right': { base: 'text-align:right' },
+			uppercase: { base: 'text-transform:uppercase' },
+			'text-uppercase': { base: 'text-transform:uppercase' },
+			lowercase: { base: 'text-transform:lowercase' },
+			'text-bold': { base: 'font-weight:700' },
+			'text-italic': { base: 'font-style:italic' },
+			// Flatsome's script accent. The source marks the ACCENTED headings with
+			// this class, so the face belongs to the class, not to the heading level:
+			// a band can hold `h3.alt-font` (Dancing Script) beside a plain `h3`
+			// (Karma), and a single per-level fact cannot describe both.
+			'alt-font': { base: 'font-family:var(--forge-font-accent, var(--forge-font-display))' },
+		},
 	},
 	{
 		id: 'revolution-slider',
@@ -611,16 +656,40 @@ const columnsOf = ( band: BandNode, adapter: BandAdapter ): BandColumn[] | undef
 const isBandNode = ( node: BandNode, adapter: BandAdapter ): boolean =>
 	adapter.band.some( ( re ) => classList( node ).some( ( cls ) => re.test( cls ) ) );
 
+/**
+ * A node that carries the site CHROME, not the page content.
+ *
+ * Elementor renders its header/footer templates into the homepage, but the
+ * REST page body the build consumes excludes them. Counting them as bands made
+ * the profile carry 9 where the build renders 7, so every POSITIONAL audit
+ * (band flow, per-band text, geometry) compared band N with band N+2 and failed
+ * wholesale (eca.directory, 2026-11-23: 9/9 bands at 0–2% text coverage).
+ */
+const isChromeNode = ( node: BandNode ): boolean => {
+	if ( node.name === 'header' || node.name === 'footer' ) {
+		return true;
+	}
+	return classList( node ).some(
+		( cls ) => cls === 'elementor-location-header' || cls === 'elementor-location-footer'
+	);
+};
+
 /** Depth-first collection of band nodes, skipping nested bands of the same kind. */
-const collectBands = ( root: BandNode, adapter: BandAdapter, out: BandNode[] = [] ): BandNode[] => {
+const collectBands = (
+	root: BandNode,
+	adapter: BandAdapter,
+	out: BandNode[] = [],
+	insideChrome = false
+): BandNode[] => {
 	for ( const child of childElements( root ) ) {
-		if ( isBandNode( child, adapter ) ) {
+		const chrome = insideChrome || isChromeNode( child );
+		if ( ! chrome && isBandNode( child, adapter ) ) {
 			out.push( child );
 			if ( ! adapter.widget ) {
 				continue; // a band's nested bands are its content, not new bands
 			}
 		}
-		collectBands( child, adapter, out );
+		collectBands( child, adapter, out, chrome );
 	}
 	return out;
 };
@@ -650,6 +719,13 @@ const toCandidate = ( node: BandNode, adapter: BandAdapter, index = 0 ): BandCan
 	const anchor = anchorOf( node ) ?? anchorWithin( node );
 	if ( anchor ) {
 		candidate.anchor = anchor;
+	}
+	// The vendor's own band id, when the builder carries it as a CLASS.
+	const vendorId = classList( node )
+		.map( ( cls ) => /^elementor-element-([0-9a-f]{4,})$/.exec( cls )?.[ 1 ] )
+		.find( Boolean );
+	if ( vendorId ) {
+		candidate.vendorId = vendorId;
 	}
 	const domId = domIdOf( node );
 	if ( domId ) {

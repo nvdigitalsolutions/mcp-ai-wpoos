@@ -76,6 +76,11 @@ class WP_MCP_AI_Tool_Slug_Integrity_Tests extends WP_UnitTestCase {
 		'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions'    => 'get_jetformbuilder_submissions',
 		'WP_MCP_AI_Tool_Get_RankMath_SEO'                  => 'get_rankmath_seo',
 		'WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet'         => 'create_wpcode_snippet',
+		// Brand capitalisation: the addon is "NV oOS WiFi", so the class carries
+		// `WiFi` and the acronym boundary would derive `wi_fi_health_check`.
+		// The slug is `wifi_health_check` because it is the public tool name on
+		// both runtimes; the class name is internal.
+		'WP_MCP_AI_Tool_WiFi_Health_Check'                 => 'wifi_health_check',
 	);
 
 	/**

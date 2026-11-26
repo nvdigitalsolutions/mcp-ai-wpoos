@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-container-gutter.test.ts — the band's inner container, per device.
 //

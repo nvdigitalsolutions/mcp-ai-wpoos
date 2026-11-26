@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Speech-to-text engines.
+//!
+//! Engines share the `engine` seam; feature flags choose the compiled backend,
+//! and the registry resolves a model without touching the UI.
 
 pub mod embedded;
 mod engine;

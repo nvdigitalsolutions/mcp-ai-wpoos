@@ -152,6 +152,16 @@ return new WP_Error( 'code', 'message', array( 'status' => 422 ) ); // error
 
 `WP_Error` codes should be namespaced (`myplugin_validation_failed`, not `validation_failed`). Status codes follow HTTP semantics: `400` validation, `401` unauthenticated, `403` forbidden, `404` not found, `409` conflict, `422` semantic validation, `500` server error.
 
+**The `status` is not optional in practice.** `WP_Error` without error data becomes **HTTP 500** — `rest_convert_error_to_response()` falls back to 500 when there is no `status` key. A handler that means "404, no such schedule" and returns `new WP_Error( 'not_found', $msg )` ships a 500, and the client cannot tell a missing record from a server fault. Pass `array( 'status' => 404 )` (or `409` for a conflict, `422` for validation) at the point the error is created — not just where it is surfaced.
+
+```php
+// WRONG - a missing record looks like a server crash to the client
+return new WP_Error( 'not_found', __( 'Schedule not found.', 'myplugin' ) );
+
+// RIGHT
+return new WP_Error( 'not_found', __( 'Schedule not found.', 'myplugin' ), array( 'status' => 404 ) );
+```
+
 ### 5. Don't leak sensitive columns
 
 Never return raw `$wpdb->get_results()` rows — they contain `user_pass`, `user_activation_key`, internal meta. Build response objects explicitly:
@@ -201,6 +211,18 @@ The official `@wordpress/api-fetch` package adds the nonce automatically **only 
 ### 8. Treat the version segment as mandatory
 
 `/myplugin/v1/items` — the `v1` is not enforced by WP at runtime, but treat it as a project policy. When you need a breaking change, ship `v2` alongside, deprecate `v1`, and remove it after a long migration window. NEVER change the contract of an existing versioned route — clients in the wild won't know.
+
+### 9. Never do slow work inline in a browser-called callback
+
+A route that the admin UI or an SPA `await`s is bounded by whatever proxy sits in front of it. Cloudflare's default read timeout is ~100 s and its failure page is **HTML, not JSON** (HTTP 524); nginx-fronted setups give 504. PHP keeps running, so the work happens *invisibly* while the client shows a parse error or a generic "An error occurred. Please try again."
+
+The tell is that it works on a fast path and fails on anything that reaches a remote API, an AI provider, or an import. When the work can outlive the edge timeout:
+
+1. Validate the request, open a record, enqueue the work (Action Scheduler, `wp_schedule_single_event()`, a queue), and return immediately with a handle — `array( 'queued' => true, 'run_id' => $run_id )`.
+2. Register a status route the client polls (`GET …/runs/{id}`) with a terminal state it can stop on, and a backoff (2 s → 10 s) plus an attempt cap so a dead worker is reported, not spun on forever.
+3. Refuse a second in-flight request for the same object with `409` and a code the client can branch on.
+
+This is the shape of AIP-151 long-running operations, and it is the same rule on both surfaces: a REST route is no safer than `admin-ajax` here, because the constraint is the edge timeout, not the transport. Keep a synchronous entry point for callers that own their own time budget (WP-CLI, MCP tools) and make the browser entry point queue.
 
 ## Common mistakes
 

@@ -151,9 +151,9 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Parse equation (split by = sign).
 		$parts = explode( '=', $equation );
 		if ( count( $parts ) !== 2 ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid equation format. Please use format: expression = expression (e.g., "2x + 5 = 15")', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_invalid_equation',
+				__( 'Invalid equation format. Please use format: expression = expression (e.g., "2x + 5 = 15")', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -175,10 +175,7 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			// Fallback: Basic solving for simple linear equations.
 			$solution = $this->solve_simple_linear( $left_side, $right_side, $variable );
 			if ( is_wp_error( $solution ) ) {
-				return array(
-					'success' => false,
-					'error'   => $solution->get_error_message(),
-				);
+				return $solution;
 			}
 			$math_result = array( 'solutions' => array( $solution ) );
 		}
@@ -186,9 +183,9 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$solutions = isset( $math_result['solutions'] ) ? $math_result['solutions'] : array();
 
 		if ( empty( $solutions ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No solutions found for the given equation.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_no_solution',
+				__( 'No solutions found for the given equation.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

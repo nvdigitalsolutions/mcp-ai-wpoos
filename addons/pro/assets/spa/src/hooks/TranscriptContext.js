@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * TranscriptContext — React context for sharing transcript session
  * state between the Layout (sidebar) and AgentPanel (chat surface).

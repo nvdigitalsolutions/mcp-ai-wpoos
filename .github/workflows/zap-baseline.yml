@@ -163,8 +163,10 @@ jobs:
         uses: zaproxy/action-baseline@v0.13.0
         with:
           target: ${{ steps.zap_target.outputs.url }}
-          # Phase 1: advisory only — warn on findings, never fail the build.
-          fail_action: 'warn'
+          # Phase 1: advisory only. The action only accepts 'true' or 'false' —
+          # 'warn' was silently ignored (it logged "should be either 'true' or
+          # 'false'"), so the intent lived only in continue-on-error below.
+          fail_action: 'false'
           rules_file_name: '.zap-rules.tsv'
           # Increase spider duration for better coverage.
           cmd_options: >
@@ -236,6 +238,10 @@ jobs:
 
       - name: Post PR comment
         if: always() && github.event_name == 'pull_request' && steps.parse.outputs.report_exists == 'true'
+        # Reporting must never fail the scan. On #8100 this step hit a transient
+        # 500 from the issues API and turned a completed scan red, so the check
+        # read as "the site is unsafe" when the only failure was a comment.
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
@@ -301,6 +307,10 @@ jobs:
 
       - name: Post PR comment (no report)
         if: always() && github.event_name == 'pull_request' && steps.parse.outputs.report_exists != 'true'
+        # Same rule as the step above: this branch runs when the scan could not
+        # run at all (e.g. the ghcr.io image pull timed out on #8100), and a
+        # comment explaining that is the last thing that should fail the job.
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Dashboards client (Proposal 084 Phase 4, W13).
  *
@@ -30,6 +31,12 @@ export interface DashboardMetric {
 	key: string;
 	label: string;
 	format: 'number' | 'money' | 'percent';
+	/**
+	 * Section heading for a merged dashboard (`Connector health`, `Member
+	 * metrics`). Absent on a single-section dashboard. Additive: a renderer
+	 * that ignores it still gets distinct, labelled metrics.
+	 */
+	group?: string;
 }
 
 export interface DashboardChart {
@@ -48,6 +55,8 @@ export interface DashboardList {
 	key: string;
 	title: string;
 	columns: DashboardListColumn[];
+	/** Section heading for a merged dashboard. See DashboardMetric.group. */
+	group?: string;
 }
 
 export interface DashboardConfig {
@@ -71,11 +80,18 @@ export interface DisabledDashboard {
 	icon: string;
 	/** wp_mcp_ai_settings flag that would enable the dashboard's toolkit. */
 	toolkit_flag: string;
+	/**
+	 * Every flag that would enable it. A merged dashboard has several, and
+	 * naming one of three is incomplete advice — prefer this when present.
+	 */
+	toolkit_flags?: string[];
 }
 
 export interface DashboardsSchemaResponse {
 	dashboards?: Record< string, DashboardConfig >;
 	disabled?: Record< string, DisabledDashboard >;
+	/** Retired ids and what replaced them (158 D1). */
+	aliases?: Record< string, string >;
 	[ k: string ]: unknown;
 }
 

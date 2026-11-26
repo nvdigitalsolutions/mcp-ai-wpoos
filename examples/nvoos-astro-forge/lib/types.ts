@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // types.ts — the forge site profile + collection contracts (Proposal 096).
 //
@@ -16,6 +17,7 @@ import type {
 	ComparisonRow,
 } from './semantic.ts';
 import type { ForgeVerify } from './gate-policy.ts';
+import type { ForgeEca } from './eca.ts';
 
 /** One WordPress REST collection (e.g. posts, pages, a CPT). */
 export interface WpCollection {
@@ -56,6 +58,23 @@ export interface WpCollection {
 	 * collection (Proposal 135 §D4), where documents carry an explicit slug.
 	 */
 	source?: 'wp' | 'payload' | 'local';
+	/**
+	 * Extra top-level REST keys copied verbatim into each entry's `data`.
+	 *
+	 * The loader projects a fixed, sanitised field set on purpose — a content
+	 * store carrying every raw field is unbounded. A collection that needs more
+	 * (the ECA toolkit's `meta`, its taxonomy ids) names those keys explicitly.
+	 */
+	passthrough?: string[];
+	/**
+	 * The canonical entry URL shape, for the redirect map.
+	 *
+	 * Default `id-slug` (`/activities/10850/ai-for-kids/`) matches the generic
+	 * extra-collection route the scaffold emits. A preset that ships its OWN
+	 * detail route (the ECA catalogue uses `/activities/<slug>/`) must say so,
+	 * or its 301s point at a path the build never wrote.
+	 */
+	canonicalPath?: 'id-slug' | 'slug';
 	/**
 	 * Auth source for the generated project: application passwords
 	 * (default) or WooCommerce consumer key/secret (wc/v3 endpoints).
@@ -98,13 +117,17 @@ export interface ForgeForms {
 	 *
 	 * `onProviderError` decides what happens when siteverify cannot answer
 	 * (timeout, 5xx, DNS): `allow` (default) keeps the enquiry and logs, `block`
-	 * refuses it. A *missing* token is always accepted-unverified with a log, so
-	 * a script/CSP problem can never 400 every real submission.
+	 * refuses it. A MISSING token is rejected (400) by default — the widget
+	 * renders for every real visitor, so a tokenless POST is a script hitting the
+	 * route directly (virtuallyjamaica, 2026-11-16). `requireToken: false` keeps
+	 * the old accept-unverified behaviour for a site that must hold its no-JS
+	 * POST floor.
 	 */
 	turnstile?: {
 		siteKey?: string;
 		action?: string;
 		onProviderError?: 'allow' | 'block';
+		requireToken?: boolean;
 	};
 	/**
 	 * How a submission becomes an email.
@@ -173,6 +196,14 @@ export interface ForgeTracker {
 	confidence: 'high' | 'medium' | 'low';
 	/** The source gates this behind a consent layer (banner + opt-in). */
 	sourceConsented?: boolean;
+	/**
+	 * Load WITHOUT a consent decision. Only reachable for a `cookieless` vendor
+	 * (audience measurement: no cookie, no device storage, publisher-only) and
+	 * only when the operator records that basis — the scaffold drops the flag
+	 * for any vendor whose spec allows cookies, because a cookie-setting tag
+	 * behind no decision is a compliance bug.
+	 */
+	consentExempt?: boolean;
 	/** How it was found: rendered HTML, browser probe, or operator entry. */
 	detectedVia?: 'html' | 'probe' | 'operator';
 	/** Dead vendor (Universal Analytics) — reported, never rebuilt. */
@@ -228,6 +259,14 @@ export interface ForgeTracking {
 	trackers: ForgeTracker[];
 	consent: ForgeConsent;
 	verification?: ForgeVerification;
+	/**
+	 * SPA route measurement for the Cloudflare beacon, which is ON by default
+	 * (`spa: true`) and patches the History API. The forge emits static
+	 * multi-page builds, where that work buys nothing and would double-count if
+	 * a client router were added later — so it is pinned OFF unless a profile
+	 * says otherwise.
+	 */
+	spa?: boolean;
 	delivery?: {
 		/** deferred (default) injects after consent; inline only with advanced. */
 		mode?: 'deferred' | 'inline' | 'partytown';
@@ -260,6 +299,16 @@ export interface ForgeInventory {
 	navPages: string[];
 	/** Paths covered by the REST collections (after exclusions). */
 	covered: string[];
+	/**
+	 * The CMS page TITLE per covered path (`/eca-days/` → `Monday- Junior School`),
+	 * as the source publishes it.
+	 *
+	 * A page's title is how a builder's listing query announces itself: several
+	 * slugs are opaque (`eca-days`) while the title names the slice the page
+	 * renders. Recorded because a claim must be DERIVED from what the site says,
+	 * not from a hardcoded slug list. Absent on profiles recorded before it.
+	 */
+	titles?: Record< string, string >;
 	/** Paths the profile excludes. */
 	excluded: string[];
 	/** Paths the source exposes but the collections do not cover. */
@@ -340,6 +389,13 @@ export interface ForgeDeploy {
 	/** Managed only: serve the `nvoos-astro-bridge` `/manage` surface. */
 	manage?: boolean;
 	/**
+	 * Managed + `manage` only: vendor the Astro CMS bundle into the project so
+	 * `/manage` embeds the editor instead of linking to wp-admin (Proposal 165
+	 * §7b). Requires the bridge checkout at scaffold time — the scaffold FAILS
+	 * CLOSED rather than emit a page whose bundle 404s.
+	 */
+	manageBundle?: boolean;
+	/**
 	 * How rebuilt forms reach the forge bridge: `bridge-direct` posts from the
 	 * browser (needs a publicly reachable CMS), `bff-proxied` posts through the
 	 * managed site's BFF (keeps the CMS private). Default `bridge-direct`.
@@ -393,7 +449,144 @@ export interface ForgeMedia {
 }
 
 /** One operator-configured WordPress site. */
+/** One operator-declared redirect (the intent; the host decides the mechanism). */
+export interface ForgeRedirect {
+	/** Source path, leading slash (`/home-page/`). */
+	from: string;
+	/** Target path or absolute URL. */
+	to: string;
+	/** Default 301 — a permanent move. */
+	status?: 301 | 302 | 303 | 307 | 308 | 404 | 410;
+}
+
+/**
+ * The page-gate block (Proposal 152).
+ *
+ * A pre-launch WordPress site gates its RENDERED HTML (503 + Retry-After, or
+ * a 200 coming-soon page) while `/wp-json/` stays open. The REST credential
+ * (`WP_APPLICATION_*`, an Application Password) cannot satisfy that gate —
+ * WordPress states plainly that an Application Password cannot log into
+ * `wp-login.php` — so the forge needs a second, page-scoped credential.
+ *
+ * Everything here is a REFERENCE or a non-secret switch. Values live in the
+ * environment (`WP_GATE_*`, `CF_ACCESS_CLIENT_*`, `WP_GATE_HTTP_AUTH`) or the
+ * vault, never in the profile, the generated repo, or an artifact.
+ *
+ * Absent = the default env names are used; a public site needs no block at
+ * all and the forge never sends credentials.
+ */
+export interface ForgeGate {
+	/**
+	 * How to get in. `auto` (default) uses whatever credentials are present;
+	 * `login` only the wp-login session; `session` only a supplied cookie /
+	 * storageState; `bypass` only the query/header token; `off` probes nothing
+	 * and sends nothing.
+	 */
+	mode?: 'auto' | 'login' | 'bypass' | 'session' | 'off';
+	/** Login form path relative to `url` (default `/wp-login.php`). */
+	loginUrl?: string;
+	/** Env var holding the automation username (default `WP_GATE_USERNAME`). */
+	userEnv?: string;
+	/** Env var holding the automation password (default `WP_GATE_PASSWORD`). */
+	passwordEnv?: string;
+	/** Where a pre-captured session comes from (2FA / CI — no login attempt). */
+	session?: {
+		/** Raw `name=value; name=value` cookie string (default `WP_GATE_COOKIE`). */
+		cookieEnv?: string;
+		/** Playwright storageState JSON path (default `WP_GATE_STORAGE_STATE`). */
+		storageStateEnv?: string;
+	};
+	/** A plugin's bypass token — non-secret by nature (a slug or query key). */
+	bypass?: { query?: Record< string, string >; headers?: Record< string, string > };
+	/** Edge gates: Cloudflare Access reads `CF_ACCESS_CLIENT_ID/_SECRET`. */
+	edge?: { cloudflareAccess?: boolean; httpBasic?: boolean };
+	/**
+	 * Probe pins. `rejectMarkers` are additional holding-page strings (the
+	 * built-in list stays active); `minVisibleChars` lowers/raises the
+	 * fingerprint-free detection threshold (default 200).
+	 */
+	verify?: { rejectMarkers?: string[]; acceptMarkers?: string[]; minVisibleChars?: number };
+}
+
+/**
+ * Publication state for a forged site (Proposal 165).
+ *
+ * Distinct from `ForgeGate`: that is how the forge gets IN to a gated source;
+ * this is how the BUILT site behaves while the CMS is gated.
+ */
+export type GateMode = 'off' | 'maintenance' | 'coming_soon';
+
+/** The operator-facing publication policy. Every field is optional. */
+export interface ForgeGatePublish {
+	/** Which CMS modes the built site honours. Default `auto` (both). */
+	honor?: 'auto' | 'coming_soon-only' | 'off';
+	/**
+	 * Where a verdict may come from. `bridge` (default) trusts only the bridge's
+	 * `/gate` route; `probe` allows HTML inference when the bridge is absent.
+	 */
+	trust?: 'bridge' | 'probe';
+	/** `Retry-After` sent on a 503. Default 600; capped at 86400. */
+	retryAfterSeconds?: number;
+	/** What a STATIC publish does with the artifact (managed ignores this). */
+	static?: {
+		policy?: 'replace' | 'keep';
+		emitEdgeSnippet?: boolean;
+	};
+	/** The gate page itself. */
+	page?: {
+		mode?: 'generated' | 'copy' | 'source';
+		title?: string;
+		body?: string;
+		eta?: string;
+		contactUrl?: string;
+		showRetryLink?: boolean;
+	};
+	/** Pre-launch treatment. */
+	comingSoon?: { indexable?: boolean };
+	/** The operator preview link behind an active gate. */
+	bypass?: { ttlSeconds?: number; cookieName?: string };
+	/**
+	 * Signed-in preview — the Elementor behaviour: a verified manager session
+	 * sees the real site while the public sees the gate. The session is verified
+	 * locally (a signed, host-only cookie minted by `/manage`) or server-to-server
+	 * against the commerce contract, never trusted from a cookie's presence.
+	 * Default on.
+	 */
+	session?: { bypass?: boolean; path?: string; cookieName?: string };
+	/** Managed runtime behaviour. */
+	managed?: { enabled?: boolean; pollSeconds?: number; maxStalenessSeconds?: number };
+}
+
+/** The resolved verdict written to `gate.generated.json` (never a secret). */
+export interface GatePublication {
+	mode: GateMode;
+	source: 'bridge' | 'probe' | 'override' | 'build';
+	plugin?: string | null;
+	/** Seconds; maintenance only. */
+	retryAfter?: number;
+	/** When the verdict was resolved (ISO 8601). */
+	checkedAt: string;
+	/** False when the policy declined the mode (e.g. `coming_soon-only`). */
+	honored: boolean;
+	policy: 'replace' | 'keep';
+	page: 'maintenance' | 'coming-soon' | null;
+	comingSoonIndexable: boolean;
+}
+
 export interface SiteProfile {
+	/**
+	 * The publication block (Proposal 165) — how the BUILT site behaves while
+	 * the CMS is gated. Distinct from `gate` (how the forge gets IN).
+	 * Absent = honour a bridge verdict with the defaults below.
+	 */
+	gatePublish?: ForgeGatePublish;
+	/**
+	 * Redirects the operator declares by hand — cutover leftovers the URL
+	 * structure cannot see (a front page's own slug, a retired landing page,
+	 * a URL the host still answers with 403). They WIN over the generated map:
+	 * the operator is the authority on where an old URL should land.
+	 */
+	redirects?: ForgeRedirect[];
 	/**
 	 * Where the content comes from. `materialized` means the CMS is gone and
 	 * `<profile>.content/` — the output of `forge materialize` — is the source;
@@ -421,6 +614,47 @@ export interface SiteProfile {
 	/** Display name (discovery fills it when absent). */
 	name?: string;
 	/**
+	 * Transport tuning for the CMS source.
+	 *
+	 * The per-request cap is a property of the SOURCE, not of whoever runs the
+	 * build: eca.directory serialises its 19 Elementor pages into one 1.23 MB REST
+	 * response that takes ~26s, so the client's 15s default aborted the build on
+	 * the fleet runner while the same build passed locally with
+	 * `WP_FETCH_TIMEOUT_MS=60000`. Baked into the generated `content.config.ts` as
+	 * the FALLBACK (`WP_FETCH_TIMEOUT_MS` still wins), so `npm run build` works on
+	 * any host without remembering an env var.
+	 */
+	fetch?: {
+		/** Per-request transport cap in ms. Positive integer. Absent = 15s. */
+		timeoutMs?: number;
+	};
+	/**
+	 * The page-gate block (Proposal 152) — the login session every
+	 * rendered-HTML pass needs when the source is in maintenance / coming-soon
+	 * mode. Absent = default env names, and nothing is sent to a public site.
+	 */
+	gate?: ForgeGate;
+	/**
+	 * The gate as MEASURED by the last analyze run (Proposal 152).
+	 *
+	 * Recorded because a gated source has two very different failure modes and
+	 * only the profile can tell them apart later: a run WITH credentials measured
+	 * the real page, while a run WITHOUT them measured the holding screen and
+	 * produced a plausible-looking, completely wrong design block. `verify` reads
+	 * this to refuse to treat a holding page as the source of truth.
+	 *
+	 * Non-secret by construction — a state, an optional fingerprint, the HTTP
+	 * status. Credentials never land here (see `ForgeGate`).
+	 */
+	gateProbe?: {
+		state: string;
+		fingerprint?: string;
+		status?: number;
+		restHealthy?: boolean;
+		/** When this probe ran (ISO). */
+		measuredAt: string;
+	};
+	/**
 	 * The media block (Proposal 139) — extra authorized image hosts and the
 	 * build-time localization pass. Absent = CMS host only, localization on.
 	 */
@@ -432,6 +666,23 @@ export interface SiteProfile {
 	deploy?: ForgeDeploy;
 	/** Page slug to render at `/` (the WordPress static front page). */
 	frontPage?: string;
+	/**
+	 * The build block (2026-11-22) — how strictly the generated project treats
+	 * route conflicts. Absent = Astro's default (`warn`, the first path wins).
+	 */
+	build?: {
+		/**
+		 * `true` writes `prerenderConflictBehavior: "error"` into the generated
+		 * `astro.config.mjs`: two documents emitting one URL fail the build
+		 * instead of one silently winning. Astro gates BOTH duplicate prerender
+		 * paths and duplicate content ids with this setting.
+		 *
+		 * Opt-in per site, deliberately: turning it on for an existing site can
+		 * surface a pre-existing CMS defect (two pages sharing a slug across
+		 * parents) as a failed build on the next deploy.
+		 */
+		strictRoutes?: boolean;
+	};
 	/**
 	 * How the site navigates — an OPERATOR SETTING, not an inference.
 	 *
@@ -493,7 +744,14 @@ export interface SiteProfile {
 	 * homepage's own `<meta name="description">` is the only exact source.
 	 * The template uses it as the front page's description fallback.
 	 */
-	seo?: { description?: string; ogDescription?: string };
+	seo?: {
+		description?: string;
+		ogDescription?: string;
+		/** The site-level social image (absolute URL, e.g. the source's own
+		 * `og:image`). Used for pages that carry no image of their own; the build
+		 * mirrors it and rewrites the meta tag to the public origin. */
+		ogImage?: string;
+	};
 	/**
 	 * Per-page band facts (Proposal 115 extension) — the same home-page
 	 * measurement applied to every page the rebuild renders, keyed by page slug.
@@ -536,6 +794,15 @@ export interface SiteProfile {
 	 * only faithful source, so this is a measurement.
 	 */
 	stickyHeader?: ForgeStickyHeader;
+	/**
+	 * The header's labelled CTA pills, MEASURED in the browser
+	 * (`analyze --geometry`). The stylesheet harvest resolves a builder var
+	 * against whichever declaration it finds first, and Elementor scopes a
+	 * button's colour to a rule the harvest may never fetch — eca.directory's
+	 * accent “Try Demo” came back as a Bootstrap red `#d9534f` from a foreign
+	 * `--e-global-color-primary`. A pill's paint is a computed fact.
+	 */
+	chromeActions?: ForgeMeasuredHeaderAction[];
 	/**
 	 * The animated-effect inventory (`analyze --animations`) — CSS keyframes,
 	 * transitions, WAAPI, library signatures, video/SMIL. `verify --animations`
@@ -623,6 +890,18 @@ export interface SiteProfile {
 	 * Mirrors `forge.lock.json` in the generated project.
 	 */
 	locked?: { at: string; by?: string; reason?: string };
+	/**
+	 * The ECA block (Proposal 163) — the extra-curricular front-end contract.
+	 *
+	 * Present means this site is an ECA catalogue, and the scaffold emits the
+	 * activity routes, facets, calendar, timetable and ICS feeds instead of the
+	 * blog IA. The record format itself lives in `lib/eca.ts` (`nvoos-eca/v1`);
+	 * this block is only the SITE config — stages, terms, time bands, currency
+	 * and the registration hand-off. Stages are deliberately config rather than
+	 * code: `junior-school`/`senior-school` fits one school, `primary`/
+	 * `secondary`/`sixth-form` fits the next, and neither needs a release.
+	 */
+	eca?: ForgeEca;
 }
 
 /**
@@ -669,6 +948,17 @@ export interface BandGeometry {
 	paddingBottom: number;
 	marginTop: number;
 	marginBottom: number;
+	/**
+	 * The BUILT band deliberately renders less than the source here.
+	 *
+	 * Set when the rebuilt wrapper carries `data-section-collapsed`: the band's
+	 * grid folded away because every card was the band's own sub-heading, or a
+	 * dynamic list had nothing published. The source's height was the height WITH
+	 * that content, so comparing it reports drift where the build made a correct
+	 * decision — eca.directory's updates band, 478px → 239px (2026-11-25).
+	 * `diffGeometry` skips a collapsed band; the attribute is the record of WHY.
+	 */
+	collapsed?: boolean;
 	/** Horizontal padding. Optional: baselines recorded before it was measured
 	 * stay valid and are simply treated as 0. */
 	paddingLeft?: number;
@@ -683,6 +973,37 @@ export interface BandGeometry {
 	 * the drift instead of leaving it to a screenshot.
 	 */
 	columns?: number[];
+	/**
+	 * The WIDTHS of those same columns, in DOM order (px).
+	 *
+	 * Height alone cannot see an asymmetric row rebuilt as equal thirds:
+	 * virtuallysrilanka's services row is 432 / 432 / 571 and rendered
+	 * 469 / 469 / 469 — every lane kept the band's height, so the column diff
+	 * passed. Optional so baselines recorded before it was measured stay valid.
+	 */
+	columnWidths?: number[];
+	/**
+	 * The band's CONTENT column — the box the copy actually sits in.
+	 *
+	 * `width` is the band WRAPPER, which is the viewport on both sides and
+	 * therefore blind to the mistake that matters: a boxed band whose section
+	 * shrink-wrapped to its text kept a 1440px wrapper while its content rendered
+	 * 989px against the source's 1280px (virtuallysrilanka's hardware row).
+	 *
+	 * The probe follows the SAME rule on both sides, so the two numbers are
+	 * comparable: the first descendant narrower than the band (the container —
+	 * `.elementor-container` on a builder, `.ds-section` on the rebuild), or, when
+	 * the band stacks several stages, the WIDEST of them. A band whose copy sits
+	 * on a partial slab reports the slab, because that is the box the rebuild
+	 * constrains.
+	 */
+	content?: {
+		width: number;
+		x: number;
+		/** The content stage's own block padding, when it states one (px). */
+		padTop?: number;
+		padBottom?: number;
+	};
 	/**
 	 * The REBUILT band's kind (`data-section` on the wrapper), recorded only when
 	 * measuring a build.
@@ -714,12 +1035,32 @@ export interface ForgePageBands {
 	/** The source URL this page's bands were measured from. */
 	url: string;
 	measuredAt: string;
+	/**
+	 * A fingerprint of the HTML these facts were measured from.
+	 *
+	 * A builder can re-issue every band id per render, so the facts are only
+	 * valid for the snapshot they came from. Without the stamp a stale profile
+	 * is indistinguishable from a site that genuinely has no facts — the pass
+	 * returns an empty result and every gate reads it as "nothing to say".
+	 */
+	sourceHash?: string;
 	/** The builder adapter that segmented the page (`flatsome`, `elementor`…). */
 	builder?: string;
 	/** The page's bands in DOM order (surfaces + measured facts). */
 	sections: ForgeSection[];
 	geometry: ForgeGeometry;
 	bandFacts: Record< string, ForgeBandFacts >;
+	/**
+	 * The page's own builder element rules (the id-keyed `<style>` blocks, with
+	 * the class-anchored fallback). `analyze` harvests these from the HOMEPAGE
+	 * only, so a sub-page's `#text-box-… { width }` would never reach the
+	 * rebuild: its layer classes differ from the front page's even when the
+	 * layout does not (coral's `y20 md-y90 lg-y25` at 36% against the home's
+	 * `y25 md-y20 lg-y30` at 34%). The CLI merges every page's rules into
+	 * `design.elementCss`, which ships as one scoped stylesheet — the selectors
+	 * are page-specific, so there is nothing to collide.
+	 */
+	elementCss?: ForgeElementCssRule[];
 }
 
 /**
@@ -866,8 +1207,27 @@ export interface ForgeBandElement {
 	bg?: string;
 	/** The ink the element's own surface needs (derived, never measured). */
 	fg?: string;
+	/**
+	 * A translucent layer painted OVER the surface, as a CSS declaration
+	 * (`background-color:rgba(0, 0, 0, 0.5)`).
+	 *
+	 * Flatsome sets a band photo's scrim on `.overlay`, which is too
+	 * transparent to count as a surface — recording it as `bg` would hide the
+	 * photo, and dropping it left the hero unshaded.
+	 */
+	veil?: string;
 	/** The rendered height in px, per device where the source overrides it. */
 	height?: number | { desktop?: number; tablet?: number; mobile?: number };
+	/**
+	 * The rendered WIDTH in px, per device where the source overrides it.
+	 *
+	 * A builder sizes images through CSS, never through the attributes: Flatsome
+	 * ships `width="1" height="1"` and puts the real box on the WRAPPER. The
+	 * vendor rule that did it is keyed by an `#image_*` id the source re-issues
+	 * between analysis and build, so it finds nothing; a structural PATH does
+	 * survive (monicarajiv’s hero chevron: 108x72 source, 1x1 rebuild).
+	 */
+	width?: number | { desktop?: number; tablet?: number; mobile?: number };
 }
 
 /**
@@ -896,12 +1256,43 @@ export interface ForgeBandColumnFact {
 	selector: string;
 	/** The rendered border-box height (px). */
 	height?: number;
+	/**
+	 * The rendered border-box WIDTH (px) — the lane's share of its row.
+	 *
+	 * A builder's `col-33` class states equal thirds, but the rendered lanes
+	 * need not be: virtuallysrilanka's services row measures 432 / 432 / 571,
+	 * and a grid built on the declaration renders the photo lane 139px narrow.
+	 */
+	width?: number;
 	/** The rendered background attachment — `fixed` is a parallax/fixed photo. */
 	attachment?: 'fixed' | 'scroll';
 	/** The rendered `background-size` (`cover`, `contain`, `auto`). */
 	size?: string;
+	/**
+	 * The column INNER’s padding (`50px 180px 60px 108px`).
+	 *
+	 * A builder pads the column’s inner wrapper per column, so the class-box
+	 * pass drops `.col-inner` as ambiguous (it differs on every column) and each
+	 * column rendered flush. Keyed by the column’s unique class, it survives.
+	 */
+	pad?: string;
 	/** The column paints a background image. */
 	image?: boolean;
+	/**
+	 * The legible INK for this lane's surface.
+	 *
+	 * A painted lane takes the source's slab, so its copy needs the ink that slab
+	 * requires: the card default (`--forge-muted`) is unreadable on
+	 * virtuallysrilanka's red and black service panels. Derived from the surface's
+	 * contrast, not guessed per band.
+	 */
+	ink?: string;
+	/**
+	 * The column paints a SOLID colour (its computed `background-color`),
+	 * recorded so the band can report the slab its content sits on. A
+	 * translucent fill is not a slab and is left unrecorded.
+	 */
+	bg?: string;
 }
 
 /** The band's columns per device. Sparse: a device with no grid is absent. */
@@ -909,6 +1300,82 @@ export interface BandColumnFacts {
 	desktop?: ForgeBandColumnFact[];
 	tablet?: ForgeBandColumnFact[];
 	mobile?: ForgeBandColumnFact[];
+}
+
+/**
+ * One ROW nested inside a band: a container that lays two or more lanes out
+ * side by side, with its own builder element id so the rebuild can address it.
+ *
+ * A band that stays RAW ships the source's markup but none of the builder's
+ * CSS, so every container stacked: eca.directory's team band rendered three
+ * 1180px cards down the page against the source's three ~318px cards across,
+ * and its copy column sat on top of them instead of beside (2026-11-24). The
+ * band's OWN row is covered by the column facts (`--ds-cols-template-desktop`);
+ * this fact covers the rows nested inside it, which nothing measures otherwise.
+ */
+export interface ForgeBandRowFact {
+	/** The container's `elementor-element-<id>` token — unique inside the band,
+	 * so the renderer can scope a rule to it. */
+	id: string;
+	/** The lane widths in DOM order (px) at the measured viewport. */
+	widths: number[];
+}
+
+/**
+ * How the band's OWN row lays its children out, measured per device
+ * (`collectBandRowLayoutFacts`).
+ *
+ * The column facts record each lane's width, but width alone cannot say
+ * whether those lanes sit side by side or one above the other: two 1280px
+ * lanes inside a 1280px content column are a STACK, and normalising them to a
+ * two-track grid laid eca.directory's about-us CTA beside itself (2026-11-25).
+ * `direction` is the browser's computed `flex-direction`; `gap` is the
+ * `row-gap` that spaces the stacked lanes.
+ */
+export interface ForgeBandRowLayout {
+	/** The row's computed `flex-direction` (`row` for a grid, `column` for a stack). */
+	direction: 'row' | 'column';
+	/** `row-gap` in px — only when the container states one. */
+	gap?: number;
+	/** `justify-content` — only when it is not the default (`normal`). */
+	justify?: string;
+	/** `align-items` — only when it is not the default (`normal`/`stretch`). */
+	align?: string;
+	/**
+	 * The ink of the band's LABEL element (a counter title / `dd`), when one is
+	 * present. The rebuild's muted default (`--forge-muted` #747474) is
+	 * unreadable on a dark panel — eca.directory's stats labels are white on
+	 * #27104A (2026-11-25).
+	 */
+	labelInk?: string;
+}
+
+/** The band's row layout per device. Sparse: a device with no row is absent. */
+export interface BandRowLayoutFacts {
+	desktop?: ForgeBandRowLayout;
+	tablet?: ForgeBandRowLayout;
+	mobile?: ForgeBandRowLayout;
+}
+
+/**
+ * A NARROW container nested inside a band — a builder insets copy by wrapping it
+ * in a smaller centred container (`e-con-inner` at 500px inside a 1280px band).
+ *
+ * The wrapper has no builder id of its own, so the fact names its PARENT (which
+ * does), and the renderer scopes a rule to the parent's direct child. Without it
+ * the copy lane stretched to the band: eca.directory's about-us CTA painted its
+ * eyebrow chip as a 1280px purple bar and wrapped the title at 1280 instead of
+ * 500 (2026-11-25).
+ */
+export interface ForgeBandNarrowBox {
+	/** The `elementor-element-<id>` token of the WRAPPING element. */
+	parentId: string;
+	/** The container's rendered width (px). */
+	width: number;
+	/** Where it sits across its parent. */
+	align: 'start' | 'center' | 'end';
+	/** The container's measured `align-items`, when it states one. */
+	alignItems?: string;
 }
 
 /**
@@ -985,6 +1452,17 @@ export interface ForgeBandContainer {
 	 * columns genuinely sit inside the gutter, so `padX` applies.
 	 */
 	flush?: boolean;
+	/**
+	 * The container's BLOCK padding (top / bottom, px).
+	 *
+	 * A builder insets the copy with `e-con-inner { padding: 60px 0 80px }` rather
+	 * than the band itself, so a rebuild that reads only the band's padding starts
+	 * the copy 60–80px high and every band below it shifts up (eca.directory's
+	 * about-us benefits band measured an ink top of 88px against the rebuild's 5,
+	 * 2026-11-25). Composed onto the band's own padding at emit time.
+	 */
+	padTop?: number;
+	padBottom?: number;
 }
 
 /**
@@ -1070,6 +1548,36 @@ export interface ForgeInteractionFact {
 export type ForgeBandInteractions = ForgeInteractionFact[];
 
 export interface ForgeBandFacts {
+	/**
+	 * The band's EYEBROW: the small label the source sets ABOVE its title.
+	 *
+	 * Builder sources routinely publish a kicker as a real heading — often the
+	 * SAME tag as the title at a fraction of the size (virtuallysrilanka's about
+	 * band pairs a 14px `h2` with a 30px `h2`). Tag level cannot separate them,
+	 * so the classifier demotes the label into body copy and the rebuild renders
+	 * it UNDER the title at body size. The browser pass records the pair: the
+	 * largest heading is the title, and a clearly smaller heading above it in the
+	 * same lane is the eyebrow.
+	 */
+	eyebrow?: BandTypeProperties & { text: string; level?: number };
+	/** The measured TITLE text — the LARGEST heading in the band. */
+	titleText?: string;
+	/**
+	 * The single SLAB the band’s content sits on: a literal colour and its
+	 * legible ink.
+	 *
+	 * `design.ts` records this on the SECTION for the homepage; the geometry
+	 * pass records it here, which is the only path a sub-page takes — without
+	 * it the slab is unpainted on every page but the front one.
+	 */
+	panel?: {
+		bg: string;
+		ink: string;
+		/** The slab's rendered width (`720px`); absent → it spans the band. */
+		width?: string;
+		/** Where a partial slab sits inside the band. */
+		align?: 'start' | 'center' | 'end';
+	};
 	/**
 	 * The width of the band's own inner container. Builder sources box their
 	 * content (`.container`, 1140px) or run fluid (`.container-fluid`, the
@@ -1183,12 +1691,47 @@ export interface ForgeBandFacts {
 	 */
 	splitColumns?: number[];
 	/**
+	 * The split's COPY lane MEASURE, measured (`collectBandLayoutFacts`): the
+	 * widest paragraph block inside the text lane, when the builder pins it
+	 * narrower than the lane itself (`elementor-widget__width-initial`).
+	 *
+	 * The vendor rule that stated the percentage never ships, so the rebuilt
+	 * lede ran the full lane and wrapped one line longer (eca.directory's
+	 * about-us hero: a 610px paragraph in an 811px lane, 2026-11-25).
+	 */
+	copyWidth?: number;
+	/**
 	 * The band's grid COLUMNS per device: rendered heights, background photos
 	 * and their attachment (`collectBandColumnFacts`). Emitted by the scaffold
 	 * as band-scoped `.column-class` rules, because the sanitized markup keeps
 	 * the classes but the vendor sheet — and the inline min-height — is gone.
 	 */
 	columns?: BandColumnFacts;
+	/**
+	 * The rows NESTED inside the band (`collectBandLayoutFacts`).
+	 *
+	 * A raw band keeps the source's markup but none of the builder's CSS, so
+	 * every container stacked. The band's own row is the `columns` fact; this
+	 * covers the rows inside it — the 3-card team row, a phase row, a footer
+	 * mark row — so the rebuild can give each its own track sizes.
+	 */
+	rows?: ForgeBandRowFact[];
+	/**
+	 * How the band's OWN row lays its lanes out (`collectBandRowLayoutFacts`).
+	 *
+	 * `columns` states each lane's width; this states whether those widths are
+	 * side by side or stacked, and the gap between them. Without it a stack of
+	 * two full-width lanes was normalised into a two-track grid and the copy
+	 * slid 319px left (eca.directory's about-us CTA, 2026-11-25).
+	 */
+	rowLayout?: BandRowLayoutFacts;
+	/**
+	 * The NARROW containers nested inside the band (`selectNarrowBoxes`): a
+	 * builder insets copy by wrapping it in a smaller centred container. The
+	 * wrapper carries no id, so each fact names its parent and the width the
+	 * source rendered.
+	 */
+	narrowBoxes?: ForgeBandNarrowBox[];
 	/**
 	 * The band's PAGED carousels per device (`collectBandCarouselFacts`): how
 	 * many slides the source shows at once and how it paginates them. The vendor
@@ -1213,6 +1756,22 @@ export interface ForgeContact {
 	blurb?: string;
 	/** Shown as a mailto link when no form transport is configured. */
 	email?: string;
+	/**
+	 * Named people rendered as mailto cards when no form transport is
+	 * configured — the honest fallback for a site whose enquiry form cannot
+	 * post anywhere (eca.directory has no forge bridge installed, so a rebuilt
+	 * form would be dead on submit). Same shape as `profile.eca.contacts`, which
+	 * the scaffold derives this from when the profile declares no `contact`.
+	 */
+	people?: Array< {
+		/** Who they are ("ECA Coordinator"). The mailto link's accessible name. */
+		label?: string;
+		/** What they handle ("Senior School ECA programme"). */
+		role?: string;
+		email?: string;
+	} >;
+	/** Further actions shown beside the contacts (a help page, a booking system). */
+	links?: Array< { label: string; href: string } >;
 }
 
 /** One band's normalised visible text from the source (`lib/text-parity.ts`). */
@@ -1261,6 +1820,27 @@ export interface RegionColors {
 	 * (virtuallyjamaica's `#services` grey `li`s turned white, 2026-11-12).
 	 */
 	inks?: InkShare[];
+	/**
+	 * The region's text by ROLE — headings vs everything else — as the single
+	 * dominant ink of each.
+	 *
+	 * The palette answers "which colours are here"; it cannot answer "which
+	 * colour is a heading". eca.directory's footer proves the difference matters:
+	 * 62% of its glyph area is `#747474` (the link LISTS) and 38% is `#27104a`
+	 * (the three block TITLES plus the wordmark). Writing the palette's winner
+	 * into `chrome.footerInk` — the slot that paints the rebuilt H3s — recoloured
+	 * every footer title grey, and the colour gate reported BOTH inks as drift
+	 * because the rebuild then carried only one of them (2026-11-24).
+	 *
+	 * `heading` is the dominant ink of heading-like text (`h1`–`h6`, and a
+	 * builder's heading widget — Elementor's `elementor-heading-title` is a
+	 * `div`); `body` is the dominant ink of the rest. Absent when the region has
+	 * no text of that role, so a single-ink footer keeps the older behaviour.
+	 */
+	roles?: {
+		heading?: string;
+		body?: string;
+	};
 	/**
 	 * The region's painted background IMAGE, when it has one — a `linear-gradient(…)`
 	 * or a `url(…)`. Bands only (`ColorRegion.descendantFill`): a builder paints a
@@ -1318,6 +1898,10 @@ export const SECTION_KINDS = [
 	'team',
 	'marquee',
 	'comparison',
+	// The 3D product viewer band — always poster-first, never hydrated.
+	// Mirrored by the Velocity storefront's SECTION_KINDS (both spell it
+	// `model-3d` so a generated band and a hand-built band mean the same thing).
+	'model-3d',
 	'content',
 ] as const;
 
@@ -1343,14 +1927,68 @@ export type {
 };
 
 /**
+ * One measured structure inside a band (see `ForgeSection.structure`).
+ *
+ * `type` names the renderer component's contract; `data` is the detector's own
+ * shape for that type (see `ForgeComparisonStructure`). Deliberately untyped at
+ * the channel level: adding a structure type must not require touching the
+ * channel, only adding a detector and a renderer entry.
+ *
+ * A VISION entry has no `data`: it records a label plus its provenance
+ * (`source`, `model`, `confidence`, `note`) so a detector can be written against
+ * it later. A deterministic detector always wins (`mergeStructureVerdicts`), and
+ * a renderer ignores an entry it does not know how to draw.
+ */
+export interface ForgeStructureEntry {
+	type: 'comparison' | string;
+	data?: {
+		columns: string[];
+		rows: ComparisonRow[];
+		caption?: string;
+		/**
+		 * Devices the source HIDES this structure at (`elementor-hidden-mobile`).
+		 * The renderer emits `display:none` at those ends; without it the rebuild
+		 * shows content the source hides — eca.directory's matrix is hidden on
+		 * phones and was rebuilt as a squeezed table at 390px.
+		 */
+		hiddenAt?: Array< 'tablet' | 'mobile' >;
+	};
+	/** `vision` when the label came from the opt-in structure pass. */
+	source?: 'vision';
+	/** The model id that produced a vision label (attribution). */
+	model?: string;
+	/** A vision label's own confidence (0–1); never set by a detector. */
+	confidence?: number;
+	/** One line of visual evidence for a vision label. */
+	note?: string;
+}
+
+/**
+ * One mark in a band's logo / partner strip (see `ForgeSection.logos`).
+ */
+export interface ForgeMark {
+	src: string;
+	alt?: string;
+}
+
+/**
  * One source page section's background facts (Proposal 117 §2) — the
  * per-band theming data the scaffold bakes into sections.generated.ts.
  * Keyed by the Elementor section id the semantic classifier carries on
  * each rebuilt section, so the source band theming re-applies positionally.
  */
-export interface ForgeSection {
+	export interface ForgeSection {
 	/** Elementor's elementor-element-<id> class suffix. */
 	id?: string;
+	/**
+	 * The vendor's own element id when `id` carries one (`elementor-element-<id>`).
+	 *
+	 * `id` is the band's identity; `vendorId` is what makes it ADDRESSABLE on the
+	 * source — the scoped CSS and the browser select `.elementor-element-<id>`, so
+	 * geometry, interaction and colour measurement can only resolve a band through
+	 * it. Absent on a band whose builder exposes no id (a structural hash id).
+	 */
+	vendorId?: string;
 	/** The band's classified kind (Proposal 136 §4.2). Advisory: the build
 	 * emits it as `data-section` and `verify` compares the two when present.
 	 * Absent → the fact gate still requires a valid kind on the built band. */
@@ -1367,10 +2005,70 @@ export interface ForgeSection {
 	 */
 	spacer?: boolean;
 	bgImage?: string;
+	/**
+	 * The band image's BOX — Elementor declares all three beside the URL
+	 * (`background-size: cover; background-repeat: no-repeat;
+	 * background-position: top center`). An image without its box paints at
+	 * NATIVE scale: eca.directory's dot pattern covered the hero and stats bands
+	 * and made white text unreadable (2026-11-25).
+	 */
+	bgSize?: string;
+	bgRepeat?: string;
+	bgPosition?: string;
+	/**
+	 * The LAYER the image is painted on. Elementor renders a band image on a
+	 * `::before` layer faded by `--overlay-opacity` and sometimes blended
+	 * (`mix-blend-mode: lighten`). Painting the image on the band instead shows a
+	 * 5%-opacity halftone at full strength (eca.directory about-us, 2026-11-25).
+	 * Absent = paint on the band.
+	 */
+	bgLayerOpacity?: number;
+	bgBlendMode?: string;
 	bgColor?: string;
 	bgGradient?: string;
 	/** The background-overlay tint (Elementor's overlay layer). */
 	overlay?: string;
+	/**
+	 * The band's MARK STRIP (a logo wall / partner row).
+	 *
+	 * A builder publishes these as an image CAROUSEL whose slides are
+	 * `background-image` DIVs (`<div class="elementor-carousel-image"
+	 * style="background-image:url(…)">`), not `<img>` — so the build-time
+	 * classifier, which reads `<img>` only, saw a band with two headings and no
+	 * media and rendered it as plain text (virtuallysrilanka's SUPPORTED
+	 * HARDWARE: 8 marks, 0 `<img>`, a 474px band with 248px of dead space under
+	 * the heading).
+	 *
+	 * Captured at ANALYZE time because the inline `style` carrying the URL is
+	 * dropped by the sanitizer. Only a band with no prose qualifies, so a
+	 * decorative background elsewhere never turns into a mark.
+	 */
+	logos?: ForgeMark[];
+	/**
+	 * The band's PANEL surface: the source sets its content on ONE coloured slab
+	 * rather than on the page background (virtuallysrilanka's "How it Works" —
+	 * four icon items on a `#dd3333` panel). Derived from `columns` when exactly
+	 * one column paints a colour and none paints a photo; `ink` is the legible
+	 * foreground for that slab, decided by contrast.
+	 *
+	 * Only the UNIFORM case is captured. Two or more DIFFERENT column surfaces
+	 * describe per-column panels, which the rebuilt flat markup cannot address
+	 * positionally — that needs the computed-style column pass.
+	 *
+	 * `width`/`align` are the SLAB's own box, measured by the browser. A builder
+	 * can fill only part of the band and put the band's heading INSIDE the slab
+	 * (virtuallysrilanka's "How it Works": a #dd3333 right half, 720 of 1440,
+	 * with the eyebrow and title centred on it). Absent → the slab spans the
+	 * band, which is the common full-bleed case.
+	 */
+	panel?: {
+		bg: string;
+		ink: string;
+		/** The slab's rendered width (`720px`). */
+		width?: string;
+		/** Where the slab sits inside the band. */
+		align?: 'start' | 'center' | 'end';
+	};
 	/** The source band's declared padding — a CSS shorthand, or a per-device
 	 * map when the source scopes it (jayainc's 059421c is 125px on desktop,
 	 * 100px on tablet and mobile). Absent → the bandSpacing policy. */
@@ -1465,6 +2163,8 @@ export interface ForgeSection {
 	 * CSS; absent → the columns size themselves.
 	 */
 	columnBox?: BandBoxFacts;
+	/** The per-column INNER padding, keyed by the column’s unique class. */
+	columnInner?: BandBoxFacts;
 	/**
 	 * The band's measured CAROUSEL geometry, keyed by the carousel root's unique
 	 * class (`bandFacts[id].carousel`) — the per-view slide count and the track's
@@ -1476,6 +2176,15 @@ export interface ForgeSection {
 	 * two-column hero band: a copy column (heading + divider + body +
 	 * links) beside a media collage column (jayainc's about band). */
 	layout?: 'split';
+	/**
+	 * Which SIDE of a split band holds the media.
+	 *
+	 * A split is not always copy-then-media: eca.directory's about-us benefits
+	 * band puts the photo on the LEFT and the copy on the right, and a rebuild
+	 * that always renders copy first mirrors the design (2026-11-25). Measured
+	 * from the lane order, never assumed.
+	 */
+	mediaSide?: 'left' | 'right';
 	/** The heading's underline divider (aux-modern-heading-divider) —
 	 * width/height/background/shadow facts the rebuild re-applies under
 	 * the split hero's title. */
@@ -1568,7 +2277,24 @@ export interface ForgeSection {
 	 * fact resolves; the pause control is always rendered (WCAG 2.2.2). */
 	marquee?: { items: MarqueeItem[]; speed?: string };
 	/** Comparison band: columns then rows; `values` align to the columns. */
-	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string };
+	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string; hiddenAt?: Array< 'tablet' | 'mobile' > };
+	/**
+	 * MEASURED STRUCTURE — the generic channel behind `comparison`.
+	 *
+	 * A builder expresses a lot of semantics through icons and per-element CSS
+	 * that `sanitizeHtml` removes before the build-time classifier runs (Elementor's
+	 * comparison matrix is 52 `<svg>`s raw and none sanitised). Every such
+	 * structure needs the same three things: a detector on the RAW html, a slot in
+	 * the profile, and an emission — so they share the slot.
+	 *
+	 * `comparison` stays as the typed fast path for one release (profiles in the
+	 * wild carry it); a reader prefers `structure` and falls back.
+	 *
+	 * ORDERING RULE: a structure renders IN ADDITION to the band's classified
+	 * kind, never instead of it — the band that carries a matrix also carries
+	 * three phase cards, and an override deletes them.
+	 */
+	structure?: ForgeStructureEntry[];
 }
 
 /** One top-level column's responsive facts (Elementor's per-device
@@ -1585,6 +2311,23 @@ export interface ForgeSectionColumn {
 	hiddenMobile?: boolean;
 	hiddenTablet?: boolean;
 	hiddenDesktop?: boolean;
+	/**
+	 * The column's own painted SURFACE — a builder PANEL.
+	 *
+	 * virtuallysrilanka's services band is three panels side by side (a red copy
+	 * panel, a PHOTO panel, a black copy panel) and its wifi band puts a 2×2 item
+	 * grid on one red panel; the rebuild rendered pale cards on the page
+	 * background. Neither half of the pipeline could see it: the sanitiser drops
+	 * the inline `style`, the vendor stylesheet never ships, and the classifier
+	 * only splits content — so a photo-only column was dropped outright
+	 * ("the flat model has no per-column surface to paint it with"). Measured
+	 * here, against the RAW source HTML + its stylesheets.
+	 */
+	bgColor?: string;
+	/** The column's own background PHOTO (the panel-like column with no copy). */
+	bgImage?: string;
+	/** The ink this lane's `bgColor` needs to stay readable (`inkForSurface`). */
+	ink?: string;
 }
 
 /**
@@ -1667,6 +2410,67 @@ export interface ForgeChromeBox {
 	 * valid for a centred brand too — unlike a brand-relative inset.
 	 */
 	padX?: number;
+	/**
+	 * The brand mark's RENDERED height at this viewport (`97px`), measured from
+	 * the brand anchor or its `<img>`. The template's fixed 2.5rem is a default,
+	 * not a fact: krishandramikasavethe.world's mark is 260×97 inside a 125px
+	 * header and rendered 2.4× too small without it (2026-11-19).
+	 */
+	logoHeight?: string;
+	/**
+	 * Where the mark STATION sits across the bar: its centre against the
+	 * header’s thirds. A source that centres its logo cannot be reproduced by
+	 * the template’s `space-between` row, which leaves the mark at the left
+	 * edge under the disclosure (monicarajiv: 273×74 centred in 1425px,
+	 * rendered 147×40 hard left, 2026-11-19).
+	 */
+	logoAlign?: 'start' | 'center' | 'end';
+}
+
+/**
+ * One trailing control in the header (the source’s envelope, a search
+ * glyph). Rebuilt as an icon link so the bar keeps its third column.
+ */
+export interface ForgeChromeAction {
+	/** `icon-` stripped from the source’s glyph class (`envelop`). */
+	icon?: string;
+	/** The accessible name the source carries (its `aria-label`/`title`). */
+	label?: string;
+	/** The destination, already resolved to `mailto:` where possible. */
+	href?: string;
+	/**
+	 * The source control's VISIBLE text, when it is a labelled pill rather than
+	 * an icon link (“Try Demo”, “Sign In”). Present → the rebuild renders a text
+	 * button in the header instead of a bare glyph.
+	 */
+	text?: string;
+	/** The pill's measured FILL (background shorthand resolved from the sheet). */
+	fill?: string;
+	/** The pill's measured ink (its own `color`), when it states one. */
+	ink?: string;
+	/** The pill's measured text style + box (padding, radius, size, weight). */
+	style?: ForgeChromeStyle;
+	/** The SOURCE hides this action at phone widths (`elementor-hidden-mobile`). */
+	hideMobile?: boolean;
+}
+
+/**
+ * A header CTA pill as the BROWSER paints it (`measureHeaderActions`).
+ *
+ * The harvest's `ForgeChromeAction` describes what the stylesheets say; this
+ * says what the page computes. They disagree whenever a builder var resolves
+ * differently under the cascade (eca.directory: the accent pill's fill came
+ * back as `#d9534f` from a foreign `--e-global-color-primary`).
+ */
+export interface ForgeMeasuredHeaderAction {
+	text: string;
+	href?: string;
+	fill?: string;
+	ink?: string;
+	/** The source HIDES this control at phone widths (`elementor-hidden-mobile`).
+	 * Measured at 390px — a rebuild that showed it overflowed the header row. */
+	hideMobile?: boolean;
+	style?: ForgeChromeStyle;
 }
 
 /**
@@ -1681,6 +2485,35 @@ export interface ForgeChromeGeometry {
 	desktop?: ForgeChromeBox;
 	tablet?: ForgeChromeBox;
 	mobile?: ForgeChromeBox;
+	/** The header’s trailing icon links, measured once at the desktop viewport. */
+	actions?: ForgeChromeAction[];
+	/**
+	 * The nav LINK's computed type at the desktop viewport.
+	 *
+	 * The static CSS resolver reads a relative `font-size` against the 16px root
+	 * and reported `16px` where the browser paints `14.208px` (`.888em`), so a
+	 * whole site's menu rebuilt one step too large — and `letter-spacing: .02em`
+	 * landed as `em` instead of the resolved `0.28416px` (monicarajiv, 2026-11-21).
+	 * A browser is already open for the box facts, so the type is measured with
+	 * them and `applyMeasuredNavStyle` overlays it at scaffold time.
+	 */
+	navStyle?: ForgeChromeStyle;
+	/**
+	 * The family the nav link paints, when it is not the body or display face
+	 * (monicarajiv's menu is Montserrat). `analyze` promotes it to
+	 * `design.typography.ui`, which `designToTokens` turns into `--forge-font-ui`
+	 * and the webfont builder then loads.
+	 */
+	navFamily?: string;
+	/**
+	 * The footer COPYRIGHT's computed size, as px.
+	 *
+	 * `chromeSizeFrom` reads `body { font-size }` out of the stylesheet, which
+	 * is a declaration and not a computed value: monicarajiv's `1.125rem` rule
+	 * resolved to 18px where the copyright paints 15.984px, so the rebuilt
+	 * footer bar ran 2px large (2026-11-21).
+	 */
+	chromeSize?: string;
 }
 
 /** Where a footer group sits horizontally inside the footer's brand row. */
@@ -1707,9 +2540,50 @@ export interface ForgeFooterBrandAlign {
 }
 
 /**
+ * The social BADGE box, measured.
+ *
+ * Kadence's filled style draws a 51px rounded SQUARE (r3) on its light-gray
+ * palette slot with palette-4 ink; the template's default is a 2.25rem circle,
+ * which reads as a different component at every width (virtuallysrilanka,
+ * 2026-11-20). Absent → the template's own circle.
+ */
+export interface ForgeFooterSocialBox {
+	/** The badge's rendered edge (`51px`) — a square box, not the glyph size. */
+	size?: string;
+	/** The badge corner radius (`3px` — a square with softened corners). */
+	radius?: string;
+	/** The badge's painted background. */
+	bg?: string;
+	/** The ink the glyph draws in. */
+	ink?: string;
+}
+
+/**
+ * The footer's TEXT line (the © row), measured.
+ *
+ * A builder centres its `footer-html` block at its own small type scale
+ * (virtuallysrilanka: 14px/600, palette-4 ink, centred). The rebuild renders
+ * footer blocks as left-aligned body copy, so without these facts the © line
+ * lands at 17px/400 flush left. Absent → the template's own footer type.
+ */
+export interface ForgeFooterText {
+	size?: string;
+	weight?: string;
+	/** The line's ink (the source's palette text colour). */
+	ink?: string;
+	/** The ink a LINK inside the line carries. A builder paints it with its
+	 * palette highlight (#3182CE on virtuallysrilanka) while the site accent
+	 * is red — reusing the accent painted the credit a colour the source does
+	 * not use there. */
+	linkInk?: string;
+	align?: ForgeFooterAlign;
+}
+
+/**
  * The footer brand row per viewport. Sparse: a viewport with nothing to say is
  * absent. `divider` is a whole-element fact (the hairline above the copyright
- * bar) and therefore lives outside the per-viewport map.
+ * bar) and therefore lives outside the per-viewport map; `social` and `text`
+ * describe the row's own components and are whole-element facts too.
  */
 export interface ForgeFooterBrand {
 	wide?: ForgeFooterBrandAlign;
@@ -1718,6 +2592,10 @@ export interface ForgeFooterBrand {
 	mobile?: ForgeFooterBrandAlign;
 	/** The sub-footer row paints a bottom hairline above the copyright bar. */
 	divider?: boolean;
+	/** The social badge's box, measured at desktop. */
+	social?: ForgeFooterSocialBox;
+	/** The footer text line's typography and alignment, measured at desktop. */
+	text?: ForgeFooterText;
 }
 
 /**
@@ -1778,6 +2656,12 @@ export interface ForgeChrome {
 	/** The brand logo (the light-background variant when the source ships
 	 * dark/light pairs). */
 	logo?: { src?: string; alt?: string };
+	/**
+	 * The header’s trailing icon links (the source’s envelope, a search
+	 * glyph). A vendor icon font never ships, so the rebuild re-draws them;
+	 * measured once, at the desktop viewport (see `geometry.actions`).
+	 */
+	headerActions?: ForgeChromeAction[];
 	/** The tagline under the brand (the source's site description). */
 	tagline?: string;
 	/** The header nav (anchor links on one-pagers; page links otherwise). */
@@ -1836,14 +2720,26 @@ export interface ForgeChrome {
 	call?: { label: string; href: string; bg?: string; ink?: string; style?: ForgeChromeStyle };
 	/** The footer columns (heading + item lines each). */
 	footerBlocks?: Array<{ title?: string; items: string[] }>;
+	/**
+	 * The links the footer's LINES carry, as `{ text, href }`.
+	 *
+	 * A builder publishes the © statement as one paragraph with the credit linked
+	 * (`… IS POWERED BY <a>NV DIGITAL SOLUTIONS.</a>`), so the link is a SUFFIX
+	 * inside a line, not a line of its own. Flattening the line to its text
+	 * printed the credit as dead copy and the rebuild could not tell it had been
+	 * a link (virtuallysrilanka). Kept as a lookup so a line stays a string.
+	 */
+	footerLinks?: Array<{ text: string; href: string }>;
 	/** The footer column heading typography (jayainc: 500/29px/capitalize). */
 	footerHeadingStyle?: ForgeChromeStyle;
 	/** The copyright line. */
 	copyright?: string;
 	/** The footer social links (the source's network badges). `icon` is the
 	 * source's own icon class (e.g. `fab fa-facebook-f`) when one exists — the
-	 * rebuild maps the network to its own inline glyph. */
-	social?: Array<{ label?: string; href: string; icon?: string }>;
+	 * rebuild maps the network to its own inline glyph. `href` is ABSENT for a
+	 * badge the source drives from JS (virtuallysrilanka's three) — the rebuild
+	 * still renders the badge, it just cannot be a link. */
+	social?: Array<{ label?: string; href?: string; icon?: string }>;
 	/** The site favicon (the first <link rel="icon"> href, absolute). */
 	favicon?: string;
 	/** The source icon-font stylesheet (the icons CSS link, e.g. the theme's
@@ -1919,6 +2815,11 @@ export interface ParallaxPiece {
 	/** `translate` (the default) or `background` (the source animates
 	 * `background-position`; the rebuild does not fake it with a transform). */
 	type?: 'position' | 'background';
+	/** The axis the source moves on. Absent means vertical (`y`) — every Phlox
+	 * piece is vertical and Elementor's translateY is the common case. An `x`
+	 * piece is a HORIZONTAL drift (motion_fx translateX, rellax horizontal,
+	 * `data-parallax-axis="x"`). */
+	axis?: 'x' | 'y';
 	/** Phlox `data-parallax-depth` — sign AND magnitude. Negative depth moves
 	 * DOWN as the page scrolls (the theme flips the sign). */
 	depth?: number;
@@ -2048,6 +2949,16 @@ export interface ForgeAnimationInventory {
 }
 
 /**
+ * One recovered per-element rule from the source builder's `<style>` blocks
+ * (`lib/element-css.ts`). `media` keeps a `@media` prelude verbatim.
+ */
+export interface ForgeElementCssRule {
+	media?: string;
+	selector: string;
+	declarations: string;
+}
+
+/**
  * The v2 design block (Proposal 114) — a DTCG-flavored design language,
  * never source assets. Roles are fail-loud (098): only confident values
  * land in `roles`; everything else stays in `unassigned`.
@@ -2061,7 +2972,7 @@ export interface ForgeDesign {
 		unassigned: string[];
 		confidence: Record<string, 'high' | 'medium' | 'low'>;
 	};
-	typography: { display?: string; body?: string; scalePx: number[]; bodyWeight?: string; /**
+	typography: { display?: string; body?: string; ui?: string; accent?: string; scalePx: number[]; bodyWeight?: string; /**
 	 * The MEASURED reading size, in px — the size the source's body text
 	 * actually renders at. `scalePx` is harvested from px declarations only,
 	 * so a source that inherits the browser default (a relative `100%`/
@@ -2106,6 +3017,14 @@ export interface ForgeDesign {
 	} >;
 	/** The builder adapter that matched the source (elementor, wpbakery, divi…). */
 	builder?: string;
+	/**
+	 * The source builder's PER-ELEMENT rules (``#gap-x{padding-top:30px}``,
+	 * ``#text-box-x{width:20%}`` …). Flatsome/UX Builder and WPBakery put an
+	 * element's own layout in a `<style>` block; the sanitizer drops it, so a
+	 * rebuild otherwise re-derives the box from class conventions and loses it.
+	 * Recovered and gated by `lib/element-css.ts`, emitted scoped to a band.
+	 */
+	elementCss?: ForgeElementCssRule[];
 	/** The site-chrome pass (120 §2) — omitted when unavailable. */
 	chrome?: ForgeChrome;
 	/** The scroll-behavior pass (121) — omitted when unavailable. */

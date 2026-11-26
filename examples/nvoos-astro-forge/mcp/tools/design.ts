@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design.ts — the design_apply/design_verify/design_verify_visual/design_verify_text/
 // design_verify_pixel tool slice (Proposals 114 P6 + 118 §5 + the parity gates).
@@ -21,6 +22,7 @@ import { z } from 'zod/v4';
 
 import { captureEndpoint, captureRemote, readArtifact } from '../../lib/capture.ts';
 import { analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity } from '../../lib/design.ts';
+import { openGate } from '../../lib/gate.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, serveDir } from '../../lib/geometry.ts';
 import { comparePngBuffers } from '../../lib/pixel.ts';
 import { compareRegionColorModes, measureRegionColors } from '../../lib/region-colors.ts';
@@ -127,22 +129,37 @@ export const DESIGN_TOOLS: ToolDef[] = [
 				if ( profile.collections.length === 0 && ! url ) {
 					return errorResult( 'The profile declares no collections — nothing to theme.' );
 				}
-				const design = analyzeDesignInput( await fetchDesignInput( profile.url ) );
-				profile.design = design;
-				if ( profileFile ) {
-					await writeFile( profileFile, `${ JSON.stringify( profile, null, '\t' ) }\n`, 'utf8' );
+				// Proposal 152 — the page gate. A gated source must never be themed
+				// from its holding page: fail with the remediation ladder instead.
+				const gate = await openGate( profile );
+				if ( gate.blocked ) {
+					gate.close();
+					return errorResult(
+						`The source is ${ gate.probe.state }${ gate.probe.fingerprint ? ` (${ gate.probe.fingerprint })` : '' } — refusing to extract a design from the holding page.\n` +
+							gate.probe.remediation.map( ( line, index ) => `${ index + 1 }. ${ line }` ).join( '\n' ),
+						{ gate: gate.describe(), probe: gate.probe }
+					);
 				}
-				return text( `Design language extracted (${ design.concept }) and written to the profile.`, {
-					url: profile.url,
-					concept: design.concept,
-					roles: design.palette.roles,
-					unassigned: design.palette.unassigned,
-					typography: design.typography,
-					sections: design.sections,
-					written: Boolean( profileFile ),
-					profileFile,
-					adaptation: design.adaptation,
-				} );
+				try {
+					const design = analyzeDesignInput( await fetchDesignInput( profile.url, gate.fetch ) );
+					profile.design = design;
+					if ( profileFile ) {
+						await writeFile( profileFile, `${ JSON.stringify( profile, null, '\t' ) }\n`, 'utf8' );
+					}
+					return text( `Design language extracted (${ design.concept }) and written to the profile.`, {
+						url: profile.url,
+						concept: design.concept,
+						roles: design.palette.roles,
+						unassigned: design.palette.unassigned,
+						typography: design.typography,
+						sections: design.sections,
+						written: Boolean( profileFile ),
+						profileFile,
+						adaptation: design.adaptation,
+					} );
+				} finally {
+					gate.close();
+				}
 			} catch ( error ) {
 				return errorResult( error instanceof Error ? error.message : String( error ) );
 			}

@@ -47,9 +47,59 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
+      # The two "own ruleset" checks run BEFORE `Get changed PHP files` on
+      # purpose. That action has wedged in_progress for over an hour on
+      # several PRs (#7862, #7863, #7864), and every step after it — these
+      # two, plus both WPCS runs — was left pending. A pending check does not
+      # fail a PR, so a style gate placed after it is decorative: the six
+      # WiFi style errors reached alpha-working that way. Neither of these
+      # checks reads `changed-files`, so nothing is lost by moving them up.
+      - name: Run PSR-12 on the Laravel trees (own ruleset)
+        run: |
+          # phpcs.xml.dist excludes lib/ and docker/, so the Laravel adapter and
+          # the app skeleton had no style gate at all. They are checked here
+          # with phpcs-laravel.xml.dist: full PSR-12 for the app skeleton,
+          # PSR-12 minus indentation for the tab-indented adapter. Line length
+          # stays advisory (PSR-12's 120-column soft limit).
+          vendor/bin/phpcs --standard=phpcs-laravel.xml.dist \
+            --error-severity=1 --warning-severity=8
+
+      - name: Run WPCS on nvoos-astro-bridge addon (own ruleset)
+        run: |
+          # The nvoos-astro-bridge addon is excluded from the base plugin's
+          # phpcs.xml.dist (PSR-4 layout, deliberate idioms) and carries its
+          # own ruleset at addons/nvoos-astro-bridge/phpcs.xml.dist. Enforce it here
+          # so addon changes stay covered on PRs and pushes.
+          vendor/bin/phpcs --standard=addons/nvoos-astro-bridge/phpcs.xml.dist \
+            addons/nvoos-astro-bridge/includes addons/nvoos-astro-bridge/nvoos-astro-bridge.php addons/nvoos-astro-bridge/uninstall.php
+
+      # The tree-wide budget check lives here, before `Get changed PHP files`,
+      # for the reason given above: that action has wedged in_progress, and a
+      # gate placed after it is decorative. This check does not read the
+      # changed-file list, so nothing is lost by running it first.
+      - name: Run the tree-wide WPCS budget check
+        # The budget may only shrink. A scope over budget (beyond the noise
+        # allowance) fails, and so does a scope more than `tolerance` under
+        # budget: the improvement has to be recorded in the same PR. Policy and
+        # the current numbers live in docs/developer/phpcs-ratchet.md and
+        # .github/phpcs-budget.json.
+        #
+        # No PHPCS --cache: it changes which files are re-tokenised, and a few
+        # WPCS sniffs are order-sensitive, so cached and cold runs disagree by
+        # a few warnings. A budget needs the same answer twice.
+        timeout-minutes: 40
+        run: php .github/scripts/phpcs-ratchet.php --check
+
+      # Bounded so a hang here cannot void the three checks below it. Five
+      # minutes is generous: the action resolves a file list, it does not lint.
+      # The steps that depend on it also guard on `any_changed` / `all_changed_files`,
+      # so a timeout degrades to "changed-file scoping skipped" rather than a
+      # silently green job — see the `if:` on `Run WPCS on changed files`.
       - name: Get changed PHP files
         id: changed-files
         if: github.event_name == 'pull_request'
+        timeout-minutes: 5
+        continue-on-error: true
         uses: tj-actions/changed-files@v45
         with:
           files: |
@@ -64,25 +114,6 @@ jobs:
             plugins/nvoos-content-graph-ai/**
             plugins/nvoos-content-graph-ai-platform/**
             plugins/nvoos-content-graph-pro/**
-
-      - name: Run WPCS on nvoos-astro-bridge addon (own ruleset)
-        run: |
-          # The nvoos-astro-bridge addon is excluded from the base plugin's
-          # phpcs.xml.dist (PSR-4 layout, deliberate idioms) and carries its
-          # own ruleset at addons/nvoos-astro-bridge/phpcs.xml.dist. Enforce it here
-          # so addon changes stay covered on PRs and pushes.
-          vendor/bin/phpcs --standard=addons/nvoos-astro-bridge/phpcs.xml.dist \
-            addons/nvoos-astro-bridge/includes addons/nvoos-astro-bridge/nvoos-astro-bridge.php addons/nvoos-astro-bridge/uninstall.php
-
-      - name: Run PSR-12 on the Laravel trees (own ruleset)
-        run: |
-          # phpcs.xml.dist excludes lib/ and docker/, so the Laravel adapter and
-          # the app skeleton had no style gate at all. They are checked here
-          # with phpcs-laravel.xml.dist: full PSR-12 for the app skeleton,
-          # PSR-12 minus indentation for the tab-indented adapter. Line length
-          # stays advisory (PSR-12's 120-column soft limit).
-          vendor/bin/phpcs --standard=phpcs-laravel.xml.dist \
-            --error-severity=1 --warning-severity=8
 
       - name: Run WPCS on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
@@ -112,8 +143,10 @@ jobs:
           
           echo "WPCS Results: $ERRORS errors, $WARNINGS warnings ($FIXABLE auto-fixable)"
           
-          # Set threshold based on current baseline (1175 total errors / 269 files ≈ 4 per file)
-          # Allow max 10 errors per changed file as improvement target
+          # Fast, file-level feedback so an author can see which of their files
+          # is noisy. The hard tree-wide guarantee is the budget check earlier in
+          # this job (docs/developer/phpcs-ratchet.md); this step is attribution,
+          # not the gate.
           MAX_ERRORS_PER_FILE=10
           NUM_FILES=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | wc -w)
           MAX_ERRORS=$((NUM_FILES * MAX_ERRORS_PER_FILE))
@@ -131,49 +164,10 @@ jobs:
             echo "✅ No WPCS errors found"
           fi
 
-      - name: Run WPCS on all files
-        if: github.event_name == 'push'
-        run: |
-          # Run PHPCS with phpcs.xml.dist (uses WPCS 3.0)
-          # Call phpcs directly to get clean JSON output (composer adds extra text)
-          PHPCS_OUTPUT=$(vendor/bin/phpcs --report=json 2>&1 || true)
-          
-          # Extract only the JSON part (last line containing valid JSON)
-          JSON_OUTPUT=$(echo "$PHPCS_OUTPUT" | grep -E '^\{' | tail -1)
-          
-          if [ -z "$JSON_OUTPUT" ]; then
-            echo "No JSON output from PHPCS. Full output:"
-            echo "$PHPCS_OUTPUT"
-            echo "✅ No issues found or unable to parse output"
-            exit 0
-          fi
-          
-          echo "$JSON_OUTPUT"
-          
-          # Parse errors and warnings
-          ERRORS=$(echo "$JSON_OUTPUT" | jq -r '.totals.errors // 0')
-          WARNINGS=$(echo "$JSON_OUTPUT" | jq -r '.totals.warnings // 0')
-          FIXABLE=$(echo "$JSON_OUTPUT" | jq -r '.totals.fixable // 0')
-          
-          echo "WPCS Results: $ERRORS errors, $WARNINGS warnings ($FIXABLE auto-fixable)"
-          echo "📊 Baseline: 1175 errors (target: continuous improvement)"
-          
-          # Current baseline threshold - will be gradually reduced
-          MAX_ERRORS=1200
-          
-          if [ "$ERRORS" -gt "$MAX_ERRORS" ]; then
-            echo "❌ WPCS errors increased: $ERRORS (regression threshold: $MAX_ERRORS)"
-            echo "💡 Run 'composer run format' to auto-fix $FIXABLE violations"
-            exit 1
-          elif [ "$ERRORS" -gt 1175 ]; then
-            echo "⚠️ WPCS errors slightly increased: $ERRORS (baseline: 1175)"
-            echo "Please review and fix new violations"
-          elif [ "$ERRORS" -lt 1175 ]; then
-            echo "✅ WPCS compliance improved! $ERRORS errors (was 1175)"
-            echo "🎉 Improvement: $((1175 - ERRORS)) errors fixed"
-          else
-            echo "📊 WPCS stable at baseline: $ERRORS errors"
-          fi
+      # The tree-wide budget check runs earlier in this job, before
+      # `Get changed PHP files`. Keeping it there is deliberate: the
+      # changed-file action has wedged in_progress for over an hour on several
+      # PRs, and any step after it is left pending — which does not fail a PR.
 
   php-compatibility:
     name: PHP Compatibility Check
@@ -216,6 +210,13 @@ jobs:
       - name: Get changed PHP files
         id: changed-files
         if: github.event_name == 'pull_request'
+        # Same wedge the `wpcs` job above documents: when this action stalls it
+        # sits in_progress until the 6-hour job ceiling, and every step after it
+        # is left pending. A pending check does not fail a PR, so the timeout is
+        # what turns an indefinite hang into a bounded skip; `continue-on-error`
+        # is what keeps the skip from failing the job.
+        timeout-minutes: 5
+        continue-on-error: true
         uses: tj-actions/changed-files@v45
         with:
           files: |
@@ -236,7 +237,17 @@ jobs:
         run: |
           echo "Changed PHP files:"
           echo "${{ steps.changed-files.outputs.all_changed_files }}"
-          vendor/bin/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 ${{ steps.changed-files.outputs.all_changed_files }}
+          # `--ignore=*.blade.php`: a Blade template is not PHP source. It ends in
+          # `.php`, so the changed-file list includes it, but the only PHP in it is
+          # an `@php` block compiled by Laravel — judging it against the WordPress
+          # runtime's PHP range produced "No PHP code was found in this file and
+          # short open tags are not allowed" on every view without an `@php` block
+          # (site-health.blade.php, #7889) and failed the job on a file that has no
+          # compatibility surface at all. Non-Blade files are still checked: this
+          # flag only excludes the pattern.
+          vendor/bin/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 \
+            --ignore='*.blade.php' \
+            ${{ steps.changed-files.outputs.all_changed_files }}
 
       - name: Run PHP Compatibility Check on all files
         if: github.event_name == 'push'
@@ -261,3 +272,57 @@ jobs:
         # .github/scripts/public-write-routes.txt, or an allowlisted route
         # goes stale. PHPCS and Plugin Check cannot reason about this pattern.
         run: php .github/scripts/check-public-write-routes.php
+
+  settings-field-registration:
+    name: Settings Field Registration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Run the settings field-registration gate
+        # Fails when a field declared in a sub-tabbed section's get_fields()
+        # appears in no get_subtab_groups() entry: `render()` iterates the
+        # active group's fields and `sanitize_with_subtabs()` whitelists input
+        # to the same list, so the field renders nowhere and is dropped on
+        # save — silently, because both methods are individually valid. This is
+        # how sse_offload_elapsed_seconds shipped invisible in #7905. Also
+        # fails on a stale baseline entry in settings-field-registration.txt.
+        run: php .github/scripts/check-settings-field-registration.php
+
+  class-aliases:
+    name: Class-alias resolution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Verify the resolver against its fixtures
+        # A hand-rolled tokenizer is only as good as its tests. These cover
+        # every shape the gate classifies, including the four original defects
+        # (two missing imports, two imports pointing at a namespace that does
+        # not exist).
+        run: php bin/check-class-aliases.php --self-test
+
+      - name: Run the class-alias gate
+        # Fails when a name in class position resolves to a FQCN that nothing
+        # declares. PHP resolves an unimported `Foo::class` to
+        # `<current namespace>\Foo` at compile time, silently: a binding lands
+        # on a name nobody asks for and a `catch` never matches. Four such
+        # defects shipped in one wave (#8131). PHPStan runs at level 1 over
+        # includes/ and addons/ only, so it never sees lib/ or docker/laravel/.
+        run: php bin/check-class-aliases.php

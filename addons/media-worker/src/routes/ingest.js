@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Ingest route — parses owner-format files into a shared { columns, rows }
  * matrix contract (tabular formats) or extracted { text } (PDF/photo OCR).
@@ -341,6 +342,34 @@ function sendError( res, err ) {
 	} );
 }
 
+/**
+ * Bound the matrix rows returned to the caller.
+ *
+ * The parse has already materialised the whole sheet, so this bounds the
+ * *response* — which is the part that matters when the caller is an agent
+ * prompt or a PHP array. `source_total` is preserved so a client can say
+ * "showing 500 of 4,000" instead of silently believing the file was small.
+ *
+ * @param {{columns: string[], rows: string[][], meta: Object}} matrix  Parsed matrix.
+ * @param {*}                                                   maxRows Raw `maxRows` from the body.
+ * @return {{columns: string[], rows: string[][], meta: Object}} Limited matrix.
+ */
+function limitMatrix( matrix, maxRows ) {
+	const limit = Number( maxRows );
+
+	if ( ! Number.isFinite( limit ) || limit <= 0 ) {
+		return { ...matrix, meta: { ...( matrix.meta || {} ), truncated: false } };
+	}
+
+	const rows = matrix.rows.slice( 0, Math.floor( limit ) );
+
+	return {
+		...matrix,
+		rows,
+		meta: { ...( matrix.meta || {} ), truncated: rows.length < matrix.rows.length },
+	};
+}
+
 // ── POST /parse — parse any supported file into the matrix contract ───────
 ingestRouter.post( '/parse', upload.single( 'file' ), async ( req, res ) => {
 	try {
@@ -365,7 +394,8 @@ ingestRouter.post( '/parse', upload.single( 'file' ), async ( req, res ) => {
 		// Spreadsheets.
 		if ( 'xlsx' === kind ) {
 			const matrix = await readXlsx( fileBuffer, body.sheet );
-			return res.json( { success: true, format: 'xlsx', columns: matrix.columns, rows: matrix.rows, meta: matrix.meta } );
+			const limited = limitMatrix( matrix, body.maxRows );
+			return res.json( { success: true, format: 'xlsx', columns: limited.columns, rows: limited.rows, meta: limited.meta } );
 		}
 		if ( 'xls' === kind ) {
 			const error = new Error( 'Legacy .xls parsing is not available in the worker; the caller falls back to local PhpSpreadsheet.' );
@@ -383,11 +413,19 @@ ingestRouter.post( '/parse', upload.single( 'file' ), async ( req, res ) => {
 		// Text formats.
 		if ( 'csv' === kind || 'tsv' === kind ) {
 			const matrix = readDelimited( fileBuffer.toString( 'utf8' ), 'tsv' === kind ? '\t' : null );
-			return res.json( { success: true, format: kind, columns: matrix.columns, rows: matrix.rows, meta: { engine: 'csv-parse', source_total: matrix.rows.length } } );
+			const limited = limitMatrix(
+				{ columns: matrix.columns, rows: matrix.rows, meta: { engine: 'csv-parse', source_total: matrix.rows.length } },
+				body.maxRows
+			);
+			return res.json( { success: true, format: kind, columns: limited.columns, rows: limited.rows, meta: limited.meta } );
 		}
 		if ( 'json' === kind || 'jsonl' === kind || 'ndjson' === kind ) {
 			const matrix = readJson( fileBuffer.toString( 'utf8' ), 'json' === kind ? 'json' : 'jsonl' );
-			return res.json( { success: true, format: kind, columns: matrix.columns, rows: matrix.rows, meta: { engine: 'json', source_total: matrix.rows.length } } );
+			const limited = limitMatrix(
+				{ columns: matrix.columns, rows: matrix.rows, meta: { engine: 'json', source_total: matrix.rows.length } },
+				body.maxRows
+			);
+			return res.json( { success: true, format: kind, columns: limited.columns, rows: limited.rows, meta: limited.meta } );
 		}
 
 		// PDF.

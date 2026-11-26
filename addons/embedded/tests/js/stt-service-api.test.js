@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for STT Service API and Backend Registry (stt-service-api.js)
  *

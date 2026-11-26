@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Admin & inspection router (Phases 4–5 of Proposal 094).
  *

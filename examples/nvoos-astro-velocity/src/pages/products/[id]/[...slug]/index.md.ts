@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // /products/<id>/<slug>/index.md — the markdown variant of a product
 // (Proposal 136 §4.4). The HTML page stays canonical; BaseLayout emits
 // `rel="alternate" type="text/markdown"` to this route.

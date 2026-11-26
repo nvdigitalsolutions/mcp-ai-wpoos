@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Crawl routes — URL → clean Markdown, batched crawling, and link scans.
  *

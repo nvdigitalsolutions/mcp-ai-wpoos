@@ -18,8 +18,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class DeleteFileTool extends AbstractTool
+class DeleteFileTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(
         ErrorFactoryInterface $errors,
@@ -95,5 +97,17 @@ class DeleteFileTool extends AbstractTool
                 'filename' => $file->filename,
             ),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Deletes durable data from the local file store.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_DESTRUCTIVE;
     }
 }

@@ -1,0 +1,125 @@
+---
+// SPDX-License-Identifier: MIT
+// BuilderLightbox — the source's gallery opened a vendor lightbox on click;
+// a forged site ships neither that script nor its stylesheet, so the rebuilt
+// slides rendered as dead links (virtuallyjamaica's hardware carousel: a
+// `.lightboxgalleryitem` anchor per logo, pointing at the CMS that no longer
+// exists).
+//
+// The markup already carries everything the interaction needs:
+//   - the trigger is a real link (`a.lightboxgalleryitem` / `a[data-lightbox]`),
+//     so it is focusable and keyboard-operable without extra markup;
+//   - the rendered `<img>` is the LOCALIZED copy — the same mirrored asset the
+//     source's original URL resolved to (the media snapshot keys both to one
+//     file), so the viewer never reaches for the dead CMS.
+//
+// A native `<dialog>` supplies the modal semantics: focus trap, Escape, inert
+// background, `::backdrop`. No dependency, and no new markup is required.
+//
+// No JS: the link still navigates (the source's lightbox was JS-only too).
+---
+<script>
+	const TRIGGER = 'a.lightboxgalleryitem, a[data-lightbox]';
+
+	let dialog: HTMLDialogElement | null = null;
+	let image: HTMLImageElement | null = null;
+	let closeButton: HTMLButtonElement | null = null;
+	let opener: HTMLAnchorElement | null = null;
+
+	function build(): HTMLDialogElement {
+		const el = document.createElement( 'dialog' );
+		el.className = 'ds-lightbox';
+		el.setAttribute( 'aria-label', 'Image viewer' );
+
+		const close = document.createElement( 'button' );
+		close.type = 'button';
+		close.className = 'ds-lightbox__close';
+		close.setAttribute( 'aria-label', 'Close image' );
+		close.textContent = '\u00d7';
+
+		const img = document.createElement( 'img' );
+		img.alt = '';
+		img.decoding = 'async';
+
+		// A click outside the image lands on the dialog box itself.
+		el.addEventListener( 'click', ( event ) => {
+			if ( event.target === el ) {
+				el.close();
+			}
+		} );
+		close.addEventListener( 'click', () => el.close() );
+		el.addEventListener( 'close', () => {
+			// APG dialog pattern: focus returns to the control that opened it.
+			opener?.focus( { preventScroll: true } );
+			opener = null;
+		} );
+
+		el.append( close, img );
+		document.body.append( el );
+		dialog = el;
+		image = img;
+		closeButton = close;
+		return el;
+	}
+
+	/**
+	 * The best asset the slide already carries. A lightbox should not show the
+	 * browser's chosen THUMB candidate (a 7-up track renders the 300w entry), so
+	 * read the largest `srcset` candidate first — the post-build localizer has
+	 * already rewritten every candidate to a mirrored `/media/…` file.
+	 */
+	function sourceOf( img: HTMLImageElement ): string {
+		let best = '';
+		let weight = -1;
+		for ( const candidate of ( img.getAttribute( 'srcset' ) ?? '' ).split( ',' ) ) {
+			const [ url, descriptor = '' ] = candidate.trim().split( /\s+/ );
+			if ( ! url ) {
+				continue;
+			}
+			const match = /^([\d.]+)([wx])$/.exec( descriptor );
+			// `2x` is roughly twice the pixel count of `1x`; scale it so a `w`
+			// descriptor can be compared with it.
+			const value = match ? Number( match[ 1 ] ) * ( match[ 2 ] === 'x' ? 1000 : 1 ) : 0;
+			if ( value > weight ) {
+				weight = value;
+				best = url;
+			}
+		}
+		return best || img.currentSrc || img.src;
+	}
+
+	function open( trigger: HTMLAnchorElement ): void {
+		const thumb = trigger.querySelector( 'img' );
+		// The rendered `<img>` is the LOCALIZED copy: the slide's href may still
+		// point at the retired CMS origin, while every `src`/`srcset` entry was
+		// mirrored at build time.
+		const source = thumb ? sourceOf( thumb ) : '';
+		if ( source === '' ) {
+			return;
+		}
+
+		const el = dialog ?? build();
+		const label = trigger.getAttribute( 'title' ) || thumb?.alt || '';
+		if ( image ) {
+			image.src = source;
+			image.alt = thumb?.alt || label;
+		}
+		el.setAttribute( 'aria-label', label === '' ? 'Image viewer' : `Image: ${ label }` );
+		opener = trigger;
+		el.showModal();
+		closeButton?.focus();
+	}
+
+	document.addEventListener( 'click', ( event ) => {
+		const target = event.target instanceof Element ? event.target.closest( TRIGGER ) : null;
+		if ( ! ( target instanceof HTMLAnchorElement ) ) {
+			return;
+		}
+		// A modified click (new tab, new window, download) keeps its native meaning.
+		if ( event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ) {
+			return;
+		}
+		event.preventDefault();
+		open( target );
+	} );
+</script>

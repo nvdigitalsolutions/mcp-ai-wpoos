@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! NV oOS WordPress plugin REST integration.
 //!
 //! The app is a headless client of a user-configured NV oOS site, using the

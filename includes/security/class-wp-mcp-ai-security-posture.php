@@ -557,17 +557,40 @@ class WP_MCP_AI_Security_Posture {
 	}
 
 	/**
-	 * Local scoring for installs without lib/core.
 	 * Convert numeric score to a letter grade.
 	 *
-	 * Mozilla HTTP Observatory bands, so the grade means the same thing here
-	 * and on the Laravel runtime (both score through the same catalogue).
+	 * The shared scorer owns the bands whenever lib/core is loaded, so the two
+	 * runtimes cannot disagree. The local table is the wp.org base build's copy
+	 * (lib/core is stripped there); `local_grade_bands()` is parity-tested
+	 * against `PostureScorer::gradeFor()` so the copy cannot rot.
 	 *
 	 * @param int $score 0-100.
 	 * @return string Grade (A+ . . . F).
 	 */
 	private function score_to_grade( $score ) {
-		$bands = array(
+		if ( class_exists( '\Nvoos\Core\Application\Security\PostureScorer' ) ) {
+			return \Nvoos\Core\Application\Security\PostureScorer::gradeFor( (int) $score );
+		}
+
+		foreach ( $this->local_grade_bands() as $band ) {
+			if ( $score >= $band[0] ) {
+				return $band[1];
+			}
+		}
+
+		return 'F';
+	}
+
+	/**
+	 * Fallback grade bands for installs without lib/core.
+	 *
+	 * Mozilla HTTP Observatory bands (http-observatory/docs/scoring.md), so a
+	 * grade means the same thing in every build.
+	 *
+	 * @return array<int, array{0: int, 1: string}>
+	 */
+	private function local_grade_bands() {
+		return array(
 			array( 100, 'A+' ),
 			array( 90, 'A' ),
 			array( 85, 'A-' ),
@@ -581,14 +604,6 @@ class WP_MCP_AI_Security_Posture {
 			array( 30, 'D' ),
 			array( 25, 'D-' ),
 		);
-
-		foreach ( $bands as $band ) {
-			if ( $score >= $band[0] ) {
-				return $band[1];
-			}
-		}
-
-		return 'F';
 	}
 
 	/**

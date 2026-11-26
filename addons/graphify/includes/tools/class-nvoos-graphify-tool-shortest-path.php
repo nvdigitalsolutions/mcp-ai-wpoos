@@ -91,9 +91,9 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 		$max_depth   = isset( $arguments['max_depth'] ) ? max( 2, min( 10, absint( $arguments['max_depth'] ) ) ) : 6;
 
 		if ( ! $start_label || ! $end_label ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Both start and end are required.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Both start and end are required.', 'nvoos-graphify' )
 			);
 		}
 
@@ -112,31 +112,35 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( ! $start_node ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( __( 'Start node "%s" not found.', 'nvoos-graphify' ), $start_label ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				sprintf( __( 'Start node "%s" not found.', 'nvoos-graphify' ), $start_label ),
+				array( 'start' => $start_label )
 			);
 		}
 		if ( ! $end_node ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( __( 'End node "%s" not found.', 'nvoos-graphify' ), $end_label ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				sprintf( __( 'End node "%s" not found.', 'nvoos-graphify' ), $end_label ),
+				array( 'end' => $end_label )
 			);
 		}
 
 		$path_ids = NV_oOS_Graphify_Analyzer::shortest_path( $start_node->node_id, $end_node->node_id, $max_depth );
 
 		if ( null === $path_ids ) {
-			return array(
-				'success' => false,
-				'start'   => $start_node->label,
-				'end'     => $end_node->label,
-				'error'   => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				sprintf(
 					__( 'No path found between "%1$s" and "%2$s" within depth %3$d.', 'nvoos-graphify' ),
 					$start_node->label,
 					$end_node->label,
 					$max_depth
 				),
+				array(
+					'start' => $start_node->label,
+					'end'   => $end_node->label,
+				)
 			);
 		}
 

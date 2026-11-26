@@ -32,6 +32,7 @@ use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Session\SessionLog;
 use Nvoos\Core\Application\Session\SessionTelemetry;
 use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Domain\Contract\ChatProfileResolverInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Service\Harness\GuardrailPrompt;
@@ -54,6 +55,7 @@ use Nvoos\Core\Domain\Event\AgenticIterationComplete;
 use Nvoos\Core\Domain\Event\AgenticLoopCompleted;
 use Nvoos\Core\Domain\Event\CostCalculated;
 use Nvoos\Core\Domain\Event\UnresolvedToolRequested;
+use Nvoos\Core\Domain\ValueObject\TurnBudget;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
@@ -92,6 +94,14 @@ class ChatOrchestrator
      * Optional token-budget manager for tool-definition capping.
      */
     private ?TokenBudgetManager $tokenBudget = null;
+
+    /**
+     * The turn's token ceilings, when a host configures them.
+     *
+     * Optional: a runtime that never wires it behaves exactly as before, because
+     * a zero ceiling is off in both dimensions.
+     */
+    private ?TurnBudget $turnBudget = null;
 
     /**
      * Optional rate limiter for API call gating.
@@ -202,12 +212,30 @@ class ChatOrchestrator
     private ?HarnessProfileProviderInterface $harnessProfiles = null;
 
     /**
+     * Optional per-user chat profile, for the advisory mode hint.
+     *
+     * The hint is **not** a control — the guard in `Application/Tool` is — so a
+     * runtime that never wires this is still enforced, just chattier: the model
+     * discovers the boundary by having a write refused instead of being told.
+     */
+    private ?ChatProfileResolverInterface $chatProfiles = null;
+
+    /**
      * Optional trace store, so a turn can record what it did.
      *
      * Capture stays opt-in per assistant through `trace_capture.enabled`; a
      * runtime that wires a store but leaves the profile off writes nothing.
      */
     private ?TraceStoreInterface $traceStore = null;
+
+    /**
+     * The one reader for the model-facing copy of a tool result.
+     *
+     * Lazy because it is stateless: constructing one per orchestrator is fine,
+     * but keeping it out of the constructor leaves the public signature alone
+     * for every runtime that already builds one (Proposal 161 §6).
+     */
+    private ?ToolResultSanitizer $resultSanitizer = null;
 
     public function __construct(
         private readonly ToolRegistry $tools,
@@ -225,6 +253,20 @@ class ChatOrchestrator
     public function setTokenBudgetManager(TokenBudgetManager $budget): void
     {
         $this->tokenBudget = $budget;
+    }
+
+    /**
+     * Wire the turn's token ceilings.
+     *
+     * Enforced before each provider call rather than after it: a ceiling applied
+     * afterwards is a report, and the request that overspends has already been
+     * billed. The estimate is the only measurement available before the call, so
+     * one request can still overshoot by its own estimation error — the same
+     * allowance `BudgetGuard` and the tool quotas document.
+     */
+    public function setTurnBudget(?TurnBudget $budget): void
+    {
+        $this->turnBudget = $budget;
     }
 
     /**
@@ -376,6 +418,33 @@ class ChatOrchestrator
     }
 
     /**
+     * Wire the per-user chat profile so the system prompt can carry its hint.
+     *
+     * Optional by design. The boundary is enforced at tool dispatch; this only
+     * tells the model where it is, so a read-only turn answers rather than
+     * spending its iterations on calls the server will refuse.
+     */
+    public function setChatProfileResolver(?ChatProfileResolverInterface $profiles): void
+    {
+        $this->chatProfiles = $profiles;
+    }
+
+    /**
+     * The advisory mode hint for this turn, or an empty string.
+     *
+     * Resolved from the server-built context only — the orchestrator's own
+     * `$userId` — so nothing a client sends can name a profile.
+     */
+    private function chatProfileHint(int $userId): string
+    {
+        if (null === $this->chatProfiles) {
+            return '';
+        }
+
+        return $this->chatProfiles->resolve(array( 'user_id' => $userId ))->promptHint();
+    }
+
+    /**
      * Resolve the guard that applies to this turn.
      */
     private function resolveOutputGuard(?array $profile): ?OutputGuard
@@ -411,16 +480,18 @@ class ChatOrchestrator
      * assistant ran on the user's words alone.
      *
      * Composition order matches WordPress: the guardrail block first, then the
-     * assistant's instructions, then whatever the conversation itself carried.
-     * Each part is added only when absent, because a client may already have
-     * injected one and a second copy doubles its weight in the prompt.
+     * assistant's instructions, then the chat profile's mode hint, then whatever
+     * the conversation itself carried. Each part is added only when absent,
+     * because a client may already have injected one and a second copy doubles
+     * its weight in the prompt.
      *
      * @param array<int, array<string, mixed>> $messages        Conversation messages.
      * @param array<string, mixed>             $assistantConfig Assistant configuration; `system_prompt` carries the instructions.
      * @param array<string, mixed>|null        $profile         Resolved harness profile, if any.
+     * @param int                              $userId          Caller, for the chat-profile hint.
      * @return array<int, array<string, mixed>>
      */
-    private function applySystemPrompt(array $messages, array $assistantConfig, ?array $profile): array
+    private function applySystemPrompt(array $messages, array $assistantConfig, ?array $profile, int $userId = 0): array
     {
         $raw          = $assistantConfig['system_prompt'] ?? '';
         $instructions = \is_string($raw) ? \trim($raw) : '';
@@ -448,6 +519,15 @@ class ChatOrchestrator
 
         if ('' !== $instructions && ! \str_contains($existing, $instructions)) {
             $parts[] = $instructions;
+        }
+
+        // The mode hint sits with the other rails, before any client text, so a
+        // client-supplied block cannot bury it. De-duplicated because a resumed
+        // turn may already carry it.
+        $hint = $this->chatProfileHint($userId);
+
+        if ('' !== $hint && ! \str_contains($existing, $hint)) {
+            $parts[] = $hint;
         }
 
         if (array() === $parts) {
@@ -694,11 +774,12 @@ class ChatOrchestrator
 
         $iteration          = 0;
         $toolResultMessages = array();
+        $budgetExhausted    = false;
 
         // The harness profile drives both the prompt rails and the response
         // guard, so it is resolved once per turn.
         $profile  = $this->resolveProfile($assistantId);
-        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile);
+        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile, $userId);
 
         // Build tool definitions for this assistant.
         $allowedToolSlugs = $assistantConfig['tools'] ?? array();
@@ -864,6 +945,28 @@ class ChatOrchestrator
         }
         $options = $this->applyRequestPolicy($options, $assistantId, 0);
 
+        // Turn budget — before the first request leaves. A ceiling applied
+        // afterwards is a report, and the call that overspent is already billed.
+        $budgetVerdict = $this->turnBudgetVerdict($messages, $options, $costAccumulator, $sessionId);
+
+        if (null !== $budgetVerdict && TurnBudget::STATE_EXHAUSTED === $budgetVerdict['state']) {
+            $this->recordSessionEvent(
+                SessionLog::TYPE_TURN_ENDED,
+                array( 'reason' => 'budget_limit', 'iterations' => 0, 'assistant_id' => $assistantId, 'user_id' => $userId ),
+                $sessionId,
+            );
+            $this->notifyTurnStopping($assistantId, 0);
+
+            return array(
+                'response'      => $this->turnBudgetError($budgetVerdict),
+                'tool_results'  => array(),
+                'iterations'    => 0,
+                'cost'          => null,
+                'cancelled'     => false,
+                'cancel_reason' => 'budget_limit',
+            );
+        }
+
         // Initial LLM call with bounded retry via agent/request_error.
         $response = $this->providers->chat($messages, $options, $assistantConfig);
         $retries  = 0;
@@ -1000,6 +1103,12 @@ class ChatOrchestrator
                 $toolDurationMs = \max(0.0, ( \microtime(true) - $toolStartedAt ) * 1000.0);
                 $toolOutcome    = $this->errors->isError($result) ? 'error' : 'success';
 
+                // One record per execution, in the shape OpenTelemetry's
+                // `execute_tool` span uses. The session log below already carries
+                // these four facts; a trace is where a reader can query them, and
+                // this is the record that makes per-tool metrics derivable.
+                $trace?->toolExecution((string) $toolName, (string) $toolCallId, $toolDurationMs, $toolOutcome);
+
                 // Normalize errors for LLM consumption.
                 if ($this->errors->isError($result)) {
                     $normalized    = $this->errors->normalize($result);
@@ -1009,8 +1118,13 @@ class ChatOrchestrator
                         ? $result['message']
                         : Json::encodeOr($result, '(unserializable result)');
                 } else {
-                    // Sanitize: strip base64 to save tokens in LLM context.
-                    $resultContent = Json::encodeOr($this->sanitizeToolResult($result), '(unserializable result)');
+                    // The model gets a sanitized copy; the tool's own result is
+                    // untouched. ToolResultSanitizer is the only place that
+                    // decides what "sanitized" means.
+                    $resultContent = Json::encodeOr(
+                        $this->resultSanitizer()->sanitize($result, $this->tools->get($toolName)),
+                        '(unserializable result)'
+                    );
                 }
 
                 // Track byte budget if wired (accounting only — spill
@@ -1080,6 +1194,16 @@ class ChatOrchestrator
             }
             $options = $this->applyRequestPolicy($options, $assistantId, $iteration + 1);
 
+            // Turn budget — before each continuation call. The spend so far plus
+            // this request is what matters: a loop that has already used its
+            // allowance must stop rather than spend one more round-trip.
+            $budgetVerdict = $this->turnBudgetVerdict($messages, $options, $costAccumulator, $sessionId);
+
+            if (null !== $budgetVerdict && TurnBudget::STATE_EXHAUSTED === $budgetVerdict['state']) {
+                $budgetExhausted = true;
+                break;
+            }
+
             // Call LLM again with tool results, with bounded retry.
             $response = $this->providers->chat($messages, $options, $assistantConfig);
             $retries  = 0;
@@ -1110,9 +1234,10 @@ class ChatOrchestrator
 
         $durationMs = ( \microtime(true) - $startedAt ) * 1000;
 
-        // Strip orphaned tool calls if loop hit max iterations.
+        // Strip orphaned tool calls if the loop stopped early — an iteration cap
+        // and a spent token ceiling leave the same half-finished step behind.
         $limitReached = $iteration >= $maxIterations;
-        if ($limitReached || $cancelled) {
+        if ($limitReached || $cancelled || $budgetExhausted) {
             $this->stripOrphanedToolCalls($response);
         }
 
@@ -1135,7 +1260,7 @@ class ChatOrchestrator
                 totalIterations: $iteration,
                 assistantId: $assistantId,
                 toolResults: $toolResultMessages,
-                limitReached: $limitReached,
+                limitReached: $limitReached || $budgetExhausted,
             )
         );
 
@@ -1145,7 +1270,7 @@ class ChatOrchestrator
         // Durable turn boundary with the exit reason.
         $turnEndReason = $cancelled
             ? 'aborted'
-            : ( $limitReached ? 'iteration_limit' : 'completed' );
+            : ( $budgetExhausted ? 'budget_limit' : ( $limitReached ? 'iteration_limit' : 'completed' ) );
         $this->recordSessionEvent(
             SessionLog::TYPE_TURN_ENDED,
             array( 'reason' => $turnEndReason, 'iterations' => $iteration, 'assistant_id' => $assistantId, 'user_id' => $userId ),
@@ -1162,10 +1287,12 @@ class ChatOrchestrator
         // Calculate cost from accumulated per-iteration usage.
         $cost = null;
         if (\is_array($response)) {
+            $billedRoute = $this->billedRoute($response, $options);
+
             $cost = $this->costs->calculateFromResponse(
                 $response,
-                $options['provider'],
-                $options['model'],
+                $billedRoute['provider'],
+                $billedRoute['model'],
             );
 
             if (
@@ -1237,10 +1364,11 @@ class ChatOrchestrator
         // The harness profile drives both the prompt rails and the response
         // guard, so it is resolved once per turn.
         $profile  = $this->resolveProfile($assistantId);
-        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile);
+        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile, $userId);
 
         $iteration          = 0;
         $toolResultMessages = array();
+        $budgetExhausted    = false;
 
         // Status: thinking.
         $this->sse->sendEvent(
@@ -1432,6 +1560,33 @@ class ChatOrchestrator
         }
         $options = $this->applyRequestPolicy($options, $assistantId, 0);
 
+        // Turn budget — before the stream opens. The SSE error event is the same
+        // one a provider error uses, so a client that already handles failures
+        // needs no new case.
+        $budgetVerdict = $this->turnBudgetVerdict($messages, $options, $costAccumulator, $sessionId);
+
+        if (null !== $budgetVerdict && TurnBudget::STATE_EXHAUSTED === $budgetVerdict['state']) {
+            $budgetError = $this->errors->normalize($this->turnBudgetError($budgetVerdict));
+
+            $this->recordSessionEvent(
+                SessionLog::TYPE_TURN_ENDED,
+                array( 'reason' => 'budget_limit', 'iterations' => 0, 'assistant_id' => $assistantId, 'user_id' => $userId ),
+                $sessionId,
+            );
+            $this->sse->sendEvent('error', array( 'code' => $budgetError['code'], 'message' => $budgetError['message'] ));
+            $this->sse->sendDone();
+            $this->notifyTurnStopping($assistantId, 0);
+
+            return array(
+                'response'      => $budgetError,
+                'tool_results'  => array(),
+                'iterations'    => 0,
+                'cost'          => null,
+                'cancelled'     => false,
+                'cancel_reason' => 'budget_limit',
+            );
+        }
+
         $response = $this->providers->stream(
             $messages,
             $options,
@@ -1577,6 +1732,10 @@ class ChatOrchestrator
                 $toolDurationMs = \max(0.0, ( \microtime(true) - $toolStartedAt ) * 1000.0);
                 $toolOutcome    = $this->errors->isError($result) ? 'error' : 'success';
 
+                // Same record on the streaming path — one shape for both, so a
+                // reader does not have to know which route produced the turn.
+                $trace?->toolExecution((string) $toolName, (string) $toolCallId, $toolDurationMs, $toolOutcome);
+
                 if ($this->errors->isError($result)) {
                     $normalized    = $this->errors->normalize($result);
                     $resultContent = "Error: {$normalized['message']}";
@@ -1585,7 +1744,13 @@ class ChatOrchestrator
                         ? $result['message']
                         : Json::encodeOr($result, '(unserializable result)');
                 } else {
-                    $resultContent = Json::encodeOr($result, '(unserializable result)');
+                    // Same sanitizer as the non-streaming loop. These two paths
+                    // used to disagree — this one encoded the raw result — and
+                    // sharing the reader is what prevents that recurring.
+                    $resultContent = Json::encodeOr(
+                        $this->resultSanitizer()->sanitize($result, $this->tools->get($toolName)),
+                        '(unserializable result)'
+                    );
                 }
 
                 if (null !== $this->budgetTracker) {
@@ -1657,6 +1822,15 @@ class ChatOrchestrator
             }
             $options = $this->applyRequestPolicy($options, $assistantId, $iteration + 1);
 
+            // Turn budget — before each continuation call, same rule as the
+            // non-streaming path: the spend so far plus this request decides.
+            $budgetVerdict = $this->turnBudgetVerdict($messages, $options, $costAccumulator, $sessionId);
+
+            if (null !== $budgetVerdict && TurnBudget::STATE_EXHAUSTED === $budgetVerdict['state']) {
+                $budgetExhausted = true;
+                break;
+            }
+
             // Status: analyzing results.
             $this->sse->sendEvent(
                 'status',
@@ -1690,9 +1864,18 @@ class ChatOrchestrator
         }
 
         $limitReached = $iteration >= $maxIterations;
-        if ($limitReached || $cancelled) {
+        if ($limitReached || $cancelled || $budgetExhausted) {
             $this->stripOrphanedToolCalls($response);
-            if ($limitReached) {
+
+            if ($budgetExhausted) {
+                $this->sse->sendEvent(
+                    'status',
+                    array(
+                        'type'    => 'budget_limit',
+                        'message' => 'Reached this turn\'s token ceiling; stopping before the next request.',
+                    )
+                );
+            } elseif ($limitReached) {
                 $this->sse->sendEvent(
                     'status',
                     array(
@@ -1708,7 +1891,7 @@ class ChatOrchestrator
                 totalIterations: $iteration,
                 assistantId: $assistantId,
                 toolResults: $toolResultMessages,
-                limitReached: $limitReached,
+                limitReached: $limitReached || $budgetExhausted,
             )
         );
 
@@ -1718,7 +1901,7 @@ class ChatOrchestrator
         // Durable turn boundary with the exit reason.
         $turnEndReason = $cancelled
             ? 'aborted'
-            : ( $limitReached ? 'iteration_limit' : 'completed' );
+            : ( $budgetExhausted ? 'budget_limit' : ( $limitReached ? 'iteration_limit' : 'completed' ) );
         $this->recordSessionEvent(
             SessionLog::TYPE_TURN_ENDED,
             array( 'reason' => $turnEndReason, 'iterations' => $iteration, 'assistant_id' => $assistantId, 'user_id' => $userId ),
@@ -1727,10 +1910,12 @@ class ChatOrchestrator
 
         $cost = null;
         if (\is_array($response)) {
+            $billedRoute = $this->billedRoute($response, $options);
+
             $cost = $this->costs->calculateFromResponse(
                 $response,
-                $options['provider'],
-                $options['model'],
+                $billedRoute['provider'],
+                $billedRoute['model'],
             );
 
             if (
@@ -2067,6 +2252,38 @@ class ChatOrchestrator
     }
 
     /**
+     * The provider and model to bill for a response (Proposal 149 §70).
+     *
+     * Normally the request's own values. When routing deviated — a model
+     * fallback, a provider hop or an accepted cascade tier-1 answer — the
+     * router annotates the response with what actually answered, and the cost
+     * table must be read against that. A response that echoes its own `model`
+     * also wins over the request: a client may have applied a provider default.
+     *
+     * @param mixed                $response Provider response.
+     * @param array<string, mixed> $options  Request options.
+     * @return array{provider: string, model: string}
+     */
+    private function billedRoute(mixed $response, array $options): array
+    {
+        $routing = \is_array($response) && \is_array($response['_nvoos_routing'] ?? null)
+            ? $response['_nvoos_routing']
+            : array();
+
+        $provider = (string) ( $routing['provider'] ?? $options['provider'] ?? '' );
+
+        if (\is_string($routing['model'] ?? null) && '' !== $routing['model']) {
+            $model = $routing['model'];
+        } elseif (\is_array($response) && \is_string($response['model'] ?? null) && '' !== $response['model']) {
+            $model = $response['model'];
+        } else {
+            $model = (string) ( $options['model'] ?? '' );
+        }
+
+        return array( 'provider' => $provider, 'model' => $model );
+    }
+
+    /**
      * Accumulate token usage from one provider response.
      *
      * Error responses (WP_Error, DomainError, etc.) contribute nothing.
@@ -2088,6 +2305,111 @@ class ChatOrchestrator
         $accumulator['total_prompt_tokens']     += (int) ( $usage['prompt_tokens'] ?? 0 );
         $accumulator['total_completion_tokens'] += (int) ( $usage['completion_tokens'] ?? 0 );
         // cost_usd is recomputed by CostCalculator when the final cost is built.
+    }
+
+    /**
+     * Judge the next provider call against the turn's ceilings.
+     *
+     * Called **before** every request leaves. A ceiling applied afterwards is a
+     * report, and the request that overspent is already billed.
+     *
+     * A `warn` verdict is recorded to the session log and does not stop anything;
+     * an `exhausted` one is the caller's to act on. Splitting the two here keeps
+     * the four call sites (two per entry point) to a single state check.
+     *
+     * @param array<int, array<string, mixed>> $messages
+     * @param array<string, mixed>             $options
+     * @param array<string, mixed>             $accumulator
+     * @return array{state: string, dimension: string, limit: int, projected: int, spent: int, percent: float|null}|null
+     */
+    private function turnBudgetVerdict(
+        array $messages,
+        array $options,
+        array $accumulator,
+        ?string $sessionId,
+    ): ?array {
+        if (null === $this->turnBudget || ! $this->turnBudget->enabled()) {
+            return null;
+        }
+
+        $spent = (int) ( $accumulator['total_prompt_tokens'] ?? 0 )
+            + (int) ( $accumulator['total_completion_tokens'] ?? 0 );
+
+        $verdict = $this->turnBudget->assess(
+            $spent,
+            $this->estimatePromptTokens($messages),
+            (int) ( $options['max_tokens'] ?? 0 ),
+        );
+
+        if (null !== $verdict && TurnBudget::STATE_WARN === $verdict['state']) {
+            $this->recordSessionEvent(
+                SessionLog::TYPE_BUDGET_WARNING,
+                array(
+                    'dimension' => $verdict['dimension'],
+                    'limit'     => $verdict['limit'],
+                    'projected' => $verdict['projected'],
+                    'spent'     => $verdict['spent'],
+                    'percent'   => $verdict['percent'],
+                ),
+                $sessionId,
+            );
+        }
+
+        return $verdict;
+    }
+
+    /**
+     * Estimate the tokens in the outgoing prompt.
+     *
+     * The tokenizer is used when one is wired; the character fallback is the same
+     * `strlen / 4` ratio the tool quotas and WordPress's `estimate_tokens()` use,
+     * so a ceiling means the same thing on a deployment without tiktoken.
+     *
+     * @param array<int, array<string, mixed>> $messages
+     */
+    private function estimatePromptTokens(array $messages): int
+    {
+        if (null !== $this->tokenBudget) {
+            return $this->tokenBudget->estimateMessageTokens($messages);
+        }
+
+        return (int) ( \strlen(Json::encodeOr($messages, '[]')) / 4 );
+    }
+
+    /**
+     * Build the refusal for an exhausted ceiling.
+     *
+     * The message names the dimension, because "reduce the conversation" (a call
+     * that is too big) and "the turn was stopped" (a loop that spent too much)
+     * call for different remedies.
+     *
+     * @param array{state: string, dimension: string, limit: int, projected: int, spent: int, percent: float|null} $verdict
+     */
+    private function turnBudgetError(array $verdict): mixed
+    {
+        $message = TurnBudget::DIMENSION_CALL === $verdict['dimension']
+            ? \sprintf(
+                'This request is estimated at %d tokens, above the per-call ceiling of %d. Reduce the conversation or deselect tools, or ask an operator to raise the ceiling.',
+                $verdict['projected'],
+                $verdict['limit'],
+            )
+            : \sprintf(
+                'This turn reached %d tokens of its %d-token ceiling, so the next call was not made. The work done so far is in the transcript.',
+                $verdict['spent'],
+                $verdict['limit'],
+            );
+
+        return $this->errors->create(
+            'turn_budget_exceeded',
+            $message,
+            array(
+                'dimension' => $verdict['dimension'],
+                'limit'     => $verdict['limit'],
+                'projected' => $verdict['projected'],
+                'spent'     => $verdict['spent'],
+                'percent'   => $verdict['percent'],
+            ),
+        );
     }
 
     /**
@@ -2311,34 +2633,11 @@ class ChatOrchestrator
     }
 
     /**
-     * Sanitize a tool result for LLM consumption.
-     *
-     * Strips base64 data and truncates very long string values
-     * to prevent token waste from inline binary content.
-     *
-     * @param mixed $result Raw tool result.
-     * @return mixed Sanitized result.
+     * The shared sanitizer instance.
      */
-    private function sanitizeToolResult($result)
+    private function resultSanitizer(): ToolResultSanitizer
     {
-        if (! \is_array($result)) {
-            return $result;
-        }
-
-        $stripKeys = array( 'b64_json', 'b64_image', 'base64', 'data', 'inline_data', 'inlineData' );
-        foreach ($stripKeys as $key) {
-            if (isset($result[ $key ])) {
-                unset($result[ $key ]);
-            }
-        }
-
-        foreach ($result as $key => $value) {
-            if (\is_string($value) && \strlen($value) > 10000) {
-                $result[ $key ] = \substr($value, 0, 200) . '…[truncated ' . \strlen($value) . ' bytes]';
-            }
-        }
-
-        return $result;
+        return $this->resultSanitizer ??= new ToolResultSanitizer();
     }
 
     /**

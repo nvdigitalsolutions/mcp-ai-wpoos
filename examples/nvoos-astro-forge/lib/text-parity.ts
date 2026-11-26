@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // text-parity.ts — content parity, measured instead of assumed.
 //
@@ -84,6 +85,12 @@ const BLOCK_TAGS = new Set( [
 const PUNCT_FOLD: Record< string, string > = {
 	'\u2018': "'", '\u2019': "'", '\u201a': "'", '\u201b': "'", '\u2032': "'",
 	'\u201c': '"', '\u201d': '"', '\u201e': '"', '\u201f': '"', '\u2033': '"',
+	// U+2010/U+2011 are typographic and non-breaking HYPHENS, and NFKC does not
+	// fold them to U+002D. `tokenize` keeps an ASCII hyphen inside a word, so a
+	// source "real‑time" (U+2010) against a rebuilt "real-time" (U+002D) split
+	// into different tokens and lost every shingle — eca.directory's hero and
+	// article bands scored 78%/64% on copy that was otherwise identical.
+	'\u2010': '-', '\u2011': '-',
 	'\u2013': '-', '\u2014': '-', '\u2015': '-', '\u2212': '-',
 	'\u2026': '...',
 	'\u00a0': ' ', '\u1680': ' ', '\u2000': ' ', '\u2001': ' ', '\u2002': ' ',

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useSettings — Schema-driven settings hook (2.4.0, Proposal 084 Phase 2).
  *

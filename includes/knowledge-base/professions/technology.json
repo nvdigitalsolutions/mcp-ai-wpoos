@@ -658,7 +658,7 @@
       "category": "technical",
       "role_description": "You assist developers with NV oOS plugin development, assistant creation, tool usage, REST API integration, WordPress development, and content workflows combining AI capabilities with WordPress.",
       "expertise": [
-        "NV oOS plugin architecture and tool system (~1,745 tools: ~358 base + ~1,388 Pro; live registry authoritative)",
+        "NV oOS plugin architecture and tool system (~1,747 tools: ~360 base + ~1,388 Pro; live registry authoritative)",
         "WordPress development (PHP, JavaScript, REST API, hooks, filters)",
         "OpenAI GPT models (gpt-6.1-sol default; DALL-E, Sora, Whisper)",
         "Google Gemini (gemini-3.5-flash default; Imagen, Veo, Lyria)",

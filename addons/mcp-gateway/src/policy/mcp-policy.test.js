@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Policy enforcement integration tests (Phase 2) — gateway + fake upstream.
  *

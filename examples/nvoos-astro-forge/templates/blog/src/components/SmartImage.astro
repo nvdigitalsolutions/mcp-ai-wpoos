@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // SmartImage — optimize WordPress media with Astro Image (responsive
 // WebP/AVIF, lazy), and pass through anything else (CDN hosts, external
 // domains) as a plain <img>. The authorization gate mirrors `image.domains`
@@ -16,9 +17,12 @@ interface Props {
 	/** Eager for above-the-fold media (the LCP image); everything else
 	 *  stays lazy — the responsive-image default (web.dev). */
 	eager?: boolean;
+	/** Inline style for the rendered `<img>` — the measured media box (a band's
+	 *  lane height + `object-fit`) has to reach the element itself. */
+	style?: string;
 }
 
-const { src, alt = '', class: className, sizes, eager = false } = Astro.props;
+const { src, alt = '', class: className, sizes, eager = false, style } = Astro.props;
 
 // Repair before the gate: a `/wp-content/…` URL on a stale host is still the
 // CMS's media, and pointing it at the live origin lets Astro download it.
@@ -38,7 +42,8 @@ const optimizedSrc = isAuthorizedImageUrl(resolvedSrc) ? resolvedSrc : undefined
 		loading={eager ? 'eager' : 'lazy'}
 		fetchpriority={eager ? 'high' : 'auto'}
 		decoding="async"
+		style={style}
 	/>
 ) : (
-	<img src={resolvedSrc} alt={alt} class={className} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+	<img src={resolvedSrc} alt={alt} class={className} loading={eager ? 'eager' : 'lazy'} decoding="async" style={style} />
 )}

@@ -61,11 +61,13 @@ class Test_Service_Memory_Capture extends WP_UnitTestCase {
 	 * Test that store() fails with error when agent_id is absent.
 	 */
 	public function test_store_fails_without_agent_id() {
-		$result = $this->service->store( array(
-			'wing'    => 'patient/test',
-			'room'    => 'vitals',
-			'content' => 'Test content',
-		) );
+		$result = $this->service->store(
+			array(
+				'wing'    => 'patient/test',
+				'room'    => 'vitals',
+				'content' => 'Test content',
+			)
+		);
 
 		$this->assertIsArray( $result );
 		$this->assertFalse( $result['success'] );
@@ -77,11 +79,13 @@ class Test_Service_Memory_Capture extends WP_UnitTestCase {
 	 * Test that store() fails with error when wing is absent.
 	 */
 	public function test_store_fails_without_wing() {
-		$result = $this->service->store( array(
-			'agent_id' => 'agent-1',
-			'room'     => 'vitals',
-			'content'  => 'Test content',
-		) );
+		$result = $this->service->store(
+			array(
+				'agent_id' => 'agent-1',
+				'room'     => 'vitals',
+				'content'  => 'Test content',
+			)
+		);
 
 		$this->assertIsArray( $result );
 		$this->assertFalse( $result['success'] );
@@ -92,11 +96,13 @@ class Test_Service_Memory_Capture extends WP_UnitTestCase {
 	 * Test that store() fails with error when room is absent.
 	 */
 	public function test_store_fails_without_room() {
-		$result = $this->service->store( array(
-			'agent_id' => 'agent-1',
-			'wing'     => 'patient/test',
-			'content'  => 'Test content',
-		) );
+		$result = $this->service->store(
+			array(
+				'agent_id' => 'agent-1',
+				'wing'     => 'patient/test',
+				'content'  => 'Test content',
+			)
+		);
 
 		$this->assertIsArray( $result );
 		$this->assertFalse( $result['success'] );
@@ -107,11 +113,13 @@ class Test_Service_Memory_Capture extends WP_UnitTestCase {
 	 * Test that store() fails with error when content is absent.
 	 */
 	public function test_store_fails_without_content() {
-		$result = $this->service->store( array(
-			'agent_id' => 'agent-1',
-			'wing'     => 'patient/test',
-			'room'     => 'vitals',
-		) );
+		$result = $this->service->store(
+			array(
+				'agent_id' => 'agent-1',
+				'wing'     => 'patient/test',
+				'room'     => 'vitals',
+			)
+		);
 
 		$this->assertIsArray( $result );
 		$this->assertFalse( $result['success'] );
@@ -122,12 +130,14 @@ class Test_Service_Memory_Capture extends WP_UnitTestCase {
 	 * Test that store() succeeds with a valid minimal envelope.
 	 */
 	public function test_store_succeeds_with_valid_minimal_envelope() {
-		$result = $this->service->store( array(
-			'agent_id' => 'agent-1',
-			'wing'     => 'patient/test',
-			'room'     => 'vitals',
-			'content'  => 'Patient blood pressure 120/80.',
-		) );
+		$result = $this->service->store(
+			array(
+				'agent_id' => 'agent-1',
+				'wing'     => 'patient/test',
+				'room'     => 'vitals',
+				'content'  => 'Patient blood pressure 120/80.',
+			)
+		);
 
 		$this->assertIsArray( $result );
 		$this->assertTrue( $result['success'] );
@@ -172,13 +182,15 @@ class Test_Service_Memory_Capture extends WP_UnitTestCase {
 			)
 		);
 
-		$result = $this->service->store( array(
-			'agent_id' => 'agent-1',
-			'wing'     => 'patient/test',
-			'room'     => 'vitals',
-			'content'  => 'Test capture.',
-			'tier'     => WP_MCP_AI_Memory_Capture_Service::TIER_CORE, // should be capped
-		) );
+		$result = $this->service->store(
+			array(
+				'agent_id' => 'agent-1',
+				'wing'     => 'patient/test',
+				'room'     => 'vitals',
+				'content'  => 'Test capture.',
+				'tier'     => WP_MCP_AI_Memory_Capture_Service::TIER_CORE, // should be capped.
+			)
+		);
 
 		$this->assertTrue( $result['success'] );
 		$this->assertSame( WP_MCP_AI_Memory_Capture_Service::TIER_RECALL, $result['tier'] );
@@ -200,12 +212,14 @@ class Test_Service_Memory_Capture extends WP_UnitTestCase {
 			2
 		);
 
-		$this->service->store( array(
-			'agent_id' => 'agent-1',
-			'wing'     => 'patient/test',
-			'room'     => 'vitals',
-			'content'  => 'Test capture.',
-		) );
+		$this->service->store(
+			array(
+				'agent_id' => 'agent-1',
+				'wing'     => 'patient/test',
+				'room'     => 'vitals',
+				'content'  => 'Test capture.',
+			)
+		);
 
 		remove_all_filters( 'wp_mcp_ai_memory_pre_store_transform' );
 

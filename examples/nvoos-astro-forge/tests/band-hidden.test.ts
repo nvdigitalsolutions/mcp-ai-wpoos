@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-hidden.test.ts — the source's resting visibility, as emitted CSS.
 //

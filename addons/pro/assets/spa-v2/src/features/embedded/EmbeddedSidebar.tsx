@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * EmbeddedSidebar — Lightweight transcripts list for the [nvoos_pro_spa]
  * shortcode (config.showSidebar = true, default).

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design-import-modes.test.ts — Proposal 098 Phase 1–4 gates: WordPress +
 // Astro-theme source modes, the re-extraction diff, the adaptation plan, and

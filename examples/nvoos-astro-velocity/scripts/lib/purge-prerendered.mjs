@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // purge-prerendered.mjs — remove orphaned prerendered HTML from the SSR client
 // output at boot.

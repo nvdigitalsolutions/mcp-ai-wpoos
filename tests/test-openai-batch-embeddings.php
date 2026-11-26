@@ -31,7 +31,7 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_batch_embeddings() must exist.
+	 * Create_batch_embeddings() must exist.
 	 */
 	public function test_method_exists() {
 		$client = new WP_MCP_AI_OpenAI_Client();
@@ -80,7 +80,7 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_batch_embeddings() must upload a JSONL file and create a batch job.
+	 * Create_batch_embeddings() must upload a JSONL file and create a batch job.
 	 *
 	 * Mocks both the file-upload endpoint and the batches endpoint, and asserts
 	 * that the batch was created targeting /v1/embeddings.
@@ -90,9 +90,9 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 		$defaults['openai_api_key'] = 'sk-test-batch-key';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
-		$urls_called  = array();
-		$batch_body   = null;
-		$upload_body  = null;
+		$urls_called = array();
+		$batch_body  = null;
+		$upload_body = null;
 
 		add_filter(
 			'pre_http_request',
@@ -123,12 +123,12 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 						'response' => array( 'code' => 200 ),
 						'body'     => wp_json_encode(
 							array(
-								'id'                 => 'batch-xyz789',
-								'object'             => 'batch',
-								'endpoint'           => '/v1/embeddings',
-								'input_file_id'      => 'file-abc123',
-								'completion_window'  => '24h',
-								'status'             => 'validating',
+								'id'                => 'batch-xyz789',
+								'object'            => 'batch',
+								'endpoint'          => '/v1/embeddings',
+								'input_file_id'     => 'file-abc123',
+								'completion_window' => '24h',
+								'status'            => 'validating',
 							)
 						),
 						'headers'  => array(),
@@ -181,7 +181,12 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 					$upload_multipart_body = $args['body'];
 					return array(
 						'response' => array( 'code' => 200 ),
-						'body'     => wp_json_encode( array( 'id' => 'file-001', 'purpose' => 'batch' ) ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'file-001',
+								'purpose' => 'batch',
+							)
+						),
 						'headers'  => array(),
 					);
 				}
@@ -240,14 +245,25 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 					$upload_body_raw = $args['body'];
 					return array(
 						'response' => array( 'code' => 200 ),
-						'body'     => wp_json_encode( array( 'id' => 'file-002', 'purpose' => 'batch' ) ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'file-002',
+								'purpose' => 'batch',
+							)
+						),
 						'headers'  => array(),
 					);
 				}
 				if ( strpos( $url, '/batches' ) !== false ) {
 					return array(
 						'response' => array( 'code' => 200 ),
-						'body'     => wp_json_encode( array( 'id' => 'batch-002', 'endpoint' => '/v1/embeddings', 'status' => 'validating' ) ),
+						'body'     => wp_json_encode(
+							array(
+								'id'       => 'batch-002',
+								'endpoint' => '/v1/embeddings',
+								'status'   => 'validating',
+							)
+						),
 						'headers'  => array(),
 					);
 				}

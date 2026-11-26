@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Theme policy — Proposal 105 §3 (storefront side of the bridge theme-policy
 // contract). Forge-portable: no Astro imports, mirrors theme.ts style.

@@ -14,6 +14,9 @@
  */
 class CR_Test_Length_Verifier extends WP_MCP_AI_Verifier_Base {
 
+	/**
+	 * Configure the length-scoring verifier.
+	 */
 	public function __construct() {
 		$this->slug                 = 'cr_length';
 		$this->kind                 = 'rule';
@@ -26,6 +29,13 @@ class CR_Test_Length_Verifier extends WP_MCP_AI_Verifier_Base {
 		);
 	}
 
+	/**
+	 * Score a subject by the length of its value, clamped to 1.0.
+	 *
+	 * @param array $subject Subject being scored.
+	 * @param array $context Optional scoring context.
+	 * @return array Pass or fail result.
+	 */
 	public function verify( array $subject, array $context = array() ) {
 		$value = array_key_exists( 'value', $subject ) ? $subject['value'] : '';
 		$len   = is_string( $value ) ? strlen( $value ) : ( is_array( $value ) ? count( $value ) : 0 );
@@ -43,6 +53,9 @@ class CR_Test_Length_Verifier extends WP_MCP_AI_Verifier_Base {
  */
 class CR_Test_Flat_Verifier extends WP_MCP_AI_Verifier_Base {
 
+	/**
+	 * Configure the flat verifier.
+	 */
 	public function __construct() {
 		$this->slug                 = 'cr_flat';
 		$this->kind                 = 'rule';
@@ -55,6 +68,13 @@ class CR_Test_Flat_Verifier extends WP_MCP_AI_Verifier_Base {
 		);
 	}
 
+	/**
+	 * Always return the same score.
+	 *
+	 * @param array $subject Subject being scored.
+	 * @param array $context Optional scoring context.
+	 * @return array Pass result.
+	 */
 	public function verify( array $subject, array $context = array() ) {
 		return $this->result_pass( 0.42, 1.0, array() );
 	}
@@ -66,10 +86,15 @@ class CR_Test_Flat_Verifier extends WP_MCP_AI_Verifier_Base {
 class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 
 	/**
+	 * Registered verifier registry.
+	 *
 	 * @var WP_MCP_AI_Verifier_Registry
 	 */
 	private $verifiers;
 
+	/**
+	 * Reset the registry and register the test verifiers.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Verifier_Registry::reset_instance();
@@ -78,11 +103,17 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		$this->verifiers->register( new CR_Test_Flat_Verifier() );
 	}
 
+	/**
+	 * Reset the registry between tests.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Verifier_Registry::reset_instance();
 		parent::tearDown();
 	}
 
+	/**
+	 * The candidate beats its own truncated variant.
+	 */
 	public function test_candidate_wins_strictly_over_truncated_variant() {
 		$runner = new WP_MCP_AI_Counterfactual_Runner( $this->verifiers );
 
@@ -95,6 +126,9 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		$this->assertLessThan( 1.0, $report['variant_scores']['truncate_to_prefix'] );
 	}
 
+	/**
+	 * A verifier with no score spread is flagged as flat.
+	 */
 	public function test_flat_verifier_is_flagged_as_flat() {
 		$runner = new WP_MCP_AI_Counterfactual_Runner( $this->verifiers );
 
@@ -106,6 +140,9 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		$this->assertNotEmpty( $report['reasons'] );
 	}
 
+	/**
+	 * A missing verifier records an error rather than a preference.
+	 */
 	public function test_verifier_error_records_error_not_preference() {
 		$runner = new WP_MCP_AI_Counterfactual_Runner( $this->verifiers );
 		$report = $runner->run( 'no_such_verifier', array( 'value' => 'x' ), array( 'shuffle_tokens' ) );
@@ -114,6 +151,9 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'error', $report );
 	}
 
+	/**
+	 * An inline callable can serve as a variant.
+	 */
 	public function test_inline_callable_variant_is_supported() {
 		$runner = new WP_MCP_AI_Counterfactual_Runner( $this->verifiers );
 
@@ -132,6 +172,9 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'inline', $report['variant_scores'] );
 	}
 
+	/**
+	 * An unknown degrader slug is skipped with a recorded reason.
+	 */
 	public function test_unknown_degrader_slug_is_skipped_with_reason() {
 		$runner  = new WP_MCP_AI_Counterfactual_Runner( $this->verifiers );
 		$subject = array( 'value' => str_repeat( 'a', 80 ) );
@@ -142,6 +185,9 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		$this->assertNotEmpty( $report['reasons'] );
 	}
 
+	/**
+	 * The degrader filter extends the stock catalogue.
+	 */
 	public function test_stock_degraders_filter_extends_catalogue() {
 		add_filter(
 			'wp_mcp_ai_counterfactual_degraders',
@@ -162,6 +208,9 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Shuffling reverses multi-token strings only.
+	 */
 	public function test_degrade_shuffle_tokens_reverses_multi_token_string() {
 		$out = WP_MCP_AI_Counterfactual_Runner::degrade_shuffle_tokens( 'one two three' );
 		$this->assertSame( 'three two one', $out );
@@ -173,6 +222,9 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		$this->assertSame( array( 'c', 'b', 'a' ), WP_MCP_AI_Counterfactual_Runner::degrade_shuffle_tokens( array( 'a', 'b', 'c' ) ) );
 	}
 
+	/**
+	 * Citation dropping strips markdown links and bare URLs.
+	 */
 	public function test_degrade_drop_citations_removes_markdown_and_urls() {
 		$text = 'Citing [src](https://a.com) and [1] see https://b.com for more';
 		$out  = WP_MCP_AI_Counterfactual_Runner::degrade_drop_citations( $text );
@@ -181,6 +233,9 @@ class Test_WP_MCP_AI_Counterfactual_Runner extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'https://', $out );
 	}
 
+	/**
+	 * Prefix truncation keeps the first quarter of the text.
+	 */
 	public function test_degrade_truncate_to_prefix_keeps_first_quarter() {
 		$text = str_repeat( 'a', 100 );
 		$out  = WP_MCP_AI_Counterfactual_Runner::degrade_truncate_to_prefix( $text );

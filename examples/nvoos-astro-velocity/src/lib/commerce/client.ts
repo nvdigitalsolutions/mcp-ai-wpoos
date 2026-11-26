@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Commerce fetch layer — Proposal 092 §5.2 / D4 / D12, revised by 104 §3.2.
 //

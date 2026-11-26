@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sync-dist.mjs — assemble the deploy tree for the public mirror
 // (nvoos-astro-velocity). Mirrors the console pattern with one difference:

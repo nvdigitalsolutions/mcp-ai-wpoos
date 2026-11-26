@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Typed WordPress REST API helpers for the NV oOS TypeScript layer.
  *

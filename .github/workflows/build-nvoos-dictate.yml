@@ -94,14 +94,19 @@ jobs:
       - name: Build webview (required for generate_context)
         run: npm run build
 
+      # Swatinem/rust-cache caches *dependency* artifacts only and prunes them
+      # before saving (own-crate outputs, incremental data, and anything older
+      # than a week are dropped). The previous actions/cache entry cached the
+      # whole `target/` tree — 40+ GB on the reference PC — under one key per
+      # OS, so this job, `boot-smoke` and `windows-bundle` fought over the same
+      # entries and blew GitHub's 10 GB per-repo budget. `shared-key` groups
+      # jobs with the same dependency profile; the rustc host in the automatic
+      # key keeps the three OS legs separate.
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            examples/nvoos-dictate/src-tauri/target
-          key: nvoos-dictate-cargo-${{ runner.os }}-${{ hashFiles('examples/nvoos-dictate/src-tauri/Cargo.lock') }}
+          workspaces: examples/nvoos-dictate/src-tauri -> target
+          shared-key: nvoos-dictate-default
 
       - name: Format check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
@@ -137,6 +142,227 @@ jobs:
             echo "headless probe exited with $CODE (unexpected)"; exit "$CODE"
           fi
           echo "headless probe OK (engine loaded, clean teardown)"
+
+  # Feature-matrix gate (cargo-hack). The complete-build union in
+  # `windows-bundle` always enables every feature at once, so a **wrong
+  # implication between two features is invisible there** — which is how
+  # `snippet-pdf = ["snippet", "dep:lopdf"]` shipped even though
+  # `document/export_pdf.rs` re-rasterizes pages through the `document`-gated
+  # `document::pdf`; the documented `--features snippet-pdf` build did not
+  # compile and CI stayed green. `--each-feature` is the ecosystem-standard
+  # answer (cargo-hack): every feature on its own, each with
+  # `--no-default-features`, so a feature must be self-sufficient. The pair
+  # step then covers features that share a dependency.
+  #
+  # Engine features are excluded: `whisper` needs CMake + libclang, and
+  # `parakeet`/`fastconformer` pull the sherpa-onnx prebuilt + C++ runtime.
+  # They remain documented local gates (see the dictation-app skill), and
+  # `windows-bundle` still links all three in the complete union.
+  #
+  # `clippy` rather than `check`: dead-code and unused-import lints are the
+  # other half of this bug class (a helper gated for one feature but used by
+  # another) and only fire under a lint pass.
+  #
+  # The **test** matrix runs `--lib` only. `cargo hack test` without `--lib`
+  # links every integration test and example for each of the 15 feature sets;
+  # that exhausted link-time resources on the reference PC ("required to be
+  # available in rlib format" after ~26 min). One lib test binary per run is
+  # the shape that stays cheap and deterministic.
+  #
+  # `hotkey::win_hook` used to be skipped here because it failed intermittently:
+  # `ptt_pressed_alone` read the *live* OS key table, so a stray held key made
+  # the synthetic PTT press pass through and the assertion failed, poisoning
+  # `TEST_LOCK` and taking the other two tests with it. The decision is now a
+  # pure `alone_from_state` with a test-only key-table override, so the module
+  # is deterministic and runs in the matrix.
+  #
+  # PDFium must be present for `document`/`snippet-pdf` lib tests to run
+  # (`build.rs` stages it beside the test binaries); the fetch script is the
+  # same pinned, sha256-verified one the publish workflow uses.
+  feature-matrix:
+    name: Feature matrix (each feature)
+    runs-on: windows-latest
+    env:
+      # The default job count exhausted the runner's commit charge on a cold
+      # target on the reference PC; clippy is link-light, so bound it.
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      # `generate_context!` embeds the frontend dist at compile time.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build webview (required for generate_context)
+        run: npm run build
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: examples/nvoos-dictate/src-tauri -> target
+          shared-key: nvoos-dictate-matrix
+
+      - name: Cache pdfium
+        uses: actions/cache@v4
+        with:
+          path: examples/nvoos-dictate/src-tauri/resources/pdfium.dll
+          key: nvoos-dictate-pdfium-${{ runner.os }}-chromium-7881
+
+      - name: Fetch pdfium (pinned, sha256-verified)
+        if: ${{ hashFiles('examples/nvoos-dictate/src-tauri/resources/pdfium.dll') == '' }}
+        run: pwsh scripts/fetch-pdfium.ps1
+
+      - uses: taiki-e/install-action@cargo-hack
+
+      - name: Clippy every feature in isolation
+        run: >
+          cargo hack clippy --manifest-path src-tauri/Cargo.toml
+          --each-feature --all-targets --keep-going
+          --exclude-features whisper,parakeet,fastconformer,silero-vad
+          -- -D warnings
+
+      # `silero-vad` is the one leg where `ort` reaches the graph indirectly
+      # (through `silero-vad-rs`). `ort-sys`'s `copy-dylibs` build script
+      # symlinks the runtime DLLs into the shared `target/<profile>` dirs; on a
+      # runner that denies symlink creation it falls back to `fs::copy`, which
+      # panics with `NotFound` when a later leg meets an entry an earlier one
+      # left behind (observed on #8071: 14 legs green, this one panicked at
+      # ort-sys build.rs:109). Give the leg its own target dir so the
+      # single-feature check still runs — it is the configuration that caught
+      # the `error.rs` `From<ort::Error>` gating bug.
+      - name: Clippy silero-vad in isolation
+        env:
+          # Relative to `examples/nvoos-dictate` (the workflow's
+          # `defaults.run.working-directory`), and nested under `target/` so it
+          # is already gitignored.
+          CARGO_TARGET_DIR: src-tauri/target/clippy-silero
+        run: >
+          cargo clippy --manifest-path src-tauri/Cargo.toml
+          --all-targets --no-default-features --features silero-vad
+          -- -D warnings
+
+      # Pairs that share a feature-gated dependency: `--each-feature` cannot
+      # see these. Extend this list when two features start sharing a module.
+      - name: Clippy features that share a dependency
+        run: |
+          set -e
+          for features in gestures,vision camera,vision document,snippet-pdf snippet,snippet-onnx; do
+            echo "::group::$features"
+            cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets \
+              --features "$features" -- -D warnings
+            echo "::endgroup::"
+          done
+
+      - name: Test every feature in isolation
+        run: >
+          cargo hack test --manifest-path src-tauri/Cargo.toml
+          --each-feature --lib --keep-going
+          --exclude-features whisper,parakeet,fastconformer,silero-vad
+
+      # Same isolation as the clippy leg above (shares its target dir, so the
+      # dependencies are already built by the time this runs).
+      - name: Test silero-vad in isolation
+        env:
+          CARGO_TARGET_DIR: src-tauri/target/clippy-silero
+        run: >
+          cargo test --manifest-path src-tauri/Cargo.toml
+          --lib --no-default-features --features silero-vad
+
+      # The integration suite that needs `document` (real PDFs through PDFium)
+      # — worth the ~1 min now that the dll is staged.
+      - name: Document integration tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml --features document
+
+  # Advisory engine matrix: `whisper`, `parakeet` and `fastconformer` are the
+  # three features the `feature-matrix` job cannot cover — whisper needs
+  # CMake + libclang, and the sherpa-onnx pair pull a native prebuilt + C++
+  # runtime. `windows-bundle` only ever builds them *together*, which is how
+  # `--features fastconformer` shipped broken: the sherpa installer is gated on
+  # `any(parakeet, fastconformer)` while its `replace_dir` helper was
+  # `parakeet`-only, so the fastconformer-only build did not compile and the
+  # union hid it. Exactly the bug class this workflow exists to catch.
+  #
+  # Advisory on purpose (`continue-on-error`): this leg is Linux-only and its
+  # greenness depends on native toolchain provisioning we do not control, so it
+  # reports without blocking a merge. `windows-bundle` remains the
+  # authoritative build for these engines. A red leg is a prompt to look, not a
+  # veto. Each engine runs on its own, then all three together (the union shape
+  # `windows-bundle` builds).
+  engine-matrix:
+    name: Engine matrix (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same Tauri/ALSA prerequisites as the `rust` job, plus the native engine
+      # toolchain: CMake for whisper.cpp and libclang for bindgen.
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libasound2-dev \
+            libdbus-1-dev \
+            pkg-config \
+            cmake \
+            libclang-dev \
+            clang
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build webview (required for generate_context)
+        run: npm run build
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: examples/nvoos-dictate/src-tauri -> target
+          shared-key: nvoos-dictate-engines
+
+      # `--keep-going` semantics by hand: one broken engine must not hide the
+      # others. `::group::` keeps the four logs readable.
+      - name: Clippy each engine feature
+        run: |
+          set -u
+          failed=0
+          for features in whisper parakeet fastconformer whisper,parakeet,fastconformer; do
+            echo "::group::$features"
+            cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets \
+              --features "$features" -- -D warnings || failed=1
+            echo "::endgroup::"
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "::warning title=Engine matrix::An engine feature did not build (advisory)."
+            exit 1
+          fi
 
   # Runtime verification of the macOS port without macOS hardware: build the
   # real UNIVERSAL .app (arm64 + x86_64 — production frontend embed +
@@ -174,18 +400,14 @@ jobs:
           # itself and lipo-merges them.
           targets: aarch64-apple-darwin, x86_64-apple-darwin
 
-      # Same key as the rust job's macOS leg: ~/.cargo/registry + git are the
-      # big reuse win (the universal target compiles into its own
-      # target/universal-apple-darwin tree, so compiled-artifact reuse with
-      # the native job is limited).
+      # The universal build compiles into its own target/universal-apple-darwin
+      # tree, so its dependency artifacts differ from the native macOS leg —
+      # hence a separate shared-key.
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            examples/nvoos-dictate/src-tauri/target
-          key: nvoos-dictate-cargo-${{ runner.os }}-${{ hashFiles('examples/nvoos-dictate/src-tauri/Cargo.lock') }}
+          workspaces: examples/nvoos-dictate/src-tauri -> target
+          shared-key: nvoos-dictate-macos-universal
 
       - name: Install frontend deps
         run: npm ci
@@ -379,16 +601,13 @@ jobs:
           'C:\Program Files\CMake\bin' | Out-File -FilePath $env:GITHUB_PATH -Append
           'C:\Program Files\LLVM\bin' | Out-File -FilePath $env:GITHUB_PATH -Append
 
-      # Same key as the rust job's Windows leg — the target/ tree is shared,
-      # so default-feature artifacts reuse; the union adds its own entries.
+      # The complete-union build pulls whisper/sherpa-onnx/ort, so its
+      # dependency profile is much heavier than the default-feature caches.
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            examples/nvoos-dictate/src-tauri/target
-          key: nvoos-dictate-cargo-${{ runner.os }}-${{ hashFiles('examples/nvoos-dictate/src-tauri/Cargo.lock') }}
+          workspaces: examples/nvoos-dictate/src-tauri -> target
+          shared-key: nvoos-dictate-complete
 
       - name: Install frontend deps
         run: npm ci

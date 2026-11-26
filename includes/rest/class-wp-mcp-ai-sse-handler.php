@@ -47,6 +47,61 @@ class WP_MCP_AI_SSE_Handler {
 	const RETRY_INTERVAL_MS = 3000;
 
 	/**
+	 * Microtime of the most recent byte written to this stream.
+	 *
+	 * @since 1.2.22
+	 * @var float
+	 */
+	private $last_write_at = 0.0;
+
+	/**
+	 * Longest silent gap (seconds) observed between two writes this turn.
+	 *
+	 * Proxies bound a streaming response by its IDLE time, not its total
+	 * duration: every byte written (keepalive comments included) resets the
+	 * read timer (Cloudflare 125 s, AWS ALB 60 s, nginx `proxy_read_timeout`
+	 * 60 s by default). This figure is the only one that describes the reset
+	 * risk, so the long-run offload decision reads it instead of total turn
+	 * elapsed time.
+	 *
+	 * @since 1.2.22
+	 * @var float
+	 */
+	private $max_idle_gap = 0.0;
+
+	/**
+	 * Record a write to the stream and update the longest silent gap.
+	 *
+	 * @since 1.2.22
+	 */
+	private function record_write() {
+		$now = microtime( true );
+
+		if ( $this->last_write_at > 0.0 ) {
+			$gap = $now - $this->last_write_at;
+			if ( $gap > $this->max_idle_gap ) {
+				$this->max_idle_gap = $gap;
+			}
+		}
+
+		$this->last_write_at = $now;
+	}
+
+	/**
+	 * Longest silent gap (seconds) observed on this stream so far.
+	 *
+	 * Zero until the stream has written at least two frames, so a caller that
+	 * has not yet had a chance to go quiet never reads as risky.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @return float Longest gap between two writes, in seconds.
+	 */
+	public function get_max_idle_gap() {
+		return (float) $this->max_idle_gap;
+	}
+
+	/**
 	 * Send SSE headers for streaming response.
 	 *
 	 * Sets up HTTP headers required for Server-Sent Events streaming.
@@ -149,6 +204,8 @@ class WP_MCP_AI_SSE_Handler {
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
+
+		$this->record_write();
 	}
 
 	/**
@@ -291,6 +348,8 @@ class WP_MCP_AI_SSE_Handler {
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
+
+		$this->record_write();
 	}
 
 	/**
@@ -313,6 +372,8 @@ class WP_MCP_AI_SSE_Handler {
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
+
+		$this->record_write();
 	}
 
 	/**
@@ -338,6 +399,8 @@ class WP_MCP_AI_SSE_Handler {
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
+
+		$this->record_write();
 	}
 
 	/**

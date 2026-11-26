@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Native Windows Credential Manager store (Generic credentials).
 //!
 //! Why not the `keyring` crate on Windows: keyring 3.6.3 writes every

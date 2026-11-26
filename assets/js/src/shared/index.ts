@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Barrel export for the NV oOS shared TypeScript module.
  *

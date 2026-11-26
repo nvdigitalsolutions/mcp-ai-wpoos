@@ -47,6 +47,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	const QUICKBOOKS_MCP_DEFAULT_URL = 'https://ai-inc.quickbooks.intuit.com/v1/mcp';
 
 	/**
+	 * Tool-name prefixes suppressed by the QuickBooks MCP category switches.
+	 *
+	 * Mirrors the upstream Intuit reference server's environment flags
+	 * (github.com/intuit/quickbooks-online-mcp-server):
+	 * `QUICKBOOKS_DISABLE_WRITE` → `create_*`, `QUICKBOOKS_DISABLE_UPDATE` →
+	 * `update_*`, `QUICKBOOKS_DISABLE_DELETE` → `delete_*`. The server-side
+	 * flags remain authoritative for self-hosted wrappers; this map enforces
+	 * the same categories on the NV oOS side of the bridge so the hosting
+	 * endpoint cannot widen the surface by ignoring its environment.
+	 *
+	 * @since 1.2.22
+	 * @var array<string, string>
+	 */
+	const QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES = array(
+		'write'  => 'create_',
+		'update' => 'update_',
+		'delete' => 'delete_',
+	);
+
+	/**
 	 * Supported authentication types.
 	 *
 	 * @var array<string>
@@ -638,6 +658,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['jetengine_cct_access'] = $existing_connection['jetengine_cct_access'];
 			}
 
+			// Preserve the QuickBooks MCP category switches when an update omits
+			// them — a partial programmatic save must never widen a restricted
+			// accounting surface back to full write access.
+			foreach ( array_keys( self::QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES ) as $category ) {
+				$switch = 'quickbooks_disable_' . $category;
+				if ( ! isset( $connection_data[ $switch ] ) && isset( $existing_connection[ $switch ] ) ) {
+					$connection_data[ $switch ] = $existing_connection[ $switch ];
+				}
+			}
+
 			// Preserve Upwork/LinkedIn mode and search criteria when updating.
 			if ( ! isset( $connection_data['upwork_mode'] ) && isset( $existing_connection['upwork_mode'] ) ) {
 				$connection_data['upwork_mode'] = $existing_connection['upwork_mode'];
@@ -909,6 +939,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'quickbooks_environment'         => isset( $connection_data['quickbooks_environment'] ) && in_array( $connection_data['quickbooks_environment'], array( 'sandbox', 'production' ), true )
 				? $connection_data['quickbooks_environment']
 				: 'production',
+			// QuickBooks Online MCP tool-category switches. These mirror the
+			// upstream server's QUICKBOOKS_DISABLE_WRITE/UPDATE/DELETE flags and
+			// are enforced on the WordPress side of the bridge.
+			'quickbooks_disable_write'       => ! empty( $connection_data['quickbooks_disable_write'] ),
+			'quickbooks_disable_update'      => ! empty( $connection_data['quickbooks_disable_update'] ),
+			'quickbooks_disable_delete'      => ! empty( $connection_data['quickbooks_disable_delete'] ),
 			'mcp_protocol_version'           => isset( $connection_data['mcp_protocol_version'] ) ? sanitize_text_field( $connection_data['mcp_protocol_version'] ) : '',
 			'mcp_server_name'                => isset( $connection_data['mcp_server_name'] ) ? sanitize_text_field( $connection_data['mcp_server_name'] ) : '',
 			'mcp_tool_count'                 => isset( $connection_data['mcp_tool_count'] ) ? absint( $connection_data['mcp_tool_count'] ) : 0,
@@ -1344,6 +1380,119 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Resolve the realm ID and bearer token a QuickBooks Online API call must use.
+	 *
+	 * Resolution order is "most specific first": the token pasted on the
+	 * connection, then an OAuth-managed grant (auto-refreshed by
+	 * `WP_MCP_AI_QuickBooks_OAuth_Handler`), then the legacy site-wide bearer
+	 * token. Tokens minted for one realm are never used against a different
+	 * realm, because Intuit access tokens are company-scoped.
+	 *
+	 * Industry context: Intuit access tokens are valid for 3,600 s and refresh
+	 * tokens for 100 days (and may rotate every 24–26 h), so the durable
+	 * credential is the refresh token, not the access token.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @param array $connection     Stored connection array (may be empty).
+	 * @param bool  $allow_settings Whether site-wide (OAuth/settings) credentials may be used.
+	 * @return array|WP_Error {
+	 *     @type string $company_id QuickBooks company / realm ID.
+	 *     @type string $token      Bearer access token.
+	 *     @type string $source     oauth|connection|settings.
+	 * }
+	 */
+	public static function resolve_quickbooks_credentials( $connection = array(), $allow_settings = true ) {
+		$connection = is_array( $connection ) ? $connection : array();
+		$settings   = array();
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		}
+
+		$settings_realm = isset( $settings['quickbooks_company_id'] ) ? trim( (string) $settings['quickbooks_company_id'] ) : '';
+		$company_id     = ! empty( $connection['company_id'] ) ? trim( (string) $connection['company_id'] ) : $settings_realm;
+
+		if ( '' === $company_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_quickbooks_missing_company_id',
+				__( 'A QuickBooks Company ID (Realm ID) is required. Enter it on the connection, or connect the company through Settings → Integrations → QuickBooks.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// A realm-specific token must not be spent against another company.
+		$realm_mismatch = ( '' !== $settings_realm && $settings_realm !== $company_id );
+
+		// 1. Token pasted on this connection (stored encrypted at rest).
+		if ( ! empty( $connection['client_secret'] ) ) {
+			$token = trim( (string) self::decrypt_value( $connection['client_secret'] ) );
+
+			if ( '' !== $token ) {
+				return array(
+					'company_id' => $company_id,
+					'token'      => $token,
+					'source'     => 'connection',
+				);
+			}
+		}
+
+		// 2. OAuth-managed grant — refreshes automatically before expiry.
+		$oauth_error = null;
+
+		if ( $allow_settings && ! $realm_mismatch && class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) && WP_MCP_AI_QuickBooks_OAuth_Handler::is_connected() ) {
+			$token = WP_MCP_AI_QuickBooks_OAuth_Handler::get_access_token();
+
+			if ( is_wp_error( $token ) ) {
+				// Keep the refresh failure: "reconnect required" is far more
+				// actionable than the generic not-connected message below.
+				$oauth_error = $token;
+			} elseif ( '' !== (string) $token ) {
+				return array(
+					'company_id' => $company_id,
+					'token'      => (string) $token,
+					'source'     => 'oauth',
+				);
+			}
+		}
+
+		// 3. Legacy site-wide bearer token.
+		if ( $allow_settings && ! $realm_mismatch && ! empty( $settings['quickbooks_api_key'] ) ) {
+			$token = trim( (string) $settings['quickbooks_api_key'] );
+
+			if ( '' !== $token ) {
+				return array(
+					'company_id' => $company_id,
+					'token'      => $token,
+					'source'     => 'settings',
+				);
+			}
+		}
+
+		if ( $realm_mismatch ) {
+			return new WP_Error(
+				'wp_mcp_ai_quickbooks_realm_mismatch',
+				sprintf(
+					/* translators: 1: connection company ID, 2: OAuth-connected company ID. */
+					__( 'This connection targets company %1$s, but the OAuth-connected QuickBooks company is %2$s. Intuit tokens are company-scoped, so they cannot be shared. Connect company %1$s through Settings → Integrations → QuickBooks, or paste an access token for it on this connection.', 'mcp-ai-wpoos-pro' ),
+					$company_id,
+					$settings_realm
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( $oauth_error instanceof WP_Error ) {
+			return $oauth_error;
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_quickbooks_not_connected',
+			__( 'QuickBooks is not connected for this company. Connect it through Settings → Integrations → QuickBooks (tokens refresh automatically) or paste an Intuit OAuth access token on the Remote Sites connection. Access tokens expire after about an hour.', 'mcp-ai-wpoos-pro' ),
+			array( 'status' => 400 )
+		);
+	}
+
+	/**
 	 * Test a remote site connection.
 	 *
 	 * @since 1.0.0
@@ -1501,6 +1650,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// hosted endpoint or a self-hosted Streamable HTTP wrapper.
 		if ( 'quickbooks_mcp' === $connection_type ) {
 			return self::test_quickbooks_mcp_connection( $connection );
+		}
+
+		// Handle QuickBooks Online (Accounting) connections separately — a real
+		// authenticated company-info probe instead of the WordPress REST probe.
+		if ( 'quickbooks' === $connection_type ) {
+			return self::test_quickbooks_connection( $connection );
 		}
 
 		// Pre-flight DNS reachability check (non-blocking diagnostic).
@@ -1751,6 +1906,87 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Resolve the tool-name prefixes a QuickBooks MCP surface must suppress.
+	 *
+	 * Accepts either a stored connection (carrying the
+	 * `quickbooks_disable_write|update|delete` switches) or an MCP App config
+	 * (carrying the already-resolved `disabled_tool_prefixes`). Only prefixes
+	 * declared in {@see QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES} are honoured,
+	 * so a tampered config cannot suppress arbitrary tool families.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @param array|mixed $source Stored connection array or app config array.
+	 * @return string[] Suppressed tool-name prefixes (empty when unrestricted).
+	 */
+	public static function get_quickbooks_mcp_disabled_prefixes( $source ) {
+		if ( ! is_array( $source ) ) {
+			return array();
+		}
+
+		$candidates = isset( $source['disabled_tool_prefixes'] ) && is_array( $source['disabled_tool_prefixes'] )
+			? $source['disabled_tool_prefixes']
+			: array();
+
+		foreach ( self::QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES as $category => $prefix ) {
+			if ( ! empty( $source[ 'quickbooks_disable_' . $category ] ) ) {
+				$candidates[] = $prefix;
+			}
+		}
+
+		if ( empty( $candidates ) ) {
+			return array();
+		}
+
+		return array_values(
+			array_unique(
+				array_intersect(
+					array_map( 'strval', $candidates ),
+					array_values( self::QUICKBOOKS_MCP_TOOL_CATEGORY_PREFIXES )
+				)
+			)
+		);
+	}
+
+	/**
+	 * Drop remote tool definitions belonging to a suppressed category.
+	 *
+	 * Mirrors the upstream reference server's `QUICKBOOKS_DISABLE_*`
+	 * environment flags on the WordPress side: suppressed verbs never reach
+	 * tool discovery, the chat tool payload, or bridge registration. The
+	 * bridge re-checks at execution time as a last line of defence.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @param array       $tools  Remote MCP tool definitions (`name`, `description`, `inputSchema`, …).
+	 * @param array|mixed $source Stored connection array or app config array.
+	 * @return array Filtered, re-indexed tool definitions.
+	 */
+	public static function filter_quickbooks_mcp_tool_definitions( array $tools, $source ) {
+		$prefixes = self::get_quickbooks_mcp_disabled_prefixes( $source );
+
+		if ( empty( $prefixes ) ) {
+			return $tools;
+		}
+
+		$filtered = array();
+
+		foreach ( $tools as $tool ) {
+			$name = is_array( $tool ) && isset( $tool['name'] ) ? strtolower( (string) $tool['name'] ) : '';
+
+			foreach ( $prefixes as $prefix ) {
+				if ( '' !== $name && 0 === strpos( $name, $prefix ) ) {
+					continue 2;
+				}
+			}
+
+			$filtered[] = $tool;
+		}
+
+		return $filtered;
+	}
+
+	/**
 	 * Map a stored QuickBooks Online MCP connection onto an MCP App client config.
 	 *
 	 * Three deployment shapes are supported, mirroring industry practice for
@@ -1771,7 +2007,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * the matching custom-header credential. They are not auto-injected into
 	 * the app config.
 	 *
+	 * The connection's tool-category switches (`quickbooks_disable_write`,
+	 * `quickbooks_disable_update`, `quickbooks_disable_delete`) ride along as
+	 * `disabled_tool_prefixes` so discovery, the chat tool payload, and the
+	 * bridge's execution gate all honour them.
+	 *
 	 * @since 1.2.21
+	 * @since 1.2.22 Carries the QuickBooks tool-category switches.
 	 *
 	 * @param array $connection Stored QuickBooks MCP connection array.
 	 * @return array MCP App client config.
@@ -1787,12 +2029,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$config = array(
-			'server_url'  => $server_url,
-			'auth_type'   => 'none',
-			'token'       => '',
-			'header_name' => isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '',
-			'verify_ssl'  => array_key_exists( 'mcp_verify_ssl', $connection ) ? (bool) $connection['mcp_verify_ssl'] : true,
-			'timeout'     => ! empty( $connection['mcp_timeout'] ) ? (int) $connection['mcp_timeout'] : 30,
+			'server_url'             => $server_url,
+			'auth_type'              => 'none',
+			'token'                  => '',
+			'header_name'            => isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '',
+			'verify_ssl'             => array_key_exists( 'mcp_verify_ssl', $connection ) ? (bool) $connection['mcp_verify_ssl'] : true,
+			'timeout'                => ! empty( $connection['mcp_timeout'] ) ? (int) $connection['mcp_timeout'] : 30,
+			// Effective QUICKBOOKS_DISABLE_* categories for the bridged surface.
+			'disabled_tool_prefixes' => self::get_quickbooks_mcp_disabled_prefixes( $connection ),
 		);
 
 		switch ( $auth_type ) {
@@ -1911,6 +2155,94 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'server_info'    => isset( $result['server_info'] ) ? $result['server_info'] : array(),
 			'tool_count'     => isset( $result['tool_count'] ) ? $result['tool_count'] : null,
 			'latency_ms'     => isset( $result['latency_ms'] ) ? $result['latency_ms'] : null,
+		);
+	}
+
+	/**
+	 * Test a QuickBooks Online (Accounting) connection.
+	 *
+	 * Unlike the generic WordPress probe, this calls the QuickBooks API with the
+	 * resolved bearer token: `GET /v3/company/{realm}/companyinfo/{realm}` is the
+	 * cheapest authenticated endpoint and returns the company name, so the
+	 * result distinguishes reachable, token-expired and wrong-realm failures
+	 * instead of surfacing a bare 401/404 from an unrelated path.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @param array $connection Stored QuickBooks (Accounting) connection array.
+	 * @return array|WP_Error Test results or error.
+	 */
+	protected static function test_quickbooks_connection( $connection ) {
+		$resolved = self::resolve_quickbooks_credentials( $connection );
+
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
+		}
+
+		$realm    = rawurlencode( $resolved['company_id'] );
+		$endpoint = sprintf( 'https://quickbooks.api.intuit.com/v3/company/%1$s/companyinfo/%1$s', $realm );
+
+		$response = wp_remote_get(
+			$endpoint,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Accept'        => 'application/json',
+					'Authorization' => 'Bearer ' . $resolved['token'],
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( 401 === $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_quickbooks_token_rejected',
+				__( 'QuickBooks rejected the access token (HTTP 401). Access tokens expire after about an hour: reconnect through Settings → Integrations → QuickBooks, or paste a fresh token on this connection.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_quickbooks_http_status',
+				sprintf(
+					/* translators: %d: HTTP status code. */
+					__( 'QuickBooks returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ),
+					$status_code
+				),
+				array(
+					'status' => $status_code,
+					'body'   => $body,
+				)
+			);
+		}
+
+		$decoded      = json_decode( $body, true );
+		$company_name = '';
+
+		if ( isset( $decoded['CompanyInfo']['CompanyName'] ) ) {
+			$company_name = sanitize_text_field( (string) $decoded['CompanyInfo']['CompanyName'] );
+		}
+
+		return array(
+			'success'      => true,
+			'quickbooks'   => true,
+			'company_id'   => $resolved['company_id'],
+			'company_name' => $company_name,
+			'token_source' => $resolved['source'],
+			'message'      => '' !== $company_name
+				? sprintf(
+					/* translators: %s: QuickBooks company name. */
+					__( 'Connected to QuickBooks company "%s".', 'mcp-ai-wpoos-pro' ),
+					$company_name
+				)
+				: __( 'Connected to QuickBooks.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -2148,7 +2480,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( ! $refresh ) {
 			$cached = get_transient( $cache_key );
 			if ( false !== $cached && is_array( $cached ) ) {
-				return $cached;
+				// Category switches are applied on top of the cached raw list so
+				// flipping one takes effect without waiting out the TTL.
+				return self::filter_quickbooks_mcp_tool_definitions( $cached, $connection );
 			}
 		}
 
@@ -2156,7 +2490,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$tools  = $client->list_tools();
 
 		if ( ! is_wp_error( $tools ) ) {
+			// Cache the raw server list; the snapshot below records the
+			// effective (filtered) surface this connection exposes.
 			set_transient( $cache_key, $tools, 300 );
+			$tools = self::filter_quickbooks_mcp_tool_definitions( $tools, $connection );
 		}
 
 		// Persist the snapshot on the stored connection.
@@ -4343,7 +4680,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Get authentication headers for a connection.
 	 *
+	 * Resolves the credential shapes `make_request()` serves:
+	 * application_password/basic_auth (username:password), jwt/bearer (the
+	 * `token` field), and WooCommerce keys (added to the URL by the caller).
+	 * MCP connection types bypass this method entirely — they build an MCP
+	 * App config — so custom_header credentials are not resolved here.
+	 *
 	 * @since 1.0.0
+	 * @since 1.2.22 Bearer tokens are sent as `Authorization: Bearer`.
 	 *
 	 * @param array $connection Connection data.
 	 * @return array Headers array.
@@ -4405,6 +4749,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				break;
 
 			case 'jwt':
+			case 'bearer':
 				$token = isset( $connection['token'] ) ? self::decrypt_value( $connection['token'] ) : '';
 
 				if ( ! empty( $token ) ) {
@@ -4517,6 +4862,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					'wp_mcp_ai_pro_missing_mcp_header',
 					__( 'Header name and header value are required for custom header authentication on MCP connections.', 'mcp-ai-wpoos-pro' )
 				);
+			}
+
+			// A scheme word in the header-name field silently produces a request
+			// with no Authorization header at all (`Bearer: <token>`), so the
+			// remote end replies 401/403 with nothing in the logs to explain it.
+			if ( 'custom_header' === $auth_type ) {
+				$header_name  = strtolower( trim( (string) $connection['mcp_header_name'] ) );
+				$scheme_words = array( 'bearer', 'basic', 'token', 'oauth', 'apikey', 'api_key', 'jwt' );
+
+				if ( in_array( $header_name, $scheme_words, true ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_mcp_header_is_scheme',
+						sprintf(
+							/* translators: 1: the scheme word that was entered as a header name, 2: the header name to use instead. */
+							__( '"%1$s" is an authentication scheme, not a header name — the request would go out unauthenticated. Use Header Name "%2$s" and prefix the value with "%1$s " (for example: "%1$s your-token"). Alternatively, switch Authentication Type to Bearer Token and paste the bare token.', 'mcp-ai-wpoos-pro' ),
+							$connection['mcp_header_name'],
+							'Authorization'
+						)
+					);
+				}
 			}
 
 			if ( 'bearer' === $auth_type && empty( $connection['token'] ) ) {
@@ -4686,10 +5051,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		if ( 'quickbooks' === $connection_type ) {
-			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			// Only the Intuit app identity is required to provision the
+			// connection. The OAuth grant (access token + refresh token) is a
+			// separate concern: Intuit access tokens live 3,600 s, so requiring
+			// one at save time forces operators to paste a value that is stale
+			// before the first report call. Token resolution happens at call
+			// time in resolve_quickbooks_credentials().
+			if ( empty( $connection['client_id'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_quickbooks_credentials',
-					__( 'Client ID and client secret are required for QuickBooks connections.', 'mcp-ai-wpoos-pro' )
+					__( 'A QuickBooks Client ID is required. Add the Intuit app Client ID from developer.intuit.com; the access token can be connected afterwards through Settings → Integrations → QuickBooks, or pasted on this connection.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}

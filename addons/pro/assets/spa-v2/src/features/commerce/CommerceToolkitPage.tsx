@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * CommerceToolkitPage — one page per commerce toolkit (Proposal 089).
  *

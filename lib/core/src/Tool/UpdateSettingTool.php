@@ -19,8 +19,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class UpdateSettingTool extends AbstractTool
+class UpdateSettingTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     /**
      * Keys that may be updated through this tool.
@@ -126,5 +128,18 @@ class UpdateSettingTool extends AbstractTool
                 'value' => $value,
             ),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Writes to a local store and persists information. Re-settable in
+     * principle, but the previous value is gone, so not `reversible`.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_WRITE;
     }
 }

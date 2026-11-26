@@ -391,6 +391,48 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Elementor's handler only dispatches when `$_POST['action']` is the
+	 * action it was registered under. Sending the NONCE action
+	 * (`elementor_pro_forms`) instead answers "the form is invalid" and
+	 * records nothing — a silent dead form on every forged site.
+	 */
+	public function test_elementor_request_carries_the_registered_ajax_action(): void {
+		$request = \NvoosForgeBridge\Rest\Forms::elementor_request( 'widget-1', 42, array( 'name' => 'Jane' ) );
+
+		// Ajax_Handler::is_form_submitted() compares this exact string.
+		$this->assertSame( 'elementor_pro_forms_send_form', $request['action'] );
+		$this->assertSame( 'widget-1', $request['form_id'] );
+		$this->assertSame( 42, $request['post_id'] );
+		$this->assertSame( 42, $request['queried_id'] );
+		$this->assertSame( array( 'name' => 'Jane' ), $request['form_fields'] );
+		$this->assertNotSame( '', (string) $request['_nonce'] );
+	}
+
+	/**
+	 * JetFormBuilder reads `$_POST['form_fields']` — the nested map PHP's own
+	 * POST parsing produces from `form_fields[name]` keys. A flat JSON/urlencoded
+	 * payload never creates it, so the bridge rebuilds it.
+	 */
+	public function test_bracket_fields_rebuild_the_native_form_fields_map(): void {
+		// The helper is internal to the JFB dispatch; reflect rather than widen
+		// the shipped API for a unit test.
+		$method = new \ReflectionMethod( \NvoosForgeBridge\Rest\Forms::class, 'bracket_fields' );
+		$method->setAccessible( true );
+
+		$mapped = $method->invoke(
+			null,
+			array(
+				'form_fields[name]'    => 'Jane',
+				'form_fields[message]' => 'Hello',
+				'consent'              => '1',
+			)
+		);
+
+		$this->assertSame( array( 'name' => 'Jane', 'message' => 'Hello' ), $mapped );
+		$this->assertSame( array(), $method->invoke( null, array( 'plain' => 'x' ) ) );
+	}
+
+	/**
 	 * Elementor path: form existence via _elementor_data, the form_fields
 	 * mapping, and the seam envelope.
 	 */
@@ -449,6 +491,31 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 		$response = $this->server->dispatch( $this->json_request( $this->valid_payload( array( 'form' => 'ghost-widget' ) ) ) );
 		$this->assertSame( 404, $response->get_status() );
 		$this->assertSame( 'nvoos_forge_form_not_found', $response->get_data()['code'] );
+	}
+
+	/**
+	 * An Elementor render without its carrier post id can never dispatch —
+	 * report why instead of forwarding the handler's generic rejection.
+	 */
+	public function test_elementor_without_the_carrier_post_is_a_typed_400(): void {
+		$this->enable_forms();
+		$post_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Contact', 'post_status' => 'publish' ) );
+		update_post_meta( $post_id, '_elementor_data', wp_json_encode( array( array( 'widgetType' => 'form', 'settings' => array( 'form_id' => 'widget-9' ) ) ) ) );
+		add_filter( 'nvoos_forge_bridge_forms_elementor_available', '__return_true' );
+
+		$response = $this->server->dispatch(
+			$this->json_request(
+				$this->valid_payload(
+					array(
+						'form'   => 'widget-9',
+						'fields' => array( 'form_fields[name]' => 'Jane' ),
+					)
+				)
+			)
+		);
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'nvoos_forge_form_post_id_required', $response->get_data()['code'] );
 	}
 
 	/**

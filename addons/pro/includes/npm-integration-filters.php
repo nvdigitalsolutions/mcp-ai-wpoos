@@ -887,14 +887,14 @@ function wp_mcp_ai_yfinance_health_check_handler( $result, $params ) {
 
 	if ( is_wp_error( $output ) ) {
 		return array(
-			'success' => false,
+			'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Filter-handler health DTO returned through apply_filters(), not a tool envelope.
 			'error'   => $output->get_error_message(),
 		);
 	}
 
 	$result_data = json_decode( $output, true );
 
-	return $result_data ?? array( 'success' => false );
+	return $result_data ?? array( 'success' => false ); // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Filter-handler health DTO; the caller reads success/error as data.
 }
 
 /**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * NodeEditor tests — the selected-node configuration panel for the
  * workflow canvas (Phase 3b W10.2b follow-up).

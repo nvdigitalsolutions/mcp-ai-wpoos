@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-diff.ts — WHERE a band's height delta comes from.
 //
@@ -32,6 +33,7 @@
 // ---------------------------------------------------------------------------
 
 import type { GeometryViewport } from './geometry.ts';
+import { gateContextOptions } from './gate.ts';
 
 /** One node's box, in CSS pixels. */
 export interface BoxNode {
@@ -559,7 +561,7 @@ export async function measureBandDiff( options: {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const context = await browser.newContext( gateContextOptions( { deviceScaleFactor: 1 } ) );
 		const sourcePage = await context.newPage();
 		const builtPage = await context.newPage();
 		const settlePage = async ( page: import('playwright').Page, url: string ): Promise< boolean > => {

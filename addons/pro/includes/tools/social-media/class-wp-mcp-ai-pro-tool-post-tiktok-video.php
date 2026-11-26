@@ -323,10 +323,14 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',                  // Pro tier tool.
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
-			'requires-capability',  // Requires user capabilities.
+			'pro',                    // Pro tier tool.
+			'social-media',           // Social media toolkit.
+			'external-api',           // Reaches the platform's REST API.
+			'external-communication', // Sends something a human elsewhere will read.
+			'irreversible',           // A published post has been seen; deleting it does not undo that.
+			'requires-capability',    // Requires user capabilities.
+			'state-changing',         // Changes state outside this site.
+			'write',                  // Writes.
 		);
 	}
 }

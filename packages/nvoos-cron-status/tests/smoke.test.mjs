@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import svc, { configure, CronStatusService } from '../dist/nvoos-cron-status.js';
 
 console.assert(svc === CronStatusService, 'default export === named export');

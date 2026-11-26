@@ -121,6 +121,10 @@ class WP_MCP_AI_Ability_Registrar {
 			return;
 		}
 
+		if ( ! self::should_register_abilities() ) {
+			return;
+		}
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$tools    = $registry->get_all_tools();
 
@@ -144,6 +148,75 @@ class WP_MCP_AI_Ability_Registrar {
 		 * @since 2.0.0
 		 */
 		do_action( 'wp_mcp_ai_abilities_registered' );
+	}
+
+	/**
+	 * Whether tool-backed abilities should be registered for this request.
+	 *
+	 * `wp_abilities_api_init` fires from `WP_Abilities_Registry::get_instance()
+	 * (via the Abilities REST controller), so it runs on *every* REST request —
+	 * including core routes such as `/wp/v2/users/me`. Registering here
+	 * enumerates the entire tool registry (`get_all_tools()`), which requires
+	 * every tool class to be loaded: ~999 files and ~80 MB on the reference
+	 * install, for a request that can never expose an ability.
+	 *
+	 * Registration is therefore skipped for REST requests outside the Abilities
+	 * and MCP namespaces. Every non-REST context (admin, AJAX, cron, CLI,
+	 * front-end) and both relevant namespaces keep the previous behaviour, and
+	 * the decision can be overridden with the
+	 * `wp_mcp_ai_register_tool_abilities` filter.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @return bool True when abilities should be registered.
+	 */
+	private static function should_register_abilities() {
+		$register = true;
+		$route    = '';
+
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			$route = self::current_rest_route();
+
+			// An unresolvable route keeps the previous (register) behaviour.
+			$register = (
+				'' === $route
+				|| 0 === strpos( $route, '/wp-abilities/' )
+				|| 0 === strpos( $route, '/mcp-ai/' )
+			);
+		}
+
+		/**
+		 * Filters whether NV oOS registers its tools as Abilities.
+		 *
+		 * Runs in every context, so returning false is a complete kill switch
+		 * for the tool-to-ability bridge.
+		 *
+		 * @since 1.2.24
+		 *
+		 * @param bool   $register Whether to register abilities.
+		 * @param string $route    Normalised REST route, or an empty string outside REST.
+		 */
+		return (bool) apply_filters( 'wp_mcp_ai_register_tool_abilities', $register, $route );
+	}
+
+	/**
+	 * Normalised REST route for the current request.
+	 *
+	 * Reads `WP::$query_vars['rest_route']`, which core populates before
+	 * `rest_api_init` fires, so it is available from `wp_abilities_api_init`.
+	 *
+	 * @since 1.2.24
+	 *
+	 * @return string Route with a leading and trailing slash, or an empty string.
+	 */
+	private static function current_rest_route() {
+		if ( ! isset( $GLOBALS['wp'] ) || ! isset( $GLOBALS['wp']->query_vars['rest_route'] ) ) {
+			return '';
+		}
+
+		$route = trim( (string) $GLOBALS['wp']->query_vars['rest_route'], '/' );
+
+		return '' === $route ? '' : '/' . $route . '/';
 	}
 
 	/**

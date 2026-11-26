@@ -32,31 +32,47 @@ use Nvoos\Core\Infrastructure\Provider\NvidiaNimClient;
 use Nvoos\Core\Infrastructure\Provider\OllamaClient;
 use Nvoos\Core\Infrastructure\Provider\OpenAiClient;
 use Nvoos\Core\Infrastructure\Provider\OpenRouterClient;
+use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 
 class ProviderRegistrar {
 
 	/**
 	 * Register the twelve text providers.
+	 *
+	 * A token-budget manager is optional so the package stays usable without
+	 * one; when supplied it is attached to every client, which turns on the
+	 * pre-flight context-window check (Proposal 149 §70).
 	 */
 	public function register(
 		ProviderRouter $router,
 		SettingsStoreInterface $settings,
 		HttpClientInterface $http,
 		ErrorFactoryInterface $errors,
+		?TokenBudgetManager $budget = null,
 	): void {
 		$router->setHealthTracker( new ProviderHealthTracker() );
 
-		$router->register( new OpenAiClient( $settings, $http, $errors ) );
-		$router->register( new GeminiClient( $settings, $http, $errors ) );
-		$router->register( new AnthropicClient( $settings, $http, $errors ) );
-		$router->register( new DeepSeekClient( $settings, $http, $errors ) );
-		$router->register( new OpenRouterClient( $settings, $http, $errors ) );
-		$router->register( new KimiClient( $settings, $http, $errors ) );
-		$router->register( new OllamaClient( $settings, $http, $errors ) );
-		$router->register( new LmStudioClient( $settings, $http, $errors ) );
-		$router->register( new DigitalOceanClient( $settings, $http, $errors ) );
-		$router->register( new NvidiaNimClient( $settings, $http, $errors ) );
-		$router->register( new CloudflareClient( $settings, $http, $errors ) );
-		$router->register( new HuggingFaceClient( $settings, $http, $errors ) );
+		$clients = array(
+			new OpenAiClient( $settings, $http, $errors ),
+			new GeminiClient( $settings, $http, $errors ),
+			new AnthropicClient( $settings, $http, $errors ),
+			new DeepSeekClient( $settings, $http, $errors ),
+			new OpenRouterClient( $settings, $http, $errors ),
+			new KimiClient( $settings, $http, $errors ),
+			new OllamaClient( $settings, $http, $errors ),
+			new LmStudioClient( $settings, $http, $errors ),
+			new DigitalOceanClient( $settings, $http, $errors ),
+			new NvidiaNimClient( $settings, $http, $errors ),
+			new CloudflareClient( $settings, $http, $errors ),
+			new HuggingFaceClient( $settings, $http, $errors ),
+		);
+
+		foreach ( $clients as $client ) {
+			if ( null !== $budget ) {
+				$client->setTokenBudgetManager( $budget );
+			}
+
+			$router->register( $client );
+		}
 	}
 }

@@ -52,7 +52,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $async_result );
 
-		// Critical assertions: async metadata must be preserved
+		// Critical assertions: async metadata must be preserved.
 		$this->assertArrayHasKey( 'async', $sanitized, 'async field must be preserved for UI detection' );
 		$this->assertArrayHasKey( 'status', $sanitized, 'status field must be preserved for UI detection' );
 		$this->assertArrayHasKey( 'job_id', $sanitized, 'job_id field must be preserved for polling' );

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Assistant Store — Zustand store for the currently selected assistant (agent).
  */

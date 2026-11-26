@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useDiagnostics — Hook for the consolidated diagnostics overview.
  */

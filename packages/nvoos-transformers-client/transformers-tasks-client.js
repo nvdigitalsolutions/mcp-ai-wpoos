@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Transformers.js Tasks Client
  *

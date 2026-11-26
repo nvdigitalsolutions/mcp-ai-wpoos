@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Stripe integration — Checkout session creation and webhook signature
  * verification.

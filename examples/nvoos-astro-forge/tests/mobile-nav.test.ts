@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // mobile-nav.test.ts — the rebuilt mobile navigation disclosure.
 //

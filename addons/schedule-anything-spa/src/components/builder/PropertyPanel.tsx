@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * PropertyPanel — right sidebar for editing selected node properties.
  */

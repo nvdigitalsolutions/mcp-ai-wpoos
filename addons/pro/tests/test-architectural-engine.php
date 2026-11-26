@@ -221,11 +221,84 @@ class Test_Architectural_Engine extends WP_UnitTestCase {
 	 * Toolkit settings produce defaults.
 	 */
 	public function test_get_toolkit_settings_defaults() {
-		delete_option( 'wp_mcp_ai_arch_design_settings' );
+		delete_option( WP_MCP_AI_Architectural_Engine::SETTINGS_OPTION );
+		delete_option( WP_MCP_AI_Architectural_Engine::LEGACY_SETTINGS_OPTION );
 		$s = WP_MCP_AI_Architectural_Engine::get_toolkit_settings();
 		$this->assertSame( 'LK', $s['default_country'] );
 		$this->assertSame( 'metric', $s['default_unit_system'] );
 		$this->assertSame( 'LKR', $s['default_currency'] );
 		$this->assertSame( '4.3', $s['ifc_export_version'] );
+	}
+
+	/**
+	 * Values saved on the settings page reach the engine.
+	 *
+	 * The page writes SETTINGS_OPTION, while the engine used to read a different
+	 * option that nothing in the plugin ever wrote — so every default an
+	 * operator saved was ignored by the tools that consume them.
+	 */
+	public function test_get_toolkit_settings_reads_the_settings_page_option() {
+		delete_option( WP_MCP_AI_Architectural_Engine::LEGACY_SETTINGS_OPTION );
+		update_option(
+			WP_MCP_AI_Architectural_Engine::SETTINGS_OPTION,
+			array(
+				'default_country'        => 'US',
+				'default_unit_system'    => 'imperial',
+				'building_code_standard' => 'us_ibc_2024',
+				'ifc_export_version'     => '4.0',
+				'masterformat_year'      => '2018',
+			)
+		);
+
+		$s = WP_MCP_AI_Architectural_Engine::get_toolkit_settings();
+
+		$this->assertSame( 'US', $s['default_country'] );
+		$this->assertSame( 'imperial', $s['default_unit_system'] );
+		// The page names the code pack differently from the engine.
+		$this->assertSame( 'us_ibc_2024', $s['default_code_pack'] );
+		$this->assertSame( '4.0', $s['ifc_export_version'] );
+		$this->assertSame( '2018', $s['masterformat_year'] );
+	}
+
+	/**
+	 * The legacy option still supplies what the page does not render.
+	 */
+	public function test_the_legacy_option_still_supplies_currency_rates() {
+		delete_option( WP_MCP_AI_Architectural_Engine::SETTINGS_OPTION );
+		update_option(
+			WP_MCP_AI_Architectural_Engine::LEGACY_SETTINGS_OPTION,
+			array(
+				'currency_rates' => array(
+					'USD' => 1.0,
+					'LKR' => 250.0,
+				),
+			)
+		);
+
+		$s = WP_MCP_AI_Architectural_Engine::get_toolkit_settings();
+
+		$this->assertEqualsWithDelta( 250.0, $s['currency_rates']['LKR'], 0.001 );
+	}
+
+	/**
+	 * What the page manages wins over the legacy option; the rest survives.
+	 */
+	public function test_the_settings_page_wins_over_the_legacy_option() {
+		update_option(
+			WP_MCP_AI_Architectural_Engine::LEGACY_SETTINGS_OPTION,
+			array(
+				'default_country' => 'JM',
+				'currency_rates'  => array( 'USD' => 1.0 ),
+			)
+		);
+		update_option(
+			WP_MCP_AI_Architectural_Engine::SETTINGS_OPTION,
+			array( 'default_country' => 'US' )
+		);
+
+		$s = WP_MCP_AI_Architectural_Engine::get_toolkit_settings();
+
+		$this->assertSame( 'US', $s['default_country'] );
+		$this->assertArrayHasKey( 'USD', $s['currency_rates'] );
 	}
 }

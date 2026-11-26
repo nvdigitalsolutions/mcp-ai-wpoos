@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // modes/wp.ts — WordPress source mode (Proposal 098 Phase 1.1).
 //

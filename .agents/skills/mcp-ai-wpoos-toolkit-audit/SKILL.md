@@ -209,6 +209,27 @@ own reviewable cluster. First completed cluster: **document-generation**
     `stdClass` rows, null handling, and the `reset_factory()` contract.
     Reference fix: PR #7590 (EZuite), mirrored to FlowHub + Shopify Sync.
 
+14. **Phantom helper on the failure path — `Call to undefined method …::error_response()`.**
+    The private `error_response()` helper exists on the `architect-agent` tools
+    only; `check_tool_compliance` copied the call sites without the method, so
+    its first gate was dead code that fataled the moment anything exercised it.
+    Before trusting a failure path, scan every `$this-><helper>(` against the
+    class's own methods (and its traits). A gate that the happy path never
+    reaches stays latent until a test or an operator hits it — which is also why
+    a "missing argument is a WP_Error" test doubles as a gate-liveness test.
+    Reference fix: PR #8107.
+
+15. **Argument validation ordered behind a default-off flag.**
+    `WP_MCP_AI_ALLOW_SHELL_TOOLS` defaults to false, and is false in the PHPUnit
+    bootstrap (PHP constants cannot be redefined), so a shell-gated tool returns
+    its gate error before it ever validates arguments — a missing-argument
+    contract test then asserts `shell_tools_disabled` instead of
+    `wp_mcp_ai_missing_param`. Fix: move the pure presence check
+    (`empty( $arguments[...] )` only, no file read and no command) ahead of the
+    gate, keep the gate ahead of every read / shell-out / write, and pin both
+    halves — empty args give the shared missing-param code, supplied args still
+    give the gate error. Reference fix: PR #8107.
+
 ## Scan procedure
 
 Use the grep tool with the **full project-rooted glob** — a bare
@@ -325,6 +346,11 @@ MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins
 MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php vendor/bin/phpcs --standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist --error-severity=1 --report=summary <cg-pro paths>'
 ```
 
+- **Never blind-`phpcbf`** the array/signature sniffs. The restricted
+  `--sniffs=` form re-emits space-indented, trailing-whitespace blocks;
+  the full standard converges if you verify the per-source delta. Read
+  `--report=diff` first; full recipe in
+  `.agents/skills/mcp-ai-wpoos-test-suite/reference/wpcs-sweep.md`.
 - **Mirror discipline**: every production fix lands byte-identically in
   `plugins/nvoos-content-graph-pro/src/…` (its own text domain) — see the
   `mcp-ai-wpoos-ecosystem-port` skill. Verify both trees lint + phpcs clean.
@@ -1025,12 +1051,12 @@ green in the 9-suite cluster; phpcs 0 errors on both standards; UTF-8 clean.
 - CG Pro byte-identity mirroring: `mcp-ai-wpoos-ecosystem-port` skill
 - v1.1.70 hardening precedent: PR #6295, `addons/pro/includes/npm-integration-filters.php`
 - Array-content normalization precedent: test-suite skill pattern 56
-- Production evidence: nirmanawellness `get_system_logs` failures
+- Production evidence: a client site's `get_system_logs` failures
   (2026-10-04) — `sse_tool_fatal_error` entries from these exact bugs
 
 ## Related non-toolkit hardening (stream hygiene)
 
-Toolkit fatals are one half of the nirmanawellness story — the other was the
+Toolkit fatals are one half of that client's story — the other was the
 chat SSE stream being reset by Cloudflare/nginx during long tool runs
 (`net::ERR_HTTP2_PROTOCOL_ERROR`). That fix (inter-step SSE keepalive comment
 frames) and its test contract are documented as **test-suite skill pattern

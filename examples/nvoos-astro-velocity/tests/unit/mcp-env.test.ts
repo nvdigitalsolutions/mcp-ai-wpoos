@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // mcp-env.test.ts — the BFF /mcp env seeding rule. Regression (2026-10-31):
 // the CI smoke step boots the BFF with only NVOOS_TARGET_SITE and Playwright

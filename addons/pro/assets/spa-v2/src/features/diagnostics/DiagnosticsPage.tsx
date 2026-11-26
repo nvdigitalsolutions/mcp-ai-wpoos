@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DiagnosticsPage — consolidated diagnostics overview (Proposal 084 Phase 3).
  *

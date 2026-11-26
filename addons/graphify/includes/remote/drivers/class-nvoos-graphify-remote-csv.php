@@ -100,15 +100,12 @@ class NV_oOS_Graphify_Remote_CSV extends NV_oOS_Graphify_Remote_Source_Base {
 	public function test_connection() {
 		$path = $this->resolve_file_path();
 		if ( is_wp_error( $path ) ) {
-			return array(
-				'success' => false,
-				'message' => $path->get_error_message(),
-			);
+			return $path;
 		}
 		if ( ! is_readable( $path ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'CSV file is not readable.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'CSV file is not readable.', 'nvoos-graphify' )
 			);
 		}
 		return array(

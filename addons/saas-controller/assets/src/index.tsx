@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * NV oOS SaaS Controller — Admin UI entry point.
  *

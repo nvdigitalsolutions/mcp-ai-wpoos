@@ -23,6 +23,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * `/webhooks/stripe` is public but signature-gated with Stripe's official
  * HMAC algorithm.
  *
+ * `/license/check` and `/license/activate` are the read side of the same
+ * store: the WordPress Pro plugin and the Laravel runtime ask them whether an
+ * issued key is still valid for this site. They are public for the same reason
+ * as `/verify` — a public plugin cannot ship a shared secret — and are
+ * protected by per-IP rate limiting, strict input validation, uniform
+ * `{status:invalid}` answers for every failure mode, and instance binding
+ * inside `NVOOS_Checkout_API_License_Resolver`.
+ *
  * @since 0.1.0
  */
 class NVOOS_Checkout_API_Rest_Controller {
@@ -149,6 +157,126 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'callback'            => array( $this, 'health' ),
 				'permission_callback' => '__return_true', // Public status probe — no secrets, no Stripe, no writes.
 			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/license/check',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'check_license' ),
+				'permission_callback' => '__return_true', // Public by design — see class docblock.
+				'args'                => $this->license_args(),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/license/activate',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'activate_license' ),
+				'permission_callback' => '__return_true', // Public by design — see class docblock.
+				'args'                => $this->license_args(),
+			)
+		);
+	}
+
+	/**
+	 * Shared argument schema for the license endpoints.
+	 *
+	 * `site_url` accepts a URL **or** a stable instance id: the Laravel runtime
+	 * sends an instance id (`estate-nvoos-cloud`), not a wp URL, so the strict
+	 * URL validator used by `/session` would reject a legitimate client.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	private function license_args(): array {
+		return array(
+			'license_key' => array(
+				'required'          => true,
+				'type'              => 'string',
+				'validate_callback' => function ( $value ) {
+					return is_string( $value ) && 1 === preg_match( '/^[A-Za-z0-9_-]{16,64}$/', $value );
+				},
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'site_url'    => array(
+				'required'          => true,
+				'type'              => 'string',
+				'validate_callback' => function ( $value ) {
+					return is_string( $value ) && '' !== trim( $value ) && strlen( $value ) <= 255;
+				},
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'product'     => array(
+				'required'          => true,
+				'type'              => 'string',
+				'validate_callback' => function ( $value ) {
+					return is_string( $value ) && '' !== trim( $value ) && strlen( $value ) <= 64;
+				},
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+	}
+
+	/**
+	 * POST /license/check — is this key valid for this site?
+	 *
+	 * Every failure mode (unknown key, revoked, wrong product, wrong site)
+	 * returns the same body with HTTP 200: a distinguishing status code or
+	 * message would make the endpoint a key oracle. A 429 is reserved for the
+	 * rate limiter, which clients treat as transient and retry.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function check_license( WP_REST_Request $request ) {
+		if ( ! NVOOS_Checkout_API_Rate_Limiter::check( 'license_check', 60, 10 * MINUTE_IN_SECONDS ) ) {
+			return new WP_Error( 'nvoos_checkout_rate_limited', __( 'Too many requests. Please slow down.', 'nvoos-checkout-api' ), array( 'status' => 429 ) );
+		}
+
+		return new WP_REST_Response(
+			NVOOS_Checkout_API_License_Resolver::resolve(
+				(string) $request['license_key'],
+				(string) $request['site_url'],
+				(string) $request['product']
+			),
+			200
+		);
+	}
+
+	/**
+	 * POST /license/activate — bind-verify a key at activation time.
+	 *
+	 * Same resolution as `/check`; the WordPress client additionally reads
+	 * `success`. The stored site is never rewritten here: a mismatch means the
+	 * key belongs to another installation, and silently re-binding would let one
+	 * key serve unlimited sites.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function activate_license( WP_REST_Request $request ) {
+		if ( ! NVOOS_Checkout_API_Rate_Limiter::check( 'license_activate', 20, 10 * MINUTE_IN_SECONDS ) ) {
+			return new WP_Error( 'nvoos_checkout_rate_limited', __( 'Too many requests. Please slow down.', 'nvoos-checkout-api' ), array( 'status' => 429 ) );
+		}
+
+		$result = NVOOS_Checkout_API_License_Resolver::resolve(
+			(string) $request['license_key'],
+			(string) $request['site_url'],
+			(string) $request['product']
+		);
+
+		return new WP_REST_Response(
+			array_merge( array( 'success' => 'valid' === $result['status'] ), $result ),
+			200
 		);
 	}
 

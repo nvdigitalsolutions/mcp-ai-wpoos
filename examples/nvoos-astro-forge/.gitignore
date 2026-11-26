@@ -5,3 +5,11 @@ test-results/
 
 # Generated frontends (forge.mjs --target output) — never commit into the monorepo
 *-frontend/
+
+# A media snapshot is the site's OWN assets: it must ship with the profile, or
+# a CMS-less rebuild has nothing to localize. A clone that excludes image
+# extensions globally (a common `.git/info/exclude`) would otherwise leave a
+# re-frozen snapshot half-committed — monicarajiv's manifest listed 68 assets
+# and 41 had no file in git, so the build hotlinked a retired CMS. A rule here
+# outranks `.git/info/exclude`, so the files always stage.
+!sites/*.media/media/**

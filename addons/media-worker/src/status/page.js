@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Public status surface: allowlisted summary + Statuspage-style HTML page.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest';
 import { normalizeMediaUrl, sanitizeDescription, toIsoDate } from '../../src/lib/commerce/normalize';
 

@@ -1,7 +1,9 @@
 ---
-// Cta — title + button sections rebuilt as a call-to-action band.
+// SPDX-License-Identifier: MIT
+// Cta — title + lede + button sections rebuilt as a call-to-action band.
 import type { SemanticSection } from '../../forge/semantic.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
+import { bandParagraphs } from '../../lib/band-copy.ts';
 import SectionTitle from './SectionTitle.astro';
 
 interface Props {
@@ -10,12 +12,27 @@ interface Props {
 }
 
 const { section, theme } = Astro.props;
-const { title, links } = section.slots;
+const { title: parsedTitle, body, links } = section.slots;
+// See `SectionHeading` — a measured `titleText` is the band's heading even when
+// the semantic pass could not pick it out of the builder markup.
+const title = parsedTitle ?? theme?.titleText;
+// A CTA that states a supporting sentence keeps it. The classifier used to
+// require `!hasBody`, so every band with a lede fell through to raw text — and
+// raw builder markup ships no vendor CSS, which is why eca.directory's blog CTA
+// rebuilt as an unstyled heading and a bare link (2026-11-25).
+const paragraphs = bandParagraphs( body, theme );
 ---
 
-{(title || (links && links.length > 0)) && (
-	<section class="ds-section ds-hero">
+{(title || paragraphs.length > 0 || (links && links.length > 0)) && (
+	<section class:list={['ds-section', 'ds-hero', theme?.titleAlign === 'center' && 'ds-body--center']}>
 		<SectionTitle title={title} theme={theme} />
+		{paragraphs.length > 0 && (
+			<div class="ds-hero-body">
+				{paragraphs.map((paragraph) => (
+					<p class="ds-text">{paragraph}</p>
+				))}
+			</div>
+		)}
 		{links && links.length > 0 && (
 			<div class="ds-links">
 				{links.map((link) => (

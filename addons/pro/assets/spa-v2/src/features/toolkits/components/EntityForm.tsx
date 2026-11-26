@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * EntityForm — the workbench's create/edit panel, generated from columns.
  *

@@ -1,0 +1,181 @@
+{
+    "$comment": "Declared-and-not-ported decisions for the Pro toolkits (Proposal 164 section 164.6). Read by bin/toolkit-parity.php. declined = not ported and not intended, subtracted from remaining. deferred = not ported, blocked on a named prerequisite, stays in remaining. The rationale, and the boundary against the readiness manifest's parity:declined, live in Nvoos\\Core\\Application\\Tool\\ToolkitParityDecisions.",
+    "decisions": {
+        "apply_watermark_batch": {
+            "decision": "declined",
+            "reason": "A watermark is a per-image `edit` operation, and a batch over it is a loop a caller writes in one line; offering it as a primitive would add a slug without adding a capability. The video counterpart, apply_watermark_to_video, is already served, so nothing in the portfolio changes shape. Declined rather than deferred because no prerequisite would make it more than a loop."
+        },
+        "batch_process_images": {
+            "decision": "declined",
+            "reason": "It would be a chain of convert, resize and compress, and ImageProcessingInterface::resize/crop/rotate/convert each take a source path and return a persisted path, so a chain is one worker round trip and one intermediate file per step. A real batch needs a multi-operation `/transform` call, which is a worker contract change rather than a tool. The three served tools (optimise_images_batch, generate_responsive_images, compress_image) already cover the jobs this slug names, so there is nothing left to build behind the name."
+        },
+        "classroom_course_analytics": {
+            "decision": "deferred",
+            "reason": "It aggregates enrolment, coursework and submission-completion metrics that only exist on the Classroom side; there is no local copy to compute over. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "configure_eca_notifications": {
+            "decision": "deferred",
+            "reason": "It stores notification rules whose triggers are enrollment and attendance changes. The adapter has a `nvoos_triggers` table but no tool surface and no emitters for those events, so a rule could be stored and never fire, which reads as a silent no-op rather than as a missing capability. Prerequisite: an event-to-action rule store plus emitters for ECA enrollment and attendance changes."
+        },
+        "create_classroom_course": {
+            "decision": "deferred",
+            "reason": "It provisions a course under a connected teacher account through the Classroom API, and nothing in this runtime holds a teacher account, an OAuth grant or a course id. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "create_classroom_coursework": {
+            "decision": "deferred",
+            "reason": "It creates coursework on a Classroom course, which requires both the client and the course id the keystone link would store. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "create_eca_workflow_rule": {
+            "decision": "deferred",
+            "reason": "It is the same substrate as configure_eca_notifications: a rule with a trigger and an action, evaluated on ECA events that nothing currently emits. Prerequisite: an event-to-action rule store plus emitters for ECA enrollment and attendance changes."
+        },
+        "create_remotion_video": {
+            "decision": "deferred",
+            "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
+        },
+        "extract_video_metadata": {
+            "decision": "declined",
+            "reason": "Superseded by get_video_metadata, which is served: it returns the container, duration and bitrate plus the video and audio streams (codec, dimensions, frame rate, channels), and accepts file_id or a URL where this tool accepts only video_id. Its analyze_audio flag asks for the audio-stream detail the served tool already returns, so a port would be a second slug for one answer. Declined rather than deferred because there is nothing left to build."
+        },
+        "fnb_import_table": {
+            "decision": "deferred",
+            "reason": "It imports transactional rows from the Drive/CSV source into five WordPress native-storage CPTs, and this runtime has one table backend by decision (Proposal 164 section 164.71 deliberately dropped the native-storage hint and the CPT-backed tables). A port today would write rows that nothing reads: fnb_read_table and all twenty-one metric tools read FnbTableSource, so the import would be a write with no reader and the probe gate would be right to refuse it. The import itself is sound once something reads the store, which is why this is deferred rather than declined. Prerequisite: a native-table store plus a read fallback in FnbTableSource, which changes the storage contract for the whole toolkit and belongs in its own proposal."
+        },
+        "generate_architectural_drawing": {
+            "decision": "deferred",
+            "reason": "Its value is the structured-prompt compiler — scale notation, dimension callouts, materials, building codes — wrapped around a DALL-E/Imagen call and a raster-to-SVG step this runtime already serves as `output_format: svg` on the image tools. There is no image-generation contract here: each of the three served generators speaks to a provider through SettingsStoreInterface and HttpClientInterface directly, so a faithful port today would be a fourth copy of that plumbing plus a second vectoriser. Prerequisite: a shared image-generation seam the prompt compiler can sit on. Deferred rather than declined because the capability is worth having once that seam exists."
+        },
+        "generate_image_ai": {
+            "decision": "declined",
+            "reason": "Its handler dispatches to no provider of its own: it is a generic front door whose work is already served by generate_openai_image, generate_gemini_image and generate_cloudflareai_image, each of which names the provider it will bill. Porting it would be a fourth slug for the same three calls with a provider the caller cannot see in advance."
+        },
+        "generate_image_variations": {
+            "decision": "declined",
+            "reason": "Superseded by create_image_variation, which is served. The two are separate WordPress slugs for one capability, so a port would give an agent two names for one call and no way to choose between them."
+        },
+        "get_queued_videos": {
+            "decision": "deferred",
+            "reason": "Lists media-library attachments filtered by _mcp_video_status and _mcp_video_target_platform. Nothing on this runtime writes either: the only writer in WordPress is upload_video_batch, which is itself unported. A port today could only answer with an empty list, and an empty list reads as a finding rather than as a missing model. Prerequisite: a video processing and upload job model. Deferred, not declined, because the query is sound once something writes the status."
+        },
+        "get_uninvoiced_orders": {
+            "decision": "deferred",
+            "reason": "It lists WooCommerce orders that lack the `_invoiced` meta flag. This runtime has no order or invoice model at all — the app skeleton registers no Order or Invoice entity — so there is nothing to query and no flag to look for. Prerequisite: an order model carrying an invoiced marker, which arrives with the ecommerce toolkit rather than ahead of it."
+        },
+        "get_unwatermarked_images": {
+            "decision": "deferred",
+            "reason": "It lists images that have no watermark, which needs a recorded relationship between a source and its watermarked rendition. FileDerivativeStoreInterface::ROLES currently offers only poster, caption and frame, so there is no watermark role to query and a port today could only answer with an empty list, which reads as a finding rather than as a missing model. Prerequisite: a watermark role on the derivative store, the same way the video inventories waited for their roles."
+        },
+        "image_inpainting": {
+            "decision": "deferred",
+            "reason": "Inpainting needs a mask-capable engine. The media worker's `/edit` route takes an `operation` and a `prompt` and no mask channel, and neither bound provider offers one, so there is nothing to send the masked region to. Prerequisite: a mask argument on the worker edit route plus a provider that accepts it."
+        },
+        "isams_query": {
+            "decision": "deferred",
+            "reason": "It reads pupils, employees, departments and terms from iSAMS through institution-specific credentials this runtime has no store for. Prerequisite: an iSAMS client with a credential store; the `_eca_isams_sync_id` field proves the schema anticipated the sync, not the transport."
+        },
+        "link_classroom_course_to_eca": {
+            "decision": "deferred",
+            "reason": "It is the keystone of the Classroom group: it writes the course-to-ECA link and the sync direction that every other Classroom slug reads. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce. Until that link exists, a port of any sibling could only refuse, which is why this one gates the other eleven."
+        },
+        "list_classroom_courses": {
+            "decision": "deferred",
+            "reason": "It lists the courses visible to a connected teacher account, which is a Classroom-side list this runtime cannot read or cache. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "list_classroom_guardians": {
+            "decision": "deferred",
+            "reason": "Guardian records live on the Classroom side and there is no student-to-guardian mapping here (the student row carries one email, `_student_email`). Prerequisite: a Google Classroom client plus a student-to-guardian mapping; the client alone would return rows nothing can be matched to."
+        },
+        "list_classroom_submissions": {
+            "decision": "deferred",
+            "reason": "Submission state only exists for a coursework item created through Classroom, and neither the item nor the course exists here. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "manage_classroom_push_watch": {
+            "decision": "deferred",
+            "reason": "It registers, renews and removes Classroom push-notification watches, which needs the client *and* a publicly reachable callback URL that this deployment model does not provide. Prerequisite: a Google Classroom client plus a public webhook endpoint the worker or app can serve."
+        },
+        "optimize_image_sharp": {
+            "decision": "deferred",
+            "reason": "It duplicates optimise_images_batch (which already batches convert and compress) plus the resize that batch_process_images would have added, so it is the same capability under a third name and lands with the multi-operation transform rather than beside it. Prerequisite: a multi-operation `/transform` call on the media worker."
+        },
+        "post_classroom_announcement": {
+            "decision": "deferred",
+            "reason": "It posts to a Classroom course stream, so it needs the client and a stored course id. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "prepare_file_for_vector_store": {
+            "decision": "deferred",
+            "reason": "It converts CSV, XLSX and PPTX into PDF or structured text, OCRs scanned PDFs and repairs encoding before ingest. The runtime has the OCR half (OcrServiceInterface, PdfOcrInterface, PdfTextExtractorInterface) and PDF mutation, but nothing reads a spreadsheet or a slide deck: the media worker generates office documents, it does not parse them. Prerequisite: an office-document reader that exposes rows and sheets as text."
+        },
+        "remote_shopify_connection": {
+            "decision": "deferred",
+            "reason": "Reads a Shopify store through the Admin API using stored credentials. Nothing in this runtime speaks Shopify: there is no Shopify client, no credential store for it, and no Shopify-shaped entity. Prerequisite: an Admin API client plus credentials in the connection store."
+        },
+        "remote_wp_connection": {
+            "decision": "deferred",
+            "reason": "A 2,900-line convenience layer over 14+ named queries (`get_posts`, `get_media`, `get_wc_products`, `get_wc_orders`, …) against a *stored* connection. This runtime is closer than it looks: `App\\Support\\RemoteSites\\RemoteSiteStore` already has all, find, create, update, delete, credentialsFor and recordTest, and `query_remote_site` covers the transport. What is missing is the seam and the semantics — the store is app-local rather than a core contract, and `query_remote_site` takes a URL and an endpoint per call, so it offers neither the named queries nor stored credentials. Prerequisite: a core contract over that store plus the action-to-endpoint map."
+        },
+        "remove_background": {
+            "decision": "deferred",
+            "reason": "Background removal needs either a Python `rembg` sidecar or a paid remove.bg key, and neither is bound on this runtime: the media worker advertises no matting capability, so the tool could only refuse at call time. Prerequisite: a matting capability on the media worker or a configured removebg_api_key."
+        },
+        "remove_image_background": {
+            "decision": "declined",
+            "reason": "It shares the handler of remove_background, so it is a second slug rather than a second capability. The capability itself is deferred on this record; when a matting engine is bound, the single deferred slug will be ported and this alias stays declined because the served tool will answer for both names."
+        },
+        "research_eca": {
+            "decision": "declined",
+            "reason": "It is a provider prompt preset: it composes a research prompt and calls the model client, and returns the text. deep_research and web_search already serve that capability, and the WordPress tool's own usage guidance points at both of them. A third name for \"research this topic\" would add a slug without adding a capability, so it is declined rather than deferred: no prerequisite would make the duplicate worth a slot."
+        },
+        "sync_classroom_courses_to_ecas": {
+            "decision": "deferred",
+            "reason": "It links existing ECAs by stored course id and optionally creates the rest, so it reads both the course list and the link the keystone would write. Prerequisite: a Google Classroom client plus the course-to-ECA link store (link_classroom_course_to_eca)."
+        },
+        "sync_classroom_roster_to_students": {
+            "decision": "deferred",
+            "reason": "It pulls a course roster into student records, matching on a Google user id this runtime does not store. Prerequisite: a Google Classroom client plus a `_student_google_id` (or equivalent) field on the student record; without the join key a sync would create duplicates rather than match."
+        },
+        "sync_eca_enrollments_from_isams": {
+            "decision": "deferred",
+            "reason": "It imports enrollment records for activities, so it depends on both the client and the student/activity rows a prior sync would create. Prerequisite: an iSAMS client with per-institution credentials."
+        },
+        "sync_ecas_from_isams": {
+            "decision": "deferred",
+            "reason": "It imports activities from iSAMS/SOCS into ECA records through the same client. Prerequisite: an iSAMS client with per-institution credentials."
+        },
+        "sync_ecas_from_socs": {
+            "decision": "deferred",
+            "reason": "SOCS is a different vendor from iSAMS with its own API and credentials, so it is a second client rather than a flag on the first. Prerequisite: a SOCS client with per-institution credentials."
+        },
+        "sync_ecas_to_isams": {
+            "decision": "deferred",
+            "reason": "It is the outbound half: it creates or updates activities in iSAMS, which is a write to a system of record that cannot be stood up or tested here. Prerequisite: an iSAMS client with per-institution credentials."
+        },
+        "sync_students_from_isams": {
+            "decision": "deferred",
+            "reason": "It imports student records from iSAMS, so it needs the iSAMS client and a stable match key before it can create or update anyone. Prerequisite: an iSAMS client with per-institution credentials."
+        },
+        "text_to_image_prompt_optimizer": {
+            "decision": "declined",
+            "reason": "Every image generation tool here already hands free-text to a model that interprets it, so a separate optimiser is a second paid call that rewrites the caller's words without showing what changed. It also has no consumer in the tool portfolio: nothing calls it. Declined rather than deferred because there is no prerequisite that would make a hidden rewrite worth a slot."
+        },
+        "update_classroom_course": {
+            "decision": "deferred",
+            "reason": "It renames or re-states an existing Classroom course, so it needs the same client plus a stored course id to address. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "upload_video_batch": {
+            "decision": "deferred",
+            "reason": "Uploads a batch to YouTube or Vimeo, and platform must be one of those two. No video-platform uploader is bound here: the media worker composes and publishes to the social channels, not to video platforms. Its dry_run mode only previews the queue that get_queued_videos reads, so the pair lands together or not at all. Prerequisite: a YouTube/Vimeo uploader plus the job model above."
+        },
+        "vault_access": {
+            "decision": "deferred",
+            "reason": "Reads items from an encrypted vault: passwords, secure notes, cards and identities, organised in folders. Core has no vault contract and the app skeleton has no vault model or table, so there is neither an encrypted store nor a key-management story to read from. A port built on plain options would be the opposite of the tool's purpose. Prerequisite: a vault contract with an encrypted backing store and a key source."
+        },
+        "vault_manage": {
+            "decision": "deferred",
+            "reason": "The write half of the same vault: folder and item creation, updates, moves and deletion. It shares the prerequisite of `vault_access` — there is no encrypted store — and splitting the pair would leave management without anything to manage. Prerequisite: a vault contract with an encrypted backing store and a key source."
+        },
+        "web_browser": {
+            "decision": "deferred",
+            "reason": "Six of its seven actions are a stateful sequence: `click`, `type` and `submit` act on one page after a `navigate`, and `extract` reads the result of that sequence. The worker's browser route is a one-shot render (URL or HTML in, one file out) with no session and no step list, so there is nothing to hold the page between calls. Prerequisite: a session-capable browser route, or a scripted step list the worker executes inside one request. The same delivery gap as `capture_webpage_screenshot` applies to its screenshot and PDF actions."
+        }
+    }
+}

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms.ts — the pure half of the storefront's form endpoint (Proposal 138).
 //

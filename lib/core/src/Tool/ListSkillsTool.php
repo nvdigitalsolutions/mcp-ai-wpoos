@@ -13,8 +13,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Application\Skill\SkillRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class ListSkillsTool extends AbstractTool
+class ListSkillsTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $e, private readonly SkillRegistry $skills)
     {
@@ -50,5 +52,17 @@ class ListSkillsTool extends AbstractTool
             return $this->emptyResult('No skills registered.');
         }
         return $this->collection("Found {$this->skills->count()} skills.", $catalogue, $this->skills->count());
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Pure in-process computation: no store, no service, no network.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }

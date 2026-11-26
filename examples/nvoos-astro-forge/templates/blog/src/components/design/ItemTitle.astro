@@ -1,0 +1,25 @@
+---
+// SPDX-License-Identifier: MIT
+// ItemTitle — an ITEM's heading rendered at the level its SOURCE heading used.
+//
+// An item is not the band's title: a services column is a real `h2` in the
+// source and a wifi icon-box caption is an `h3`. The band's measured type rule
+// is scoped to that level (`[data-section-id=…] h2{…}`), so rendering every item
+// at one template level left those headings at the default size
+// (virtuallysrilanka's services columns and wifi items).
+//
+// `fallback` keeps each component's historical level when the source's is
+// unknown — FeatureGrid has always used `h3`, IconList `h4`.
+import { itemTitleTag } from '../../lib/title-tag.ts';
+import type { TitleTag } from '../../lib/title-tag.ts';
+
+interface Props {
+	item: { title?: string; titleLevel?: number };
+	fallback?: TitleTag;
+}
+
+const { item, fallback = 'h4' } = Astro.props;
+const Heading = itemTitleTag( item.titleLevel, fallback );
+---
+
+{item.title && <Heading>{item.title}</Heading>}

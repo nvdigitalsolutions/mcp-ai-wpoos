@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sites.ts — site-management tool slice (096 §3.3): the operator allowlist
 // that every fetch-capable tool consults. Credentials never appear here —

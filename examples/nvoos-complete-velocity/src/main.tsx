@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * NV oOS Complete Console — entry point.
  *
@@ -19,6 +20,13 @@ import '@nvoos/pro-spa-v2/styles/toolkits.css';
 import '@nvoos/pro-spa-v2/styles/drawers.css';
 import '@nvoos/pro-spa-v2/styles/embedded.css';
 import { useUIStore } from '@nvoos/pro-spa-v2/stores/uiStore';
+import {
+  clearTenantId,
+  readTenantId,
+  resolveTenantSelection,
+  writeTenantId,
+  type EstateSummary,
+} from '@nvoos/pro-spa-v2/api/tenant';
 import './shell.css';
 
 import {
@@ -30,10 +38,12 @@ import {
   fetchSiteName,
   UnauthorizedError,
 } from './runtime-config';
+import { backendPaths, buildTimeBackend } from './backend-profile';
 import { brandText } from './brand';
 import { installFetchWrapper } from './fetch-wrapper';
 import { confirmMagicLink, logoutFromWordPress } from './login';
 import { LoginScreen } from './console/LoginScreen';
+import { EstatePicker } from './console/EstatePicker';
 
 declare global {
   interface Window {
@@ -53,6 +63,7 @@ const ConsoleShell = lazy(() =>
 type BootState =
   | { phase: 'loading' }
   | { phase: 'login'; notice?: string; error?: string }
+  | { phase: 'estate'; estates: EstateSummary[] }
   | { phase: 'error'; message: string }
   | { phase: 'ready' };
 
@@ -66,6 +77,37 @@ function extractMagicLoginToken(): string {
 
 function Console(): JSX.Element {
   const [boot, setBoot] = useState<BootState>({ phase: 'loading' });
+
+  /**
+   * Whether the backend offers passwordless sign-in, from the public feature
+   * map. `null` until the fetch settles, and the sign-in screen treats anything
+   * but an explicit `false` as available — the endpoint is authoritative, and a
+   * failed probe should not remove a working login method.
+   */
+  const [magicLinkAvailable, setMagicLinkAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch(
+          backendPaths('', buildTimeBackend()).features,
+          { credentials: 'include', headers: { Accept: 'application/json' } },
+        );
+        if (!response.ok) return;
+        const data = (await response.json()) as { data?: { magic_login?: unknown } } | null;
+        if (cancelled) return;
+        setMagicLinkAvailable(data?.data?.magic_login === false ? false : true);
+      } catch {
+        // Leave it null: show the method rather than hide a working one.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /**
    * Session bootstrap — runs on mount and again after a successful sign-in.
@@ -82,6 +124,11 @@ function Console(): JSX.Element {
       // bearer/basic/guest credentials exist here.
       installFetchWrapper({
         siteOrigin: window.location.origin,
+        // The Laravel runtime resolves the estate per request from this
+        // header (149 §21). WordPress never reads it, so it is only wired for
+        // a backend that does — and the wrapper scopes it to `/api/v1/`
+        // paths while skipping the identity endpoints.
+        tenantId: buildTimeBackend() === 'wordpress' ? undefined : readTenantId,
         onUnauthorized: () =>
           setBoot((prev) =>
             prev.phase === 'login'
@@ -95,12 +142,37 @@ function Console(): JSX.Element {
       await assertBackendContract();
 
       const nonce = await fetchSessionNonce();
-      const { user, nonce: effectiveNonce } = await fetchCurrentUser(nonce);
+      const { user, nonce: effectiveNonce, session } = await fetchCurrentUser(nonce);
+
+      // Estate selection (Laravel only — WordPress reports no memberships).
+      // Boot order matters: `/session/me` and `/features` sit outside tenant
+      // resolution, so this decision can be made before any scoped request.
+      // A stored id that is no longer a membership resolves to `pick` instead
+      // of a permanent 404, and a single membership needs no header at all.
+      const estates = session?.estates ?? [];
+      const selection = resolveTenantSelection(estates, readTenantId());
+      if (selection.action === 'pick') {
+        setBoot({ phase: 'estate', estates });
+        return;
+      }
+      if (selection.action === 'none') {
+        // A Laravel session that reports no memberships cannot own a stored
+        // id: clear it so the next request is not sent with a selector the
+        // middleware will 404. WordPress reports no session block at all, so
+        // this never touches storage on that runtime.
+        if (session && readTenantId()) {
+          clearTenantId();
+        }
+      } else if (readTenantId() !== selection.tenantId) {
+        writeTenantId(selection.tenantId);
+      }
+
       // Availability map fails open — never block boot on optional surfaces.
       // One read returns both the feature flags and which routes this
       // backend serves, so a missing route blanks its endpoint instead of
       // 404ing when the user opens the page.
-      const { features, endpoints } = await fetchRuntimeAvailability(effectiveNonce);
+      const { features, endpoints, endpointUrls, endpointReasons, connectedProxy } =
+        await fetchRuntimeAvailability(effectiveNonce);
       // Site title fails open too ('' → branding surfaces fall back to the
       // product name). It also feeds the browser tab title.
       const siteName = await fetchSiteName();
@@ -111,7 +183,12 @@ function Console(): JSX.Element {
         user,
         features,
         endpoints,
+        endpointUrls,
+        endpointReasons,
+        connectedProxy,
         siteName,
+        tenantId: selection.action === 'proceed' ? selection.tenantId : '',
+        estates,
       });
       setBoot({ phase: 'ready' });
     } catch (error) {
@@ -173,6 +250,11 @@ function Console(): JSX.Element {
     if (!result.ok) {
       console.warn('[nvoos-console] sign-out did not complete:', result.message);
     }
+    // The estate selection belongs to the signed-out session: leaving it
+    // behind would point the next user's requests at an estate they may not
+    // be a member of (the middleware would 404, but the picker would never
+    // show because the stored id looked valid).
+    clearTenantId();
     setBoot({ phase: 'login' });
   };
 
@@ -190,7 +272,24 @@ function Console(): JSX.Element {
       <LoginScreen
         notice={boot.notice}
         error={boot.error}
+        magicLinkAvailable={magicLinkAvailable !== false}
         onSuccess={() => void bootstrap()}
+      />
+    );
+  }
+
+  if (boot.phase === 'estate') {
+    return (
+      <EstatePicker
+        estates={boot.estates}
+        onSelect={(estateId) => {
+          // Persist first: the fetch wrapper reads the selection per request,
+          // so the very next bootstrap's `/session/me` and every scoped call
+          // carry it.
+          writeTenantId(estateId);
+          void bootstrap();
+        }}
+        onSignOut={handleSignOut}
       />
     );
   }

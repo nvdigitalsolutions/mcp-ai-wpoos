@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Schedule Manager client.
  *
@@ -86,6 +87,42 @@ export interface FleetStats {
 interface OkEnvelope {
 	ok?: boolean;
 	message?: string;
+}
+
+/**
+ * The trigger acknowledgement.
+ *
+ * Both runtimes answer the same way now: WordPress queues an Action Scheduler
+ * (or WP-Cron) run, Laravel dispatches a queue job. Neither executes the
+ * handler inside the request, so the body carries a run id and the client
+ * polls instead of waiting.
+ */
+export interface ScheduleTriggerResult {
+	ok?: boolean;
+	queued?: boolean;
+	run_id?: string | number;
+	backend?: string;
+	message?: string;
+	[ k: string ]: unknown;
+}
+
+/**
+ * One polled run from GET /schedules/{id}/runs/{runId}.
+ *
+ * `status` is the lifecycle slug (`pending`, `running`, `success`, `failure`,
+ * `timeout`); `finished` is the server's own terminal check so the client
+ * never has to hard-code the vocabulary.
+ */
+export interface ScheduleRunStatus {
+	ok?: boolean;
+	run_id?: string | number;
+	schedule_id?: string;
+	status: string;
+	finished: boolean;
+	duration?: number | null;
+	error?: string | null;
+	time?: number | null;
+	[ k: string ]: unknown;
 }
 
 export interface ScheduleManagerClientOptions {
@@ -180,11 +217,33 @@ export class ScheduleManagerClient {
 		} );
 	}
 
-	/** POST /schedules/{id}/trigger — run the schedule now. */
-	async trigger( id: string ): Promise< void > {
-		await this.request( `/schedules/${ encodeURIComponent( id ) }/trigger`, {
-			method: 'POST',
-		} );
+	/** POST /schedules/{id}/trigger — queue the run; the body is an ack. */
+	async trigger( id: string ): Promise< ScheduleTriggerResult > {
+		const body = await this.request< ScheduleTriggerResult >(
+			`/schedules/${ encodeURIComponent( id ) }/trigger`,
+			{ method: 'POST' }
+		);
+
+		return body ?? { ok: true };
+	}
+
+	/**
+	 * GET /schedules/{id}/runs/{runId} — the poll side of the trigger.
+	 *
+	 * Throws on a transport or permission failure so the caller can keep the
+	 * previous state and retry; a transient blip must not end the poll early.
+	 */
+	async runStatus(
+		id: string,
+		runId: string | number,
+		signal?: AbortSignal
+	): Promise< ScheduleRunStatus > {
+		const body = await this.request< ScheduleRunStatus >(
+			`/schedules/${ encodeURIComponent( id ) }/runs/${ encodeURIComponent( String( runId ) ) }`,
+			{ signal }
+		);
+
+		return body ?? { status: 'unknown', finished: true };
 	}
 
 	/** POST /schedules/{id}/toggle — flip enabled state. */

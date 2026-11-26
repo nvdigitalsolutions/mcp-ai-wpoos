@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Paste backend trait.
+//!
+//! The trait keeps platform paste implementations behind one fallible seam, so
+//! callers never branch on the OS.
 
 use crate::error::AppResult;
 

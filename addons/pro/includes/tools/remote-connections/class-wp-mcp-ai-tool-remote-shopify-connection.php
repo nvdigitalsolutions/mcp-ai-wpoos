@@ -263,12 +263,20 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 			$result = $client->graphql( $query );
 
 			if ( is_wp_error( $result ) ) {
-				return array(
-					'success'       => false,
-					'connection_id' => $connection_id,
-					'name'          => isset( $connection['name'] ) ? $connection['name'] : '',
-					'api_mode'      => $api_mode,
-					'error'         => $result->get_error_message(),
+				// Re-return the inner error, enriched with the connection context the
+				// failure payload used to carry: the code and any data survive, and the
+				// caller still learns which connection it was.
+				return new WP_Error(
+					$result->get_error_code(),
+					$result->get_error_message(),
+					array_merge(
+						(array) $result->get_error_data(),
+						array(
+							'connection_id' => $connection_id,
+							'name'          => isset( $connection['name'] ) ? $connection['name'] : '',
+							'api_mode'      => $api_mode,
+						)
+					)
 				);
 			}
 
@@ -294,12 +302,17 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
 
 			if ( is_wp_error( $result ) ) {
-				return array(
-					'success'       => false,
-					'connection_id' => $connection_id,
-					'name'          => isset( $connection['name'] ) ? $connection['name'] : '',
-					'api_mode'      => $api_mode,
-					'error'         => $result->get_error_message(),
+				return new WP_Error(
+					$result->get_error_code(),
+					$result->get_error_message(),
+					array_merge(
+						(array) $result->get_error_data(),
+						array(
+							'connection_id' => $connection_id,
+							'name'          => isset( $connection['name'] ) ? $connection['name'] : '',
+							'api_mode'      => $api_mode,
+						)
+					)
 				);
 			}
 

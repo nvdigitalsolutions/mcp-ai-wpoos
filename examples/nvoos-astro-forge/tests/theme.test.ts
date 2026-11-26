@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // theme.test.ts — the template's runtime theme module (Proposal 104 §4.2):
 // the forge port of the velocity theme contract, unit-covered here by

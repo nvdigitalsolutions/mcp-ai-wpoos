@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // deploy-config.test.ts — Phase 3.3: emitted deploy/rebuild workflows +
 // the fail-closed dispatch verifier, executed for real in a subprocess.
@@ -5,14 +6,15 @@
 
 import { createHmac } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { promisify } from 'node:util';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { DEFAULT_EVENT_TYPE, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
+import { DEFAULT_EVENT_TYPE, emitDeployConfig, requiredRuntime, resolveRuntime, resolveSiteUrl } from '../lib/deploy-config.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const execFileAsync = promisify( execFile );
 
@@ -59,7 +61,7 @@ describe( 'emitDeployConfig', () => {
 				'scripts/verify-dispatch.mjs',
 			] );
 		} finally {
-			await rm( local, { recursive: true, force: true } );
+			await rmTemp( local );
 		}
 	} );
 
@@ -375,5 +377,61 @@ describe( 'emitted verify-dispatch.mjs (fail-closed contract)', () => {
 	it( 'rejects non-JSON payloads', async () => {
 		await emitDeployConfig( dir, { mode: 'github-pages' } );
 		await expect( run( 'not-json{' ) ).rejects.toThrow( /not valid JSON/ );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// The runtime gate — a profile that names a managed-only feature must never be
+// emitted as a static tree (that is the shape that shipped a static artifact to
+// an Astro-SSR Velocity app and failed at PM2).
+// ---------------------------------------------------------------------------
+
+describe( 'runtime requirement', () => {
+	it( 'treats bridge forms as static-safe (the browser POSTs to WordPress)', () => {
+		expect( requiredRuntime( { forms: { delivery: 'bridge' } } ) ).toEqual( {
+			runtime: 'static',
+			reason: 'no managed-only feature is configured',
+		} );
+	} );
+
+	it( 'requires managed for direct forms delivery', () => {
+		expect( requiredRuntime( { forms: { delivery: 'direct' } } ).runtime ).toBe( 'managed' );
+	} );
+
+	it( 'requires managed for a direct fallback', () => {
+		expect( requiredRuntime( { forms: { fallback: 'direct' } } ).runtime ).toBe( 'managed' );
+	} );
+
+	it( 'honours an explicit managed deploy block', () => {
+		expect( requiredRuntime( { deploy: { runtime: 'managed' } } ).runtime ).toBe( 'managed' );
+	} );
+
+	it( 'requires managed for the /manage surface', () => {
+		expect( requiredRuntime( { deploy: { manage: true } } ).runtime ).toBe( 'managed' );
+		expect( () => resolveRuntime( { deploy: { manage: true } }, 'static' ) ).toThrow(
+			/requires the managed runtime/
+		);
+	} );
+
+	it( 'refuses a static emit for a managed profile', () => {
+		expect( () => resolveRuntime( { forms: { delivery: 'direct' } }, 'static' ) ).toThrow(
+			/requires the managed runtime/
+		);
+		// The CLI default is static, so an omitted runtime must refuse too.
+		expect( () => resolveRuntime( { forms: { delivery: 'direct' } } ) ).toThrow(
+			/requires the managed runtime/
+		);
+	} );
+
+	it( 'allows managed for a static profile — managed is a superset', () => {
+		expect( resolveRuntime( { forms: { delivery: 'bridge' } }, 'managed' ) ).toBe( 'managed' );
+	} );
+
+	it( 'defaults a static profile to static', () => {
+		expect( resolveRuntime( {} ) ).toBe( 'static' );
+	} );
+
+	it( 'rejects an unknown runtime value', () => {
+		expect( () => resolveRuntime( {}, 'ssr' ) ).toThrow( /Invalid deploy runtime/ );
 	} );
 } );

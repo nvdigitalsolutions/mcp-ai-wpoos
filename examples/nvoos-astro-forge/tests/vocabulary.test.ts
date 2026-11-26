@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // vocabulary.test.ts — Proposal 116 §3: the learned widget/block vocabulary
 // (block-types registry keyword rules, widget-name collection, the

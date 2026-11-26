@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Auth\MagicLinkService;
+use App\Support\ConnectedApps\ConnectedAppRegistry;
 use App\Support\EndpointCapabilities;
 use Illuminate\Http\JsonResponse;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
@@ -13,6 +15,15 @@ class FeaturesController
         $features = config('oos.features', array());
         $entitlement = app(ProEntitlementInterface::class);
         $manifest = EndpointCapabilities::manifest();
+
+        // Class C discovery (090-i Phase 4): a configured, reachable product
+        // lights its key and publishes the base URL the console should mount
+        // the island against. The static route map cannot know this — the
+        // product is not part of this router. The merge recomputes `gaps`
+        // because a flipped key changes the answer; WordPress applies the same
+        // rule in `WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps()`.
+        $connectedUrls = app(ConnectedAppRegistry::class)->available();
+        $manifest = EndpointCapabilities::applyConnectedApps($manifest, $connectedUrls);
 
         return response()->json(array(
             'success' => true,
@@ -29,9 +40,19 @@ class FeaturesController
                 'endpoint_contract_version' => $manifest['version'],
                 'endpoint_reasons' => (object) $manifest['reasons'],
                 'endpoint_gaps' => $manifest['gaps'],
+                // Additive (v2): the resolved base URL for a connected app that
+                // answered its probe. A client that ignores the field behaves
+                // exactly as it did before discovery existed.
+                'endpoint_urls' => (object) ( $manifest['endpoint_urls'] ?? array() ),
                 'backend' => 'laravel',
                 'contract' => 'mcp-ai/v1',
                 'contract_version' => 1,
+                // 149 §103 — whether the console should offer passwordless
+                // sign-in. Read from the CURRENT estate's settings, because this
+                // endpoint is public and carries no estate selector; truthful
+                // for the single-estate deployment and deliberately not a
+                // global "any estate" scan on a route the SPA polls.
+                'magic_login' => app(MagicLinkService::class)->enabledHere(),
                 'entitlement' => array(
                     'plan' => $entitlement->plan(),
                     'source' => $entitlement->source(),

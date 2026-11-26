@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useProOps — Hook for the consolidated Pro ops overview.
  */

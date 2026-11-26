@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Auth bridge — read the headless credential the standalone app placed in
  * the in-memory auth slot.

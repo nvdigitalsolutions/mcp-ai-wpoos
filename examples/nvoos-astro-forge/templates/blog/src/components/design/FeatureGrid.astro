@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // FeatureGrid — icon-box/counter/feature sections rebuilt as a card grid.
 // `columns` (Proposal 115 §4) drives the grid via per-breakpoint CSS custom
 // properties — the wireframe's captured/inferred collapse behavior. The
@@ -8,8 +9,10 @@
 import type { SemanticSection } from '../../forge/semantic.ts';
 import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
+import { itemTitleTag } from '../../lib/title-tag.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
+import { bandParagraphs, titleEchoItems, mediaLane } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -18,14 +21,66 @@ interface Props {
 }
 
 const { section, columns, theme } = Astro.props;
-const { title, body, items } = section.slots;
+const { title: parsedTitle, body, items } = section.slots;
+// The measured `titleText` is the band's heading even when the semantic pass
+// could not pick it out of the builder markup — and the echo fold below depends
+// on knowing it, or the lead icon-box renders as a card whose title repeats the
+// heading (eca.directory's benefits band, 2026-11-25).
+const title = parsedTitle ?? theme?.titleText;
 // A grid never declares more tracks than it has items: the source's authored
 // column count (3 in a services band, 4 in a logo wall) can exceed what the
 // classifier rebuilt after merging or skipping an empty column.
-const desktop = columns ? Math.min( columns.desktop ?? 4, Math.max( items?.length ?? 1, 1 ) ) : undefined;
-const gridStyle = columns && desktop
-	? `--ds-cols-desktop: ${ desktop }; --ds-cols-tablet: ${ Math.min( columns.tablet ?? 2, desktop ) }; --ds-cols-mobile: ${ Math.min( columns.mobile ?? 1, desktop ) };`
+// A source column that carries a SURFACE owns a lane even when it holds no copy.
+// A photo column published as a CSS `background-image` produces no item, and
+// clamping the track count to the item count collapsed a three-column band to
+// two AND dropped every surface with it (virtuallysrilanka's services band is
+// red / photo / black; the rebuild was two plain cards). The profile's
+// `columns` is keyed by index, and each item carries its `columnIndex`.
+const sourceColumns = theme?.columns ?? [];
+const lanes = sourceColumns.some( ( column ) => column.bgColor || column.bgImage )
+	? sourceColumns.length
 	: undefined;
+const desktop = lanes ?? ( columns ? Math.min( columns.desktop ?? 4, Math.max( items?.length ?? 1, 1 ) ) : undefined );
+const gridStyle = desktop
+	? `--ds-cols-desktop: ${ desktop }; --ds-cols-tablet: ${ Math.min( columns?.tablet ?? 2, desktop ) }; --ds-cols-mobile: ${ Math.min( columns?.mobile ?? 1, desktop ) };`
+	: undefined;
+// The cards the grid renders: the measured LANES first (a lane's own surface must
+// land on its card), then any item the classifier found OUTSIDE the lanes — the
+// comparison table that shares a band with a card row, for instance. Rendering
+// the extras keeps their copy on the page; the laned path alone silently dropped
+// it (eca.directory's 77f4271d, 2026-11-24).
+// The band's media LANE, when its measured row is one picture beside content.
+// The renderer then lays the grid beside that picture (`ds-band-split`), so the
+// lane-derived cards would duplicate the split itself — a photo card AND an
+// empty card above the real grid (eca.directory's benefits band, 2026-11-25).
+const splitLane = mediaLane( theme );
+const cards =
+	lanes && ! splitLane
+		? [
+				...Array.from( { length: lanes }, ( _, index ) => ( {
+					item: ( items ?? [] ).find( ( entry ) => entry.columnIndex === index ),
+					surface: sourceColumns[ index ],
+				} ) ),
+				...( items ?? [] )
+					.filter( ( entry ) => entry.columnIndex === undefined )
+					.map( ( item ) => ( { item, surface: undefined } ) ),
+		  ]
+		: ( items ?? [] ).map( ( item ) => ( { item, surface: undefined } ) );
+
+// A card whose heading IS the band's own title is not a card — it is the band's
+// sub-heading. The rule (and its media/link/lane guards) lives in
+// `titleEchoItems`, because `DesignRenderer` needs the same answer to decide
+// whether the band's measured `min-height` still applies once the grid folds
+// away entirely.
+const titleEchoes = titleEchoItems( items, title, theme, sourceColumns );
+const visibleCards =
+	titleEchoes.length > 0
+		? cards.filter( ( card ) => ! card.item || ! titleEchoes.includes( card.item ) )
+		: cards;
+const ledeBody = [
+	...( body ?? [] ),
+	...titleEchoes.flatMap( ( item ) => item.paragraphs ?? ( item.body ? [ item.body ] : [] ) ),
+];
 
 const titleVars = [
 	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
@@ -53,27 +108,50 @@ const dividerStyle = theme?.titleDivider
 <section class:list={['ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center']}>
 	{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 	{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-	{body && body.length > 0 && (
+	{bandParagraphs( ledeBody, theme ).length > 0 && (
 		<div class="ds-lede">
-			{body.map((paragraph) => (
+			{bandParagraphs( ledeBody, theme ).map((paragraph) => (
 				<p>{paragraph}</p>
 			))}
 		</div>
 	)}
-	{items && items.length > 0 && (
+	{visibleCards.length > 0 && (
 		<div class="ds-grid" style={gridStyle}>
-			{items.map((item) => (
-				<div class="ds-card">
-					{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
-					{item.title && <h3>{item.title}</h3>}
-					{item.body && <p>{item.body}</p>}
-					{item.links?.[0] && (
-						<a class="ds-button" href={item.links[0].href ?? '#'}>
-							{item.links[0].text ?? 'Learn more'}
-						</a>
-					)}
-				</div>
-			))}
+			{visibleCards.map(({ item, surface }) => {
+				const surfaceStyle = [
+					surface?.bgColor && `background-color:${ surface.bgColor }`,
+					surface?.bgImage &&
+						`background-image:url('${ surface.bgImage }');background-size:cover;background-position:center`,
+					// The lane's copy takes the ink its own slab needs — the card default
+					// is a muted grey, unreadable on the source's red and black panels.
+					surface?.ink && `--ds-card-surface-ink:${ surface.ink }`,
+				]
+					.filter( Boolean )
+					.join( ';' );
+				const Heading = itemTitleTag( item?.titleLevel, 'h3' );
+				return (
+					<div class:list={[ 'ds-card', ( surface?.bgColor || surface?.bgImage ) && 'ds-card--surface', surface?.bgImage && 'ds-card--surface-media' ]} style={surfaceStyle || undefined}>
+						{item?.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
+						{item?.title && item?.kicker && <p class="ds-card-kicker">{item.kicker}</p>}
+						{item?.title && <Heading>{item.title}</Heading>}
+						{(item?.paragraphs ?? (item?.body ? [item.body] : [])).map((paragraph) => (
+							<p>{paragraph}</p>
+						))}
+						{(item?.bullets ?? []).length > 0 && (
+							<ul class="ds-card-bullets">
+								{(item?.bullets ?? []).map((bullet) => (
+									<li>{bullet}</li>
+								))}
+							</ul>
+						)}
+						{item?.links?.[0] && (
+							<a class="ds-button" href={item.links[0].href ?? '#'}>
+								{item.links[0].text ?? 'Learn more'}
+							</a>
+						)}
+					</div>
+				);
+			})}
 		</div>
 	)}
 	<SectionLinks section={section} />

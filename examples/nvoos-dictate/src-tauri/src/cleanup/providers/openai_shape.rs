@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Shared OpenAI-compatible transport shape for Stage-2 polish providers.
 //!
 //! Both `openai_compat` and `lm_studio` speak the same `/v1/chat/completions`
@@ -133,11 +134,29 @@ pub fn vision_polish_prompt() -> &'static str {
      {\"label\":\"unknown\",\"confidence\":0}."
 }
 
+/// Deictic grounding prompt (Proposal 153 §7.2): the image is the region a user
+/// is pointing at; the question is what they asked. The model answers from the
+/// image only, refuses anything that needs a person's identity, and says so
+/// plainly rather than guessing.
+#[cfg(feature = "gestures")]
+pub fn deictic_prompt(question: &str) -> String {
+    format!(
+        "You are looking at a region of a live webcam frame that the user is \
+         pointing at. Answer the question using only what is visible in this \
+         image. Describe objects, text, colours, and spatial arrangement. \
+         Never identify, name, describe or guess at any person's face, body or \
+         identity; if the question requires that, say you cannot help with \
+         faces. If the image does not contain the answer, say so plainly instead \
+         of guessing. Answer in at most two short sentences.\n\nQuestion: {question}"
+    )
+}
+
 /// Build a multimodal chat-completions body: a text instruction plus a single
 /// base64 data-URI image. `model` is omitted when `None` (LM Studio serves its
 /// single loaded model in that case). Pure JSON — shared by the vision polish
-/// (Proposal 076) and OCR polish (Proposal 109) transports.
-#[cfg(any(feature = "vision", feature = "document"))]
+/// (Proposal 076), OCR polish (Proposal 109) and deictic grounding (Proposal
+/// 153) transports.
+#[cfg(any(feature = "vision", feature = "document", feature = "gestures"))]
 pub fn build_vision_body(
     model: Option<&str>,
     prompt: &str,

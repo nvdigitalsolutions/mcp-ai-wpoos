@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! macOS snippet capture + OCR via the bundled `nvoos-audio-helper` Swift
 //! sidecar (Proposal 100, M3).
 //!

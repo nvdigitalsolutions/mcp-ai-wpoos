@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // managed.generated.ts — rewritten by the forge scaffold (Proposal 135).
 //

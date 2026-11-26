@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * esbuild configuration for bundling Pro addon Node.js scripts
  * 

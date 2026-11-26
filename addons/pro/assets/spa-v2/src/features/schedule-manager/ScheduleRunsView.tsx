@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ScheduleRunsView — run history, reports, and captured results for one
  * schedule.

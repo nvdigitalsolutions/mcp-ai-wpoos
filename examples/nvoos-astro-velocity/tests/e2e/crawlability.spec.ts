@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // No-JS crawlability audit — Proposal 092 Phase 2.5.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // persistence.ts — Phase 4 durable design state (Proposal 095 §4.4).
 //

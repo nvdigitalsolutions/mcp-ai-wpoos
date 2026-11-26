@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Model Store — Zustand store for the currently selected AI model and profile.
  */

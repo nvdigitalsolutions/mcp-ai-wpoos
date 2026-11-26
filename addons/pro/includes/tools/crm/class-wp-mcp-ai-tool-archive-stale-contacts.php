@@ -155,14 +155,14 @@ class WP_MCP_AI_Tool_Archive_Stale_Contacts implements WP_MCP_AI_Tool_Interface,
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array Archive result.
+	 * @return array|WP_Error Archive result, or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_crm_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'CRM Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'toolkit_not_available',
+				__( 'CRM Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

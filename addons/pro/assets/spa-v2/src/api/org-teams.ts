@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Org teams client — the tenant's people, not the agent-team catalogue.
  *
- * Wraps `/api/v1/org/teams` (Proposal 090-g, Phase 3). The path is namespaced
+ * Wraps `/api/v1/org/teams` (Laravel) and `/mcp-ai/v1/org/teams`
+ * (WordPress, 090-p W7) — Proposal 090-g Phase 3. The path is namespaced
  * because `mcp-ai/v1/teams` already means "a collection of professions" — the
- * surface `TeamsPage` renders. This surface is Laravel-only until the
- * WordPress runtime grows the same contract, so callers must handle an empty
- * endpoint (see OrgTeamsPage).
+ * surface `TeamsPage` renders. Callers still handle an empty endpoint on older
+ * installs, but both runtimes now serve the contract.
  */
 
 import { __ } from '@wordpress/i18n';

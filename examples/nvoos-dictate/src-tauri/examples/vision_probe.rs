@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Vision detector risk spike (Proposal 075).
 //!
 //! The de-risk step: prove that a YOLOv8/v11 ONNX model actually runs on the

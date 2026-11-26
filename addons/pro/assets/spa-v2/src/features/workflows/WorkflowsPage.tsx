@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * WorkflowsPage — workflow list + visual builder (Proposal 084 Phase 3b).
  *

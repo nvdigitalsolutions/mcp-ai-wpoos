@@ -21,8 +21,69 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Infrastructure\Token;
 
+use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
+use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
+
 class TokenBudgetManager
 {
+    /**
+     * Optional live model catalogue (Proposal 149 §70).
+     *
+     * The `MODEL_LIMITS` and `MAX_OUTPUT_TOKENS` tables below are snapshots.
+     * When a catalogue is attached it answers first, so a provider that ships a
+     * model or changes a limit is picked up by syncing the catalogue rather
+     * than by editing core. An unknown model still falls back to the snapshot.
+     */
+    private ?ModelLimitCatalogueInterface $catalogue = null;
+
+    /**
+     * Optional tokenizer (Proposal 149 §71).
+     *
+     * Without one, `estimateTokens()` is the chars/4 heuristic. With one, the
+     * tokenizer decides how accurate that is and says so through
+     * `isAvailable()`; the manager does not care which.
+     */
+    private ?TiktokenServiceInterface $tokenizer = null;
+
+    /**
+     * Attach a live model-limit catalogue.
+     *
+     * @since 1.6.0
+     */
+    public function setCatalogue(ModelLimitCatalogueInterface $catalogue): void
+    {
+        $this->catalogue = $catalogue;
+    }
+
+    /**
+     * The attached catalogue, if any (diagnostics and tests).
+     *
+     * @since 1.6.0
+     */
+    public function getCatalogue(): ?ModelLimitCatalogueInterface
+    {
+        return $this->catalogue;
+    }
+
+    /**
+     * Attach a tokenizer used by `estimateTokens()`.
+     *
+     * @since 1.7.0
+     */
+    public function setTokenizer(TiktokenServiceInterface $tokenizer): void
+    {
+        $this->tokenizer = $tokenizer;
+    }
+
+    /**
+     * The attached tokenizer, if any (diagnostics and tests).
+     *
+     * @since 1.7.0
+     */
+    public function getTokenizer(): ?TiktokenServiceInterface
+    {
+        return $this->tokenizer;
+    }
     /**
      * Characters-per-token ratio for the heuristic estimator.
      *
@@ -200,6 +261,13 @@ class TokenBudgetManager
             return 0;
         }
 
+        // The catalogue is the maintained source; the snapshot is the fallback.
+        $catalogueLimit = $this->catalogue?->contextWindow($model);
+
+        if (null !== $catalogueLimit && $catalogueLimit > 0) {
+            return $catalogueLimit;
+        }
+
         if (isset(self::MODEL_LIMITS[ $model ])) {
             return self::MODEL_LIMITS[ $model ];
         }
@@ -230,6 +298,10 @@ class TokenBudgetManager
     {
         if ('' === $text) {
             return 0;
+        }
+
+        if (null !== $this->tokenizer) {
+            return $this->tokenizer->countTokens($text, $model);
         }
 
         $charCount = \mb_strlen($text, 'UTF-8');
@@ -294,6 +366,12 @@ class TokenBudgetManager
     public function getMaxOutputTokens(string $model): int
     {
         $model = \strtolower(\trim($model));
+
+        $catalogueLimit = $this->catalogue?->maxOutputTokens($model);
+
+        if (null !== $catalogueLimit && $catalogueLimit > 0) {
+            return $catalogueLimit;
+        }
 
         if (isset(self::MAX_OUTPUT_TOKENS[ $model ])) {
             return self::MAX_OUTPUT_TOKENS[ $model ];

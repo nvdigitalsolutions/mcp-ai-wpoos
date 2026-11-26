@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the ingest route (Proposal 079):
  * POST /api/ingest/parse.
@@ -122,6 +123,38 @@ test( 'xlsx sheet param selects a worksheet by name', async () => {
 		assert.deepEqual( body.columns, [ 'Supplier', 'Qty' ] );
 		assert.deepEqual( body.rows[ 0 ], [ 'ACME', '12' ] );
 		assert.equal( body.meta.sheet, 'Purchases' );
+	} finally {
+		server.close();
+	}
+} );
+
+test( 'maxRows bounds the response and reports the truncation', async () => {
+	const { server, url } = await startServer();
+	try {
+		const res = await fetch( `${ url }/parse`, {
+			method: 'POST',
+			body: multipart( await makeXlsx(), 'daily_sales.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', { maxRows: 1 } ),
+		} );
+		assert.equal( res.status, 200 );
+		const body = await res.json();
+		assert.equal( body.rows.length, 1 );
+		assert.equal( body.meta.source_total, 2, 'the original count survives' );
+		assert.equal( body.meta.truncated, true );
+	} finally {
+		server.close();
+	}
+} );
+
+test( 'an absent maxRows marks the matrix as not truncated', async () => {
+	const { server, url } = await startServer();
+	try {
+		const res = await fetch( `${ url }/parse`, {
+			method: 'POST',
+			body: multipart( await makeXlsx(), 'daily_sales.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ),
+		} );
+		const body = await res.json();
+		assert.equal( body.rows.length, 2 );
+		assert.equal( body.meta.truncated, false );
 	} finally {
 		server.close();
 	}

@@ -57,6 +57,28 @@ class WP_MCP_AI_Architectural_Engine {
 	const SQM_PER_PERCH = 25.2929;
 
 	/**
+	 * Option the toolkit settings page writes.
+	 *
+	 * The page is the only UI for these defaults, so it owns the store. It was
+	 * added after the engine shipped, which is why the name below differs from
+	 * `LEGACY_SETTINGS_OPTION`.
+	 *
+	 * @since 1.2.22
+	 */
+	const SETTINGS_OPTION = 'wp_mcp_ai_architectural_design_toolkit_settings';
+
+	/**
+	 * Pre-parity option name, kept as a read-only fallback.
+	 *
+	 * Nothing in the plugin writes this, but `currency_rates` is a nested map the
+	 * settings page does not render, and a site may already set values under this
+	 * name programmatically. Reads merge it first, then let the page win.
+	 *
+	 * @since 1.2.22
+	 */
+	const LEGACY_SETTINGS_OPTION = 'wp_mcp_ai_arch_design_settings';
+
+	/**
 	 * Convert square feet to square meters.
 	 *
 	 * @param float $sqft Square feet.
@@ -146,7 +168,7 @@ class WP_MCP_AI_Architectural_Engine {
 		);
 
 		// Allow override from settings.
-		$settings = get_option( 'wp_mcp_ai_arch_design_settings', array() );
+		$settings = self::read_stored_settings();
 		if ( ! empty( $settings['currency_rates'] ) && is_array( $settings['currency_rates'] ) ) {
 			foreach ( $settings['currency_rates'] as $code => $rate ) {
 				if ( is_numeric( $rate ) && (float) $rate > 0 ) {
@@ -753,6 +775,41 @@ class WP_MCP_AI_Architectural_Engine {
 	}
 
 	/**
+	 * Read the toolkit settings from the options the UI and third parties use.
+	 *
+	 * The settings page owns `SETTINGS_OPTION`. `LEGACY_SETTINGS_OPTION` predates
+	 * it and is merged underneath, so a site that sets values programmatically
+	 * under the old name keeps working and `currency_rates` — a nested map the
+	 * page does not render — still reaches the rate table. Anything the page
+	 * manages wins, because the page is what an operator just saved.
+	 *
+	 * @since 1.2.22
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function read_stored_settings() {
+		$legacy = get_option( self::LEGACY_SETTINGS_OPTION, array() );
+		$page   = get_option( self::SETTINGS_OPTION, array() );
+
+		$settings = is_array( $legacy ) ? $legacy : array();
+		$page     = is_array( $page ) ? $page : array();
+
+		// The page calls the code pack by its UI name; the engine has always
+		// resolved the same value as `default_code_pack`.
+		if ( isset( $page['building_code_standard'] ) ) {
+			$settings['default_code_pack'] = $page['building_code_standard'];
+		}
+
+		foreach ( array( 'default_country', 'default_unit_system', 'ifc_export_version', 'masterformat_year' ) as $key ) {
+			if ( array_key_exists( $key, $page ) ) {
+				$settings[ $key ] = $page[ $key ];
+			}
+		}
+
+		return $settings;
+	}
+
+	/**
 	 * Get the resolved toolkit settings with defaults applied.
 	 *
 	 * @return array Settings array.
@@ -768,10 +825,7 @@ class WP_MCP_AI_Architectural_Engine {
 			'currency_rates'      => array(),
 		);
 
-		$settings = get_option( 'wp_mcp_ai_arch_design_settings', array() );
-		if ( ! is_array( $settings ) ) {
-			$settings = array();
-		}
+		$settings = self::read_stored_settings();
 
 		$resolved = array_merge( $defaults, $settings );
 

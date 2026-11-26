@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! MCP tool handlers — implemented as plain methods on a `Clone` toolbox so
 //! they are unit-testable without a live transport or a Tauri app handle,
 //! then wired to rmcp's `#[tool_router]` in `server.rs`.

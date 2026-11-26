@@ -3,6 +3,8 @@
 namespace App\Support\RemoteSites;
 
 use App\Support\CredentialStore;
+use Closure;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -27,6 +29,12 @@ use InvalidArgumentException;
  *  3. **A blank credential keeps the stored one.** The console's update
  *     contract is "leave it blank to keep it"; `CredentialStore` already skips
  *     blanks, so an update merges rather than replaces.
+ *  4. **Every read and write is estate-scoped.** `nvoos_remote_sites` grew a
+ *     `tenant_id` in 149 §27, because without it every tenant user could list,
+ *     edit and delete every estate's connections — a cross-tenant READ and
+ *     WRITE, the same class of defect §19 fixed for credentials. The estate is
+ *     a resolver closure rather than a constructor value so it is read at query
+ *     time: this store can be built before tenant middleware runs.
  *
  * Verification, the type catalogue and the routes belong to steps (b) and (c);
  * `remoteSites` stays unavailable in the capability manifest until (c) lands.
@@ -78,12 +86,14 @@ final class RemoteSiteStore
     /** The uniform read mask — never varies with the credential. */
     private const MASK = "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}";
 
-    public function __construct(private readonly CredentialStore $credentials)
-    {
+    public function __construct(
+        private readonly CredentialStore $credentials,
+        private readonly Closure $tenant
+    ) {
     }
 
     /**
-     * Every connection, redacted, alphabetically.
+     * Every connection in the current estate, redacted, alphabetically.
      *
      * @return list<array<string, mixed>>
      */
@@ -93,7 +103,7 @@ final class RemoteSiteStore
             return [];
         }
 
-        return DB::table('nvoos_remote_sites')
+        return $this->query()
             ->orderBy('name')
             ->get()
             ->map(fn (object $row): array => $this->redact($row))
@@ -125,8 +135,9 @@ final class RemoteSiteStore
         $name = $this->name($data);
         $id = (string) Str::ulid();
 
-        DB::table('nvoos_remote_sites')->insert([
+        $this->query()->insert([
             'id' => $id,
+            'tenant_id' => $this->tenantId(),
             'name' => $name,
             'url' => $this->url($data),
             'connection_type' => $this->connectionType($data),
@@ -201,7 +212,7 @@ final class RemoteSiteStore
             );
         }
 
-        DB::table('nvoos_remote_sites')->where('id', $id)->update($changes);
+        $this->query()->where('id', $id)->update($changes);
 
         return $this->find($id);
     }
@@ -215,7 +226,7 @@ final class RemoteSiteStore
             return false;
         }
 
-        DB::table('nvoos_remote_sites')->where('id', $id)->delete();
+        $this->query()->where('id', $id)->delete();
 
         return true;
     }
@@ -248,7 +259,7 @@ final class RemoteSiteStore
             return;
         }
 
-        DB::table('nvoos_remote_sites')->where('id', $id)->update([
+        $this->query()->where('id', $id)->update([
             'last_tested_at' => now(),
             'last_test_status' => $success ? 'ok' : 'failed',
             'updated_at' => now(),
@@ -287,7 +298,27 @@ final class RemoteSiteStore
             return null;
         }
 
-        return DB::table('nvoos_remote_sites')->find($id);
+        return $this->query()->find($id);
+    }
+
+    /**
+     * The estate this store speaks for, read at query time.
+     *
+     * A resolver rather than a constructor value: the store can be resolved
+     * before `ResolveApiTenant` has run, and a value captured then would be the
+     * default estate forever.
+     */
+    private function tenantId(): string
+    {
+        return (string) ($this->tenant)();
+    }
+
+    /**
+     * Every query in this class starts here, so no method can forget the scope.
+     */
+    private function query(): Builder
+    {
+        return DB::table('nvoos_remote_sites')->where('tenant_id', $this->tenantId());
     }
 
     /**

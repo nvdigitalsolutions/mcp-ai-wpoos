@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ESLint flat config — Astro + TypeScript. (A11y linting is covered by the
 // Phase 2 Lighthouse/Playwright gates instead of a plugin — jsx-a11y's
 // peer range conflicts with eslint-plugin-astro 3's ESLint 10 requirement.)

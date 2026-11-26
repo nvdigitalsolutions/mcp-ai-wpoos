@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Global fetch + jQuery AJAX wrapper for the standalone SPA.
  *

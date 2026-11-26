@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // readme.ts — the deploy-branch build report.
 //
@@ -52,7 +53,7 @@ export interface ReadmeInput {
 	shape?: string;
 	surfaces?: Record<string, boolean>;
 	collections?: ReadmeCollection[];
-	tracking?: { enabled?: boolean; vendors?: string[]; consentMode?: string };
+	tracking?: { enabled?: boolean; vendors?: string[]; consentMode?: string; consentExempt?: string[] };
 	/** Resolved design tokens (semantic layer). */
 	tokens?: Record<string, string>;
 	/** The analysed design concept, one line. */
@@ -283,6 +284,8 @@ export function composeSiteReadme( input: ReadmeInput ): string {
 	}
 
 	// -- tracking -----------------------------------------------------------
+	// "Consent-gated" is a claim about behaviour, so a consent-exempt cookieless
+	// beacon must not inherit it: that one loads with no decision at all.
 	if ( input.tracking ) {
 		const vendors = ( input.tracking.vendors ?? [] ).filter( Boolean );
 		const enabled = input.tracking.enabled === true || vendors.length > 0;
@@ -290,11 +293,22 @@ export function composeSiteReadme( input: ReadmeInput ): string {
 		if ( ! enabled ) {
 			lines.push( 'No analytics or marketing tags are enabled on this build.', '' );
 		} else {
-			const consent = input.tracking.consentMode ? ` Consent mode: \`${ cell( input.tracking.consentMode ) }\`.` : '';
-			lines.push(
-				`${ vendors.length } consent-gated vendor(s): ${ vendors.map( ( vendor ) => `\`${ cell( vendor ) }\`` ).join( ', ' ) }.${ consent }`,
-				'',
-			);
+			const exemptVendors = input.tracking.consentExempt ?? [];
+			const list = ( names: string[] ) => names.map( ( vendor ) => `\`${ cell( vendor ) }\`` ).join( ', ' );
+			const exempt = vendors.filter( ( vendor ) => exemptVendors.includes( vendor ) );
+			const gated = vendors.filter( ( vendor ) => ! exempt.includes( vendor ) );
+			if ( gated.length > 0 ) {
+				lines.push( `${ gated.length } consent-gated vendor(s): ${ list( gated ) }.` );
+			}
+			if ( exempt.length > 0 ) {
+				lines.push(
+					`${ exempt.length } consent-exempt vendor(s): ${ list( exempt ) } — cookieless audience measurement (no cookie, no device storage), so the beacon loads without a decision.`
+				);
+			}
+			if ( input.tracking.consentMode ) {
+				lines.push( `Consent mode: \`${ cell( input.tracking.consentMode ) }\`.` );
+			}
+			lines.push( '' );
 		}
 	}
 

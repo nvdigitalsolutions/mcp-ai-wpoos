@@ -54,6 +54,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		// Create a mock tool.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -112,13 +113,26 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
+			/**
+			 * Tool instance returned by get_tool().
+			 *
+			 * @var mixed
+			 */
 			protected $tool;
 			/**
 			 * Constructor.
+			 *
+			 * @param mixed $tool Tool instance.
 			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
+			/**
+			 * Return the tool for a slug.
+			 *
+			 * @param string $slug Tool slug.
+			 * @return mixed
+			 */
 			public function get_tool( $slug ) {
 				return $this->tool;
 			}
@@ -330,6 +344,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		// Create a mock tool.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -382,13 +397,26 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 
 		// Create mock registry.
 		$registry = new class( $mock_tool ) {
+			/**
+			 * Tool instance returned by get_tool().
+			 *
+			 * @var mixed
+			 */
 			protected $tool;
 			/**
 			 * Constructor.
+			 *
+			 * @param mixed $tool Tool instance.
 			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
+			/**
+			 * Return the tool for a slug.
+			 *
+			 * @param string $slug Tool slug.
+			 * @return mixed
+			 */
 			public function get_tool( $slug ) {
 				return $this->tool;
 			}

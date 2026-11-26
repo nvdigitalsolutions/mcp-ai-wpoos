@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Fake mouse cursor injection for headless Playwright recordings.
  *

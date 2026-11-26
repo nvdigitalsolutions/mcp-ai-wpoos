@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Clipboard snapshot and restore (Proposal 144 §4.2).
 //!
 //! The paste path must never destroy what the user had on the clipboard.

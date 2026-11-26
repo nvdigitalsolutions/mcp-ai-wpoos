@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! YOLO ONNX detector: letterbox → `ort` inference → NMS → `Vec<Detection>`.
 //!
 //! The ONNX output shape is `[1, 4+nc, N]` (`[1, 84, 8400]` for COCO-80 with

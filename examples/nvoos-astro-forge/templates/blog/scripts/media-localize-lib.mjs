@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media-localize-lib.mjs — pure helpers for the post-build asset localizer.
 //
@@ -131,6 +132,15 @@ export const WP_UPLOADS_PREFIX = '/wp-content/uploads/';
 
 /** A URL attribute that carries one URL. */
 const SINGLE_URL_ATTRS = [ 'src', 'data-src', 'data-lazy-src', 'poster', 'href' ];
+
+/** Meta keys whose CONTENT is an image URL that must stay ABSOLUTE. */
+const META_IMAGE_KEYS = new Set( [
+	'og:image',
+	'og:image:url',
+	'og:image:secure_url',
+	'twitter:image',
+	'twitter:image:src',
+] );
 /** A URL attribute that carries a candidate list. */
 const SRCSET_ATTRS = [ 'srcset', 'data-srcset' ];
 
@@ -424,10 +434,45 @@ export function collectAssetUrls( html ) {
 			collectTag( match[ 0 ], [ 'href' ] );
 		}
 	}
+	// Social images (og:image / twitter:image). They are MIRRORED like any other
+	// asset but must stay absolute, so `rewriteHtml` re-points them at the public
+	// origin instead of a root-relative path. Collecting them here is what makes
+	// the download happen at all.
+	for ( const match of html.matchAll( /<meta\b[^>]*>/gi ) ) {
+		const key = ( attributeValue( match[ 0 ], 'property' ) ?? attributeValue( match[ 0 ], 'name' ) ?? '' ).toLowerCase();
+		if ( META_IMAGE_KEYS.has( key ) ) {
+			collectTag( match[ 0 ], [ 'content' ] );
+		}
+	}
 	for ( const match of html.matchAll( /url\(\s*(?:'|")?([^'")]+?)(?:'|")?\s*\)/gi ) ) {
 		const url = ( match[ 1 ] ?? '' ).trim();
 		if ( /^https?:\/\//i.test( url ) ) {
 			urls.add( url );
+		}
+	}
+	return urls;
+}
+
+/**
+ * The SOCIAL-image URLs a document declares (`og:image`, `twitter:image`).
+ *
+ * They are mirrored like any other asset but kept in their ORIGINAL format:
+ * a scraper that cannot read WebP shows no card at all, while the few KB saved
+ * matter to nobody in a social embed.
+ *
+ * @param {string} html Built HTML document.
+ * @returns {Set<string>} Absolute social-image URLs.
+ */
+export function collectSocialImageUrls( html ) {
+	const urls = new Set();
+	for ( const match of html.matchAll( /<meta\b[^>]*>/gi ) ) {
+		const key = ( attributeValue( match[ 0 ], 'property' ) ?? attributeValue( match[ 0 ], 'name' ) ?? '' ).toLowerCase();
+		if ( ! META_IMAGE_KEYS.has( key ) ) {
+			continue;
+		}
+		const value = ( attributeValue( match[ 0 ], 'content' ) ?? '' ).trim();
+		if ( /^https?:\/\//i.test( value ) ) {
+			urls.add( value );
 		}
 	}
 	return urls;
@@ -666,9 +711,13 @@ function rewriteTagAttributes( tag, names, map ) {
  *
  * @param {string} html Built HTML document.
  * @param {Map<string,string>} map Original URL → local path (`/media/...`).
+ * @param {{ siteOrigin?: string }} [options] `siteOrigin` (the built site's
+ *   public origin, ASTRO_SITE) re-points og:image / twitter:image at
+ *   `${siteOrigin}${localPath}`. A root-relative social image is invalid, which
+ *   is why they are the one asset class never rewritten to a local path.
  * @returns {string} The rewritten document.
  */
-export function rewriteHtml( html, map ) {
+export function rewriteHtml( html, map, options = {} ) {
 	if ( map.size === 0 ) {
 		return html;
 	}
@@ -712,6 +761,49 @@ export function rewriteHtml( html, map ) {
 		// Generated media paths never contain a character unquoted url() forbids.
 		return local ? `url(${ local })` : match;
 	} );
+	// Social images stay ABSOLUTE: re-point them at the PUBLIC origin + the
+	// localized path. Opt-in via `siteOrigin`, so the pure helper only changes
+	// behaviour when the caller knows the deployed origin.
+	const siteOrigin = typeof options.siteOrigin === 'string' ? options.siteOrigin.replace( /\/+$/, '' ) : '';
+	if ( siteOrigin ) {
+		out = out.replace( /<meta\b[^>]*>/gi, ( tag ) => {
+			const key = ( attributeValue( tag, 'property' ) ?? attributeValue( tag, 'name' ) ?? '' ).toLowerCase();
+			if ( ! META_IMAGE_KEYS.has( key ) ) {
+				return tag;
+			}
+			const content = ( attributeValue( tag, 'content' ) ?? '' ).trim();
+			const local = map.get( content ) ?? map.get( decodeAmp( content ) );
+			if ( ! local ) {
+				return tag;
+			}
+			return rewriteTagAttributes( tag, [ 'content' ], new Map( [ [ content, `${ siteOrigin }${ local }` ] ] ) );
+		} );
+	}
+
+	// JSON-LD carries assets too — `Organization.logo` on every page, which a
+	// cut-over site would otherwise leave pointing at the CMS it is retiring:
+	// the URL 404s and the structured data advertises a dead image
+	// (monicarajiv, 2026-11-21). Schema.org needs an ABSOLUTE url, so these are
+	// re-pointed at the public origin rather than made root-relative — the one
+	// asset class that cannot use the local path form.
+	if ( siteOrigin ) {
+		out = out.replace(
+			/(<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>)([\s\S]*?)(<\/script>)/gi,
+			( match, open, body, close ) => {
+				let next = body;
+				for ( const [ original, local ] of map ) {
+					next = next.split( original ).join( `${ siteOrigin }${ local }` );
+					// A serializer may escape the slashes; both forms must move.
+					const escaped = original.replace( /\//g, '\\/' );
+					if ( escaped !== original ) {
+						next = next.split( escaped ).join( `${ siteOrigin }${ local }`.replace( /\//g, '\\/' ) );
+					}
+				}
+				return next === body ? match : `${ open }${ next }${ close }`;
+			}
+		);
+	}
+
 	return out;
 }
 

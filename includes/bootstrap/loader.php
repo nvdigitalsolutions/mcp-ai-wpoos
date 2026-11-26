@@ -1732,6 +1732,19 @@ add_action(
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-feature-flags.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-feature-flags.php';
 }
+// Console endpoint capability manifest — the WordPress twin of the Laravel
+// `EndpointCapabilities` class (Proposal 090-i phase 1). The features
+// controller serves it so the console stops relying on a client-side matrix.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-endpoint-capabilities.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-endpoint-capabilities.php';
+}
+// Connected-app discovery (Proposal 090-i Phase 4 / 090-p W6): probes the
+// configured product bases so /features can publish `endpoint_urls` and flip
+// the corresponding key. Needs the URL guard (loaded earlier in this file) for
+// the per-address SSRF check.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/connected-apps/class-wp-mcp-ai-connected-app-registry.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/connected-apps/class-wp-mcp-ai-connected-app-registry.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-features-controller.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-features-controller.php';
 }
@@ -1739,6 +1752,40 @@ add_action(
 	'rest_api_init',
 	function () {
 		$controller = new WP_MCP_AI_REST_Features_Controller();
+		$controller->register_routes();
+	}
+);
+// Profession catalogue REST surface (GET /professions[/{slug}]) — the
+// WordPress twin of the Laravel route the console's selector reads (090-p W1).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-professions-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-professions-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Professions_Controller();
+		$controller->register_routes();
+	}
+);
+// Org teams (users with roles) — storage + REST contract (090-p W7).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/org-teams/class-wp-mcp-ai-org-team-cpt.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/org-teams/class-wp-mcp-ai-org-team-cpt.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/org-teams/class-wp-mcp-ai-org-team-service.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/org-teams/class-wp-mcp-ai-org-team-service.php';
+}
+if ( did_action( 'init' ) ) {
+	WP_MCP_AI_Org_Team_CPT::register();
+} else {
+	add_action( 'init', array( 'WP_MCP_AI_Org_Team_CPT', 'register' ) );
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-org-teams-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-org-teams-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Org_Teams_Controller();
 		$controller->register_routes();
 	}
 );

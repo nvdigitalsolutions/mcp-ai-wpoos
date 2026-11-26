@@ -3,6 +3,9 @@
 	"name": "Virtually Sri Lanka",
 	"frontPage": "home-v3-2",
 	"shape": "one-pager",
+	"content": {
+		"source": "materialized"
+	},
 	"collections": [
 		{
 			"slug": "posts",
@@ -222,9 +225,14 @@
 						"width": 50
 					},
 					{
-						"width": 50
+						"width": 50,
+						"bgColor": "#DD3333"
 					}
-				]
+				],
+				"panel": {
+					"bg": "#DD3333",
+					"ink": "#ffffff"
+				}
 			},
 			{
 				"id": "bfaba9f",
@@ -240,10 +248,12 @@
 				"marginTop": "100px",
 				"columns": [
 					{
-						"width": 33
+						"width": 33,
+						"bgColor": "#DD3333"
 					},
 					{
-						"width": 33
+						"width": 33,
+						"bgImage": "https://virtuallysrilanka.com/wp-content/uploads/2018/11/phone-2.jpg"
 					},
 					{
 						"width": 33
@@ -257,7 +267,30 @@
 				"marginTop": "150px",
 				"marginBottom": "150px",
 				"measure": "1140px",
-				"paddingX": "10px"
+				"paddingX": "10px",
+				"logos": [
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/6.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/11.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/1.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/10.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/9.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/2.png"
+					},
+					{
+						"src": "https://virtuallysrilanka.com/wp-content/uploads/2017/09/4.png"
+					}
+				]
 			},
 			{
 				"id": "ccdbf50",
@@ -386,6 +419,16 @@
 					]
 				}
 			],
+			"footerLinks": [
+				{
+					"text": "NV DIGITAL SOLUTIONS.",
+					"href": "http://www.nvdigitalsolutions.com/"
+				}
+			],
+			"footerLogo": {
+				"src": "https://virtuallysrilanka.com/wp-content/uploads/2019/01/VJ-Sri-Lanka-Logo-V5-outline.svg",
+				"alt": ""
+			},
 			"favicon": "https://virtuallysrilanka.com/wp-content/uploads/2019/01/cropped-fav-icon-vj-sri-linka-3-32x32.png",
 			"iconCss": "https://virtuallysrilanka.com/wp-content/plugins/elementor/assets/lib/eicons/css/elementor-icons.min.css?ver=5.54.0",
 			"socialIconCss": "https://virtuallysrilanka.com/wp-content/plugins/elementor/assets/lib/font-awesome/css/fontawesome.min.css?ver=5.15.3",
@@ -418,6 +461,19 @@
 					"logoHeight": "63px"
 				},
 				"divider": false,
+				"social": {
+					"size": "51px",
+					"radius": "3px",
+					"bg": "rgb(237, 242, 247)",
+					"ink": "rgb(45, 55, 72)"
+				},
+				"text": {
+					"size": "14px",
+					"weight": "600",
+					"ink": "rgb(45, 55, 72)",
+					"linkInk": "rgb(49, 130, 206)",
+					"align": "center"
+				},
 				"tablet": {
 					"logo": "start",
 					"socials": "start",
@@ -445,7 +501,9 @@
 			],
 			"mobileNav": {
 				"overlay": false
-			}
+			},
+			"headerTransparent": true,
+			"headerInk": "rgb(255, 255, 255)"
 		},
 		"behavior": {
 			"headerSticky": false,
@@ -626,12 +684,23 @@
 		}
 	],
 	"deploy": {
-		"runtime": "static",
+		"runtime": "managed",
 		"publicOrigin": "https://virtuallysrilanka.com"
 	},
 	"media": {
 		"localize": true,
-		"mode": "local"
+		"mode": "local",
+		"snapshot": true
+	},
+	"forms": {
+		"delivery": "direct",
+		"mail": {
+			"provider": "brevo",
+			"from": "forms@virtuallysrilanka.com",
+			"fromName": "Virtually Sri Lanka",
+			"to": "info@virtuallysrilanka.com",
+			"subject": "Virtually Sri Lanka website enquiry"
+		}
 	},
 	"colors": {
 		"light": {
@@ -885,7 +954,15 @@
 				"columns": [
 					278,
 					634
-				]
+				],
+				"columnWidths": [
+					640,
+					640
+				],
+				"content": {
+					"width": 1280,
+					"x": 80
+				}
 			},
 			"tablet": {
 				"height": 1112,
@@ -899,6 +976,10 @@
 				"columns": [
 					336,
 					412
+				],
+				"columnWidths": [
+					834,
+					834
 				]
 			},
 			"mobile": {
@@ -913,6 +994,10 @@
 				"columns": [
 					325,
 					361
+				],
+				"columnWidths": [
+					390,
+					390
 				]
 			}
 		},
@@ -929,7 +1014,15 @@
 				"columns": [
 					433,
 					522
-				]
+				],
+				"columnWidths": [
+					640,
+					640
+				],
+				"content": {
+					"width": 1280,
+					"x": 80
+				}
 			},
 			"tablet": {
 				"height": 921,
@@ -943,6 +1036,10 @@
 				"columns": [
 					454,
 					467
+				],
+				"columnWidths": [
+					834,
+					834
 				]
 			},
 			"mobile": {
@@ -957,6 +1054,10 @@
 				"columns": [
 					217,
 					729
+				],
+				"columnWidths": [
+					390,
+					390
 				]
 			}
 		},
@@ -969,7 +1070,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 720,
+					"x": 720
+				}
 			},
 			"tablet": {
 				"height": 893,
@@ -979,7 +1084,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 667,
+					"x": 0
+				}
 			},
 			"mobile": {
 				"height": 1345,
@@ -1006,7 +1115,16 @@
 					24,
 					104,
 					829
-				]
+				],
+				"columnWidths": [
+					1120,
+					1120,
+					1120
+				],
+				"content": {
+					"width": 1140,
+					"x": 150
+				}
 			},
 			"tablet": {
 				"height": 1000,
@@ -1021,7 +1139,16 @@
 					24,
 					104,
 					652
-				]
+				],
+				"columnWidths": [
+					814,
+					814,
+					814
+				],
+				"content": {
+					"width": 814,
+					"x": 10
+				}
 			},
 			"mobile": {
 				"height": 1543,
@@ -1036,7 +1163,16 @@
 					24,
 					140,
 					1159
-				]
+				],
+				"columnWidths": [
+					370,
+					370,
+					370
+				],
+				"content": {
+					"width": 370,
+					"x": 10
+				}
 			}
 		},
 		"116ce85": {
@@ -1053,7 +1189,16 @@
 					536,
 					536,
 					536
-				]
+				],
+				"columnWidths": [
+					432,
+					432,
+					571
+				],
+				"content": {
+					"width": 571,
+					"x": 864
+				}
 			},
 			"tablet": {
 				"height": 812,
@@ -1068,7 +1213,16 @@
 					356,
 					456,
 					456
-				]
+				],
+				"columnWidths": [
+					834,
+					167,
+					667
+				],
+				"content": {
+					"width": 667,
+					"x": 167
+				}
 			},
 			"mobile": {
 				"height": 1675,
@@ -1083,6 +1237,11 @@
 					572,
 					419,
 					684
+				],
+				"columnWidths": [
+					390,
+					390,
+					390
 				]
 			}
 		},
@@ -1095,7 +1254,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 150,
-				"marginBottom": 150
+				"marginBottom": 150,
+				"content": {
+					"width": 1280,
+					"x": 80
+				}
 			},
 			"tablet": {
 				"height": 388,
@@ -1105,7 +1268,11 @@
 				"paddingLeft": 42,
 				"paddingRight": 42,
 				"marginTop": 150,
-				"marginBottom": 150
+				"marginBottom": 150,
+				"content": {
+					"width": 751,
+					"x": 42
+				}
 			},
 			"mobile": {
 				"height": 458,
@@ -1115,7 +1282,11 @@
 				"paddingLeft": 20,
 				"paddingRight": 20,
 				"marginTop": 150,
-				"marginBottom": 150
+				"marginBottom": 150,
+				"content": {
+					"width": 351,
+					"x": 20
+				}
 			}
 		},
 		"ccdbf50": {
@@ -1127,7 +1298,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 1140,
+					"x": 150
+				}
 			},
 			"tablet": {
 				"height": 1112,
@@ -1137,7 +1312,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 751,
+					"x": 42
+				}
 			},
 			"mobile": {
 				"height": 912,
@@ -1147,7 +1326,11 @@
 				"paddingLeft": 20,
 				"paddingRight": 20,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"content": {
+					"width": 350,
+					"x": 20
+				}
 			}
 		}
 	},
@@ -1285,31 +1468,43 @@
 				"desktop": [
 					{
 						"selector": "elementor-element-2d81ba5",
-						"height": 278
+						"height": 278,
+						"width": 640,
+						"pad": "0px 30px 0px 0px"
 					},
 					{
 						"selector": "elementor-element-4fd16dd",
-						"height": 634
+						"height": 634,
+						"width": 640,
+						"pad": "50px"
 					}
 				],
 				"tablet": [
 					{
 						"selector": "elementor-element-2d81ba5",
-						"height": 336
+						"height": 336,
+						"width": 834,
+						"pad": "200px 100px 0px"
 					},
 					{
 						"selector": "elementor-element-4fd16dd",
-						"height": 412
+						"height": 412,
+						"width": 834,
+						"pad": "0px 0px 100px"
 					}
 				],
 				"mobile": [
 					{
 						"selector": "elementor-element-2d81ba5",
-						"height": 325
+						"height": 325,
+						"width": 390,
+						"pad": "160px 30px 0px"
 					},
 					{
 						"selector": "elementor-element-4fd16dd",
-						"height": 361
+						"height": 361,
+						"width": 390,
+						"pad": "0px 0px 100px"
 					}
 				]
 			},
@@ -1343,7 +1538,23 @@
 				"elementor-widget-wrap",
 				"size-full",
 				"wp-image-5374"
-			]
+			],
+			"eyebrow": {
+				"size": "20px",
+				"weight": "700",
+				"lineHeight": "20px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "start",
+				"family": "Montserrat",
+				"color": "rgb(255, 255, 255)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "10px",
+				"text": "SEE WHAT WE CAN DO FOR YOU",
+				"level": 3
+			},
+			"titleText": "WE SPECIALIZE IN CUSTOM SOLUTIONS FOR YOUR BUSINESS"
 		},
 		"9c37fd4": {
 			"containerWidth": 1280,
@@ -1501,31 +1712,43 @@
 				"desktop": [
 					{
 						"selector": "elementor-element-9d48e3a",
-						"height": 433
+						"height": 433,
+						"width": 640,
+						"pad": "10px"
 					},
 					{
 						"selector": "elementor-element-3985a67",
-						"height": 522
+						"height": 522,
+						"width": 640,
+						"pad": "50px"
 					}
 				],
 				"tablet": [
 					{
 						"selector": "elementor-element-9d48e3a",
-						"height": 454
+						"height": 454,
+						"width": 834,
+						"pad": "10px"
 					},
 					{
 						"selector": "elementor-element-3985a67",
-						"height": 467
+						"height": 467,
+						"width": 834,
+						"pad": "50px"
 					}
 				],
 				"mobile": [
 					{
 						"selector": "elementor-element-9d48e3a",
-						"height": 217
+						"height": 217,
+						"width": 390,
+						"pad": "10px"
 					},
 					{
 						"selector": "elementor-element-3985a67",
-						"height": 729
+						"height": 729,
+						"width": 390,
+						"pad": "80px 20px"
 					}
 				]
 			},
@@ -1597,7 +1820,23 @@
 						}
 					]
 				}
-			]
+			],
+			"eyebrow": {
+				"size": "14px",
+				"weight": "600",
+				"lineHeight": "14px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "start",
+				"family": "Montserrat",
+				"color": "rgb(122, 122, 122)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "7px",
+				"text": "SOCIAL WIFI MARKETING SOLUTION",
+				"level": 2
+			},
+			"titleText": "The best way to promote your business!"
 		},
 		"8d6ec26": {
 			"containerWidth": 1440,
@@ -1936,7 +2175,29 @@
 						}
 					]
 				}
-			]
+			],
+			"eyebrow": {
+				"size": "16px",
+				"weight": "600",
+				"lineHeight": "16px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "center",
+				"family": "Montserrat",
+				"color": "rgb(237, 242, 247)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "8px",
+				"text": "WIFI SOCIAL MARKETING",
+				"level": 2
+			},
+			"titleText": "How it Works",
+			"panel": {
+				"bg": "rgb(221, 51, 51)",
+				"ink": "#ffffff",
+				"width": "720px",
+				"align": "end"
+			}
 		},
 		"bfaba9f": {
 			"containerWidth": 1140,
@@ -2259,7 +2520,23 @@
 					"base": "cursor:pointer;color:rgb(45, 55, 72);text-decoration-line:none;font-weight:700;display:block",
 					"transition": "all"
 				}
-			]
+			],
+			"eyebrow": {
+				"size": "16px",
+				"weight": "600",
+				"lineHeight": "16px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "center",
+				"family": "Montserrat",
+				"color": "rgb(122, 122, 122)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "8px",
+				"text": "POWERFUL AND UNLIMITED DESIGN",
+				"level": 2
+			},
+			"titleText": "FEATURE HIGHLIGHTS"
 		},
 		"116ce85": {
 			"containerWidth": 1440,
@@ -2436,43 +2713,64 @@
 				"desktop": [
 					{
 						"selector": "elementor-element-e0c7fc7",
-						"height": 536
+						"height": 536,
+						"width": 432,
+						"bg": "rgb(221, 51, 51)"
 					},
 					{
 						"selector": "elementor-element-954853d",
-						"height": 536
+						"height": 536,
+						"width": 432,
+						"image": true,
+						"attachment": "scroll"
 					},
 					{
 						"selector": "elementor-element-ac7a06e",
-						"height": 536
+						"height": 536,
+						"width": 571,
+						"bg": "rgb(0, 0, 0)"
 					}
 				],
 				"tablet": [
 					{
 						"selector": "elementor-element-e0c7fc7",
-						"height": 356
+						"height": 356,
+						"width": 834,
+						"bg": "rgb(221, 51, 51)"
 					},
 					{
 						"selector": "elementor-element-954853d",
-						"height": 456
+						"height": 456,
+						"width": 167,
+						"image": true,
+						"attachment": "scroll"
 					},
 					{
 						"selector": "elementor-element-ac7a06e",
-						"height": 456
+						"height": 456,
+						"width": 667,
+						"bg": "rgb(0, 0, 0)"
 					}
 				],
 				"mobile": [
 					{
 						"selector": "elementor-element-e0c7fc7",
-						"height": 572
+						"height": 572,
+						"width": 390,
+						"bg": "rgb(221, 51, 51)"
 					},
 					{
 						"selector": "elementor-element-954853d",
-						"height": 419
+						"height": 419,
+						"width": 390,
+						"image": true,
+						"attachment": "scroll"
 					},
 					{
 						"selector": "elementor-element-ac7a06e",
-						"height": 684
+						"height": 684,
+						"width": 390,
+						"bg": "rgb(0, 0, 0)"
 					}
 				]
 			},
@@ -2549,7 +2847,8 @@
 						}
 					]
 				}
-			]
+			],
+			"titleText": "Our products are custom designed for the environment they will be deployed into."
 		},
 		"a5d0ddc": {
 			"containerWidth": 1280,
@@ -2863,7 +3162,52 @@
 					"base": "cursor:pointer;color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-radius:50%;text-decoration-line:none;display:inline-block;font-size:17px",
 					"transition": "all"
 				}
-			]
+			],
+			"eyebrow": {
+				"size": "14px",
+				"weight": "600",
+				"lineHeight": "14px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "center",
+				"family": "Montserrat",
+				"color": "rgb(0, 0, 0)",
+				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "7px",
+				"text": "CHOOSE THE ACCESS POINT THAT WORKS BEST FOR YOU. OR THE CHEAPEST ONE. OR ASK US TO SUPPORT YOUR FAVORITE BRAND.",
+				"level": 2
+			},
+			"titleText": "SUPPORTED HARDWARE",
+			"carousel": {
+				"desktop": [
+					{
+						"selector": "elementor-main-swiper",
+						"count": 17,
+						"perView": 6,
+						"gap": 50,
+						"dots": 7
+					}
+				],
+				"tablet": [
+					{
+						"selector": "elementor-main-swiper",
+						"count": 13,
+						"perView": 3,
+						"gap": 10,
+						"dots": 7
+					}
+				],
+				"mobile": [
+					{
+						"selector": "elementor-main-swiper",
+						"count": 9,
+						"perView": 1,
+						"gap": 10,
+						"dots": 7
+					}
+				]
+			}
 		},
 		"ccdbf50": {
 			"containerWidth": 1140,
@@ -3169,11 +3513,17 @@
 					"transition": "all",
 					"focusVisible": "box-shadow:rgba(0, 0, 0, 0.1) 0px 0px 0px 1px inset"
 				}
-			]
+			],
+			"titleText": "CONTACT US"
 		}
 	},
 	"stickyHeader": {
-		"sticky": false
+		"sticky": false,
+		"position": "absolute",
+		"restInk": "rgb(255, 255, 255)",
+		"restHeight": 80,
+		"bgChanged": false,
+		"heightChanged": false
 	},
 	"pageBackground": "rgb(247, 250, 252)",
 	"text": {

@@ -8,16 +8,21 @@
  * all the judgement lives in the domain service, which is also what WordPress
  * drives, so the two runtimes cannot disagree about what is overeager.
  *
+ * `$preApproved` is passed straight through to the gate, so an operator can
+ * waive the approval step for tools whose risk is spend rather than damage.
+ * `null` keeps the shared default list; `array()` prompts for everything.
+ *
  * **Two verdicts are not expressible here.** `ToolGuardInterface` can only
  * allow or deny, so:
  *
  *  - `skip` (unnecessary but harmless) is allowed through. Denying a benign
  *    read-only call would hand the model an error it has to recover from,
  *    which is worse than running it.
- *  - `approval_required` denies, with a reason that says so. No approval
- *    service is wired on this runtime yet, and the registry's own `ask` path
- *    fails closed for the same reason — so failing closed here is consistent
- *    rather than a policy choice.
+ *  - `approval_required` denies until a ticket is spent. When an approval
+ *    store is bound the call issues (or reuses) a ticket bound to the exact
+ *    arguments, and a retry with the same arguments runs once that ticket is
+ *    approved. Without a store it fails closed, matching the registry's own
+ *    `ask` path rather than silently running an unapproved write.
  *
  * Both are recorded in the port plan rather than silently narrowed.
  *
@@ -32,17 +37,23 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Tool;
 
-use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
+use Nvoos\Core\Domain\Contract\CapabilityFlagOverridesInterface;
 use Nvoos\Core\Domain\Contract\ToolGuardInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagResolution;
 use Nvoos\Core\Domain\Service\Safety\NecessityGate;
+use Nvoos\Core\Domain\ValueObject\ApprovalRequest;
 
 final class NecessityGuard implements ToolGuardInterface
 {
     public function __construct(
         private readonly ToolResolverInterface $tools,
         private readonly bool $enabled = true,
+        private readonly ?ApprovalTicketInterface $approvals = null,
+        private readonly ?array $preApproved = null,
+        private readonly ?CapabilityFlagOverridesInterface $overrides = null,
     ) {
     }
 
@@ -51,7 +62,6 @@ final class NecessityGuard implements ToolGuardInterface
      */
     public function evaluate(string $slug, array $arguments, array $context): ?string
     {
-        unset($context);
 
         if (! $this->enabled) {
             return null;
@@ -64,20 +74,45 @@ final class NecessityGuard implements ToolGuardInterface
             return null;
         }
 
-        $flags = $tool instanceof ToolCapabilityFlagsInterface
-            ? \array_map('strtolower', $tool->getCapabilityFlags())
-            : array();
+        // The core tool classes carry no flags of their own, so the corpus
+        // catalogue supplies what WordPress declared. `CapabilityFlagResolution`
+        // owns that lookup plus the administrator's additions, so this gate and
+        // the read-only guard cannot disagree about a tool's flags. Absence stays
+        // null, and the gate's own "undeclared is not safe" rule takes over.
+        $flags = CapabilityFlagResolution::resolve($slug, $tool, $this->overrides) ?? array();
 
-        $decision = NecessityGate::decide($flags, $slug, $arguments);
+        $decision = NecessityGate::decide($flags, $slug, $arguments, null, null, $this->preApproved);
 
         if (ActionSafetyProfile::VERDICT_BLOCK === $decision['verdict']) {
             return \sprintf('Tool "%s" is blocked by the necessity gate: %s', $slug, $decision['reason']);
         }
 
         if (ActionSafetyProfile::VERDICT_APPROVAL_REQUIRED === $decision['verdict']) {
-            return \sprintf(
-                'Tool "%s" requires human approval and none is wired: %s',
+            $request = self::approvalRequest(
                 $slug,
+                $arguments,
+                $context,
+                (string) $decision['reason_code']
+            );
+
+            // A retry after a human said yes spends the ticket. Anything the
+            // ticket store cannot prove is treated as unapproved.
+            if (null !== $this->approvals && $this->approvals->consume($request)) {
+                return null;
+            }
+
+            if (null === $this->approvals) {
+                return \sprintf(
+                    'Tool "%s" requires human approval and no approval store is bound: %s',
+                    $slug,
+                    $decision['reason']
+                );
+            }
+
+            return \sprintf(
+                'Tool "%s" requires human approval — ticket %s is pending: %s',
+                $slug,
+                $this->approvals->request($request),
                 $decision['reason']
             );
         }
@@ -85,5 +120,29 @@ final class NecessityGuard implements ToolGuardInterface
         // allow, warn and skip all run. `warn` is a log concern for a runtime
         // that has one; `skip` is not expressible through this contract.
         return null;
+    }
+
+    /**
+     * Build the ticket subject from the call and its context.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     * @param array<string, mixed> $context   Execution context.
+     */
+    private static function approvalRequest(
+        string $slug,
+        array $arguments,
+        array $context,
+        string $reason
+    ): ApprovalRequest {
+        $userId  = isset($context['user_id']) ? (int) $context['user_id'] : 0;
+        $session = $context['session_id'] ?? null;
+
+        return new ApprovalRequest(
+            $slug,
+            $arguments,
+            $userId > 0 ? $userId : null,
+            \is_string($session) && '' !== $session ? $session : null,
+            $reason
+        );
     }
 }

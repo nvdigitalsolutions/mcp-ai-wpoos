@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // mcp-build-integration.mjs — rebuild the /mcp bundle when `astro build`
 // finishes. Wired into astro.config.mjs integrations.

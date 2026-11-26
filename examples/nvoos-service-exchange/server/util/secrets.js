@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Secret handling: AES-256-GCM at rest, fingerprints for display, masking
  * for snippets. Nothing in this module ever logs.

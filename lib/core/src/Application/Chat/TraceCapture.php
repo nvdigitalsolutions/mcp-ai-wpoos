@@ -44,6 +44,7 @@ final class TraceCapture
     public const TYPE_START = 'start';
     public const TYPE_ROUTING = 'routing';
     public const TYPE_ITERATION = 'iteration';
+    public const TYPE_TOOL = 'tool';
     public const TYPE_END = 'end';
 
     /** Records this run has written, so a runaway loop is visible in the trace. */
@@ -195,6 +196,37 @@ final class TraceCapture
     public function providerCalls(): int
     {
         return $this->providerCalls;
+    }
+
+    /**
+     * Record one tool execution.
+     *
+     * The shape follows OpenTelemetry's `execute_tool` span: the tool's name, the
+     * call id that ties it back to the model's request, how long it took and
+     * whether it succeeded. Those four answer "which tool is slow, and which is
+     * failing", and the orchestrator already measures all of them for the session
+     * log — this writes them where a reader can query them.
+     *
+     * No arguments and no result: a tool's input is user content, and the rule
+     * this store follows is identifiers and timings, never message text. The
+     * call id is the join back to the session log for anyone who needs the body.
+     *
+     * @param string $slug       Tool slug as the model named it.
+     * @param string $callId     Provider call id, when one was supplied.
+     * @param float  $durationMs Wall-clock execution time.
+     * @param string $outcome    `success`, `error`, or empty when unknown.
+     */
+    public function toolExecution(string $slug, string $callId, float $durationMs, string $outcome): void
+    {
+        $this->record(
+            self::TYPE_TOOL,
+            array(
+                'tool'         => $slug,
+                'tool_call_id' => $callId,
+                'duration_ms'  => \round(\max(0.0, $durationMs), 3),
+                'outcome'      => '' !== $outcome ? $outcome : 'unknown',
+            )
+        );
     }
 
     /**

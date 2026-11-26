@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // fetch-proxy.test.ts — the build-time proxy seam: no-op when unset,
 // ProxyAgent when set, fail-closed on misconfiguration.

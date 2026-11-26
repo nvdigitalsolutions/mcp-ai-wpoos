@@ -81,6 +81,7 @@ class Phase1ConsoleTest extends TestCase
                     'providers',
                     'mcp_server' => ['tool_count'],
                     'queue' => ['available', 'counts'],
+                    'routing_export' => ['configured', 'backing_off', 'retry_after', 'consecutive_failures'],
                 ],
             ]);
     }

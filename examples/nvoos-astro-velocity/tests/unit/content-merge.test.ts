@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // content-merge.test.ts — Proposal 106 P2: the L2 merge matrix.
 // Envelope wins slug collisions; local fills gaps; posts sort date desc.
 import { describe, expect, it } from 'vitest';

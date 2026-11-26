@@ -86,7 +86,7 @@ class Test_Tool_Batch_Manage_Memory extends WP_UnitTestCase {
 	}
 
 	/**
-	 * bulk_delete with empty context_ids and no filters returns "no contexts found".
+	 * Bulk_delete with empty context_ids and no filters returns "no contexts found".
 	 */
 	public function test_bulk_delete_no_matching_contexts() {
 		$result = $this->tool->execute(
@@ -109,7 +109,7 @@ class Test_Tool_Batch_Manage_Memory extends WP_UnitTestCase {
 	}
 
 	/**
-	 * bulk_update with empty context list is handled gracefully.
+	 * Bulk_update with empty context list is handled gracefully.
 	 */
 	public function test_bulk_update_empty_context_list() {
 		$result = $this->tool->execute(

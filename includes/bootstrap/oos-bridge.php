@@ -26,8 +26,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Only activate on PHP 8.1+ (the core package requires readonly/enums/fibers).
-if ( PHP_VERSION_ID < 80100 ) {
+// Only activate on PHP 8.2+.
+//
+// The engine's domain DTOs are `final readonly class` (e.g.
+// `Nvoos\Core\Domain\Entity\AuthContext`), and `readonly` **classes** are PHP
+// 8.2 — only `readonly` **properties** are 8.1. This guard used to say 8.1, on
+// the strength of enums, readonly properties and fibers, which meant that on an
+// 8.1 host this autoloader was registered and the first entity it resolved was a
+// parse error.
+//
+// `lib/core/composer.json` now declares `^8.2` to match. The plugin itself still
+// supports PHP 8.1 (`Requires PHP: 8.1`): on 8.1 the engine is simply not
+// available, which is the same clean bail-out as the missing-`lib/` case below,
+// rather than a fatal in the middle of a request.
+if ( PHP_VERSION_ID < 80200 ) {
 	return;
 }
 

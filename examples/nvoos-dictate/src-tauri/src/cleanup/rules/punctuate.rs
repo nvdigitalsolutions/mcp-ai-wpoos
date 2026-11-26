@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Punctuation: terminal punctuation, commas after discourse markers,
 //! and category-aware behavior (code/terminal stay minimal).
 

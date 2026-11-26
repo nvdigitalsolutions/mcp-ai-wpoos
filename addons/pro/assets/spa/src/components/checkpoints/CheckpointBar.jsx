@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * CheckpointBar — Shows after agent edits with "Restore" and "Review Changes".
  * Zed equivalent: Restore Checkpoint button.

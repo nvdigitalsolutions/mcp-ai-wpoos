@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ApprovalsPage — HITL approval queue browser.
  *

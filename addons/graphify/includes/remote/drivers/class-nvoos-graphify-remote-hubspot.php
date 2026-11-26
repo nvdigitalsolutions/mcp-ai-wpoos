@@ -109,26 +109,20 @@ class NV_oOS_Graphify_Remote_HubSpot extends NV_oOS_Graphify_Remote_Source_Base 
 	public function test_connection() {
 		$token = $this->resolve_token();
 		if ( is_wp_error( $token ) ) {
-			return array(
-				'success' => false,
-				'message' => $token->get_error_message(),
-			);
+			return $token;
 		}
 		$result = $this->get_http()->get(
 			self::API_BASE . '/crm/v3/objects/contacts?limit=1',
 			array( 'headers' => $this->auth_headers( $token ) )
 		);
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status. */
-				'message' => sprintf( __( 'HubSpot returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] ),
+				sprintf( __( 'HubSpot returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] )
 			);
 		}
 		return array(

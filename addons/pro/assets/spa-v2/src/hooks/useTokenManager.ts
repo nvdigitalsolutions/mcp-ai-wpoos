@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useTokenManager — Hook for the assistant token-manager overview.
  */

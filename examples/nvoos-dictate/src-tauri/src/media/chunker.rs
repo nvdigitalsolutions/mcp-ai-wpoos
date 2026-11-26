@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Long-media transcription: windowed chunking with cross-window context.
 //!
 //! Two strategies:

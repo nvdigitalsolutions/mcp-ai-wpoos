@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * NV oOS Content Graph AI — Assistant builder block set (frontend).
  *

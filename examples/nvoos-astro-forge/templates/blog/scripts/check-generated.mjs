@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // check-generated.mjs — the generated-artifact drift gate (Proposal 126
 // §drift) with the handoff lock (Proposal 141).
 //

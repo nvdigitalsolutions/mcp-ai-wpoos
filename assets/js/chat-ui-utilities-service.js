@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * UI Utilities Service for NV oOS Chat
  * 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! WAV encoding for the remote STT fallback (`embedded` engine) and for
 //! optional meeting-audio export.
 //!

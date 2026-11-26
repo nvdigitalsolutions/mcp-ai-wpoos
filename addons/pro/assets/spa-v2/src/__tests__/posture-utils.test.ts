@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Security Center posture-utils contract tests — parsePosture, groupSignals,
  * gradeTone, formatTimestamp, summarizeAction.

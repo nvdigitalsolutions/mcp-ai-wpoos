@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useSlashCommands — Hook for the slash-command catalogue + executor.
  */

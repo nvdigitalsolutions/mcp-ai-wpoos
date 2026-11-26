@@ -147,6 +147,19 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 			)
 		);
 
+		// The poll half of the async trigger: a run id is useless to the SPA
+		// without a status resource. Run ids are 12 hex chars on this runtime
+		// (the Laravel runtime uses numeric ids; the pattern is per-backend).
+		register_rest_route(
+			$this->namespace,
+			'/schedules/(?P<id>[A-Za-z0-9]+)/runs/(?P<run_id>[0-9a-f]+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_run_status' ),
+				'permission_callback' => array( $this, 'permission_check' ),
+			)
+		);
+
 		// Toggle enabled/disabled.
 		register_rest_route(
 			$this->namespace,
@@ -386,6 +399,12 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 	/**
 	 * Trigger a schedule manually.
 	 *
+	 * Queues the run and returns a handle, mirroring the `admin-ajax` trigger:
+	 * this route is called by the browser from the SPA's "Run now" button, so it
+	 * must not hold the request open for a provider round trip that outlives the
+	 * edge timeout. Clients poll the run history (or `wp_mcp_ai_sm_get_run_status`
+	 * in the classic UI) for the outcome.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -394,7 +413,7 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 	public function trigger_schedule( $request ) {
 		$id = sanitize_key( $request->get_param( 'id' ) );
 
-		$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now( $id );
+		$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $id, get_current_user_id() );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -404,7 +423,73 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 			array(
 				'ok'          => true,
 				'schedule_id' => $id,
-				'result'      => $result,
+				'queued'      => true,
+				'run_id'      => $result['run_id'],
+				'backend'     => $result['backend'],
+				'message'     => $result['message'],
+			)
+		);
+	}
+
+	/**
+	 * One run's status, for a client poll loop.
+	 *
+	 * Mirrors the classic UI's `wp_mcp_ai_sm_get_run_status` handler but answers
+	 * in the REST envelope the SPA expects, with `time` as a Unix timestamp
+	 * (the ajax surface formats it server-side for its own consumer).
+	 *
+	 * A scoped reap runs first so a worker that died hard is reported as
+	 * `timeout` on the poll that would otherwise spin forever.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_run_status( $request ) {
+		$id     = sanitize_key( $request->get_param( 'id' ) );
+		$run_id = sanitize_key( $request->get_param( 'run_id' ) );
+
+		if ( ! $id || ! $run_id ) {
+			return new WP_Error(
+				'rest_invalid_param',
+				__( 'Both a schedule id and a run id are required.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( false === WP_MCP_AI_Pro_Schedule_Manager::get_run_history( $id ) ) {
+			return new WP_Error(
+				'schedule_not_found',
+				__( 'Schedule not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		WP_MCP_AI_Pro_Schedule_Manager::reap_stale_runs( $id );
+
+		$run = WP_MCP_AI_Pro_Schedule_Manager::get_run( $id, $run_id );
+
+		if ( ! $run ) {
+			return new WP_Error(
+				'run_not_found',
+				__( 'Run not found. It may have been cleared from the history.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$status = isset( $run['status'] ) ? (string) $run['status'] : 'unknown';
+
+		return rest_ensure_response(
+			array(
+				'ok'          => true,
+				'run_id'      => $run_id,
+				'schedule_id' => $id,
+				'status'      => $status,
+				'finished'    => in_array( $status, array( 'success', 'failure', 'timeout' ), true ),
+				'duration'    => isset( $run['duration'] ) ? (float) $run['duration'] : 0.0,
+				'error'       => isset( $run['error'] ) ? (string) $run['error'] : '',
+				'time'        => isset( $run['start_time'] ) ? (int) $run['start_time'] : null,
 			)
 		);
 	}
@@ -412,15 +497,41 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 	/**
 	 * Toggle a schedule's enabled state.
 	 *
+	 * Accepts an optional `enabled` boolean. When it is omitted (the SPA's
+	 * Enable/Disable button sends no body) the current state is flipped; sending
+	 * `enabled=false` disables and `enabled=true` enables, idempotently.
+	 *
+	 * Previously this method called `toggle_schedule( $id )` against a signature
+	 * of `toggle_schedule( $schedule_id, $enabled, $user_id = 0 )`. `$enabled`
+	 * is required, so PHP 8 raised `ArgumentCountError` — which extends `Error`,
+	 * not `Exception`, so `WP_REST_Server::respond_to_request()` (it catches
+	 * `Exception` only) never handled it and the route answered with a bare 500.
+	 * An unknown id is a 404 here rather than a silent no-op for the same
+	 * reason: a toggle that cannot fail loudly is indistinguishable from one
+	 * that quietly did nothing.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function toggle_schedule( $request ) {
-		$id = sanitize_key( $request->get_param( 'id' ) );
+		$id       = sanitize_key( $request->get_param( 'id' ) );
+		$existing = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
 
-		$toggled = WP_MCP_AI_Pro_Schedule_Manager::toggle_schedule( $id );
+		if ( ! $existing ) {
+			return new WP_Error(
+				'not_found',
+				/* translators: %s: schedule ID */
+				sprintf( __( 'Schedule "%s" not found.', 'mcp-ai-wpoos-pro' ), $id ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$enabled = $request->get_param( 'enabled' );
+		$enabled = null === $enabled ? empty( $existing['enabled'] ) : rest_sanitize_boolean( $enabled );
+
+		$toggled = WP_MCP_AI_Pro_Schedule_Manager::toggle_schedule( $id, $enabled, get_current_user_id() );
 
 		if ( is_wp_error( $toggled ) ) {
 			return $toggled;

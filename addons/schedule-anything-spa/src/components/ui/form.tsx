@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Form — react-hook-form + zod glue (shadcn form pattern, dependency-light).
  *

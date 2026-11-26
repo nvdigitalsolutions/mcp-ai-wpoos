@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Add Assistant page behaviour for the Content Graph AI addon.
  *

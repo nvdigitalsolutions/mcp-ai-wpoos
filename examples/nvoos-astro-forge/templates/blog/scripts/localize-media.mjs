@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // localize-media.mjs — mirror remote media into the built site (Proposal 139).
 //
@@ -54,6 +55,7 @@ import {
 	addFontDisplaySwap,
 	addImageDimensions,
 	collectAssetUrls,
+	collectSocialImageUrls,
 	collectCssAssetUrls,
 	collectDocumentUrls,
 	collectStylesheetUrls,
@@ -104,6 +106,17 @@ function log( message ) {
 	console.log( `[forge-media] ${ message }` );
 }
 
+/**
+ * A failure the build must NOT survive.
+ *
+ * This pass is an enhancement, and `main().catch()` below is deliberately
+ * forgiving: a font that cannot be mirrored costs a fallback face, not the
+ * build. But an artifact whose media still points at the origin is not a
+ * degraded enhancement — it is a broken promise (the retired-cms gate exists
+ * to refuse it). An incomplete snapshot is that kind of failure.
+ */
+class FatalMediaError extends Error {}
+
 /** A non-2xx answer — retried only when it looks transient. */
 class HttpStatusError extends Error {
 	constructor( status ) {
@@ -153,22 +166,60 @@ function resolveCmsOrigin( manifest ) {
  *
  * FAIL-SOFT: an absent/unreadable snapshot is reported and ignored; a site
  * that never made one keeps building exactly as before.
+ *
+ * An entry whose FILE is missing is not fail-soft, though. A manifest is a
+ * promise that the asset is committed, and when it is authoritative the build
+ * has no other source — the reference silently stayed an origin URL and the
+ * retired-cms gate failed eight of them on a site whose CMS is gone
+ * (monicarajiv, 2026-11-20: the manifest listed 68 assets, 41 had no file in
+ * git). An authoritative snapshot with holes now STOPS the build and names
+ * them; a non-authoritative one drops the broken entries and falls back to the
+ * network, which is what a fallback is for.
  */
 async function readMediaSnapshot( mediaPolicy ) {
 	const requested = env( 'NVOOS_FORGE_MEDIA_SNAPSHOT' );
 	const dir = requested ? path.resolve( ROOT, requested ) : path.join( ROOT, 'media-snapshot' );
 	const manifestPath = path.join( dir, 'manifest.json' );
+	const authoritative = mediaPolicy?.snapshot === true;
 	if ( ! existsSync( manifestPath ) ) {
-		return { dir: undefined, entries: new Map(), authoritative: mediaPolicy?.snapshot === true };
+		return { dir: undefined, entries: new Map(), authoritative };
 	}
+	let entries;
 	try {
 		const manifest = JSON.parse( await readFile( manifestPath, 'utf8' ) );
-		const entries = new Map( Object.entries( manifest.entries ?? {} ) );
-		return { dir, entries, authoritative: mediaPolicy?.snapshot === true };
+		entries = new Map( Object.entries( manifest.entries ?? {} ) );
 	} catch ( error ) {
 		log( `media snapshot ignored (${ error instanceof Error ? error.message : error }).` );
-		return { dir: undefined, entries: new Map(), authoritative: mediaPolicy?.snapshot === true };
+		return { dir: undefined, entries: new Map(), authoritative };
 	}
+	const broken = [ ...entries.entries() ].filter( ( [ , entry ] ) => {
+		const file = entry && typeof entry.file === 'string' ? entry.file : '';
+		return ! file || ! existsSync( path.join( dir, file ) );
+	} );
+	if ( broken.length === 0 ) {
+		return { dir, entries, authoritative };
+	}
+	const sample = broken
+		.slice( 0, 5 )
+		.map( ( [ url ] ) => `  - ${ url }` )
+		.join( '\n' );
+	if ( authoritative ) {
+		throw new FatalMediaError(
+			[
+				`media snapshot is incomplete: ${ broken.length } of ${ entries.size } manifest entries have no file in ${ path.relative( ROOT, dir ) }.`,
+				sample,
+				...( broken.length > 5 ? [ `  …and ${ broken.length - 5 } more` ] : [] ),
+				'  Re-freeze it: `forge media-snapshot <profile> --from <built project>`.',
+			].join( '\n' )
+		);
+	}
+	log(
+		`WARNING: media snapshot has ${ broken.length } entr${ broken.length === 1 ? 'y' : 'ies' } with no file — falling back to the network for those.`
+	);
+	for ( const [ url ] of broken ) {
+		entries.delete( url );
+	}
+	return { dir, entries, authoritative };
 }
 
 /** A Content-Type for a snapshot file when its manifest omits one. */
@@ -517,6 +568,10 @@ async function main() {
 		.filter( ( [ file ] ) => path.extname( file ).toLowerCase() === '.html' )
 		.map( ( [ , text ] ) => text )
 		.join( '\n' );
+	// Social images keep their ORIGINAL format (see `collectSocialImageUrls`):
+	// some card scrapers do not read WebP, and a missing card is worse than the
+	// few KB a re-encode would save.
+	const socialImageUrls = collectSocialImageUrls( htmlText );
 	for ( const url of stylesheetUrls ) {
 		try {
 			const fromSnapshot = snapshot.authoritative ? snapshotEntryFor( [ url ], snapshot ) : undefined;
@@ -696,9 +751,14 @@ async function main() {
 
 			// 140 §1 — re-encode raster images to WebP before they ship. A WebP
 			// that came out larger than the source is discarded: the source wins.
+			// A SOCIAL image (og:image / twitter:image) is never re-encoded: its
+			// only consumer is a card scraper, and format compatibility outranks
+			// the bytes.
 			let payload = buffer;
 			let size = await intrinsicSize( transformer, buffer, extension );
-			if ( transformer && isReencodableImage( extension ) ) {
+			const social =
+				socialImageUrls.has( downloadUrl ) || originals.some( ( original ) => socialImageUrls.has( original ) );
+			if ( transformer && ! social && isReencodableImage( extension ) ) {
 				const encoded = await encodeWebp( transformer, buffer, webpQuality );
 				if ( encoded && encoded.buffer.length < payload.length ) {
 					optimized.push( {
@@ -726,7 +786,17 @@ async function main() {
 				if ( size ) {
 					sizes.set( publicPath, size );
 				}
-				localized.push( { url: original, file: publicPath, bytes: payload.length, contentType, source } );
+				localized.push( {
+					url: original,
+					file: publicPath,
+					bytes: payload.length,
+					contentType,
+					source,
+					// A social image keeps its original format on purpose (see
+					// `collectSocialImageUrls`): the media-budget gate reads this flag
+					// and does not report the JPEG/PNG as an un-optimized leftover.
+					...( social ? { social: true } : {} ),
+				} );
 			}
 			totalBytes += payload.length;
 		} catch ( error ) {
@@ -734,6 +804,46 @@ async function main() {
 			failed.push( { url: downloadUrl, reason } );
 		}
 	} );
+
+	// 2b. A reference the CMS no longer serves must NOT ship as a hotlink: the
+	// artifact would depend on a dead origin, and the retired-cms gate refuses it
+	// (monicarajiv's WP install has lost ten of its own uploads to 404). Replace a
+	// DEFINITIVELY absent image with a local blank mark of the right kind — a
+	// transparent SVG scaled into the box the markup already declares — so the
+	// layout keeps its shape and nothing leaves the site. A TRANSIENT failure
+	// (timeout, 5xx, reset) keeps the origin URL and only warns: a build-to-build
+	// blip must not blank a photograph that the next build will fetch.
+	const replaced = [];
+	const transient = [];
+	const PLACEHOLDER = 'media/unavailable.svg';
+	const PLACEHOLDER_SVG =
+		'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><rect width="1" height="1" fill="none"/></svg>';
+	const goneReason = /^HTTP 4\d\d$/;
+	for ( const failure of failed ) {
+		const originals = byDownloadUrl.get( failure.url ) ?? [];
+		if ( ! goneReason.test( failure.reason ) || originals.length === 0 ) {
+			transient.push( failure );
+			continue;
+		}
+		const extension = ( path.extname( new URL( failure.url ).pathname ).replace( /^\./, '' ) || '' ).toLowerCase();
+		const isImage = isReencodableImage( extension ) || extension === 'svg';
+		if ( ! isImage ) {
+			// A stylesheet or a document has no neutral stand-in: keep the URL and
+			// let the gate report it rather than serve an empty file.
+			transient.push( failure );
+			continue;
+		}
+		await writeFile( path.join( out, PLACEHOLDER ), PLACEHOLDER_SVG, 'utf8' );
+		for ( const original of originals ) {
+			map.set( original, `/${ PLACEHOLDER }` );
+			replaced.push( { url: original, reason: failure.reason } );
+		}
+	}
+	if ( replaced.length > 0 ) {
+		log( `replaced ${ replaced.length } gone asset(s) with ${ PLACEHOLDER } (the CMS no longer serves them).` );
+		// They are no longer FAILURES — the reference now points at a local file.
+		failed.splice( 0, failed.length, ...transient );
+	}
 
 	// 3. Emit the localized stylesheets now that their assets have local paths.
 	//
@@ -828,6 +938,7 @@ async function main() {
 		unoptimized,
 		proxied,
 		skipped: [ ...skipped, ...leftRemote ],
+		replaced,
 		failed,
 		droppedFontFamilies: droppedFamilies,
 		bytes: totalBytes,
@@ -840,9 +951,15 @@ async function applyRewrite( sources, map, sizes = new Map(), preconnectHosts = 
 	for ( const [ file, source ] of sources ) {
 		const isHtml = path.extname( file ).toLowerCase() === '.html';
 		// 140 §2 — the dimension fill runs after the URL rewrite so it can key on
-		// the local path the tag now carries.
+		// the local path the tag now carries. `ASTRO_SITE` is the built site's
+		// public origin: og:image/twitter:image are mirrored like any asset but
+		// must stay absolute, so they are re-pointed at it (a root-relative
+		// social image is invalid). Unset → the meta keeps the source URL.
 		const next = isHtml
-			? addImageDimensions( stripPreconnects( rewriteHtml( source, map ), preconnectHosts ), sizes )
+			? addImageDimensions(
+					stripPreconnects( rewriteHtml( source, map, { siteOrigin: env( 'ASTRO_SITE' ) } ), preconnectHosts ),
+					sizes
+			  )
 			: rewriteCss( source, map );
 		if ( next !== source ) {
 			await writeFile( file, next, 'utf8' );
@@ -900,6 +1017,13 @@ async function writeReport( payload ) {
 }
 
 await main().catch( ( error ) => {
-	// Never fail the build: the localized output is an enhancement.
+	if ( error instanceof FatalMediaError ) {
+		// A missing asset the build cannot stand in for. Shipping the page with
+		// the origin URL is worse than stopping here: that URL outlives the CMS.
+		log( `FAILED: ${ error.message }` );
+		process.exitCode = 1;
+		return;
+	}
+	// Never fail the build for the rest: the localized output is an enhancement.
 	log( `pass aborted: ${ error instanceof Error ? error.message : error }` );
 } );

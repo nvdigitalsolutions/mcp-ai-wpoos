@@ -52,7 +52,19 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 	 * @var string
 	 */
 	protected $admin_nonce;
+
+	/**
+	 * REST nonce for the author user.
+	 *
+	 * @var string
+	 */
 	protected $author_nonce;
+
+	/**
+	 * REST nonce for the subscriber user.
+	 *
+	 * @var string
+	 */
 	protected $subscriber_nonce;
 
 	/**
@@ -346,17 +358,47 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$called = false;
 		$mock   = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			/**
+			 * Job id this mock claims to own.
+			 *
+			 * @var string
+			 */
 			private $job_id = 'mock_job_xyz';
-			public $called  = false;
 
+			/**
+			 * Whether cancel_job() was called for the owned job.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Source slug.
+			 *
+			 * @return string
+			 */
 			public function get_slug() {
 				return 'mock_source';
 			}
 
+			/**
+			 * Jobs owned by this mock source.
+			 *
+			 * @param int      $user_id      User id filter.
+			 * @param int|null $assistant_id Assistant id filter.
+			 * @return array
+			 */
 			public function get_jobs( $user_id = 0, $assistant_id = null ) {
 				return array();
 			}
 
+			/**
+			 * Cancel the owned job.
+			 *
+			 * @param string $job_id  Job identifier.
+			 * @param int    $user_id User id filter.
+			 * @return bool|null True when cancelled, null when not owned.
+			 */
 			public function cancel_job( $job_id, $user_id = 0 ) {
 				if ( $job_id === $this->job_id ) {
 					$this->called = true;

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sync-manage-assets.mjs — build (when stale) and copy the Astro CMS
 // standalone bundle into public/manage-assets/, which the /manage page

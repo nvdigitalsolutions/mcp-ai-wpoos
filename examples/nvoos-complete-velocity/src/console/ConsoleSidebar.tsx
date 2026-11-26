@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ConsoleSidebar — SA-format left navigation for the console shell.
  *
@@ -19,6 +20,7 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { readProSpaConfig, type ProSpaUser } from '@nvoos/pro-spa-v2/api/config';
+import { writeTenantId, type EstateSummary } from '@nvoos/pro-spa-v2/api/tenant';
 
 import { brandText } from '../brand';
 
@@ -46,6 +48,10 @@ export interface ConsoleSidebarProps {
    * not serve. Absent = fail open.
    */
   endpoints?: EndpointMap;
+  /** The estate API requests act in ('' = none / WordPress). */
+  tenantId?: string;
+  /** Estates this session may switch between ([] or absent = no switcher). */
+  estates?: EstateSummary[];
   /** End the WordPress session (footer action). */
   onSignOut: () => Promise<void> | void;
 }
@@ -83,7 +89,17 @@ function writeGroupPrefs(prefs: Record<string, boolean>): void {
 }
 
 export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
-  const { dockOpen, onToggleDock, isChatRoute, user, features, endpoints, onSignOut } = props;
+  const {
+    dockOpen,
+    onToggleDock,
+    isChatRoute,
+    user,
+    features,
+    endpoints,
+    tenantId = '',
+    estates = [],
+    onSignOut,
+  } = props;
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
   const [groupPrefs, setGroupPrefs] = useState<Record<string, boolean>>(readGroupPrefs);
   const [signingOut, setSigningOut] = useState(false);
@@ -118,6 +134,23 @@ export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
       }
       return next;
     });
+  };
+
+  /**
+   * Switch estates by reloading the app.
+   *
+   * A reload — not a live header swap — is the isolation guarantee: spa-v2
+   * keeps per-estate data in its stores (assistants, drafts, transcripts,
+   * chat state), and swapping the tenant underneath them would paint one
+   * estate's data under another's name. The selection is persisted first so
+   * the next boot sends it on the very first scoped request.
+   */
+  const switchEstate = (nextId: string): void => {
+    if (!nextId || nextId === tenantId) {
+      return;
+    }
+    writeTenantId(nextId);
+    window.location.reload();
   };
 
   const isGroupExpanded = (groupId: string, defaultExpanded?: boolean): boolean =>
@@ -255,6 +288,27 @@ export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
       </nav>
 
       <div className="nvoos-console-nav__footer">
+        {!collapsed && estates.length > 1 && (
+          <label className="nvoos-console-nav__estate">
+            <span className="nvoos-console-nav__estate-label">Estate</span>
+            <select
+              className="nvoos-console-nav__estate-select"
+              value={tenantId}
+              onChange={(event) => switchEstate(event.target.value)}
+            >
+              {tenantId === '' && (
+                <option value="" disabled>
+                  Select…
+                </option>
+              )}
+              {estates.map((estate) => (
+                <option key={estate.id} value={estate.id}>
+                  {estate.name || estate.id}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <button
           type="button"
           className={

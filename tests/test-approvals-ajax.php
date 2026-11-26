@@ -30,6 +30,19 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Bind the approval handlers. WP_MCP_AI_Admin_Approvals registers them
+		// from its constructor, which production only runs on an admin request;
+		// unbound, every dispatch ends with an empty body that the rejection
+		// assertions accept.
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_list_approvals' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Admin_Approvals' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-approvals.php';
+			}
+			if ( class_exists( 'WP_MCP_AI_Admin_Approvals' ) ) {
+				new WP_MCP_AI_Admin_Approvals();
+			}
+		}
+
 		// Ensure the approval queue table exists before each test.
 		if ( class_exists( 'WP_MCP_AI_Approval_Queue' ) ) {
 			$queue = WP_MCP_AI_Approval_Queue::get_instance();

@@ -29,6 +29,8 @@ class WP_MCP_AI_Test_Fake_Verifier extends WP_MCP_AI_Verifier_Base {
 	}
 
 	/**
+	 * Verify a subject.
+	 *
 	 * @param array $subject Subject.
 	 * @param array $context Context.
 	 * @return array

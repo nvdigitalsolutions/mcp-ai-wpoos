@@ -85,14 +85,19 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	// ── format_vitals_for_embedding ────────────────────────────────────────────
 
 	/**
-	 * format_vitals_for_embedding returns a non-empty string.
+	 * Format_vitals_for_embedding returns a non-empty string.
 	 */
 	public function test_format_vitals_returns_string() {
 		$method = $this->reflection->getMethod( 'format_vitals_for_embedding' );
 		$method->setAccessible( true );
 
 		$measurements = array(
-			'blood_pressure' => array( 'systolic' => 120, 'diastolic' => 80, 'reading' => '120/80', 'status' => 'normal' ),
+			'blood_pressure' => array(
+				'systolic'  => 120,
+				'diastolic' => 80,
+				'reading'   => '120/80',
+				'status'    => 'normal',
+			),
 		);
 
 		$result = $method->invoke( $this->tool, $measurements, 1, '2024-01-01' );
@@ -102,7 +107,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * format_vitals_for_embedding includes "vital signs" and the member ID so
+	 * Format_vitals_for_embedding includes "vital signs" and the member ID so
 	 * that queries for "vital signs" surface the entry.
 	 */
 	public function test_format_vitals_contains_vital_signs_terms() {
@@ -110,18 +115,22 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$measurements = array(
-			'heart_rate' => array( 'value' => 72, 'unit' => 'bpm', 'status' => 'normal' ),
+			'heart_rate' => array(
+				'value'  => 72,
+				'unit'   => 'bpm',
+				'status' => 'normal',
+			),
 		);
 
 		$text = $method->invoke( $this->tool, $measurements, 99, '2024-03-08' );
 
 		$this->assertStringContainsStringIgnoringCase( 'vital signs', $text );
-		$this->assertStringContainsString( '99', $text ); // member_id
+		$this->assertStringContainsString( '99', $text ); // member_id.
 		$this->assertStringContainsString( '2024-03-08', $text );
 	}
 
 	/**
-	 * format_vitals_for_embedding includes kidney health terminology (eGFR,
+	 * Format_vitals_for_embedding includes kidney health terminology (eGFR,
 	 * creatinine) so that semantic search for "kidney health metrics" returns
 	 * entries with these indicators.
 	 */
@@ -130,13 +139,34 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$measurements = array(
-			'egfr'       => array( 'value' => 72.0, 'unit' => 'mL/min/1.73m²' ),
-			'creatinine' => array( 'value' => 1.1, 'unit' => 'mg/dL' ),
-			'bun'        => array( 'value' => 20.0, 'unit' => 'mg/dL' ),
-			'potassium'  => array( 'value' => 4.2, 'unit' => 'mEq/L' ),
-			'sodium'     => array( 'value' => 140.0, 'unit' => 'mg/day' ),
-			'phosphorus' => array( 'value' => 3.5, 'unit' => 'mg/dL' ),
-			'albumin'    => array( 'value' => 4.0, 'unit' => 'g/dL' ),
+			'egfr'       => array(
+				'value' => 72.0,
+				'unit'  => 'mL/min/1.73m²',
+			),
+			'creatinine' => array(
+				'value' => 1.1,
+				'unit'  => 'mg/dL',
+			),
+			'bun'        => array(
+				'value' => 20.0,
+				'unit'  => 'mg/dL',
+			),
+			'potassium'  => array(
+				'value' => 4.2,
+				'unit'  => 'mEq/L',
+			),
+			'sodium'     => array(
+				'value' => 140.0,
+				'unit'  => 'mg/day',
+			),
+			'phosphorus' => array(
+				'value' => 3.5,
+				'unit'  => 'mg/dL',
+			),
+			'albumin'    => array(
+				'value' => 4.0,
+				'unit'  => 'g/dL',
+			),
 		);
 
 		$text = $method->invoke( $this->tool, $measurements, 1, '2024-03-08' );
@@ -150,14 +180,19 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * format_vitals_for_embedding includes blood pressure when present.
+	 * Format_vitals_for_embedding includes blood pressure when present.
 	 */
 	public function test_format_vitals_includes_blood_pressure() {
 		$method = $this->reflection->getMethod( 'format_vitals_for_embedding' );
 		$method->setAccessible( true );
 
 		$measurements = array(
-			'blood_pressure' => array( 'systolic' => 130, 'diastolic' => 85, 'reading' => '130/85', 'status' => 'elevated' ),
+			'blood_pressure' => array(
+				'systolic'  => 130,
+				'diastolic' => 85,
+				'reading'   => '130/85',
+				'status'    => 'elevated',
+			),
 		);
 
 		$text = $method->invoke( $this->tool, $measurements, 1, '2024-01-01' );
@@ -170,7 +205,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	// ── store_vitals_embedding ─────────────────────────────────────────────────
 
 	/**
-	 * store_vitals_embedding with no configured API keys does not crash and
+	 * Store_vitals_embedding with no configured API keys does not crash and
 	 * leaves the index empty (embedding silently skipped).
 	 */
 	public function test_store_vitals_embedding_no_api_key_is_silent() {
@@ -194,7 +229,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * store_vitals_embedding populates the expected fields when an embedding is
+	 * Store_vitals_embedding populates the expected fields when an embedding is
 	 * successfully generated.  We pre-seed the index directly to simulate a
 	 * prior successful store call (avoids needing a real API key).
 	 */
@@ -270,7 +305,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * store_vitals_embedding uses the Gemini task_type RETRIEVAL_DOCUMENT
+	 * Store_vitals_embedding uses the Gemini task_type RETRIEVAL_DOCUMENT
 	 * (not RETRIEVAL_QUERY) so the stored embedding is optimised for document
 	 * retrieval rather than query retrieval.
 	 *
@@ -387,7 +422,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 			array(
 				'entry_id'         => $entry_id,
 				'measurement_date' => '2024-06-15',
-				'creatinine'       => 1,  // integer-rounded value
+				'creatinine'       => 1,  // integer-rounded value.
 			),
 		);
 

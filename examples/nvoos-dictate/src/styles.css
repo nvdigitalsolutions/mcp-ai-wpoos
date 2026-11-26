@@ -207,6 +207,84 @@ body {
   cursor: crosshair;
 }
 
+/* Hand-gesture status strip (Proposal 153). */
+.gesture-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 8px 0 4px;
+}
+
+.gesture-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gesture-conf {
+  display: inline-block;
+  width: 72px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--border);
+  overflow: hidden;
+}
+
+.gesture-conf-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent-2);
+  transition: width 120ms linear;
+}
+
+/* "Ask your camera" (Proposal 153 M5) — the gesture supplies the referent,
+   the typed question supplies the intent. Answers are display-only. */
+.ask-camera {
+  margin: 10px 0 0;
+}
+
+.ask-camera input[type='text'] {
+  flex: 1 1 240px;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.ask-answer {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.ask-answer p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.ask-answer p + p {
+  margin-top: 4px;
+}
+
+/* A guarded gesture was seen but the confirmation hold is incomplete:
+   nothing has executed, so this is a prompt, not a result. */
+.gesture-confirm {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--warn);
+  background: rgba(245, 197, 66, 0.12);
+  color: var(--warn);
+  font-size: 13px;
+}
+
 .kv {
   list-style: none;
   margin: 0 0 12px;

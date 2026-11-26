@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // animations.test.ts — the animated-effect inventory (2026-11-12).
 //
@@ -238,6 +239,51 @@ describe( 'animationRebuildCss', () => {
 	it( 'emits nothing for deferred facts', () => {
 		const planned = planAnimationRebuild( [ fact( { infinite: true, iterations: 'infinite' } ) ] );
 		expect( animationRebuildCss( planned ) ).toBe( '' );
+	} );
+
+	it( 'COMPOSES the parallax animation when the carrier is also a parallax target', () => {
+		// Both emitters write `animation-*` longhands on the same `.ds-media`.
+		// Without a merged NAME list the later rule wins the name and the parallax
+		// never binds — a real defect found on a built site (2026-11-17).
+		const planned = planAnimationRebuild( [ fact() ] );
+		const css = animationRebuildCss( planned, [ { bandId: 'a1b2c3d', mediaIndex: 0 } ] );
+
+		expect( css ).toContain( ', ds-parallax-media' );
+		// Positional lists: every property carries BOTH values, defaults written out.
+		expect( css ).toContain( ', auto' );
+		expect( css ).toContain( 'animation-timeline:auto, scroll(root)' );
+		expect( css ).toContain( 'animation-range:normal, cover 0% cover 100%' );
+		expect( css ).toContain( 'animation-fill-mode:both, both' );
+		// Never a shorthand — it would reset the pair it is meant to compose.
+		expect( css ).not.toMatch( /(^|[;{])animation:/ );
+	} );
+
+	it( 'does not compose when the band or ordinal differs', () => {
+		const planned = planAnimationRebuild( [ fact() ] );
+		expect( animationRebuildCss( planned, [ { bandId: 'a1b2c3d', mediaIndex: 1 } ] ) ).not.toContain(
+			'ds-parallax-media'
+		);
+		expect( animationRebuildCss( planned, [ { bandId: 'zzzzzzz', mediaIndex: 0 } ] ) ).not.toContain(
+			'ds-parallax-media'
+		);
+	} );
+
+	it( 'never composes into a non-media target', () => {
+		const planned = planAnimationRebuild( [ fact( { target: 'text' } ) ] );
+		expect( animationRebuildCss( planned, [ { bandId: 'a1b2c3d', mediaIndex: 0 } ] ) ).not.toContain(
+			'ds-parallax-media'
+		);
+	} );
+
+	it( 'never composes when the source animation ALREADY moves the same property', () => {
+		// CSS cannot blend two animations on `translate`; the later name wins. So a
+		// translate-based inventory keyframe keeps the carrier rather than being
+		// silently killed by the parallax it was meant to share it with.
+		const planned = planAnimationRebuild( [
+			fact( { keyframes: [ { offset: '0%', declarations: { translate: '0 0' } }, { offset: '100%', declarations: { translate: '0 20px' } } ] } ),
+		] );
+		const css = animationRebuildCss( planned, [ { bandId: 'a1b2c3d', mediaIndex: 0 } ] );
+		expect( css ).not.toContain( 'ds-parallax-media' );
 	} );
 } );
 

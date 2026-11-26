@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 // Smoke test: the webview renders and switches tabs without a Rust backend.
 // (Tauri IPC is unavailable in plain Playwright; the app must degrade to
 // "loading" states instead of crashing — which is what this asserts.)

@@ -250,7 +250,7 @@ Strategy:
 2. For Envato/native formats, make image URLs absolute and point them at a
    location that resolves during import — typically the target site itself
    after pre-uploading media to the referenced path (e.g.
-   `https://site.com/wp-content/uploads/sascha/x.jpg`).
+   `https://site.com/wp-content/uploads/kit/x.jpg`).
 3. Parametrize the generator with a `--media-base` flag and print a warning
    when it is missing.
 4. `Media_Mapper` (transient `elementor_media_mapping` + a
@@ -290,7 +290,7 @@ Strategy:
 
 ## This project's tooling
 
-The Sascha Torres kit generator demonstrates all three formats from one set of
+The kit generator demonstrates all three formats from one set of
 page definitions (`elementor-kit/scripts/`):
 
 - `generate-kit.mjs` — element builders (`container`, `row`, `heading`,

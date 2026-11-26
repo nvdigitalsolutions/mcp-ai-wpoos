@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Raster-image decode integration tests (Proposal 109 follow-up 1).
 //!
 //! Decode + routing contract only: recognition needs the platform engines

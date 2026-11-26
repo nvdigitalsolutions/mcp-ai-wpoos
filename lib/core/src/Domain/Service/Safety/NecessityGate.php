@@ -45,6 +45,14 @@ final class NecessityGate
     /** An unnecessary call that cannot do damage — skipped silently. */
     public const REASON_UNNECESSARY_READ_ONLY = 'unnecessary_read_only';
 
+    /**
+     * The call would need a human, but the operator pre-approved this tool.
+     *
+     * @since 2.1.0
+     * @var string
+     */
+    public const REASON_PRE_APPROVED = 'pre_approved_tool';
+
     /** Search tools whose only useful input is a query. */
     private const SEARCH_TOOLS = array(
         'web_search',
@@ -64,31 +72,39 @@ final class NecessityGate
     /**
      * Tier 1 — a tool that cannot do harm, so the gate has nothing to add.
      *
+     * Flags are normalised first, so a tool spelling `external_api` or
+     * `state_changing` is read the same way as its hyphenated twin. A
+     * read-only tool that merely *reaches* an external system stays safe; only
+     * an outbound mutation disqualifies it.
+     *
+     * A tool that claims `read-only` while also declaring a mutating or sending
+     * flag is contradicting itself, and a contradiction is not an assurance.
+     *
      * @param array<int, string> $flags Capability flags.
      */
     public static function isSafeTool(array $flags): bool
     {
-        $flags = \array_map('strtolower', $flags);
+        $flags = CapabilityFlagVocabulary::normalise($flags);
 
         if (! \in_array('read-only', $flags, true)) {
             return false;
         }
 
-        $dangerous = array(
+        if (
+            CapabilityFlagVocabulary::hasAny($flags, array(
+            'write',
+            'state-changing',
             'irreversible',
             'financial-impact',
-            'external-communication',
             'data-destruction',
             'access-control-change',
-        );
-
-        foreach ($dangerous as $flag) {
-            if (\in_array($flag, $flags, true)) {
-                return false;
-            }
+            'mass-email',
+            ))
+        ) {
+            return false;
         }
 
-        return true;
+        return ! CapabilityFlagVocabulary::hasOutboundMutation($flags);
     }
 
     /**
@@ -145,7 +161,8 @@ final class NecessityGate
         string $slug,
         array $arguments,
         ?float $irreversibility = null,
-        ?callable $classifier = null
+        ?callable $classifier = null,
+        ?array $preApproved = null
     ): array {
         if (self::isSafeTool($flags)) {
             return array(
@@ -180,6 +197,24 @@ final class NecessityGate
         }
 
         $verdict = ActionSafetyProfile::determineVerdict($irreversibility, $necessity);
+
+        // Pre-approval waives the human decision, not the validity check: it is
+        // applied only here, so a `block` (an overeager or under-specified call)
+        // reaches the caller untouched.
+        if (
+            ActionSafetyProfile::VERDICT_APPROVAL_REQUIRED === $verdict['verdict']
+            && PreApprovedTools::contains($slug, $preApproved)
+        ) {
+            return array(
+                'verdict' => ActionSafetyProfile::VERDICT_ALLOW,
+                'reason_code' => self::REASON_PRE_APPROVED,
+                'reason' => 'Tool is pre-approved by the operator: it spends budget but is not destructive.',
+                'risk_score' => $verdict['risk_score'],
+                'irreversibility' => $irreversibility,
+                'necessity' => $necessity,
+                'requires_approval' => false,
+            );
+        }
 
         return array(
             'verdict' => $verdict['verdict'],

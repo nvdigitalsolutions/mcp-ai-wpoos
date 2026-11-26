@@ -121,33 +121,27 @@ class NV_oOS_Graphify_Remote_ServiceNow extends NV_oOS_Graphify_Remote_Source_Ba
 	public function test_connection() {
 		$base = $this->resolve_base_url();
 		if ( '' === $base ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No ServiceNow instance_url configured.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
+				__( 'No ServiceNow instance_url configured.', 'nvoos-graphify' )
 			);
 		}
 		$auth = $this->resolve_auth_headers();
 		if ( is_wp_error( $auth ) ) {
-			return array(
-				'success' => false,
-				'message' => $auth->get_error_message(),
-			);
+			return $auth;
 		}
 		$result = $this->get_http()->get(
 			$base . '/api/now/table/sys_user?sysparm_limit=1',
 			array( 'headers' => $auth )
 		);
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status. */
-				'message' => sprintf( __( 'ServiceNow returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] ),
+				sprintf( __( 'ServiceNow returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] )
 			);
 		}
 		return array(

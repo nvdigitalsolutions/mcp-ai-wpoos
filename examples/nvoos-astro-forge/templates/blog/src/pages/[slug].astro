@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // /{slug}/ — one WordPress page (or a local MDX page from src/content/pages/).
 // The static front page (manifest.frontPage) renders at `/` instead, so it is
 // skipped here to keep one canonical URL.
@@ -26,6 +27,17 @@ export async function getStaticPaths() {
 const { page, body } = Astro.props;
 const { Content } = await render(page);
 const pageUrl = Astro.site ? new URL(`/${page.data.slug}/`, Astro.site).href : undefined;
+// A REBUILT page's own markup already carries its heading (Flatsome's
+// single-page-nav templates render no `.page-title` element at all, and the
+// hero heading may be an `<h3>` for design reasons). Rendering the template's
+// `<h1>` on top of it invented a visible title the source never had — and, with
+// an overlay header, pushed the whole band down by the title's height. A page
+// whose body carries its own heading keeps a VISUALLY HIDDEN `<h1>` so the
+// document outline still has one; only a page with no heading at all shows the
+// template title.
+const bandHeading = /<h[1-6][\s>]/i.test( body ?? '' );
+const showTitle = ! bandHeading;
+const srTitle = bandHeading && ! /<h1[\s>]/i.test( body ?? '' );
 // SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
 const seoTitle = page.data.seoTitle ?? page.data.title;
 
@@ -62,7 +74,8 @@ const jsonLd = buildGraph(
 
 <Base title={seoTitle} description={seoDescription} canonical={pageUrl} seo={page.data.seo} markdownHref={`/${page.data.slug}/index.md`}>
 	<article class="post">
-		<h1>{page.data.title}</h1>
+		{showTitle && <h1>{page.data.title}</h1>}
+		{srTitle && <h1 class="visually-hidden">{page.data.title}</h1>}
 		{body ? (
 			<DesignRenderer html={body} bandThemes={pageBands[page.data.slug]} />
 		) : (

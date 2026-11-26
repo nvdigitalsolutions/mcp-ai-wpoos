@@ -5,9 +5,8 @@
 **Scope:** `examples/nvoos-service-exchange/server/clients/cloudways.js` and the
 call sites in `server/provision/steps.js`
 **Method:** live unauthenticated probes + in-repo production client evidence
-**Probe script:** `examples/nvoos-service-exchange/scripts/cloudways-api-probe.mjs`
-(`npm run probe:cloudways`) and `scripts/cloudways-mcp-probe.mjs`
-(`npm run probe:mcp`)
+**Tooling:** the probe CLIs are internal/local and not shipped in this repo;
+only their results are recorded here.
 
 ---
 
@@ -38,7 +37,7 @@ behind a Cloudflare challenge. Four call shapes were marked
 
 ### 2.2 Live unauthenticated probes (2026-11-12)
 
-`npm run probe:cloudways` output (abridged):
+Live REST probe output (abridged):
 
 ```
 V1 POST /oauth/access_token   403  route-exists-auth-required   application/json
@@ -76,8 +75,8 @@ V2 GET  /monitoring/server    200  route-exists (HTML catch-all) text/html
 Both Cloudways MCP servers are configured in Zed (`cloudways-nvdigital`,
 `cloudways-mushroom`; Streamable HTTP at `https://mcp.cloudways.com/mcp/`).
 They are not attached to every agent session, so the same endpoint was called
-by `examples/nvoos-service-exchange/scripts/cloudways-mcp-probe.mjs`
-(credentials read from the Zed settings at runtime; never printed).
+by a local read-only probe (credentials read from the Zed settings at runtime;
+never printed; the probe is internal and not shipped in this repo).
 
 Observed:
 
@@ -175,8 +174,8 @@ no writes, no app creation):
 
 ```bash
 cd examples/nvoos-service-exchange
-CLOUDWAYS_EMAIL=… CLOUDWAYS_API_KEY=… CLOUDWAYS_DEFAULT_SERVER_ID=… \
-  npm run probe:cloudways
+Set `CLOUDWAYS_EMAIL`, `CLOUDWAYS_API_KEY` and
+`CLOUDWAYS_DEFAULT_SERVER_ID`, then run the local read-only probe.
 ```
 
 The script prints, without echoing tokens or account data:

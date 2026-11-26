@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // robots.txt — SSR endpoint so the sitemap URL uses the configured site host.
 import type { APIRoute } from 'astro';
 

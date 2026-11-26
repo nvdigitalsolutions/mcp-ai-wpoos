@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // readme.test.ts — the deploy-branch build report.
 //
@@ -175,6 +176,32 @@ describe( 'composeSiteReadme — surfaces and tracking', () => {
 		const readme = composeSiteReadme( base( { tracking: { enabled: true, vendors: [ 'gtm' ], consentMode: 'advanced' } } ) );
 		expect( readme ).toContain( '1 consent-gated vendor(s): `gtm`.' );
 		expect( readme ).toContain( 'Consent mode: `advanced`.' );
+	} );
+
+	it( 'separates a consent-exempt cookieless beacon from the gated vendors', () => {
+		const readme = composeSiteReadme(
+			base( {
+				tracking: {
+					enabled: true,
+					vendors: [ 'cloudflare-web-analytics', 'google-analytics-4' ],
+					consentMode: 'forge',
+					consentExempt: [ 'cloudflare-web-analytics' ],
+				},
+			} )
+		);
+		expect( readme ).toContain( '1 consent-gated vendor(s): `google-analytics-4`.' );
+		expect( readme ).toContain( '1 consent-exempt vendor(s): `cloudflare-web-analytics`' );
+		expect( readme ).toContain( 'loads without a decision' );
+	} );
+
+	it( 'does not infer an exemption from the vendor name alone', () => {
+		// The manifest records the operator's decision; a cookieless vendor with
+		// no recorded exemption is still reported as gated.
+		const readme = composeSiteReadme(
+			base( { tracking: { enabled: true, vendors: [ 'cloudflare-web-analytics' ], consentMode: 'none' } } )
+		);
+		expect( readme ).toContain( '1 consent-gated vendor(s): `cloudflare-web-analytics`.' );
+		expect( readme ).not.toContain( 'consent-exempt' );
 	} );
 } );
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
+//! Desktop and headless entry point.
+//!
+//! Dispatches `--mcp` to the stdio server; otherwise builds the Tauri app.
 // Prevents an additional console window on Windows in release; DO NOT
 // REMOVE (comment per Tauri template — required by some tooling lints).
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]

@@ -249,6 +249,33 @@ the form read fields the directory never returned).
     Pin with an end-to-end wp/v2 test that registers the CPT + meta INSIDE
     the test body (wp-phpunit's `unregister_all_meta_keys()` wipes
     bootstrap-registered keys — see the test-suite skill).
+16. **Blocking-in-browser-callback — the route exists, is contract-clean, and
+    does the work inline.** The client `await`s it, so the request is bounded
+    by the edge proxy: Cloudflare answers **524 with an HTML body** (not JSON)
+    at ~100 s, nginx gives 504. PHP keeps running, so the SPA shows a generic
+    "An error occurred" while the job finishes invisibly. Real case
+    (2026-11-20): `POST /schedules/{id}/trigger` called the synchronous
+    `trigger_now()`; the same bug sat in the classic `admin-ajax` trigger, so
+    both surfaces broke the same way. Symptom split is the tell — instant on a
+    plain task hook, 524 on anything that reaches a provider. Fix: queue and
+    return a handle (`queued`, `run_id`, `backend`), add a status route the
+    client polls, `409` a second concurrent trigger. Audit rule: any client
+    call that *can* reach a provider round trip is a poll, never a wait. Full
+    rationale in `wp-rest-api` rule 9.
+17. **Wrong-arity call from the controller — the helper takes more arguments
+    than the route passes.** Real case (2026-11-20): `toggle_schedule()` was
+    called with one argument against
+    `toggle_schedule( $schedule_id, $enabled, $user_id = 0 )`. Because
+    `$enabled` is **required**, PHP 8 raised `ArgumentCountError`; that extends
+    `Error`, not `Exception`, and `WP_REST_Server::respond_to_request()`
+    catches `Exception` only — so the route answered with an uncaught **500**,
+    not a handled `WP_Error`. The endpoint reads as contract-clean in a diff
+    and the button appears to do nothing (or shows a generic error); the fatal
+    is only in the PHP log. Audit step: for every `Some_Class::method(` inside
+    a controller, open the signature and diff the arguments, paying attention
+    to parameters that *look* optional. A route that mutates state also
+    deserves an explicit not-found branch — a toggle that cannot fail loudly
+    is indistinguishable from one that quietly did nothing.
 
 ## Audit path per client (4 hops, verify every hop)
 
@@ -506,6 +533,16 @@ The console no longer guesses whether a backend serves a surface — it is told,
 - **Read the response shape from the client, not from the project convention.** The MCP-apps route answers **top-level** (`success`, `assistant_id`, `apps`, `app_count`); wrapping it in `{success, data}` renders an empty panel while unit tests stay green.
 - **Laravel parity work is per-key.** A surface is "done" when its key is route-backed, its envelope matches WordPress field-for-field, and a parity test asserts the wire — not when the controller exists.
 
+## The manifest closes at `gaps=[]` (v1.2.22)
+
+The last two asymmetries between the runtimes are gone; the contract is now **complete**, and the working assumption for a new audit is that a mismatch is a bug, not a known gap.
+
+- **Org teams vs agent teams — two different resources, similar names.** `mcp-ai/v1/org/teams` (+ `/{team}`, `/{team}/members`, `/{team}/members/{user}`) is the tenant's **users with roles**, backed by the `includes/org-teams/` CPT and service. `mcp-ai/v1/teams` is the **agent**-team catalogue. They are not interchangeable and both report `route` on both runtimes; the live manifest is **41 true / 4 false / `gaps=[]`**.
+- **`/features` now emits `endpoint_urls`.** `WP_MCP_AI_Connected_App_Registry` probes each product configured in `wp_mcp_ai_connected_apps` (option or filter). Three properties are load-bearing and easy to regress: private/reserved resolutions are **refused before any request**; the validated address is **pinned** with `CURLOPT_RESOLVE` so DNS cannot rebind between validation and connection; and the cached answer **includes failures**, so a dead host is not re-probed on every call. The result flips both the `endpoints` key and the matching `features` flag.
+- **Connected products mount same-origin.** The Complete Console proxies a product through `scripts/serve.mjs`'s `/connected/<key>/*`, advertised as `connected_proxy: true`. Connected-app tokens are encrypted at rest and masked on every read — never echo one back into a config payload.
+- **A `false` key with a reason beats a blank page.** Nav items whose endpoint is unserved are hidden by design, so "the page is empty" almost always means "the key resolved false", not "the fetch failed" — check the key before DevTools.
+- **The Laravel side adds `GET|POST /api/v1/org/teams`**, `/ops/models` (a 251-row catalogue that also feeds 13 settings selects) and a `routing_export` block on `/api/v1/diagnostics/overview`. Settings fields are owner-scoped there (`operator` vs `tenant`), which is a **contract** fact: a console that offers an operator key for editing will get a server-side refusal, not a silent no-op.
+
 ## Validation matrix (coordinator)
 
 - phpcs: `phpcbf <files>` then `phpcs --standard=phpcs.xml.dist
@@ -569,3 +606,19 @@ The console no longer guesses whether a backend serves a surface — it is told,
   empty-state, verify the server data actually resolves — the reseed now
   relinks members automatically
   (`WP_MCP_AI_Team_Repository::relink_members_after_profession_replace()`).
+- **A tiny envelope field can be the dominant cost of a polled endpoint.**
+  `storage_bytes` on the transcripts helper is a `SUM(LENGTH(...))` over a
+  `LONGTEXT` column — 659 rows / 184 MB, `PRIMARY` only, and it **cannot be
+  indexed away** (no index makes `LENGTH()` cheap). Warm it read ~25 ms; cold
+  after a MySQL restart it was ~8 s — precisely when the console's status-bar
+  poll fires, so it presents as "the console is frozen / the connection is
+  broken". Don't reach for an index on an aggregate like this. The shipped fix
+  in `class-wp-mcp-ai-transcript-repository.php` is cache-first:
+  `get_storage_bytes()` wraps the (now `protected`) aggregate with a 5-minute
+  TTL, a per-user version meta busted on `delete_transcript()`, a 7-day
+  **last-known-good backstop** for recompute failures, and a 2 s statement
+  budget (`max_statement_time` on MariaDB / `max_execution_time` on MySQL).
+  Expose a TTL filter (`wp_mcp_ai_transcript_storage_bytes_ttl`, `0` disables
+  caching) so tests aren't forced to expire transients. Measure the field by
+  timing the repo method directly (`wp eval-file`), not the request — a slow
+  app's multi-second request floor (3.1 s on Victory) hides the delta.

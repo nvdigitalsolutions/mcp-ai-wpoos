@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import svc, {
 	getFileExtension, isFileTypeAllowed, isRealAttachmentUrl,
 	getFileTypeInfo, isVideoAttachment, isAudioAttachment,

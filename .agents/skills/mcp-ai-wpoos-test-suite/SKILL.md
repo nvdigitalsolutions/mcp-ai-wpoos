@@ -42,6 +42,10 @@ The test suite runs inside the `oos-wp` container (plugin bind-mounted at
 `/var/www/html/wp-content/plugins/mcp-ai-wpoos`, DB in `oos-wp-db`). Run from
 the repo root on the Windows host with `MSYS_NO_PATHCONV=1`.
 
+> The **Laravel** app suite does not run here — it lives in `oos-laravel-app`
+> (`docker exec -w /app oos-laravel-app …`) and its runner, sync trap and memory
+> limit are documented in the `mcp-ai-wpoos-laravel-runtime` skill §3.
+
 **WP 6.9 (primary):**
 
 ```bash
@@ -1070,9 +1074,12 @@ the changed files is the substantive gate; plan CI waits accordingly.
 	        non-static provider errors at suite construction, not in the test.
 	      - Providers are evaluated **eagerly, before filtering**: a provider
 	        that reads a missing fixture fails the run even with `--filter`
-	        naming an unrelated test. Pass the fixture env vars
-	        (`NVOOS_PM_FIXTURE`, `NVOOS_PM_WRITES_FIXTURE`) instead of
-	        assuming a filtered run is isolated.
+	        naming an unrelated test. `docker/docker-compose.laravel.yml`
+	        sets `NVOOS_PM_FIXTURE` / `NVOOS_PM_WRITES_FIXTURE` to the repo
+	        corpus (`/workspace/oos/tests/fixtures/pm/*.json`), so a
+	        container recreated after that line exists needs no `-e` flags;
+	        one older than it still does. Never assume a filtered run is
+	        isolated.
 
 	   76. **Init-time `wp_insert_post()` → "Attempt to read property 'feeds' on
 	      null" (PHP 8, bootstrap logs; 2026-10-24, SSE offload pass).**
@@ -1267,13 +1274,18 @@ the changed files is the substantive gate; plan CI waits accordingly.
       it back in `tearDown()` so later suites see the environment they expect.
       (`wp_set_current_user(0)` alone is not enough; the restore runs inside
       the request, after your setUp.)
-  91. **A standalone-plugin suite whose bootstrap needs `WP_TESTS_*` cannot run
-      in this container.** `plugins/nvoos-forge-bridge` (and similar
-      single-plugin suites) read `WP_TESTS_DOMAIN` / `WP_TESTS_TITLE` /
-      `WP_TESTS_EMAIL` / `WP_PHP_BINARY` and abort without them; this local
-      environment does not define them, CI does. Gates that DO apply locally:
-      `php -l` and `phpcs`. Say "lint only, CI runs the suite" in the PR rather
-      than claiming the tests passed.
+  91. **A standalone-plugin suite whose bootstrap needs `WP_TESTS_*` CAN run
+      locally — in a one-off CLI container, not on the host.**
+      `plugins/nvoos-forge-bridge` (and similar single-plugin suites) read
+      `WP_TESTS_DOMAIN` / `WP_TESTS_TITLE` / `WP_TESTS_EMAIL` /
+      `WP_PHP_BINARY` and abort without them; the host does not define them.
+      Copy the plugin to `/tmp` inside a `wordpress:cli-php8.2` container
+      (never write into the bind mount), `wp core download --skip-content`,
+      write `vendor/wp-phpunit/wp-phpunit/wp-tests-config.php` in the COPY
+      with all four constants plus `DB_*` pointing at `oos-wp-db`, then run
+      `vendor/bin/phpunit -c phpunit.xml.dist`. forge-bridge 0.3.4: 83/83
+      tests, 239 assertions, ~10 s. Host gates (`php -l`, `phpcs`) remain
+      useful, but do not report "lint only" when the container run passed.
   92. **Shared-state flakes in a parallel JS suite.** `examples/nvoos-astro-forge`
       `tests/sites.test.ts` reads the shared `~/.nvoos-forge/sites.json`: it
       fails intermittently in a full parallel `npm test` run and passes in
@@ -1329,6 +1341,77 @@ the changed files is the substantive gate; plan CI waits accordingly.
       inspects the value (`fn ($v) => $v instanceof \stdClass`), or build a
       fresh mock per test. Recognition signal: the failure lands on a call
       count or a downstream assertion rather than on the branch under test.
+
+  96. **Authenticated API tests 403 en masse after estate resolution
+      (2026-11-17, `ApiTenantResolutionTest`).** Once `/api/v1` resolves
+      `TenantContext` from membership, every test whose fixture created a user
+      with **no** estate answers `403 tenant_unprovisioned` — 356 failures that
+      read like a code break. A user with no membership is a state production
+      cannot reach (the membership migration backfills every user into
+      `default`), so fix the fixture, not the resolver: `UserFactory::create()`
+      provisions `default` with `CapabilityMap::estateRoleFor()`, `inEstate($id,
+      $role)` provisions exactly one estate, `withoutEstate()` is the single
+      state that pins the 403. Related trap in the same sweep:
+      **`Assistant::$fillable` omits `tenant_id` on purpose**, so
+      `create(['tenant_id' => 'estate-b'])` silently lands in `default` and the
+      assertion passes for the wrong reason — assign the column after create.
+
+  97. **A shared parity fixture generated with a different seed than one host
+      uses (2026-11-17, `NvoosWifiKpiParityTest`).** Two runtimes pinned the
+      same committed JSON, but Laravel constructed the mock with
+      `config('wifi.mock_seed', 'mock-default')` while WordPress used
+      `settings()['mock_seed'] ?? 'nvoos-wifi-mock'`. The fixture can only match
+      one, so the test was unsatisfiable from the day both landed (same commit —
+      check with `git log -S '<seed string>' -- <host file>`). Recognition: the
+      payload **shape** matches and every **value** differs; recompute one sample
+      from the derivation (`crc32(seed|venue|key)`) under each candidate seed to
+      identify which side the fixture encodes. Fix the outlier host to use the
+      adapter's own default; do not regenerate the fixture to match a host.
+
+  98. **`syncWithoutDetaching($id, $attributes)` silently drops the
+      attributes (2026-11-17).** Its second parameter is `$detaching`, not an
+      attribute array — `syncWithoutDetaching($user->id, ['role' => 'owner'])`
+      passes the array as a truthy boolean and inserts the pivot with **no role**.
+      The union form is the only correct one:
+      `syncWithoutDetaching([$user->id => ['role' => 'owner']])`. This bites when
+      converting a fixture from `attach()` (whose second parameter *is*
+      attributes) to make it idempotent after a factory started provisioning the
+      same pivot; 22 call sites changed in one sweep and a mechanical
+      `attach(` → `syncWithoutDetaching(` substitution would have broken all of
+      them silently.
+  99. **An AJAX rejection assertion passes on a dispatch that reached no
+      code (2026-11-19).** `WP_MCP_AI_Ajax_TestCase::dispatch()` used to return
+      `{"success":false,"data":""}` for **two** different outcomes: a handler
+      calling `wp_die()`, and **no handler bound at all**. Every rejection helper
+      (`assertAjaxForbidden`, `assertAjaxError`) accepted the second shape, so
+      **260 dispatches across 22 files** asserted nothing. The base class now
+      fails when nothing is attached to `wp_ajax_{action}` — the only safe lever,
+      because an empty body cannot distinguish the two. The three ways handlers
+      went missing, all fixed by binding in `setUp()` behind `has_action()`:
+      a `static init()`/constructor that production only runs under `is_admin()`
+      (never true in the CLI runner); a file-scope `add_action()` where another
+      suite autoloads the file first and wp-phpunit's once-per-process
+      `_restore_hooks()` drops the binding while the definitions survive; and a
+      test dispatching an action that does not exist (delete those cases).
+      Two production defects fell out of the guard: `array_map()` on an
+      unvalidated `post_ids` (TypeError on any non-empty non-array) and handlers
+      that `catch ( Throwable )` around `wp_send_json_*` — under PHPUnit
+      `wp_die()` throws, so the catch swallowed it and a second response closed
+      PHPUnit's own buffer. Rethrow under the test seam only; leave production
+      behaviour alone.
+
+  100. **A fixture missing from `/app` is a stale copy, not a missing file
+       (2026-11-21).** `docker/laravel/app` is gitignored and is a **copy** of
+       `docker/laravel/app-skeleton` taken when the stack was built; a fixture
+       added to the skeleton afterwards exists in the repository and in CI but
+       not in `/app`, so a suite fails on a file `git ls-files` says is
+       committed. Check both sides before touching the test:
+       `git ls-files <path>` and `docker exec oos-laravel-app ls <path>`, then
+       sync the file (or rebuild the `app` service). Corollary: a provider that
+       resolves a fixture by walking up from `__DIR__` cannot work under `/app`,
+       because the mount does not preserve the repository path — the container
+       names it in `docker-compose.laravel.yml` instead (`NVOOS_TOKENS_PATH`,
+       `NVOOS_PM_FIXTURE`, `NVOOS_PM_WRITES_FIXTURE`).
 
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
@@ -1410,6 +1493,8 @@ Moved to `reference/cluster-state-board.md` (the merged-cluster PR ledger).
 - Remaining-fixes tracker: `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`
 - Plugin operational guide: `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md`
 - Per-toolkit hardening audit loop: `.agents/skills/mcp-ai-wpoos-toolkit-audit/SKILL.md`
+- **WPCS/phpcs sweep playbook** (budget arithmetic, the `phpcbf` trap,
+  structural edit recipes, Windows/MSYS notes): `reference/wpcs-sweep.md`
 - **ID-handoff contract suites (permanent CI infrastructure):**
   `tests/test-tool-id-handoff-contract.php` (L1 honesty — checks
   `tests/fixtures/tool-contract-manifest.php` against the live registry in
