@@ -176,9 +176,13 @@
         ],
         "gtmetrix": [
             "gtmetrix_account_status",
+            "gtmetrix_get_lighthouse_audits",
+            "gtmetrix_get_report",
+            "gtmetrix_get_resource_summary",
             "gtmetrix_get_test_status",
             "gtmetrix_list_browsers",
             "gtmetrix_list_locations",
+            "gtmetrix_list_report_resources",
             "gtmetrix_list_simulated_devices",
             "gtmetrix_list_tests",
             "gtmetrix_start_test"

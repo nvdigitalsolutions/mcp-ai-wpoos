@@ -31,6 +31,10 @@ final class FakeGtmetrixClient implements GtmetrixClientInterface
     /**
      * Responses keyed by the exact path, then by the path before any query.
      *
+     * A row may carry `status`, `data`, `meta`, `links`, `location`,
+     * `rate_limit` and `document`; the last is the raw body a report-resource
+     * request answers with.
+     *
      * @var array<string, array<string, mixed>>
      */
     public array $responses = array();
@@ -74,6 +78,7 @@ final class FakeGtmetrixClient implements GtmetrixClientInterface
             'rate_limit' => is_array($row['rate_limit'] ?? null)
                 ? $row['rate_limit']
                 : array('limit' => 0, 'remaining' => null, 'reset' => null),
+            'document'   => is_array($row['document'] ?? null) ? $row['document'] : array(),
         );
     }
 }

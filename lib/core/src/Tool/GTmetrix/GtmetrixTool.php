@@ -142,6 +142,65 @@ abstract class GtmetrixTool extends AbstractTool implements ToolCapabilityFlagsI
     }
 
     /**
+     * A numeric field with its type preserved, or null when absent.
+     *
+     * `number()` truncates, which is right for a byte count and wrong for a
+     * cumulative layout shift of 0.05 or a score of 99.5.
+     */
+    protected function numeric(mixed $value): int|float|null
+    {
+        return is_numeric($value) ? $value + 0 : null;
+    }
+
+    /**
+     * A path-safe id from the arguments, or '' when absent or unusable.
+     *
+     * WordPress passed the argument through `sanitize_text_field()`, which
+     * leaves `/` and `..` intact; the id becomes a path segment here, so it is
+     * restricted to the characters GTmetrix ids actually use.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     */
+    protected function identifierArg(array $arguments, string $key): string
+    {
+        $value = array_key_exists($key, $arguments) && is_scalar($arguments[$key])
+            ? trim((string) $arguments[$key])
+            : '';
+
+        return 1 === preg_match('/^[A-Za-z0-9_-]+$/', $value) ? $value : '';
+    }
+
+    /**
+     * The body of a report-resource response.
+     *
+     * Most resources answer a bare object (`lighthouse.json`,
+     * `resource-summary`); a few wrap it in a JSON:API datum
+     * (`analysis-options`, filmstrip). Both shapes are accepted.
+     *
+     * @param array<string, mixed> $response Transport response.
+     *
+     * @return array<string, mixed>
+     */
+    protected function resourceBody(array $response): array
+    {
+        $document = is_array($response['document'] ?? null) ? $response['document'] : array();
+
+        if (array() === $document && is_array($response['data'] ?? null)) {
+            $document = array('data' => $response['data']);
+        }
+
+        $data = $document['data'] ?? null;
+
+        if (is_array($data)) {
+            $attrs = $data['attributes'] ?? null;
+
+            return is_array($attrs) ? $attrs : $data;
+        }
+
+        return $document;
+    }
+
+    /**
      * A boolean field from an API row.
      */
     protected function flag(mixed $value): bool

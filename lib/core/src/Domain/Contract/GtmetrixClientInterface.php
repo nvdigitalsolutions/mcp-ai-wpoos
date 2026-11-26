@@ -18,6 +18,10 @@
  * `Location: /reports/{id}` once a test completes, and a client that follows the
  * redirect hands the caller a report where it expected a test.
  *
+ * `document` is the decoded body as it arrived. Most endpoints wrap their
+ * resource in `data`, but a report resource answers a bare object; returning
+ * both shapes lets a tool read either without a second verb per resource.
+ *
  * Implementations throw {@see \Nvoos\Core\Domain\Error\GtmetrixApiException}
  * rather than returning an error value, so a tool cannot forget to check.
  *
@@ -56,7 +60,8 @@ interface GtmetrixClientInterface
      *     meta: array<string, mixed>,
      *     links: array<string, mixed>,
      *     location: string,
-     *     rate_limit: array{limit: int, remaining: int|null, reset: int|null}
+     *     rate_limit: array{limit: int, remaining: int|null, reset: int|null},
+     *     document: array<string, mixed>
      * }
      */
     public function request(string $method, string $path, ?array $body = null): array;
