@@ -5202,3 +5202,75 @@ the toolkit should have, and it is why the client landed first.
 | tool readiness audit | **345 / 345**, servable **326** (+4), no violations |
 | toolkit parity | **124 of 854**; `cloudways` **8 ported**, 0 declined, 0 deferred, **52 remaining** |
 | phpcs | clean, no fixes needed |
+
+
+## 164.62 The order the owner asked for
+
+Fourteen toolkits were named, in this order, as the ones to finish first. The
+names are recorded with their manifest ids, because three of them are not the
+folder name and a later session should not have to guess.
+
+| # | asked for | toolkit id | declared | ported | declined | deferred | remaining |
+|---|---|---|---|---|---|---|---|
+| 1 | document generation | `document-generation` | 38 | 37 | 0 | 1 | **0** |
+| 2 | image generation | `image-production` | 22 | 12 | 6 | 4 | **0** |
+| 3 | crm | `crm` | 13 | 0 | 0 | 0 | **13** |
+| 4 | email outreach | `email-marketing` | 7 | 0 | 0 | 0 | **7** |
+| 5 | chat channels | `chat-channels` | 50 | 0 | 0 | 0 | **50** |
+| 6 | remote sites | `remote-connections` | 2 | 0 | 0 | 2 | **0** |
+| 7 | calendar booking | `calendar-booking` | 34 | 0 | 0 | 0 | **34** |
+| 8 | food and beverage | `food-beverage` | 23 | 0 | 0 | 0 | **23** |
+| 9 | places | `places` | 12 | 0 | 0 | 0 | **12** |
+| 10 | regulatory registration | `regulatory-registration` | 59 | 0 | 0 | 0 | **59** |
+| 11 | gtmetrix | `gtmetrix` | 23 | 0 | 0 | 0 | **23** |
+| 12 | social media | `social-media` | 32 | 3 | 0 | 0 | **29** |
+| 13 | orchestration | `orchestration` | 36 | 1 | 0 | 0 | **35** |
+| 14 | ecommerce | `ecommerce` | 44 | 1 | 0 | 0 | **43** |
+
+That is **328 of the 687 remaining slugs** — 48% of what is left, in eleven
+toolkits that still have work. Three of the fourteen are already at zero.
+
+### Three are already at zero, and one of those is not the same kind of zero
+
+- **`document-generation`** is genuinely ported: 37 of 38, with a single
+  deferral. The deferred slug is `get_uninvoiced_orders`, and its recorded
+  reason is that this runtime has no order model and no invoiced flag to look
+  for. Its prerequisite is the order model that arrives with `ecommerce`
+  (§164.58's register), so item 1 closes the last slug when item 14 lands. The
+  order is self-consistent: nothing needs to move.
+- **`image-production`** is genuinely ported to its dispositions: 12 ported, 6
+  declined (batch wrappers and duplicates of tools that already exist), 4
+  deferred (local Sharp operations the media worker does not serve).
+- **`remote-connections`** is at zero **by deferral**: both slugs are deferred,
+  not ported. `remote_wp_connection` is a 2,900-line convenience layer over a
+  stored connection; the recorded prerequisite is a core contract over the
+  connection store plus the action-to-endpoint map, because `query_remote_site`
+  takes a URL per call and offers neither named queries nor stored credentials.
+  `remote_shopify_connection` needs a Shopify Admin client and a credential
+  store, neither of which exists.
+
+  So "remote sites first" has two readings. If it means *dispositioned*, it is
+  done. If it means *working*, the deferral **is** the work, and it is worth
+  doing: the store exists, and the missing piece is one contract plus a map, not
+  a port. This section records the ambiguity rather than resolving it silently —
+  the build is recommended when the owner says remote sites should actually
+  answer queries.
+
+### What this changes
+
+- **`cloudways` pauses at 8 of 60.** The client and the eight tools are merged;
+  the remaining fifty-two wait behind this list.
+- **`crm` is first with real work.** It is also the one that needs measuring
+  before it is ported: 13 declared slugs sit on a 38-file engine, the entities
+  are custom post types (`mcp_ai_lead`, `mcp_ai_deal`, `mcp_ai_customer`,
+  `mcp_ai_crm_activity`, plus companies), which maps to `ContentStoreInterface`
+  the way the classroom family does. What needs measuring is not the storage but
+  the helpers: two tools lean on `WP_MCP_AI_CRM_Engine` (lead scoring and stage
+  history), two on `WP_MCP_AI_CRM_Relevance`, and one on `WP_MCP_AI_CRM_Gmail`.
+  Those are logic seams, not tables — the signals table the toolkit ships is
+  written by a support class no declared tool reads. The measurement slice
+  decides which helpers travel into the port and which are deferred.
+- **`email-marketing` is the smallest self-contained item** on the list: seven
+  tools over three transactional APIs (Brevo, Mailjet, Mailgun), each an HTTP
+  client plus a key. It is a natural pair of slices after the CRM survey if an
+  early merge is wanted while CRM's engine is still being mapped.
