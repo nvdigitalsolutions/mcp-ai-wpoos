@@ -99,6 +99,7 @@
             "get_unoptimised_images",
             "optimise_images_batch",
             "optimize_for_web",
+            "resize_image_smart",
             "upscale_image_ai"
         ],
         "infrastructure": [],
@@ -147,6 +148,8 @@
             "generate_video_captions",
             "generate_video_thumbnails",
             "get_video_metadata",
+            "get_videos_without_thumbnails",
+            "get_videos_without_transcripts",
             "merge_videos",
             "optimize_for_platform",
             "resize_video_resolution",

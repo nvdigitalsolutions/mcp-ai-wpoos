@@ -3991,3 +3991,106 @@ predates `visibility`, `slug`, `checksum`, `tenant_id` and `metadata`, all of wh
 `FileStore` writes. A package-only install cannot store a file at all. The app
 skeleton has the columns, so no deployment is affected; it needs its own migration
 and its own slice rather than a half-fix here.
+
+## 164.47 resize_image_smart, and the arguments the WordPress tool never read
+
+### The reference behaviour is not the reference implementation
+
+The WordPress tool with this slug documents itself as “smart content-aware image
+resizing” that “uses seam carving and other algorithms to maintain visual
+quality”. It offers four `mode` values and a `focus_area` enum that includes
+`face`. What `execute()` actually does is:
+
+| declared | executed |
+|---|---|
+| `mode: crop` | `resize( $w, $h, true )` — a centre crop |
+| `mode: fit` | `resize( $w, $h, false )` — a fit |
+| `mode: fill` | `resize( $w, $h, false )` — the same fit |
+| `mode: smart` | `resize( $w, $h, false )` — the same fit again |
+| `focus_area` | nothing — the string is never read |
+
+Three of the four modes are one engine call, and the parameter that sounds most
+capable is unused. Porting that schema would have produced a tool that returns
+success for an edit it did not perform, which is the recurring defect this
+programme keeps naming: **accepted-then-ignored**.
+
+### What the port offers instead
+
+The Laravel engine has a real operation for one of those four modes, so the port
+keeps exactly that one and refuses to pretend about the rest:
+
+- **Cover-crop to exact dimensions**, with the crop centred by `position`:
+  `attention` (Sharp's smartcrop saliency map), `entropy`, `centre`, or a fixed
+  edge. Seven values — only the ones `ImageProductionInterface::resizeSmart()`
+  documents, because a host implementing the contract is not obliged to know the
+  adapter's extra corner aliases.
+- **No `mode`.** `fit` and centre-crop already live on `resize_image`, which has
+  had them since 2.0.0. A second slug for the same two calls is a second way to
+  ask one question.
+- **No `focus_area`, no `face`.** Sharp's attention strategy is edge-and-skin-tone
+  saliency. It is not face detection and it is not seam carving, and the tool
+  description says so — a caller who believes either will mis-read a result it
+  cannot inspect.
+- **No `quality`.** `resizeSmart()` takes no quality argument (the adapter pins
+  90), so offering the knob would have been the same defect in a new place.
+
+### One dimension is enough, and that is the honest part
+
+The WordPress usage notes promise the missing dimension is derived from the
+aspect ratio. That promise is worth keeping, and it is the one behaviour that is
+strictly better here than in WordPress: deriving needs the source size, so it goes
+through `ImageProcessingInterface::getInfo()` from the geometry engine. A host that
+bound the production half and not the geometry half refuses with
+`no_dimension_source` rather than rounding the unknown to a square.
+
+### One round trip, two capability refusals
+
+`resizeSmart()` posts one `POST /api/image/transform` call with
+`fit: cover` and the resolved `position`; the result metadata is read from that
+same response, so a smart crop is one worker request, not two. The tool asks
+`supports( 'resize_smart' )` — which maps to the worker's `image_smart_crop`
+capability — **before** spending the request, and refuses by name when the worker
+does not advertise it. The feature test asserts both halves: that `fit` and
+`position` reach the engine, and that a worker without the capability never sees a
+transform request at all.
+
+### The other ten slugs on this toolkit
+
+`image-production` is now closed at 22 declared — 12 ported, 6 declined, 4
+deferred, **0 remaining**. The register carries the full reasons; in short:
+
+| disposition | slugs |
+|---|---|
+| declined | `apply_watermark_batch`, `batch_process_images`, `generate_image_ai`, `generate_image_variations`, `remove_image_background`, `text_to_image_prompt_optimizer` |
+| deferred | `get_unwatermarked_images`, `image_inpainting`, `optimize_image_sharp`, `remove_background` |
+
+Two of the declines are worth naming because they are not aliases: `batch_process_images`
+would need a multi-operation `/transform`, because each geometry call takes a path
+and returns a persisted path, so a chain is one round trip and one intermediate
+file per step — a worker contract change, not a tool. `apply_watermark_batch` is a
+loop over a per-image edit, and the video counterpart is already served.
+
+The four deferrals are all blocked on a named prerequisite rather than on effort:
+a watermark role on the derivative store (the store's `ROLES` are still poster,
+caption and frame), a mask argument on the worker edit route, a multi-operation
+transform, and a matting engine (`rembg` or a `removebg_api_key`), none of which is
+bound. A deferral is not a decision to do less; it is a statement about what would
+have to exist first.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **2,901 / 18,994** (14 tool tests, plus 2 manifest data sets) |
+| adapter PHPUnit | **448 / 2,143**, OK |
+| `ImageProductionToolsTest` (app, SQLite) | **27 / 27**, 138 assertions (2 added) |
+| tool readiness audit | **317 / 317**, servable **298** (+1), no violations |
+| toolkit parity | **96 of 854**; `image-production` **12 of 22**, 0 remaining |
+
+### A pre-existing defect, reported not repaired
+
+The tail of §164.46 is corrupted on `alpha-working`: a paragraph and the
+measurement table are spliced together (`| gate | value |e tool will list the video
+again …`), which is what a bad conflict resolution looks like. It predates this
+slice and repairing it means reconstructing text, so it is left for its own change
+rather than folded into a slice whose diff should be insertions only.

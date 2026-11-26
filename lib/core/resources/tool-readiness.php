@@ -2133,6 +2133,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProcessingAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'resize_image_smart' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ResizeImageSmartTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerImageProduction over `POST /api/image/transform` (resize op with `fit: cover` and the `position` argument, capability `image_smart_crop`). The WordPress tool with this slug advertises four `mode` values and a `focus_area` including `face`, but collapses three of the four onto one engine call and never reads `focus_area`; this row offers only the seven positions the contract documents. A single missing dimension is derived from the source aspect ratio through ImageProcessingInterface::getInfo().',
+			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProductionToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'resize_video_resolution' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ResizeVideoResolutionTool',
 			'readiness' => 'ready',
