@@ -61,6 +61,7 @@ use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\OfficeWriterInterface;
 use Nvoos\Core\Domain\Contract\PdfMutatorInterface;
 use Nvoos\Core\Domain\Contract\PdfOcrInterface;
+use Nvoos\Core\Domain\Contract\PdfPageRendererInterface;
 use Nvoos\Core\Domain\Contract\PdfTextExtractorInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
@@ -144,6 +145,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerImageProduction;
 use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfMutator;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfOcr;
+use Nvoos\Laravel\Adapter\MediaWorkerPdfPageRenderer;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfTextExtractor;
 use Nvoos\Laravel\Adapter\MediaWorkerSocialComposer;
 use Nvoos\Laravel\Adapter\MediaWorkerSocialPublisher;
@@ -284,6 +286,12 @@ class NvoosServiceProvider extends ServiceProvider {
 		// matrix before claiming availability: a configured worker may predate
 		// the `/api/pdf/ocr` route, and a named refusal beats a 404 mid-run.
 		$this->app->bind( PdfOcrInterface::class, MediaWorkerPdfOcr::class );
+
+		// Page images for something that is not this host — a vision model, most
+		// often. The route is older than the `inline` argument, so the adapter asks
+		// for the narrower capability key: a worker that answers with paths this
+		// host cannot read would otherwise look like success.
+		$this->app->bind( PdfPageRendererInterface::class, MediaWorkerPdfPageRenderer::class );
 
 		// The docs corpus is a directory, not a service (Proposal 164 section
 		// 164.34). `oos.docs.corpus.root` empty means the five `docs_hub_*` tools
