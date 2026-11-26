@@ -144,7 +144,8 @@ beforeAll( async () => {
 		'export function handler(req, res) {\n' +
 			"\tres.statusCode = 200;\n" +
 			"\tres.setHeader('content-type', 'text/html; charset=utf-8');\n" +
-			"\tres.end('<html>APP HANDLER</html>');\n" +
+			"\tconst xfh = req.headers['x-forwarded-host'] || '';\n" +
+			"\tres.end('<html>APP HANDLER xfh=' + xfh + '</html>');\n" +
 			'}\n',
 		'utf8'
 	);
@@ -185,6 +186,7 @@ beforeAll( async () => {
 			NVOOS_MANAGE_SECRET: MANAGED_SECRET,
 			NVOOS_REVALIDATE_TOKEN: PUSH_TOKEN,
 			NVOOS_TARGET_SITE: '',
+			ASTRO_SITE: 'https://example.com',
 		},
 		stdio: [ 'ignore', 'pipe', 'pipe' ],
 	} );
@@ -374,6 +376,25 @@ describe( 'the emitted front controller', () => {
 
 		expect( response.status ).toBe( 200 );
 		expect( await response.text() ).toContain( 'APP HANDLER' );
+	} );
+
+	it( 'keeps a client host that is one of the app own names', async () => {
+		// Astro compares the browser Origin with Astro.url, which the pin feeds.
+		// Pinning EVERY request to the apex made a www visitor unrepresentable.
+		const apex = await fetch( `${ base }/api/health`, {
+			headers: { 'x-forwarded-host': 'example.com, edge' },
+		} );
+		expect( await apex.text() ).toContain( 'xfh=example.com' );
+
+		const www = await fetch( `${ base }/api/health`, {
+			headers: { 'x-forwarded-host': 'www.example.com' },
+		} );
+		expect( await www.text() ).toContain( 'xfh=www.example.com' );
+
+		const foreign = await fetch( `${ base }/api/health`, {
+			headers: { 'x-forwarded-host': 'evil.test' },
+		} );
+		expect( await foreign.text() ).toContain( 'xfh=example.com' );
 	} );
 
 	it( 'never serves outside dist/client', async () => {

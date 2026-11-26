@@ -668,13 +668,15 @@ const root = dirname(fileURLToPath(import.meta.url));
 const gate = createGate({ root });
 const statics = createStatic(join(root, 'dist', 'client'));
 
-const publicHost = (() => {
+const rawPublicHost = (() => {
 	try {
-		return new URL(process.env.ASTRO_SITE || '').hostname;
+		return new URL(process.env.ASTRO_SITE || '').hostname.toLowerCase();
 	} catch {
 		return '';
 	}
 })();
+const publicHost = rawPublicHost.replace(/^www\./, '');
+const knownHosts = publicHost ? [publicHost, 'www.' + publicHost] : [];
 
 const server = createServer((req, res) => {
 	(async () => {
@@ -682,7 +684,16 @@ const server = createServer((req, res) => {
 		// This is the configured origin, not a client value; Astro accepts it
 		// only because astro.config.mjs lists it in security.allowedDomains.
 		if (publicHost) {
-			req.headers['x-forwarded-host'] = publicHost;
+			// Keep the host the CLIENT used when it is one of this app's own names.
+			// Astro compares Origin with Astro.url, so pinning EVERY request to the
+			// apex makes a www visitor unrepresentable: the Origin can never match
+			// and every POST is refused (2026-11-26).
+			const incoming = String(req.headers['x-forwarded-host'] || req.headers.host || '')
+				.split(',')[0]
+				.trim()
+				.toLowerCase();
+			req.headers['x-forwarded-host'] =
+				knownHosts.indexOf(incoming) === -1 ? publicHost : incoming;
 			req.headers['x-forwarded-proto'] = 'https';
 		}
 		if (await gate.handle(req, res)) {

@@ -423,7 +423,22 @@ function sameOrigin(request: Request): boolean {
 		allowed.add(bare(value));
 		allowed.add('www.' + bare(value));
 	}
-	return allowed.has(host.toLowerCase());
+	return allowed.has( host.toLowerCase() );
+}
+
+/** A compact, non-secret reason for an origin refusal — surfaced as a header so
+ *  the next failure names its own cause instead of needing a debugger. */
+function originDetail( request: Request ): string {
+	return (
+		'origin=' +
+		( request.headers.get( 'origin' ) ?? '-' ) +
+		' host=' +
+		( request.headers.get( 'host' ) ?? '-' ) +
+		' xfh=' +
+		( request.headers.get( 'x-forwarded-host' ) ?? '-' ) +
+		' site=' +
+		( process.env.ASTRO_SITE ?? '-' )
+	);
 }
 
 /** Only an in-app path is accepted as a post-login destination. */
@@ -556,13 +571,16 @@ export const POST: APIRoute = async ({ request, cookies, url, clientAddress }) =
 			: errorRedirect('config');
 	}
 
-	if (!sameOrigin(request)) {
-		return json
-			? new Response(JSON.stringify({ error: 'Cross-origin sign-in is refused.' }), {
+	if ( ! sameOrigin( request ) ) {
+		const detail = originDetail( request );
+		const refusal = json
+			? new Response( JSON.stringify( { error: 'Cross-origin sign-in is refused.', detail } ), {
 					status: 403,
 					headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-			  })
-			: errorRedirect('origin');
+			  } )
+			: errorRedirect( 'origin' );
+		refusal.headers.set( 'x-nvoos-origin', detail );
+		return refusal;
 	}
 
 	const key = clientKey(request, clientAddress);
