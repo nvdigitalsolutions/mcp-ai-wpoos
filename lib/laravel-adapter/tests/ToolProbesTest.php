@@ -152,6 +152,13 @@ Probe Club,club
 			array( 'cloudways_get_server', array( 'server_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'cloudways_list_apps', array( 'server_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'cloudways_get_app', array( 'server_id' => 1, 'app_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.61 — services, operations and labels. Same reason: no credentials,
+			// so each proves the wiring and the client refusal.
+			array( 'cloudways_service_status', array( 'server_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_restart_service', array( 'server_id' => 1, 'service' => 'nginx' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_get_operation_status', array( 'operation_id' => 'flex-1' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_update_server_label', array( 'server_id' => 1, 'label' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
