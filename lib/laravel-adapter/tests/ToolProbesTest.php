@@ -398,6 +398,14 @@ Probe Club,club
 			// the id validator.
 			array( 'gtmetrix_start_test', array( 'url' => 'https://example.test/' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_get_test_status', array( 'test_id' => 'probe-test' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.93 — the four report readers. Same keyless probe host, so each
+			// answers the guard; the report id is valid so the refusal is the
+			// guard and not validation.
+			array( 'gtmetrix_get_report', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_get_lighthouse_audits', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_get_resource_summary', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_list_report_resources', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

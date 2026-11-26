@@ -22,6 +22,11 @@
  *    `Retry-After` or `X-RateLimit-Reset` and the caller decides.
  * 4. **The fixture switch is gone.** Tests inject `HttpClientInterface`; the
  *    committed JSON fixtures are the oracle, not a runtime branch.
+ * 5. **The decoded body is returned.** A report resource (`lighthouse.json`,
+ *    `resource-summary`) answers a bare object rather than a JSON:API datum,
+ *    and the WordPress client's `get_resource()` special-cased that per call.
+ *    Returning `document` alongside `data` lets one verb serve both shapes and
+ *    keeps the endpoint knowledge in the tools.
  *
  * @package Nvoos\Core
  * @since   3.0.0
@@ -166,6 +171,7 @@ final class GtmetrixClient implements GtmetrixClientInterface
                     'links'      => array(),
                     'location'   => $this->header($response, 'location'),
                     'rate_limit' => $this->rateLimit($response),
+                    'document'   => array(),
                 );
             }
 
@@ -195,6 +201,7 @@ final class GtmetrixClient implements GtmetrixClientInterface
             'links'      => is_array($decoded['links'] ?? null) ? $decoded['links'] : array(),
             'location'   => $this->header($response, 'location'),
             'rate_limit' => $this->rateLimit($response),
+            'document'   => $decoded,
         );
     }
 

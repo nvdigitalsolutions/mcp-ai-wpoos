@@ -8234,3 +8234,93 @@ is the more instructive: it made a correct reserve-and-read cycle look broken.
 Next: slice 3, the reports — `gtmetrix_get_report`,
 `gtmetrix_get_lighthouse_audits`, `gtmetrix_get_resource_summary` and
 `gtmetrix_list_report_resources`.
+
+## 164.93 `gtmetrix`, slice 3 — the reports, and links that were never read
+
+The four report readers: `gtmetrix_get_report`,
+`gtmetrix_get_lighthouse_audits`, `gtmetrix_get_resource_summary` and
+`gtmetrix_list_report_resources`. The toolkit moves from 7 to **11 of 23**.
+
+### The transport gained one key
+
+A report resource answers a *bare* object: `lighthouse.json` is the Lighthouse
+report, `resource-summary` is a map of seven categories. A JSON:API test or
+report answers `{"data": {...}}`. The WordPress client kept a separate
+`get_resource()` method that unwrapped `attributes` when present per call.
+
+`request()` now also returns `document` — the decoded body as it arrived — and
+`GtmetrixTool::resourceBody()` accepts either shape (a wrapped datum unwraps to
+`attributes`; a bare object is returned whole). One verb still serves every
+endpoint, and the endpoint name stays in the tool. The alternative, a client
+method per resource, is the second copy of the API surface this contract
+exists to avoid.
+
+### Corrections
+
+1. **The report links live beside `attributes`.** JSON:API, the published v2.0
+documentation and every committed fixture agree: a report datum is
+`{type, id, attributes, links}`. WordPress read `$report['attributes']['links']`,
+so `get_report` always answered `resources: []` and
+`list_report_resources` always answered `count: 0` on a real response. Both
+read the sibling block now. This is the slice-defining bug: two tools whose
+whole purpose is the resource inventory could not see one.
+2. **The annotation table is keyed by link name.** The API names links `har`,
+`lighthouse`, `resource_summary`, `optimized_images`, `report_pdf`; the
+WordPress table was keyed by endpoint names (`net.har`, `lighthouse.json`,
+`resource-summary`, `optimized-images.tar`, `report.pdf`). Every lookup missed
+and fell through to "not sensitive", so **`har` — a raw network capture, and
+one of the two resources the client refuses to fetch — was listed as
+downloadable**. The corrected table carries both names (`name` is the link
+key, `resource` the endpoint), and adds `report_pdf_full`, `report_url` and
+`filmstrip-frame`, which the WordPress table never had.
+3. **An unknown impact band is refused.** WordPress treated any unrecognised
+`min_impact` as "no filter", so a typo returned the full list while reading as
+a filtered one. `None` is a data band, not a filter value, and is refused with
+the same message.
+4. **The audit limit is checked before the append.** WordPress appended first
+and compared after, so `limit: 0` still returned one audit; it is bounded to
+1–200 here.
+5. **Numbers keep their type.** WordPress passed attributes through, so an
+absent key was a PHP notice, and a cumulative layout shift of 0.05 survived by
+luck. `numeric()` preserves int/float and answers `null` when absent; a
+non-scalar category label falls back to the category name instead of reaching
+the reply as an array.
+
+### Adaptations
+
+- **No snapshot preference.** WordPress preferred a report the poller had
+  snapshotted locally. The core has no poller (section 164.92), so there is
+  nothing to prefer and the report is read live; a host with its own store can
+  front the tool.
+- Report ids are validated against `[A-Za-z0-9_-]+` before becoming a path
+  segment. WordPress ran `sanitize_text_field()`, which leaves `/` and `..`
+  intact.
+- The audit reader orders by `_impactScore`, the documented bands (0.12, 0.24,
+  0.36, 0.48), and returns the LCP phase breakdown with `estimated: true` when
+  the API omitted the phases.
+- The resource table records the documented add-on costs (a PDF render is +0.2
+  credits, a full PDF +0.3), which is why the notes mention credits rather than
+  a boolean field.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,877 / 22,996** (20 tests and 81 assertions added) |
+| adapter `ToolProbesTest` | **231 / 1,594**, 2 skipped, 0 failures — four new probes |
+| tool readiness audit | **451 / 451**, servable **432** (+4), no violations |
+| toolkit parity | **230 of 854**; `gtmetrix` **11 ported**, 0 declined, 0 deferred, **12 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The four probes answer the not-configured refusal, because the guard runs
+before validation and the probe host binds no API key; each passes a valid
+report id so the refusal is the guard and not the id validator. Payload shapes,
+the two corrections above and the estimated-phase fallback are pinned in
+`lib/core` against fixture-shaped responses.
+
+The link names and the sibling placement were re-verified against the live v2.0
+documentation on 2026-11-27 (changelog current to 2026-11-18), not inferred from
+the fixtures alone.
+
+Next: slice 4, the score engine — `gtmetrix_analyze_report` and
+`gtmetrix_compare_reports`.
