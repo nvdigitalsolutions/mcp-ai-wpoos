@@ -6917,10 +6917,158 @@ The adapter's probe host now defines `read_content`, `edit_content` and
 `delete_content` permissively in `ToolProbesTest`, matching the dedicated
 content-store suites; per-user policy remains covered there.
 
-Next is the **schedules** group (10 tools): `create_pro_schedule`,
+## 164.80 `orchestration`, slice 4 — the ten schedule tools
+
+The declared group is ten tools over one record: `create_pro_schedule`,
 `list_pro_schedules`, `update_pro_schedule`, `delete_pro_schedule`,
 `dry_run_pro_schedule`, `get_schedule_run_history`,
 `get_schedule_latest_result`, `plan_schedules_from_workflow`,
-`render_schedule_result` and `configure_schedule_widget_defaults` — which needs
-a schedule store and runner contract over the machinery the Laravel app
-skeleton already carries. After that, `research and content` (5).
+`render_schedule_result` and `configure_schedule_widget_defaults`.
+
+### The seam is a new contract, not the app's table
+
+WordPress keeps definitions, run history and result envelopes in three options
+(`wp_mcp_ai_pro_schedules`, `wp_mcp_ai_pro_schedule_history`,
+`wp_mcp_ai_pro_schedule_results`) managed by a 5,000-line static class. The app
+skeleton has an `nvoos_schedules` table and a `ScheduleRunner`, but a tool in
+`lib/core` cannot touch Eloquent, and no tool should depend on the schema of a
+host's runner. So the seam is **`ScheduleStoreInterface`**: definitions, runs
+and envelopes behind nine methods, with `JsonScheduleStore` as the bundled
+implementation. One file per id holds all three arrays, as the autonomous
+session store does, because a history entry and its result envelope belong to
+the same definition and one atomic write cannot leave them disagreeing. A host
+that already has a runner can implement the contract and keep the tools.
+
+### The id is derived, and that is load-bearing
+
+WordPress hashes a type-specific key with `md5()`: hook plus args for `task`,
+type plus name plus first-run timestamp for everything else. Two consequences
+the port keeps:
+
+- Re-creating an **identical task schedule is an upsert**. `save()` therefore
+  preserves the history and results already stored for the id — editing a task
+  by re-creating it does not erase its run record. A test creates the same task
+twice, asserts one record, and asserts a run appended in between survives.
+- Two non-task schedules planned for the same 09:00 would collide.
+  `plan_schedules_from_workflow` therefore offsets each successive first run by
+  60 seconds, exactly as WordPress did, and a test pins the 60-second gap.
+
+### The re-arm rule, written into the record
+
+`update_pro_schedule` is a partial update, and four interactions with
+`timestamp` are easy to get wrong. They are now stated in the tool and pinned
+by tests:
+
+1. An explicit `timestamp` wins after validation.
+2. Disabling stores `timestamp = 0`; a paused schedule reports `null`.
+3. A consumed one-shot (`schedule: single`, `run_count > 0`) is **not** re-armed
+   by a metadata-only save — renaming it does not make it fire again.
+4. A cadence change or a re-enable arms exactly one new interval from now.
+   A metadata change on a live schedule leaves the armed time alone.
+
+### Intervals are fixed seconds, and the drift is named
+
+Every slug in `ScheduleInterval` is a number of seconds — the four core
+intervals plus the eight the Pro addon registers. `daily` is 86,400 s, not "the
+same local time tomorrow", so a daily schedule shifts by an hour in local time
+across a daylight-saving change. That is WordPress's behaviour, documented in
+Trac #17957, and the same model every fixed-interval scheduler has: a job that
+must keep a wall-clock time reschedules a single event after each run instead of
+extrapolating an interval. The port keeps the model and states the limitation in
+the readiness rows rather than silently switching to cron expressions; the
+`next_runs` projection extrapolates from the stored timestamp at the fixed
+interval. The research basis for that choice is the misfire handling in Quartz
+Scheduler (`MISFIRE_INSTRUCTION_DO_NOTHING` skips missed fire times and waits for
+the next scheduled one), which is the semantic `wp_next_scheduled()` has, not a
+catch-up loop.
+
+### Results are stored, never delivered
+
+No tool in this group executes anything. `result_delivery`, the notify
+credentials and `max_retries` are stored for a host runner; `dry_run_pro_schedule`
+resolves nothing external, and `render_schedule_result` renders an envelope a
+runner already recorded. That is the same split as WordPress, where the manager
+records and the tools read, and it keeps every tool's capability flags honest.
+
+### Four divergences, each deliberate
+
+1. **`html-safe` escapes instead of running kses.** WordPress passed
+authenticated `raw` + `html-safe` output through `wp_kses_post()`. The core has
+no kses, and returning unfiltered HTML from a tool is the wrong default, so
+`raw` mode escapes every value with `htmlspecialchars(ENT_QUOTES, 'UTF-8')`.
+2. **`widget_defaults` merges deeply.** WordPress merged `display` with a
+shallow `array_merge()` and re-sanitised, so supplying only
+`widget_defaults.title` reset the stored `render_mode` to `summary-card` and
+`refresh_interval` to 0 — silent data loss in a partial update whose schema
+gives the caller no warning. Both display writers (`update_pro_schedule` and
+`configure_schedule_widget_defaults`) merge that one nested object key-by-key;
+a caller that supplies the whole object sees identical behaviour.
+3. **An unset timestamp is `null`, not 1970.** `wp_date(DATE_ATOM, 0)` rendered
+`1970-01-01T00:00:00+00:00` for a run that never started. The shared
+`ScheduleDefinition::iso()` returns `null` for 0, so "no run" stays
+distinguishable from a run at the epoch.
+4. **`workflow_builder` is declined as a schedule type.** The WordPress manager
+supported it but verified the workflow against the `wp_mcp_ai_pro_workflows`
+option store, which the core does not have, and the tool schema never offered
+the type. `create_pro_schedule` accepts the four types the manager genuinely
+implements.
+
+### Capabilities are the effective ones
+
+Every schedule tool except two declares `edit_posts` in WordPress, but
+`execute()` checks `manage_options` first, so that is what the port declares for
+`create_`, `list_`, `update_`, `delete_`, `dry_run_`, `plan_`, and
+`configure_`. `get_schedule_latest_result` and `render_schedule_result` accept
+`read_private_posts` **or** `manage_options`; the core contract names one
+capability, so both declare the narrower `read_private_posts`, which an
+administrator role holds.
+
+### Per-tool notes
+
+`list_pro_schedules`' type enum is the four the manager supports; WordPress
+offered three and omitted `assistant_run`, so a filter for it was impossible.
+Filters are ANDed, ordering is priority then name, and `next_run` is `null` for
+a paused or unarmed schedule.
+
+`dry_run_pro_schedule` keeps WordPress's four warnings — paused, no cadence,
+unregistered cadence, no projected runs — and reports `timezone: UTC` because
+the core has no site timezone. The action preview omits the assistant title
+(`''`), since there is no post store to resolve it from.
+
+`get_schedule_run_history` reads the 50-entry ring buffer, newest first, with
+`limit` clamped to 1–50. `get_schedule_latest_result` treats "no runs yet" as a
+success with `envelope: null`, not an error.
+
+`render_schedule_result` passes the schedule and envelope to a renderer that is
+pure with respect to them; only the `timeline` mode reads the store, because it
+is inherently multi-run. Unknown modes fall back to `summary-card`.
+
+`plan_schedules_from_workflow` reproduces the WordPress keyword tables in their
+order: explicit `suggested_*`, then cadence inference (hourly → twice-daily →
+monthly → weekly → daily, then a follow-up/review/check/respond/monitor
+heuristic), then the batch default. An **invalid** `suggested_cadence` falls to
+the default rather than to inference, as it did before. Text input supports
+`## Category` headings and strips bullet/number prefixes. Three site-state
+defaults have no core counterpart and are named rather than faked: times are
+UTC, `notify_email` defaults to `''` instead of `admin_email`, and
+`default_assistant_id` is accepted without a post-status check; an invalid
+recipient is dropped rather than failing the batch.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,575 / 21,522** (50 tests and 157 assertions added) |
+| adapter `ToolProbesTest` | **190 / 1,335**, 2 skipped, 0 failures — ten new probes |
+| tool readiness audit | **410 / 410**, servable **391** (+10), no violations |
+| toolkit parity | **189 of 854**; `orchestration` **31 ported**, 0 declined, 0 deferred, **5 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The adapter binds `ScheduleStoreInterface` to a `JsonScheduleStore` rooted at
+`oos.schedules_root` / `NVOOS_SCHEDULES_ROOT`, defaulting to
+`storage_path('schedules')`. The ten probes create one schedule through the real
+store, list it back, and use an impossible id for every reader and writer, so
+both the success and refusal paths run against the bound implementation.
+
+Next is **research and content** (5 tools), the last of the declared
+`orchestration` group.
