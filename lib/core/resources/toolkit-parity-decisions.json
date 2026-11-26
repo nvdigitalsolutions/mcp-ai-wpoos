@@ -53,6 +53,22 @@
             "decision": "declined",
             "reason": "Superseded by create_image_variation, which is served. The two are separate WordPress slugs for one capability, so a port would give an agent two names for one call and no way to choose between them."
         },
+        "get_jetappointment_providers": {
+            "decision": "deferred",
+            "reason": "It reads provider rows out of JetAppointment's own tables, which exist only when JetEngine and JetAppointment are installed on a WordPress site. This runtime stores appointments in the content store and has no JetEngine booking data layer, so the tool would either return an empty list or fabricate one. Prerequisite: a JetAppointment client (table or REST access with credentials) and the provider-to-local-record mapping."
+        },
+        "get_jetappointment_services": {
+            "decision": "deferred",
+            "reason": "Services are JetAppointment rows, not the local mcp_service records that create_service and import_services manage, so porting the reader without the client would answer a question about data this runtime cannot see. Prerequisite: the JetAppointment client, plus a mapping from Jet service ids to _service_external_id so an import stays idempotent."
+        },
+        "get_jetbooking_instances": {
+            "decision": "deferred",
+            "reason": "JetBooking instances are booking configurations held in JetEngine tables, and the local service catalogue models none of their fields. Prerequisite: a JetBooking client, plus a decision on whether an instance maps to a service, a location or both; the answer shapes the service record, so it has to precede the port."
+        },
+        "get_jetbooking_units": {
+            "decision": "deferred",
+            "reason": "Units are the rentable inventory rows in JetBooking's tables and have no local representation. Inventing a content type for them before the JetBooking client exists would be a schema guess. Prerequisite: the JetBooking client, and a unit model that check_availability and get_available_slots can read, so a unit is actually bookable rather than merely stored."
+        },
         "get_queued_videos": {
             "decision": "deferred",
             "reason": "Lists media-library attachments filtered by _mcp_video_status and _mcp_video_target_platform. Nothing on this runtime writes either: the only writer in WordPress is upload_video_batch, which is itself unported. A port today could only answer with an empty list, and an empty list reads as a finding rather than as a missing model. Prerequisite: a video processing and upload job model. Deferred, not declined, because the query is sound once something writes the status."
@@ -149,9 +165,29 @@
             "decision": "deferred",
             "reason": "It is the outbound half: it creates or updates activities in iSAMS, which is a write to a system of record that cannot be stood up or tested here. Prerequisite: an iSAMS client with per-institution credentials."
         },
+        "sync_from_jetappointment": {
+            "decision": "deferred",
+            "reason": "An inbound sync needs somewhere to put the rows and a way to recognise them on the next run. Prerequisite: the JetAppointment client, a sync-state store holding the last cursor per provider, and an id map from Jet ids to local ids so a second run updates instead of duplicating."
+        },
+        "sync_from_jetbooking": {
+            "decision": "deferred",
+            "reason": "The same shape as the JetAppointment inbound sync, against JetBooking. Prerequisite: the JetBooking client, the sync-state store, and the unit and instance mapping that the two JetBooking readers also need; building the sync first would freeze a mapping nobody has agreed."
+        },
+        "sync_google_calendar": {
+            "decision": "deferred",
+            "reason": "The Google Calendar API syncs incrementally with a per-calendar syncToken and returns nextSyncToken with the last page; an expired token answers 410 GONE and the client must clear its storage and run a full sync. None of those pieces exist here. Prerequisite: an OAuth credential store with refresh, a per-calendar sync-state store, and deletion tombstones; without them a resync cannot tell a deleted event from one that was never imported."
+        },
+        "sync_outlook_calendar": {
+            "decision": "deferred",
+            "reason": "The Microsoft Graph delta query returns an @odata.deltaLink to replay changes from, and answers 410 with syncStateNotFound or syncStateInvalid when that state expires, at which point the client restarts with a full sync. Prerequisite: the same OAuth credential store and sync-state store as the Google sync, plus a delta-link cursor per calendar and the tombstones a resync needs."
+        },
         "sync_students_from_isams": {
             "decision": "deferred",
             "reason": "It imports student records from iSAMS, so it needs the iSAMS client and a stable match key before it can create or update anyone. Prerequisite: an iSAMS client with per-institution credentials."
+        },
+        "sync_to_jetappointment": {
+            "decision": "deferred",
+            "reason": "This is the one Jet tool that writes into the WordPress side, so it needs credentials with write scope and a conflict rule before it can be safe. Prerequisite: the JetAppointment client with write access, an outbound id map, and a conflict policy that says which side wins when both changed since the last cursor."
         },
         "text_to_image_prompt_optimizer": {
             "decision": "declined",
