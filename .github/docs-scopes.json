@@ -8,7 +8,8 @@
     "**/*.min.css",
     "**/*.bundle.js",
     "examples/nvoos-dictate/vendor/**",
-    "addons/canvas/assets/canvas/**"
+    "addons/canvas/assets/canvas/**",
+    "tests/fixtures/headers/**"
   ],
   "scopes": [
     {
