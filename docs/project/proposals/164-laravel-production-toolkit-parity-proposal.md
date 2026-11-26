@@ -7737,3 +7737,115 @@ probes would see.
 Next in the queue: **notifications** (4). The final **9** stay on the register:
 the seven Jet tools need a booking-provider contract and the two external syncs
 need a credential store plus a sync-state store.
+
+## 164.88 `calendar-booking`, slice 7 — notifications, and a contract that gained attachments
+
+This slice ports the four notification tools. All four send mail through
+`EmailServiceInterface`, so the rules that were previously copied — or missing —
+in each tool now live once in `CalendarNotification`.
+
+### The send log
+
+A successful notification appends to `_notification_log`:
+
+| key | meaning |
+|---|---|
+| `kind` | `confirmation`, `reschedule_invitation`, or `reminder:{hours_before}` |
+| `revision` | the appointment revision, which is also its ICS `SEQUENCE` |
+| `sent_at` | the UTC time the transport accepted the message |
+| `message_id` | what the transport returned, when it returns one |
+
+**Revision is the reschedule count.** `reschedule_appointment` already appends
+one `_activity_log` entry per move, so counting those entries is the RFC 5545
+sequence without a second key to keep in step. A confirmation sent before a
+reschedule therefore does not suppress the confirmation owed afterwards.
+**Only successful sends are logged**, so a transport failure stays retryable, and
+the log is capped at 50 entries. `resend: true` overrides the suppression.
+
+Splitting the reminder kind by `hours_before` matters: a 24-hour and a 2-hour
+reminder are different notifications, and the original schema carried the value
+without ever letting it distinguish anything.
+
+### The mail contract gained attachments
+
+WordPress declared `include_ical`, defaulted it to `true` and never read it. The
+runtime could not honour it either: `EmailServiceInterface` carried `to`,
+`subject`, `body` and `is_html`, and no implementation had an attachment path.
+Repeating the declaration without the capability is the defect this port exists
+to remove, so the contract now documents `attachments` as a list of
+`{name, mime, content}` with raw bytes, and the Laravel adapter builds them as
+`rawAttachments` on the mailable. Attachment names are flattened to one path
+segment, and the list is capped at five files and 5 MiB because it arrives from
+tool arguments. The interface states that a transport which cannot carry a file
+must refuse the message rather than drop it.
+
+An invite is published (`METHOD:PUBLISH`) unless the caller supplies
+`organizer_email`, in which case it is a `METHOD:REQUEST` with `ORGANIZER` and an
+`ATTENDEE;RSVP=TRUE` — a REQUEST with no organizer is not conformant. The `UID`
+is `appointment-{id}@{host}`, with the host taken from
+`RuntimeIdentityInterface` when bound and the RFC 2606 reserved `nvoos.invalid`
+otherwise.
+
+### Corrections
+
+1. **A failed send is an error in all four tools.** WordPress returned
+   `success => true` with `email_sent`, `reminder_sent` or `sent` false, so a
+   caller had to read a nested flag to learn that nothing was delivered.
+2. **`include_ical` is implemented** for the single and batch confirmations.
+3. **The batch reads `_appointment_type`.** It collected `_service_type`, a key
+   no writer sets, so every preview was blank.
+4. **`method` and `reminder_type` are honoured.** WordPress accepted any string
+   for the batch method — `sms` and `both` then matched nothing and every row
+   reported "no delivery method succeeded" — and always emailed the reminder
+   while logging `type => email` whatever was asked. No SMS transport is bound
+   here, so both values are refused up front.
+5. **The reschedule gate reads the key and value the writers store.** WordPress
+   checked `_appointment_status === 'no_show'`; the toolkit writes `_status`
+   with the hyphenated `no-show`, and no writer ever set that key — so the
+   original skipped every appointment the toolkit created, including real
+   no-shows. The underscore spelling is still accepted for migrated records.
+6. **`hours_before` is bounded and meaningful.** It went through `absint` and
+   was used only in the log.
+7. **The batch envelope reflects the outcome.** A run where every send failed is
+   `delivery_failed` with the per-booking detail, not a success with a failure
+   counter.
+8. **Batches are bounded** at 50 recipients per call.
+9. **The reschedule subject is a plain string** — WordPress passed the client
+   name to a `sprintf()` format with no placeholder — and the closing line asks
+   the client to reply instead of visiting a booking page that the message never
+   linked.
+10. **Capabilities are the ones WordPress enforced.** The two single-send tools
+    declared `edit_posts` and required `manage_options`; the two batch tools
+    declared and enforced `edit_posts`, and stay there.
+
+### Adaptations
+
+- **SMS is refused, not faked.** WordPress reached an SMS gateway through a
+  filter that returns `false` by default; this runtime binds no SMS contract, so
+  declining the value is the honest answer.
+- **Times are rendered as ISO 8601.** The stored values are UTC; printing them as
+  WordPress did would silently label a UTC instant as local.
+- **A confirmable record without a readable start sends no invite** and says so
+  (`ical_included: false`) rather than attaching an empty calendar.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,819 / 22,488** (47 tests and 145 assertions added) |
+| adapter suite | **227 / 1,562**, 2 skipped, 0 failures — four new probes and two mailer tests |
+| tool readiness audit | **440 / 440**, servable **421** (+4), no violations |
+| toolkit parity | **219 of 854**; `calendar-booking` **25 ported**, 0 declined, 0 deferred, **9 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The two singleton probes answer the not-found refusal; the two batch probes run
+the dry-run default over an impossible id, which proves enumeration and the skip
+path without sending anything. The send path, the invite contents and the
+duplicate suppression are pinned in `lib/core`.
+
+Next: the final **9**. The seven Jet tools (providers, services, units,
+instances, and the three syncs) need a booking-provider contract before a port
+would be more than a wrapper over an unbound dependency, and the Google and
+Outlook syncs need an OAuth credential store plus a sync-state store with
+tombstones. Both are register decisions — `deferred` with the prerequisite named,
+or `declined` with the reason — not porting work.

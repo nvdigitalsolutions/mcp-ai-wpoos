@@ -31,10 +31,16 @@ use Nvoos\Laravel\Mail\OutboundMessage;
 
 class EmailService implements EmailServiceInterface {
 
+	/** The most files one message may carry. */
+	private const MAX_ATTACHMENTS = 5;
+
+	/** The total raw bytes one message may attach. */
+	private const MAX_ATTACHMENT_BYTES = 5242880;
+
 	/**
 	 * Send one message.
 	 *
-	 * @param array<string, mixed> $message Keys: to, subject, body, is_html.
+	 * @param array<string, mixed> $message Keys: to, subject, body, is_html, attachments.
 	 * @return array<string, mixed>
 	 */
 	public function send( array $message ): array {
@@ -47,10 +53,67 @@ class EmailService implements EmailServiceInterface {
 		}
 
 		Mail::to( $to )->send(
-			new OutboundMessage( $subject, $body, ! empty( $message['is_html'] ) )
+			new OutboundMessage(
+				$subject,
+				$body,
+				! empty( $message['is_html'] ),
+				$this->attachments( $message['attachments'] ?? array() )
+			)
 		);
 
 		return array( 'success' => true, 'to' => $to );
+	}
+
+	/**
+	 * Normalise the attachment list a caller supplied.
+	 *
+	 * Entries without a name or content are dropped rather than sent as empty
+	 * files, and the name is flattened to a single path segment so a caller
+	 * cannot traverse out of the mailer's temp directory. The count and total
+	 * size are capped because the list comes from tool arguments.
+	 *
+	 * @param mixed $raw Attachment list.
+	 * @return list<array{name: string, mime: string, content: string}>
+	 */
+	private function attachments( mixed $raw ): array {
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+
+		$normalised = array();
+		$bytes      = 0;
+
+		foreach ( $raw as $attachment ) {
+			if ( ! is_array( $attachment ) ) {
+				continue;
+			}
+
+			$name    = isset( $attachment['name'] ) && is_string( $attachment['name'] ) ? trim( $attachment['name'] ) : '';
+			$content = isset( $attachment['content'] ) && is_string( $attachment['content'] ) ? $attachment['content'] : '';
+			$mime    = isset( $attachment['mime'] ) && is_string( $attachment['mime'] ) ? trim( $attachment['mime'] ) : '';
+
+			if ( '' === $name || '' === $content ) {
+				continue;
+			}
+
+			$bytes += strlen( $content );
+
+			if ( $bytes > self::MAX_ATTACHMENT_BYTES ) {
+				continue;
+			}
+
+			$normalised[] = array(
+				'name'    => str_replace( array( '/', '\\', "\0" ), '-', $name ),
+				'mime'    => '' === $mime ? 'application/octet-stream' : $mime,
+				'content' => $content,
+			);
+
+			if ( count( $normalised ) >= self::MAX_ATTACHMENTS ) {
+				break;
+			}
+		}
+
+		return $normalised;
 	}
 
 	/**

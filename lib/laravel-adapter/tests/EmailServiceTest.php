@@ -60,6 +60,69 @@ final class EmailServiceTest extends TestCase {
 		Mail::assertSent( OutboundMessage::class, 1 );
 	}
 
+	public function test_attachments_reach_the_mailable(): void {
+		Mail::fake();
+
+		$result = $this->app->make( EmailServiceInterface::class )->send(
+			array(
+				'to'          => 'one@example.com',
+				'subject'     => 'Invite',
+				'body'        => 'Body',
+				'attachments' => array(
+					array(
+						'name'    => 'appointment-1.ics',
+						'mime'    => 'text/calendar',
+						'content' => "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n",
+					),
+				),
+			),
+		);
+
+		$this->assertTrue( $result['success'] );
+
+		Mail::assertSent(
+			OutboundMessage::class,
+			static function ( OutboundMessage $mail ): bool {
+				return 1 === count( $mail->fileAttachments )
+					&& 'appointment-1.ics' === $mail->fileAttachments[0]['name']
+					&& 'text/calendar' === $mail->fileAttachments[0]['mime'];
+			}
+		);
+	}
+
+	public function test_an_unusable_attachment_is_dropped_and_its_name_flattened(): void {
+		Mail::fake();
+
+		$this->app->make( EmailServiceInterface::class )->send(
+			array(
+				'to'          => 'one@example.com',
+				'subject'     => 'Hi',
+				'body'        => 'Body',
+				'attachments' => array(
+					array(
+						'name'    => '',
+						'mime'    => 'text/plain',
+						'content' => 'x',
+					),
+					array(
+						'name'    => '../escape.ics',
+						'mime'    => '',
+						'content' => 'y',
+					),
+				),
+			),
+		);
+
+		Mail::assertSent(
+			OutboundMessage::class,
+			static function ( OutboundMessage $mail ): bool {
+				return 1 === count( $mail->fileAttachments )
+					&& '..-escape.ics' === $mail->fileAttachments[0]['name']
+					&& 'application/octet-stream' === $mail->fileAttachments[0]['mime'];
+			}
+		);
+	}
+
 	public function test_an_invalid_message_is_refused_without_sending(): void {
 		Mail::fake();
 

@@ -37,7 +37,16 @@ class OutboundMessage extends Mailable {
 		public readonly string $subjectLine,
 		public readonly string $body,
 		public readonly bool $isHtml = false,
+		/** @var list<array{name: string, mime: string, content: string}> */
+		public readonly array $fileAttachments = array(),
 	) {
+		foreach ( $this->fileAttachments as $attachment ) {
+			$this->rawAttachments[] = array(
+				'data'    => $attachment['content'],
+				'name'    => $attachment['name'],
+				'options' => array( 'mime' => $attachment['mime'] ),
+			);
+		}
 	}
 
 	public function envelope(): Envelope {

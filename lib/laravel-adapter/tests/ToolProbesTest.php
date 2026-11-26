@@ -374,6 +374,14 @@ Probe Club,club
 			// appointments the other probes would see.
 			array( 'generate_booking_link', array( 'appointment_type' => 'Probe consultation' ), 'success', array( 'link_id', 'link', 'booking_path', 'token' ), array( 'user_id' => 1 ) ),
 			array( 'optimize_schedule', array( 'date_range_start' => '2099-01-01', 'date_range_end' => '2099-01-31' ), 'success', array( 'analysis', 'recommendations', 'optimization_goal' ), array( 'user_id' => 1 ) ),
+
+			// §164.88 — notifications. The two singletons answer the refusal path
+			// for an impossible appointment; the two batches run their dry-run
+			// default, which proves enumeration and the skip path without sending.
+			array( 'send_booking_confirmation', array( 'appointment_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_appointment_reminder', array( 'appointment_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_booking_confirmations', array( 'booking_ids' => array( 999999 ) ), 'success', array( 'total', 'skipped', 'recipients' ), array( 'user_id' => 1 ) ),
+			array( 'send_reschedule_invitation', array( 'appointment_ids' => array( 999999 ) ), 'success', array( 'total', 'skipped', 'recipients' ), array( 'user_id' => 1 ) ),
 		);
 	}
 

@@ -27,6 +27,10 @@
             "list_events",
             "optimize_schedule",
             "reschedule_appointment",
+            "send_appointment_reminder",
+            "send_booking_confirmation",
+            "send_booking_confirmations",
+            "send_reschedule_invitation",
             "set_availability_rules",
             "update_appointment",
             "update_event"
