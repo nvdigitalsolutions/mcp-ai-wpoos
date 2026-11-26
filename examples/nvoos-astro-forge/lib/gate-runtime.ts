@@ -530,9 +530,11 @@ export function createStatic(rootDir) {
 		if (req.method !== 'GET' && req.method !== 'HEAD') {
 			return false;
 		}
+		let requestUrl;
 		let pathname;
 		try {
-			pathname = decodeURIComponent(new URL(String(req.url ?? '/'), 'http://localhost').pathname);
+			requestUrl = new URL(String(req.url ?? '/'), 'http://localhost');
+			pathname = decodeURIComponent(requestUrl.pathname);
 		} catch {
 			return false;
 		}
@@ -549,6 +551,26 @@ export function createStatic(rootDir) {
 		}
 		const info = await stat(file).catch(() => null);
 		if (!info || !info.isFile()) {
+			// Directory-index canonicalisation. build.format 'directory' writes a
+			// page to <slug>/index.html only, so /about-us matches no route on a
+			// managed build and would 404. WordPress 301s that form instead, and
+			// every legacy inbound link and the sitemap canonical depend on it.
+			if (!pathname.endsWith('/index.html')) {
+				const index = resolve(root, '.' + pathname + '/index.html');
+				if (index !== root && index.startsWith(root + sep)) {
+					const indexInfo = await stat(index).catch(() => null);
+					if (indexInfo && indexInfo.isFile()) {
+						res.statusCode = 301;
+						res.setHeader('location', pathname + '/' + requestUrl.search);
+						res.setHeader('content-type', 'text/plain; charset=utf-8');
+						if (!res.hasHeader('cache-control')) {
+							res.setHeader('cache-control', 'public, max-age=300, must-revalidate');
+						}
+						res.end();
+						return true;
+					}
+				}
+			}
 			return false;
 		}
 		res.statusCode = 200;
@@ -675,14 +697,17 @@ export function createStatic( rootDir: string ): {
 			const response = res as {
 				statusCode: number;
 				setHeader( name: string, value: string ): void;
+				hasHeader( name: string ): boolean;
 				end( body?: string ): void;
 			};
 			if ( req.method !== 'GET' && req.method !== 'HEAD' ) {
 				return false;
 			}
+			let requestUrl: URL;
 			let pathname: string;
 			try {
-				pathname = decodeURIComponent( new URL( String( req.url ?? '/' ), 'http://localhost' ).pathname );
+				requestUrl = new URL( String( req.url ?? '/' ), 'http://localhost' );
+				pathname = decodeURIComponent( requestUrl.pathname );
 			} catch {
 				return false;
 			}
@@ -695,6 +720,23 @@ export function createStatic( rootDir: string ): {
 			}
 			const info = await stat( file ).catch( () => null );
 			if ( ! info || ! info.isFile() ) {
+				// Directory-index canonicalisation — see the emitted module above.
+				if ( ! pathname.endsWith( '/index.html' ) ) {
+					const index = path.resolve( root, `.${ pathname }/index.html` );
+					if ( index !== root && index.startsWith( root + path.sep ) ) {
+						const indexInfo = await stat( index ).catch( () => null );
+						if ( indexInfo && indexInfo.isFile() ) {
+							response.statusCode = 301;
+							response.setHeader( 'location', pathname + '/' + requestUrl.search );
+							response.setHeader( 'content-type', 'text/plain; charset=utf-8' );
+							if ( ! response.hasHeader( 'cache-control' ) ) {
+								response.setHeader( 'cache-control', 'public, max-age=300, must-revalidate' );
+							}
+							response.end();
+							return true;
+						}
+					}
+				}
 				return false;
 			}
 			response.statusCode = 200;

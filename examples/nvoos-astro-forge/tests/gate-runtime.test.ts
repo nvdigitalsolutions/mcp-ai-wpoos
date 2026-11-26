@@ -120,6 +120,14 @@ beforeAll( async () => {
 
 	await writeFile( path.join( dir, 'dist', 'client', 'index.html' ), '<html>REAL SITE</html>', 'utf8' );
 	await writeFile( path.join( dir, 'dist', 'client', 'robots.txt' ), 'User-agent: *', 'utf8' );
+	// A prerendered page: build.format 'directory' writes this and ONLY this,
+	// so /about-us has no route of its own (WordPress 301s the un-slashed form).
+	await mkdir( path.join( dir, 'dist', 'client', 'about-us' ), { recursive: true } );
+	await writeFile(
+		path.join( dir, 'dist', 'client', 'about-us', 'index.html' ),
+		'<html>ABOUT PAGE</html>',
+		'utf8'
+	);
 	await writeFile(
 		path.join( dir, 'dist', 'client', 'coming-soon', 'index.html' ),
 		'<html>COMING SOON PAGE</html>',
@@ -335,6 +343,37 @@ describe( 'the emitted front controller', () => {
 		expect( response.status ).toBe( 403 );
 		expect( response.headers.getSetCookie().length ).toBe( 0 );
 		await response.body?.cancel();
+	} );
+
+	it( 'canonicalises a prerendered page to its slashed URL', async () => {
+		// Without this redirect /about-us matches no route on a managed build and
+		// 404s — the exact regression against the WordPress site it replaces.
+		const response = await fetch( `${ base }/about-us?utm=x`, {
+			headers: { cookie: `${ BYPASS_COOKIE }=${ encodeURIComponent( bypassToken() ) }` },
+			redirect: 'manual',
+		} );
+
+		expect( response.status ).toBe( 301 );
+		expect( response.headers.get( 'location' ) ).toBe( '/about-us/?utm=x' );
+		// The gate's no-store must survive the redirect.
+		expect( response.headers.get( 'cache-control' ) ).toContain( 'no-store' );
+		await response.body?.cancel();
+
+		const followed = await fetch( `${ base }/about-us/`, {
+			headers: { cookie: `${ BYPASS_COOKIE }=${ encodeURIComponent( bypassToken() ) }` },
+		} );
+		expect( followed.status ).toBe( 200 );
+		expect( await followed.text() ).toContain( 'ABOUT PAGE' );
+	} );
+
+	it( 'leaves a genuinely missing path to the app, never redirects it', async () => {
+		const response = await fetch( `${ base }/not-a-page`, {
+			headers: { cookie: `${ BYPASS_COOKIE }=${ encodeURIComponent( bypassToken() ) }` },
+			redirect: 'manual',
+		} );
+
+		expect( response.status ).toBe( 200 );
+		expect( await response.text() ).toContain( 'APP HANDLER' );
 	} );
 
 	it( 'never serves outside dist/client', async () => {
