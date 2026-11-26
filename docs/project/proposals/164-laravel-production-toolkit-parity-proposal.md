@@ -7626,7 +7626,114 @@ The create probe writes a record; the import probe runs its dry-run path, so it
 proves parsing and per-row validation against the real store without adding rows
 the other probes would see.
 
-Next in the queue: **booking links and optimisation** (2) and **notifications**
-(4). The final **9** need a register decision: the seven Jet tools on a
-booking-adapter contract and the two external syncs on an OAuth credential
-store.
+Next in the queue: **notifications** (4), then the final **9**, which need a
+register decision: the seven Jet tools on a booking-adapter contract and the
+two external syncs on an OAuth credential store.
+
+## 164.87 `calendar-booking`, slice 6 — booking links, and a stub replaced
+
+This slice ports `generate_booking_link` and `optimize_schedule`. The first is a
+working WordPress tool with two storage defects; the second is a stub, so the
+port implements the capability rather than the shape it happened to return.
+
+### The booking link record
+
+An `mcp_booking_link` content item with the WordPress meta family, minus the
+secret and plus two keys:
+
+| key | meaning |
+|---|---|
+| `_token_hash` | `hash( 'sha256', $token )`; the only stored copy of the secret |
+| `_appointment_type` | the label, also used in the record title |
+| `_duration_minutes` | the link's default appointment length |
+| `_expiry_days` | the requested window, echoed for round-trip |
+| `_expires_at` | absolute UTC deadline, **authoritative** |
+| `_max_bookings` | `0` means unlimited |
+| `_bookings_count` | incremented by the resolver, starts at `0` |
+
+`_expires_at` is the authority because it is absolute. Recomputing from
+`_expiry_days` later would move the deadline every time the record was read, and
+no WordPress consumer ever did the conversion at all. The relative value is kept
+only so an exported record reads back the numbers it was created with.
+
+### Corrections: the link
+
+1. **The token is hashed at rest.** WordPress wrote `_token` verbatim, so every
+   backup, replica and support export contained working booking links. The token
+   is returned once and only its hash is stored; `findByToken()` hashes the
+   presented value and matches one field, so a wrong token and a missing link are
+   indistinguishable.
+2. **Expiry is absolute.** See above.
+3. **The bounds are enforced.** Duration reuses the appointment bounds (15–480),
+   expiry is capped at 3,650 days, and a negative `max_bookings` is refused.
+   WordPress ran `absint` over all three, which turned a negative cap into
+   "unlimited" — the opposite of the request.
+4. **The capability is the one WordPress enforced.** The WordPress class declared
+   `edit_posts` and then required `manage_options` inside `execute()`. Minting a
+   public access grant is an administrative act, so the port declares the
+   enforced capability. `optimize_schedule` has the same discrepancy and the same
+   decision.
+5. **`booking_url` is not fabricated.** The runtime has no site URL, so the
+   payload always carries `booking_path`. `booking_url` is filled only when a
+   `RuntimeIdentityInterface` is bound and reports an http(s) `site_url`.
+
+### Corrections: the optimiser
+
+WordPress returned `utilization_rate: 0.75` and `average_gap_minutes: 30` as
+literals whatever the calendar held, and `generate_recommendations()` ignored
+both of its parameters, so every call produced the same `consolidation` entry
+with `potential_improvement: '15%'`. The
+`WP_MCP_AI_Calendar_Orchestration_Optimization` class in the same folder is
+retention and autoload housekeeping, not schedule analysis, so there was no
+engine to port. The port measures instead:
+
+1. **Counts come from the records.** Cancelled, no-show and end-before-start rows
+   are excluded and reported separately, so the range total reconciles with the
+   record count. An incomplete row is not given a default duration.
+2. **Gaps are real.** Consecutive spans are compared against the furthest end
+   seen so far, so an overlap cannot manufacture a gap, and the largest gap names
+   its date and both endpoints.
+3. **Capacity comes from `business_hours`.** With no rules configured,
+   `utilization_rate` is `null` and `capacity.basis` says `unconfigured`.
+   `outside_hours_booked_minutes` explains a utilisation above `1.0` rather than
+   hiding it.
+4. **The goal is honoured and validated.** The three goals produce different,
+   measured recommendations; an unknown value is refused instead of defaulted.
+5. **No invented percentages.** Every recommendation carries the minutes, counts
+   and dates it was derived from.
+6. **The range is bounded and the scan is honest.** Both dates are required
+   `Y-m-d` values in order, the range is capped at 366 days, and a collection
+   larger than the 1,000-row scan reports `scan.truncated` rather than silently
+   analysing a prefix.
+
+### Adaptations
+
+- The `ai-feature` flag WordPress declared is not carried: no model is called, so
+  the claim would be false. The tool declares the local-read vocabulary.
+- Resolution is not a tool. WordPress served `/book/{token}` from the front end,
+  so `BookingLinkDefinition::state()` carries the three checks a resolver needs —
+  publication, expiry and the booking cap — and fails closed on an unreadable
+  deadline.
+- The parity baseline was regenerated. Four toolkits (`calendar-booking`,
+  `cloudways`, `crm`, `food-beverage`) still had empty arrays, which made the
+  regression check blind to them; the diff is the four arrays filling in and the
+  two new slugs.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,772 / 22,343** (50 tests and 174 assertions added) |
+| adapter `ToolProbesTest` | **216 / 1,524**, 2 skipped, 0 failures — two new probes |
+| tool readiness audit | **436 / 436**, servable **417** (+2), no violations |
+| toolkit parity | **215 of 854**; `calendar-booking` **21 ported**, 0 declined, 0 deferred, **13 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The link probe writes a record through the real adapter and returns the token
+once; the analysis probe answers an empty far-future range, proving the `BETWEEN`
+query and the unconfigured-capacity path without leaving appointments the other
+probes would see.
+
+Next in the queue: **notifications** (4). The final **9** stay on the register:
+the seven Jet tools need a booking-provider contract and the two external syncs
+need a credential store plus a sync-state store.

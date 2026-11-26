@@ -1496,6 +1496,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ProviderConnectorToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => true ),
 		),
+		'generate_booking_link' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Calendar\\GenerateBookingLinkTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the booking-link minter (Proposal 164 section 164.87). WordPress stored a 32-character token in plaintext meta, which made every database copy a set of working links; the port returns the token once and stores only its SHA-256 hash. The expiry is written as an absolute UTC deadline because no WordPress consumer ever derived one from the relative day count, and duration, expiry and the booking cap are bounded and refused rather than passed through absint, which silently turned a negative limit into unlimited. The runtime has no site URL, so the response carries booking_path and fills booking_url only when a RuntimeIdentityInterface reports an http(s) site_url. Resolution rules live in the same class so a host route checks publication, expiry and the cap instead of trusting the token alone.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarBookingLinksTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'generate_chart' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateChartTool',
 			'readiness' => 'pure',
@@ -2772,6 +2781,15 @@ return array(
 			'reason' => 'MediaWorkerImageProduction over `POST /api/image/batch`: width cap, modern encoder, progressive JPEG. EXIF is always stripped on re-encode, so `strip_metadata` is not offered rather than accepted and ignored.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProductionToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'optimize_schedule' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Calendar\\OptimizeScheduleTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the schedule optimiser (Proposal 164 section 164.87), which on WordPress was a stub: utilization_rate 0.75 and average_gap_minutes 30 were literals, and the goal argument was accepted then ignored, so every call returned the same hardcoded 15 percent consolidation. The port measures the book instead. Counted appointments exclude cancelled and no-show rows and report them, booked minutes sum appointment durations, gaps are computed against the furthest end so an overlap cannot manufacture one, and capacity comes from the business_hours rules or is reported as unconfigured rather than guessed. Each goal produces different recommendations carrying the minutes and dates they were derived from. The scan ceiling and the one-year range cap are reported as truncated instead of silently sampling.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarScheduleOptimisationTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'paper_store_export' => array(
 			'class' => 'Nvoos\\Core\\Tool\\PaperStoreExportTool',
