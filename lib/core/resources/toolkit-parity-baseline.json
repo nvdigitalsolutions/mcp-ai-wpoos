@@ -102,7 +102,9 @@
             "resize_image_smart",
             "upscale_image_ai"
         ],
-        "infrastructure": [],
+        "infrastructure": [
+            "toolkit_cpt"
+        ],
         "jetengine": [],
         "jev": [],
         "math": [],

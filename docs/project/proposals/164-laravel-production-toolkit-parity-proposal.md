@@ -4199,3 +4199,93 @@ singleton through the REST API, and the unit suite runs against the real
 The tail of §164.46 remains spliced on `alpha-working` (a paragraph and the
 measurement table run together). It predates both this slice and §164.47, and
 repairing it means reconstructing text, so it stays a finding for its own change.
+
+## 164.49 The four near-closed toolkits, and the one that was not an alias
+
+**On the numbering:** §164.48 is the `paper-store` slice, which merged ahead of
+this one; the two are independent, so this section simply takes the next free
+number.
+
+### What a sweep is for
+
+Four toolkits were each one or two slugs from closing, and the cheap assumption
+was that all of them were aliases of something already served. That assumption
+was wrong once, in the way that matters.
+
+### `toolkit_cpt` is a capability, not a synonym
+
+The first reading of the WordPress tool was "generic CPT CRUD, and this runtime
+has no CPTs", which would have made it a decline. It is not: the Pro toolkits'
+entities live here as **typed content records** through `ContentStoreInterface` —
+`mcp_ai_project`, `mcp_ai_task` and the rest are the toolkit tables, exactly as
+the CPTs are on WordPress. `save_post` even takes `post_type` plus arbitrary
+`meta_input`, so the *shape* of the data was never the gap.
+
+The gap was in what could be asked. Measured against the served tools, five of
+the eight actions already existed:
+
+| action | already served by |
+|---|---|
+| `get_schema` | `get_post_type_schema` |
+| `create_item` / `update_item` | `save_post` (`post_type` + `meta_input`) |
+| `get_item` | `get_post` |
+| `delete_item` | `delete_post` |
+
+Three did not, and they are the reason the tool was built:
+
+- **`list_types`** — nothing enumerates the registered types. `get_post_type_schema`
+  *requires* a type, so an agent that does not already know the slug has no way to
+  discover it. This is the discovery step the whole workflow starts from.
+- **`list_items` without a search term** — `search_content` requires `query`,
+  hard-codes `publish`, and cannot filter by meta. "Tasks assigned to 42" is not
+  expressible there.
+- **`bulk_create` for any type** — `bulk_import` handles tasks and projects only.
+
+Keeping all eight actions rather than only the three is deliberate: the tool's
+value is one discoverable surface for an agent that learned the WordPress one, and
+a surface with holes in it sends that agent back to guessing.
+
+### Where this port refuses and the reference normalises
+
+This is the part worth reading. The WordPress tool coerces silently at four
+points, and each coercion answers a different question than the caller asked:
+
+| reference behaviour | this port |
+|---|---|
+| unknown `compare` → `=` | refused, naming the 14 operators that exist |
+| unknown meta `type` → `CHAR` | refused, naming the 9 types |
+| meta key stripped to `[A-Za-z0-9_]` (`my-field` → `myfield`) | refused — a renamed field is a different field |
+| unknown `orderby` → `date` | refused; `menu_order` and `rand` are absent from the schema because the store cannot sort by them |
+
+The last one is the same rule the image tools follow: a parameter that is accepted
+and then ignored is worse than one that is not offered. `date` is refused for the
+same reason — this runtime stamps record dates from the store and has no way to
+set them, so accepting it would be a silent drop.
+
+### The three that are genuinely blocked
+
+| toolkit | slug | prerequisite |
+|---|---|---|
+| `architectural-design` | `generate_architectural_drawing` | a shared image-generation seam — its value is the structured-prompt compiler, and porting it today means a fourth copy of provider plumbing plus a second raster→SVG step the image tools already serve |
+| `vector-storage` | `prepare_file_for_vector_store` | an office-document reader — the runtime has the OCR and PDF half, but nothing parses XLSX/PPTX |
+| `document-generation` | `get_uninvoiced_orders` | an order model with an invoiced marker; there is no Order or Invoice entity here at all |
+
+Each is deferred rather than declined because the capability is worth having once
+the prerequisite exists. A deferral is a statement about ordering, not a decision
+to do less.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **2,961 / 19,242** (28 tests, plus 2 manifest data sets) |
+| adapter PHPUnit | **448 / 2,146**, OK — the new row constructs |
+| tool readiness audit | **320 / 320**, servable **301** (+1), no violations |
+| toolkit parity | **99 of 854**; four toolkits closed, three deferrals recorded |
+| licence boundary / phpcs | intact / clean |
+
+`infrastructure` closes at 1 of 1 ported. `architectural-design`,
+`vector-storage` and `document-generation` close at 0 remaining through their
+recorded deferrals, which is the arithmetic the register is designed to make
+visible: a deferred slug stays counted until someone builds the prerequisite, and
+these three are now documented rather than merely unexamined.
