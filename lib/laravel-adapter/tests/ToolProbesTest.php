@@ -188,6 +188,10 @@ Probe Club,club
 			// §164.68 — the accounting search. Defaults are benign here: all
 			// filters plus a date sort, so an empty corpus is a clean success.
 			array( 'crm_email_search_accounting', array(), 'success', array( 'records', 'total', 'filters', 'summary' ), array( 'user_id' => 1 ) ),
+
+			// §164.69 — the correspondence search. The default mode plus the meta
+			// sort answers an empty corpus with an empty list.
+			array( 'crm_email_search_correspondence', array(), 'success', array( 'contacts', 'total', 'filters' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
