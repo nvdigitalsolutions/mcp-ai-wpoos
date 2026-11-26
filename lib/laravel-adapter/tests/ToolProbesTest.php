@@ -321,6 +321,18 @@ Probe Club,club
 			array( 'schedule_channel_broadcast', array( 'message' => 'Probe broadcast.', 'channels' => array( 'slack' ), 'credentials' => array( 'slack' => array( 'webhook' => 'https://probe.example/hook' ) ), 'name' => 'Probe broadcast' ), 'success', array( 'schedule_id', 'channels', 'schedule' ), array( 'user_id' => 1 ) ),
 			array( 'export_assistant_blueprint', array( 'assistant_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'generate_research_report', array( 'title' => 'Probe report', 'sections' => array( array( 'heading' => 'Findings', 'content' => 'Probe finding.' ), array( 'heading' => 'Next steps', 'content' => 'Probe step.' ) ), 'citations' => array( 'Probe source' ) ), 'success', array( 'report', 'word_count', 'section_count' ), array( 'user_id' => 1 ) ),
+
+			// §164.82 — the appointment core. The create writes through the bound
+			// content store and, because the conflict check defaults on, it also
+			// proves the three-clause overlap meta query is accepted by the real
+			// adapter. The notification is off so the probe does not depend on the
+			// mail transport. The four id-taking tools are probed with an impossible
+			// id to prove the refusal path.
+			array( 'create_appointment', array( 'client_name' => 'Probe client', 'client_email' => 'probe@example.com', 'start_time' => '2099-01-01 09:00:00', 'duration_minutes' => 30, 'send_notification' => false ), 'success', array( 'appointment_id', 'start_time', 'end_time', 'status' ), array( 'user_id' => 1 ) ),
+			array( 'get_appointment_details', array( 'appointment_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'update_appointment', array( 'appointment_id' => 999999, 'location' => 'Nowhere' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cancel_appointment', array( 'appointment_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'reschedule_appointment', array( 'appointment_id' => 999999, 'new_start_time' => '2099-01-02 09:00:00' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

@@ -7176,3 +7176,105 @@ the probe still proves the tool is registered and refuses honestly.
 
 `orchestration` is complete. Next in the queue is **`calendar-booking`**
 (34 declared), then **`gtmetrix`** (23).
+
+## 164.82 `calendar-booking`, slice 1 — the appointment core
+
+The toolkit declares 34 tools across nine groups, all built on three
+WordPress CPTs, one option and two third-party booking plugins:
+
+| group | tools | storage |
+|---|---:|---|
+| appointment core | 5 | `mcp_appointment` |
+| availability | 4 | `mcp_appointment`, `mcp_blocked_time`, `wp_mcp_ai_business_hours` |
+| events | 6 | `mcp_ai_event` |
+| services | 2 | `mcp_service` + `mcp_service_category` |
+| booking links & optimisation | 2 | `mcp_booking_link`, `mcp_appointment` |
+| notifications | 4 | `mcp_appointment` + email |
+| triage | 2 | `mcp_appointment` |
+| JetAppointment / JetBooking | 7 | plugin adapters |
+| Google / Outlook sync | 2 | OAuth + external APIs |
+
+This slice ports the **appointment core**: `create_appointment`,
+`update_appointment`, `cancel_appointment`, `reschedule_appointment` and
+`get_appointment_details`. All five read and write one record type through
+`ContentStoreInterface`, keeping the `mcp_appointment` type and the
+`_client_*` / `_appointment_*` / `_status` / `_created_*` / `_activity_log` /
+`_change_history` meta family so an export round-trips.
+
+### Times are UTC wall-clock strings, parsed strictly
+
+WordPress stored site-local `Y-m-d H:i:s` (`current_time( 'mysql' )`). The core
+has no site timezone, so stored times are **UTC** and the tools say so. The
+parser accepts the documented format and ISO 8601 with an explicit offset, and
+normalises both to UTC; a relative expression such as `next friday` is refused.
+WordPress passed the string through `strtotime()`, then stored it **verbatim** —
+so a relative booking was stored as the literal text and never matched a slot.
+
+### Corrections
+
+1. **The overlap query missed contained appointments.** Two OR'd range clauses
+   together caught the cases where an existing booking starts inside the new
+   slot or encloses its end, but not one **entirely inside** it: for new
+   09:00–12:00 and existing 10:00–11:00, neither `existing.start <= 09:00` nor
+   `existing.end >= 12:00` holds, so the double booking was accepted. The port
+   uses the half-open test — `existing.start < new.end AND existing.end >
+   new.start` — three ANDed meta clauses the adapter executes directly.
+2. **A replace reported a status it had not stored.** `create_appointment`
+   leaves `_status` alone on the update path but returned `confirmed`; a
+   pending appointment was reported as confirmed. The port returns the stored
+   status.
+3. **A start-only update kept the old end.** Moving the start forward without
+   an end left the previous end in place — possibly before the new start — and
+   WordPress stored the negative-length booking. The port keeps the duration,
+   the same rule rescheduling uses.
+4. **A moved appointment kept its old time in the title.** The title embeds the
+   start (`Appointment: {client} - {start}`), and `reschedule_appointment`
+   never regenerated it, so every listing advertised the old slot. It is
+   regenerated now.
+5. **Writes trusted a capability instead of the record.** `update`,
+   `cancel` and `reschedule` checked only `manage_options`, then wrote to any
+   id; `get_appointment_details` read any id. The port applies the content
+   store's `edit` and `read` rules.
+6. **`cancelled_by` accepted any string.** It is validated against
+   `client` / `staff` / `system` and the effective value is reported.
+
+### Adaptations and what is not ported
+
+- **`target_system` accepts `nvoos` only.** WordPress could route a booking into
+  JetAppointment or JetBooking through `WP_MCP_AI_Booking_Adapter_Factory`; when
+  the adapter class was absent it silently fell through to the native path. No
+  adapter exists here, so any other value is a named validation error.
+- **Refunds are not ported.** WordPress raised
+  `wp_mcp_ai_process_appointment_refund` and recorded the result. The core has
+  no filter that can return a value and no refund gateway, so
+  `process_refund: true` reports `refund_processed: false` with a
+  `refund_error`, and nothing writes `_refund_processed`.
+- **The reschedule link is prose.** `offer_reschedule` interpolated
+  `home_url( '/book-appointment/' )`; the core has no site URL, so the email
+  asks the client to reply instead of linking to a page that may not exist.
+- **Email is optional and never fails a booking.** The four writing tools take
+  an optional `EmailServiceInterface`; a host without a transport, or a
+  transport that throws, still completes the write and reports
+  `notification_sent: false` plus `notification_error`.
+- **The event, availability, service, notification, triage, Jet and external-sync
+  groups** are untouched by this slice. The seven Jet tools and the two external
+  syncs need a register decision (a plugin adapter contract and an OAuth
+  credential store respectively) before they can be ported; the other twenty are
+  straightforward continuations of the CPT-over-content-store pattern.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,641 / 21,761** (34 tests and 127 assertions added) |
+| adapter `ToolProbesTest` | **200 / 1,401**, 2 skipped, 0 failures — five new probes |
+| tool readiness audit | **420 / 420**, servable **401** (+5), no violations |
+| toolkit parity | **199 of 854**; `calendar-booking` **5 ported**, 0 declined, 0 deferred, **29 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The create probe runs with the conflict check on, so it also proves the
+three-clause meta query against the real adapter's JSON meta column — the
+refusal path is probed with an impossible id for the other four tools.
+
+Next in the queue: **availability** (4), then **events** (6), **services** (2),
+**booking links and optimisation** (2), **notifications** (4) and **triage** (2).
