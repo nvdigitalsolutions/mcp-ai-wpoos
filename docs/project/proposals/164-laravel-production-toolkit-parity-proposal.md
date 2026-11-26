@@ -4590,3 +4590,55 @@ gets one when a session-capable `web_browser` has a reason to ask.
 | tool readiness audit | **323 / 323**, servable **304** (+1), no violations |
 | toolkit parity | **102 of 854**; `capture` **1 of 2** ported, 1 deferred, 0 remaining |
 | licence boundary / phpcs | intact / clean |
+
+## 164.55 The ECA dispositions reach the register
+
+**On the numbering:** §164.54 (the comparison) is open in its own change, so this
+section takes the next number; it is the register half of that section and changes
+no code.
+
+### What moved
+
+Twenty-one entries, in the shape §164.51 established: one declined, twenty
+deferred, each naming its own prerequisite rather than repeating a group label.
+
+| toolkit | before | after |
+|---|---|---|
+| `eca-management` | 13 ported, 0 declined, 0 deferred, **35 remaining** | 13 ported, **1 declined**, **20 deferred**, **14 remaining** |
+| all toolkits | 102 ported, 7 declined, 15 deferred, **730 remaining** | 102 / **8** / **35** / **709** |
+
+The fourteen that remain are exactly the "portable now" set §164.54 identified:
+the deletes, the reads over `_eca_attendance_log` and the schedule fields, the
+aggregates, the CSV pair, the term and schedule writers, and the two senders. They
+are now visible as the toolkit's remaining work instead of being hidden inside a
+count that also contained two dozen external integrations.
+
+### Why the one is declined and the twenty are not
+
+`research_eca` composes a research prompt and calls the model client. `deep_research`
+and `web_search` already serve that capability and the WordPress tool's own guidance
+points at them, so no prerequisite would make a third name worth a slot.
+
+The twenty are deferred because each *is* a capability with a named blocker: a
+Classroom client and the keystone course-to-ECA link, two school-MIS clients
+(iSAMS and SOCS are different vendors), and an event-to-action rule store with
+emitters. Declining them would say the capability is unwanted, which is not what
+§164.54 found.
+
+### The gate was exercised
+
+The register is read by `bin/toolkit-parity.php --check`, so the anti-vacuity check
+was repeated after the edit: an injected `"decision": "soon"` fails the check, and
+the restored file is byte-identical. `--write` then refreshed the baseline.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| toolkit parity | **102 of 854**; 8 declined, 35 deferred, **709 remaining**; `eca-management` 13/1/20/**14** |
+| `lib/core` PHPUnit | **2,999 / 19,433** — tests unchanged; assertions rise by 42 because the register checks now read 21 more rows |
+| tool readiness audit | **323 / 323**, servable **304**, unchanged (no tool) |
+| licence boundary | intact |
+
+The adapter suite is not implicated: it reads the readiness manifest, not the
+decisions register.

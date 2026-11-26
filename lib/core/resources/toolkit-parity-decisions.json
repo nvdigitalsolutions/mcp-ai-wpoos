@@ -9,6 +9,26 @@
             "decision": "declined",
             "reason": "It would be a chain of convert, resize and compress, and ImageProcessingInterface::resize/crop/rotate/convert each take a source path and return a persisted path, so a chain is one worker round trip and one intermediate file per step. A real batch needs a multi-operation `/transform` call, which is a worker contract change rather than a tool. The three served tools (optimise_images_batch, generate_responsive_images, compress_image) already cover the jobs this slug names, so there is nothing left to build behind the name."
         },
+        "classroom_course_analytics": {
+            "decision": "deferred",
+            "reason": "It aggregates enrolment, coursework and submission-completion metrics that only exist on the Classroom side; there is no local copy to compute over. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "configure_eca_notifications": {
+            "decision": "deferred",
+            "reason": "It stores notification rules whose triggers are enrollment and attendance changes. The adapter has a `nvoos_triggers` table but no tool surface and no emitters for those events, so a rule could be stored and never fire, which reads as a silent no-op rather than as a missing capability. Prerequisite: an event-to-action rule store plus emitters for ECA enrollment and attendance changes."
+        },
+        "create_classroom_course": {
+            "decision": "deferred",
+            "reason": "It provisions a course under a connected teacher account through the Classroom API, and nothing in this runtime holds a teacher account, an OAuth grant or a course id. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "create_classroom_coursework": {
+            "decision": "deferred",
+            "reason": "It creates coursework on a Classroom course, which requires both the client and the course id the keystone link would store. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "create_eca_workflow_rule": {
+            "decision": "deferred",
+            "reason": "It is the same substrate as configure_eca_notifications: a rule with a trigger and an action, evaluated on ECA events that nothing currently emits. Prerequisite: an event-to-action rule store plus emitters for ECA enrollment and attendance changes."
+        },
         "create_remotion_video": {
             "decision": "deferred",
             "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
@@ -45,9 +65,37 @@
             "decision": "deferred",
             "reason": "Inpainting needs a mask-capable engine. The media worker's `/edit` route takes an `operation` and a `prompt` and no mask channel, and neither bound provider offers one, so there is nothing to send the masked region to. Prerequisite: a mask argument on the worker edit route plus a provider that accepts it."
         },
+        "isams_query": {
+            "decision": "deferred",
+            "reason": "It reads pupils, employees, departments and terms from iSAMS through institution-specific credentials this runtime has no store for. Prerequisite: an iSAMS client with a credential store; the `_eca_isams_sync_id` field proves the schema anticipated the sync, not the transport."
+        },
+        "link_classroom_course_to_eca": {
+            "decision": "deferred",
+            "reason": "It is the keystone of the Classroom group: it writes the course-to-ECA link and the sync direction that every other Classroom slug reads. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce. Until that link exists, a port of any sibling could only refuse, which is why this one gates the other eleven."
+        },
+        "list_classroom_courses": {
+            "decision": "deferred",
+            "reason": "It lists the courses visible to a connected teacher account, which is a Classroom-side list this runtime cannot read or cache. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "list_classroom_guardians": {
+            "decision": "deferred",
+            "reason": "Guardian records live on the Classroom side and there is no student-to-guardian mapping here (the student row carries one email, `_student_email`). Prerequisite: a Google Classroom client plus a student-to-guardian mapping; the client alone would return rows nothing can be matched to."
+        },
+        "list_classroom_submissions": {
+            "decision": "deferred",
+            "reason": "Submission state only exists for a coursework item created through Classroom, and neither the item nor the course exists here. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
+        },
+        "manage_classroom_push_watch": {
+            "decision": "deferred",
+            "reason": "It registers, renews and removes Classroom push-notification watches, which needs the client *and* a publicly reachable callback URL that this deployment model does not provide. Prerequisite: a Google Classroom client plus a public webhook endpoint the worker or app can serve."
+        },
         "optimize_image_sharp": {
             "decision": "deferred",
             "reason": "It duplicates optimise_images_batch (which already batches convert and compress) plus the resize that batch_process_images would have added, so it is the same capability under a third name and lands with the multi-operation transform rather than beside it. Prerequisite: a multi-operation `/transform` call on the media worker."
+        },
+        "post_classroom_announcement": {
+            "decision": "deferred",
+            "reason": "It posts to a Classroom course stream, so it needs the client and a stored course id. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
         },
         "prepare_file_for_vector_store": {
             "decision": "deferred",
@@ -69,9 +117,45 @@
             "decision": "declined",
             "reason": "It shares the handler of remove_background, so it is a second slug rather than a second capability. The capability itself is deferred on this record; when a matting engine is bound, the single deferred slug will be ported and this alias stays declined because the served tool will answer for both names."
         },
+        "research_eca": {
+            "decision": "declined",
+            "reason": "It is a provider prompt preset: it composes a research prompt and calls the model client, and returns the text. deep_research and web_search already serve that capability, and the WordPress tool's own usage guidance points at both of them. A third name for \"research this topic\" would add a slug without adding a capability, so it is declined rather than deferred: no prerequisite would make the duplicate worth a slot."
+        },
+        "sync_classroom_courses_to_ecas": {
+            "decision": "deferred",
+            "reason": "It links existing ECAs by stored course id and optionally creates the rest, so it reads both the course list and the link the keystone would write. Prerequisite: a Google Classroom client plus the course-to-ECA link store (link_classroom_course_to_eca)."
+        },
+        "sync_classroom_roster_to_students": {
+            "decision": "deferred",
+            "reason": "It pulls a course roster into student records, matching on a Google user id this runtime does not store. Prerequisite: a Google Classroom client plus a `_student_google_id` (or equivalent) field on the student record; without the join key a sync would create duplicates rather than match."
+        },
+        "sync_eca_enrollments_from_isams": {
+            "decision": "deferred",
+            "reason": "It imports enrollment records for activities, so it depends on both the client and the student/activity rows a prior sync would create. Prerequisite: an iSAMS client with per-institution credentials."
+        },
+        "sync_ecas_from_isams": {
+            "decision": "deferred",
+            "reason": "It imports activities from iSAMS/SOCS into ECA records through the same client. Prerequisite: an iSAMS client with per-institution credentials."
+        },
+        "sync_ecas_from_socs": {
+            "decision": "deferred",
+            "reason": "SOCS is a different vendor from iSAMS with its own API and credentials, so it is a second client rather than a flag on the first. Prerequisite: a SOCS client with per-institution credentials."
+        },
+        "sync_ecas_to_isams": {
+            "decision": "deferred",
+            "reason": "It is the outbound half: it creates or updates activities in iSAMS, which is a write to a system of record that cannot be stood up or tested here. Prerequisite: an iSAMS client with per-institution credentials."
+        },
+        "sync_students_from_isams": {
+            "decision": "deferred",
+            "reason": "It imports student records from iSAMS, so it needs the iSAMS client and a stable match key before it can create or update anyone. Prerequisite: an iSAMS client with per-institution credentials."
+        },
         "text_to_image_prompt_optimizer": {
             "decision": "declined",
             "reason": "Every image generation tool here already hands free-text to a model that interprets it, so a separate optimiser is a second paid call that rewrites the caller's words without showing what changed. It also has no consumer in the tool portfolio: nothing calls it. Declined rather than deferred because there is no prerequisite that would make a hidden rewrite worth a slot."
+        },
+        "update_classroom_course": {
+            "decision": "deferred",
+            "reason": "It renames or re-states an existing Classroom course, so it needs the same client plus a stored course id to address. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
         },
         "upload_video_batch": {
             "decision": "deferred",
