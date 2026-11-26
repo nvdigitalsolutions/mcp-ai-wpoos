@@ -2049,6 +2049,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SearchAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'get_no_show_appointments' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\GetNoShowAppointmentsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the no-show reader (Proposal 164 section 164.85) and repairs the keys it queried. WordPress matched _appointment_status = no_show, _appointment_date and _service_type; the writers store _status with the hyphenated no-show, _start_time and _appointment_type, so the original could never match an appointment the toolkit created. The port reads the writer keys, includes both boundary days in the date window, validates and orders the range, sorts newest first in PHP because the store cannot order by meta, and reports truncated when the scan window was smaller than the collection. The row keeps the WordPress keys and adds client_phone and ISO timestamps; status reports the stored value instead of a hard-coded literal. Read-only: it never marks a status.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarTriageToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_open_meteo_forecast' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetOpenMeteoForecastTool',
 			'readiness' => 'ready',
@@ -2216,6 +2225,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'Ports the plan reader (Proposal 164 section 164.79). Progress and tasks are parsed from the markdown, so a hand-edited plan reports what it says; include_history is accepted and inert because no edit history exists; an empty completed_at is null and timestamps are ISO 8601 UTC. project_id is included only when set.',
 			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationPlanToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'get_unconfirmed_bookings' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\GetUnconfirmedBookingsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the pending-booking reader (Proposal 164 section 164.85) with the same key repair: _status = pending and no _confirmation_sent_at, over _start_time and _appointment_type, instead of the WordPress _appointment_status IN (unconfirmed, pending, empty), which no writer could produce. create_appointment now stamps _confirmation_sent_at when the transport accepts the notification, so a booking confirmed at creation is not listed again; a pending record with a stamp is excluded. Oldest first, boundary days included, truncated reported. Read-only.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarTriageToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_unoptimised_images' => array(

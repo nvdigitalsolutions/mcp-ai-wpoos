@@ -41,7 +41,7 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Tests\Support\FakeEventFiles;
-use Nvoos\Core\Tests\Support\FakeEventStore;
+use Nvoos\Core\Tests\Support\FakeCalendarStore;
 use Nvoos\Core\Tool\Calendar\CalendarEventDefinition;
 use Nvoos\Core\Tool\Calendar\CreateEventTool;
 use Nvoos\Core\Tool\Calendar\DeleteEventTool;
@@ -125,7 +125,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_create_writes_every_meta_key_and_the_all_day_flag(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $tool  = new CreateEventTool($this->errors, $store);
 
         $result = $tool->execute(
@@ -163,7 +163,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_create_stores_timed_events_in_utc_wall_clock(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $tool  = new CreateEventTool($this->errors, $store);
 
         $result = $tool->execute(
@@ -184,7 +184,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_create_refuses_incoherent_spans(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $tool  = new CreateEventTool($this->errors, $store);
 
         $cases = array(
@@ -205,7 +205,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_create_refuses_an_unknown_type_and_a_missing_project(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(50, CalendarEventDefinition::TASK_TYPE, 'A task', array());
         $tool = new CreateEventTool($this->errors, $store);
 
@@ -224,7 +224,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_create_replace_clears_omitted_fields(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(
             5,
             CalendarEventDefinition::TYPE,
@@ -270,7 +270,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_create_replace_honours_the_store_edit_rule(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(5, CalendarEventDefinition::TYPE, 'Theirs', array('_event_start_date' => '2026-02-01'));
         $store->access[5] = array('edit' => false);
 
@@ -287,7 +287,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_update_changes_only_the_supplied_fields(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(
             5,
             CalendarEventDefinition::TYPE,
@@ -320,7 +320,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_update_clears_times_and_recomputes_all_day(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(
             5,
             CalendarEventDefinition::TYPE,
@@ -348,7 +348,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_update_refuses_an_incoherent_result(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(
             5,
             CalendarEventDefinition::TYPE,
@@ -371,7 +371,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_update_refuses_an_unknown_type_and_a_non_list_attendees(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(5, CalendarEventDefinition::TYPE, 'Event', array('_event_start_date' => '2026-02-01'));
 
         $tool = new UpdateEventTool($this->errors, $store);
@@ -387,7 +387,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_delete_removes_the_event(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(5, CalendarEventDefinition::TYPE, 'Event', array());
 
         $tool   = new DeleteEventTool($this->errors, $store);
@@ -400,7 +400,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_delete_refuses_a_wrong_type_and_lost_access(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(5, CalendarEventDefinition::TASK_TYPE, 'Task', array());
         $store->seed(6, CalendarEventDefinition::TYPE, 'Event', array());
         $store->access[6] = array('delete' => false);
@@ -473,7 +473,7 @@ final class CalendarEventToolsTest extends TestCase
 
     public function test_list_reports_truncation_beyond_the_scan_ceiling(): void
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
 
         for ($id = 1; $id <= 1050; ++$id) {
             $store->seed(
@@ -736,9 +736,9 @@ final class CalendarEventToolsTest extends TestCase
     /**
      * Four events in a known order, one with a project and one with an attendee.
      */
-    private function eventFixture(): FakeEventStore
+    private function eventFixture(): FakeCalendarStore
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
 
         $store->seed(10, CalendarEventDefinition::TYPE, 'D', array('_event_start_date' => '2026-02-03', '_event_start_time' => '09:00'));
         $store->seed(11, CalendarEventDefinition::TYPE, 'A', array('_event_start_date' => '2026-02-01', '_event_start_time' => '', '_event_type' => 'deadline'));
@@ -752,9 +752,9 @@ final class CalendarEventToolsTest extends TestCase
     /**
      * A project spanning the year, a task and an event inside February.
      */
-    private function calendarFixture(): FakeEventStore
+    private function calendarFixture(): FakeCalendarStore
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
 
         $store->seed(
             100,
@@ -803,9 +803,9 @@ final class CalendarEventToolsTest extends TestCase
     /**
      * Project 10 with a task and an event, plus an event in another project.
      */
-    private function exportFixture(): FakeEventStore
+    private function exportFixture(): FakeCalendarStore
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
 
         $store->seed(
             10,
@@ -851,9 +851,9 @@ final class CalendarEventToolsTest extends TestCase
         return $store;
     }
 
-    private function emptyProjectStore(): FakeEventStore
+    private function emptyProjectStore(): FakeCalendarStore
     {
-        $store = new FakeEventStore();
+        $store = new FakeCalendarStore();
         $store->seed(10, CalendarEventDefinition::PROJECT_TYPE, 'Empty', array());
 
         return $store;

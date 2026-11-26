@@ -354,6 +354,12 @@ Probe Club,club
 			array( 'list_events', array(), 'success', array( 'count', 'total', 'events' ), array( 'user_id' => 1 ) ),
 			array( 'get_calendar_view', array( 'start_date' => '2099-01-01', 'end_date' => '2099-01-31' ), 'success', array( 'count', 'calendar' ), array( 'user_id' => 1 ) ),
 			array( 'export_calendar_ics', array( 'project_id' => 999999, 'download_file' => false ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.85 — the triage readers. Both answer an empty store, which
+			// proves the repaired meta keys are accepted by the real adapter
+			// instead of failing the query.
+			array( 'get_no_show_appointments', array(), 'success', array( 'count', 'total', 'appointments' ), array( 'user_id' => 1 ) ),
+			array( 'get_unconfirmed_bookings', array(), 'success', array( 'count', 'total', 'bookings' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
