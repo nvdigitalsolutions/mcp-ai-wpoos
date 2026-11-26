@@ -1036,6 +1036,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoFramesAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'fnb_audit_log' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Fnb\\FnbAuditLogTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the audit viewer (Proposal 164 section 164.76) over SystemLogInterface, the same seam get_system_logs uses. Four decisions are recorded: manage_options rather than the WordPress read, because the host audit trail is operator-only and handing it to a read tool would widen access; the tool filter keeps entries that do not name a tool (the WordPress condition only rejects a present, non-matching field) and also reads detail.tool; act_tier_seen is computed from the returned entries against fnb_import_table rather than hardcoded false as in WordPress; and the flag set drops cacheable because a log changes on every call. An unbound log or an empty sources list answers "this host keeps no queryable audit log" rather than an empty list.',
+			'evidence' => 'lib/core/tests/Unit/Tool/FnbAuditLogToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'fnb_budget_variance' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Fnb\\FnbBudgetVarianceTool',
 			'readiness' => 'ready',

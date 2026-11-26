@@ -6488,3 +6488,84 @@ unit suite structurally cannot.
 
 Next is slice 6, the last two: `fnb_import_table` — the CPT reader, structure
 matcher and ingest quality — and `fnb_audit_log`.
+
+## 164.76 Closing `food-beverage` — audit logging, and an import deferred
+
+Slice 6 ports one tool and records a decision not to port the other. The
+toolkit ends at **22 ported, 0 declined, 1 deferred, 0 remaining** — complete
+against its own contract, with the deferral visible rather than laundered into
+either a port or a decline.
+
+### `fnb_audit_log`
+
+Reads the host's queryable log through `SystemLogInterface` — the same seam
+`get_system_logs` uses — rather than `WP_MCP_AI_Audit_Logger`. Four decisions
+are recorded, each because copying WordPress would have been worse:
+
+- **`manage_options`, not the WordPress `read`.** The F&B base gives every tool
+  `read`, so any subscriber could read the audit trail. The trail is the
+  operator's, cross-estate and already gated on the host; handing it to a `read`
+  tool would widen access relative to the page that owns the data.
+  `get_system_logs` made the same correction, and this tool follows it.
+- **The tool filter keeps entries that do not name a tool.** The WordPress
+  condition only rejects an entry when the field is *present* and does not
+  match — an entry without `tool` passes. The port keeps that rule and also
+  looks in `detail.tool`, because this runtime's entries carry structured
+  detail rather than a top-level field. It never invents a match.
+- **`act_tier_seen` is computed.** WordPress returns `false` without reading a
+  single entry. Here it is true when a returned entry names
+  `fnb_import_table` — the toolkit's only ACT-tier slug — and the `note` says
+  exactly that. A flag that cannot be wrong is not a finding.
+- **`cacheable` is dropped.** The base declares it because tables are cached
+  for five minutes; a log that changes on every call must not claim that.
+
+Two smaller edges: a non-array entry is skipped (the WordPress loop would pass
+it through, but `SystemLogInterface` promises arrays), and an unbound service or
+an empty `sources()` answers **“this host keeps no queryable audit log”**
+rather than an empty list, which would read as “nothing happened”.
+
+### `fnb_import_table` — deferred, and why not declined
+
+The tool migrates transactional rows (6.0 sales, 8.0 purchases, 9.0 stock
+counts, 10.0 waste, 16.0 bookings) from the Drive/CSV source into five
+**native-storage CPTs**, with a structure-match report, ingest-quality flags,
+idempotent upserts and offset pagination. It is the heaviest tool in the
+toolkit and the one whose value depends entirely on a second backend existing.
+
+This runtime has one table backend **by decision**: §164.71 deliberately dropped
+the native-storage hint, the CPT-backed tables and the `fnb_native_cpt` source,
+because every read goes through `TabularReaderInterface`. A faithful port today
+would write rows that nothing reads — `fnb_read_table` and all 21 metric tools
+read `FnbTableSource` — which is precisely the “free success” the adapter probe
+gate exists to refuse.
+
+It is **deferred rather than declined** because the import itself is sound the
+moment something reads the store; the prerequisite is a native-table store plus
+a read fallback in `FnbTableSource`, which changes the storage contract for the
+whole toolkit and belongs in its own proposal. That is the same shape as
+`get_queued_videos` in the register: a query (here, a write) that is fine once
+the missing half exists. `lib/core/resources/toolkit-parity-decisions.json`
+records it, and `bin/toolkit-parity.php --check` validates the entry against the
+tree.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,392 / 20,807** (10 tests added) |
+| adapter `ToolProbesTest` | **160 / 1,144**, 2 skipped, 0 failures — the audit probe reads the “no queryable log” path because the adapter binds no `SystemLogInterface` |
+| tool readiness audit | **380 / 380**, servable **361** (+1), no violations |
+| toolkit parity | **159 of 854**; `food-beverage` **22 ported**, 0 declined, **1 deferred**, **0 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+### What the toolkit proved
+
+The 22 served tools share one table source, one metric engine and one settings
+object; the report, export and draft paths read the engine rather than
+recomputing anything; and the audit viewer reads the host's log rather than a
+plugin-private option. The port kept the money rounded by the tenant currency,
+the zeroed-but-answered metrics, the date filter that counts undated rows, and
+the empty-success budget check — each pinned where it is surprising, and each
+recorded in a readiness row with the deviation named.
+
+The queue's next toolkit is `orchestration` (36 tools).
