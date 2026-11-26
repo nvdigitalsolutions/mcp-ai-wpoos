@@ -5727,3 +5727,71 @@ no-op, no fabricated results.
 
 Next is 5b, `crm_email_search_accounting`, which reuses the ranker and the
 cache/shape base from this section.
+
+## 164.68 The accounting search — benign defaults over a key family with no writers
+
+Slice 5b is `crm_email_search_accounting`. It reuses the ranker and the
+cache/shape base from §164.67, so only the store vocabulary and the accounting
+arithmetic are new.
+
+### Another key family with no writers, but the opposite blast radius
+
+A scoped grep finds **zero writers** of every key this tool reads:
+`accounting_transaction_type`, `billing_status`, `service_category`,
+`invoice_amount`, `invoice_due_date`, `invoice_currency`, `invoice_number`.
+`manage_crm_contact` does not declare them.
+
+Unlike the lead search, the defaults are **benign**: every accounting filter
+defaults to `all` and the sort defaults to `date`, so a default call returns
+contacts with empty accounting fields rather than nothing. A caller who passes
+`transaction_type: invoice` on a manager-written store gets zero rows — which
+is correct, because no record carries that key.
+
+The key names are worth stating because they are not the argument names: the
+`transaction_type` argument reads **`accounting_transaction_type`** in the
+store. A test pins it.
+
+### "Fiscal" quarters are calendar quarters
+
+`fiscal_quarter_dates()` hardcodes `Q1 = Jan–Mar … Q4 = Oct–Dec`, and the
+schema says so. A fiscal quarter is defined by the company's fiscal-year start
+— public definitions are consistent that fiscal quarters "may or may not align
+with the calendar year" — so for a July–June business this code labels the
+wrong three months. Pinned as-is: inventing a fiscal-year-start setting is a
+product decision, not a port decision.
+
+### Four pinned behaviours
+
+1. **`days_overdue` sorts the page, not the set.** WordPress paginates in SQL
+   and only then `usort`s the returned page. The port keeps that shape on both
+   the native and the in-memory path.
+2. **An unparsable due date is null.** WordPress coerces `strtotime()`'s
+   `false` to `0` and reports roughly 20,000 overdue days. The port returns
+   `null` — a documented deviation, because a bad date is not an overdue
+   invoice.
+3. **`get_cached` is an error on a miss.** The lead search auto-falls back;
+   this tool returns `not_found` with an empty `records` / `total` payload.
+   Faithful, and a test pins the asymmetry.
+4. **`invoice_amount` and `company` sorts exclude rows without the key**, the
+   same `meta_key` INNER JOIN rule as §164.67.
+
+### Core seams
+
+The default currency is the CRM toolkit setting through `crmSettings()`; the
+WordPress filter (`wp_mcp_ai_crm_default_currency`) has no core equivalent.
+Audit metadata reports "No accounting integration detected" because the core
+cannot know which accounting platform a host has installed — the WordPress
+check is a `class_exists()` on a Pro tool that does not exist here.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,205 / 20,212** (19 tests added) |
+| adapter PHPUnit | **135**, 950 assertions, **1 skipped, 0 failures** — the skip is `export_eca_data` on this host's missing `ext-fileinfo` (#8329), not a regression |
+| tool readiness audit | **355 / 355**, servable **336** (+1), no violations |
+| toolkit parity | **134 of 854**; `crm` **10 ported**, 0 declined, 0 deferred, **3 remaining** |
+| phpcs | clean, no fixes needed |
+
+Next is 5c, `crm_email_search_correspondence` — the last of the trio and the
+last email tool in the `crm` toolkit.

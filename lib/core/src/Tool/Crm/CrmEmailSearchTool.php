@@ -142,4 +142,68 @@ abstract class CrmEmailSearchTool extends CrmTool
             'External Gmail search requires the Gmail client. This runtime has none; search local CRM records only.'
         );
     }
+
+    /**
+     * An argument constrained to a closed vocabulary, defaulted on anything else.
+     *
+     * @param array<string, mixed> $arguments
+     * @param list<string> $allowed
+     */
+    protected function enumParam(array $arguments, string $key, array $allowed, string $default): string
+    {
+        $value = $this->key($this->stringParam($arguments, $key, $default));
+
+        return in_array($value, $allowed, true) ? $value : $default;
+    }
+
+    /**
+     * An orderby argument constrained to the tool's declared options.
+     *
+     * @param list<string> $allowed
+     */
+    protected function orderbyParam(string $raw, array $allowed, string $default): string
+    {
+        $value = $this->key($raw);
+
+        return in_array($value, $allowed, true) ? $value : $default;
+    }
+
+    /**
+     * Sort rows on one projected field, ties in arrival order.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<int, array<string, mixed>>
+     */
+    protected function sortRowsByField(array $rows, string $field, string $order, bool $numeric = false): array
+    {
+        $indexed = array();
+
+        foreach ($rows as $index => $row) {
+            $row['_original_index'] = $index;
+            $indexed[]              = $row;
+        }
+
+        usort(
+            $indexed,
+            static function (array $a, array $b) use ($field, $order, $numeric): int {
+                $cmp = $numeric
+                    ? (float) $a[ $field ] <=> (float) $b[ $field ]
+                    : strcasecmp((string) $a[ $field ], (string) $b[ $field ]);
+
+                if (0 === $cmp) {
+                    return $a['_original_index'] <=> $b['_original_index'];
+                }
+
+                return 'ASC' === $order ? $cmp : -$cmp;
+            }
+        );
+
+        foreach ($indexed as &$row) {
+            unset($row['_original_index']);
+        }
+
+        unset($row);
+
+        return $indexed;
+    }
 }

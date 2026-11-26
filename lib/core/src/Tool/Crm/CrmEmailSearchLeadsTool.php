@@ -368,18 +368,18 @@ class CrmEmailSearchLeadsTool extends CrmEmailSearchTool
     private function extractFilters(array $arguments): array
     {
         $filters = array(
-            'lead_status'   => $this->enum($arguments, 'lead_status', self::LEAD_STATUSES, 'new'),
-            'inquiry_type'  => $this->enum($arguments, 'inquiry_type', self::INQUIRY_TYPES, 'all'),
-            'mql_stage'     => $this->enum($arguments, 'mql_stage', self::MQL_STAGES, 'all'),
+            'lead_status'   => $this->enumParam($arguments, 'lead_status', self::LEAD_STATUSES, 'new'),
+            'inquiry_type'  => $this->enumParam($arguments, 'inquiry_type', self::INQUIRY_TYPES, 'all'),
+            'mql_stage'     => $this->enumParam($arguments, 'mql_stage', self::MQL_STAGES, 'all'),
             'contact_owner' => trim($this->stringParam($arguments, 'contact_owner')),
             'email_domain'  => trim($this->stringParam($arguments, 'email_domain')),
-            'source'        => $this->enum($arguments, 'source', self::SOURCE_CHANNELS, 'all'),
-            'priority'      => $this->enum($arguments, 'priority', self::LEAD_PRIORITY, 'all'),
+            'source'        => $this->enumParam($arguments, 'source', self::SOURCE_CHANNELS, 'all'),
+            'priority'      => $this->enumParam($arguments, 'priority', self::LEAD_PRIORITY, 'all'),
             'date_from'     => trim($this->stringParam($arguments, 'date_from')),
             'date_to'       => trim($this->stringParam($arguments, 'date_to')),
             'per_page'      => $this->intParam($arguments, 'per_page', 20),
             'page'          => $this->intParam($arguments, 'page', 1),
-            'orderby'       => $this->orderby($this->stringParam($arguments, 'orderby', 'lead_score')),
+            'orderby'       => $this->orderbyParam($this->stringParam($arguments, 'orderby', 'lead_score'), self::ORDERBY_OPTIONS, 'lead_score'),
             'order'         => 'ASC' === strtoupper($this->stringParam($arguments, 'order', 'DESC')) ? 'ASC' : 'DESC',
             'search'        => trim($this->stringParam($arguments, 'search')),
         );
@@ -469,7 +469,7 @@ class CrmEmailSearchLeadsTool extends CrmEmailSearchTool
                 static fn (array $row): bool => null !== $row[ $orderby ] && '' !== (string) $row[ $orderby ]
             ));
 
-            $rows = $this->sortByField($rows, $orderby, $order);
+            $rows = $this->sortRowsByField($rows, $orderby, $order, 'lead_score' === $orderby);
         } elseif ($isRelevance) {
             $rows = $this->ranker->rank($rows, $search);
         }
@@ -637,45 +637,6 @@ class CrmEmailSearchLeadsTool extends CrmEmailSearchTool
     }
 
     /**
-     * Sort rows on one projected field, ties in arrival order.
-     *
-     * @param array<int, array<string, mixed>> $rows
-     * @return array<int, array<string, mixed>>
-     */
-    private function sortByField(array $rows, string $field, string $order): array
-    {
-        $indexed = array();
-
-        foreach ($rows as $index => $row) {
-            $row['_original_index'] = $index;
-            $indexed[]              = $row;
-        }
-
-        usort(
-            $indexed,
-            static function (array $a, array $b) use ($field, $order): int {
-                $cmp = 'lead_score' === $field
-                    ? (int) $a[ $field ] <=> (int) $b[ $field ]
-                    : strcasecmp((string) $a[ $field ], (string) $b[ $field ]);
-
-                if (0 === $cmp) {
-                    return $a['_original_index'] <=> $b['_original_index'];
-                }
-
-                return 'ASC' === $order ? $cmp : -$cmp;
-            }
-        );
-
-        foreach ($indexed as &$row) {
-            unset($row['_original_index']);
-        }
-
-        unset($row);
-
-        return $indexed;
-    }
-
-    /**
      * WordPress' `date_query` at day granularity.
      */
     private function withinDates(ContentItem $item, string $from, string $to): bool
@@ -699,25 +660,5 @@ class CrmEmailSearchLeadsTool extends CrmEmailSearchTool
     private function domainMatches(string $email, string $domain): bool
     {
         return '' === $domain || false !== strpos($email, '@' . $domain);
-    }
-
-    /**
-     * An argument constrained to a closed vocabulary, defaulted on anything else.
-     *
-     * @param array<string, mixed> $arguments
-     * @param list<string> $allowed
-     */
-    private function enum(array $arguments, string $key, array $allowed, string $default): string
-    {
-        $value = $this->key($this->stringParam($arguments, $key, $default));
-
-        return in_array($value, $allowed, true) ? $value : $default;
-    }
-
-    private function orderby(string $raw): string
-    {
-        $value = $this->key($raw);
-
-        return in_array($value, self::ORDERBY_OPTIONS, true) ? $value : 'lead_score';
     }
 }

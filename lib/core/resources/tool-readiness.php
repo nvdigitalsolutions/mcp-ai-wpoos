@@ -648,6 +648,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoCompositionAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'crm_email_search_accounting' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\CrmEmailSearchAccountingTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the accounting email search over ContentStoreInterface (Proposal 164 section 164.68): transaction type, billing status, service category, invoice-amount range, currency, domain, fiscal window, audit metadata and the financial summary. The transaction filter reads accounting_transaction_type, not the argument name. No writer sets any accounting key in the toolkit, but the defaults are benign (all/date), so a default call returns contacts with empty accounting fields while any non-all accounting filter finds nothing on a manager-written store. Fiscal quarters are calendar quarters, as the WordPress code hardcodes. days_overdue sorts the returned page only, as WordPress does; an unparsable due date yields null instead of WordPress 20,000-day coercion. get_cached is a not-found error on a miss, unlike the lead search. The default currency is the CRM setting; audit hints report no integration because the core cannot detect one.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmEmailSearchAccountingToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'crm_email_search_leads' => array(
 			'class' => 'Nvoos\Core\Tool\Crm\\CrmEmailSearchLeadsTool',
 			'readiness' => 'ready',
