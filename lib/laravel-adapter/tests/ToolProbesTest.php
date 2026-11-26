@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Nvoos\Laravel\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -29,6 +30,19 @@ use PHPUnit\Framework\Attributes\DataProvider;
 final class ToolProbesTest extends TestCase {
 
 	use RefreshDatabase;
+
+	/**
+	 * The probe host allows content reads and writes. These cases prove each
+	 * tool does its own work; per-user content policy is exercised in its own
+	 * suite (ContentStoreTaxonomyTest, ProjectManagementUpdateTest).
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+
+		foreach ( array( 'read_content', 'edit_content', 'delete_content' ) as $ability ) {
+			Gate::define( $ability, static fn ( $user = null ): bool => true );
+		}
+	}
 
 	/**
 	 * 090-M Phase 2, batch 2 — read-only tools promoted with a probe each.
@@ -265,6 +279,19 @@ Probe Club,club
 			array( 'detect_completion_indicators', array( 'text' => 'All requirements met. Objective achieved.' ), 'success', array( 'indicator_count', 'completion_met' ), array( 'user_id' => 1 ) ),
 			array( 'configure_circuit_breaker', array( 'action' => 'view' ), 'success', array( 'settings', 'defaults' ), array( 'user_id' => 1 ) ),
 			array( 'calculate_orchestration_capacity', array( 'mode' => 'calculate_capacity', 'arrival_rate' => 2, 'service_time' => 1 ), 'success', array( 'littles_law', 'capacity', 'recommendations' ), array( 'user_id' => 1 ) ),
+
+			// §164.79 — the plan and template family. Creates exercise the real
+			// content store; reads and updates with impossible ids prove the
+			// refusal path. The seeder writes the whole fourteen-template library
+			// into its own refreshed database.
+			array( 'create_task_plan', array( 'plan_name' => 'Probe plan', 'goal' => 'Probe goal.', 'tasks' => array( array( 'text' => 'First', 'priority' => 'high' ), array( 'text' => 'Second' ) ) ), 'success', array( 'plan_id', 'task_count', 'markdown' ), array( 'user_id' => 1 ) ),
+			array( 'get_task_plan', array( 'plan_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'update_task_plan', array( 'plan_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'create_template', array( 'template_name' => 'Probe template', 'description' => 'A template.', 'category' => 'research', 'markdown_template' => "# {{goal}}\n- [ ] Do it\n" ), 'success', array( 'template_id', 'placeholders', 'storage_type' ), array( 'user_id' => 1 ) ),
+			array( 'list_templates', array(), 'success', array( 'templates', 'total_count', 'filters' ), array( 'user_id' => 1 ) ),
+			array( 'instantiate_template', array( 'template_id' => 999999, 'variables' => array() ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'seed_template_library', array(), 'success', array( 'templates_created', 'created', 'errors' ), array( 'user_id' => 1 ) ),
+			array( 'create_execution_prompt', array( 'plan_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
