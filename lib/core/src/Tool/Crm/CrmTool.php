@@ -67,6 +67,12 @@ abstract class CrmTool extends AbstractTool
     /** The content type a CRM activity is stored as. */
     public const ACTIVITY_TYPE = 'mcp_ai_crm_activity';
 
+    /** The content type a CRM customer is stored as. */
+    public const CUSTOMER_TYPE = 'mcp_ai_customer';
+
+    /** The content type a toolkit-managed CRM contact is stored as. */
+    public const CONTACT_TYPE = 'mcp_crm_contacts';
+
     /** The WordPress option the toolkit settings live in. */
     public const SETTINGS_OPTION = 'wp_mcp_ai_crm_toolkit_settings';
 
