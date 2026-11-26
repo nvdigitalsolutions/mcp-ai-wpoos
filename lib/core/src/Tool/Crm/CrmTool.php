@@ -82,6 +82,13 @@ abstract class CrmTool extends AbstractTool
         'handover_ask'     => '',
     );
 
+    /**
+     * `related_type` values whose `related_id` can be a contact id.
+     *
+     * `deal` is deliberately absent: a deal id is not a contact id.
+     */
+    protected const CONTACT_RELATED_TYPES = array('lead', 'contact');
+
     /** The CRM engine's symbol map. */
     private const CURRENCY_SYMBOLS = array(
         'USD' => '$',
@@ -267,5 +274,84 @@ abstract class CrmTool extends AbstractTool
         $text = preg_replace('/\s+/', ' ', strip_tags($html));
 
         return trim((string) $text);
+    }
+
+    /**
+     * The current clock, overridable so time-dependent tools are testable.
+     */
+    protected function now(): int
+    {
+        return time();
+    }
+
+    /**
+     * WP_Query-style clauses linking activities to one contact.
+     *
+     * Two vocabularies, for the reason §164.64 recorded: the WordPress readers
+     * look for `_activity_contact_id`, which nothing in the toolkit writes,
+     * while `create_crm_activity` stamps `related_type` / `related_id`. Reading
+     * only the first leaves the tool blind to its own toolkit's records.
+     *
+     * @return array<int|string, mixed>
+     */
+    protected function contactActivityClauses(int $contactId): array
+    {
+        return array(
+            'relation' => 'OR',
+            array('key' => '_activity_contact_id', 'value' => $contactId, 'type' => 'NUMERIC'),
+            array(
+                'relation' => 'AND',
+                array('key' => 'related_id', 'value' => $contactId, 'type' => 'NUMERIC'),
+                array('key' => 'related_type', 'value' => self::CONTACT_RELATED_TYPES, 'compare' => 'IN'),
+            ),
+        );
+    }
+
+    /**
+     * An activity's type, from the legacy key or the live one.
+     *
+     * @param array<string, mixed> $meta
+     */
+    protected function activityType(array $meta): string
+    {
+        return $this->text($meta['_activity_type'] ?? $meta['activity_type'] ?? '');
+    }
+
+    /**
+     * An activity's outcome, from the legacy key or the live one.
+     *
+     * The live completion signal is the `completed` stamp, not the free-text
+     * `outcome` note, so `outcome` is not consulted here.
+     *
+     * @param array<string, mixed> $meta
+     */
+    protected function activityOutcome(array $meta): string
+    {
+        return $this->text($meta['_activity_outcome'] ?? $meta['disposition'] ?? '');
+    }
+
+    /**
+     * Whether an activity is completed.
+     *
+     * WordPress tests `_activity_outcome === 'completed'`, which nothing writes.
+     * `complete_crm_activity` stamps `completed = '1'`, so the live marker is
+     * accepted too — otherwise the completion component of the engagement score
+     * is structurally zero.
+     *
+     * @param array<string, mixed> $meta
+     */
+    protected function activityCompleted(array $meta): bool
+    {
+        if ('completed' === $this->text($meta['_activity_outcome'] ?? '')) {
+            return true;
+        }
+
+        $completed = $meta['completed'] ?? null;
+
+        if (is_bool($completed)) {
+            return $completed;
+        }
+
+        return is_scalar($completed) && '1' === (string) $completed;
     }
 }

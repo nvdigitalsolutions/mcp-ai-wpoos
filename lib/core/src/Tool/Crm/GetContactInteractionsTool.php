@@ -66,9 +66,6 @@ class GetContactInteractionsTool extends CrmTool
     /** A hard stop for the walk, so a sparse range cannot scan forever. */
     private const MAX_PAGES = 100;
 
-    /** `related_type` values whose `related_id` can be a contact id. */
-    private const CONTACT_RELATED_TYPES = array('lead', 'contact');
-
     public function __construct(
         ErrorFactoryInterface $e,
         ContentStoreInterface $content,
@@ -195,15 +192,7 @@ class GetContactInteractionsTool extends CrmTool
     {
         $clauses = array(
             'relation' => 'AND',
-            array(
-                'relation' => 'OR',
-                array('key' => '_activity_contact_id', 'value' => $contactId, 'type' => 'NUMERIC'),
-                array(
-                    'relation' => 'AND',
-                    array('key' => 'related_id', 'value' => $contactId, 'type' => 'NUMERIC'),
-                    array('key' => 'related_type', 'value' => self::CONTACT_RELATED_TYPES, 'compare' => 'IN'),
-                ),
-            ),
+            $this->contactActivityClauses($contactId),
         );
 
         if ('all' !== $type) {
@@ -276,10 +265,10 @@ class GetContactInteractionsTool extends CrmTool
 
         return array(
             'id'               => $item->id,
-            'type'             => $this->text($meta['_activity_type'] ?? $meta['activity_type'] ?? ''),
+            'type'             => $this->activityType($meta),
             'subject'          => $item->title,
             'date'             => $item->createdAt->format('Y-m-d H:i:s'),
-            'outcome'          => $this->text($meta['_activity_outcome'] ?? $meta['disposition'] ?? ''),
+            'outcome'          => $this->activityOutcome($meta),
             'duration_minutes' => $this->intValue($meta['_activity_duration'] ?? 0),
             'summary'          => (string) ( $item->excerpt ?? '' ),
         );

@@ -159,6 +159,15 @@ return array(
 			'evidence' => 'lib/laravel-adapter/tests/FilesystemDocsCorpusTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'archive_stale_contacts' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\ArchiveStaleContactsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the stale-contact archive over ContentStoreInterface (Proposal 164 section 164.66). The candidate rule has two parts and both are kept: only contacts created at or before the cutoff qualify, and a candidate is stale when its newest activity is absent or older than the cutoff. dry_run defaults to true. Archiving sets the status to draft and stamps _archived_date, _archive_reason and _archived_by. Deviation: the activity link is the shared dual-vocabulary clause, because WordPress filters only on _activity_contact_id, which nothing in the toolkit writes; without the bridge every contact would read as stale.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmHygieneToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'auto_categorize_content' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AutoCategorizeContentCompletionTool',
 			'readiness' => 'ready',
@@ -2367,6 +2376,15 @@ return array(
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'recalculate_engagement_scores' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\RecalculateEngagementScoresTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the 0-100 engagement score over ContentStoreInterface (Proposal 164 section 164.66): volume 40%, recency 25%, channel diversity 20%, completion 15%, rounded and clamped, with the score and the breakdown computed from one 200-activity fetch instead of two. Three WordPress defects are handled explicitly: the activity join uses the shared dual-vocabulary clause rather than the dead _activity_contact_id key; completion accepts the live completed stamp because _activity_outcome is never written and no disposition is completed; and score_model remains a stored label, since custom never changed the formula and a second model has no definition. dry_run defaults to true; a real run stamps the four _engagement_score_* meta keys.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmHygieneToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'reliefweb_reports' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ReliefwebReportsTool',

@@ -5563,3 +5563,95 @@ already writes.
 Next is slice 4, the hygiene pair: `archive_stale_contacts` and
 `recalculate_engagement_scores` — both readers of `_activity_*`, so the
 vocabulary found in §164.64 is now on the critical path.
+
+## 164.66 The hygiene pair, and a score with an unreachable 15%
+
+Slice 4 is `archive_stale_contacts` and `recalculate_engagement_scores`. Both
+were read line by line. The second one is the clearest instance yet of the
+dead-vocabulary defect class.
+
+### The score
+
+The WordPress formula is four weighted components:
+
+| component  | weight | rule |
+|---|---|---|
+| volume     | 40%    | `min(100, activities × 10)` |
+| recency    | 25%    | `max(0, 100 − days_since_last × 2)` |
+| diversity  | 20%    | `min(100, unique_types × 25)` |
+| completion | 15%    | `completed / total × 100`, capped at 100 |
+
+Public engagement-score write-ups agree on the shape — a recency decay plus
+weighted signals, normalised to 0–100 — and disagree on the weights. The
+weights here are therefore a product choice, ported as declared rather than
+improved.
+
+Three defects sit on the scoring path:
+
+1. **The activity join is dead.** `get_contact_activities()` filters on
+   `_activity_contact_id`, which nothing writes. The port uses the shared
+   `contactActivityClauses()`, so the score sees the activities
+   `create_crm_activity` actually records.
+2. **Completion is structurally zero.** WordPress counts
+   `_activity_outcome === 'completed'`. No tool writes `_activity_outcome`, and
+   the live `disposition` vocabulary
+   (`connected`, `voicemail`, `no_answer`, …, `needs_follow_up`) contains no
+   `completed` value. The only completion marker the toolkit writes is
+   `completed = '1'` from `complete_crm_activity`.
+
+   Consequence, measured: with completion permanently 0, **no contact can score
+   above 85** in WordPress — 40 + 25 + 20 — however engaged it is. The port
+   accepts the live `completed` stamp, so the 15% is reachable again.
+3. **`score_model` is a label, not a switch.** `calculate_engagement_score()`
+   takes the argument and never reads it; `custom` and `default` produce the
+   same number. The port keeps that, including storing the label in
+   `_engagement_score_model`, because inventing a second model would invent a
+   contract the schema never defined. A test pins the equality.
+
+One non-behavioural change: WordPress fetches the same 200 activities twice per
+contact (once for the score, once for the breakdown). The port fetches once and
+derives both. Same output, half the reads.
+
+### The archive
+
+`archive_stale_contacts` has two candidate rules, and both are easy to lose:
+
+- Only contacts **created** at or before the cutoff qualify (`date_query` with
+  `before`, inclusive). A new contact with no activity is never archived.
+- A candidate is stale when its newest activity is absent or older than the
+  cutoff. The activity's own date is the clock.
+
+The activity lookup uses the same dual-vocabulary clause, so a contact with a
+`related_type` / `related_id` activity is correctly recent; without the bridge
+every contact would read as stale and the tool would archive the whole CRM.
+
+`dry_run` defaults to `true`. Archiving is a status change to `draft` plus
+`_archived_date`, `_archive_reason` and `_archived_by` — nothing is deleted, and
+the item keeps its content, so an operator can restore it by publishing.
+
+### Decisions
+
+- **The inactivity window is clamped to 30–3650 days**, as WordPress clamps it.
+- **An unknown `contact_type` scans nothing** and returns an empty success,
+  matching the WordPress loop that builds no post types.
+- **`score_model` is stored, not interpreted.** Both values are accepted and
+  the label is written to meta.
+- **The breakdown is stored as a JSON string**, as WordPress stores it, so a
+  WordPress-side reader that calls `json_decode()` keeps working.
+- **Scores are ints.** WordPress' `round()` returns a float that serialises to
+  the same number; the port casts it, so the meta value and the payload agree.
+- **Both tools read a clock through `now()`**, a protected seam, so the
+  recency arithmetic and the cutoff date are testable without sleeping.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,170 / 20,115** (21 tests added) |
+| adapter PHPUnit | **133**, 932 assertions — both new probes pass; the same unrelated `export_eca_data` host-MIME failure remains |
+| tool readiness audit | **353 / 353**, servable **334** (+2), no violations |
+| toolkit parity | **132 of 854**; `crm` **8 ported**, 0 declined, 0 deferred, **5 remaining** |
+| phpcs | clean, no fixes needed |
+
+Next is slice 5, the email search trio: `crm_email_search_leads`,
+`crm_email_search_accounting` and `crm_email_search_correspondence`.
