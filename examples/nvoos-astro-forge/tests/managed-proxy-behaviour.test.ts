@@ -16,6 +16,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
+import { gzipSync } from 'node:zlib';
 
 import { describe, expect, it } from 'vitest';
 
@@ -24,6 +25,7 @@ import { renderProxyHelperTs } from '../lib/managed-runtime.ts';
 interface ProxyResult {
 	status: number;
 	body: string;
+	headers: Record< string, string >;
 }
 
 /** Run the emitted helper in a child process and report what it returned. */
@@ -36,7 +38,7 @@ async function callProxy( target: string, timeoutMs?: number, headers?: Record< 
 			"import { proxyToWordPress } from './managed-proxy.ts';",
 			`const request = new Request('https://public.example.com/api/x', { headers: ${ JSON.stringify( headers ?? {} ) } });`,
 			"const response = await proxyToWordPress(request, '/wp-json/x');",
-			'process.stdout.write(JSON.stringify({ status: response.status, body: await response.text() }));',
+			'process.stdout.write(JSON.stringify({ status: response.status, headers: Object.fromEntries(response.headers), body: await response.text() }));',
 		].join( '\n' ),
 		'utf8'
 	);
@@ -143,6 +145,43 @@ describe( 'emitted proxy helper — runtime failure modes', () => {
 			expect( seen[ 'cf-connecting-ip' ] ).toBeUndefined();
 			expect( seen[ 'x-forwarded-for' ] ).toBeUndefined();
 			expect( seen[ 'cdn-loop' ] ).toBeUndefined();
+		} finally {
+			await new Promise< void >( ( resolve ) => server.close( () => resolve() ) );
+		}
+	} );
+
+	it( 'does not relay a Content-Encoding it has already decoded', async () => {
+		// The CMS (or the CDN in front of it) compresses whatever it is asked for,
+		// and the runtime decodes the body. What leaves the proxy must describe the
+		// bytes it actually carries: `gzip` on a plain body makes a browser drop the
+		// file entirely — eca's logo rendered 0px while curl showed 43 KB.
+		const plain = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
+		const gzipped = gzipSync( Buffer.from( plain, 'utf8' ) );
+		let seenEncoding = '';
+		const server = http.createServer( ( request, response ) => {
+			seenEncoding = String( request.headers[ 'accept-encoding' ] ?? '' );
+			response.writeHead( 200, {
+				'content-type': 'image/svg+xml',
+				'content-encoding': 'gzip',
+				'content-length': String( gzipped.length ),
+			} );
+			response.end( gzipped );
+		} );
+		await new Promise< void >( ( resolve ) => server.listen( 0, '127.0.0.1', resolve ) );
+		const address = server.address();
+		if ( ! address || typeof address === 'string' ) {
+			throw new Error( 'fixture server failed to bind' );
+		}
+
+		try {
+			const result = await callProxy( `http://127.0.0.1:${ address.port }` );
+
+			expect( result.status ).toBe( 200 );
+			expect( result.body ).toBe( plain );
+			expect( result.headers[ 'content-encoding' ] ).toBeUndefined();
+			expect( result.headers[ 'content-length' ] ).toBeUndefined();
+			// The hop asks for identity, so the common case needs no strip at all.
+			expect( seenEncoding ).toBe( 'identity' );
 		} finally {
 			await new Promise< void >( ( resolve ) => server.close( () => resolve() ) );
 		}
