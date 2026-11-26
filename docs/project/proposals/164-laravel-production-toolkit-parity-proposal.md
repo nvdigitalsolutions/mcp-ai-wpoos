@@ -4726,3 +4726,61 @@ the restored file is byte-identical. `--write` then refreshed the baseline.
 
 The adapter suite is not implicated: it reads the readiness manifest, not the
 decisions register.
+
+## 164.56 The two deletes, and the number WordPress leaves as prose
+
+**On the numbering:** §164.54 (the comparison) is open in its own change and
+§164.55 (the register) merged ahead of this one; this is the first code slice the
+comparison's order named.
+
+### What was built
+
+`delete_eca` and `delete_student`, the two slugs the first ECA batch left out of CRUD.
+Both run on `ContentStoreInterface`'s existing types (`mcp_ai_eca`, `mcp_ai_student`),
+so neither adds a model, a table or a contract.
+
+### The cascade runs in one direction on purpose
+
+`delete_eca` writes each student's side first and the activity last. A cascade that
+fails halfway then leaves an activity listing students who no longer list it —
+visible, and repairable by deleting again. The reverse order would leave students
+enrolled in an activity that no longer exists, which nothing can repair from the data
+that remains. `withdraw_student_eca` uses the same ordering, and the test that proves
+it fails the second student write and asserts the activity is untouched.
+
+The refusal is WordPress's rule: an activity with active enrolments answers
+`confirmation_required` naming the count, before any write.
+
+### Two divergences, both measured, neither silent
+
+**Cancelling clears the roster and the counter.** WordPress removes each student's
+side and leaves `_eca_enrollments` and `_eca_current_enrollment` on the cancelled
+activity, so `list_ecas` reports twelve enrolled on a cancelled club whose students
+are gone, and a later enrol refuses on capacity. Two values that contradict reality
+are worse than one clear state, so this port writes `_eca_enrollments = []` and
+`_eca_current_enrollment = 0` alongside `_eca_status = cancelled`.
+
+**`delete_student` replaces a warning with a number.** WordPress deletes the record
+and says, in prose, that it does not unenroll the student. This port keeps the
+behaviour and reports what it left behind: `enrollments_left`, `eca_ids` and
+`eca_names`, from the **union** of the student's own `_student_eca_enrollments` and
+the rosters that still list them. Reporting one side would hide exactly the rows a
+cleanup needs, because the two sides can disagree. The scan is one page of 200, the
+same ceiling `list_ecas` uses, and `truncated` says when the count is a lower bound.
+
+`_eca_cancelled_at` is written as UTC `Y-m-d H:i:s`. WordPress writes
+`current_time( 'mysql' )`, a local-time string with no offset, which is not a
+timestamp this runtime can compare against anything.
+
+The capability is `delete_posts` for both, following WordPress's execute-time guard
+rather than the declared `edit_posts` on its schema — a delete keeps the stricter one.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,012 / 19,480** (13 tests added) |
+| adapter PHPUnit | **453 / 2,179** (2 probes added), OK |
+| tool readiness audit | **325 / 325**, servable **306** (+2), no violations |
+| toolkit parity | **104 of 854**; 8 declined, 35 deferred, **707 remaining**; `eca-management` **15 ported**, 1 declined, 20 deferred, **12 remaining** |
+| licence boundary / phpcs | intact / clean (6 files) |
