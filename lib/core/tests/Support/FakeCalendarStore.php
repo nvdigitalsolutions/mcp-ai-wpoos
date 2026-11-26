@@ -1,7 +1,7 @@
 <?php
 
 /**
- * An in-memory content store for the calendar event tests.
+ * An in-memory content store for the calendar tools.
  *
  * Type, status, include/exclude, paging and id ordering are honoured, along with
  * meta clauses using `=`, `>`, `>=`, `<`, `<=`, `BETWEEN`, `IN`/`NOT IN`,
@@ -31,7 +31,7 @@ use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\NotFoundException;
 
-final class FakeEventStore implements ContentStoreInterface
+final class FakeCalendarStore implements ContentStoreInterface
 {
     /** @var array<int, ContentItem> */
     public array $items = array();

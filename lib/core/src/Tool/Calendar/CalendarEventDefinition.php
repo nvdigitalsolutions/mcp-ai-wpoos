@@ -43,8 +43,6 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool\Calendar;
 
-use DateTimeImmutable;
-use DateTimeZone;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
@@ -88,10 +86,10 @@ final class CalendarEventDefinition
     public const META_PROJECT_ID = '_event_project_id';
 
     /** The store's page ceiling, from `ContentQuery`. */
-    public const PAGE_SIZE = 200;
+    public const PAGE_SIZE = CalendarScan::PAGE_SIZE;
 
     /** The read ceiling: how many matching rows one call will scan. */
-    public const MAX_SCAN = 1000;
+    public const MAX_SCAN = CalendarScan::MAX_SCAN;
 
     /** `list_events` bounds, as WordPress declared them. */
     public const LIST_LIMIT_DEFAULT = 100;
@@ -101,28 +99,12 @@ final class CalendarEventDefinition
     /**
      * A valid `Y-m-d` date, or null.
      *
-     * The exact shape is required: `2026-02-31` parses as March and is refused
-     * rather than silently moved.
+     * Delegates to the appointment family so both calendar toolkits share one
+     * date parser.
      */
     public static function date(mixed $value): ?string
     {
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $value = trim($value);
-
-        if (1 !== preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
-            return null;
-        }
-
-        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $value, new DateTimeZone('UTC'));
-
-        if (false === $parsed || $parsed->format(self::DATE_FORMAT) !== $value) {
-            return null;
-        }
-
-        return $value;
+        return AppointmentDefinition::date($value);
     }
 
     /**
@@ -379,8 +361,8 @@ final class CalendarEventDefinition
      *
      * The store cannot order by meta, so a reader that must return the earliest
      * events has to see a window of rows and sort them itself. The window is
-     * bounded here rather than by the page size, and the caller reports
-     * `truncated` when the collection holds more than the window.
+     * bounded by {@see CalendarScan}, and the caller reports `truncated` when
+     * the collection holds more than the window.
      *
      * @param ContentQuery $query Base query; page and perPage are replaced.
      * @param int          $max   Items to collect, at most `MAX_SCAN`.
@@ -389,54 +371,6 @@ final class CalendarEventDefinition
      */
     public static function scan(ContentStoreInterface $content, ContentQuery $query, int $max = self::MAX_SCAN): array
     {
-        $max = max(0, min(self::MAX_SCAN, $max));
-
-        if (0 === $max) {
-            return array('items' => array(), 'total' => 0, 'scanned' => 0);
-        }
-
-        $items   = array();
-        $total   = 0;
-        $scanned = 0;
-        $page    = 1;
-
-        do {
-            $collection = $content->query(
-                new ContentQuery(
-                    types: $query->types,
-                    statuses: $query->statuses,
-                    search: $query->search,
-                    authorId: $query->authorId,
-                    include: $query->include,
-                    exclude: $query->exclude,
-                    metaQuery: $query->metaQuery,
-                    taxQuery: $query->taxQuery,
-                    orderBy: $query->orderBy,
-                    order: $query->order,
-                    page: $page,
-                    perPage: self::PAGE_SIZE,
-                    userId: $query->userId,
-                )
-            );
-
-            $total = $collection->total;
-
-            foreach ($collection->items as $item) {
-                if (! $item instanceof ContentItem || $scanned >= $max) {
-                    continue;
-                }
-
-                $items[] = $item;
-                ++$scanned;
-            }
-
-            ++$page;
-        } while ($collection->hasItems() && $collection->hasMorePages() && $scanned < $max && $scanned < $total);
-
-        return array(
-            'items'   => $items,
-            'total'   => $total,
-            'scanned' => $scanned,
-        );
+        return CalendarScan::scan($content, $query, $max);
     }
 }

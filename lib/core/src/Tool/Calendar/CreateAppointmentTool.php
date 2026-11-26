@@ -21,13 +21,17 @@
  *   reports `notification_sent: false` plus `notification_error`, because
  *   losing a booking over a mail transport would be worse than a missed email.
  *
- * ## Two corrections
+ * ## Three corrections
  *
  * 1. **Overlap detection missed contained appointments** — see
  *    {@see AppointmentDefinition::conflicts()}.
  * 2. **The replace path reported a status it had not stored.** WordPress left
  *    `_status` untouched on update but returned `confirmed`; a `pending`
  *    appointment was reported as confirmed. The port returns the stored status.
+ * 3. **A sent notification was never recorded.** The triage reader defines an
+ *    unconfirmed booking as pending with no `_confirmation_sent_at`, and no
+ *    writer set it, so a booking confirmed at creation was listed again. The
+ *    port stamps the timestamp when the transport accepts the message.
  *
  * @package Nvoos\Core
  * @since   3.0.0
@@ -297,6 +301,10 @@ class CreateAppointmentTool extends AbstractTool implements ToolCapabilityFlagsI
             ? $this->notify($item->id, $clientMail, $clientName, $start, $end)
             : array(false, null);
 
+        if ($sent) {
+            $this->recordConfirmation($item->id, $userId);
+        }
+
         $message = null === $existing
             ? 'Appointment created successfully.'
             : 'Appointment updated successfully.';
@@ -342,6 +350,30 @@ class CreateAppointmentTool extends AbstractTool implements ToolCapabilityFlagsI
                 'truncated' => $found['truncated'],
             )
         );
+    }
+
+    /**
+     * Stamp the confirmation time the triage reader looks for.
+     *
+     * Best effort: the email has already been sent, so a failed stamp must not
+     * turn a completed booking into an error. The record was just written by
+     * this user, so the store edit rule cannot refuse it in practice.
+     */
+    private function recordConfirmation(int $appointmentId, int $userId): void
+    {
+        try {
+            $this->content->update(
+                $appointmentId,
+                new UpdateContentCommand(
+                    userId: $userId,
+                    meta: array(
+                        '_confirmation_sent_at' => gmdate(AppointmentDefinition::TIME_FORMAT),
+                    ),
+                )
+            );
+        } catch (\Throwable $error) {
+            // The notification went out; the stamp only aids the triage reader.
+        }
     }
 
     /**

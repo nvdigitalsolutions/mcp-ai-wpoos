@@ -120,6 +120,34 @@ final class AppointmentDefinition
     }
 
     /**
+     * A valid `Y-m-d` date, or null.
+     *
+     * The exact shape is required: `2026-02-31` parses as March and is refused
+     * rather than silently moved. Shared by the appointment, availability,
+     * event and triage tools so one parser serves the whole calendar family.
+     */
+    public static function date(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if (1 !== preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $value, new DateTimeZone('UTC'));
+
+        if (false === $parsed || $parsed->format('Y-m-d') !== $value) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    /**
      * A stored time as ISO 8601, or null when it is unset or unreadable.
      */
     public static function iso(mixed $stored): ?string

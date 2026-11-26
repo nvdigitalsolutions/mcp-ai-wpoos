@@ -7466,3 +7466,75 @@ Next in the queue: **services** (2), **booking links and optimisation** (2),
 **notifications** (4) and **triage** (2). The final **9** need a register
 decision: the seven Jet tools on a booking-adapter contract and the two external
 syncs on an OAuth credential store.
+
+## 164.85 `calendar-booking`, slice 4 — triage, and four keys that never matched
+
+The two triage readers ask two questions about the same record:
+`get_no_show_appointments` lists appointments marked `no-show`, and
+`get_unconfirmed_bookings` lists pending bookings with no confirmation stamp.
+Both are read-only.
+
+### The readers queried a schema the writers do not produce
+
+The WordPress tools were written against keys that no writer sets, so neither
+could ever match an appointment the toolkit created:
+
+| WordPress queried | The writers store |
+|---|---|
+| `_appointment_status = 'no_show'` | `_status = 'no-show'` |
+| `_appointment_date` | `_start_time` |
+| `_service_type` | `_appointment_type` |
+| `_appointment_notes` | the record content |
+
+`get_unconfirmed_bookings` added `unconfirmed` and the empty string to its
+status list; the writer vocabulary is `pending`, `confirmed`, `completed`,
+`cancelled`, `no-show`, so `unconfirmed` could never appear.
+
+The port reads the writer keys, and the tests seed a record carrying only the
+old keys to prove it is not matched.
+
+### Corrections
+
+1. **The key repair above.** The row keeps the WordPress keys, so clients see
+   the same shape; `status` now reports the stored value instead of a literal,
+   and `notes` reads the content.
+2. **The date window includes both boundary days.** `date_from` compares from
+   `00:00:00` and `date_to` to `23:59:59` against the stored UTC start, and an
+   invalid or reversed window is refused rather than returning an empty list.
+3. **The confirmation stamp exists.** The unconfirmed reader defines its
+   question by `_confirmation_sent_at`, and no writer set it, so a booking
+   confirmed at creation was listed again. `create_appointment` now stamps the
+   key when the transport accepts the notification, and only then.
+4. **Ordering is explicit.** No-show results are newest first, unconfirmed
+   results oldest first. The store cannot order by meta, so each reader scans a
+   bounded window and sorts it, reporting `truncated` when the window was
+   smaller than the collection.
+
+### Adaptations
+
+- The row adds `client_phone` (the no-show tool omitted it) and
+  `start_time_iso` / `end_time_iso`, the machine-readable pair the appointment
+  reader returns.
+- The `service_type` argument keeps its WordPress name and filters
+  `_appointment_type`, normalised through `sanitizeKey`, so `Consult` and
+  `consult` are the same filter.
+- The bounded scan now lives in `CalendarScan`, shared by the event readers and
+  the triage readers, so "scanned" means the same thing in both families.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,703 / 22,054** (11 tests and 45 assertions added) |
+| adapter `ToolProbesTest` | **212 / 1,488**, 2 skipped, 0 failures — two new probes |
+| tool readiness audit | **432 / 432**, servable **413** (+2), no violations |
+| toolkit parity | **211 of 854**; `calendar-booking` **17 ported**, 0 declined, 0 deferred, **17 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+Both probes answer an empty store, which proves the repaired keys are accepted
+by the real adapter rather than failing the query.
+
+Next in the queue: **services** (2), **booking links and optimisation** (2) and
+**notifications** (4). The final **9** need a register decision: the seven Jet
+tools on a booking-adapter contract and the two external syncs on an OAuth
+credential store.
