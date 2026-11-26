@@ -56,6 +56,7 @@ use Nvoos\Core\Domain\Contract\HealthReportInterface;
 use Nvoos\Laravel\Health\PackageHealthReport;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
+use Nvoos\Core\Domain\Contract\BrowserCaptureInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
 use Nvoos\Core\Domain\Contract\ImageProductionInterface;
 use Nvoos\Core\Domain\Contract\MediaWorkerClientInterface;
@@ -146,6 +147,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProduction;
 use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
+use Nvoos\Laravel\Adapter\MediaWorkerBrowserCapture;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfMutator;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfOcr;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfPageRenderer;
@@ -284,6 +286,11 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( PdfTextExtractorInterface::class, MediaWorkerPdfTextExtractor::class );
 		$this->app->bind( PdfMutatorInterface::class, MediaWorkerPdfMutator::class );
 		$this->app->bind( OfficeWriterInterface::class, MediaWorkerOfficeWriter::class );
+
+		// Page capture (§164.53). The browser route answers the rendered bytes so
+		// the tool can store them; a worker that predates the `b64` field is
+		// refused at call time rather than handed a path this host cannot read.
+		$this->app->bind( BrowserCaptureInterface::class, MediaWorkerBrowserCapture::class );
 
 		// OCR is newer than the PDF family, so its adapter asks the capability
 		// matrix before claiming availability: a configured worker may predate

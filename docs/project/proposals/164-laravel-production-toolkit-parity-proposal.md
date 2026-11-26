@@ -4524,3 +4524,69 @@ on the schema assertion — so the pair is not vacuous.
 | tool readiness audit | **322 / 322**, servable **303**, unchanged (no tool lands here) |
 | toolkit parity | **101 of 854**; no row moved |
 | licence boundary / phpcs | intact / clean |
+
+## 164.53 The render the host could not retrieve
+
+**On the numbering:** §164.51 recorded this as a delivery gap and left it for its own
+change; §164.52 (the package migration) merged ahead of this one. This is that
+change, and the number is the next free one.
+
+### What was missing, in one line
+
+`POST /api/browser/screenshot` rendered the page, wrote the image to the worker's
+own volume, and answered `output_path`. The worker exposes no download route for
+`/browser`, so a host could ask for a picture it had no way to receive. That is why
+`capture_webpage_screenshot` and `web_browser` were deferred rather than ported: a
+tool that returns a path its own runtime cannot open is a lie with a URL attached.
+
+### Four pieces, each small
+
+| piece | why it exists |
+|---|---|
+| `inline-bytes.js` and two fields on the route | the screenshot answer carries `b64` and `mime`; past 24 MiB the route refuses with 413 rather than building a payload the host cannot hold |
+| `BrowserCaptureInterface` | URL in, bytes out — deliberately the same shape as the route, so the seam maps onto the engine that exists instead of inventing a session |
+| `MediaWorkerBrowserCapture` | one JSON POST per capture; the tool's seconds become both the navigation budget and the HTTP budget, so a slow page fails as a navigation timeout rather than a transport error |
+| `CaptureWebpageScreenshotTool` | the port itself: eight arguments, five viewports, and the bytes always persisted through the file registry |
+
+The helper lives outside `routes/browser.js` on purpose: that module imports
+Puppeteer and Express, so a test that imported it would resolve both. Extracting
+`inlineFile()` makes the part that can be wrong — the bytes, the MIME, the cap —
+testable with `node --test` and no dependencies. The route wiring itself is still
+only proven end to end against a live worker.
+
+### What it refuses, and why each refusal is the point
+
+Three WordPress behaviours are deliberately not reproduced, and all three are
+refusals rather than silent drops:
+
+- **`width`/`height` beside a preset.** WordPress accepts them and ignores them.
+  Here the pair is refused with the rule in the message, in the same spirit as the
+  sweep's `compare` and `orderby` refusals.
+- **`quality` on PNG.** Puppeteer rejects the combination, and dropping it quietly
+  would look like a quality setting that did nothing.
+- **`save_to_media: false`.** WordPress can obey it because an unsaved screenshot
+  is still an mshots URL. Here it would mean a multi-megabyte blob in a tool payload
+  or nothing at all, so the tool says why it cannot.
+
+There is also no mshots fallback. A third-party thumbnail service returns a
+different picture, and calling that a fallback would make the tool's output depend
+on a service nobody named.
+
+### What is still not ported
+
+`web_browser` stays deferred. Six of its seven actions act on a page *between*
+calls, and a one-shot render cannot hold that page open; the screenshot and PDF
+actions are now individually reachable, which is a capability the deferral note
+said would arrive separately. The PDF action still has no `b64` on its route — it
+gets one when a session-capable `web_browser` has a reason to ask.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **2,999 / 19,391** (17 tests, plus 2 manifest data sets) |
+| adapter PHPUnit | **451 / 2,169** (1 probe added) |
+| worker (`node --test inline-bytes`) | **3 / 3** |
+| tool readiness audit | **323 / 323**, servable **304** (+1), no violations |
+| toolkit parity | **102 of 854**; `capture` **1 of 2** ported, 1 deferred, 0 remaining |
+| licence boundary / phpcs | intact / clean |

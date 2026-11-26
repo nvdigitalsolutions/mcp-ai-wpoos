@@ -233,6 +233,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CacheQueueAndBatchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'capture_webpage_screenshot' => array(
+			'class' => 'Nvoos\Core\Tool\CaptureWebpageScreenshotTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'MediaWorkerBrowserCapture implements BrowserCaptureInterface over the media worker `POST /api/browser/screenshot` (Proposal 164 section 164.53), which answers the rendered bytes inline because a worker-local path is not readable by this host. Needs `oos.media_worker.url` at runtime and refuses with `no_browser_engine` otherwise. The tool always stores the result through the file registry, and refuses width/height outside `viewport: custom` and quality on PNG rather than accepting and ignoring them. No mshots fallback: a different service returns a different picture.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CaptureWebpageScreenshotToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'check_capability' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CheckCapabilityTool',
 			'readiness' => 'ready',
