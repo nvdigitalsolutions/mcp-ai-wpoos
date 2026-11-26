@@ -230,6 +230,15 @@ Probe Club,club
 			array( 'fnb_utilities_per_cover', array( 'month' => '2026-09' ), 'success', array( 'meters', 'costed', 'per_cover', 'covers' ), array( 'user_id' => 1 ) ),
 			array( 'fnb_variance_split', array( 'month' => '2026-09', 'prev_month' => '2026-08' ), 'success', array( 'month', 'prev_month', 'total_change', 'lines' ), array( 'user_id' => 1 ) ),
 			array( 'fnb_waste_analysis', array( 'month' => '2026-09' ), 'success', array( 'month', 'value', 'waste_value', 'by_reason' ), array( 'user_id' => 1 ) ),
+
+			// §164.75 — the report path. A report and a draft list degrade rather
+			// than refuse on an unmapped corpus; CSV writes through the file
+			// registry; PDF refuses because no renderer is bound here.
+			array( 'fnb_generate_report', array( 'report_id' => 'R-05', 'month' => '2026-09' ), 'success', array( 'report_id', 'sections', 'draft' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_export_report', array( 'report_id' => 'R-05', 'format' => 'csv', 'month' => '2026-09' ), 'success', array( 'report_id', 'mode', 'filename' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_export_report', array( 'report_id' => 'R-05', 'format' => 'pdf', 'month' => '2026-09' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'fnb_save_draft', array( 'title' => 'F&B probe draft', 'content' => 'Probe body' ), 'success', array( 'location', 'status' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_list_drafts', array(), 'success', array( 'drafts', 'count' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
@@ -243,9 +252,19 @@ Probe Club,club
 	public function test_promoted_tool_does_its_own_work( string $slug, array $arguments, string $expect, array $keys, array $context = array() ): void {
 		// The ECA export is the one probe that writes through the file store,
 		// which refuses bytes it cannot sniff. A host without ext-fileinfo cannot
-		// honour that tool, so the claim is skipped rather than failed.
+		// honour that tool, so the claim is skipped rather than failed. The F&B
+		// CSV export is the same case: the registry sniffs the CSV bytes before
+		// storing them, and its own work (the rows) is pinned in lib/core.
 		if ( 'export_eca_data' === $slug && ! \function_exists( 'finfo_open' ) ) {
 			$this->markTestSkipped( 'export_eca_data needs ext-fileinfo: the file store cannot sniff without it.' );
+		}
+
+		if (
+			'fnb_export_report' === $slug
+			&& 'csv' === ( $arguments['format'] ?? '' )
+			&& ! \function_exists( 'finfo_open' )
+		) {
+			$this->markTestSkipped( 'fnb_export_report (CSV) needs ext-fileinfo: the file store cannot sniff without it.' );
 		}
 
 		$registry = $this->app->make( ToolRegistry::class );

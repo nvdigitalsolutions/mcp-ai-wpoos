@@ -6389,3 +6389,102 @@ engine; neither needed a source edit.
 Next is slice 5: the report path — `fnb_generate_report`, `fnb_export_report`,
 `fnb_save_draft`, `fnb_list_drafts` — which brings `Report_Builder`,
 `Report_Exporter` and `Draft_Writer` across.
+
+## 164.75 The report path — R-01…R-14, CSV/PDF, and drafts
+
+Slice 5 adds four tools and three helpers: `FnbReportBuilder`,
+`FnbReportExporter` and `FnbDraftWriter`. Every figure still comes from the
+metric engine; the builder only assembles sections, which is the same division
+of labour the WordPress classes keep.
+
+### The report library
+
+The registry holds **fourteen** reports. The WordPress class docblock says
+R-01…R-13, but its `REPORTS` constant and `build_r_14()` both carry R-14, and the
+registry wins. R-14 is the operator's own "monthly sales report", addressed on
+export as `client-r01`.
+
+Four behaviours are pinned rather than corrected:
+
+- **`money()` does not round to whole units.** The WordPress docblock claims it
+  does; the code delegates to the tenant profile, so the currency decides the
+  decimals — zero for LKR/JPY/KRW/VND, two otherwise. The port delegates to
+  `FnbSettings::formatMoney()`, which follows the same rule.
+- **The date filter counts undated rows.** `search_table()` filters the column
+  by substring, then the parsed date by range, and never skips a row whose date
+  does not parse. R-01 therefore counts an undated row on *any* date. That is
+  the quirk `fnb_search_table` already pins, reproduced here.
+- **R-01 does not fall back to `total_covers`.** M-02 does; the daily snapshot
+  sums the three cover columns only.
+- **A defaulted R-14 has a blank period in its draft title.** The month default
+  is applied inside the report body, while `build()` composes the title from the
+  argument it received — so `[R-14] Monthly sales report —  — Draft — for Owner`
+  is what WordPress prints, and what the port prints.
+
+Two expectations in the new suite were corrected against the code rather than
+the other way round, both from the same fixture: **the unit price is the pack
+price divided by the pack size** (30 ÷ 10 = 3.00, so the R-04 request totals
+15.00, not 150.00), and **popularity share is within the item's own type** (both
+fixture dishes show 100%, which makes the low-margin soda a Plowhorse rather
+than a Dog).
+
+### Export — CSV and PDF
+
+- **CSV** flattens each section to `section,key,value` rows and stores the file
+  through `FileVisibilityStoreInterface`. `file` is added only when the store
+  also implements `FileStoreInterface`, so a key that would name a
+  non-existent path is omitted rather than faked.
+- **PDF** renders the report's HTML through `HtmlToPdfInterface`. The WordPress
+  ladder — DomPDF, then the document-generation HTML→PDF tool, then an error —
+  collapses to the bound renderer; an unbound or unavailable one is the same
+  `no_pdf_engine` refusal with the same advice: export CSV instead.
+- **No file registry is a named refusal.** WordPress always has a filesystem;
+  a bare core host may not. Returning a temporary path would hand back a file
+  that disappears.
+- The three client aliases (`client-r01` → R-14, `client-r02` → R-05,
+  `client-r03` → R-08) are resolved before the report is built.
+- Export requires `edit_posts`, as the WordPress tool already does.
+
+### Drafts — a Paper Store record, not a file
+
+`fnb_save_draft` writes a record in the `fnb-drafts` collection: id from the
+title's slug, `body.markdown`, `status: draft`. WordPress writes a `.md` file
+or a Google Doc; this runtime has neither a drafts directory nor a Drive
+connection, and the Paper Store exists to hold exactly this kind of document.
+Re-saving the same title replaces the record, as the file write did. A title
+with no usable characters is refused — WordPress would write `.md`, and the
+store will not accept an empty id.
+
+`fnb_list_drafts` reads the same collection newest-first and keeps the
+WordPress keys: `name` is `<id>.md`, `path` is the record locator, `bytes` is
+the stored markdown's length. `title`, `updated_at` and `total` are added so the
+200-record page cap is visible rather than silent.
+
+One deviation is recorded rather than copied: **the WordPress save tool inherits
+`read` and `read-only` while writing a file.** Here it asks for `edit_posts` and
+declares `state-changing`/`write`, so the read-only profile gate cannot be told
+that nothing changed when a record was written.
+
+### A return type the adapter caught
+
+The first pass declared `: array` on `build()`, `toCsv()`, `toPdf()` and
+`save()`. The core tests passed because the mocked error factory returns arrays.
+In the adapter the error factory returns a `RuntimeException`, so every error
+path became a `TypeError` — three of the five new probes failed on exactly that.
+The four signatures are now `mixed`, matching `FnbTableSource::getTable()`: a
+method that answers “the result or the platform's error object” cannot promise
+an array. This is the second time the adapter suite has caught something the
+unit suite structurally cannot.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,382 / 20,781** (34 tests added) |
+| adapter `ToolProbesTest` | **159 / 1,135**, 2 skipped, 0 failures — the CSV probe skips without `ext-fileinfo` because the file store cannot sniff, the same reason `export_eca_data` skips |
+| tool readiness audit | **379 / 379**, servable **360** (+4), no violations |
+| toolkit parity | **158 of 854**; `food-beverage` **21 ported**, 0 declined, 0 deferred, **2 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+Next is slice 6, the last two: `fnb_import_table` — the CPT reader, structure
+matcher and ingest quality — and `fnb_audit_log`.
