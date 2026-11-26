@@ -207,6 +207,13 @@ Probe Club,club
 			// the comparison degrades to its two split rows, as WordPress does.
 			array( 'fnb_calculate_metric', array( 'metric_id' => 'M-01', 'month' => '2026-09' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'fnb_compare_periods', array( 'month' => '2026-09', 'prev_month' => '2026-08' ), 'success', array( 'month', 'prev_month', 'metrics' ), array( 'user_id' => 1 ) ),
+
+			// §164.73 — the three table-reading tools. M-14 and M-12 answer zeros
+			// on an unmapped corpus (the engine does not surface a table error for
+			// them); the ledger scan refuses.
+			array( 'fnb_days_of_cover', array( 'ingredient_id' => 'ING-1' ), 'success', array( 'ingredient_id', 'shelf_life_days', 'over_ordering_flag', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_weekend_demand', array( 'friday' => '2026-09-25' ), 'success', array( 'weekend', 'per_day', 'supplier_cutoffs' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_duplicate_invoice_scan', array(), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

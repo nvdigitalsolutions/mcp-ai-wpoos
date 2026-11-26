@@ -6211,3 +6211,76 @@ that passes months and an LKR venue sees the identical behaviour.
 Next is slice 3: the three tools that read a table directly —
 `fnb_days_of_cover`, `fnb_weekend_demand`, `fnb_duplicate_invoice_scan` — which
 now need only their own arguments on top of the engine.
+
+## 164.73 The three table-reading tools, and two descriptions that overpromise
+
+Slice 3 adds the tools that read a table on their own account rather than
+through an `m*` function. Each contributes one thing the engine cannot know: a
+shelf-life cap, a three-day window with supplier cut-offs, and a
+vendor/invoice/amount triple.
+
+### `fnb_days_of_cover`
+
+The cap is the ingredient's shelf life when the ingredients table carries one
+and **fourteen days** otherwise — the long-life rule. Three details are pinned:
+
+- **The flag is a string**, `''` when the cover is inside the cap, because
+  WordPress callers test truthiness.
+- **The shelf-life lookup is the first matching row** and an unreadable
+  ingredients table leaves it at zero, so the flag falls to the 14-day cap
+  rather than the call failing: the metric is worth returning even when the
+  annotation around it is not.
+- **`as_of` must be `Y-m-d` or it is dropped**, which re-applies the configured
+  as-of date rather than today. A malformed date does not silently move the
+  measurement.
+
+### `fnb_weekend_demand`
+
+Three days from a Friday, each with M-12, plus each supplier's cut-off and lead
+time. Two things are recorded rather than invented:
+
+- **The description promises expected portions and stock shortfalls; the code
+  returns neither.** It computes covers per day and the supplier list, and
+  points at the `R-03` report layout for the rest. `fnb_calculate_metric`
+  answers M-13 for a dish; nothing here pretends to.
+- **`report_hint` names `fnb_generate_report`**, which lands in slice 5. The
+  string is kept because it is the WordPress contract and the tool will exist;
+  until then it is a forward reference, and the readiness row says so.
+
+The default Friday is derived — the next Friday on or after today — instead of
+the demo's `2026-10-09`. A malformed date substitutes that default, which is
+what the original does with its own.
+
+### `fnb_duplicate_invoice_scan`
+
+Three flags, and three pins:
+
+1. **The amount is rounded to a whole unit** before it enters the key, so
+   `1,250.40` and `1,250.00` are the same claim. That is `round()` with no
+   precision, and it is deliberate rather than incidental — a cent of difference
+   should not hide a re-entered invoice.
+2. **The stock-purchase line is never "missing a budget line"**, because the
+   budget deliberately omits it. The exception is hardcoded in the original and
+   kept.
+3. **`no_budget_line` is capped at 50 but the duplicate list is not**, because a
+   duplicate is the finding and a cap would silently drop one.
+
+The description also promises "large price jumps". The code does not attempt
+them — that is M-19 — so the port does not either. A missing ledger returns the
+source's typed error; a missing budget sheet only empties the match list.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,327 / 20,581** (16 tests added) |
+| adapter `ToolProbesTest` | **144 / 1,014**, 1 skipped, 0 failures — two successes (M-14 and M-12 answer zeros on an unmapped corpus), one refusal (the ledger) |
+| tool readiness audit | **365 / 365**, servable **346** (+3), no violations |
+| toolkit parity | **144 of 854**; `food-beverage` **7 ported**, 0 declined, 0 deferred, **16 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, 15/15 files |
+
+Next is slice 4: the ten metric wrappers — `fnb_dish_margin`,
+`fnb_price_change_impact`, `fnb_stock_used`, `fnb_stock_variance`,
+`fnb_expected_use`, `fnb_waste_analysis`, `fnb_budget_variance`,
+`fnb_variance_split`, `fnb_labour_analysis`, `fnb_utilities_per_cover` — which
+are now argument handling over an engine that already answers their metrics.
