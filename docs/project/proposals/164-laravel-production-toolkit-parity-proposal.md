@@ -5795,3 +5795,55 @@ check is a `class_exists()` on a Pro tool that does not exist here.
 
 Next is 5c, `crm_email_search_correspondence` — the last of the trio and the
 last email tool in the `crm` toolkit.
+
+## 164.69 The correspondence search — two defaults that cancel each other
+
+Slice 5c is `crm_email_search_correspondence`, the last of the trio. It adds
+the follow-up modes, SLA filtering, analytics and routing; the ranker, cache
+and shape come from §164.67.
+
+### The key family, and a default that finds nothing
+
+Every correspondence key has **no writer** in the toolkit — `last_contacted`,
+`follow_up_date`, `contact_count`, `correspondence_category`, `contact_status`
+— except `tags`. On a store written only by `manage_crm_contact` the default
+call therefore returns **zero rows**, for a reason that is worth spelling out:
+
+- `needs_followup` matches `last_contacted < cutoff` **or NOT EXISTS**, so
+  every record with no `last_contacted` matches.
+- The default sort is `last_contacted`, a `meta_key` sort, which WordPress
+  implements with an INNER JOIN — which drops exactly those records.
+
+The working invocation is `correspondence_type: all, orderby: date` on such a
+store, or data that carries `last_contacted`. The same collision makes
+`correspondence_type: never_contacted` with the default sort return zero: the
+mode selects only the rows the sort removes. A test pins both.
+
+### Four more pinned behaviours
+
+1. **The channel filter reads the stored meta.** The projection defaults an
+   absent channel to `email`, but `channel: email` filters on the meta key, so
+   an untracked record does not match its own default. Faithful, and pinned.
+2. **`sla_breach_only` does not treat a never-contacted record as a breach.**
+   WordPress only computes the breach when `last_contacted` is non-empty, so
+   the empty case passes the filter. Pinned.
+3. **Malformed dates yield `null` analytics** and are never reported as a
+   breach. WordPress coerces `strtotime()`'s `false` to the epoch, reporting a
+   huge day count and a breach; the port deviates deliberately, as §164.68 did
+   for due dates.
+4. **`get_cached` is a `not_found` error on a miss**, with a `contacts` /
+   `total` payload, and the native path's `total` is the store's
+   pre-post-filter count — a page can be shorter than `per_page` after the
+   domain/tag/SLA filters, exactly as WordPress returns it.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,219 / 20,251** (14 tests added) |
+| adapter PHPUnit | **136**, 959 assertions, **1 skipped, 0 failures** — the skip is `export_eca_data` on a host without `ext-fileinfo` |
+| tool readiness audit | **356 / 356**, servable **337** (+1), no violations |
+| toolkit parity | **135 of 854**; `crm` **11 ported**, 0 declined, 0 deferred, **2 remaining** |
+| phpcs | clean, no fixes needed |
+
+Slice 6 is the last pair: `crm_capture_interaction` and `research_company`.

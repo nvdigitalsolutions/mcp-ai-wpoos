@@ -657,6 +657,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CrmEmailSearchAccountingToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'crm_email_search_correspondence' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\CrmEmailSearchCorrespondenceTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the correspondence search over ContentStoreInterface (Proposal 164 section 164.69): the five follow-up modes, category/channel/status filters, all-tags matching, SLA-breach filtering, relevance ranking, and per-contact analytics with routing. Two defaults collide, and both are pinned: needs_followup includes last_contacted NOT EXISTS, while the default last_contacted sort is a meta_key INNER JOIN that drops exactly those rows, so the default call sees only the stale half and never_contacted with the default sort returns zero. The channel filter reads the stored channel meta, so an absent channel does not match email even though the projection defaults to it. sla_breach_only does not treat a never-contacted record as a breach. Malformed dates yield null analytics and are never reported as a breach, a documented deviation. get_cached is a not-found error on a miss, and the native total is the pre-post-filter count, as WordPress returns it.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmEmailSearchCorrespondenceToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'crm_email_search_leads' => array(
 			'class' => 'Nvoos\Core\Tool\Crm\\CrmEmailSearchLeadsTool',
 			'readiness' => 'ready',
