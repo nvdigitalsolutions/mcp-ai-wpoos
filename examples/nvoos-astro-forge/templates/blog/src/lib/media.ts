@@ -25,6 +25,9 @@ export type MediaEnv = Record<string, string | undefined>;
 /** A WordPress-owned asset path (`/wp-content/…`, `/wp-includes/…`). */
 const WP_ASSET_PATH = /^\/(?:wp-content|wp-includes)\//i;
 
+/** The uploads prefix the managed `/media/*` proxy maps (mirrors proxyMediaPath). */
+const WP_UPLOADS_PREFIX = '/wp-content/uploads/';
+
 /** `import.meta.env` is a getter object — accept it as a plain record. */
 function readEnv( env?: MediaEnv ): MediaEnv {
 	return env ?? ( import.meta.env as unknown as MediaEnv );
@@ -161,6 +164,59 @@ export function repairMediaUrl( url: string | undefined, env?: MediaEnv ): strin
 		return url;
 	}
 	return `${ cms.origin }${ parsed.pathname }${ parsed.search }`;
+}
+
+/**
+ * The same-origin URL a visitor should load for a CMS asset (Proposal 139).
+ *
+ * A managed build serves `/media/<uploads path>` from the CMS server-to-server,
+ * so emitting an upload through it keeps media same-origin. This is the RUNTIME
+ * counterpart of the localizer's rewrite: the localizer edits the PRERENDERED
+ * HTML on disk, but a page rendered per request (the 404, any future SSR route)
+ * never passes through it — so the template has to ask for the proxied path
+ * itself (2026-11-26: the 404 page hotlinked the CMS logo and its icon sheet
+ * while every prerendered page carried `/media/...`).
+ *
+ * Non-uploads, and every static-tier build, come back as the repaired URL — a
+ * static artifact must never grow a `/media/` reference nothing serves.
+ *
+ * @param url Candidate asset URL.
+ * @param env Environment record (defaults to `import.meta.env`).
+ * @returns The `/media/<path>` form for an upload on the managed tier, else the
+ *          repaired URL.
+ */
+export function mediaUrl( url: string | undefined, env?: MediaEnv ): string | undefined {
+	const repaired = repairMediaUrl( url, env );
+	if ( ! repaired || ! managedRuntime() ) {
+		return repaired;
+	}
+	let parsed: URL;
+	try {
+		parsed = new URL( repaired );
+	} catch {
+		return repaired;
+	}
+	if ( parsed.protocol !== 'http:' && parsed.protocol !== 'https:' ) {
+		return repaired;
+	}
+	const path = parsed.pathname;
+	if ( ! path.toLowerCase().startsWith( WP_UPLOADS_PREFIX ) ) {
+		return repaired;
+	}
+	const rest = path.slice( WP_UPLOADS_PREFIX.length );
+	return rest ? `/media/${ rest }${ parsed.search }` : repaired;
+}
+
+/**
+ * Whether this build's manifest declares the managed runtime.
+ *
+ * The localizer resolves its mode from the same field, so the template and the
+ * post-build pass agree on which tier this project is.
+ *
+ * @returns True when `nvoos.json` says `runtime: "managed"`.
+ */
+function managedRuntime(): boolean {
+	return ( manifest as unknown as { runtime?: string } ).runtime === 'managed';
 }
 
 /**

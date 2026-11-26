@@ -1705,6 +1705,14 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 			expect( revalidate ).toContain( 'cache.invalidate({ tags })' );
 			expect( revalidate ).toContain( 'export const prerender = false;' );
 
+			// The diagnostic surface (2026-11-26): "is the BFF wired, and what does
+			// the CMS say?" in one request, without shell access to the app.
+			const health = await readFile( path.join( target, 'src/pages/api/health.ts' ), 'utf8' );
+			expect( health ).toContain( 'NVOOS_TARGET_SITE is not configured.' );
+			expect( health ).toContain( 'export const prerender = false;' );
+			// Public route: the target origin must be redacted out of any error.
+			expect( health ).toContain( "join('<target>')" );
+
 			// Proposal 135 Phase 5 — the preview seam.
 			const previewApi = await readFile( path.join( target, 'src/pages/api/preview.ts' ), 'utf8' );
 			expect( previewApi ).toContain( "const COOKIE = 'nvoos_preview';" );
@@ -1721,6 +1729,12 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 			const verifyTree = await readFile( path.join( target, 'scripts/verify-deploy-tree.mjs' ), 'utf8' );
 			expect( verifyTree ).toContain( "spawn(process.execPath, ['server.js']" );
 			expect( verifyTree ).toContain( "'install', '--omit=dev'" );
+			// Booting "/" is not enough: a tree whose BFF routes are absent starts
+			// green and serves 502s to every visitor (eca.directory, 2026-11-26).
+			expect( verifyTree ).toContain( '/media/__forge_probe__.png' );
+			expect( verifyTree ).toContain( '/api/__forge_probe__' );
+			expect( verifyTree ).toContain( "path: '/api/revalidate'" );
+			expect( verifyTree ).toContain( "method: 'POST'" );
 
 			const config = await readFile( path.join( target, 'astro.config.mjs' ), 'utf8' );
 			expect( config ).toContain( 'memoryCache' );
