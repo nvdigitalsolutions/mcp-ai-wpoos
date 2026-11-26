@@ -591,6 +591,30 @@ flood, the token/provenance checks stop a single crafted request.
     “disappears” in production, diff the built artifact against the template at
     `origin/alpha-working` before debugging the code.
 
+21. **A managed sign-in fails in ONE of four layers — read the header, do not
+    guess.** Every refusal carries `x-nvoos-origin` or `x-nvoos-cred` naming the
+    layer and the values it compared. The ladder, in order:
+    - `origin` — a same-origin **form** POST arrives as `Origin: null` in Chrome
+      (fetch sends the real origin), and a proxy that pins `x-forwarded-host` to
+      the apex makes a `www` visitor unrepresentable. Accept `null` by falling
+      back to `Sec-Fetch-Site`, and pass the client host through when it is one
+      of the app's own names.
+    - `credentials` — three doors: Basic app password, wp-login account password,
+      or the bridge contract. WordPress distinguishes `invalid_username` from
+      `incorrect_password`; report which.
+    - `permission` — never scrape `wp-admin` for capability (a firewall filtering
+      it reads an administrator as unprivileged), and note that REST ignores
+      `wordpress_logged_in_*` without an `X-WP-Nonce` — it needs the
+      `wordpress_<hash>` **auth** cookie, so carry the whole jar.
+    - `upstream` — this CMS answers REST in 3-9 s, so an 8 s client cap loses the
+      race. Default is now 15 s (`NVOOS_MANAGE_TIMEOUT_MS`).
+
+    Prefer the bridge contract `POST /wp-json/nvoos-commerce/v1/auth/login`
+    (`{email, password}` -> `{id, name, canManage}`): one call, no cookies, no
+    scraping, and the only door that answers capability authoritatively. A WAF
+    (MalCare here) returning an HTML 403 to the app's egress appears as
+    `basic=403:-`; whitelist the app server IP or exclude `/wp-json/*`.
+
 ## Mirror-push mechanics (verified 2026-11-24)
 
 - **`forge deploy --mirror-repo` is self-sufficient.** It emits
