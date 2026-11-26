@@ -33,7 +33,7 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Cache-key prefix for the storage-byte aggregate.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 * @var string
 	 */
 	const STORAGE_BYTES_CACHE_PREFIX = 'wp_mcp_ai_tb_';
@@ -41,7 +41,7 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * User meta key holding the cache-busting version for the aggregate.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 * @var string
 	 */
 	const STORAGE_BYTES_VERSION_META = '_wp_mcp_ai_tb_version';
@@ -49,7 +49,7 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Default freshness window for the cached aggregate, in seconds.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 * @var int
 	 */
 	const STORAGE_BYTES_CACHE_TTL = 300;
@@ -59,7 +59,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 *
 	 * Used as a backstop when a recompute exceeds its time budget.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 * @var int
 	 */
 	const STORAGE_BYTES_BACKSTOP_TTL = 604800;
@@ -67,7 +67,7 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Default maximum time the aggregate may run, in milliseconds.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 * @var int
 	 */
 	const STORAGE_BYTES_TIME_BUDGET_MS = 2000;
@@ -296,7 +296,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 * as `get_sessions()`, and returns 0 when the table is unavailable.
 	 *
 	 * @since 1.0.0
-	 * @since 1.2.23 Caches the aggregate and bounds the recompute.
+	 * @since 1.2.24 Caches the aggregate and bounds the recompute.
 	 *
 	 * @param int $user_id      User identifier.
 	 * @param int $assistant_id Optional assistant ID to filter by.
@@ -315,7 +315,7 @@ class WP_MCP_AI_Transcript_Repository {
 		 *
 		 * Return 0 to disable caching, so every read recomputes the aggregate.
 		 *
-		 * @since 1.2.23
+		 * @since 1.2.24
 		 *
 		 * @param int $ttl          Freshness window in seconds. Default 300.
 		 * @param int $user_id      User identifier.
@@ -384,7 +384,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 * Each statement runs under a statement time limit; when that limit is hit
 	 * the method returns null instead of blocking the request indefinitely.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @param int $user_id      User identifier.
 	 * @param int $assistant_id Optional assistant ID to filter by.
@@ -456,7 +456,7 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Execute an aggregate SELECT under a statement time limit.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @param string $query Prepared SQL.
 	 * @return int|null Integer result, or null on failure or timeout.
@@ -469,7 +469,7 @@ class WP_MCP_AI_Transcript_Repository {
 		 *
 		 * Return 0 to run without a limit.
 		 *
-		 * @since 1.2.23
+		 * @since 1.2.24
 		 *
 		 * @param int $budget_ms Time budget in milliseconds. Default 2000.
 		 */
@@ -508,7 +508,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 * it can be restored exactly. When neither setting is available the query
 	 * simply runs unbounded.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @param int $budget_ms Time budget in milliseconds.
 	 * @return array|null State to pass to restore_statement_time_limit(), or null.
@@ -562,7 +562,7 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Restore the statement time limit captured by apply_statement_time_limit().
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @param array|null $previous State returned by apply_statement_time_limit().
 	 * @return void
@@ -591,7 +591,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 * assistant-scoped entry needs a single meta write rather than enumerating
 	 * keys. Old entries expire on their own.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @param int $user_id      User identifier.
 	 * @param int $assistant_id Assistant identifier (0 = all assistants).
@@ -615,7 +615,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 * The backstop survives cache invalidation so a timed-out recompute can
 	 * still report the last figure that was successfully measured.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @param int $user_id      User identifier.
 	 * @param int $assistant_id Assistant identifier (0 = all assistants).
@@ -628,7 +628,7 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Invalidate every cached storage total for a user.
 	 *
-	 * @since 1.2.23
+	 * @since 1.2.24
 	 *
 	 * @param int $user_id User identifier.
 	 * @return void
