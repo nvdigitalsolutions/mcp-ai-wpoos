@@ -4861,3 +4861,59 @@ One tooling note for whoever writes the next slice: this terminal halves backsla
 heredoc content, so a `	rim(` arrived as a tab followed by `rim(`. The suite caught it
 as an undefined function; every new file was then scanned for stray control bytes and
 the damaged call repaired.
+
+## 164.58 The four aggregates, and three helpers that stopped drifting
+
+**On the numbering:** §164.57 merged ahead of this one. This is step 2 of the order
+§164.54 named, and it leaves `eca-management` at five remaining.
+
+### What shipped
+
+| tool | question it answers |
+|---|---|
+| `check_eca_conflicts` | would this slot collide, before anything is written |
+| `generate_eca_analytics` | participation, capacity, financial, engagement |
+| `generate_eca_participation_report` | one activity, one student, a year group or the school, as JSON or markdown |
+| `export_eca_data` | activities, students, enrolments, attendance or financial rows as a CSV |
+
+### Three helpers, because four tools ask the same questions
+
+- **`Schedule`** — minutes since midnight, strict overlap, the seven days. The
+  timetable and the conflict check now share it; the timetable's private copy is gone.
+- **`EcaFilter`** — list / CSV / single-name matching and the live-key roster read.
+  The timetable uses it too, so a teacher view and a teacher conflict check cannot
+  disagree about who teaches what.
+- **`AttendanceLog::forStudent()`** — the per-student reader, pulled out of
+  `get_student_participation_summary` when the report needed the same numbers. The
+  summary keeps WordPress's `sessions_recorded` key by mapping the shared `records`,
+  rather than renaming a payload key two tools had already published.
+
+### Decisions that are visible in the payloads
+
+- **The export is private by default.** It names children. A public default would
+  put attendance and financial rows on a web-served path, which is the one mistake
+  an export tool must not make quietly.
+- **Money is a projection and says so.** `financial` exports `projected_revenue`
+  (cost × enrolments) and repeats the caveat in the payload: there is no payments
+  ledger here, and a column called "revenue" that is really "expected" would be read
+  as receipts.
+- **`term` is free text.** WordPress restricts it to four values; `_eca_term` stores
+  whatever `manage_eca_term` wrote, so an enum would refuse real terms the data holds.
+- **The export is capped at 20,000 rows** with `truncated`, because exporting half a
+  term's attendance as if it were all of it is the failure a flag exists to prevent.
+- **The conflict check names its blind spot.** A clean answer means nothing this
+  runtime stores occupies the slot; a room booking held elsewhere is invisible.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,040 / 19,589** (24 tests added across the two commits) |
+| adapter PHPUnit | **460 / 2,234** (4 probes added), OK |
+| tool readiness audit | **332 / 332**, servable **313** (+7), no violations |
+| toolkit parity | **111 of 854**; `eca-management` **22 ported**, 1 declined, 20 deferred, **5 remaining** |
+| licence boundary / phpcs | intact / clean (12 files) |
+
+The `` half of the heredoc hazard recorded in §164.57 recurred — `ile` arrived as a
+form feed — so every file in the slice is now scanned for stray control bytes before
+gates run, not just the one that failed.

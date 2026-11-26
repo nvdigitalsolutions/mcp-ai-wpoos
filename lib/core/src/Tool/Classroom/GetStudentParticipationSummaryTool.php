@@ -162,7 +162,22 @@ class GetStudentParticipationSummaryTool extends AbstractTool
             );
 
             if ($include_attendance) {
-                $stats               = $this->attendance($eca, $student_id);
+                $attendance = AttendanceLog::forStudent(
+                    AttendanceLog::sessions($eca->meta['_eca_attendance_log'] ?? array()),
+                    $student_id
+                );
+
+                // WordPress calls this key `sessions_recorded`; the shared
+                // reader calls the same number `records`, so it is mapped here
+                // rather than renamed in the payload.
+                $stats = array(
+                    'sessions_recorded' => $attendance['records'],
+                    'present'           => $attendance['present'],
+                    'absent'            => $attendance['absent'],
+                    'late'              => $attendance['late'],
+                    'excused'           => $attendance['excused'],
+                    'attendance_rate'   => $attendance['attendance_rate'],
+                );
                 $entry['attendance'] = $stats;
 
                 if ($stats['sessions_recorded'] > 0) {
@@ -204,44 +219,4 @@ class GetStudentParticipationSummaryTool extends AbstractTool
         );
     }
 
-    /**
-     * One student's attendance inside one activity.
-     *
-     * @return array{sessions_recorded: int, present: int, absent: int, late: int, excused: int, attendance_rate: float}
-     */
-    private function attendance(ContentItem $eca, int $student_id): array
-    {
-        $stats = array(
-            'sessions_recorded' => 0,
-            'present'           => 0,
-            'absent'            => 0,
-            'late'              => 0,
-            'excused'           => 0,
-            'attendance_rate'   => 0.0,
-        );
-
-        foreach (AttendanceLog::sessions($eca->meta['_eca_attendance_log'] ?? array()) as $session) {
-            foreach (AttendanceLog::attendees($session) as $attendee) {
-                if ((int) ($attendee['student_id'] ?? 0) !== $student_id) {
-                    continue;
-                }
-
-                ++$stats['sessions_recorded'];
-
-                $status = (string) ($attendee['status'] ?? '');
-
-                if (isset($stats[ $status ])) {
-                    ++$stats[ $status ];
-                }
-            }
-        }
-
-        $stats['attendance_rate'] = AttendanceLog::rate(
-            $stats['present'],
-            $stats['late'],
-            $stats['sessions_recorded']
-        );
-
-        return $stats;
-    }
 }

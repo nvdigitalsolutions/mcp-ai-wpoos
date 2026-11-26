@@ -88,6 +88,53 @@ final class AttendanceLog
     }
 
     /**
+     * One student's attendance across a set of sessions.
+     *
+     * `records` is how many sessions carried a row for this student, which is
+     * the denominator the rate uses: a session the register never recorded is
+     * not an absence, and counting it as one would punish the student for the
+     * register keeper's omission.
+     *
+     * @param array<string, array<string, mixed>> $sessions Date-keyed sessions.
+     * @return array{records: int, present: int, absent: int, late: int, excused: int, attendance_rate: float}
+     */
+    public static function forStudent(array $sessions, int $student_id): array
+    {
+        $stats = array(
+            'records'         => 0,
+            'present'         => 0,
+            'absent'          => 0,
+            'late'            => 0,
+            'excused'         => 0,
+            'attendance_rate' => 0.0,
+        );
+
+        if ($student_id <= 0) {
+            return $stats;
+        }
+
+        foreach ($sessions as $session) {
+            foreach (self::attendees($session) as $attendee) {
+                if ((int) ($attendee['student_id'] ?? 0) !== $student_id) {
+                    continue;
+                }
+
+                ++$stats['records'];
+
+                $status = (string) ($attendee['status'] ?? '');
+
+                if (isset($stats[ $status ]) && 'records' !== $status) {
+                    ++$stats[ $status ];
+                }
+            }
+        }
+
+        $stats['attendance_rate'] = self::rate($stats['present'], $stats['late'], $stats['records']);
+
+        return $stats;
+    }
+
+    /**
      * A rate as a percentage of records, one decimal place.
      *
      * @param int $present Counted as attended.
