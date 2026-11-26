@@ -43,6 +43,11 @@ const eyebrowStyle = eyebrow
 			eyebrow.color && `color:${ eyebrow.color }`,
 			eyebrow.align && eyebrow.align !== 'start' && `text-align:${ eyebrow.align }`,
 			eyebrow.maxWidth && eyebrow.maxWidth !== 'none' && `max-width:${ eyebrow.maxWidth }`,
+			// The measured block margins: a builder publishes the kicker with its own
+			// `margin: 0 0 15px`, and the template's default margin pushed the eyebrow
+			// (and every line under it) 16px down (eca.directory's FAQ band, 2026-11-25).
+			eyebrow.marginTop && `margin-top:${ eyebrow.marginTop }`,
+			eyebrow.marginBottom && `margin-bottom:${ eyebrow.marginBottom }`,
 		]
 			.filter( Boolean )
 			.join( ';' )

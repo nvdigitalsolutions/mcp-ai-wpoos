@@ -1243,6 +1243,63 @@ export interface ForgeBandRowFact {
 }
 
 /**
+ * How the band's OWN row lays its children out, measured per device
+ * (`collectBandRowLayoutFacts`).
+ *
+ * The column facts record each lane's width, but width alone cannot say
+ * whether those lanes sit side by side or one above the other: two 1280px
+ * lanes inside a 1280px content column are a STACK, and normalising them to a
+ * two-track grid laid eca.directory's about-us CTA beside itself (2026-11-25).
+ * `direction` is the browser's computed `flex-direction`; `gap` is the
+ * `row-gap` that spaces the stacked lanes.
+ */
+export interface ForgeBandRowLayout {
+	/** The row's computed `flex-direction` (`row` for a grid, `column` for a stack). */
+	direction: 'row' | 'column';
+	/** `row-gap` in px — only when the container states one. */
+	gap?: number;
+	/** `justify-content` — only when it is not the default (`normal`). */
+	justify?: string;
+	/** `align-items` — only when it is not the default (`normal`/`stretch`). */
+	align?: string;
+	/**
+	 * The ink of the band's LABEL element (a counter title / `dd`), when one is
+	 * present. The rebuild's muted default (`--forge-muted` #747474) is
+	 * unreadable on a dark panel — eca.directory's stats labels are white on
+	 * #27104A (2026-11-25).
+	 */
+	labelInk?: string;
+}
+
+/** The band's row layout per device. Sparse: a device with no row is absent. */
+export interface BandRowLayoutFacts {
+	desktop?: ForgeBandRowLayout;
+	tablet?: ForgeBandRowLayout;
+	mobile?: ForgeBandRowLayout;
+}
+
+/**
+ * A NARROW container nested inside a band — a builder insets copy by wrapping it
+ * in a smaller centred container (`e-con-inner` at 500px inside a 1280px band).
+ *
+ * The wrapper has no builder id of its own, so the fact names its PARENT (which
+ * does), and the renderer scopes a rule to the parent's direct child. Without it
+ * the copy lane stretched to the band: eca.directory's about-us CTA painted its
+ * eyebrow chip as a 1280px purple bar and wrapped the title at 1280 instead of
+ * 500 (2026-11-25).
+ */
+export interface ForgeBandNarrowBox {
+	/** The `elementor-element-<id>` token of the WRAPPING element. */
+	parentId: string;
+	/** The container's rendered width (px). */
+	width: number;
+	/** Where it sits across its parent. */
+	align: 'start' | 'center' | 'end';
+	/** The container's measured `align-items`, when it states one. */
+	alignItems?: string;
+}
+
+/**
  * One PAGED carousel inside a band, measured per device
  * (`collectBandCarouselFacts`).
  *
@@ -1555,6 +1612,16 @@ export interface ForgeBandFacts {
 	 */
 	splitColumns?: number[];
 	/**
+	 * The split's COPY lane MEASURE, measured (`collectBandLayoutFacts`): the
+	 * widest paragraph block inside the text lane, when the builder pins it
+	 * narrower than the lane itself (`elementor-widget__width-initial`).
+	 *
+	 * The vendor rule that stated the percentage never ships, so the rebuilt
+	 * lede ran the full lane and wrapped one line longer (eca.directory's
+	 * about-us hero: a 610px paragraph in an 811px lane, 2026-11-25).
+	 */
+	copyWidth?: number;
+	/**
 	 * The band's grid COLUMNS per device: rendered heights, background photos
 	 * and their attachment (`collectBandColumnFacts`). Emitted by the scaffold
 	 * as band-scoped `.column-class` rules, because the sanitized markup keeps
@@ -1570,6 +1637,22 @@ export interface ForgeBandFacts {
 	 * mark row — so the rebuild can give each its own track sizes.
 	 */
 	rows?: ForgeBandRowFact[];
+	/**
+	 * How the band's OWN row lays its lanes out (`collectBandRowLayoutFacts`).
+	 *
+	 * `columns` states each lane's width; this states whether those widths are
+	 * side by side or stacked, and the gap between them. Without it a stack of
+	 * two full-width lanes was normalised into a two-track grid and the copy
+	 * slid 319px left (eca.directory's about-us CTA, 2026-11-25).
+	 */
+	rowLayout?: BandRowLayoutFacts;
+	/**
+	 * The NARROW containers nested inside the band (`selectNarrowBoxes`): a
+	 * builder insets copy by wrapping it in a smaller centred container. The
+	 * wrapper carries no id, so each fact names its parent and the width the
+	 * source rendered.
+	 */
+	narrowBoxes?: ForgeBandNarrowBox[];
 	/**
 	 * The band's PAGED carousels per device (`collectBandCarouselFacts`): how
 	 * many slides the source shows at once and how it paginates them. The vendor

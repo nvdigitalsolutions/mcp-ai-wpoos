@@ -13377,8 +13377,8 @@
 		},
 		"contact-us": {
 			"url": "https://eca.directory/contact-us/",
-			"measuredAt": "2026-11-25T17:06:59.693Z",
-			"sourceHash": "050534e90b3b679d",
+			"measuredAt": "2026-11-25T19:37:07.812Z",
+			"sourceHash": "701301caaa052a6c",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -13556,8 +13556,8 @@
 						"marginTop": 0,
 						"marginBottom": 0,
 						"content": {
-							"width": 1280,
-							"x": 80,
+							"width": 1100,
+							"x": 170,
 							"padTop": 60,
 							"padBottom": 60
 						}
@@ -13623,6 +13623,10 @@
 						}
 					},
 					"titleText": "Contact Us",
+					"splitColumns": [
+						0.665,
+						0.335
+					],
 					"box": {
 						"elementor-element": {
 							"base": "margin:0px 0px 0px 0px"
@@ -13811,6 +13815,20 @@
 							}
 						]
 					},
+					"rowLayout": {
+						"desktop": {
+							"direction": "row",
+							"gap": 60
+						},
+						"tablet": {
+							"direction": "row",
+							"gap": 60
+						},
+						"mobile": {
+							"direction": "row",
+							"gap": 40
+						}
+					},
 					"classes": [
 						"e-child",
 						"e-con",
@@ -13898,6 +13916,13 @@
 						}
 					},
 					"titleText": "Get in touch",
+					"narrowBoxes": [
+						{
+							"parentId": "e7f1a29",
+							"width": 894,
+							"align": "start"
+						}
+					],
 					"box": {
 						"elementor-element-a969758": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 90px 0px"
@@ -14151,6 +14176,20 @@
 							}
 						]
 					},
+					"rowLayout": {
+						"desktop": {
+							"direction": "row",
+							"gap": 60
+						},
+						"tablet": {
+							"direction": "row",
+							"gap": 60
+						},
+						"mobile": {
+							"direction": "row",
+							"gap": 60
+						}
+					},
 					"classes": [
 						"e-child",
 						"e-con",
@@ -14333,6 +14372,14 @@
 						"level": 2
 					},
 					"centeredContent": true,
+					"narrowBoxes": [
+						{
+							"parentId": "7f49f06",
+							"width": 1100,
+							"align": "center",
+							"alignItems": "center"
+						}
+					],
 					"box": {
 						"elementor-element-7f49f06": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -14524,6 +14571,83 @@
 							}
 						}
 					],
+					"panel": {
+						"bg": "rgb(135, 100, 160)",
+						"ink": "#ffffff"
+					},
+					"columns": {
+						"desktop": [
+							{
+								"selector": "elementor-element-fc07233",
+								"height": 28,
+								"width": 66,
+								"bg": "rgb(135, 100, 160)"
+							},
+							{
+								"selector": "elementor-element-040533f",
+								"height": 91,
+								"width": 550
+							},
+							{
+								"selector": "elementor-element-c089717",
+								"height": 572,
+								"width": 1100
+							}
+						],
+						"tablet": [
+							{
+								"selector": "elementor-element-fc07233",
+								"height": 28,
+								"width": 66,
+								"bg": "rgb(135, 100, 160)"
+							},
+							{
+								"selector": "elementor-element-040533f",
+								"height": 81,
+								"width": 581
+							},
+							{
+								"selector": "elementor-element-c089717",
+								"height": 601,
+								"width": 774
+							}
+						],
+						"mobile": [
+							{
+								"selector": "elementor-element-fc07233",
+								"height": 28,
+								"width": 66,
+								"bg": "rgb(135, 100, 160)"
+							},
+							{
+								"selector": "elementor-element-040533f",
+								"height": 114,
+								"width": 330
+							},
+							{
+								"selector": "elementor-element-c089717",
+								"height": 773,
+								"width": 330
+							}
+						]
+					},
+					"rowLayout": {
+						"desktop": {
+							"direction": "column",
+							"gap": 20,
+							"align": "center"
+						},
+						"tablet": {
+							"direction": "column",
+							"gap": 20,
+							"align": "center"
+						},
+						"mobile": {
+							"direction": "column",
+							"gap": 20,
+							"align": "center"
+						}
+					},
 					"hidden": [
 						"[class~=\"elementor-clearfix\"][class~=\"elementor-tab-content\"]:not([class~=\"elementor-active\"])"
 					],
@@ -14604,8 +14728,8 @@
 		},
 		"about-us": {
 			"url": "https://eca.directory/about-us/",
-			"measuredAt": "2026-11-25T17:06:23.673Z",
-			"sourceHash": "61171ddf5e6b0c52",
+			"measuredAt": "2026-11-25T19:36:28.529Z",
+			"sourceHash": "ba879f56eb1dbfa8",
 			"builder": "elementor",
 			"sections": [
 				{
@@ -14751,8 +14875,7 @@
 						"content": {
 							"width": 1280,
 							"x": 80,
-							"padTop": 80,
-							"padBottom": 0
+							"padTop": 80
 						}
 					},
 					"tablet": {
@@ -14775,8 +14898,7 @@
 						"content": {
 							"width": 774,
 							"x": 30,
-							"padTop": 60,
-							"padBottom": 0
+							"padTop": 60
 						}
 					},
 					"mobile": {
@@ -14799,8 +14921,7 @@
 						"content": {
 							"width": 330,
 							"x": 30,
-							"padTop": 60,
-							"padBottom": 0
+							"padTop": 60
 						}
 					}
 				},
@@ -14969,6 +15090,11 @@
 						"marginBottom": "18px"
 					},
 					"titleText": "About Us",
+					"splitColumns": [
+						0.665,
+						0.335
+					],
+					"copyWidth": 610,
 					"box": {
 						"elementor-element": {
 							"base": "margin:0px 0px 0px 0px"
@@ -15163,6 +15289,20 @@
 							}
 						]
 					},
+					"rowLayout": {
+						"desktop": {
+							"direction": "row",
+							"gap": 60
+						},
+						"tablet": {
+							"direction": "row",
+							"gap": 60
+						},
+						"mobile": {
+							"direction": "row",
+							"gap": 40
+						}
+					},
 					"classes": [
 						"e-child",
 						"e-con",
@@ -15293,6 +15433,11 @@
 						"text": "Our benefits",
 						"level": 2
 					},
+					"splitColumns": [
+						0.5,
+						0.5
+					],
+					"copyWidth": 460,
 					"rows": [
 						{
 							"id": "7b8046e2",
@@ -15592,6 +15737,23 @@
 							}
 						]
 					},
+					"rowLayout": {
+						"desktop": {
+							"direction": "row",
+							"gap": 60,
+							"align": "flex-end"
+						},
+						"tablet": {
+							"direction": "row",
+							"gap": 60,
+							"align": "flex-end"
+						},
+						"mobile": {
+							"direction": "row",
+							"gap": 40,
+							"align": "flex-end"
+						}
+					},
 					"classes": [
 						"e-child",
 						"e-con",
@@ -15700,6 +15862,13 @@
 						}
 					},
 					"titleText": "Why choose our platform",
+					"narrowBoxes": [
+						{
+							"parentId": "14c60321",
+							"width": 1100,
+							"align": "center"
+						}
+					],
 					"box": {
 						"e-con-inner": {
 							"base": "padding:60px 0px 60px 0px;margin:0px 140px 0px 140px",
@@ -15784,6 +15953,109 @@
 						},
 						"elementor-element-630a251e": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+						}
+					},
+					"columns": {
+						"desktop": [
+							{
+								"selector": "elementor-element-332f382b",
+								"height": 48,
+								"width": 1100
+							},
+							{
+								"selector": "elementor-element-3c550ce9",
+								"height": 86,
+								"width": 151
+							},
+							{
+								"selector": "elementor-element-4b70ea17",
+								"height": 86,
+								"width": 253
+							},
+							{
+								"selector": "elementor-element-392768ef",
+								"height": 86,
+								"width": 197
+							},
+							{
+								"selector": "elementor-element-630a251e",
+								"height": 86,
+								"width": 163
+							}
+						],
+						"tablet": [
+							{
+								"selector": "elementor-element-332f382b",
+								"height": 35,
+								"width": 774
+							},
+							{
+								"selector": "elementor-element-3c550ce9",
+								"height": 68,
+								"width": 348
+							},
+							{
+								"selector": "elementor-element-4b70ea17",
+								"height": 68,
+								"width": 348
+							},
+							{
+								"selector": "elementor-element-392768ef",
+								"height": 68,
+								"width": 348
+							},
+							{
+								"selector": "elementor-element-630a251e",
+								"height": 68,
+								"width": 348
+							}
+						],
+						"mobile": [
+							{
+								"selector": "elementor-element-332f382b",
+								"height": 69,
+								"width": 330
+							},
+							{
+								"selector": "elementor-element-3c550ce9",
+								"height": 68,
+								"width": 330
+							},
+							{
+								"selector": "elementor-element-4b70ea17",
+								"height": 68,
+								"width": 330
+							},
+							{
+								"selector": "elementor-element-392768ef",
+								"height": 68,
+								"width": 330
+							},
+							{
+								"selector": "elementor-element-630a251e",
+								"height": 68,
+								"width": 330
+							}
+						]
+					},
+					"rowLayout": {
+						"desktop": {
+							"direction": "row",
+							"gap": 60,
+							"justify": "space-between",
+							"labelInk": "rgb(255, 255, 255)"
+						},
+						"tablet": {
+							"direction": "row",
+							"gap": 60,
+							"justify": "space-between",
+							"labelInk": "rgb(255, 255, 255)"
+						},
+						"mobile": {
+							"direction": "row",
+							"gap": 40,
+							"justify": "space-between",
+							"labelInk": "rgb(255, 255, 255)"
 						}
 					},
 					"classes": [
@@ -15886,6 +16158,14 @@
 						"text": "Our blog",
 						"level": 2
 					},
+					"narrowBoxes": [
+						{
+							"parentId": "3b9857a4",
+							"width": 500,
+							"align": "center",
+							"alignItems": "center"
+						}
+					],
 					"box": {
 						"elementor-element": {
 							"base": "margin:0px 0px 0px 0px"
@@ -16033,6 +16313,20 @@
 								"bg": "rgb(135, 100, 160)"
 							}
 						]
+					},
+					"rowLayout": {
+						"desktop": {
+							"direction": "column",
+							"gap": 40
+						},
+						"tablet": {
+							"direction": "column",
+							"gap": 40
+						},
+						"mobile": {
+							"direction": "column",
+							"gap": 40
+						}
 					},
 					"classes": [
 						"e-child",
