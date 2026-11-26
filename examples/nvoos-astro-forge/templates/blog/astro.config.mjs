@@ -8,6 +8,27 @@ import manifest from './nvoos.json';
 // Set ASTRO_SITE at build/deploy time to the production hostname.
 const site = process.env.ASTRO_SITE || 'http://localhost:4321';
 
+// CSRF origin check (Astro security.checkOrigin is on by default). Behind the
+// Velocity proxy the Node process sees an internal Host, so Astro compares the
+// browser's Origin with the wrong host and refuses every POST — "Cross-site
+// POST form submissions are forbidden" (2026-11-26). Naming the public host
+// lets Astro trust the x-forwarded-host the front controller pins, so
+// Astro.url — and therefore the origin check — resolves to the real origin.
+const rawPublicHost = (() => {
+	try {
+		return new URL(site).hostname;
+	} catch {
+		return '';
+	}
+})();
+const publicHost = rawPublicHost.startsWith('www.') ? rawPublicHost.slice(4) : rawPublicHost;
+const allowedDomains = publicHost
+	? [
+			{ hostname: publicHost, protocol: 'https' },
+			{ hostname: 'www.' + publicHost, protocol: 'https' },
+	  ]
+	: [];
+
 // Remote image domains for Astro Image: the WordPress source host, derived
 // from the same env-first rule the content layer uses (WP_SITE_URL overrides
 // the scaffolded profile URL). `profile.media.hosts` and
@@ -45,6 +66,7 @@ const prerenderConflictBehavior = manifest.build?.strictRoutes ? 'error' : 'warn
 
 export default defineConfig({
 	site,
+	security: { allowedDomains },
 	prerenderConflictBehavior,
 	// Hybrid local content (Proposal 106 P2): the src/content/*.mdx glob
 	// collections need the MDX integration.

@@ -64,16 +64,62 @@ export function renderManageSessionTs( options: ManageRenderOptions ): string {
 // The gate verifies the SAME format locally, so a signed-in manager still sees
 // the real site when the CMS is unreachable — which is when a gate matters.
 
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export const MANAGED_COOKIE = '__COOKIE_NAME__';
 export const MANAGED_TTL_SECONDS = __TTL_SECONDS__;
 
 /** NVOOS_MANAGE_SECRET wins; NVOOS_FORGE_GATE_SECRET is the operator fallback.
- *  A blank value counts as unset — the env template ships the key empty. */
+ *  A blank value counts as unset — the env template ships the key empty.
+ *  With neither set, a key is provisioned ONCE beside the app (the same
+ *  the .forge-gate-secret file forge-gate/runtime.mjs reads), so sign-in works out
+ *  the box instead of refusing with error=config, and sessions survive a
+ *  restart. Set either env var to share one key across instances. */
+let provisionedSecret = '';
 export function manageSecret(): string {
 	const explicit = String(process.env.NVOOS_MANAGE_SECRET ?? '').trim();
-	return explicit || String(process.env.NVOOS_FORGE_GATE_SECRET ?? '').trim();
+	if (explicit) {
+		return explicit;
+	}
+	const fallback = String(process.env.NVOOS_FORGE_GATE_SECRET ?? '').trim();
+	if (fallback) {
+		return fallback;
+	}
+	if (provisionedSecret) {
+		return provisionedSecret;
+	}
+	// Provision only inside a scaffolded app. A library consumer (or a unit
+	// test) with no gate manifest must keep failing closed.
+	if (!existsSync(join(process.cwd(), 'gate.generated.json'))) {
+		return '';
+	}
+	const path = join(process.cwd(), '.forge-gate-secret');
+	const read = (): string => {
+		try {
+			return String(readFileSync(path, 'utf8')).trim();
+		} catch {
+			return '';
+		}
+	};
+	const existing = read();
+	if (existing) {
+		provisionedSecret = existing;
+		return provisionedSecret;
+	}
+	provisionedSecret = randomBytes(32).toString('hex');
+	try {
+		writeFileSync(path, provisionedSecret + '\n', { mode: 0o600, flag: 'wx' });
+	} catch {
+		const raced = read();
+		if (raced) {
+			provisionedSecret = raced;
+		} else {
+			console.warn('[manage] no signing secret and ' + path + ' is not writable; sessions reset on restart.');
+		}
+	}
+	return provisionedSecret;
 }
 
 export interface ManageSession {
@@ -353,19 +399,31 @@ function sameOrigin(request: Request): boolean {
 		return false;
 	}
 	const allowed = new Set< string >();
-	const headerHost = request.headers.get('host');
-	if (headerHost) {
-		allowed.add(headerHost);
-	}
+	const bare = (value: string): string => (value.startsWith('www.') ? value.slice(4) : value);
+	// The proxy rewrites Host, so the browser Origin is matched against the
+	// configured public origin and the pinned x-forwarded-host as well — and
+	// against both the apex and www forms of each.
+	const sources = [
+		request.headers.get('host') ?? '',
+		request.headers.get('x-forwarded-host') ?? '',
+	];
 	const configured = process.env.ASTRO_SITE ?? '';
 	if (configured) {
 		try {
-			allowed.add(new URL(configured).host);
+			sources.push(new URL(configured).host);
 		} catch {
 			// A malformed ASTRO_SITE is not a reason to trust anything extra.
 		}
 	}
-	return allowed.has(host);
+	for (const source of sources) {
+		const value = source.trim().toLowerCase();
+		if (!value) {
+			continue;
+		}
+		allowed.add(bare(value));
+		allowed.add('www.' + bare(value));
+	}
+	return allowed.has(host.toLowerCase());
 }
 
 /** Only an in-app path is accepted as a post-login destination. */
@@ -383,6 +441,82 @@ function errorRedirect(code: string): Response {
 		headers: { location: '/manage/?error=' + encodeURIComponent(code), 'cache-control': 'no-store' },
 	});
 	return response;
+}
+
+/** The wordpress_logged_in_* cookie a successful wp-login.php sets. */
+function loggedInCookie(response: Response): string {
+	const all = typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
+	for (const line of all) {
+		if (line.toLowerCase().startsWith('wordpress_logged_in_')) {
+			return line.split(';')[0];
+		}
+	}
+	return '';
+}
+
+/** POST the ACCOUNT password to wp-login.php — the door Basic auth cannot open. */
+async function passwordLogin(username: string, password: string): Promise< string > {
+	const body = new URLSearchParams({
+		log: username,
+		pwd: password,
+		'wp-submit': 'Log In',
+		redirect_to: TARGET + '/wp-admin/',
+		testcookie: '1',
+	});
+	const response = await fetch(TARGET + '/wp-login.php', {
+		method: 'POST',
+		redirect: 'manual',
+		headers: {
+			'content-type': 'application/x-www-form-urlencoded',
+			'user-agent': 'nvoos-forge-manage',
+		},
+		body: body.toString(),
+		signal: AbortSignal.timeout(8000),
+	});
+	await response.body?.cancel();
+	return loggedInCookie(response);
+}
+
+/** The login name WordPress encodes in that cookie (user|exp|token|hmac). */
+function cookieUser(cookie: string): string {
+	const raw = cookie.slice(cookie.indexOf('=') + 1);
+	try {
+		return decodeURIComponent(raw).split('|')[0] ?? '';
+	} catch {
+		return '';
+	}
+}
+
+/** edit.php answers 200 to anyone who may edit posts, 403 to a subscriber. */
+async function cookieAccess(cookie: string): Promise< { ok: boolean; id: string; name: string } > {
+	let id = '0';
+	try {
+		const profile = await fetch(TARGET + '/wp-admin/profile.php', {
+			headers: { cookie, 'user-agent': 'nvoos-forge-manage' },
+			redirect: 'manual',
+			signal: AbortSignal.timeout(8000),
+		});
+		const html = await profile.text();
+		const found = /name="checkuser_id" value="([0-9]+)"/.exec(html);
+		if (found) {
+			id = found[1] ?? '0';
+		}
+	} catch {
+		// Identity is a convenience here; the capability probe below is the gate.
+	}
+	let ok = false;
+	try {
+		const edit = await fetch(TARGET + '/wp-admin/edit.php', {
+			headers: { cookie, 'user-agent': 'nvoos-forge-manage' },
+			redirect: 'manual',
+			signal: AbortSignal.timeout(8000),
+		});
+		await edit.body?.cancel();
+		ok = edit.status === 200;
+	} catch {
+		ok = false;
+	}
+	return { ok, id, name: cookieUser(cookie) };
 }
 
 export const prerender = false;
@@ -475,16 +609,36 @@ export const POST: APIRoute = async ({ request, cookies, url, clientAddress }) =
 			: errorRedirect('upstream');
 	}
 
+	let passwordUser: Record< string, unknown > | null = null;
 	if (response.status === 401 || response.status === 403) {
 		await response.body?.cancel();
-		remember(key);
-		return json
-			? new Response(JSON.stringify({ error: 'Invalid username or application password.' }), {
-					status: 401,
-					headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-			  })
-			: errorRedirect('credentials');
-	}
+		// WordPress core accepts HTTP Basic only for Application Passwords. The
+		// ACCOUNT password is a different door: wp-login.php. Try it before
+		// refusing, so an ordinary administrator can sign in.
+		const cookie = await passwordLogin(username, password).catch(() => '');
+		if (!cookie) {
+			remember(key);
+			return json
+				? new Response(JSON.stringify({ error: 'Invalid username, password or application password.' }), {
+						status: 401,
+						headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+				  })
+				: errorRedirect('credentials');
+		}
+		const access = await cookieAccess(cookie).catch(() => null);
+		if (!access || !access.ok) {
+			remember(key);
+			return json
+				? new Response(JSON.stringify({ error: 'That account cannot manage this site.' }), {
+						status: 403,
+						headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+				  })
+				: errorRedirect('permission');
+		}
+		// A password sign-in returns no REST body; carry the identity forward so
+		// the shared tail stays the only place that mints a session.
+		passwordUser = { id: access.id, name: access.name || username, capabilities: { edit_posts: true } };
+	} else
 	if (!response.ok) {
 		await response.body?.cancel();
 		return json
@@ -495,7 +649,7 @@ export const POST: APIRoute = async ({ request, cookies, url, clientAddress }) =
 			: errorRedirect('upstream');
 	}
 
-	const user = (await response.json().catch(() => null)) as Record< string, unknown > | null;
+	const user = passwordUser ?? ((await response.json().catch(() => null)) as Record< string, unknown > | null);
 	const capabilities =
 		user && typeof user.capabilities === 'object' && user.capabilities !== null
 			? (user.capabilities as Record< string, unknown >)
