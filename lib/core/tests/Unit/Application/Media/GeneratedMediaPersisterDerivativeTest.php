@@ -167,6 +167,17 @@ final class GeneratedMediaPersisterDerivativeTest extends TestCase
                 return $this->stored('/tmp/derivative', 'derivative.jpg', 'image/jpeg', 1);
             }
 
+            /**
+             * Not exercised here: this file is about the write path.
+             *
+             * @param list<int> $sourceFileIds
+             * @return list<int>
+             */
+            public function sourceIdsWithDerivative(array $sourceFileIds, string $role): array
+            {
+                return array();
+            }
+
             private function stored(string $localPath, string $filename, string $mimeType, int $userId): StoredFile
             {
                 return new StoredFile(

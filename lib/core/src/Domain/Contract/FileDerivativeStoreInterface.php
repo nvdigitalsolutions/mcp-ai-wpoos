@@ -111,4 +111,26 @@ interface FileDerivativeStoreInterface
      * @throws \Nvoos\Core\Domain\Error\NotFoundException   When either file id does not exist.
      */
     public function recordDerivative(int $fileId, int $sourceFileId, string $role): StoredFile;
+
+    /**
+     * Which of these sources already have a derivative in this role.
+     *
+     * The inventory question, asked once: "of these videos, which already have a
+     * poster?". Asking per file would be one scan of the registry per video, so
+     * the batch form is part of the contract rather than something each caller
+     * assembles out of `FileStoreInterface::findByMetadata()`.
+     *
+     * Only sources *not* in the returned list are missing the derivative, so an
+     * implementation that cannot see a relationship must omit it — never guess.
+     *
+     * @param list<int> $sourceFileIds Candidate source ids.
+     * @param string    $role          One of {@see self::ROLES}.
+     *
+     * @return list<int> The subset of `$sourceFileIds` that has at least one
+     *                   derivative in that role.
+     *
+     * @throws \Nvoos\Core\Domain\Error\ValidationException When the role is not
+     *                                                      in the vocabulary.
+     */
+    public function sourceIdsWithDerivative(array $sourceFileIds, string $role): array;
 }
