@@ -2460,6 +2460,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixReadToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'gtmetrix_manage_page_tags' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixManagePageTagsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the page-tag manager (Proposal 164 section 164.98): list, create, update, attach and detach, over the tag collection, one tag, and the tag membership endpoints. Corrections: update posts to page_tags/{tag_id} where WordPress validated a tag id and then called the create endpoint without it, so an update created a second tag and never touched the named one; a partial update may omit the name, which the docs allow and WordPress refused; create requires the unique name before the call instead of letting the API answer 400; attach and detach are one tag-side request of 1-500 page ids, where WordPress looped page-side, discarded every per-page result and answered success even when all failed; and every page id is path-checked. Deletion is not offered. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixPageTagsToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'gtmetrix_retest_page' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixRetestPageTool',
 			'readiness' => 'ready',

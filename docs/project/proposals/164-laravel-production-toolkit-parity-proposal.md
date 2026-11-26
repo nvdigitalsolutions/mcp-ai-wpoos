@@ -8609,3 +8609,68 @@ are pinned in `lib/core`. The test fake gained method-keyed responses because
 
 Next: slice 8, the last portable tool — `gtmetrix_manage_page_tags` — and the
 toolkit closes at 22 ported, 1 deferred.
+
+## 164.98 `gtmetrix`, slice 8 — the tags, and the toolkit closes
+
+`gtmetrix_manage_page_tags`, five actions behind one slug. The toolkit closes
+at **22 of 23**: 22 ported, 0 declined, 1 deferred (`gtmetrix_install_wpcode_fix`,
+section 164.95), 1 remaining. The toolkit is done; the loop returns to the
+parity table.
+
+### Corrections
+
+1. **`update` updates.** WordPress required a `tag_id`, validated it, and then
+   called the create endpoint *without* the id. An update therefore created a
+   second tag — or failed on the unique-name constraint — and never touched the
+   tag named. The documented partial update is `POST /page_tags/{tag_id}`.
+2. **A partial update may omit the name.** The docs say an omitted attribute
+   keeps its value; WordPress refused an update without a name. The port
+   requires at least one of name, description or colour.
+3. **`create` requires a name.** WordPress sent empty attributes and let the
+   API answer a 400. The declared unique name is required before the call, and
+   over 45 characters is refused by field.
+4. **Attach and detach are one request.** WordPress looped over the page ids
+   against the page-side endpoint, discarded the per-page results, and answered
+   success with a page count even when every call failed. The tag-side endpoint
+   takes the whole list (1–500) in one request, and a refusal is returned as
+   the classified error it is. A partial outcome is therefore impossible to
+   report as a success.
+5. **Every page id is path-checked** before it becomes a body value or a path
+   segment; `sanitize_text_field()` leaves `/` and `..` intact.
+
+Deletion stays unexposed, as WordPress decided: removing a tag from every page
+it labels is irreversible and no caller of this tool asked for it.
+
+### The toolkit, closed
+
+| slice | section | tools |
+|---|---|---|
+| 0 | 164.90 | measurement |
+| 1 | 164.91 | transport, `account_status`, `list_locations`, `list_browsers`, `list_simulated_devices`, `list_tests` |
+| 2 | 164.92 | `start_test`, `get_test_status` |
+| 3 | 164.93 | `get_report`, `get_lighthouse_audits`, `get_resource_summary`, `list_report_resources` |
+| 4 | 164.94 | `analyze_report`, `compare_reports`, score engine, fix matcher |
+| 5 | 164.95 | `generate_wpcode_snippet`; `install_wpcode_fix` deferred |
+| 6 | 164.96 | `get_page`, `list_pages`, `retest_page` |
+| 7 | 164.97 | `set_monitoring`, `get_alert_conditions`, `set_alert_conditions`, `get_alert_events` |
+| 8 | 164.98 | `manage_page_tags` |
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,960 / 23,348** (13 tests and 48 assertions added) |
+| adapter `ToolProbesTest` | **242 / 1,638**, 2 skipped, 0 failures — one new probe |
+| tool readiness audit | **462 / 462**, servable **443** (+1), no violations |
+| toolkit parity | **241 of 854**; `gtmetrix` **22 ported**, 0 declined, 1 deferred, **1 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The update-path correction is pinned by the request path itself
+(`page_tags/TAG1`, not `page_tags`), the partial update by the absence of a
+`name` attribute, and the single-request attach by the call count. The probe
+answers the not-configured guard on the keyless host.
+
+Next: no gtmetrix work remains. The parity table's largest remaining toolkits
+are `regulatory-registration` (59), `cloudways` (52), `chat-channels` (50) and
+`financial-planning` (44); each starts with a measurement section like
+164.90 before any port.
