@@ -123,6 +123,10 @@ final class ToolProbesTest extends TestCase {
 			// real tables, so they are probed here rather than faked.
 			array( 'content_recommendation_engine', array( 'content' => 'Widget installation guide.' ), 'success', array( 'recommendations', 'count' ) ),
 			array( 'analyze_file_suitability', array( 'file_id' => 999999 ), 'error', array() ),
+
+			// §164.56 — the deletes refuse an id that is not a record of their type.
+			array( 'delete_eca', array( 'eca_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'delete_student', array( 'student_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

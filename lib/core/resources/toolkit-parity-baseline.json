@@ -63,6 +63,8 @@
             "bulk_enroll_students",
             "create_eca",
             "create_student",
+            "delete_eca",
+            "delete_student",
             "enroll_student_eca",
             "get_eca",
             "get_student",

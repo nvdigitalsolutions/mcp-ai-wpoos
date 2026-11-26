@@ -592,6 +592,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CacheQueueAndBatchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'delete_eca' => array(
+			'class' => 'Nvoos\Core\Tool\Classroom\DeleteEcaTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress delete/cancel pair over ContentStoreInterface (Proposal 164 section 164.56). The cascade writes each student side before the activity, and an activity with active enrolments refuses with `confirmation_required` naming the count. Divergence: cancelling clears `_eca_enrollments` and `_eca_current_enrollment`, which WordPress leaves stale on a cancelled activity.',
+			'evidence' => 'lib/core/tests/Unit/Tool/DeleteEcaToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'delete_file' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeleteFileTool',
 			'readiness' => 'ready',
@@ -622,6 +631,15 @@ return array(
 			'parity' => 'port',
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/MemorySettingsAndEventToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'delete_student' => array(
+			'class' => 'Nvoos\Core\Tool\Classroom\DeleteStudentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress delete over ContentStoreInterface (Proposal 164 section 164.56). It keeps WordPress behaviour and does not unenroll, but returns `enrollments_left`, `eca_ids` and `eca_names` from the union of both sides, where WordPress only warns in prose; `truncated` marks the 200-activity scan ceiling.',
+			'evidence' => 'lib/core/tests/Unit/Tool/DeleteStudentToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'delete_task' => array(
