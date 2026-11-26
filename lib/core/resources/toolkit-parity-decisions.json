@@ -81,6 +81,10 @@
             "decision": "deferred",
             "reason": "It lists images that have no watermark, which needs a recorded relationship between a source and its watermarked rendition. FileDerivativeStoreInterface::ROLES currently offers only poster, caption and frame, so there is no watermark role to query and a port today could only answer with an empty list, which reads as a finding rather than as a missing model. Prerequisite: a watermark role on the derivative store, the same way the video inventories waited for their roles."
         },
+        "gtmetrix_install_wpcode_fix": {
+            "decision": "deferred",
+            "reason": "It installs the generated snippet into WPCode and activates it, then reports the snippet id. The generation half ships as gtmetrix_generate_wpcode_snippet; only the install is blocked. Nothing in this runtime stores code snippets: there is no snippet record contract, no activation seam and no store to read back from, and writing one would put a WPCode-shaped table in the core. Prerequisite: a code-snippet store contract (create, activate, read back) that both WPCode and any other snippet host could implement as an adapter."
+        },
         "image_inpainting": {
             "decision": "deferred",
             "reason": "Inpainting needs a mask-capable engine. The media worker's `/edit` route takes an `operation` and a `prompt` and no mask channel, and neither bound provider offers one, so there is nothing to send the masked region to. Prerequisite: a mask argument on the worker edit route plus a provider that accepts it."

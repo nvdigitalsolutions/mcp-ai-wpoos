@@ -2334,6 +2334,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixAnalysisToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'gtmetrix_generate_wpcode_snippet' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixGenerateWpcodeSnippetTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WPCode snippet emitter (Proposal 164 section 164.95) over the fix engine: only the blocks matching the report findings are emitted, a high-risk block is commented out under a staging warning, and a configuration-only fix contributes advice but no code. Corrections: only a not-found Lighthouse resource answers gtmetrix_no_lighthouse, where WordPress replaced every fetch failure, a network error included, with that message; and matched fixes are counted apart from emitted code blocks, which WordPress conflated so the reply claimed one more block than the snippet held. include_risky coerces a JSON string false correctly. Read-only: nothing is installed, and gtmetrix_install_wpcode_fix is deferred on a code-snippet store contract. Costs no credits. Gated on read.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixWpcodeSnippetToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'gtmetrix_get_lighthouse_audits' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixGetLighthouseAuditsTool',
 			'readiness' => 'ready',

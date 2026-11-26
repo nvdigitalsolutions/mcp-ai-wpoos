@@ -178,6 +178,7 @@
             "gtmetrix_account_status",
             "gtmetrix_analyze_report",
             "gtmetrix_compare_reports",
+            "gtmetrix_generate_wpcode_snippet",
             "gtmetrix_get_lighthouse_audits",
             "gtmetrix_get_report",
             "gtmetrix_get_resource_summary",
