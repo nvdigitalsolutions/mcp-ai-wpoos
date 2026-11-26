@@ -17,6 +17,7 @@ use Nvoos\Core\Tool\GenerateResponsiveImagesTool;
 use Nvoos\Core\Tool\GetImagesWithoutAltTool;
 use Nvoos\Core\Tool\GetUnoptimisedImagesTool;
 use Nvoos\Core\Tool\OptimiseImagesBatchTool;
+use Nvoos\Core\Tool\ResizeImageSmartTool;
 use Nvoos\Core\Tool\OptimizeForWebTool;
 use Nvoos\Core\Tool\UpscaleImageAiTool;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProduction;
@@ -616,6 +617,50 @@ final class ImageProductionToolsTest extends TestCase
         $this->assertSame('generate_image_alt_text', $result['data']['next_step']);
     }
 
+    public function test_smart_crop_sends_a_cover_fit_and_the_chosen_position(): void
+    {
+        $captured = null;
+        $this->fakeWorker(self::CAPABILITIES, $captured);
+
+        $result = $this->app->make(ResizeImageSmartTool::class)->execute(array(
+            'image_url' => $this->source(),
+            'width' => 64,
+            'height' => 48,
+            'position' => 'entropy',
+        ));
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('/api/image/transform', $this->path($captured));
+
+        $operations = (string) $this->part($captured, 'operations');
+
+        $this->assertStringContainsString('"fit":"cover"', $operations, 'A smart resize is a cover crop, not a fit.');
+        $this->assertStringContainsString('"position":"entropy"', $operations, 'The chosen position has to reach the engine.');
+        $this->assertSame('90', $this->part($captured, 'quality'));
+        $this->assertSame('entropy', $result['data']['position'], 'The engine-resolved position is reported.');
+    }
+
+    public function test_smart_crop_without_the_capability_refuses_before_asking(): void
+    {
+        $captured = null;
+        $this->fakeWorker(array_merge(self::CAPABILITIES, array('image_smart_crop' => false)), $captured);
+
+        $result = $this->app->make(ResizeImageSmartTool::class)->execute(array(
+            'image_url' => $this->source(),
+            'width' => 64,
+            'height' => 48,
+        ));
+
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertStringContainsString('image_smart_crop', $result->getMessage());
+        $this->assertStringNotContainsString(
+            '/api/image/transform',
+            (string) ($captured['url'] ?? ''),
+            'A capability refusal must not spend a transform request.',
+        );
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private function source(): string
@@ -705,9 +750,21 @@ final class ImageProductionToolsTest extends TestCase
             'bytes' => 1234,
         ), 200, $json);
 
+        $transform = Http::response(array(
+            'success' => true,
+            'width' => 64,
+            'height' => 48,
+            'format' => 'png',
+            'mime_type' => 'image/png',
+            'bytes' => 90,
+            'original_size' => 140,
+            'optimized_size' => 90,
+            'b64' => self::PNG_B64,
+        ), 200, $json);
+
         $missing = Http::response(array('error' => 'unexpected route'), 404, $json);
 
-        Http::fake(function (ClientRequest $request) use (&$captured, $health, $batch, $enhance, $upscale, $edit, $info, $missing) {
+        Http::fake(function (ClientRequest $request) use (&$captured, $health, $batch, $enhance, $upscale, $edit, $info, $transform, $missing) {
             $url = $request->url();
 
             if (str_contains($url, '/api/health/full')) {
@@ -721,6 +778,7 @@ final class ImageProductionToolsTest extends TestCase
                 str_contains($url, '/api/image/enhance') => $enhance,
                 str_contains($url, '/api/image/upscale') => $upscale,
                 str_contains($url, '/api/image/edit') => $edit,
+                str_contains($url, '/api/image/transform') => $transform,
                 str_contains($url, '/api/image/info') => $info,
                 default => $missing,
             };

@@ -1,6 +1,14 @@
 {
     "$comment": "Declared-and-not-ported decisions for the Pro toolkits (Proposal 164 section 164.6). Read by bin/toolkit-parity.php. declined = not ported and not intended, subtracted from remaining. deferred = not ported, blocked on a named prerequisite, stays in remaining. The rationale, and the boundary against the readiness manifest's parity:declined, live in Nvoos\\Core\\Application\\Tool\\ToolkitParityDecisions.",
     "decisions": {
+        "apply_watermark_batch": {
+            "decision": "declined",
+            "reason": "A watermark is a per-image `edit` operation, and a batch over it is a loop a caller writes in one line; offering it as a primitive would add a slug without adding a capability. The video counterpart, apply_watermark_to_video, is already served, so nothing in the portfolio changes shape. Declined rather than deferred because no prerequisite would make it more than a loop."
+        },
+        "batch_process_images": {
+            "decision": "declined",
+            "reason": "It would be a chain of convert, resize and compress, and ImageProcessingInterface::resize/crop/rotate/convert each take a source path and return a persisted path, so a chain is one worker round trip and one intermediate file per step. A real batch needs a multi-operation `/transform` call, which is a worker contract change rather than a tool. The three served tools (optimise_images_batch, generate_responsive_images, compress_image) already cover the jobs this slug names, so there is nothing left to build behind the name."
+        },
         "create_remotion_video": {
             "decision": "deferred",
             "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
@@ -9,9 +17,41 @@
             "decision": "declined",
             "reason": "Superseded by get_video_metadata, which is served: it returns the container, duration and bitrate plus the video and audio streams (codec, dimensions, frame rate, channels), and accepts file_id or a URL where this tool accepts only video_id. Its analyze_audio flag asks for the audio-stream detail the served tool already returns, so a port would be a second slug for one answer. Declined rather than deferred because there is nothing left to build."
         },
+        "generate_image_ai": {
+            "decision": "declined",
+            "reason": "Its handler dispatches to no provider of its own: it is a generic front door whose work is already served by generate_openai_image, generate_gemini_image and generate_cloudflareai_image, each of which names the provider it will bill. Porting it would be a fourth slug for the same three calls with a provider the caller cannot see in advance."
+        },
+        "generate_image_variations": {
+            "decision": "declined",
+            "reason": "Superseded by create_image_variation, which is served. The two are separate WordPress slugs for one capability, so a port would give an agent two names for one call and no way to choose between them."
+        },
         "get_queued_videos": {
             "decision": "deferred",
             "reason": "Lists media-library attachments filtered by _mcp_video_status and _mcp_video_target_platform. Nothing on this runtime writes either: the only writer in WordPress is upload_video_batch, which is itself unported. A port today could only answer with an empty list, and an empty list reads as a finding rather than as a missing model. Prerequisite: a video processing and upload job model. Deferred, not declined, because the query is sound once something writes the status."
+        },
+        "get_unwatermarked_images": {
+            "decision": "deferred",
+            "reason": "It lists images that have no watermark, which needs a recorded relationship between a source and its watermarked rendition. FileDerivativeStoreInterface::ROLES currently offers only poster, caption and frame, so there is no watermark role to query and a port today could only answer with an empty list, which reads as a finding rather than as a missing model. Prerequisite: a watermark role on the derivative store, the same way the video inventories waited for their roles."
+        },
+        "image_inpainting": {
+            "decision": "deferred",
+            "reason": "Inpainting needs a mask-capable engine. The media worker's `/edit` route takes an `operation` and a `prompt` and no mask channel, and neither bound provider offers one, so there is nothing to send the masked region to. Prerequisite: a mask argument on the worker edit route plus a provider that accepts it."
+        },
+        "optimize_image_sharp": {
+            "decision": "deferred",
+            "reason": "It duplicates optimise_images_batch (which already batches convert and compress) plus the resize that batch_process_images would have added, so it is the same capability under a third name and lands with the multi-operation transform rather than beside it. Prerequisite: a multi-operation `/transform` call on the media worker."
+        },
+        "remove_background": {
+            "decision": "deferred",
+            "reason": "Background removal needs either a Python `rembg` sidecar or a paid remove.bg key, and neither is bound on this runtime: the media worker advertises no matting capability, so the tool could only refuse at call time. Prerequisite: a matting capability on the media worker or a configured removebg_api_key."
+        },
+        "remove_image_background": {
+            "decision": "declined",
+            "reason": "It shares the handler of remove_background, so it is a second slug rather than a second capability. The capability itself is deferred on this record; when a matting engine is bound, the single deferred slug will be ported and this alias stays declined because the served tool will answer for both names."
+        },
+        "text_to_image_prompt_optimizer": {
+            "decision": "declined",
+            "reason": "Every image generation tool here already hands free-text to a model that interprets it, so a separate optimiser is a second paid call that rewrites the caller's words without showing what changed. It also has no consumer in the tool portfolio: nothing calls it. Declined rather than deferred because there is no prerequisite that would make a hidden rewrite worth a slot."
         },
         "upload_video_batch": {
             "decision": "deferred",
