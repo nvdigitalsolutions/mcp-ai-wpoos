@@ -360,6 +360,12 @@ Probe Club,club
 			// instead of failing the query.
 			array( 'get_no_show_appointments', array(), 'success', array( 'count', 'total', 'appointments' ), array( 'user_id' => 1 ) ),
 			array( 'get_unconfirmed_bookings', array(), 'success', array( 'count', 'total', 'bookings' ), array( 'user_id' => 1 ) ),
+
+			// §164.86 — the service family. The create writes a record; the import
+			// runs its dry-run path so it proves parsing and per-row validation
+			// against the real store without adding rows the other probes see.
+			array( 'create_service', array( 'name' => 'Probe service', 'duration_minutes' => 60, 'price' => 10 ), 'success', array( 'service_id', 'service' ), array( 'user_id' => 1 ) ),
+			array( 'import_services', array( 'source' => 'json_array', 'dry_run' => true, 'data' => array( array( 'name' => 'Probe import A' ), array( 'name' => 'Probe import B' ) ) ), 'success', array( 'created', 'total', 'complete' ), array( 'user_id' => 1 ) ),
 		);
 	}
 

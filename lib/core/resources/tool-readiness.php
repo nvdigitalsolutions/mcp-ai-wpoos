@@ -753,6 +753,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'create_service' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\CreateServiceTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the single-service writer (Proposal 164 section 164.86) over ContentStoreInterface as mcp_service, keeping the WordPress _service_* meta family and the mcp_service_category taxonomy so an export round-trips. Corrections: duration, buffer, participants, price, place and source URL are validated, where WordPress passed absint and floatval straight into the record and a 10,000-minute service was storable and unbookable; the store edit rule replaces the author-or-edit-others check; source_url is exposed in the schema, where WordPress read and saved it but never accepted it through validation; tags are stored, where the argument was declared and never written; and remote image URLs are refused because this runtime has no SSRF-guarded fetch contract, with media_ids replacing them. The fallback identity _service_key is derived from the name and place so an import can be re-run without duplicates. The places toolkit is not ported, so place_id is an opaque reference and is not verified.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarServiceToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'create_student' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\CreateStudentTool',
 			'readiness' => 'ready',
@@ -2417,6 +2426,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'Ports the WordPress CSV importer over ContentStoreInterface and FileStoreInterface (Proposal 164 section 164.59). The bytes come from the file registry by file_id, never from a caller-supplied URL, which is refused by name. A duplicate eca_code inside one file is skipped and reported instead of creating a second activity or overwriting the first. Unknown enum values fall back to the same defaults create_eca uses and the substitution is reported per row. Reads are capped at 1 MiB and 500 data rows with truncated in the result. Unlike WordPress, a supplied description updates the body of a matched activity.',
 			'evidence' => 'lib/core/tests/Unit/Tool/EcaWriterToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
+		'import_services' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\ImportServicesTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the bulk service import (Proposal 164 section 164.86) with the ingestion playbook applied. Corrections: batch_size only chose when to flush the WordPress object cache and never chunked anything, so it is replaced by offset and limit with next_offset and complete reported and a 5,000-row per-call ceiling; the dry run now validates every row through the same writer and reports would-create and would-update separately, where WordPress counted every non-skipped row as created; CSV input strips a UTF-8 BOM, sniffs comma, semicolon, tab or pipe, normalises header aliases and reports ignored columns and source row numbers, where a BOM broke the first header; auto_create_categories now checks the vocabulary instead of creating the term anyway; and deduplication matches external_id, then the derived _service_key, then a legacy exact title under the name strategy. Duplicate rows inside one payload are reported, not written twice. Remote images are refused per row.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarServiceToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
 		'increment_cache' => array(

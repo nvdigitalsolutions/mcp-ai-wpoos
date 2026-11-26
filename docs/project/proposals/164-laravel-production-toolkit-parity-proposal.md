@@ -7538,3 +7538,95 @@ Next in the queue: **services** (2), **booking links and optimisation** (2) and
 **notifications** (4). The final **9** need a register decision: the seven Jet
 tools on a booking-adapter contract and the two external syncs on an OAuth
 credential store.
+
+## 164.86 `calendar-booking`, slice 5 — the service catalogue
+
+This slice ports the two service tools: `create_service` writes one record and
+`import_services` bulk-loads many. Both go through `ServiceDefinition` for the
+rules and `ServiceWriter` for the write, so a single create and an imported row
+cannot drift apart — which is what happened in WordPress, where the importer
+saved `source_url` and the single writer's schema did not expose it.
+
+### The record
+
+An `mcp_service` content item with the WordPress `_service_*` family, plus three
+keys the port adds:
+
+| key | why |
+|---|---|
+| `_service_key` | `slug(name)` plus the place id; the fallback identity an import matches on |
+| `_service_external_id` | the stable source identity, matched first |
+| `_service_tags` | WordPress declared `tags` and never wrote it |
+
+Duration and buffer reuse the appointment bounds (15–480 and 0–240), because a
+service is bookable only if an appointment can represent it. WordPress accepted
+`absint` with no ceiling, so a 10,000-minute service was storable and
+unbookable. Price is a bare number with two decimals; the runtime keeps no
+currency.
+
+### Corrections: the single writer
+
+1. **Bounds are enforced.** Duration, buffer, participants, price, place and
+   source URL are validated, where WordPress stored whatever `absint` and
+   `floatval` produced.
+2. **`source_url` is in the schema.** WordPress read and saved it, but the
+   schema omitted it, so a validated call could never set it.
+3. **`tags` is stored.** It was declared and ignored.
+4. **Remote images are refused.** `image_urls` needed
+   `media_sideload_image()`, which fetches an arbitrary URL server-side; there is
+   no SSRF-guarded fetch contract here. `media_ids` replaces it, and the refusal
+   is explicit rather than a silent drop.
+5. **The store edit rule replaces the author check.**
+
+### Corrections: the importer
+
+1. **`batch_size` only chose when to flush the object cache.** It never chunked
+   the import. It is replaced by `offset` and `limit`, with `next_offset`,
+   `complete` and `has_more` reported and a 5,000-row ceiling per call, so a
+   large import is resumable and never silently truncated.
+2. **The dry run validates every row.** It used to count each non-skipped row as
+   created, so a negative price or a 10-minute duration looked fine. It now
+   builds each record through the same writer and reports would-create and
+   would-update separately, with per-row errors.
+3. **CSV input is handled structurally.** The parser strips a UTF-8 BOM (which
+   used to break the first header), sniffs comma, semicolon, tab or pipe,
+   normalises header aliases, reports ignored columns and gives the source row
+   number for a failure. UTF-16 is refused with a pointer to convert it.
+4. **`auto_create_categories` is effective.** WordPress called
+   `wp_set_object_terms()` with the unknown term even when the flag was false,
+   which creates it anyway. The port checks the vocabulary and reports an
+   unknown category per row.
+5. **Deduplication has three rungs.** `external_id`, then `_service_key`, then —
+   under the `name` strategy only — a legacy exact title, so a migrated database
+   without keys still re-imports idempotently. `name_and_place` never falls back
+   to the title, because two places may legitimately share a name.
+6. **Duplicates inside one payload are reported.** A dry run and a write both
+   skip the second row instead of planning it twice.
+
+### Adaptations
+
+- The places toolkit is not ported, so `place_id` is stored as an opaque
+  reference. `default_place_id` and the `name_and_place` strategy still work.
+- `media_ids` are stored as references; the media reader enforces access, as it
+  does for every other file reference.
+- A category is one term, which is what the WordPress tool set; the store
+  supports more if a later slice needs it.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,722 / 22,169** (19 tests and 115 assertions added) |
+| adapter `ToolProbesTest` | **214 / 1,505**, 2 skipped, 0 failures — two new probes |
+| tool readiness audit | **434 / 434**, servable **415** (+2), no violations |
+| toolkit parity | **213 of 854**; `calendar-booking` **19 ported**, 0 declined, 0 deferred, **15 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide (1,759 files) |
+
+The create probe writes a record; the import probe runs its dry-run path, so it
+proves parsing and per-row validation against the real store without adding rows
+the other probes would see.
+
+Next in the queue: **booking links and optimisation** (2) and **notifications**
+(4). The final **9** need a register decision: the seven Jet tools on a
+booking-adapter contract and the two external syncs on an OAuth credential
+store.
