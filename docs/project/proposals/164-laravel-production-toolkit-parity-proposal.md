@@ -4914,6 +4914,131 @@ the damaged call repaired.
 | toolkit parity | **111 of 854**; `eca-management` **22 ported**, 1 declined, 20 deferred, **5 remaining** |
 | licence boundary / phpcs | intact / clean (12 files) |
 
-The `` half of the heredoc hazard recorded in §164.57 recurred — `ile` arrived as a
+The `\t` half of the heredoc hazard recorded in §164.57 recurred — `\file` arrived as a
 form feed — so every file in the slice is now scanned for stray control bytes before
 gates run, not just the one that failed.
+
+
+## 164.59 The five writers, and four refusals WordPress does not make
+
+`eca-management` closes with this slice: **27 ported, 1 declined, 20 deferred, 0
+remaining**, from 48 declared slugs. The five that were left were the ones with a
+side effect — a timetable, a term state machine, a file import, two senders — and
+each of them had at least one WordPress behaviour that is not worth reproducing.
+
+| slug | class | what it writes |
+|---|---|---|
+| `set_eca_schedule` | `SetEcaScheduleTool` | `_eca_sessions`, plus the first session mirrored into `_eca_day` / `_eca_start_time` / `_eca_end_time` / `_eca_venue` |
+| `manage_eca_term` | `ManageEcaTermTool` | the `eca_terms` setting; on transition, `_eca_term` and `_eca_attendance_log` on the outgoing activities |
+| `import_ecas_csv` | `ImportEcasCsvTool` | activities through `ContentStoreInterface`, created or matched by `_eca_code` |
+| `send_eca_notification` | `SendEcaNotificationTool` | email, then `_eca_notification_log` |
+| `send_eca_parent_report` | `SendEcaParentReportTool` | email, then `_student_reports_sent` |
+
+### The four refusals
+
+**A timetable that collides with itself is refused.** WordPress validates one
+session at a time, so a payload booking the same room twice on the same day is
+saved and then reported by the timetable as a conflict the caller already knew
+about. The port refuses it, naming both session numbers. Back-to-back is not a
+collision: `Schedule::overlaps()` keeps the strict inequalities, so 09:00–10:00
+and 10:00–11:00 save cleanly.
+
+**An unknown recurrence is refused, not rewritten.** WordPress falls back to
+`weekly` for anything outside the three it knows, so a caller that typed
+`fortnight` gets a weekly activity and no signal. Here it is `validation_failed`
+naming the accepted values. The schema already declares the enum; this refusal
+only fires for a caller that bypassed schema validation, which is the caller that
+needs to hear it.
+
+**A caller-supplied URL is refused.** WordPress imports from `file_url` by
+fetching it server-side. The port reads a `file_id` from the file registry under
+an ownership check and refuses `file_url` with a message naming `file_id`. This
+is the same SSRF surface the runtime declines everywhere else; an importer is not
+a reason to open it.
+
+**A duplicate code inside one file is refused.** WordPress processes rows in
+order, so two rows sharing an `eca_code` either create two activities
+(`update_existing` off) or update the same record twice (on) — silently
+overwriting the first row. Here the second row is skipped and named in `errors`,
+because a duplicate code is a defect in the file, not a precedence rule.
+
+### Terms: the name is the join key
+
+WordPress links an activity to a term twice: `_eca_term` (free text) and
+`_eca_term_id` (the generated id). This runtime writes only `_eca_term`, so the
+term **name** is what `get` counts and what `close` deactivates. Two consequences
+are on the record: creating a second term with the same name is refused (two
+terms joining to the same rows make every count ambiguous), and an operator
+migrating a WordPress install copies the option array into the `eca_terms`
+setting unchanged — the shape is identical.
+
+### Rollover retags instead of snapshotting
+
+WordPress copies each roster into `_eca_student_enrollments_{term_id}`, a key
+nothing reads. The port does not create it. With `rollover_enrollments` the
+activities carrying the outgoing term are retagged with the incoming term's name,
+which is the thing the term filter in `generate_eca_participation_report`
+actually reads.
+
+### The attendance reset is scoped, counted and irreversible
+
+`reset_attendance` keeps its WordPress default of true. WordPress deletes
+`_eca_attendance_log` on **every** published activity with one boolean. The port
+scopes the delete to the activities that belonged to the term being completed,
+reports the count in `attendance_reset` and the scope in `attendance_scope`, and
+when there is no outgoing term it says `all_activities` before doing it. The log
+holds dated totals with no per-session provenance, so a cleared log cannot be
+reconstructed — which is exactly why the scope must be visible in the result.
+
+### The two senders
+
+Both go through `EmailServiceInterface` and report per address. Three details
+worth keeping:
+
+- **An untyped roster row counts as confirmed.** WordPress requires
+  `enrollment_type === 'confirmed'` and therefore skips a row written by an
+  importer; the port reads an absent type as confirmed and says so.
+- **The parent address is a second message, not a second header.** A parent with
+  no address is reported as `no_parent_email` rather than dropped.
+- **The notification body reads what is stored.** WordPress reads `_eca_time`, a
+  key its own create tool never writes, so its Time row is always empty; the port
+  reads `_eca_start_time` and `_eca_end_time`.
+
+The log rows are additive over WordPress: `_eca_notification_log` gains
+`failed_count`, and `_student_reports_sent` gains `recipient_role`. A log that
+records only successes cannot answer whether the cancellation notice reached the
+parent whose address bounced.
+
+### The import's ceilings and reported substitutions
+
+Reads are capped at 1 MiB and 500 data rows with `truncated` in the result.
+Unknown `eca_type`, `status` and `cost_period` fall back to the same defaults
+`create_eca` uses, and the substitution is reported per row — an importer that
+quietly changes a value is indistinguishable from one that parsed the column
+wrong. Unlike WordPress, a supplied description updates the body of a matched
+activity, because an import carrying corrected text should correct it.
+
+### Test-harness note
+
+The adapter's `vendor/` carries a **copy** of `nvoos/core` (a path repository
+resolved without a symlink), so a local Docker run against a fresh core tree must
+refresh `vendor/nvoos/core` first or every tool added since that copy was made
+reports "not registered". CI runs `composer install` per job and does not hit
+this. The symptom is precise: every data set from a fixed index onward fails,
+which is a stale classmap rather than a registry problem.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,072 / 19,708** (32 tests added) |
+| adapter PHPUnit | **465 / 2,269** (5 probes added), OK |
+| tool readiness audit | **337 / 337**, servable **318** (+5), no violations |
+| toolkit parity | **116 of 854**; `eca-management` **27 ported**, 1 declined, 20 deferred, **0 remaining** |
+| phpcs | clean (8 files, 1,208 automatic fixes applied before the gate) |
+
+The `\t` / `\f` heredoc hazard recurred twice in this slice, including
+inside a long file that truncated mid-token at line 353. Every file is now built in
+short chunks and byte-scanned for 0x09/0x0B/0x0C/0x0D before any gate runs. The
+paragraph above §164.58 that the transport had corrupted was repaired in the same
+commit.
