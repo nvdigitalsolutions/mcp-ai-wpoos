@@ -315,8 +315,11 @@ Never echo the token. For an operator run, read it with `gh auth token` inside a
 small wrapper (`execFileSync('gh', ['auth','token'])`) and pass it via env.
 
 Then follow the `auto_deploy` branch above. Verify the live page with a
-cache-buster (`?cb=deploy-<sha>`); `last-modified` should match the deploy and
-`cf-cache-status` is normally `DYNAMIC` (no purge needed). Current example:
+cache-buster (`?cb=deploy-<sha>`) **and compare it against the plain URL**:
+`last-modified` should match the deploy, and `cf-cache-status` is **not always
+`DYNAMIC`** — CMS-served paths such as `/media/*` do come back `HIT` (eca,
+2026-11-26: `HIT`, `age: 2951`). A plain `HIT` whose body disagrees with the
+`MISS` is an edge copy, not broken code (gotcha 17). Current example:
 jayainc app `6771968` on server `1685799`, branch `site/jayainc`.
 
 ## Post-deploy checklist (a CMS-less site)
@@ -535,6 +538,20 @@ flood, the token/provenance checks stop a single crafted request.
     mapping. Related blind spot: a ROOT-RELATIVE `/wp-content/…` is invisible to
     that gate (it matches `//host/wp-content/`), so the post-build pass rescues
     those from the same report.
+17. **A fixed asset can stay broken at the edge, and a shared zone cannot be
+    purged.** After the `/media` decode fix shipped, eca's logo still loaded at
+    0 px: the edge answered `HIT` with `age: 2951` while the identical URL plus
+    `?cb=<ts>` returned the correct 43 020 bytes. Confirm it is cache, not code,
+    before touching the origin — fetch the plain URL and the cache-busted one and
+    diff them. `cloudflare_get_details` returns `data: []` for that app: with no
+    CDN-attached domain the host sits on Cloudways' **shared**
+    `cloudwaysnodeapps.com` zone, so there is **no purge path** at all. Two
+    remedies, both shipped 2026-11-26: cap the relayed `max-age` (a proxied path
+    is not content-hashed, so the CMS's `max-age=31536000, immutable` must not be
+    passed through), and stamp the managed `/media` path with `?v=<build>` so every
+    deploy is a fresh cache key. The stamp covers media emitted through
+    `mediaUrl()` (header logo, favicon); band/CSS images rely on the TTL cap, which
+    bounds a bad copy to five minutes.
 
 ## Mirror-push mechanics (verified 2026-11-24)
 
