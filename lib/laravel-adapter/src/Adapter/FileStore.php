@@ -51,6 +51,17 @@ use Throwable;
 class FileStore implements FileStoreInterface, FileVisibilityStoreInterface, FileDerivativeStoreInterface
 {
 	/**
+	 * How many rows a metadata read looks at, newest first.
+	 *
+	 * Metadata is JSON and `json_extract()` differs between MySQL and SQLite, so
+	 * reads scan and match in PHP instead. The bound is shared by every reader on
+	 * purpose: `findByMetadata()` and the derived-file lookup must see the *same*
+	 * window, or an inventory could report a poster as missing because its scan
+	 * stopped one row earlier than the source lookup's did.
+	 */
+	private const SCAN_LIMIT = 1000;
+
+	/**
 	 * Sniffed MIME → [extension, policy group].
 	 *
 	 * The group decides the size ceiling: a video is not an image, and one cap for
@@ -449,7 +460,7 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface, Fil
 
 		$scan = DB::table( 'nvoos_files' )
 			->orderByDesc( 'id' )
-			->limit( 1000 )
+			->limit( self::SCAN_LIMIT )
 			->get();
 
 		$matches = array();
@@ -543,6 +554,66 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface, Fil
 		}
 
 		return $stored;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * One scan, not one per candidate. Ids are monotonic, so a derivative always
+	 * has a higher id than its source: if a source is inside the scan window its
+	 * derivative is too, which is why this and `findByMetadata()` share a bound.
+	 *
+	 * A `derived_from` that is not an integer is skipped rather than matched. The
+	 * only writer stores an integer, so a string there means the row was edited by
+	 * hand, and a guessed relationship is worse than a missing one.
+	 */
+	public function sourceIdsWithDerivative( array $sourceFileIds, string $role ): array {
+		if ( ! \in_array( $role, FileDerivativeStoreInterface::ROLES, true ) ) {
+			throw new ValidationException(
+				sprintf(
+					'Unknown derivative role "%s"; expected one of: %s.',
+					$role,
+					\implode( ', ', FileDerivativeStoreInterface::ROLES ),
+				),
+			);
+		}
+
+		$candidates = array();
+
+		foreach ( $sourceFileIds as $id ) {
+			$id = (int) $id;
+
+			if ( $id > 0 ) {
+				$candidates[ $id ] = true;
+			}
+		}
+
+		if ( array() === $candidates || ! Schema::hasTable( 'nvoos_files' ) ) {
+			return array();
+		}
+
+		$rows = DB::table( 'nvoos_files' )
+			->orderByDesc( 'id' )
+			->limit( self::SCAN_LIMIT )
+			->get();
+
+		$found = array();
+
+		foreach ( $rows as $row ) {
+			$metadata = $this->decodeMetadata( $row->metadata ?? null );
+
+			if ( $role !== ( $metadata[ FileDerivativeStoreInterface::META_ROLE ] ?? null ) ) {
+				continue;
+			}
+
+			$source = $metadata[ FileDerivativeStoreInterface::META_SOURCE ] ?? null;
+
+			if ( \is_int( $source ) && isset( $candidates[ $source ] ) ) {
+				$found[ $source ] = true;
+			}
+		}
+
+		return \array_keys( $found );
 	}
 
 	/**

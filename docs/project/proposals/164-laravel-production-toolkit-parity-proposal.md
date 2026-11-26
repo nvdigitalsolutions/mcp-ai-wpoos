@@ -3875,3 +3875,119 @@ refused", with the hosted names now covered by the paths above.
 Nothing in this cluster. `document-generation` is **37 of 38**; the remaining
 tool is `get_uninvoiced_orders`, which is blocked on order data rather than on
 code.
+
+## 164.46 The registry learns relationships, and the inventory reads them
+
+**On the numbering:** there is no §164.45. This section covers both halves of one
+capability — the contract that records a derivative, and the inventory that reads
+it — because the second is unanswerable without the first. The contract's own
+docblocks point here, and it landed in #8284; the inventory is this slice.
+
+### The gap that could not even be measured
+
+The WordPress tools ask a question the media library can answer for free: which
+videos lack `_thumbnail_id`, and which lack transcript meta. This runtime had no
+relationship at all. `generate_video_thumbnails` stored a poster and recorded
+nothing about where it came from, so **"this video has no poster" and "this video
+has a poster that nothing recorded" produced the same answer**.
+
+A tool built on that would have reported false gaps, which is worse than
+reporting none: a false "missing" costs a regenerated poster, and a regenerated
+poster costs money. So the inventory waited for the relationship.
+
+### The contract
+
+`FileDerivativeStoreInterface` is an **optional capability**, exactly like
+`FileVisibilityStoreInterface`: a separate interface, because `FileStoreInterface`
+has three adapters and many test doubles and adding a method there breaks all of
+them for something most hosts never need.
+
+The vocabulary was not invented here. Adobe's XMP specifies `xmpMM:DerivedFrom`
+for the **immediate** source an asset was made from — not its ultimate ancestor,
+so a chain stays walkable one step at a time — and digital asset management calls
+the result a *rendition*. The link is two metadata keys on the existing
+`nvoos_files.metadata` column, so **no migration**.
+
+| role | producer |
+|---|---|
+| `poster` | `generate_video_thumbnails` |
+| `caption` | `generate_video_captions` (the `.srt`/`.vtt` sidecar) |
+| `frame` | `extract_video_frames` |
+
+Every role has a producer. A role nothing writes would be a flag describing
+behaviour the host does not have, so roles are added when their producer lands.
+
+Three refusals carry the safety argument, because a wrong link is *trusted* while
+a missing one is merely missed: a file may not derive from itself, the source must
+exist, and the role must be in the vocabulary. Recording the same pair twice is
+idempotent — the link is a fact — and the write merges rather than replaces.
+
+**The source id is an integer, and that is load-bearing.** `findByMetadata()`
+compares a string criterion with `stripos`, so `'7'` also matches file `17`. An
+integer is compared strictly. A test creates sources `1` and `10`, links a poster
+to each, and asserts a query for `1` returns exactly one row; it fails the moment
+someone "simplifies" the id to a string.
+
+### The read half
+
+`sourceIdsWithDerivative( array $sourceFileIds, string $role ): array` answers the
+inventory question once — *of these videos, which already have a poster?* — instead
+of one registry scan per video. It is on the contract rather than assembled from
+`findByMetadata()` by each caller because the batch form is the only version that
+is not quadratic.
+
+**Why the answer is trustworthy inside the window.** Ids are monotonic: a
+derivative is created *after* its source, so it always has a higher id. If a video
+is inside the scanned window, its poster is inside it too. That is what makes "not
+in the derivative set" mean "has no poster" rather than "the scan did not reach
+that far" — and it is why both reads share one `SCAN_LIMIT` constant. Two
+different bounds would let the poster lookup stop one row earlier than the source
+lookup and report a poster as missing.
+
+Outside the window nothing is claimed: a video older than the scan is **not listed
+at all**, never listed as missing a poster it may well have.
+
+### The two tools
+
+`get_videos_without_thumbnails` and `get_videos_without_transcripts` are the same
+query with a different role. The shared logic is `Application\Media\VideoAssetGaps`
+— two scans, one report — and each tool is a schema plus its own wording.
+
+Two deliberate differences from WordPress, both recorded rather than silently
+dropped:
+
+- **No `platform` filter.** WordPress accepts `youtube`, `vimeo`, `local`. Nothing
+  in this runtime records a target platform — its only writer would be
+  `upload_video_batch`, which is deferred — so the parameter is absent rather than
+  accepted and ignored.
+- **A transcript here is a stored caption file.** `generate_video_captions` writes
+  an `.srt`/`.vtt` sidecar and records the link; `transcribe_video` returns text in
+  its payload and stores nothing. So a transcript that was never saved is not a
+  record, and the tool will list the video again — which its description says,
+  because a caller who has just transcribed will otherwise read the repeat as a
+  bug. WCAG 2.2 SC 1.2.2 (captions, Level A) is why the gap is worth measuring at
+  all.
+
+Both are bounded and say so: at most `limit` videos (default 50, ceiling 100 —
+the registry's own cap), and `truncated` when the page was full.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **2,872 / 18,882** (10 tests added by this slice) |
+| adapter PHPUnit | **448 / 2,142**, OK |
+| `FileDerivativeTest` (app, SQLite) | **11 / 21** (3 added by this slice) |
+| tool readiness audit | **316 / 316**, servable **297** (+2) |
+| toolkit parity | **95 of 854**; `video-production` **17 of 21** |
+
+`video-production` now reads 21 declared, 17 ported, 1 declined, 3 deferred,
+**0 remaining** — closed, without claiming 100%.
+
+### A finding, deliberately not fixed
+
+The adapter's package migration `2026_01_01_000006_create_nvoos_files_table`
+predates `visibility`, `slug`, `checksum`, `tenant_id` and `metadata`, all of which
+`FileStore` writes. A package-only install cannot store a file at all. The app
+skeleton has the columns, so no deployment is affected; it needs its own migration
+and its own slice rather than a half-fix here.

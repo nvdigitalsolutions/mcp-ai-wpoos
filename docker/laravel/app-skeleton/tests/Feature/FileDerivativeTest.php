@@ -197,6 +197,71 @@ final class FileDerivativeTest extends TestCase
         );
     }
 
+    // ── The batch read ───────────────────────────────────────────────────
+
+    /**
+     * The inventory question, asked once: of these sources, which already have a
+     * derivative in this role?
+     */
+    public function test_only_the_candidates_that_have_one_are_returned(): void
+    {
+        $first = $this->file('first.png');
+        $second = $this->file('second.png');
+        $third = $this->file('third.png');
+
+        $firstPoster = $this->file('first-poster.png');
+        $thirdPoster = $this->file('third-poster.png');
+
+        $this->store()->recordDerivative($firstPoster->id, $first->id, FileDerivativeStoreInterface::ROLE_POSTER);
+        $this->store()->recordDerivative($thirdPoster->id, $third->id, FileDerivativeStoreInterface::ROLE_POSTER);
+
+        $with = $this->store()->sourceIdsWithDerivative(
+            array($first->id, $second->id, $third->id),
+            FileDerivativeStoreInterface::ROLE_POSTER,
+        );
+
+        sort($with);
+
+        $this->assertSame(array($first->id, $third->id), $with);
+    }
+
+    /**
+     * A poster is not a caption. The role filter is the whole difference between
+     * the two inventory tools, so it is pinned directly.
+     */
+    public function test_the_role_filter_is_exact(): void
+    {
+        $source = $this->file('source.png');
+        $poster = $this->file('source-poster.png');
+        $caption = $this->file('source.vtt');
+
+        $this->store()->recordDerivative($poster->id, $source->id, FileDerivativeStoreInterface::ROLE_POSTER);
+        $this->store()->recordDerivative($caption->id, $source->id, FileDerivativeStoreInterface::ROLE_CAPTION);
+
+        $this->assertSame(
+            array($source->id),
+            $this->store()->sourceIdsWithDerivative(array($source->id), FileDerivativeStoreInterface::ROLE_POSTER)
+        );
+
+        $this->assertSame(
+            array($source->id),
+            $this->store()->sourceIdsWithDerivative(array($source->id), FileDerivativeStoreInterface::ROLE_CAPTION)
+        );
+
+        $this->assertSame(
+            array(),
+            $this->store()->sourceIdsWithDerivative(array($source->id), FileDerivativeStoreInterface::ROLE_FRAME)
+        );
+    }
+
+    public function test_the_batch_read_refuses_an_unknown_role(): void
+    {
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Unknown derivative role');
+
+        $this->store()->sourceIdsWithDerivative(array(1, 2), 'thumbnail');
+    }
+
     // ── The refusals ─────────────────────────────────────────────────────
 
     public function test_a_file_cannot_derive_from_itself(): void
