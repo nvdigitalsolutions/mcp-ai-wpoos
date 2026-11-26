@@ -357,6 +357,12 @@ import {
 } from '../../../lib/manage-session';__CRED_IMPORT__
 
 const TARGET = (process.env.NVOOS_TARGET_SITE ?? '').replace(/\/+$/, '');
+// The CMS answers REST in 3-9 s (Elementor, no object cache). An 8 s cap raced it
+// and surfaced as error=upstream, so the limit is operator-tunable.
+const TIMEOUT_MS = (() => {
+	const raw = Number(process.env.NVOOS_MANAGE_TIMEOUT_MS ?? '');
+	return Number.isFinite(raw) && raw >= 1000 ? Math.min(raw, 30000) : 15000;
+})();
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_FAILURES = 5;
 const failures = new Map< string, number[] >();
@@ -491,7 +497,7 @@ async function passwordLogin(username: string, password: string): Promise< strin
 			'user-agent': 'nvoos-forge-manage',
 		},
 		body: body.toString(),
-		signal: AbortSignal.timeout(8000),
+		signal: AbortSignal.timeout(TIMEOUT_MS),
 	});
 	await response.body?.cancel();
 	return loggedInCookie(response);
@@ -516,7 +522,7 @@ async function cookieAccess(
 		const profile = await fetch(TARGET + '/wp-admin/profile.php', {
 			headers: { cookie, 'user-agent': 'nvoos-forge-manage' },
 			redirect: 'manual',
-			signal: AbortSignal.timeout(8000),
+			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
 		const html = await profile.text();
 		const found = /name="checkuser_id" value="([0-9]+)"/.exec(html);
@@ -533,7 +539,7 @@ async function cookieAccess(
 	try {
 		const me = await fetch(TARGET + '/wp-json/wp/v2/users/me?context=edit', {
 			headers: { cookie, accept: 'application/json', 'user-agent': 'nvoos-forge-manage' },
-			signal: AbortSignal.timeout(8000),
+			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
 		if (me.ok) {
 			const body = (await me.json().catch(() => null)) as Record< string, unknown > | null;
@@ -563,7 +569,7 @@ async function cookieAccess(
 		const edit = await fetch(TARGET + '/wp-admin/edit.php', {
 			headers: { cookie, 'user-agent': 'nvoos-forge-manage' },
 			redirect: 'manual',
-			signal: AbortSignal.timeout(8000),
+			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
 		await edit.body?.cancel();
 		ok = edit.status === 200;
@@ -657,15 +663,31 @@ export const POST: APIRoute = async ({ request, cookies, url, clientAddress }) =
 				authorization: 'Basic ' + Buffer.from(username + ':' + password, 'utf8').toString('base64'),
 				'user-agent': 'nvoos-forge-manage',
 			},
-			signal: AbortSignal.timeout(8000),
+			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
-	} catch {
-		return json
-			? new Response(JSON.stringify({ error: 'The CMS did not answer.' }), {
-					status: 502,
-					headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-			  })
-			: errorRedirect('upstream');
+	} catch ( error ) {
+		// A slow CMS and an unreachable one look identical to the visitor, but they
+		// need different answers: the first is a timeout cap, the second a network
+		// fault. Name it, and name the cap.
+		const detail =
+			'basic=' +
+			( error && ( error as { name?: string } ).name === 'TimeoutError' ? 'timeout' : 'net' ) +
+			' limit=' +
+			TIMEOUT_MS +
+			'ms';
+		const refusal = json
+			? new Response(
+					JSON.stringify( {
+						error: 'The CMS did not answer in time. Try again shortly.',
+						detail,
+					} ), {
+						status: 502,
+						headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+					}
+			  )
+			: errorRedirect( 'upstream' );
+		refusal.headers.set( 'x-nvoos-cred', detail );
+		return refusal;
 	}
 
 	let passwordUser: Record< string, unknown > | null = null;
@@ -933,7 +955,7 @@ if (session) {
 					authorization: 'Basic ' + Buffer.from(credential.u + ':' + credential.p, 'utf8').toString('base64'),
 					'user-agent': 'nvoos-forge-manage',
 				},
-				signal: AbortSignal.timeout(8000),
+				signal: AbortSignal.timeout(Number(process.env.NVOOS_MANAGE_TIMEOUT_MS) || 15000),
 			});
 			if (res.status === 404) {
 				bridgeState = 'absent';
