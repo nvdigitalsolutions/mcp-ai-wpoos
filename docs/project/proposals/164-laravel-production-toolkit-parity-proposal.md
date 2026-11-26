@@ -6569,3 +6569,100 @@ the empty-success budget check — each pinned where it is surprising, and each
 recorded in a readiness row with the deviation named.
 
 The queue's next toolkit is `orchestration` (36 tools).
+
+## 164.77 `orchestration`, measured — and four utilities that need no store
+
+The toolkit declares **36 tools** in `addons/pro/includes/tools/orchestration/`.
+One is already served (`verify_information`, ported with the research
+work), so **35 are real work**. The `blueprint-installer` file in the same
+directory is a helper, not a tool, and is not counted.
+
+Measuring first was worth it: the 35 divide by the seam each group needs, and
+only one group needs nothing.
+
+| group | tools | seam it needs |
+|---|---:|---|
+| `schedules` | 10 | a schedule store and runner — the Laravel app skeleton already has `Schedule`, `RunSchedule`, `ScheduleRunner` and `ScheduleTiming`, so this is a contract over existing work rather than new machinery |
+| `autonomous loop` | 8 | a session-state store (statuses, iterations, budget), which nothing here has yet |
+| `templates and task plans` | 8 | a template/plan store; `create_execution_prompt` also reads a plan |
+| `research and content` | 5 | a model client, the content store and the Paper Store |
+| `pure utilities` | 4 | none |
+
+Slice 1 takes the four utilities, because each is a pure function of its
+arguments and can be proven now, before any contract is invented.
+
+### `generate_password`
+
+`random_int()` over a combined charset. Three behaviours are pinned:
+
+- **No per-set guarantee.** A password can contain no digit with `numbers`
+  enabled; the generator does not reserve one character per class. The strength
+  score shows the consequence and is not corrected.
+- **`avoid_ambiguous` filters letters and digits only.** The symbol set is fixed
+  and happens to contain none of `0 O I l 1`.
+- **The strength scale cannot reach 4.** Three points for length plus four for
+  class diversity is a maximum raw score of 7, halved and floored to 3. The
+  documented 0–4 top is unreachable, and a test pins that.
+
+Length 12–128 and count 1–10 are refused by the tool. The vault service it
+delegates to silently resets an out-of-range length to 20; the tool validates
+first, so that path is not reachable. Flags are `read-only` and `local-only` —
+**not** idempotent, because the same arguments deliberately produce a different
+secret.
+
+### `convert_html_to_markdown`
+
+The description claims turndown.js; the code is a regex chain, and its own usage
+guidance admits it. The port keeps the chain, with its order-dependent edges:
+images match `src` before `alt` (an alt-first image loses its alt), links keep
+only a double-quoted `href`, dropping links keeps the text while dropping
+images removes them, and `compression` is a **signed** percentage string. One
+edge is narrowed: WordPress's `empty()` check refuses the string `"0"`; here it
+is a valid document.
+
+### `extract_structured_data`
+
+The description promises CSS selectors; the code does not implement them. A
+selector shaped like `[a-z0-9-.#[]]+` is used as an **element name**, so
+`.product-price` is searched for as `<.product-price>` and matches nothing.
+Anything else is spliced into `/pattern/i` with no escaping — a pattern
+containing `/` is an invalid regex and answers an empty field rather than
+raising the warning WordPress would emit. `csv` output does not quote values.
+
+### `analyze_data_patterns`
+
+The four analyses share one summary. Non-numeric entries are dropped, but
+numeric strings survive `is_numeric`, so `min`/`max` can return the string they
+were given while the mean and median are numeric. Frequency buckets round to two
+decimals, correlation is Pearson against the **position** (the tool has one
+dataset), outliers use nearest-rank quartiles, and an unknown `analysis_type`
+adds no block rather than erroring.
+
+One crash is fixed: a one-element dataset divided by an empty second half in the
+trend split and raised `DivisionByZeroError` on PHP 8. It answers `stable` now,
+and the readiness row records the deviation.
+
+### A bug the tests caught in the port, not the source
+
+The first `byTag()` wrote `1 === preg_match_all(...)`. `preg_match_all` returns
+the number of matches, not 1, so every multi-match extraction returned an empty
+string. The WordPress condition is a plain truthiness test, and the port now
+matches it. Two expectations were also corrected to the source rather than the
+other way round: missing **and** empty selectors share one error code, and a
+non-array selector is a different error from an empty map.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,427 / 20,889** (35 tests added) |
+| adapter `ToolProbesTest` | **164 / 1,178**, 2 skipped, 0 failures — all four probes exercise real work |
+| tool readiness audit | **384 / 384**, servable **365** (+4), no violations |
+| toolkit parity | **163 of 854**; `orchestration` **5 ported**, 0 declined, 0 deferred, **31 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+Next is the autonomous-loop group: `calculate_orchestration_capacity`,
+`get_loop_metrics`, `check_exit_conditions`, `detect_completion_indicators`,
+`analyze_loop_health`, `configure_circuit_breaker`,
+`manage_autonomous_session` and `get_session_status` — which needs the
+session-state contract the loop tools share.

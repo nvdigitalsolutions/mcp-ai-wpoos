@@ -244,6 +244,13 @@ Probe Club,club
 			// SystemLogInterface, so the honest "no queryable log" answer is the
 			// probe; the entry filter and act-tier flag are pinned in lib/core.
 			array( 'fnb_audit_log', array(), 'success', array( 'entries', 'count', 'sources' ), array( 'user_id' => 1 ) ),
+
+			// §164.77 — the orchestration utilities. All four are local and pure,
+			// so each probe exercises the real work rather than a degraded path.
+			array( 'analyze_data_patterns', array( 'dataset' => array( 1, 2, 3, 4 ), 'analysis_type' => 'trend' ), 'success', array( 'analysis', 'insights' ), array( 'user_id' => 1 ) ),
+			array( 'convert_html_to_markdown', array( 'html' => '<h1>Hi</h1><p>There</p>' ), 'success', array( 'markdown', 'original_length', 'markdown_length' ), array( 'user_id' => 1 ) ),
+			array( 'extract_structured_data', array( 'content' => '<h1>Title</h1>', 'selectors' => array( 'title' => 'h1' ) ), 'success', array( 'extracted_data', 'fields_extracted' ), array( 'user_id' => 1 ) ),
+			array( 'generate_password', array( 'length' => 12 ), 'success', array( 'password', 'strength', 'length' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
