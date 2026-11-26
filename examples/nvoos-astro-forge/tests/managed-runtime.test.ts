@@ -84,6 +84,14 @@ describe( 'managed runtime — proxy helper', () => {
 		expect( src ).toContain( "headers.set('accept-encoding', 'identity')" );
 	} );
 
+	it( 'caps a relayed Cache-Control that would outlive the fix', () => {
+		// The proxied URL is the CMS's own path, not content-hashed, so a year-long
+		// immutable TTL makes a broken answer unreachable by any later fix.
+		expect( src ).toContain( 'RELAY_MAX_AGE_SECONDS' );
+		expect( src ).toContain( 'capCacheControl' );
+		expect( src ).toContain( 'responseHeaders.set("cache-control", capCacheControl(cacheControl))' );
+	} );
+
 	it( 'forwards an allowlist instead of the inbound header set', () => {
 		// Copied wholesale, the inbound request drags hop-by-hop headers and the
 		// edge's own cf-* / x-forwarded-* markers upstream, which a CDN can read

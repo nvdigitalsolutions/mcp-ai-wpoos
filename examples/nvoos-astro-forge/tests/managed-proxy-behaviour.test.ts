@@ -164,6 +164,7 @@ describe( 'emitted proxy helper — runtime failure modes', () => {
 				'content-type': 'image/svg+xml',
 				'content-encoding': 'gzip',
 				'content-length': String( gzipped.length ),
+				'cache-control': 'public, max-age=31536000, immutable',
 			} );
 			response.end( gzipped );
 		} );
@@ -180,6 +181,9 @@ describe( 'emitted proxy helper — runtime failure modes', () => {
 			expect( result.body ).toBe( plain );
 			expect( result.headers[ 'content-encoding' ] ).toBeUndefined();
 			expect( result.headers[ 'content-length' ] ).toBeUndefined();
+			// The CMS's one-year immutable TTL is capped: this URL is not
+			// content-hashed, so a long-lived copy outlives every fix.
+			expect( result.headers[ 'cache-control' ] ).toBe( 'public, max-age=300' );
 			// The hop asks for identity, so the common case needs no strip at all.
 			expect( seenEncoding ).toBe( 'identity' );
 		} finally {
