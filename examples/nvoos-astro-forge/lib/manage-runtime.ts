@@ -508,7 +508,9 @@ function cookieUser(cookie: string): string {
 }
 
 /** edit.php answers 200 to anyone who may edit posts, 403 to a subscriber. */
-async function cookieAccess(cookie: string): Promise< { ok: boolean; id: string; name: string } > {
+async function cookieAccess(
+	cookie: string
+): Promise< { ok: boolean; id: string; name: string; detail: string } > {
 	let id = '0';
 	try {
 		const profile = await fetch(TARGET + '/wp-admin/profile.php', {
@@ -524,6 +526,38 @@ async function cookieAccess(cookie: string): Promise< { ok: boolean; id: string;
 	} catch {
 		// Identity is a convenience here; the capability probe below is the gate.
 	}
+	// The capability map comes from REST, the SAME source the Basic door reads —
+	// scraping edit.php breaks the moment anything filters wp-admin (MalCare did,
+	// 2026-11-26), which reads an administrator as unprivileged.
+	let detail = '';
+	try {
+		const me = await fetch(TARGET + '/wp-json/wp/v2/users/me?context=edit', {
+			headers: { cookie, accept: 'application/json', 'user-agent': 'nvoos-forge-manage' },
+			signal: AbortSignal.timeout(8000),
+		});
+		if (me.ok) {
+			const body = (await me.json().catch(() => null)) as Record< string, unknown > | null;
+			const caps =
+				body && typeof body.capabilities === 'object' && body.capabilities !== null
+					? (body.capabilities as Record< string, unknown >)
+					: null;
+			if (caps) {
+				const ok =
+					caps.edit_posts === true ||
+					caps.manage_options === true ||
+					caps.manage_astro === true;
+				return { ok, id, name: cookieUser(cookie), detail: 'rest=' + me.status + (ok ? '' : ':no-cap') };
+			}
+			detail = 'rest=' + me.status + ':no-caps';
+		} else {
+			detail = 'rest=' + me.status;
+			await me.body?.cancel();
+		}
+	} catch {
+		detail = 'rest=net';
+	}
+	// REST could not answer (a firewall, or an older CMS): fall back to the HTML
+	// probe rather than locking an administrator out.
 	let ok = false;
 	try {
 		const edit = await fetch(TARGET + '/wp-admin/edit.php', {
@@ -533,10 +567,12 @@ async function cookieAccess(cookie: string): Promise< { ok: boolean; id: string;
 		});
 		await edit.body?.cancel();
 		ok = edit.status === 200;
+		detail += ' edit=' + edit.status;
 	} catch {
 		ok = false;
+		detail += ' edit=net';
 	}
-	return { ok, id, name: cookieUser(cookie) };
+	return { ok, id, name: cookieUser(cookie), detail };
 }
 
 export const prerender = false;
@@ -634,29 +670,48 @@ export const POST: APIRoute = async ({ request, cookies, url, clientAddress }) =
 
 	let passwordUser: Record< string, unknown > | null = null;
 	if (response.status === 401 || response.status === 403) {
-		await response.body?.cancel();
+		// Read the refusal BEFORE the body goes away: WordPress distinguishes a
+		// wrong username from a wrong application password, and that difference
+		// is the whole diagnosis. Reported as a header so it survives the
+		// redirect that carries the human-readable code.
+		const basicCode = await response
+			.json()
+			.then( ( body: { code?: unknown } | null ) =>
+				body && typeof body.code === 'string' ? body.code : ''
+			)
+			.catch( () => '' );
 		// WordPress core accepts HTTP Basic only for Application Passwords. The
 		// ACCOUNT password is a different door: wp-login.php. Try it before
 		// refusing, so an ordinary administrator can sign in.
-		const cookie = await passwordLogin(username, password).catch(() => '');
-		if (!cookie) {
-			remember(key);
-			return json
-				? new Response(JSON.stringify({ error: 'Invalid username, password or application password.' }), {
-						status: 401,
-						headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-				  })
-				: errorRedirect('credentials');
+		const cookie = await passwordLogin( username, password ).catch( () => '' );
+		if ( ! cookie ) {
+			remember( key );
+			const detail = 'basic=' + response.status + ':' + ( basicCode || '-' ) + ' wp_login=no';
+			const refusal = json
+				? new Response(
+						JSON.stringify( {
+							error: 'Invalid username, password or application password.',
+							detail,
+						} ), {
+							status: 401,
+							headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+						}
+				  )
+				: errorRedirect( 'credentials' );
+			refusal.headers.set( 'x-nvoos-cred', detail );
+			return refusal;
 		}
-		const access = await cookieAccess(cookie).catch(() => null);
-		if (!access || !access.ok) {
-			remember(key);
-			return json
-				? new Response(JSON.stringify({ error: 'That account cannot manage this site.' }), {
+		const access = await cookieAccess( cookie ).catch( () => null );
+		if ( ! access || ! access.ok ) {
+			remember( key );
+			const refusal = json
+				? new Response( JSON.stringify( { error: 'That account cannot manage this site.' } ), {
 						status: 403,
 						headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-				  })
-				: errorRedirect('permission');
+				  } )
+				: errorRedirect( 'permission' );
+			refusal.headers.set( 'x-nvoos-cred', 'wp_login=yes access=' + ( access ? access.detail : '-' ) );
+			return refusal;
 		}
 		// A password sign-in returns no REST body; carry the identity forward so
 		// the shared tail stays the only place that mints a session.
@@ -681,17 +736,47 @@ export const POST: APIRoute = async ({ request, cookies, url, clientAddress }) =
 		capabilities.edit_posts === true ||
 		capabilities.manage_options === true ||
 		capabilities.manage_astro === true;
-	if (!canManage) {
-		return json
-			? new Response(JSON.stringify({ error: 'That account cannot manage this site.' }), {
+	let effectiveUser = user;
+	if ( ! canManage && passwordUser === null && Object.keys( capabilities ).length === 0 ) {
+		// A security plugin can strip the capability map from the REST body, which
+		// reads an administrator as unprivileged. When the map is MISSING (rather
+		// than explicitly false), ask the password door before refusing.
+		const cookie = await passwordLogin( username, password ).catch( () => '' );
+		const fallback = cookie ? await cookieAccess( cookie ).catch( () => null ) : null;
+		if ( fallback && fallback.ok ) {
+			effectiveUser = {
+				id: fallback.id,
+				name: fallback.name || username,
+				capabilities: { edit_posts: true },
+			};
+		} else {
+			remember( key );
+			const refusal = json
+				? new Response( JSON.stringify( { error: 'That account cannot manage this site.' } ), {
+						status: 403,
+						headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+				  } )
+				: errorRedirect( 'permission' );
+			refusal.headers.set(
+				'x-nvoos-cred',
+				'basic=200:nocaps ' + ( fallback ? fallback.detail : 'wp_login=no' )
+			);
+			return refusal;
+		}
+	} else if ( ! canManage ) {
+		remember( key );
+		const refusal = json
+			? new Response( JSON.stringify( { error: 'That account cannot manage this site.' } ), {
 					status: 403,
 					headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-			  })
-			: errorRedirect('permission');
+			  } )
+			: errorRedirect( 'permission' );
+		refusal.headers.set( 'x-nvoos-cred', 'basic=200:caps-false' );
+		return refusal;
 	}
 
-	const uid = String(user?.id ?? '0');
-	const name = String(user?.name ?? username);
+	const uid = String(effectiveUser?.id ?? '0');
+	const name = String(effectiveUser?.name ?? username);
 	const token = signManageSession(uid, name);
 	if (!token) {
 		return json
