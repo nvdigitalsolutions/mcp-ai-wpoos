@@ -180,14 +180,24 @@ export function repairMediaUrl( url: string | undefined, env?: MediaEnv ): strin
  * Non-uploads, and every static-tier build, come back as the repaired URL — a
  * static artifact must never grow a `/media/` reference nothing serves.
  *
+ * A MATERIALIZED build is the other exception, for the same reason: it has no
+ * CMS to proxy to. Its uploads are mirrored into `dist/media/<hashed>` by the
+ * post-build localizer, and only the localizer knows that name — so the template
+ * hands it the CMS URL untouched. Rewriting first would name a path nothing
+ * serves AND hide the URL from the localizer's report, which is the only source
+ * structured data is repaired from (virtuallyjamaica, 2026-11-26: three
+ * documents shipped a `/wp-content/` logo in JSON-LD beside a 503'ing
+ * `/media/2018/11/...` `<img>`).
+ *
  * @param url Candidate asset URL.
  * @param env Environment record (defaults to `import.meta.env`).
- * @returns The `/media/<path>` form for an upload on the managed tier, else the
- *          repaired URL.
+ * @returns The `/media/<path>` form for an upload on a managed CMS-backed build,
+ *          else the repaired URL.
  */
 export function mediaUrl( url: string | undefined, env?: MediaEnv ): string | undefined {
 	const repaired = repairMediaUrl( url, env );
-	if ( ! repaired || ! managedRuntime() ) {
+	// No CMS, no proxy: a materialized build's media comes from the mirror.
+	if ( ! repaired || materializedContent() || ! managedRuntime() ) {
 		return repaired;
 	}
 	let parsed: URL;

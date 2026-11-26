@@ -120,31 +120,11 @@ function collectDocuments() {
 }
 
 function localizeStructuredData() {
-	const reportPath = resolve(process.cwd(), '.forge-cache', 'media-localize.json');
-	if (!existsSync(reportPath)) {
+	const map = localizeReport();
+	if (!map) {
 		return;
 	}
-	let report;
-	try {
-		report = JSON.parse(readFileSync(reportPath, 'utf8'));
-	} catch {
-		return;
-	}
-	const localized = Array.isArray(report?.localized) ? report.localized : [];
-	const map = localized
-		.filter((entry) => entry?.url && entry?.file)
-		.map((entry) => [entry.url, entry.file]);
-	if (map.length === 0) {
-		return;
-	}
-	// Structured data wants an ABSOLUTE url; the report's `file` is root-relative.
-	const origin = (() => {
-		try {
-			return new URL(JSON.parse(readFileSync(resolve(process.cwd(), 'nvoos.json'), 'utf8')).url).origin;
-		} catch {
-			return '';
-		}
-	})();
+	const origin = siteOrigin();
 
 	let pages = 0;
 	let rewrites = 0;
@@ -179,7 +159,81 @@ function localizeStructuredData() {
 	}
 }
 
+/**
+ * The localizer's own report — `url -> root-relative file`.
+ *
+ * @returns {Map<string,string>|null} Null when the localizer did not run or
+ *          wrote nothing worth mapping.
+ */
+function localizeReport() {
+	const reportPath = resolve(process.cwd(), '.forge-cache', 'media-localize.json');
+	if (!existsSync(reportPath)) {
+		return null;
+	}
+	let report;
+	try {
+		report = JSON.parse(readFileSync(reportPath, 'utf8'));
+	} catch {
+		return null;
+	}
+	const localized = Array.isArray(report?.localized) ? report.localized : [];
+	const entries = localized
+		.filter((entry) => entry?.url && entry?.file)
+		.map((entry) => [entry.url, entry.file]);
+	return entries.length ? new Map(entries) : null;
+}
+
+/** This site's public origin, from the scaffolded manifest. */
+function siteOrigin() {
+	try {
+		return new URL(JSON.parse(readFileSync(resolve(process.cwd(), 'nvoos.json'), 'utf8')).url).origin;
+	} catch {
+		return '';
+	}
+}
+
 localizeStructuredData();
+
+// --- root-relative CMS assets ---------------------------------------------
+// The localizer resolves ABSOLUTE urls, so a ROOT-RELATIVE `/wp-content/...`
+// reference survives every pass: invisible to the retired-cms gate, which
+// matches `//host/wp-content/`, yet dead the moment the CMS is retired
+// (virtuallyjamaica ships seven lightbox hrefs of exactly this shape while the
+// destination file is already mirrored beside them). Resolve the path against
+// the profile origin and let the report's mapping win.
+function localizeRootRelativeAssets() {
+	const map = localizeReport();
+	const origin = siteOrigin();
+	if (!map || !origin) {
+		return;
+	}
+
+	let pages = 0;
+	let rewrites = 0;
+	for (const document of collectDocuments()) {
+		const html = readFileSync(document, 'utf8');
+		const next = html.replace(
+			/(["'(=\s])(\/wp-(?:content|includes)\/[^"'\s)]+)/gi,
+			(match, lead, assetPath) => {
+				const file = map.get(`${origin}${assetPath}`);
+				if (!file) {
+					return match;
+				}
+				rewrites += 1;
+				return `${lead}${file}`;
+			}
+		);
+		if (next !== html) {
+			writeFileSync(document, next, 'utf8');
+			pages += 1;
+		}
+	}
+	if (rewrites > 0) {
+		console.log(`[forge-postbuild] localized ${rewrites} root-relative CMS asset(s) on ${pages} document(s).`);
+	}
+}
+
+localizeRootRelativeAssets();
 
 if (!targetPath) {
 	console.log('[forge-postbuild] no redirects.json — skipping _redirects.');
