@@ -20,6 +20,12 @@ export interface ManageAdminConfig {
 		canManage: boolean;
 		capabilities: string[];
 		readOnlyCollections: string[];
+		/**
+		 * Optional surfaces the CMS says exist (`'eca'` today). The admin bundle
+		 * gates its Activities nav on this list, and the bridge computes it server
+		 * side — omitting it here silently hides a surface the manager can use.
+		 */
+		features: string[];
 	};
 }
 
@@ -39,6 +45,7 @@ export function buildAdminConfig(
 			canManage: customer?.canManage ?? false,
 			capabilities: customer?.capabilities ?? [],
 			readOnlyCollections: customer?.readOnlyCollections ?? [],
+			features: customer?.features ?? [],
 		},
 	};
 }

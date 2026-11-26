@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scaffold.test.ts — template copy, FORGE-marker rewrite, vendoring, gates.
 // ---------------------------------------------------------------------------
@@ -164,6 +163,7 @@ describe('scaffold — production blog template', () => {
 			'src/lib/tracking.generated.ts',
 			'src/lib/managed.generated.ts',
 			'public/tokens.dtcg.json',
+			'gate.generated.json',
 		]);
 	});
 

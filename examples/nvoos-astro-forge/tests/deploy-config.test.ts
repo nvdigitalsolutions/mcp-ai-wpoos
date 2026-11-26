@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // deploy-config.test.ts — Phase 3.3: emitted deploy/rebuild workflows +
 // the fail-closed dispatch verifier, executed for real in a subprocess.
@@ -404,6 +403,13 @@ describe( 'runtime requirement', () => {
 
 	it( 'honours an explicit managed deploy block', () => {
 		expect( requiredRuntime( { deploy: { runtime: 'managed' } } ).runtime ).toBe( 'managed' );
+	} );
+
+	it( 'requires managed for the /manage surface', () => {
+		expect( requiredRuntime( { deploy: { manage: true } } ).runtime ).toBe( 'managed' );
+		expect( () => resolveRuntime( { deploy: { manage: true } }, 'static' ) ).toThrow(
+			/requires the managed runtime/
+		);
 	} );
 
 	it( 'refuses a static emit for a managed profile', () => {

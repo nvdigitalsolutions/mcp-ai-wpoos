@@ -34,8 +34,12 @@ import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, typ
 import { ECA_CONFIG_PATH, ecaCollection, ecaScaffoldWarnings, renderEcaGenerated } from './eca-scaffold.ts';
 import { ecaDataPages, ecaRouteFiles } from './eca-ui.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderHealthTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
+import { MANAGE_BOOT_FILE, renderManageCredentialTs, renderManageGeneratedTs, renderManageLoginTs, renderManageLogoutTs, renderManageMeTs, renderManagePageTs, renderManageSessionTs, renderManageBootJs } from './manage-runtime.ts';
+import { resolveManageBundle, type ManageBundle } from './manage-bundle.ts';
+import { renderFrontController, renderGateRuntime, renderGateStatic } from './gate-runtime.ts';
+import { offPublication, resolveGateConfig, writeGateManifest } from './gate-publish.ts';
 import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor, isCookielessVendor } from './tracking.ts';
-import type { BandBoxFacts, BandGeometry, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ForgeSectionColumn, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { BandBoxFacts, BandGeometry, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ForgeSectionColumn, GatePublication, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -197,6 +201,12 @@ creates this directory; its contents are yours.
 export interface ScaffoldOptions {
 	/** Operator-configured site profile (allowlisted URL). */
 	profile: SiteProfile;
+	/**
+	 * The publication verdict (Proposal 165). Absent = off (the real site).
+	 * The CLI resolves it from the bridge before scaffolding; tests pass it
+	 * explicitly, so the scaffold itself never makes a network call.
+	 */
+	gate?: GatePublication;
 	/** Where the Astro project is written. */
 	targetDir: string;
 	/**
@@ -339,6 +349,19 @@ export interface ForgeManifest {
 	 * inferable from the JSON; media handling keys off it (Proposal 139).
 	 */
 	runtime?: 'static' | 'managed';
+	/**
+	 * The staff surface (Proposal 165 §7) — emitted when `deploy.manage` is on.
+	 * `sessionCookie` is the host-only cookie name the gate verifies; it is not
+	 * a secret, so the manifest stays safe in a public repo. `bundle` appears
+	 * only when the Astro CMS bundle was vendored (§7b); its `integrity` is the
+	 * SRI token the page enforces, so a stale copy fails loudly instead of
+	 * running mismatched code.
+	 */
+	admin?: {
+		enabled: boolean;
+		sessionCookie?: string;
+		bundle?: { src: string; css: string; integrity: string; cssIntegrity: string };
+	};
 	/**
 	 * Tracking provenance (Proposal 130) — vendor names and the consent mode
 	 * only. No ids, no tokens: the manifest must stay safe in a public repo.
@@ -745,9 +768,21 @@ async function writeGeneratedManifest( targetDir: string ): Promise<void> {
 		'src/lib/tracking.generated.ts',
 		// Present only on an ECA profile — the loop tolerates a missing file.
 		'src/lib/eca.generated.ts',
+		// Present only when deploy.manage is on — the loop tolerates a missing file.
+		'src/lib/manage-session.ts',
+		// Present only when deploy.manageBundle is on (§7b).
+		'src/lib/manage-credential.ts',
+		// The bundle's SRI/sha provenance. The 900 KB binaries are NOT hashed here:
+		// reading them as text is lossy, and the SRI token in this file already pins
+		// their bytes.
+		'src/lib/manage.generated.ts',
+		// The external /manage boot (no inline script on the page).
+		MANAGE_BOOT_FILE,
 		'src/lib/managed.generated.ts',
 		'public/tokens.dtcg.json',
 		'public/_headers',
+		// Proposal 165 — the publication verdict (generated, never hand-edited).
+		'gate.generated.json',
 	];
 	const files: Record<string, string> = {};
 	for ( const file of generatedFiles ) {
@@ -4335,7 +4370,7 @@ export const OG_DEV_DEPENDENCIES: Record<string, string> = {
  * exist only in 'ssr' mode; 'static' removes both lines. The template
  * carries the markers — matching is line-anchored like the FORGE:site span.
  */
-export function renderAstroConfig(source: string, render: RenderMode, managed = false): string {
+export function renderAstroConfig(source: string, render: RenderMode, managed = false, frontController = false): string {
 	const lines = source.split(/\r?\n/);
 	const importLine = lines.findIndex((line) => line.trim() === '// FORGE:adapter-import');
 	const configLine = lines.findIndex((line) => line.trim() === '// FORGE:render-config');
@@ -4357,7 +4392,11 @@ export function renderAstroConfig(source: string, render: RenderMode, managed = 
 		if (i === configLine) {
 			if (render === 'ssr') {
 				out.push("\toutput: 'server',");
-				out.push("\tadapter: node({ mode: 'standalone' }),");
+				out.push(
+					frontController
+						? "\tadapter: node({ mode: 'middleware' }),"
+						: "\tadapter: node({ mode: 'standalone' }),"
+				);
 			}
 			if (managed) {
 				// Proposal 135: tag-based route caching backs the revalidate route.
@@ -4659,6 +4698,32 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
  * the new one is committed. A locked target (a dev server, watcher or editor
  * holding it) fails the rename BEFORE anything is destroyed, with an
  * actionable message rather than a half-written project. */
+/**
+ * Rename with a bounded retry for the Windows lock window.
+ *
+ * A just-written 900 KB bundle (the §7b vendor step) can still be held by
+ * Defender or the search indexer for a moment, and the rename of the staging
+ * directory then answers EPERM/EBUSY. Retrying is the documented remedy; the
+ * LAST error still surfaces, so a real lock is never masked.
+ */
+async function renameWithRetry( from: string, to: string, attempts = 5 ): Promise< void > {
+	let last: unknown;
+	for ( let attempt = 0; attempt < attempts; attempt += 1 ) {
+		try {
+			await rename( from, to );
+			return;
+		} catch ( error ) {
+			last = error;
+			const code = ( error as NodeJS.ErrnoException ).code ?? '';
+			if ( code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES' ) {
+				throw error;
+			}
+			await new Promise( ( resolve ) => setTimeout( resolve, 50 * ( attempt + 1 ) ) );
+		}
+	}
+	throw last;
+}
+
 async function swapStagedProject(stagingDir: string, finalDir: string): Promise<void> {
 	const backupDir = `${finalDir}.forge-old-${process.pid}-${Date.now()}`;
 	let hadTarget = false;
@@ -4681,7 +4746,7 @@ async function swapStagedProject(stagingDir: string, finalDir: string): Promise<
 	}
 
 	try {
-		await rename(stagingDir, finalDir);
+		await renameWithRetry(stagingDir, finalDir);
 	} catch (error) {
 		if (hadTarget) {
 			await rename(backupDir, finalDir).catch(() => undefined);
@@ -4723,11 +4788,24 @@ async function scaffoldProject(
 	// revalidate endpoint), so it requires server output. Infer it from the
 	// runtime tier; an explicit conflicting --render still fails closed BEFORE
 	// any writes — a half-scaffolded managed project is worse than an error.
-	const managed = profile.deploy?.runtime === 'managed';
+	// `deploy.manage` is itself a managed-only surface (Proposal 165 §7), so it
+	// implies the same tier even when `runtime` is omitted.
+	const managed = profile.deploy?.runtime === 'managed' || profile.deploy?.manage === true;
 	const render: RenderMode = options.render ?? (managed ? 'ssr' : preset.render);
 	if (managed && render !== 'ssr') {
 		throw new Error('A managed site uses server output — scaffold it with --render ssr (Proposal 135).');
 	}
+	// Proposal 165 §7b — the vendored bundle only makes sense inside the manage
+	// page, and the manage page only exists on the managed tier. Refuse rather
+	// than emit a project that half-has an editor.
+	if ( profile.deploy?.manageBundle === true && ! ( managed && profile.deploy?.manage === true ) ) {
+		throw new Error(
+			'deploy.manageBundle requires BOTH deploy.runtime: "managed" and deploy.manage: true — the bundle is served by the /manage page (Proposal 165 §7b).'
+		);
+	}
+	// Resolved inside the managed block below; hoisted because the manifest (§4)
+	// records its fingerprints after every generated write has landed.
+	let manageBundle: ManageBundle | undefined;
 	const templateDir = await resolveTemplateDir(options.template);
 
 	// 1. Copy the template (never copy its build artifacts or lockfile state).
@@ -5085,9 +5163,13 @@ async function scaffoldProject(
 	// 3e. Render-mode config rewrite (104 Q4) — server output + the node
 	//     adapter only in ssr mode; the static config is untouched. Skipped
 	//     when the template carries no config (the builtin test fixture).
+	//     A profile with `gatePublish` gets the FRONT CONTROLLER (Proposal 165):
+	//     middleware mode leaves no listener of its own, so `server.js` can gate
+	//     before the router and still serve dist/client.
+	const frontController = managed && Boolean( profile.gatePublish );
 	const astroConfigPath = path.join(targetDir, 'astro.config.mjs');
 	try {
-		await writeFile(astroConfigPath, renderAstroConfig(await readFile(astroConfigPath, 'utf8'), render, managed), 'utf8');
+		await writeFile(astroConfigPath, renderAstroConfig(await readFile(astroConfigPath, 'utf8'), render, managed, frontController), 'utf8');
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
 			throw error;
@@ -5142,12 +5224,21 @@ async function scaffoldProject(
 	}
 
 	if (managed) {
+		// §7b — resolve the bundle ONCE, before any of its consumers are written.
+		// `resolveManageBundle` throws a named error when the bridge checkout is
+		// absent, so a profile that opted in can never emit a /manage page whose
+		// bundle 404s (runbook §4, rule 1).
+		manageBundle = profile.deploy?.manageBundle === true ? await resolveManageBundle() : undefined;
 		await mkdir(path.join(targetDir, 'src', 'lib'), { recursive: true });
 		await writeFile(path.join(targetDir, 'src', 'lib', 'managed.generated.ts'), renderManagedGenerated(true), 'utf8');
 		await writeFile(path.join(targetDir, 'src', 'lib', 'managed-proxy.ts'), renderProxyHelperTs(), 'utf8');
 
 		await mkdir(path.join(targetDir, 'src', 'pages', 'api', 'forms'), { recursive: true });
-		await writeFile(path.join(targetDir, 'src', 'pages', 'api', '[...path].ts'), renderApiProxyTs(), 'utf8');
+		await writeFile(
+			path.join(targetDir, 'src', 'pages', 'api', '[...path].ts'),
+			renderApiProxyTs({ manageCredentials: Boolean(manageBundle) }),
+			'utf8'
+		);
 		// `direct` sends through the provider API instead of the WordPress
 		// bridge; the validation above guarantees this is the managed tier.
 		await writeFile(
@@ -5174,10 +5265,67 @@ async function scaffoldProject(
 		await mkdir(path.join(targetDir, 'src', 'pages', 'preview'), { recursive: true });
 		await writeFile(path.join(targetDir, 'src', 'pages', 'preview', '[...slug].astro'), renderPreviewPageTs(), 'utf8');
 
+		// Proposal 165 §7 — the staff surface. `deploy.manage: true` emits a
+		// self-contained sign-in (WordPress Application Password, verified
+		// server-to-server) that mints the host-only session the gate trusts.
+		// It works without the commerce bridge; when the bridge is installed the
+		// same page keeps working and the bundle can be layered on top.
+		if ( profile.deploy?.manage === true ) {
+			const gate = resolveGateConfig( profile );
+			const manage = {
+				cookieName: gate.session.cookieName,
+				ttlSeconds: gate.bypass.ttlSeconds,
+				targetSite: ( profile.url ?? '' ).replace( /\/+$/, '' ),
+				...( manageBundle
+					? { bundle: { integrity: manageBundle.integrity, cssIntegrity: manageBundle.cssIntegrity } }
+					: {} ),
+			};
+			const withBundle = Boolean( manageBundle );
+			await mkdir(path.join(targetDir, 'src', 'pages', 'manage'), { recursive: true });
+			await mkdir(path.join(targetDir, 'src', 'pages', 'api', 'manage'), { recursive: true });
+			await writeFile(path.join(targetDir, 'src', 'lib', 'manage-session.ts'), renderManageSessionTs( manage ), 'utf8');
+			await writeFile(path.join(targetDir, 'src', 'pages', 'manage', 'index.astro'), renderManagePageTs( manage ), 'utf8');
+			await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'manage', 'login.ts'), renderManageLoginTs({ bundle: withBundle }), 'utf8');
+			await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'manage', 'logout.ts'), renderManageLogoutTs({ bundle: withBundle }), 'utf8');
+			await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'manage', 'me.ts'), renderManageMeTs(), 'utf8');
+
+			if ( manageBundle ) {
+				// The credential the BFF holds, the provenance module, and the two
+				// vendored files. Copied into the CUSTOMER project only — never into
+				// templates/blog/, which the public forge repo mirrors.
+				await writeFile(path.join(targetDir, 'src', 'lib', 'manage-credential.ts'), renderManageCredentialTs(), 'utf8');
+				await writeFile(
+					path.join(targetDir, 'src', 'lib', 'manage.generated.ts'),
+					renderManageGeneratedTs({
+						integrity: manageBundle.integrity,
+						cssIntegrity: manageBundle.cssIntegrity,
+						jsSha256: manageBundle.jsSha256,
+						cssSha256: manageBundle.cssSha256,
+						jsBytes: manageBundle.js.length,
+						cssBytes: manageBundle.css.length,
+					}),
+					'utf8'
+				);
+				await mkdir(path.join(targetDir, 'public', 'manage-assets'), { recursive: true });
+				await writeFile(path.join(targetDir, 'public', 'manage-assets', 'astro-admin.js'), manageBundle.js);
+				await writeFile(path.join(targetDir, 'public', 'manage-assets', 'astro-admin.css'), manageBundle.css);
+				await writeFile(
+					path.join(targetDir, MANAGE_BOOT_FILE),
+					renderManageBootJs({ integrity: manageBundle.integrity, cssIntegrity: manageBundle.cssIntegrity }),
+					'utf8'
+				);
+			}
+		}
+
 		await mkdir(path.join(targetDir, 'src', 'pages', 'media'), { recursive: true });
 		await writeFile(path.join(targetDir, 'src', 'pages', 'media', '[...path].ts'), renderMediaProxyTs(), 'utf8');
 
-		await writeFile(path.join(targetDir, 'server.js'), renderServerShim(), 'utf8');
+		await writeFile(path.join(targetDir, 'server.js'), frontController ? renderFrontController() : renderServerShim(), 'utf8');
+		if ( frontController ) {
+			await mkdir(path.join(targetDir, 'forge-gate'), { recursive: true });
+			await writeFile(path.join(targetDir, 'forge-gate', 'runtime.mjs'), renderGateRuntime(), 'utf8');
+			await writeFile(path.join(targetDir, 'forge-gate', 'static.mjs'), renderGateStatic(), 'utf8');
+		}
 		await writeFile(path.join(targetDir, 'scripts', 'sync-deploy-tree.mjs'), renderSyncDeployTree(), 'utf8');
 		await writeFile(path.join(targetDir, 'scripts', 'verify-deploy-tree.mjs'), renderVerifyDeployTree(), 'utf8');
 		await mutatePackageJson(targetDir, (pkg) => {
@@ -5187,6 +5335,13 @@ async function scaffoldProject(
 			pkg.scripts = scripts;
 		});
 	}
+
+	// Proposal 165 — the publication verdict every tier reads (the static
+	// postbuild, the managed front controller). Written BEFORE the drift
+	// manifest so it is hashed with the other generated files, and even when the
+	// gate is off: it is the runtime's boot state, so a cold start during a gate
+	// still knows to gate before its first poll.
+	await writeGateManifest( targetDir, options.gate ?? offPublication(), profile );
 
 	// 3g. Generated-artifact drift manifest (Proposal 126 §drift) — sha256 of
 	//     every generated/rewritten file. Written LAST, after every other
@@ -5236,6 +5391,26 @@ async function scaffoldProject(
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',
 		forms,
+		// Proposal 165 §7 — the staff surface. `bundle` appears only when the
+		// bundle was vendored, and it is the provenance the drift/audit path reads.
+		...( profile.deploy?.manage === true
+			? {
+					admin: {
+						enabled: true,
+						sessionCookie: resolveGateConfig( profile ).session.cookieName,
+						...( manageBundle
+							? {
+									bundle: {
+										src: '/manage-assets/astro-admin.js',
+										css: '/manage-assets/astro-admin.css',
+										integrity: manageBundle.integrity,
+										cssIntegrity: manageBundle.cssIntegrity,
+									},
+							  }
+							: {} ),
+					},
+			  }
+			: {} ),
 		// Proposal 139 — the media policy, emitted only when the profile sets
 		// one: an absent block IS the default (CMS host, localization on).
 		...( profile.media
@@ -5262,7 +5437,9 @@ async function scaffoldProject(
 		// Always emitted (139): the media pass reads it to choose between
 		// mirroring the library (static) and rewriting uploads to the
 		// same-origin `/media/*` proxy (managed).
-		runtime: profile.deploy?.runtime === 'managed' ? 'managed' : 'static',
+		runtime: managed ? 'managed' : 'static',
+		// (The staff surface block is emitted ABOVE — a second `admin` key here
+		// would silently win and drop the bundle provenance.)
 		...( hasTrackingModule && profile.tracking
 			? {
 					tracking: {
@@ -5436,7 +5613,7 @@ async function scaffoldProject(
 			'CF_ACCESS_CLIENT_ID=',
 			'CF_ACCESS_CLIENT_SECRET=',
 			'WP_GATE_HTTP_AUTH=',
-			...(profile.deploy?.runtime === 'managed'
+			...(managed
 				? [
 						'',
 						...(isMaterializedContent(profile)
@@ -5456,6 +5633,18 @@ async function scaffoldProject(
 						'# Shared secret for POST /api/revalidate (tag-based cache invalidation).',
 						'# Unset disables the route (503).',
 						'NVOOS_REVALIDATE_TOKEN=',
+						...( profile.deploy?.manage === true
+							? [
+									'',
+									'# Manage sign-in (Proposal 165) — signs the host-only session the gate',
+									'# trusts. Unset falls back to NVOOS_FORGE_GATE_SECRET; both unset disables',
+									'# sign-in (the site stays gated and /manage says so).',
+									'NVOOS_MANAGE_SECRET=',
+									'',
+									'# Operator bypass links for an active gate (?nvoos-gate=...).',
+									'NVOOS_FORGE_GATE_SECRET=',
+							  ]
+							: [] ),
 				  ]
 				: []),
 			...renderTrackingEnvLines( profile ),

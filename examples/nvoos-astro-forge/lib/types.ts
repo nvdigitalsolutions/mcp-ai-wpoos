@@ -389,6 +389,13 @@ export interface ForgeDeploy {
 	/** Managed only: serve the `nvoos-astro-bridge` `/manage` surface. */
 	manage?: boolean;
 	/**
+	 * Managed + `manage` only: vendor the Astro CMS bundle into the project so
+	 * `/manage` embeds the editor instead of linking to wp-admin (Proposal 165
+	 * §7b). Requires the bridge checkout at scaffold time — the scaffold FAILS
+	 * CLOSED rather than emit a page whose bundle 404s.
+	 */
+	manageBundle?: boolean;
+	/**
 	 * How rebuilt forms reach the forge bridge: `bridge-direct` posts from the
 	 * browser (needs a publicly reachable CMS), `bff-proxied` posts through the
 	 * managed site's BFF (keeps the CMS private). Default `bridge-direct`.
@@ -501,7 +508,78 @@ export interface ForgeGate {
 	verify?: { rejectMarkers?: string[]; acceptMarkers?: string[]; minVisibleChars?: number };
 }
 
+/**
+ * Publication state for a forged site (Proposal 165).
+ *
+ * Distinct from `ForgeGate`: that is how the forge gets IN to a gated source;
+ * this is how the BUILT site behaves while the CMS is gated.
+ */
+export type GateMode = 'off' | 'maintenance' | 'coming_soon';
+
+/** The operator-facing publication policy. Every field is optional. */
+export interface ForgeGatePublish {
+	/** Which CMS modes the built site honours. Default `auto` (both). */
+	honor?: 'auto' | 'coming_soon-only' | 'off';
+	/**
+	 * Where a verdict may come from. `bridge` (default) trusts only the bridge's
+	 * `/gate` route; `probe` allows HTML inference when the bridge is absent.
+	 */
+	trust?: 'bridge' | 'probe';
+	/** `Retry-After` sent on a 503. Default 600; capped at 86400. */
+	retryAfterSeconds?: number;
+	/** What a STATIC publish does with the artifact (managed ignores this). */
+	static?: {
+		policy?: 'replace' | 'keep';
+		emitEdgeSnippet?: boolean;
+	};
+	/** The gate page itself. */
+	page?: {
+		mode?: 'generated' | 'copy' | 'source';
+		title?: string;
+		body?: string;
+		eta?: string;
+		contactUrl?: string;
+		showRetryLink?: boolean;
+	};
+	/** Pre-launch treatment. */
+	comingSoon?: { indexable?: boolean };
+	/** The operator preview link behind an active gate. */
+	bypass?: { ttlSeconds?: number; cookieName?: string };
+	/**
+	 * Signed-in preview — the Elementor behaviour: a verified manager session
+	 * sees the real site while the public sees the gate. The session is verified
+	 * locally (a signed, host-only cookie minted by `/manage`) or server-to-server
+	 * against the commerce contract, never trusted from a cookie's presence.
+	 * Default on.
+	 */
+	session?: { bypass?: boolean; path?: string; cookieName?: string };
+	/** Managed runtime behaviour. */
+	managed?: { enabled?: boolean; pollSeconds?: number; maxStalenessSeconds?: number };
+}
+
+/** The resolved verdict written to `gate.generated.json` (never a secret). */
+export interface GatePublication {
+	mode: GateMode;
+	source: 'bridge' | 'probe' | 'override' | 'build';
+	plugin?: string | null;
+	/** Seconds; maintenance only. */
+	retryAfter?: number;
+	/** When the verdict was resolved (ISO 8601). */
+	checkedAt: string;
+	/** False when the policy declined the mode (e.g. `coming_soon-only`). */
+	honored: boolean;
+	policy: 'replace' | 'keep';
+	page: 'maintenance' | 'coming-soon' | null;
+	comingSoonIndexable: boolean;
+}
+
 export interface SiteProfile {
+	/**
+	 * The publication block (Proposal 165) — how the BUILT site behaves while
+	 * the CMS is gated. Distinct from `gate` (how the forge gets IN).
+	 * Absent = honour a bridge verdict with the defaults below.
+	 */
+	gatePublish?: ForgeGatePublish;
 	/**
 	 * Redirects the operator declares by hand — cutover leftovers the URL
 	 * structure cannot see (a front page's own slug, a retired landing page,

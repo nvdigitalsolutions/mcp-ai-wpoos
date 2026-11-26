@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // eca-scaffold.test.ts — the `eca` preset and its generated artifacts
 // (Proposal 163 §P1).
@@ -348,6 +347,17 @@ describe( 'the committed ECA profile', () => {
 		// The warning path exists for a profile that says nothing; this one must
 		// never reach it.
 		expect( ecaScaffoldWarnings( profile ) ).toEqual( [] );
+	} );
+
+	it( 'keeps the CMS origin split and the manager-session bypass', async () => {
+		const profile = await load();
+		expect( profile.url ).toBe( 'https://cms.eca.directory' );
+		expect( profile.deploy?.publicOrigin ).toBe( 'https://eca.directory' );
+		expect( profile.deploy?.manage ).toBe( true );
+		expect( profile.gatePublish?.session ).toEqual( {
+			bypass: true,
+			cookieName: 'nvoos_forge_session',
+		} );
 	} );
 } );
 
