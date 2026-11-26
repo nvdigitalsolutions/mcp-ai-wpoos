@@ -184,6 +184,22 @@ Every tool's `execute()` method must satisfy two gates (Unix Theory Compliance �
 
 The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` (severity 5 — visible under `composer run lint`, silent under `composer run lint:base`). The sniff warns when `$arguments[...]` is interpolated into a double-quoted string or concatenated with `.` outside a recognised safe wrapper. Full sanitiser / escaper allow-list and rationale: [`docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 
+## File Headers — Cross-Language Contract (P8–P12)
+
+Every first-party source file opens with two things:
+
+1. **Licence** — one `SPDX-License-Identifier` line equal to the nearest manifest
+   (`.github/docs-scopes.json`; `UNLICENSED` → `LicenseRef-Proprietary`).
+2. **Purpose** — `@fileoverview` (TS/JS/Astro) or `//!` (Rust), sized to the file
+   class: 1–5 lines for a module (responsibility, invariant, non-goal), 1–3 for a
+   test/config, none for generated code.
+
+Never add `@package` or `@since` to TS/Rust headers: ownership lives in the
+folder README, and stability uses TSDoc release tags. Gates:
+`composer run docs:check-file`, `composer run docs:check-file:strict`, and the
+`Docs Contract` workflow (`--new-files-only` on PRs). Full contract:
+[`docs/developer/file-header-convention.md`](docs/developer/file-header-convention.md).
+
 ## Base vs Pro Decision
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
